@@ -1,0 +1,49 @@
+// Line breakpoints set at the entry, before the parse: each reply is pending, and a `breakpoint`
+// event resolves each once the program's root is known. Lines 5, 2 (in f, called twice), 7 (the
+// loop body), 9 (blank, moved to 10) and 11 at column 12; breakpointLocations before the parse
+// (pending) and for lines 5-7.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "spec": {"alg": "ParseScript", "path": "1"}, "js": {"contexts": 1}}}}
+{"send": {"command": "breakpointLocations", "arguments": {"source": {"path": "${program}"}, "line": 5}}}
+{"expect": {"type": "response", "command": "breakpointLocations", "success": false, "message": "pending"}}
+{"send": {"command": "setBreakpoints", "arguments": {"source": {"path": "${program}"}, "breakpoints": [{"line": 5}, {"line": 9}, {"line": 2}, {"line": 7}, {"line": 11, "column": 12}]}}}
+{"expect": {"type": "response", "command": "setBreakpoints", "success": true, "body": {"breakpoints": [{"id": 1, "verified": false, "line": 5, "message": "pending"}, {"id": 2, "verified": false, "line": 9, "message": "pending"}, {"id": 3, "verified": false, "line": 2, "message": "pending"}, {"id": 4, "verified": false, "line": 7, "message": "pending"}, {"id": 5, "verified": false, "line": 11, "message": "pending"}]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "breakpoint", "body": {"reason": "changed", "breakpoint": {"id": 1, "verified": true, "line": 5, "column": 1, "source": {"name": "linebp.js", "path": "${program}"}}}}}
+{"expect": {"type": "event", "event": "breakpoint", "body": {"reason": "changed", "breakpoint": {"id": 2, "verified": true, "line": 10, "column": 1, "source": {"name": "linebp.js", "path": "${program}"}}}}}
+{"expect": {"type": "event", "event": "breakpoint", "body": {"reason": "changed", "breakpoint": {"id": 3, "verified": true, "line": 2, "column": 3, "source": {"name": "linebp.js", "path": "${program}"}}}}}
+{"expect": {"type": "event", "event": "breakpoint", "body": {"reason": "changed", "breakpoint": {"id": 4, "verified": true, "line": 7, "column": 3, "source": {"name": "linebp.js", "path": "${program}"}}}}}
+{"expect": {"type": "event", "event": "breakpoint", "body": {"reason": "changed", "breakpoint": {"id": 5, "verified": true, "line": 11, "column": 12, "source": {"name": "linebp.js", "path": "${program}"}}}}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 5, "column": 1, "endLine": 5, "endColumn": 11, "lo": 47, "hi": 57, "contexts": 2}, "hitBreakpointIds": [1]}}}
+{"send": {"command": "breakpointLocations", "arguments": {"source": {"path": "${program}"}, "line": 5, "endLine": 7}}}
+{"expect": {"type": "response", "command": "breakpointLocations", "success": true, "body": {"breakpoints": [{"line": 5, "column": 1}, {"line": 6, "column": 1}, {"line": 7, "column": 3}]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 7, "column": 3, "endLine": 7, "endColumn": 13, "lo": 90, "hi": 100, "contexts": 2}, "hitBreakpointIds": [4]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 7, "column": 3, "endLine": 7, "endColumn": 13, "lo": 90, "hi": 100, "contexts": 2}, "hitBreakpointIds": [4]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 10, "column": 1, "endLine": 10, "endColumn": 17, "lo": 104, "hi": 120, "contexts": 2}, "hitBreakpointIds": [2]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 2, "column": 3, "endLine": 2, "endColumn": 17, "lo": 18, "hi": 32, "contexts": 3}, "hitBreakpointIds": [3]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 2, "column": 3, "endLine": 2, "endColumn": 17, "lo": 18, "hi": 32, "contexts": 3}, "hitBreakpointIds": [3]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 11, "column": 12, "endLine": 11, "endColumn": 22, "lo": 132, "hi": 142, "contexts": 2}, "hitBreakpointIds": [5]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 4"}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

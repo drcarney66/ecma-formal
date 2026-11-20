@@ -1,0 +1,30 @@
+// specAlgorithm: an algorithm's or SDO row's listing, at any phase (here before launch, before
+// configurationDone and at a pause). EvaluateCall's steps with an If's arms after it; the
+// DebuggerStatement's Evaluation row with its erratum's reading under step 1, numbered within it;
+// ExpressionStatement's row by sec-id and idx at a pause; a name of many algorithms and an unknown
+// sec-id refused.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "specAlgorithm", "arguments": {"alg": "EvaluateCall"}}}
+{"expect": {"type": "response", "command": "specAlgorithm", "success": true, "body": {"name": "EvaluateCall", "secId": "sec-evaluatecall", "idx": 0, "kind": "alg", "params": ["func", "thisValueRef", "argumentListNode", "tailPosition"], "steps": [{"path": "1", "text": "If thisValueRef is a Reference Record, then", "depth": 0, "steps": [{"path": "1.a", "text": "If IsPropertyReference(thisValueRef) is true, then", "depth": 1, "steps": [{"path": "1.a.i", "text": "Let thisValue be GetThisValue(thisValueRef).", "depth": 2}]}, {"path": "1.b", "text": "Else,", "depth": 1}]}, {"path": "2", "text": "Else,", "depth": 0, "steps": [{"path": "2.a", "text": "Let thisValue be undefined.", "depth": 1}]}, {"path": "3", "text": "Let argList be ? ArgumentListEvaluation of argumentListNode.", "depth": 0}, {"path": "4"}, {"path": "5"}, {"path": "6"}, {"path": "7", "text": "Return ? Call(func, thisValue, argList).", "depth": 0}]}}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "specAlgorithm", "arguments": {"secId": "sec-debugger-statement-runtime-semantics-evaluation"}}}
+{"expect": {"type": "response", "command": "specAlgorithm", "success": true, "body": {"name": "Evaluation", "secId": "sec-debugger-statement-runtime-semantics-evaluation", "idx": 0, "kind": "row", "production": "DebuggerStatement : `debugger` `;`", "params": [], "steps": [{"path": "1", "text": "If an implementation-defined debugging facility is available and enabled, then", "depth": 0, "steps": [{"path": "1.a", "depth": 1}, {"path": "1.b", "depth": 1}, {"path": "1", "reading": "definition-sec-debugger-statement-runtime-semantics-evaluation-1/sec-debugger-statement-runtime-semantics-evaluation@1/definition", "text": "If DebuggerEnabled() is true, then", "depth": 1, "steps": [{"path": "1.a", "reading": "definition-sec-debugger-statement-runtime-semantics-evaluation-1/sec-debugger-statement-runtime-semantics-evaluation@1/definition", "text": "Perform DebuggerAction().", "depth": 2}, {"path": "1.b"}]}]}, {"path": "2", "text": "Return empty.", "depth": 0}]}}}
+{"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["debugger"]}}}
+{"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "secId": "sec-debugger-statement-runtime-semantics-evaluation", "idx": 0, "path": "1", "text": "If an implementation-defined debugging facility is available and enabled, then"}}}}
+{"send": {"command": "specAlgorithm", "arguments": {"secId": "sec-expression-statement-runtime-semantics-evaluation", "idx": 0}}}
+{"expect": {"type": "response", "command": "specAlgorithm", "success": true, "body": {"name": "Evaluation", "kind": "row", "production": "ExpressionStatement : Expression `;`", "steps": [{"path": "1", "text": "Let exprRef be ? Evaluation of |Expression|.", "depth": 0}, {"path": "2", "text": "Return ? GetValue(exprRef).", "depth": 0}]}}}
+{"send": {"command": "specAlgorithm", "arguments": {"alg": "Evaluation"}}}
+{"expect": {"type": "response", "command": "specAlgorithm", "success": false, "message": "Evaluation names ${=n} algorithms: give secId and idx"}}
+{"send": {"command": "specAlgorithm", "arguments": {"secId": "sec-no-such-clause"}}}
+{"expect": {"type": "response", "command": "specAlgorithm", "success": false, "message": "no such algorithm sec-no-such-clause"}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 2", "exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

@@ -1,0 +1,186 @@
+Completion Record
+Number
+String
+Boolean
+Symbol
+BigInt
+Object
+List
+Record
+integer
+mathematical value
+extended mathematical value
+Parse Node
+Abstract Closure
+ECMAScript language value
+property key
+normal completion
+abrupt completion
+throw completion
+return completion
+undefined
+null
+non-negative integer
+Property Descriptor
+non-negative
+integral Number
+odd
+Environment Record
+Reference Record
+Private Name
+extensible
+ordinary
+object
+Data Block
+Agent Events Record
+WriteSharedMemory
+Shared Data Block
+ReadSharedMemory
+Chosen Value Record
+error
+positive
+Array exotic object
+Proxy exotic object
+internal slot name
+PropertyDescriptor
+function object
+constructor
+Array
+bound function exotic object
+Realm Record
+PrivateElement
+ClassFieldDefinition Record
+ECMAScript function object
+built-in
+Iterator Record
+DisposableResource Record
+nonterminal
+grammar symbol
+PrivateEnvironment Record
+Declarative Environment Record
+strict
+binding
+mutable
+uninitialized
+Object Environment Record
+Function Environment Record
+Global Environment Record
+Module Environment Record
+Module Record
+execution context
+Script Record
+JobCallback Record
+agent signifier
+WeakRef
+FinalizationRegistry
+WeakMap
+WeakSet
+data property
+accessor property
+fully
+populated
+array index
+ECMAScript code execution context
+Unicode code point
+String exotic object
+arguments exotic object
+TypedArray
+integer index
+TypedArray With Buffer Witness Record
+DataView
+module namespace exotic object
+ResolvedBinding Record
+immutable
+prototype exotic object
+code point
+leading
+surrogate
+trailing
+code unit
+Super Reference Record
+possibly empty
+ImportAttribute Record
+ModuleRequest Record
+Promise
+PromiseCapability Record
+Source Text Module Record
+continue completion
+iterator object
+For-In Iterator instance
+break completion
+implementation-defined Completion Record
+ClassStaticBlockDefinition Record
+ECMAScript source text
+ImportEntry Record
+LoadedModuleRequest Record
+Cyclic Module Record
+GraphLoadingState Record
+ExportEntry Record
+Synthetic Module Record
+sequence of Unicode code points
+GlobalSymbolRegistry Record
+finite
+time value
+epoch nanoseconds count
+Time Zone Identifier Record
+character
+MatchState
+RegExp Record
+Matcher
+MatcherContinuation
+CharSetElement
+CaptureRange
+CharSet
+empty
+single
+Unicode property name
+Unicode property value
+Match Record
+initialized RegExp instance
+RegExp String Iterator Object Instance
+Array Iterator Instance
+TypedArray element type
+ArrayBuffer
+SharedArrayBuffer
+byte
+Uint8Array
+byte value
+Generator
+Set Record
+NaN
+ReadModifyWriteSharedMemory
+read-modify-write modification function
+DataView With Buffer Witness Record
+WaiterList Record
+Synchronize event
+Waiter Record
+JSON Parse Record
+property name
+JSON Serialization Record
+PromiseReaction Record
+Job Abstract Closure
+AsyncGenerator
+AsyncGeneratorRequest
+Memory event
+candidate execution
+Shared Data Block event
+WriteSharedMemory event
+Undefined
+Null
+candidate execution Record
+callable
+IteratorResult object
+async iterator object
+AsyncGeneratorRequest Record
+host-defined exotic object
+Set
+candidate execution Agent Events Record
+host-specific event
+events
+host-specific Memory events
+event
+execution
+production
+indirect
+Agent Record
+non-zero

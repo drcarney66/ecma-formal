@@ -1,0 +1,134 @@
+<emu-clause id="formal-fields">
+  <h1>Fields and Internal Slots Declared in Prose</h1>
+  <p>The fields and internal slots that the spec declares in prose rather than in a field or slot table, each with the type its prose and its uses give; and the operations that return *true* only for a value of a type.</p>
+
+  <emu-fields of="Environment Record" clause="sec-environment-records">
+    [[OuterEnv]]: an Environment Record or *null*
+  </emu-fields>
+
+  <emu-fields of="execution context" clause="sec-execution-contexts">
+    [[Function]]: a function object or *null*
+    [[Realm]]: a Realm Record
+    [[ScriptOrModule]]: a Script Record, a Module Record, or *null*
+  </emu-fields>
+
+  <emu-fields of="ECMAScript code execution context" clause="sec-execution-contexts">
+    [[LexicalEnvironment]]: an Environment Record
+    [[VariableEnvironment]]: an Environment Record
+    [[PrivateEnvironment]]: a PrivateEnvironment Record or *null*
+  </emu-fields>
+
+  <emu-fields of="Private Name" clause="sec-private-names">
+    [[Description]]: a String
+  </emu-fields>
+
+  <emu-fields of="ResolvedBinding Record" clause="sec-resolvedbinding-record">
+    [[Module]]: a Module Record
+    [[BindingName]]: a String or ~namespace~
+  </emu-fields>
+
+  <emu-fields of="MatchState" clause="sec-pattern-notation">
+    [[Input]]: a List of characters
+    [[EndIndex]]: a non-negative integer
+  </emu-fields>
+
+  <emu-fields of="ordinary" clause="sec-ordinary-object-internal-methods-and-internal-slots" slots>
+    [[Prototype]]: an Object or *null*
+    [[Extensible]]: a Boolean
+  </emu-fields>
+
+  <emu-fields of="Proxy exotic object" clause="sec-proxy-object-internal-methods-and-internal-slots" slots>
+    [[ProxyTarget]]: an Object or *null*
+    [[ProxyHandler]]: an Object or *null*
+  </emu-fields>
+
+  <emu-fields of="String exotic object" clause="sec-string-exotic-objects" slots>
+    [[StringData]]: a String
+  </emu-fields>
+
+  <emu-fields of="Boolean instance" clause="sec-properties-of-boolean-instances" slots>
+    [[BooleanData]]: a Boolean
+  </emu-fields>
+
+  <emu-fields of="Number instance" clause="sec-properties-of-number-instances" slots>
+    [[NumberData]]: a Number
+  </emu-fields>
+
+  <emu-fields of="Symbol instance" clause="sec-properties-of-symbol-instances" slots>
+    [[SymbolData]]: a Symbol
+  </emu-fields>
+
+  <emu-fields of="BigInt instance" clause="sec-properties-of-bigint-instances" slots>
+    [[BigIntData]]: a BigInt
+  </emu-fields>
+
+  <emu-fields of="Error instance" clause="sec-properties-of-error-instances" slots>
+    [[ErrorData]]: *undefined*
+  </emu-fields>
+
+  <emu-fields of="Date instance" clause="sec-properties-of-date-instances" slots>
+    [[DateValue]]: a Number
+  </emu-fields>
+
+  <emu-fields of="initialized RegExp instance" clause="sec-properties-of-regexp-instances" slots>
+    [[OriginalSource]]: a String
+    [[OriginalFlags]]: a String
+    [[RegExpRecord]]: a RegExp Record
+    [[RegExpMatcher]]: an Abstract Closure
+  </emu-fields>
+
+  <emu-fields of="Map instance" clause="sec-properties-of-map-instances" slots>
+    [[MapData]]: a List of Records with fields [[Key]] (an ECMAScript language value or ~empty~) and [[Value]] (an ECMAScript language value or ~empty~)
+  </emu-fields>
+
+  <emu-fields of="Set instance" clause="sec-properties-of-set-instances" slots>
+    [[SetData]]: a List of either ECMAScript language values or ~empty~
+  </emu-fields>
+
+  <emu-fields of="WeakMap" clause="sec-properties-of-weakmap-instances" slots>
+    [[WeakMapData]]: a List of Records with fields [[Key]] (an ECMAScript language value or ~empty~) and [[Value]] (an ECMAScript language value or ~empty~)
+  </emu-fields>
+
+  <emu-fields of="WeakSet" clause="sec-properties-of-weakset-instances" slots>
+    [[WeakSetData]]: a List of either ECMAScript language values or ~empty~
+  </emu-fields>
+
+  <emu-fields of="ArrayBuffer" clause="sec-properties-of-the-arraybuffer-instances" slots>
+    [[ArrayBufferData]]: a Data Block or *null*
+    [[ArrayBufferByteLength]]: a non-negative integer
+    [[ArrayBufferMaxByteLength]]: a non-negative integer
+    [[ArrayBufferDetachKey]]: an ECMAScript language value or ~empty~
+  </emu-fields>
+
+  <emu-fields of="SharedArrayBuffer" clause="sec-properties-of-the-sharedarraybuffer-instances" slots>
+    [[ArrayBufferData]]: a Shared Data Block
+    [[ArrayBufferByteLength]]: a non-negative integer
+    [[ArrayBufferMaxByteLength]]: a non-negative integer
+  </emu-fields>
+
+  <emu-fields of="DataView" clause="sec-properties-of-dataview-instances" slots>
+    [[ViewedArrayBuffer]]: an ArrayBuffer or a SharedArrayBuffer
+    [[ByteLength]]: a non-negative integer or ~auto~
+    [[ByteOffset]]: a non-negative integer
+  </emu-fields>
+
+  <emu-fields of="TypedArray" clause="sec-typedarray-exotic-objects" slots>
+    [[ViewedArrayBuffer]]: an ArrayBuffer or a SharedArrayBuffer
+    [[TypedArrayName]]: a String
+    [[ContentType]]: ~bigint~ or ~number~
+    [[ByteLength]]: a non-negative integer or ~auto~
+    [[ByteOffset]]: a non-negative integer
+    [[ArrayLength]]: a non-negative integer or ~auto~
+  </emu-fields>
+
+  <emu-guard op="IsCallable" type="a function object"></emu-guard>
+  <emu-guard op="IsConstructor" type="a constructor"></emu-guard>
+  <emu-guard op="IsArray" type="an Object"></emu-guard>
+  <emu-guard op="IsRegExp" type="an Object"></emu-guard>
+  <emu-guard op="IsConcatSpreadable" type="an Object"></emu-guard>
+  <emu-guard op="IsPromise" type="a Promise"></emu-guard>
+  <emu-guard op="IsSharedArrayBuffer" type="a SharedArrayBuffer"></emu-guard>
+  <emu-guard op="IsDataDescriptor" type="a Property Descriptor"></emu-guard>
+  <emu-guard op="IsAccessorDescriptor" type="a Property Descriptor"></emu-guard>
+  <emu-guard op="IsGenericDescriptor" type="a Property Descriptor"></emu-guard>
+</emu-clause>

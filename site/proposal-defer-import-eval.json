@@ -1,0 +1,1234 @@
+{
+ "format": 1,
+ "name": "defer-import-eval",
+ "title": "tc39/proposal-defer-import-eval",
+ "proposal": {
+  "repository": "https://github.com/tc39/proposal-defer-import-eval",
+  "commit": "6fefd29d9698595d4e345fee226c78ecb03e2a25",
+  "path": "external/proposal-defer-import-eval"
+ },
+ "ecma262": "b1eaed82fc5e8a511c5b2007f194b16c8f7e5ea6",
+ "branch": {
+  "name": "proposal-defer-import-eval",
+  "commit": "",
+  "merge_base": "",
+  "base": "main",
+  "base_commit": ""
+ },
+ "groups": [
+  {
+   "id": "pin",
+   "title": "The pin",
+   "files": [
+    {
+     "path": ".gitmodules",
+     "added": 3,
+     "removed": 0,
+     "group": "pin",
+     "new": false
+    },
+    {
+     "path": "external/proposal-defer-import-eval",
+     "added": 1,
+     "removed": 0,
+     "group": "pin",
+     "new": true
+    },
+    {
+     "path": "spec/proposals.txt",
+     "added": 2,
+     "removed": 0,
+     "group": "pin",
+     "new": false
+    }
+   ]
+  },
+  {
+   "id": "answers",
+   "title": "The merge's answers",
+   "files": [
+    {
+     "path": "spec/proposals/defer-import-eval/README.md",
+     "added": 25,
+     "removed": 0,
+     "group": "answers",
+     "new": true
+    },
+    {
+     "path": "spec/proposals/defer-import-eval/resolutions.txt",
+     "added": 27,
+     "removed": 0,
+     "group": "answers",
+     "new": true
+    }
+   ]
+  },
+  {
+   "id": "readings",
+   "title": "Readings (the overlay)",
+   "files": [
+    {
+     "path": "spec/formal/defer-import.emu",
+     "added": 102,
+     "removed": 0,
+     "group": "readings",
+     "new": true
+    },
+    {
+     "path": "spec/formal/fields.emu",
+     "added": 1,
+     "removed": 1,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/formal/lists.emu",
+     "added": 4,
+     "removed": 4,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/formal/permanent.emu",
+     "added": 0,
+     "removed": 1,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/formal/realm.emu",
+     "added": 2,
+     "removed": 3,
+     "group": "readings",
+     "new": false
+    }
+   ]
+  },
+  {
+   "id": "lists",
+   "title": "List files, by hand",
+   "files": [
+    {
+     "path": "spec/formal/decisions.md",
+     "added": 31,
+     "removed": 0,
+     "group": "lists",
+     "new": false
+    },
+    {
+     "path": "spec/formal/phrase-unreviewed.txt",
+     "added": 9,
+     "removed": 1,
+     "group": "lists",
+     "new": false
+    },
+    {
+     "path": "spec/formal/readings-restating.txt",
+     "added": 11,
+     "removed": 3,
+     "group": "lists",
+     "new": false
+    }
+   ]
+  },
+  {
+   "id": "tests",
+   "title": "Tests",
+   "files": [
+    {
+     "path": "tests/run/frontend_not_ecmascript.js",
+     "added": 3,
+     "removed": 2,
+     "group": "tests",
+     "new": false
+    },
+    {
+     "path": "tests/run/import_defer_basic.js",
+     "added": 3,
+     "removed": 6,
+     "group": "tests",
+     "new": false
+    },
+    {
+     "path": "tests/run/import_defer_dynamic.js",
+     "added": 2,
+     "removed": 5,
+     "group": "tests",
+     "new": false
+    },
+    {
+     "path": "tests/run/import_defer_tla.js",
+     "added": 3,
+     "removed": 6,
+     "group": "tests",
+     "new": false
+    },
+    {
+     "path": "tests/test262/full.conf",
+     "added": 0,
+     "removed": 1,
+     "group": "tests",
+     "new": false
+    },
+    {
+     "path": "tests/test262/sample.conf",
+     "added": 0,
+     "removed": 1,
+     "group": "tests",
+     "new": false
+    },
+    {
+     "path": "tests/test262/suite.conf",
+     "added": 0,
+     "removed": 1,
+     "group": "tests",
+     "new": false
+    }
+   ]
+  },
+  {
+   "id": "lean-hand",
+   "title": "Hand-written Lean",
+   "files": []
+  },
+  {
+   "id": "regenerated",
+   "title": "Regenerated: Lean modules",
+   "files": [
+    {
+     "path": "lean/Ecma/Gen/Decls.lean",
+     "added": 20,
+     "removed": 18,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Phrases.lean",
+     "added": 3,
+     "removed": 2,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Phrases_DeferImport.lean",
+     "added": 31,
+     "removed": 0,
+     "group": "regenerated",
+     "new": true
+    },
+    {
+     "path": "lean/Ecma/Gen/Realm.lean",
+     "added": 1,
+     "removed": 2,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S10_4_part2.lean",
+     "added": 32,
+     "removed": 10,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S13_3.lean",
+     "added": 66,
+     "removed": 18,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S16_2_part1.lean",
+     "added": 82,
+     "removed": 58,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S16_2_part2.lean",
+     "added": 45,
+     "removed": 528,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S16_2_part3.lean",
+     "added": 529,
+     "removed": 1,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S27_5_part1.lean",
+     "added": 27,
+     "removed": 38,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S27_5_part2.lean",
+     "added": 34,
+     "removed": 1,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Tables_1.lean",
+     "added": 110,
+     "removed": 8,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Tables_2.lean",
+     "added": 217,
+     "removed": 91,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Grammar/Gen/Index.lean",
+     "added": 302,
+     "removed": 296,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Grammar/Gen/Symbols.lean",
+     "added": 5,
+     "removed": 2,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Grammar/Gen/Syntactic1.lean",
+     "added": 17,
+     "removed": 31,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Grammar/Gen/Syntactic2.lean",
+     "added": 29,
+     "removed": 0,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Grammar/Gen/SyntacticProd.lean",
+     "added": 5,
+     "removed": 2,
+     "group": "regenerated",
+     "new": false
+    }
+   ]
+  },
+  {
+   "id": "ids",
+   "title": "Regenerated: id tables",
+   "files": [
+    {
+     "path": "spec/formal/clause-ids.txt",
+     "added": 14,
+     "removed": 3,
+     "group": "ids",
+     "new": false
+    },
+    {
+     "path": "spec/formal/enum-ids.txt",
+     "added": 3,
+     "removed": 0,
+     "group": "ids",
+     "new": false
+    },
+    {
+     "path": "spec/formal/erratum-ids.txt",
+     "added": 16,
+     "removed": 3,
+     "group": "ids",
+     "new": false
+    },
+    {
+     "path": "spec/formal/field-ids.txt",
+     "added": 3,
+     "removed": 0,
+     "group": "ids",
+     "new": false
+    },
+    {
+     "path": "spec/formal/nt-ids.txt",
+     "added": 1,
+     "removed": 0,
+     "group": "ids",
+     "new": false
+    },
+    {
+     "path": "spec/formal/prod-ids.txt",
+     "added": 12,
+     "removed": 4,
+     "group": "ids",
+     "new": false
+    },
+    {
+     "path": "spec/formal/sdo-ids.txt",
+     "added": 2,
+     "removed": 0,
+     "group": "ids",
+     "new": false
+    },
+    {
+     "path": "spec/formal/table-ids.txt",
+     "added": 5,
+     "removed": 0,
+     "group": "ids",
+     "new": false
+    }
+   ]
+  },
+  {
+   "id": "lists-regen",
+   "title": "Regenerated: list files",
+   "files": [
+    {
+     "path": "spec/formal/assert-sites.txt",
+     "added": 35,
+     "removed": 24,
+     "group": "lists-regen",
+     "new": false
+    },
+    {
+     "path": "spec/formal/asserts-open.txt",
+     "added": 1,
+     "removed": 1,
+     "group": "lists-regen",
+     "new": false
+    },
+    {
+     "path": "spec/formal/errata.txt",
+     "added": 2,
+     "removed": 0,
+     "group": "lists-regen",
+     "new": false
+    },
+    {
+     "path": "spec/formal/permanent-sentences.txt",
+     "added": 7,
+     "removed": 8,
+     "group": "lists-regen",
+     "new": false
+    },
+    {
+     "path": "spec/formal/residue.txt",
+     "added": 1,
+     "removed": 1,
+     "group": "lists-regen",
+     "new": false
+    },
+    {
+     "path": "spec/formal/type-dyn-sites.txt",
+     "added": 100,
+     "removed": 85,
+     "group": "lists-regen",
+     "new": false
+    },
+    {
+     "path": "tests/parser/grammar_index.txt",
+     "added": 8,
+     "removed": 4,
+     "group": "lists-regen",
+     "new": false
+    }
+   ]
+  },
+  {
+   "id": "unpublished",
+   "title": "Not on the site: files under docs/, counted only",
+   "files": [],
+   "count": 7
+  }
+ ],
+ "answers": [
+  {
+   "answer": "ignore sec-LoadRequestedModules 1",
+   "verb": "ignore",
+   "question": "the clause's header (`<dl class=\"header\">`) has no markup but is not the base's",
+   "reason": "the proposal abbreviates it: it drops the `<dt>description</dt>` (and, in InnerModuleLoading and InnerModuleLinking, every entry). It changes nothing there, so the base's header stays",
+   "tool": "context block (no markup) differs from the base; kind dl",
+   "clause": "sec-LoadRequestedModules",
+   "num": "16.2.1.6.1.1",
+   "title": "LoadRequestedModules"
+  },
+  {
+   "answer": "ignore sec-InnerModuleLoading 1",
+   "verb": "ignore",
+   "question": "the clause's header (`<dl class=\"header\">`) has no markup but is not the base's",
+   "reason": "the proposal abbreviates it: it drops the `<dt>description</dt>` (and, in InnerModuleLoading and InnerModuleLinking, every entry). It changes nothing there, so the base's header stays",
+   "tool": "context block (no markup) differs from the base; kind dl",
+   "clause": "sec-InnerModuleLoading",
+   "num": "16.2.1.6.1.1.1",
+   "title": "InnerModuleLoading"
+  },
+  {
+   "answer": "ignore sec-moduledeclarationlinking 1",
+   "verb": "ignore",
+   "question": "the clause's header (`<dl class=\"header\">`) has no markup but is not the base's",
+   "reason": "the proposal abbreviates it: it drops the `<dt>description</dt>` (and, in InnerModuleLoading and InnerModuleLinking, every entry). It changes nothing there, so the base's header stays",
+   "tool": "context block (no markup) differs from the base; kind dl",
+   "clause": "sec-moduledeclarationlinking",
+   "num": "16.2.1.6.1.2",
+   "title": "Link"
+  },
+  {
+   "answer": "ignore sec-InnerModuleLinking 1",
+   "verb": "ignore",
+   "question": "the clause's header (`<dl class=\"header\">`) has no markup but is not the base's",
+   "reason": "the proposal abbreviates it: it drops the `<dt>description</dt>` (and, in InnerModuleLoading and InnerModuleLinking, every entry). It changes nothing there, so the base's header stays",
+   "tool": "context block (no markup) differs from the base; kind dl",
+   "clause": "sec-InnerModuleLinking",
+   "num": "16.2.1.6.1.2.1",
+   "title": "InnerModuleLinking"
+  },
+  {
+   "answer": "place sec-InnerModuleLoading 2 after 2",
+   "verb": "place",
+   "question": "the proposal inserts a note (`<emu-note>` all `<ins>`) but omits the header and the algorithm around it: before or after the algorithm?",
+   "reason": "after it (base block 2 is the algorithm): a note on an algorithm follows it, as everywhere in the text, and the note speaks of the algorithm's steps",
+   "tool": "inserted emu-note: the proposal omits base blocks here (1:dl, 2:emu-alg); say where with `place sec-InnerModuleLoading 2 after N`",
+   "clause": "sec-InnerModuleLoading",
+   "num": "16.2.1.6.1.1.1",
+   "title": "InnerModuleLoading"
+  },
+  {
+   "answer": "place sec-InnerModuleLinking 2 after 2",
+   "verb": "place",
+   "question": "the proposal inserts a note (`<emu-note>` all `<ins>`) but omits the header and the algorithm around it: before or after the algorithm?",
+   "reason": "after it (base block 2 is the algorithm): a note on an algorithm follows it, as everywhere in the text, and the note speaks of the algorithm's steps",
+   "tool": "inserted emu-note: the proposal omits base blocks here (1:dl, 2:emu-alg); say where with `place sec-InnerModuleLinking 2 after N`",
+   "clause": "sec-InnerModuleLinking",
+   "num": "16.2.1.6.1.2.1",
+   "title": "InnerModuleLinking"
+  },
+  {
+   "answer": "rebase sec-source-text-module-record-initialize-environment 2",
+   "verb": "rebase",
+   "question": "InitializeEnvironment's steps: the proposal's old text lacks two of the base's lines, `Assert: _exportEntry_.[[ExportName]] is not *null*.` (1.a) and `Assert: _importEntry_.[[ImportName]] is a String.` (7.c.i)",
+   "reason": "the base is newer than the proposal's copy; the proposal's changes (GetModuleNamespace's new phase argument, twice, and the `~deferred-namespace~` branch of 7.c.iii) touch other lines, so the three-way merge applies them to the base with no conflict and both Asserts stay",
+   "tool": "old text (<ins> dropped, <del> kept) differs from the base; kind emu-alg; nearest base block 2",
+   "clause": "sec-source-text-module-record-initialize-environment",
+   "num": "16.2.1.7.3.1",
+   "title": "InitializeEnvironment"
+  },
+  {
+   "answer": "rebase sec-resolveexport 2",
+   "verb": "rebase",
+   "question": "ResolveExport's steps: the proposal's old text has an `Else,` after `Return ResolvedBinding Record { … ~namespace~ }.` that the base no longer has",
+   "reason": "the same: the base dropped it, the proposal's change (the `~deferred-namespace~` branch) is elsewhere in the algorithm, and the merge applies it to the base's lines",
+   "tool": "old text (<ins> dropped, <del> kept) differs from the base; kind emu-alg; nearest base block 2",
+   "clause": "sec-resolveexport",
+   "num": "16.2.1.7.2.2",
+   "title": "ResolveExport"
+  },
+  {
+   "answer": "rebase-take sec-abstract-module-records 4",
+   "verb": "rebase-take",
+   "question": "Module Record Fields: the table differs as a whole (the base gained a `<thead>`), and row by row too, at [[Namespace]]'s Meaning",
+   "reason": "the proposal rewrote that cell without `<ins>`/`<del>`: the link to `#sec-module-namespace-objects` (a clause it deletes) becomes `#sec-module-namespace-exotic-objects`, and \"whose [[Deferred]] slot is *false*,\" is added. That is the proposal's change, so its line wins where it differs from the base; the base's `<thead>` stays.",
+   "tool": "old text (<ins> dropped, <del> kept) differs from the base; kind emu-table; nearest base block 4",
+   "clause": "sec-abstract-module-records",
+   "num": "16.2.1.5",
+   "title": "Abstract Module Records"
+  },
+  {
+   "answer": "rename ModuleRequestsEqual ModuleRequestsKeyEqual",
+   "verb": "rename",
+   "question": "a warning: ModuleRequestsEqual, whose clause the proposal removes (`del-sec-ModuleRequestsEqual`), is still used in 6 clauses the proposal does not show",
+   "reason": "the proposal's new clause ModuleRequestsKeyEqual takes over the old one's id (`oldids=\"sec-ModuleRequestsEqual\"`), with the same steps, and the proposal renames the two uses it shows; the other seven uses (Realm Record and Script Record [[LoadedModules]], Cyclic Module Record [[LoadedModules]], InnerModuleLoading 2.d.ii, GetImportedModule 1, HostLoadImportedModule's requirements) are renamed with it.",
+   "tool": null,
+   "clause": null,
+   "num": "",
+   "title": ""
+  }
+ ],
+ "answers_file": "spec/proposals/defer-import-eval/resolutions.txt",
+ "readings": [
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-module-namespace-exotic-objects-defineownproperty-p-desc",
+   "num": "10.4.6.6",
+   "title": "[[DefineOwnProperty]] ( propertyKey: a property key, propertyDesc: a Property Descriptor, ): either a normal completion containing a Boolean or a throw completion",
+   "steps": [
+    "1"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "1",
+     "text": "If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_), return ! OrdinaryDefineOwnProperty(_obj_, _propertyKey_, _propertyDesc_)."
+    }
+   ],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_) is *true*, return ! OrdinaryDefineOwnProperty(_obj_, _propertyKey_, _propertyDesc_)."
+    }
+   ],
+   "note": [
+    "IsSymbolLikeNamespaceKey returns a Boolean; the condition is that it returns *true*."
+   ],
+   "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
+  },
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-module-namespace-exotic-objects-hasproperty-p",
+   "num": "10.4.6.7",
+   "title": "[[HasProperty]] ( propertyKey: a property key, ): a normal completion containing a Boolean",
+   "steps": [
+    "1"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "1",
+     "text": "If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_), return ! OrdinaryHasProperty(_obj_, _propertyKey_)."
+    }
+   ],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_) is *true*, return ! OrdinaryHasProperty(_obj_, _propertyKey_)."
+    }
+   ],
+   "note": [
+    "IsSymbolLikeNamespaceKey returns a Boolean; the condition is that it returns *true*."
+   ],
+   "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
+  },
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-module-namespace-exotic-objects-get-p-receiver",
+   "num": "10.4.6.8",
+   "title": "[[Get]] ( propertyKey: a property key, receiver: an ECMAScript language value, ): either a normal completion containing an ECMAScript language value or a throw completion",
+   "steps": [
+    "1"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "1",
+     "text": "If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_), then"
+    }
+   ],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_) is *true*, then\n  1. Return ! OrdinaryGet(_obj_, _propertyKey_, _receiver_)."
+    }
+   ],
+   "note": [
+    "IsSymbolLikeNamespaceKey returns a Boolean; the condition is that it returns *true*."
+   ],
+   "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
+  },
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-module-namespace-exotic-objects-delete-p",
+   "num": "10.4.6.10",
+   "title": "[[Delete]] ( propertyKey: a property key, ): a normal completion containing a Boolean",
+   "steps": [
+    "1"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "1",
+     "text": "If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_), then"
+    }
+   ],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_) is *true*, then\n  1. Return ! OrdinaryDelete(_obj_, _propertyKey_)."
+    }
+   ],
+   "note": [
+    "IsSymbolLikeNamespaceKey returns a Boolean; the condition is that it returns *true*."
+   ],
+   "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
+  },
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-ReadyForSyncExecution",
+   "num": "16.2.1.5.1.2",
+   "title": "ReadyForSyncExecution ( module: a Module Record, optional seen: a List of Module Records, ): a Boolean",
+   "steps": [
+    "5"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "5",
+     "text": "If IsModuleSCCEvaluated(_module_), return *true*."
+    }
+   ],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. If IsModuleSCCEvaluated(_module_) is *true*, return *true*."
+    }
+   ],
+   "note": [
+    "IsModuleSCCEvaluated returns a Boolean; the condition is that it returns *true*."
+   ],
+   "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
+  },
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-getmodulenamespace",
+   "num": "16.2.1.13",
+   "title": "GetModuleNamespace ( module: an instance of a concrete subclass of Module Record, phase: defer or evaluation, ): a Module Namespace Object",
+   "steps": [
+    "2"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "2",
+     "text": "If _phase_ is ~defer~, let _namespace_ be _module_.[[DeferredNamespace]]. Else, let _namespace_ be _module_.[[Namespace]]."
+    }
+   ],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. If _phase_ is ~defer~, let _namespace_ be _module_.[[DeferredNamespace]]; else let _namespace_ be _module_.[[Namespace]]."
+    }
+   ],
+   "note": [
+    "The two sentences of the step are one conditional: _namespace_ is the [[DeferredNamespace]] field for ~defer~ and the [[Namespace]] field otherwise."
+   ],
+   "why": "an inline conditional written as two sentences. The text writes \"…; else let …\" everywhere else"
+  },
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-ContinueDynamicImport",
+   "num": "13.3.10.5",
+   "title": "ContinueDynamicImport ( promiseCapability: a PromiseCapability Record, moduleCompletion: either a normal completion containing a Module Record or a throw completion, phase: defer or evaluation, ): unused",
+   "steps": [
+    "6.d.iv"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "6.d.iv",
+     "text": "For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate() to _asyncDepsEvaluationPromises_."
+    }
+   ],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. For each Module Record _dep_ of _evaluationList_, do\n  1. Append _dep_.Evaluate() to _asyncDepsEvaluationPromises_."
+    }
+   ],
+   "note": [
+    "The loop's body written as a step of its own: in order, each module's Evaluate() is called and its Promise appended."
+   ],
+   "why": "a For each with an inline body, which the text writes nowhere else"
+  },
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-moduleevaluation",
+   "num": "16.2.1.6.1.3",
+   "title": "Evaluate ( ): a Promise",
+   "steps": [
+    "1"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "1",
+     "text": "Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~, ~linking~, ~unlinked~, or ~new~."
+    }
+   ],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. Let _pending_ be « _module_ ».\n1. Let _seen_ be a new empty List.\n1. Repeat, while _pending_ is not empty,\n  1. Let _m_ be the first element of _pending_.\n  1. Remove the first element from _pending_.\n  1. If _seen_ does not contain _m_ and _m_ is a Cyclic Module Record, then\n    1. Append _m_ to _seen_.\n    1. Assert: _m_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.\n    1. For each ModuleRequest Record _request_ of _m_.[[RequestedModules]], do\n      1. Append GetImportedModule(_m_, _request_) to _pending_."
+    }
+   ],
+   "note": [
+    "The text does not define \"recursive dependencies\"; the reading takes them as the modules reached from _module_ through [[RequestedModules]] and GetImportedModule, the way InnerModuleEvaluation walks them (§16.2.1.6.1.3.1, step 11), each once. [[Status]] is one of ~new~, ~unlinked~, ~linking~, ~linked~, ~evaluating~, ~evaluating-async~ and ~evaluated~ (a table of §16.2.1.6), so \"not ~evaluating~, ~linking~, ~unlinked~, or ~new~\" is the other three. Only a Cyclic Module Record has a [[Status]]; a module of another kind has no dependencies to walk. The walk asks GetImportedModule only of a module whose [[Status]] is not ~new~ or ~unlinked~, whose requests have all been loaded."
+   ],
+   "why": "\"recursive dependencies\" is defined nowhere. There is no model operation for it, so this is the one new loop"
+  },
+  {
+   "file": "spec/formal/lists.emu",
+   "clause": "sec-GetImportedModule",
+   "num": "16.2.1.9",
+   "title": "GetImportedModule ( referrer: a Cyclic Module Record, request: a ModuleRequest Record, ): a Module Record",
+   "steps": [
+    "1"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "1",
+     "text": "Let _records_ be a List consisting of each LoadedModuleRequest Record _r_ of _referrer_.[[LoadedModules]] such that ModuleRequestsKeyEqual(_r_, _request_) is *true*."
+    }
+   ],
+   "status": "re-anchored",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. Let _records_ be a new empty List.\n1. For each LoadedModuleRequest Record _r_ of _referrer_.[[LoadedModules]], do\n  1. If ModuleRequestsKeyEqual(_r_, _request_) is *true*, append _r_ to _records_."
+    }
+   ],
+   "note": [
+    "The List keeps the order of _referrer_.[[LoadedModules]]; step 2 asserts it has one element."
+   ],
+   "why": "the rename changed the step's hash, so the reading lost its anchor"
+  },
+  {
+   "file": "spec/formal/lists.emu",
+   "clause": "sec-evaluate-import-call",
+   "num": "13.3.10.4",
+   "title": "EvaluateImportCall ( args: a Parse Node, phase: defer or evaluation, ): either a normal completion containing a Promise or an abrupt completion",
+   "steps": [
+    "9.f"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "9.f",
+     "text": "Sort _attrs_ according to the lexicographic order of their [[Key]] field, treating the value of each such field as a sequence of UTF-16 code unit values. NOTE: This sorting is observable only in that hosts are prohibited from changing behaviour based on the order in which attributes are enumerated."
+    }
+   ],
+   "status": "re-anchored",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. Let _rest_ be a copy of _attrs_.\n1. Let _sorted_ be a new empty List.\n1. Repeat, while _rest_ is not empty,\n  1. Let _least_ be the first element of _rest_.\n  1. For each element _a_ of _rest_, do\n    1. If ! IsLessThan(_a_.[[Key]], _least_.[[Key]], *true*) is *true*, set _least_ to _a_.\n  1. Append _least_ to _sorted_.\n  1. Remove _least_ from _rest_.\n1. Set _attrs_ to _sorted_."
+    }
+   ],
+   "note": [
+    "Lexicographic order of sequences of UTF-16 code units is IsLessThan's order on Strings (§7.2.12, step 3). The [[Key]] fields are distinct, so each step's least element is unique. _attrs_ is not shared, so its sorted copy replaces it.",
+    "This sorting is observable only in that hosts are prohibited from changing behaviour based on the order in which attributes are enumerated."
+   ],
+   "why": "the step was renumbered"
+  },
+  {
+   "file": "spec/formal/lists.emu",
+   "clause": "sec-innermoduleevaluation",
+   "num": "16.2.1.6.1.3.1",
+   "title": "InnerModuleEvaluation ( module: a Module Record, stack: a List of Cyclic Module Records, index: a non-negative integer, ): either a normal completion containing a non-negative integer or a throw completion",
+   "steps": [
+    "18.b.iv"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "18.b.iv",
+     "text": "Assert: _requiredModule_.[[AsyncEvaluationOrder]] is either an integer or ~unset~."
+    }
+   ],
+   "status": "re-anchored",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. Assert: _requiredModule_.[[AsyncEvaluationOrder]] is an integer or _requiredModule_.[[AsyncEvaluationOrder]] is ~unset~."
+    }
+   ],
+   "note": [
+    "The alternatives are a type and a value; each is its own condition."
+   ],
+   "why": "the step was renumbered"
+  },
+  {
+   "file": "spec/formal/realm.emu",
+   "clause": "sec-modulenamespacecreate",
+   "num": "10.4.6.12",
+   "title": "ModuleNamespaceCreate ( module: a Module Record, exports: a List of Strings, phase: defer or evaluation, ): a module namespace exotic object",
+   "steps": [
+    "9"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "9",
+     "text": "Create an own data property of _namespace_ named %Symbol.toStringTag% whose [[Value]] is _toStringTag_ and whose [[Writable]], [[Enumerable]], and [[Configurable]] attributes are *false*."
+    }
+   ],
+   "status": "replaced",
+   "reading": [
+    {
+     "readings": [
+      "definition"
+     ],
+     "text": "1. Perform OwnPropertyCreate(_namespace_, %Symbol.toStringTag%, PropertyDescriptor { [[Value]]: _toStringTag_, [[Writable]]: *false*, [[Enumerable]]: *false*, [[Configurable]]: *false* }, ~data~)."
+    }
+   ],
+   "note": [
+    "A module namespace exotic object's [[IsExtensible]] is *false*, so its properties are created directly rather than by [[DefineOwnProperty]]."
+   ],
+   "why": "the old reading created the properties of §28.3, which the proposal deletes; the new sentence has no phrase (\"CreateOwnProperty, unclassified\")"
+  }
+ ],
+ "errata": [
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-static-semantics-boundnames",
+   "num": "8.2.1",
+   "title": "Static Semantics: BoundNames ( ): a List of Strings",
+   "steps": [],
+   "grammar": "ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`",
+   "sentence": [],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "test262",
+      "proposed"
+     ],
+     "text": "1. Return the BoundNames of |NameSpaceImport|."
+    }
+   ],
+   "note": [
+    "The proposal adds the production <emu-grammar>ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`</emu-grammar> to §16.2.2 and gives it rows of ModuleRequests and ImportEntries, but none of BoundNames, and the production is not a chain production. Every |Module| with an `import defer` asks for it before it runs: the early errors of <emu-grammar>ModuleItem : ImportDeclaration</emu-grammar> (\"the BoundNames of |ImportDeclaration|\") and of |ModuleItemList| (its LexicallyDeclaredNames, which are the BoundNames of each |ImportDeclaration|). So the literal text stops every such module at its early errors. The literal text, a row that is not there, is not a reading the notation can write, so the erratum has one reading (<code>switch=\"none\"</code>). The test262 and proposed reading: the row is the twin of <emu-grammar>ImportClause : NameSpaceImport</emu-grammar>'s, the one name the namespace import binds (test262's language/import/import-defer tests bind it)."
+   ],
+   "why": "a defect of the text",
+   "erratum": "BoundNamesImportDefer",
+   "resolution": "test262",
+   "switch": "none"
+  },
+  {
+   "file": "spec/formal/defer-import.emu",
+   "clause": "sec-create-default-export-synthetic-module",
+   "num": "16.2.1.8.1",
+   "title": "CreateDefaultExportSyntheticModule ( defaultExport: an ECMAScript language value, ): a Synthetic Module Record",
+   "steps": [
+    "3"
+   ],
+   "grammar": null,
+   "sentence": [
+    {
+     "step": "3",
+     "text": "Return the Synthetic Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[HostDefined]]: *undefined*, [[ExportNames]]: « *\"default\"* », [[EvaluationSteps]]: _setDefaultExport_ }."
+    }
+   ],
+   "status": "new",
+   "reading": [
+    {
+     "readings": [
+      "test262",
+      "proposed"
+     ],
+     "text": "1. Return the Synthetic Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[HostDefined]]: *undefined*, [[ExportNames]]: « *\"default\"* », [[EvaluationSteps]]: _setDefaultExport_ }."
+    }
+   ],
+   "note": [
+    "The proposal adds [[DeferredNamespace]] to the fields of every Module Record (a table of §16.2.1.5) and initialises it in ParseModule, but not in CreateDefaultExportSyntheticModule, which makes every JSON module's record: read literally, the record has no [[DeferredNamespace]], and GetModuleNamespace(_module_, ~defer~) reads a field the record lacks (`import defer * as ns from \"./x.json\" with { type: \"json\" }`). The test262 and proposed reading: the field is ~empty~, as [[Namespace]] is (test262's language/import/import-defer/deferred-namespace-object/json-module.js)."
+   ],
+   "why": "a defect of the text",
+   "erratum": "SyntheticModuleDeferredNamespace",
+   "resolution": "test262",
+   "switch": "spec"
+  }
+ ],
+ "other_overlay": [
+  {
+   "file": "spec/formal/fields.emu",
+   "removed": [
+    "[[BindingName]]: a String or ~namespace~"
+   ],
+   "added": [
+    "[[BindingName]]: a String, ~namespace~, or ~deferred-namespace~"
+   ]
+  },
+  {
+   "file": "spec/formal/permanent.emu",
+   "removed": [
+    "<emu-permanent clause=\"sec-moduleevaluation\" step=\"1\" class=\"assert-provenance\">About the surrounding agent's other calls to Evaluate, which the state at the step does not record.</emu-permanent>"
+   ],
+   "added": []
+  }
+ ],
+ "ids": [
+  {
+   "table": "clause-ids.txt",
+   "new": [
+    "2932\tsec-IsSymbolLikeNamespaceKey",
+    "2933\tsec-GetModuleExportsList",
+    "2934\tsec-import-call-runtime-semantics-EvaluateImportCallSpecifier",
+    "2935\tsec-import-call-runtime-semantics-EvaluateImportCallOptions",
+    "2936\tsec-IsModuleSCCEvaluated",
+    "2937\tsec-ReadyForSyncExecution",
+    "2938\tsec-GatherAsynchronousTransitiveDependencies",
+    "2939\tsec-example-cyclic-module-record-graphs-deferred-imports",
+    "2940\tsec-create-promise-all-resolve-element",
+    "2941\tsec-safe-perform-promise-all",
+    "2942\trow-boundnames-import-defer"
+   ],
+   "retired": [
+    "2236\tsec-module-namespace-objects\tretired",
+    "2237\tsec-%symbol.tostringtag%\tretired"
+   ],
+   "renamed": [
+    "922\tsec-ModuleRequestsKeyEqual\twas sec-ModuleRequestsEqual"
+   ],
+   "moved": []
+  },
+  {
+   "table": "enum-ids.txt",
+   "new": [
+    "evaluation",
+    "deferred-namespace",
+    "defer"
+   ],
+   "retired": [],
+   "renamed": [],
+   "moved": []
+  },
+  {
+   "table": "erratum-ids.txt",
+   "new": [
+    "287\tBoundNamesImportDefer",
+    "288\tSyntheticModuleDeferredNamespace",
+    "289\tdefinition-sec-module-namespace-exotic-objects-defineownproperty-p-desc-1",
+    "290\tdefinition-sec-module-namespace-exotic-objects-hasproperty-p-1",
+    "291\tdefinition-sec-module-namespace-exotic-objects-get-p-receiver-1",
+    "292\tdefinition-sec-module-namespace-exotic-objects-delete-p-1",
+    "293\tdefinition-sec-ReadyForSyncExecution-5",
+    "294\tdefinition-sec-getmodulenamespace-2",
+    "295\tdefinition-sec-ContinueDynamicImport-6.d.iv",
+    "296\tdefinition-sec-moduleevaluation-1",
+    "297\tdefinition-sec-evaluate-import-call-9.f",
+    "298\tdefinition-sec-innermoduleevaluation-18.b.iv",
+    "299\tdefinition-sec-modulenamespacecreate-9"
+   ],
+   "retired": [
+    "156\tdefinition-sec-evaluate-import-call-11.f\tretired",
+    "162\tdefinition-sec-innermoduleevaluation-16.b.iv\tretired",
+    "237\tdefinition-sec-modulenamespacecreate-8\tretired"
+   ],
+   "renamed": [],
+   "moved": []
+  },
+  {
+   "table": "field-ids.txt",
+   "new": [
+    "DeferredNamespace",
+    "Deferred",
+    "Phase"
+   ],
+   "retired": [],
+   "renamed": [],
+   "moved": []
+  },
+  {
+   "table": "nt-ids.txt",
+   "new": [
+    "426\tImportCallArguments"
+   ],
+   "retired": [],
+   "renamed": [],
+   "moved": []
+  },
+  {
+   "table": "prod-ids.txt",
+   "new": [
+    "1537\tSyntactic - ImportCall : `import` ImportCallArguments[?Yield, ?Await]",
+    "1538\tSyntactic - ImportCall : `import` `.` `defer` ImportCallArguments[?Yield, ?Await]",
+    "1539\tSyntactic 0 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`",
+    "1540\tSyntactic 1 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`",
+    "1541\tSyntactic 0 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`",
+    "1542\tSyntactic 1 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`",
+    "1543\tSyntactic 0 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`",
+    "1544\tSyntactic 1 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"
+   ],
+   "retired": [
+    "631\tSyntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`\tretired",
+    "632\tSyntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`\tretired",
+    "633\tSyntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`\tretired",
+    "634\tSyntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`\tretired"
+   ],
+   "renamed": [],
+   "moved": []
+  },
+  {
+   "table": "sdo-ids.txt",
+   "new": [
+    "145\tEvaluateImportCallSpecifier",
+    "146\tEvaluateImportCallOptions"
+   ],
+   "retired": [],
+   "renamed": [],
+   "moved": []
+  },
+  {
+   "table": "table-ids.txt",
+   "new": [
+    "106\ttable-module-graph-deferred-async-fields-1",
+    "107\ttable-module-graph-deferred-async-fields-2",
+    "108\ttable-module-graph-deferred-async-fields-3",
+    "109\ttable-module-graph-deferred-async-cycle-root-fields-1",
+    "110\ttable-module-graph-deferred-async-cycle-root-fields-2"
+   ],
+   "retired": [],
+   "renamed": [],
+   "moved": []
+  }
+ ],
+ "merge": {
+  "no_answers": {
+   "refusals": [
+    {
+     "clause": "sec-abstract-module-records",
+     "block": 4,
+     "message": "old text (<ins> dropped, <del> kept) differs from the base; kind emu-table; nearest base block 4",
+     "diff": "--- base\n+++ proposal's old text (<ins> dropped, <del> kept)\n@@ -45,3 +45,3 @@\n <td>\n-The Module Namespace Object (<emu-xref href=\"#sec-module-namespace-objects\"></emu-xref>) if one has been created for this module.\n+The Module Namespace Object (<emu-xref href=\"#sec-module-namespace-exotic-objects\"></emu-xref>) whose [[Deferred]] slot is *false*, if one has been created for this module.\n </td>"
+    },
+    {
+     "clause": "sec-LoadRequestedModules",
+     "block": 1,
+     "message": "context block (no markup) differs from the base; kind dl",
+     "diff": "--- base\n+++ proposal's old text (<ins> dropped, <del> kept)\n@@ -0,0 +1,4 @@\n+<dl class=\"header\">\n+<dt>for</dt>\n+<dd>a Cyclic Module Record _module_</dd>\n+</dl>"
+    },
+    {
+     "clause": "sec-InnerModuleLoading",
+     "block": 1,
+     "message": "context block (no markup) differs from the base; kind dl",
+     "diff": "--- base\n+++ proposal's old text (<ins> dropped, <del> kept)\n@@ -0,0 +1,2 @@\n+<dl class=\"header\">\n+</dl>"
+    },
+    {
+     "clause": "sec-InnerModuleLoading",
+     "block": 2,
+     "message": "inserted emu-note: the proposal omits base blocks here (1:dl, 2:emu-alg); say where with `place sec-InnerModuleLoading 2 after N`",
+     "diff": ""
+    },
+    {
+     "clause": "sec-moduledeclarationlinking",
+     "block": 1,
+     "message": "context block (no markup) differs from the base; kind dl",
+     "diff": "--- base\n+++ proposal's old text (<ins> dropped, <del> kept)\n@@ -0,0 +1,4 @@\n+<dl class=\"header\">\n+<dt>for</dt>\n+<dd>a Cyclic Module Record _module_</dd>\n+</dl>"
+    },
+    {
+     "clause": "sec-InnerModuleLinking",
+     "block": 1,
+     "message": "context block (no markup) differs from the base; kind dl",
+     "diff": "--- base\n+++ proposal's old text (<ins> dropped, <del> kept)\n@@ -0,0 +1,2 @@\n+<dl class=\"header\">\n+</dl>"
+    },
+    {
+     "clause": "sec-InnerModuleLinking",
+     "block": 2,
+     "message": "inserted emu-note: the proposal omits base blocks here (1:dl, 2:emu-alg); say where with `place sec-InnerModuleLinking 2 after N`",
+     "diff": ""
+    },
+    {
+     "clause": "sec-source-text-module-record-initialize-environment",
+     "block": 2,
+     "message": "old text (<ins> dropped, <del> kept) differs from the base; kind emu-alg; nearest base block 2",
+     "diff": "--- base\n+++ proposal's old text (<ins> dropped, <del> kept)\n@@ -2,3 +2,2 @@\n 1. For each ExportEntry Record _exportEntry_ of _module_.[[IndirectExportEntries]], do\n-1. Assert: _exportEntry_.[[ExportName]] is not *null*.\n 1. Let _resolution_ be _module_.ResolveExport(_exportEntry_.[[ExportName]]).\n@@ -14,3 +13,3 @@\n 1. If _importEntry_.[[ImportName]] is ~namespace~, then\n-1. Let _namespace_ be GetModuleNamespace(_importedModule_).\n+1. Let _namespace_ be GetModuleNamespace(_importedModule_, ).\n 1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*).\n@@ -18,7 +17,6 @@\n 1. Else,\n-1. Assert: _importEntry_.[[ImportName]] is a String.\n 1. Let _resolution_ be _importedModule_.ResolveExport(_importEntry_.[[ImportName]]).\n 1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.\n-1. If _resolution_.[[BindingName]] is ~namespace~, then\n-1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]]).\n+1. If _resolution_.[[BindingName]] is  ~namespace~ , then\n+1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], ).\n 1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*)."
+    },
+    {
+     "clause": "sec-resolveexport",
+     "block": 2,
+     "message": "old text (<ins> dropped, <del> kept) differs from the base; kind emu-alg; nearest base block 2",
+     "diff": "--- base\n+++ proposal's old text (<ins> dropped, <del> kept)\n@@ -19,2 +19,3 @@\n 1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.\n+1. Else,\n 1. Assert: _module_ imports a specific binding for this export."
+    }
+   ],
+   "warnings": [
+    "ModuleRequestsEqual (sec-ModuleRequestsEqual, removed (sec-ModuleRequestsEqual)) is still used in 6 clause(s): sec-GetImportedModule, sec-HostLoadImportedModule, sec-InnerModuleLoading, sec-code-realms, sec-cyclic-module-records, sec-script-records; answer with `rename ModuleRequestsEqual NEW` if the proposal renames it"
+   ]
+  },
+  "with_answers": {
+   "changed": 26,
+   "inserted": 11,
+   "removed": 2,
+   "figures": 3,
+   "ins": 129,
+   "del": 57,
+   "tree_ok": true,
+   "warnings": []
+  }
+ },
+ "rename": {
+  "old": "ModuleRequestsEqual",
+  "new": "ModuleRequestsKeyEqual",
+  "shown": 2,
+  "left": 7,
+  "old_clause": "sec-ModuleRequestsEqual",
+  "old_num": "16.2.1.3.1",
+  "clauses": [
+   "sec-GetImportedModule, sec-HostLoadImportedModule, sec-InnerModuleLoading, sec-code-realms, sec-cyclic-module-records, sec-script-records"
+  ]
+ },
+ "test262": {
+  "feature": "import-defer",
+  "counts": {
+   "pass": 251,
+   "skip": 1
+  },
+  "dirs": {
+   "language/expressions/assignmenttargettype": {
+    "pass": 2
+   },
+   "language/expressions/dynamic-import": {
+    "pass": 147
+   },
+   "language/import/import-defer": {
+    "pass": 102,
+    "skip": 1
+   }
+  },
+  "test262": "2e58f87d8350ad51224617a041c6e041d52f8444",
+  "skipped": [
+   [
+    "language/import/import-defer/evaluation-triggers/ignore-private-name-access.js",
+    "feature nonextensible-applies-to-private"
+   ]
+  ],
+  "command": ""
+ },
+ "axioms": {
+  "branch": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "branch_pins": 0,
+  "base": [
+   "propext",
+   "Classical.choice",
+   "Quot.sound"
+  ],
+  "base_pins": 0
+ }
+}

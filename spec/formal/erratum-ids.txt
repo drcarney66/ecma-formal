@@ -1,0 +1,292 @@
+# The erratum ids (`ErratumId`; `Ecma.Gen.errata`, `errataIds`, `parity`): the overlay's errata by their name,
+# then its definition readings (`<emu-reading steps=…>` outside an erratum) by theirs (`definition-CLAUSE-STEP`).
+# The first ones are those `Ecma.Known` reads (crates/spec-gen data.rs KNOWN_ERRATA). The generator gives an
+# erratum met its number here and a new one the next unused number, and writes this file (scripts/gen_spec.py
+# --write); one the overlay no longer has keeps its number, marked retired. Do not renumber or reuse a line by hand.
+0	UnitChainChild
+1	MustCoverOtherRules	retired
+2	StringValueReservedWord
+3	LookaheadSourceTokens
+4	HTMLCloseCommentToken
+5	AnnexBRegExpOrder
+6	AnnexBGroupCount
+7	AnnexBModifierEarlyErrors
+8	CoveredNodeParent
+9	NumberMultiplyZeroSign
+10	GatherAvailableAncestorsEmptyCycleRoot
+11	BuiltinReturnCompletion
+12	ExecuteModuleAsyncDisposeResources
+13	ParseTextErrorObjects
+14	DoWaitSyncTimeout
+15	TypedArrayWithSetElementAbrupt	retired
+16	TypedArrayFilterKeptUndefined	retired
+17	IsLooselyEqualBooleanAbrupt	retired
+18	AtomicsWaitAsyncTimeoutAssert
+19	AtomicsWaitAsyncTimeoutNegativeDelay
+20	GetUTCEpochNanosecondsNaN
+21	GetMatchStringStartAfterEnd
+22	AsyncBlockStartAwaitResult
+23	PromiseJobAbruptCompletion
+24	PromiseJobNullRealmCode	retired
+25	NativeFunctionInitialName
+26	SyntheticModuleLinkResets
+27	CreateDynamicFunctionPrivateIdentifiers
+28	IdentityEscapeJoinControls
+29	LonePropertyGeneralCategoryAssert
+30	AllocateSharedArrayBufferByteLengthStore
+31	RevalidateAtomicAccess	retired
+32	ContainsAwaitCover
+33	SplitCodeUnitStrings
+34	OrdinarySetReceiverHasProperty	retired
+35	ReadsBytesFromUnboundResult	retired
+36	RacesNotBoth
+37	InitHappensBeforeOverlap
+38	MemoryRangeSameBlock
+39	CreateIntrinsicsAsyncArgument
+40	SortInfiniteComparator
+41	PropNameCoverInitializedName	retired
+42	UnregisterIteratesCopy
+43	IsCharacterClassControlLetter
+44	NativeFunctionSourceForm	retired
+45	BigIntMaximumSize
+46	definition-sec-suspendthisagent-7
+47	definition-sec-notifywaiter-2.a
+48	definition-sec-entercriticalsection-1
+49	definition-sec-getwaiterlist-2
+50	definition-sec-entercriticalsection-2
+51	definition-sec-entercriticalsection-3.g
+52	definition-sec-leavecriticalsection-8
+53	definition-sec-createbytedatablock-3
+54	definition-sec-countleftcapturingparenswithin-2
+55	definition-sec-countleftcapturingparensbefore-3
+56	definition-sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset-8.h.vii.1
+57	definition-sec-runtime-semantics-scriptevaluation-15
+58	definition-sec-generatorstart-4.e
+59	definition-sec-asyncgeneratorstart-4.e
+60	definition-sec-asyncblockstart-1.d
+61	definition-sec-ordinarycallbindthis-8
+62	definition-sec-getexportednames-6.a
+63	definition-sec-getexportednames-7.a
+64	definition-sec-resolveexport-5.a.i
+65	definition-sec-resolveexport-6.a.iii.1
+66	definition-sec-resolveexport-6.a.iv
+67	definition-sec-ParseJSON-8
+68	definition-sec-compiletocharset-2-P	retired
+69	definition-sec-runsuspendedcontext-5
+70	definition-sec-source-text-module-record-execute-module-1
+71	definition-sec-source-text-module-record-initialize-environment-2	retired
+72	definition-sec-runtime-semantics-canonicalize-ch-1.a
+73	definition-sec-runtime-semantics-canonicalize-ch-5
+74	definition-sec-allcharacters-1.a
+75	definition-sec-compileatom-2.a
+76	definition-sec-compiletocharset-1
+77	definition-sec-backreference-matcher-1.q
+78	definition-sec-runtime-semantics-charactersetmatcher-abstract-operation-2.l
+79	definition-sec-wordcharacters-2
+80	definition-sec-regexp.escape-4.a.iv
+81	definition-sec-regexpbuiltinexec-21
+82	definition-sec-runtime-semantics-canonicalize-ch-3
+83	definition-sec-runtime-semantics-canonicalize-ch-7
+84	definition-sec-runtime-semantics-characterrange-abstract-operation-1
+85	definition-sec-runtime-semantics-charactersetmatcher-abstract-operation-1.b	retired
+86	definition-sec-updatemodifiers-1	retired
+87	definition-sec-wordcharacters-3
+88	definition-sec-get-regexp.prototype.flags-20
+89	definition-sec-isvalidregularexpressionliteral-7.b
+90	definition-sec-regexpinitialize-13.a
+91	definition-sec-parsepattern-annexb-4.a
+92	definition-sec-parsepattern-annexb-4.b
+93	definition-sec-runtime-semantics-characterrangeorunion-abstract-operation-1.a.ii
+94	definition-sec-runtime-semantics-repeatmatcher-abstract-operation-4
+95	definition-sec-compilepattern-2.d
+96	definition-sec-groupspecifiersthatmatch-4
+97	definition-sec-mightbothparticipate-1
+98	definition-sec-mightbothparticipate-2
+99	definition-sec-regexpbuiltinexec-34.e
+100	definition-sec-compiletocharset-1-D
+101	definition-sec-compiletocharset-1-S
+102	definition-sec-compiletocharset-1-W
+103	definition-sec-getactivescriptormodule-3
+104	definition-sec-asyncgeneratoryield-6
+105	definition-sec-date.prototype.toisostring-6
+106	definition-sec-date.prototype.toisostring-7
+107	definition-sec-makeday-8
+108	definition-sec-date-4.c.ii.2
+109	definition-sec-numerictorawbytes-1.a
+110	definition-sec-numerictorawbytes-2.a
+111	definition-sec-numerictorawbytes-3.a
+112	definition-sec-numerictorawbytes-4.d.i
+113	definition-sec-numerictorawbytes-4.e.i
+114	definition-sec-decodefulllengthbase64chunk-1
+115	definition-sec-uint8array.prototype.tobase64-9.a
+116	definition-sec-uint8array.prototype.tobase64-10.b
+117	definition-sec-numerictorawbytes-4.b
+118	definition-sec-runtime-semantics-catchclauseevaluation-2
+119	definition-sec-declarative-environment-records-createmutablebinding-n-d-2
+120	definition-sec-declarative-environment-records-createimmutablebinding-n-s-2
+121	definition-sec-declarative-environment-records-deletebinding-n-2
+122	definition-sec-declarative-environment-records-deletebinding-n-3
+123	definition-sec-declarative-environment-records-initializebinding-n-v-2
+124	definition-sec-declarative-environment-records-initializebinding-n-v-3
+125	definition-sec-declarative-environment-records-setmutablebinding-n-v-s-4.a
+126	definition-sec-module-environment-records-getbindingvalue-n-s-3
+127	definition-sec-createimportbinding-3
+128	definition-sec-declarative-environment-records-initializebinding-n-v-1
+129	definition-sec-declarative-environment-records-setmutablebinding-n-v-s-5.a
+130	definition-sec-global-environment-records-initializebinding-n-v-3
+131	definition-sec-enumerate-object-properties-1
+132	definition-sec-timezoneestring-9
+133	definition-sec-atomics.pause-1
+134	definition-sec-preparefortailcall-2
+135	definition-sec-initializehostdefinedrealm-10	retired
+136	definition-sec-initializehostdefinedrealm-12	retired
+137	definition-sec-initializehostdefinedrealm-17	retired
+138	definition-sec-initializehostdefinedrealm-2
+139	definition-sec-error-message-5
+140	definition-sec-nativeerror-5
+141	definition-sec-aggregate-error-7
+142	definition-sec-suppressederror-6
+143	definition-sec-host-cleanup-finalization-registry-2
+144	definition-sec-cleanup-finalization-registry-3
+145	definition-sec-hostmakejobcallback-1
+146	definition-sec-hostcalljobcallback-2
+147	definition-sec-debugger-statement-runtime-semantics-evaluation-1
+148	definition-sec-function.prototype.tostring-3
+149	definition-sec-function.prototype.tostring-4
+150	definition-sec-escaperegexppattern-4
+151	definition-sec-string.prototype.localecompare-4
+152	definition-sec-ParseJSON-1
+153	definition-sec-shallowestcontainedjsonvalue-2
+154	definition-sec-GetImportedModule-1
+155	definition-sec-internalizejsonproperty-5.c.ii.1
+156	definition-sec-evaluate-import-call-11.f
+157	definition-sec-withclausetoattributes-2
+158	definition-sec-GetImportedModule-2
+159	definition-sec-add-value-to-keyed-group-1.a.i
+160	definition-sec-async-module-execution-fulfilled-10	retired
+161	definition-sec-getmodulenamespace-1
+162	definition-sec-innermoduleevaluation-16.b.iv
+163	definition-sec-resolveexport-7.a
+164	definition-sec-addwaiter-2	retired
+165	definition-sec-composewriteeventbytes-3.a
+166	definition-sec-copydatablockbytes-1
+167	definition-sec-getmodifysetvalueinbuffer-3
+168	definition-sec-getvaluefrombuffer-7
+169	definition-sec-getwaiterlist-1
+170	definition-sec-setvalueinbuffer-3
+171	definition-sec-tear-free-aligned-reads-1.a.i
+172	definition-sec-valueofreadevent-2	retired
+173	definition-sec-frombase64-10.a
+174	definition-sec-decode-4.c.viii.5
+175	definition-sec-races-1.a.i
+176	definition-sec-valid-chosen-reads-1.g
+177	definition-sec-createbytedatablock-2
+178	definition-sec-createsharedbytedatablock-1
+179	definition-sec-getrawbytesfromsharedblock-6
+180	definition-sec-getmodifysetvalueinbuffer-9.c
+181	definition-sec-atomiccompareexchangeinsharedblock-4
+182	definition-sec-copydatablockbytes-6.a.iv
+183	definition-sec-allocatearraybuffer-8.a	retired
+184	definition-sec-sharedarraybuffer.prototype.grow-12.f
+185	definition-sec-numeric-types-number-leftShift-4
+186	definition-sec-numeric-types-number-signedRightShift-4
+187	definition-sec-numeric-types-number-unsignedRightShift-4
+188	definition-sec-numeric-types-number-bitwiseNOT-2
+189	definition-sec-number.prototype.tofixed-11.a
+190	definition-sec-number.prototype.toprecision-10.a	retired
+191	definition-sec-number.prototype.toexponential-10.a.i	retired
+192	definition-sec-math.hypot-7
+193	definition-sec-numeric-types-number-exponentiate-13
+194	definition-sec-parseint-string-radix-11
+195	definition-sec-parseint-string-radix-14
+196	definition-sec-numeric-types-number-tostring-5
+197	definition-sec-number.prototype.toexponential-10.b.i	retired
+198	definition-sec-numeric-types-number-unaryMinus-2
+199	definition-sec-toobject-2
+200	definition-sec-toobject-3
+201	definition-sec-toobject-4
+202	definition-sec-toobject-5
+203	definition-sec-toobject-6
+204	definition-sec-arguments-exotic-objects-get-p-receiver-4
+205	definition-sec-array-10
+206	definition-sec-createmappedargumentsobject-1
+207	definition-sec-createnonenumerabledatapropertyorthrow-1
+208	definition-sec-definemethodproperty-1
+209	definition-sec-functiondeclarationinstantiation-20.d
+210	definition-sec-runtime-semantics-propertydefinitionevaluation-4
+211	definition-sec-runtime-semantics-propertydefinitionevaluation-8
+212	definition-sec-typedarray-7.d.i
+213	definition-sec-typedarraycreatefromconstructor-3
+214	definition-sec-class-definitions-runtime-semantics-evaluation-4	retired
+215	definition-sec-makebasicobject-2
+216	definition-sec-createbuiltinfunction-4
+217	definition-sec-parsetext-2
+218	definition-sec-parsefloat-string-4
+219	definition-sec-performeval-11	retired
+220	definition-sec-json.rawjson-6
+221	definition-sec-performeval-1
+222	definition-sec-ParseJSON-3
+223	definition-sec-grouping-operator-runtime-semantics-evaluation-1
+224	definition-sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset-8.g.ii.1
+225	definition-sec-serializejsonobject-1
+226	definition-sec-serializejsonobject-10.a.i
+227	definition-sec-serializejsonobject-10.b.ii
+228	definition-sec-serializejsonarray-1
+229	definition-sec-serializejsonarray-10.a.i
+230	definition-sec-serializejsonarray-10.b.ii
+231	definition-sec-quotejsonstring-2.a.i
+232	definition-sec-shallowestcontainedjsonvalue-6.d.i.2.a
+233	definition-sec-shallowestcontainedjsonvalue-6.d.i.3.a
+234	definition-sec-shallowestcontainedjsonvalue-6.d.ii.1
+235	definition-sec-createintrinsics-2
+236	definition-sec-setdefaultglobalbindings-2
+237	definition-sec-modulenamespacecreate-8
+238	definition-sec-getprototypefromconstructor-1
+239	definition-sec-ordinarycreatefromconstructor-1
+240	definition-sec-getprototypefromconstructor-3.b	retired
+241	definition-sec-addrestrictedfunctionproperties-1
+242	definition-sec-sortindexedproperties-4
+243	definition-sec-string.prototype.tolowercase-5
+244	definition-sec-createdynamicfunction-13.c.ii
+245	definition-sec-string.prototype.normalize-7
+246	definition-sec-encodeforregexpescape-5.e
+247	definition-sec-object-initializer-static-semantics-early-errors-rule-2b500b2120c5
+248	definition-sec-class-definitions-static-semantics-early-errors-rule-8d2e85c577b0
+249	definition-sec-block-static-semantics-early-errors-rule-a9822fccf15d
+250	definition-sec-switch-statement-static-semantics-early-errors-rule-5e8f3fee108a
+251	definition-sec-isintailposition-2
+252	definition-sec-runtime-semantics-methoddefinitionevaluation-5
+253	definition-sec-runtime-semantics-classfielddefinitionevaluation-2.a
+254	definition-sec-runtime-semantics-classstaticblockdefinitionevaluation-4
+255	definition-sec-static-semantics-lexicallydeclarednames-1
+256	definition-sec-static-semantics-vardeclarednames-1
+257	definition-sec-static-semantics-varscopeddeclarations-1
+258	definition-sec-encodeforregexpescape-2.a
+259	definition-sec-patterns-static-semantics-character-value-1
+260	definition-sec-runtime-semantics-unicodematchproperty-p-3
+261	definition-sec-runtime-semantics-unicodematchpropertyvalue-p-v-3
+262	definition-sec-availablenamedtimezoneidentifiers-1
+263	definition-sec-availablenamedtimezoneidentifiers-2
+264	definition-sec-availablenamedtimezoneidentifiers-4.b
+265	definition-sec-systemtimezoneidentifier-1
+266	definition-sec-utc-t-4.d.ii
+267	MVDecimalIntegerLiteralZero
+268	definition-sec-initializehostdefinedrealm-11
+269	definition-sec-initializehostdefinedrealm-13
+270	definition-sec-initializehostdefinedrealm-18
+271	definition-sec-allocatearraybuffer-9.a
+272	definition-sec-number.prototype.toprecision-11.a
+273	definition-sec-number.prototype.toexponential-11.a.i
+274	definition-sec-number.prototype.toexponential-11.b.i
+275	definition-sec-performeval-12
+276	definition-sec-getprototypefromconstructor-6
+277	definition-sec-numeric-types-bigint-leftShift-1
+278	definition-sec-numeric-types-bigint-leftShift-2
+279	definition-sec-bigint.asuintn-3
+280	definition-sec-bigint.asintn-3
+281	definition-sec-runtime-semantics-stringnumericvalue-5
+282	definition-sec-runtime-semantics-stringnumericvalue-6
+283	definition-sec-runtime-semantics-stringnumericvalue-7
+284	definition-sec-numericvalue-1
+285	definition-sec-parsehexoctet-3
+286	StringMaximumLength

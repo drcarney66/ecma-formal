@@ -1,0 +1,23 @@
+// The execution context stack inside f(2): the realm's context, the script's, and f's (running,
+// last). The running context's Record holds the callee as its Function; what state.md §7 derives
+// from the stack follows the contexts.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": [{"alg": "OrdinaryCallEvaluateBody", "path": "1"}]}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "OrdinaryCallEvaluateBody", "path": "1"}}}}
+{"send": {"command": "scopes", "arguments": {"frameId": 0}}}
+{"expect": {"type": "response", "command": "scopes", "success": true, "body": {"scopes": [{"name": "Slots", "variablesReference": "${=slots}"}, {"name": "Step"}, {"name": "Execution contexts", "variablesReference": "${=ctxs}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${slots}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "func", "value": "${=f}", "type": "Object"}, {"name": "argList", "type": "List (1)"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${ctxs}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "[0]", "type": "execution context"}, {"name": "[1]", "value": "${=script}", "type": "ECMAScript code execution context"}, {"name": "[2] running", "value": "${=callee}", "type": "ECMAScript code execution context", "variablesReference": "${=calleeRef}"}, {"name": "resumed", "value": "absent"}, {"name": "suspended", "value": "${script}"}, {"name": "running execution context", "value": "${callee}"}, {"name": "active function", "value": "${f}", "type": "Object"}, {"name": "current Realm", "type": "Realm Record", "value": "${=realm}"}, {"name": "GetActiveScriptOrModule()", "type": "Script Record", "value": "${=script0}"}, {"name": "strict", "value": "false (the active function's [[Strict]])"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${calleeRef}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "sort", "value": "ECMAScript code execution context", "type": "sort"}, {"name": "[[Function]]", "value": "${f}"}, {"name": "[[Realm]]", "value": "${realm}"}, {"name": "[[ScriptOrModule]]", "value": "${script0}"}, {"name": "[[LexicalEnvironment]]", "type": "Function Environment Record"}, {"name": "[[VariableEnvironment]]", "type": "Function Environment Record"}, {"name": "[[PrivateEnvironment]]", "value": "null"}]}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

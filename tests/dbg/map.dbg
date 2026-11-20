@@ -1,0 +1,35 @@
+// A callback through Array.prototype.map: stepIn at the first statement enters the
+// callback (two more contexts: map's and the callback's); next after its return stops in map's
+// steps at the call expression, inBuiltin "Array.prototype.map"; next there runs the rest of map
+// (the second call too) to its return in the script; next at the last statement skips its callback.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "spec": {"alg": "ParseScript", "path": "1"}, "js": {"contexts": 1}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 1, "column": 1, "endLine": 4, "endColumn": 4, "lo": 0, "hi": 67, "contexts": 2}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 2, "column": 3, "endLine": 2, "endColumn": 18, "lo": 36, "hi": 51, "contexts": 4}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 3, "column": 3, "endLine": 3, "endColumn": 12, "lo": 54, "hi": 63, "contexts": 4}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "[[Call]]", "path": "8"}, "js": {"line": 1, "column": 9, "endLine": 4, "endColumn": 3, "lo": 8, "hi": 66, "inBuiltin": "Array.prototype.map", "contexts": 3, "statement": {"line": 1, "column": 1, "lo": 0, "hi": 67}}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "BuiltinCallOrConstruct", "path": "14"}, "js": {"line": 1, "column": 9, "endLine": 4, "endColumn": 3, "lo": 8, "hi": 66, "contexts": 2, "statement": {"line": 1, "column": 1, "lo": 0, "hi": 67}}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 5, "column": 1, "endLine": 5, "endColumn": 47, "lo": 68, "hi": 114, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: undefined"}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

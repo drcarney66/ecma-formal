@@ -1,0 +1,39 @@
+<!-- title: {{SITE_NAME}} -->
+<!-- eyebrow: ECMA-262, the ECMAScript language specification, as a Lean 4 specification -->
+<!-- lede: <p>The specification's algorithms, tables, early errors and grammars are generated from its own source, spec.html. What the text assumes of its values and leaves to the host is stated as laws, each quoting the sentence it reads. One implementation, the engine, is proved to implement this specification, and runs test262.</p> -->
+
+<ul class="facts" aria-label="The specification in numbers">
+<li><b>{{gen_modules}}</b><span>generated modules of algorithms, tables and early errors ({{gen_lines}} lines)</span></li>
+<li><b>{{host_laws}}</b><span>laws of the host, in {{host_topics}} topics</span></li>
+<li><b>{{model_laws}}</b><span>laws of the model's values (including {{num_laws}} of Numbers and {{byte_laws}} of Data Blocks), {{unicode_laws}} of Unicode, and {{parent_laws}} of Parse Node parents</span></li>
+<li><b>{{errata}}</b><span>errata: {{errata_defects}} defects of the text and {{errata_proposals}} proposed normative {{errata_proposals_noun}}, {{errata_switch_spec}} of them switchable in the specification when a program runs</span></li>
+</ul>
+
+<h2 id="read">Read first</h2>
+<ul class="cards {{read_cols}}">
+<li><h3><a href="how-it-works.html">How it works</a></h3><p>From spec.html and the overlay of readings to the Lean specification: the data, the machine, the model and the host, the errata, and one clause followed end to end.</p></li>
+<li><h3><a href="what-is-proved.html">What is proved</a></h3><p>What it is to implement the specification, the engine's theorems verbatim, and what is proved, trusted, owed and outside the claim.</p></li>
+{{errata_card}}
+{{proposal_card}}
+</ul>
+
+<h2 id="pages">The specification, set for reading</h2>
+<p>Generated from the Lean sources: each declaration with its documentation first, each law with its clause and the sentence it reads, the Lean beside.</p>
+<ul class="cards two">
+<li><h3><a href="model.html">The model and its laws</a></h3><p>The sorts of the specification as carriers and operations, and the laws a model obeys.</p></li>
+<li><h3><a href="host.html">The host and its laws</a></h3><p>What the specification leaves to the host, and the {{host_laws}} laws it requires, by topic.</p></li>
+<li><h3><a href="implements.html">Implements</a></h3><p>What it is to implement the specification, in full, with the definitions of a run.</p></li>
+<li><h3><a href="parser-laws.html">The parser's laws</a></h3><p>What a parse must be. Stated, and owed: not yet proved of the engine.</p></li>
+</ul>
+
+{{dbg_section}}
+{{t262_section}}
+<h2 id="three">Three things to know first</h2>
+<ol class="steps">
+<li><strong>The Lean is generated where the English is algorithmic.</strong> Every algorithm step, table and early-error rule in <code>lean/Ecma/Gen</code> is produced from spec.html by a generator, never edited by hand. The generator checks that it prints each one back as the HTML's text; the Lean printer (<code>scripts/bijection.py</code>) checks the same from the Lean side.</li>
+<li><strong>Where the English is not algorithmic, the Lean quotes it.</strong> What the text assumes (that mathematical values behave as the reals, that Numbers are IEEE 754 binary64) and what it leaves to the host (time, job scheduling, locale) is a law, and each law's documentation quotes the sentence it reads. A script checks every quotation against the pinned spec.html.</li>
+<li><strong>The claim is precise and has limits.</strong> The engine is proved to implement the specification. The proof relies on Lean's {{axiom_count}} standard axioms alone ({{runtime_pins}} equations on the generated program are checked at run time before shortcuts run); the parser's laws are owed; the debugger is outside the claim. <a href="what-is-proved.html">What is proved</a> lists all of it.</li>
+</ol>
+
+<h2 id="revisions">Revisions</h2>
+<p>This site is built from one commit of the repository, <code>{{rev}}</code>, with the specification at tc39/ecma262 <code>{{ecma262}}</code> and the tests at tc39/test262 <code>{{test262}}</code>. The engine runs as <code>{{RUN}}</code>{{dbg_revision}}{{t262_sentence}}</p>

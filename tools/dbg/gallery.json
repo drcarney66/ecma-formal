@@ -1,0 +1,1785 @@
+{
+ "groups": [
+  {
+   "id": "tour",
+   "title": "The tour",
+   "intro": "Four short programs, each with breakpoints set where the specification's algorithms do the work. The debugger's guided script for them, stop by stop, is docs/debugger/DEMO.md."
+  },
+  {
+   "id": "language",
+   "title": "The language, step by step",
+   "intro": "Ordinary JavaScript, paused in the algorithms that give it its meaning: environments, calls into built-ins, eval, generators, modules."
+  },
+  {
+   "id": "corners",
+   "title": "Corners of the specification",
+   "intro": "Programs that go where fewer readers go: Proxy traps, the job queue, using declarations, with, Annex B, regular expressions, top-level await, timeouts, iterator helpers."
+  },
+  {
+   "id": "errata",
+   "title": "Errata: the default reading and the literal text",
+   "intro": "Each of these programs reaches a sentence the formalisation reads in more than one way (an erratum). Under the specification's build it runs with the default reading; under the literal text's build it shows what the sentence says as written. Where the default reading is itself the literal one, the run stops in both builds, at the step where the text gives no answer."
+  },
+  {
+   "id": "proposal",
+   "title": "A proposal: import defer",
+   "intro": "Three programs that use the syntax of tc39/proposal-defer-import-eval. Under the specification's build each is a SyntaxError, since ECMA-262 has no such syntax. Under the build \"Proposal: import defer\", made from a branch where the proposal's text is merged into the specification's, each runs, and the breakpoints stop in the proposal's own algorithms."
+  },
+  {
+   "id": "errata-programs",
+   "title": "The errata page's programs",
+   "intro": "The programs the errata page runs that show an erratum and are not above, with no breakpoints set: each opens under the specification's build. The errata page links each also with its erratum's other reading."
+  }
+ ],
+ "examples": [
+  {
+   "id": "demo/get",
+   "group": "tour",
+   "demo": "get.js",
+   "title": "A property get, up the prototype chain",
+   "line": "GetValue calls the object's [[Get]], which is OrdinaryGet; for a property the object lacks, OrdinaryGet calls its prototype's [[Get]] with the same receiver.",
+   "breakpoints": [
+    {
+     "alg": "sec-ordinaryget",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "OrdinaryGet",
+       "path": "1",
+       "frames": [
+        "OrdinaryGet",
+        "[[Get]]",
+        "GetValue"
+       ]
+      },
+      {
+       "alg": "OrdinaryGet",
+       "path": "1",
+       "frames": [
+        "OrdinaryGet",
+        "[[Get]]",
+        "GetValue"
+       ]
+      },
+      {
+       "alg": "OrdinaryGet",
+       "path": "1",
+       "frames": [
+        "OrdinaryGet",
+        "[[Get]]",
+        "OrdinaryGet",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: 8"
+    }
+   }
+  },
+  {
+   "id": "demo/call",
+   "group": "tour",
+   "demo": "call.js",
+   "title": "A function call",
+   "line": "EvaluateCall evaluates the arguments and calls Call, the function's [[Call]] makes a new execution context, and OrdinaryCallEvaluateBody runs the body.",
+   "breakpoints": [
+    {
+     "alg": "sec-evaluatecall",
+     "path": "7"
+    },
+    {
+     "alg": "sec-ordinarycallevaluatebody",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "EvaluateCall",
+       "path": "7"
+      },
+      {
+       "alg": "OrdinaryCallEvaluateBody",
+       "path": "1",
+       "frames": [
+        "OrdinaryCallEvaluateBody",
+        "[[Call]]",
+        "Call",
+        "EvaluateCall"
+       ]
+      }
+     ],
+     "end": "normal: 5"
+    }
+   }
+  },
+  {
+   "id": "demo/forof",
+   "group": "tour",
+   "demo": "forof.js",
+   "title": "A for-of loop",
+   "line": "ForIn/OfBodyEvaluation asks the iterator for its next result at step 8.a once per round, and once more to find that it is done.",
+   "breakpoints": [
+    {
+     "alg": "ForIn/OfBodyEvaluation",
+     "path": "8.a"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "ForIn/OfBodyEvaluation",
+       "path": "8.a",
+       "frames": [
+        "ForIn/OfBodyEvaluation",
+        "ForInOfLoopEvaluation"
+       ]
+      },
+      {
+       "alg": "ForIn/OfBodyEvaluation",
+       "path": "8.a"
+      },
+      {
+       "alg": "ForIn/OfBodyEvaluation",
+       "path": "8.a"
+      }
+     ],
+     "end": "normal: 30"
+    }
+   }
+  },
+  {
+   "id": "demo/throw",
+   "group": "tour",
+   "demo": "throw.js",
+   "title": "A throw caught",
+   "line": "The throw statement's Evaluation makes a throw completion inside the called function; it returns through [[Call]] to the try statement, and CatchClauseEvaluation binds it.",
+   "breakpoints": [
+    {
+     "alg": "sec-runtime-semantics-catchclauseevaluation",
+     "path": "1"
+    }
+   ],
+   "filters": [
+    "throw"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-throw-statement-runtime-semantics-evaluation",
+       "path": "3",
+       "frames": [
+        "Evaluation",
+        "[[Call]]",
+        "Call",
+        "EvaluateCall"
+       ]
+      },
+      {
+       "alg": "CatchClauseEvaluation",
+       "path": "1"
+      }
+     ],
+     "end": "normal: \"negative\""
+    }
+   }
+  },
+  {
+   "id": "run/iscallable",
+   "group": "language",
+   "title": "IsCallable, step by step",
+   "line": "The worked example of How it works. EvaluateCall asks IsCallable of each callee that is an Object: a function has a [[Call]] internal method, and step 2 returns true; an ordinary object has none, step 3 returns false, and the call throws a TypeError.",
+   "breakpoints": [
+    {
+     "alg": "sec-iscallable",
+     "path": "2"
+    },
+    {
+     "alg": "sec-iscallable",
+     "path": "3"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "IsCallable",
+       "path": "2",
+       "frames": [
+        "IsCallable",
+        "sort-ECMAScript-function-object",
+        "MakeConstructor"
+       ]
+      },
+      {
+       "alg": "IsCallable",
+       "path": "2",
+       "frames": [
+        "IsCallable",
+        "EvaluateCall"
+       ]
+      },
+      {
+       "alg": "IsCallable",
+       "path": "2",
+       "frames": [
+        "IsCallable",
+        "Call",
+        "EvaluateCall"
+       ]
+      },
+      {
+       "alg": "IsCallable",
+       "path": "2",
+       "frames": [
+        "IsCallable",
+        "EvaluateCall"
+       ]
+      },
+      {
+       "alg": "IsCallable",
+       "path": "3",
+       "frames": [
+        "IsCallable",
+        "EvaluateCall"
+       ]
+      }
+     ],
+     "end": "normal: \"function|TypeError\""
+    }
+   }
+  },
+  {
+   "id": "run/s2_let_tdz",
+   "group": "language",
+   "title": "A let binding read before its declaration",
+   "line": "The declarative Environment Record's GetBindingValue finds the binding uninitialized and throws a ReferenceError, which the catch clause receives.",
+   "breakpoints": [
+    {
+     "alg": "sec-declarative-environment-records-getbindingvalue-n-s"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-declarative-environment-records-getbindingvalue-n-s",
+       "path": "1",
+       "frames": [
+        "GetBindingValue",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: \"ReferenceError\""
+    }
+   }
+  },
+  {
+   "id": "dbg/loop",
+   "group": "language",
+   "title": "A for loop's binding, copied each round",
+   "line": "ForBodyEvaluation calls CreatePerIterationEnvironment before the first round and after each, so each round has its own binding of i.",
+   "breakpoints": [
+    {
+     "alg": "sec-createperiterationenvironment"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "CreatePerIterationEnvironment",
+       "path": "1",
+       "frames": [
+        "CreatePerIterationEnvironment",
+        "ForBodyEvaluation"
+       ]
+      },
+      {
+       "alg": "CreatePerIterationEnvironment",
+       "path": "1",
+       "frames": [
+        "CreatePerIterationEnvironment",
+        "ForBodyEvaluation"
+       ]
+      }
+     ],
+     "end": "normal: 1"
+    }
+   }
+  },
+  {
+   "id": "dbg/getter",
+   "group": "language",
+   "title": "An accessor property",
+   "line": "OrdinaryGet finds an accessor descriptor and, at step 7, calls its getter with the receiver as this; the getter's body runs in OrdinaryCallEvaluateBody.",
+   "breakpoints": [
+    {
+     "alg": "sec-ordinaryget",
+     "path": "7"
+    },
+    {
+     "alg": "sec-ordinarycallevaluatebody",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "OrdinaryGet",
+       "path": "7",
+       "frames": [
+        "OrdinaryGet",
+        "[[Get]]",
+        "GetValue"
+       ]
+      },
+      {
+       "alg": "OrdinaryCallEvaluateBody",
+       "path": "1",
+       "frames": [
+        "OrdinaryCallEvaluateBody",
+        "[[Call]]",
+        "Call",
+        "OrdinaryGet"
+       ]
+      }
+     ],
+     "end": "normal: [object #N]"
+    }
+   }
+  },
+  {
+   "id": "dbg/map",
+   "group": "language",
+   "title": "A built-in that calls back",
+   "line": "Array.prototype.map runs as a built-in function's steps under BuiltinCallOrConstruct, and calls the callback for each element; the JS stack shows the built-in between the two functions.",
+   "breakpoints": [
+    {
+     "alg": "sec-array.prototype.map"
+    },
+    {
+     "alg": "sec-ordinarycallevaluatebody",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "Array.prototype.map",
+       "path": "1",
+       "frames": [
+        "Array.prototype.map",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "OrdinaryCallEvaluateBody",
+       "path": "1",
+       "frames": [
+        "OrdinaryCallEvaluateBody",
+        "[[Call]]",
+        "Call",
+        "Array.prototype.map"
+       ]
+      }
+     ],
+     "end": "normal: undefined"
+    }
+   }
+  },
+  {
+   "id": "dbg/eval",
+   "group": "language",
+   "title": "Direct eval and new Function",
+   "line": "A direct eval goes through PerformEval and new Function through CreateDynamicFunction; each parses its own source text, which the debugger opens as a source of its own.",
+   "breakpoints": [
+    {
+     "alg": "sec-performeval"
+    },
+    {
+     "alg": "sec-createdynamicfunction"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "PerformEval",
+       "path": "1"
+      },
+      {
+       "alg": "CreateDynamicFunction",
+       "path": "1",
+       "frames": [
+        "CreateDynamicFunction",
+        "Construct",
+        "EvaluateNew"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "10"
+     ]
+    }
+   }
+  },
+  {
+   "id": "dbg/generator",
+   "group": "language",
+   "title": "A generator",
+   "line": "Each yield is GeneratorYield, which suspends the generator's execution context; next() resumes it through GeneratorResume.",
+   "breakpoints": [
+    {
+     "alg": "sec-generatoryield"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "GeneratorYield",
+       "path": "1",
+       "frames": [
+        "GeneratorYield",
+        "Yield",
+        "GeneratorStart"
+       ]
+      },
+      {
+       "alg": "GeneratorYield",
+       "path": "1",
+       "frames": [
+        "GeneratorYield",
+        "Yield",
+        "GeneratorResume"
+       ]
+      }
+     ],
+     "end": "normal: 3"
+    }
+   }
+  },
+  {
+   "id": "dbg/strict",
+   "group": "language",
+   "title": "A string that is not a directive",
+   "line": "\"use strict\" followed by .length on the next line is one expression statement, not a Use Strict Directive: IsStrict finds the script non-strict.",
+   "breakpoints": [
+    {
+     "alg": "sec-isstrict"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "IsStrict",
+       "path": "1"
+      }
+     ],
+     "end": "normal: 10"
+    }
+   }
+  },
+  {
+   "id": "dbg/heap",
+   "group": "language",
+   "title": "Objects in the store",
+   "line": "Each debugger statement pauses; the Heap tab shows the object's cell, and after the assignment the cell that changed.",
+   "filters": [
+    "debugger"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-debugger-statement-runtime-semantics-evaluation",
+       "path": "1"
+      },
+      {
+       "alg": "sec-debugger-statement-runtime-semantics-evaluation",
+       "path": "1"
+      },
+      {
+       "alg": "sec-debugger-statement-runtime-semantics-evaluation",
+       "path": "1"
+      }
+     ],
+     "end": "normal: 2"
+    }
+   }
+  },
+  {
+   "id": "dbg/bundle",
+   "group": "language",
+   "title": "Three modules",
+   "line": "The entry module's LoadRequestedModules, then Link, then Evaluate; each module of the bundle opens as a source of its own.",
+   "breakpoints": [
+    {
+     "alg": "sec-LoadRequestedModules"
+    },
+    {
+     "alg": "sec-moduledeclarationlinking"
+    },
+    {
+     "alg": "sec-moduleevaluation"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "LoadRequestedModules",
+       "path": "1"
+      },
+      {
+       "alg": "Link",
+       "path": "1"
+      },
+      {
+       "alg": "Evaluate",
+       "path": "1"
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "42"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/proxy_traps",
+   "group": "corners",
+   "title": "Proxy traps",
+   "line": "A get on a Proxy is the Proxy's own [[Get]], which calls the handler's get trap; every other trap is called the same way, and a missing one forwards to the target.",
+   "breakpoints": [
+    {
+     "alg": "sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver",
+       "path": "1",
+       "frames": [
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: \"get:a,has:a,set:b,getOwnPropertyDescriptor:b,defineProperty:b,delete:b,ownKeys,getOwnPropertyDescriptor:a,defineProperty:c,getPrototypeOf,setPrototypeOf,isExtensible,preventExtensions|1|true|2|a,c|true\""
+    }
+   }
+  },
+  {
+   "id": "run/promise_job_order",
+   "group": "corners",
+   "title": "Promise jobs in order",
+   "line": "then calls PerformPromiseThen, which makes a job with NewPromiseReactionJob; the jobs run after the script in the order they were queued, and resolving with a promise takes two more.",
+   "breakpoints": [
+    {
+     "alg": "sec-newpromisereactionjob"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "NewPromiseReactionJob",
+       "path": "1",
+       "frames": [
+        "NewPromiseReactionJob",
+        "PerformPromiseThen",
+        "Promise.prototype.then"
+       ]
+      }
+     ],
+     "end": "normal: \"0\"",
+     "printed": [
+      "0,1,2,3,4",
+      "b,c,a,d"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/using_dispose",
+   "group": "corners",
+   "title": "using declarations",
+   "line": "At the end of the block, DisposeResources calls each resource's dispose method in the reverse order of the declarations; DisposableStack.prototype.dispose does the same.",
+   "breakpoints": [
+    {
+     "alg": "sec-disposeresources"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "DisposeResources",
+       "path": "1"
+      }
+     ],
+     "end": "normal: \"b,a,s\""
+    }
+   }
+  },
+  {
+   "id": "run/s2_with",
+   "group": "corners",
+   "title": "The with statement",
+   "line": "Inside with, ResolveBinding goes through GetIdentifierReference to the object Environment Record's HasBinding, which reads @@unscopables.",
+   "breakpoints": [
+    {
+     "alg": "sec-object-environment-records-hasbinding-n"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-object-environment-records-hasbinding-n",
+       "path": "1",
+       "frames": [
+        "HasBinding.2",
+        "GetIdentifierReference",
+        "ResolveBinding"
+       ]
+      }
+     ],
+     "end": "normal: \"1,5,outer,undefined,2\""
+    }
+   }
+  },
+  {
+   "id": "run/annexb_block_function",
+   "group": "corners",
+   "title": "A function in a block, on a web browser's host",
+   "line": "With the host a web browser, FunctionDeclarationInstantiation also gives the enclosing function a var binding of the block's function (B.3.2.1): typeof f is undefined before the block and function after it.",
+   "breakpoints": [
+    {
+     "alg": "sec-functiondeclarationinstantiation"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "FunctionDeclarationInstantiation",
+       "path": "1",
+       "frames": [
+        "FunctionDeclarationInstantiation",
+        "OrdinaryCallEvaluateBody",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: \"undefined,function,2\""
+    }
+   }
+  },
+  {
+   "id": "run/regexp_duplicate_named_groups",
+   "group": "corners",
+   "title": "Duplicate named groups",
+   "line": "Two groups of one name are an early error unless MightBothParticipate finds them in different alternatives; the check runs while the pattern is parsed.",
+   "breakpoints": [
+    {
+     "alg": "sec-mightbothparticipate"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "MightBothParticipate",
+       "path": "1",
+       "frames": [
+        "MightBothParticipate",
+        "ParsePattern"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "SyntaxError SyntaxError SyntaxError ok ok",
+      "SyntaxError",
+      "y"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/module_top_level_await",
+   "group": "corners",
+   "title": "Top-level await",
+   "line": "A module whose body awaits is evaluated by ExecuteAsyncModule, which runs the body with AsyncBlockStart, so the rest of the body runs from the promise jobs. Read literally, AsyncBlockStart's step 4 has no answer (erratum AsyncBlockStartAwaitResult) and the run stops there.",
+   "breakpoints": [
+    {
+     "alg": "sec-asyncblockstart"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "AsyncBlockStart",
+       "path": "1",
+       "frames": [
+        "AsyncBlockStart",
+        "ExecuteModule",
+        "ExecuteAsyncModule"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "before",
+      "3 after"
+     ]
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "AsyncBlockStart",
+       "path": "1",
+       "frames": [
+        "AsyncBlockStart",
+        "ExecuteModule",
+        "ExecuteAsyncModule"
+       ]
+      },
+      {
+       "alg": "AsyncBlockStart",
+       "path": "4"
+      }
+     ],
+     "end": "stop: erratum AsyncBlockStartAwaitResult sec-asyncblockstart#0 4"
+    }
+   }
+  },
+  {
+   "id": "run/settimeout_order",
+   "group": "corners",
+   "title": "Timeouts after promise jobs",
+   "line": "The test host's setTimeout performs HostEnqueueTimeoutJob: the promise jobs run first, then each timeout job once its delay has passed on the host's clock.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "function,2,undefined",
+      "sync",
+      "promise",
+      "t0",
+      "t5",
+      "t10,true"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/iterator_helpers",
+   "group": "corners",
+   "title": "Iterator helpers",
+   "line": "Iterator.prototype.map and the other helpers make iterator objects whose next runs the helper's steps; Iterator.from, concat and zip build on the same protocol.",
+   "breakpoints": [
+    {
+     "alg": "sec-iterator.prototype.map"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "Iterator.prototype.map",
+       "path": "1",
+       "frames": [
+        "Iterator.prototype.map",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: \"10,30,50|2,3|3,4,5|1,1,2,2|15|true,false,3|1+2|a,b,c|1:x,2:y|u,v,w\""
+    }
+   }
+  },
+  {
+   "id": "run/number_multiply_zero_sign",
+   "group": "errata",
+   "title": "NumberMultiplyZeroSign: +0 × −5",
+   "line": "Number::multiply step 6 gives 𝔽(0), which is +0, where IEEE 754 and every engine give −0. The default reading gives −0, so 1 / (0 * -5) is -Infinity; the literal text gives +0 and Infinity.",
+   "breakpoints": [
+    {
+     "alg": "sec-numeric-types-number-multiply",
+     "path": "6"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "Number::multiply",
+       "path": "6",
+       "frames": [
+        "Number::multiply",
+        "ApplyStringOrNumericBinaryOperator"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "-Infinity,-Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity"
+     ]
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "Number::multiply",
+       "path": "6",
+       "frames": [
+        "Number::multiply",
+        "ApplyStringOrNumericBinaryOperator"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "Infinity,Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/errata_sort_infinite_comparator",
+   "group": "errata",
+   "title": "SortInfiniteComparator: a comparator returning ±Infinity",
+   "line": "SortIndexedProperties takes ℝ of the comparator's result, which ±∞ does not have. The default reading orders by the result's sign; the literal text stops in SortIndexedProperties.",
+   "breakpoints": [
+    {
+     "alg": "sec-sortindexedproperties"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "SortIndexedProperties",
+       "path": "1",
+       "frames": [
+        "SortIndexedProperties",
+        "Array.prototype.sort"
+       ]
+      }
+     ],
+     "end": "normal: \"1,2,3|3,2,1\""
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "SortIndexedProperties",
+       "path": "1",
+       "frames": [
+        "SortIndexedProperties",
+        "Array.prototype.sort"
+       ]
+      }
+     ],
+     "end": "stop: sortError sec-sortindexedproperties#0 ?"
+    }
+   }
+  },
+  {
+   "id": "run/erratum_unit_chain_child",
+   "group": "errata",
+   "title": "UnitChainChild: a labelled function in an if body",
+   "line": "IsLabelledFunction takes \"the LabelledItem of\" a Statement that has one only through its chain of single children. The default reading follows the chain and the early error makes it a SyntaxError; the literal text stops at IsLabelledFunction step 2.",
+   "breakpoints": [
+    {
+     "alg": "sec-islabelledfunction"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "IsLabelledFunction",
+       "path": "1"
+      }
+     ],
+     "end": "throw: SyntaxError"
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "IsLabelledFunction",
+       "path": "1"
+      }
+     ],
+     "end": "stop: sortError sec-islabelledfunction#0 2"
+    }
+   }
+  },
+  {
+   "id": "dbg/async",
+   "group": "errata",
+   "title": "AsyncBlockStartAwaitResult: an async function",
+   "line": "An async function's body runs under AsyncBlockStart and suspends at each await. Its step 4, read literally, has no answer for the result of the body's last await, and the run stops there; the default reading goes on, and the function's promise resolves to 2.",
+   "breakpoints": [
+    {
+     "alg": "sec-asyncblockstart"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "AsyncBlockStart",
+       "path": "1",
+       "frames": [
+        "AsyncBlockStart",
+        "AsyncFunctionStart"
+       ]
+      }
+     ],
+     "end": "normal: [object #N]",
+     "printed": [
+      "2"
+     ]
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "AsyncBlockStart",
+       "path": "1",
+       "frames": [
+        "AsyncBlockStart",
+        "AsyncFunctionStart"
+       ]
+      },
+      {
+       "alg": "AsyncBlockStart",
+       "path": "4"
+      }
+     ],
+     "end": "stop: erratum AsyncBlockStartAwaitResult sec-asyncblockstart#0 4"
+    }
+   }
+  },
+  {
+   "id": "run/atomics_wait_sync_timeout",
+   "group": "errata",
+   "title": "DoWaitSyncTimeout: Atomics.wait that times out",
+   "line": "On a host whose agent can block, DoWait waits until its timeout. The default reading gives the woken waiter the result \"timed-out\" and removes it from the WaiterList; as the text is written it returns \"ok\" and leaves the waiter in the WaiterList, so the second Atomics.wait fails AddWaiter step 2's Assert.",
+   "breakpoints": [
+    {
+     "alg": "sec-dowait"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "DoWait",
+       "path": "1",
+       "frames": [
+        "DoWait",
+        "Atomics.wait"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "timed-out,timed-out,true,true,0 ; not-equal"
+     ]
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "DoWait",
+       "path": "1",
+       "frames": [
+        "DoWait",
+        "Atomics.wait"
+       ]
+      },
+      {
+       "alg": "DoWait",
+       "path": "1",
+       "frames": [
+        "DoWait",
+        "Atomics.wait"
+       ]
+      },
+      {
+       "alg": "AddWaiter",
+       "path": "2",
+       "frames": [
+        "AddWaiter",
+        "DoWait",
+        "Atomics.wait"
+       ]
+      }
+     ],
+     "end": "stop: erratum DoWaitSyncTimeout sec-addwaiter#0 2"
+    }
+   }
+  },
+  {
+   "id": "run/dynamic_function_private_identifiers",
+   "group": "errata",
+   "title": "CreateDynamicFunctionPrivateIdentifiers: new Function with #names",
+   "line": "CreateDynamicFunction parses the parameters and the body on their own, where a private name refers to no class. The default reading makes that a SyntaxError for both (test262 requires it of the body); the literal text has no such check and makes the function.",
+   "breakpoints": [
+    {
+     "alg": "sec-createdynamicfunction"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "CreateDynamicFunction",
+       "path": "1",
+       "frames": [
+        "CreateDynamicFunction",
+        "Construct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "body: SyntaxError",
+      "params: SyntaxError",
+      "generator body: SyntaxError"
+     ]
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "CreateDynamicFunction",
+       "path": "1",
+       "frames": [
+        "CreateDynamicFunction",
+        "Construct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "body: no error",
+      "params: no error",
+      "generator body: no error"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/errata_unregister_two_cells",
+   "group": "errata",
+   "title": "UnregisterIteratesCopy: two cells with one token",
+   "line": "FinalizationRegistry.prototype.unregister removes cells from the list it iterates. The default reading removes both cells with the token, so a second unregister returns false; as written it skips the second cell, and the second call returns true.",
+   "breakpoints": [
+    {
+     "alg": "sec-finalization-registry.prototype.unregister"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "FinalizationRegistry.prototype.unregister",
+       "path": "1"
+      }
+     ],
+     "end": "normal: \"true|false\""
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "FinalizationRegistry.prototype.unregister",
+       "path": "1"
+      }
+     ],
+     "end": "normal: \"true|true\""
+    }
+   }
+  },
+  {
+   "id": "run/errata_createintrinsics_async_argument_literal",
+   "group": "errata",
+   "title": "CreateIntrinsicsAsyncArgument: the realm itself",
+   "line": "Read literally, CreateIntrinsics passes an argument SetFunctionName does not accept for one async built-in, and the run stops at SetFunctionName step 5.a while the realm is set up, before the program. This is why the literal text's build keeps this erratum at its default reading; this example reads it literally on its own.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "stop: erratum CreateIntrinsicsAsyncArgument sec-setfunctionname#0 5.a"
+    }
+   }
+  },
+  {
+   "id": "run/date_utc_large_local_time",
+   "group": "errata",
+   "title": "GetUTCEpochNanosecondsNaN: a local time out of range",
+   "line": "setHours(1e21) asks UTC for a local time far out of range: GetUTCEpochNanoseconds finds no time value, and the Assert of its step 4 fails. No reading is chosen for this one, so the run stops in both builds.",
+   "breakpoints": [
+    {
+     "alg": "sec-getutcepochnanoseconds"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "GetUTCEpochNanoseconds",
+       "path": "1",
+       "frames": [
+        "GetUTCEpochNanoseconds",
+        "UTC",
+        "Date.prototype.setHours"
+       ]
+      },
+      {
+       "alg": "GetUTCEpochNanoseconds",
+       "path": "4"
+      }
+     ],
+     "end": "stop: erratum GetUTCEpochNanosecondsNaN sec-getutcepochnanoseconds#0 4",
+     "printed": [
+      "NaN"
+     ]
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "GetUTCEpochNanoseconds",
+       "path": "1",
+       "frames": [
+        "GetUTCEpochNanoseconds",
+        "UTC",
+        "Date.prototype.setHours"
+       ]
+      },
+      {
+       "alg": "GetUTCEpochNanoseconds",
+       "path": "4"
+      }
+     ],
+     "end": "stop: erratum GetUTCEpochNanosecondsNaN sec-getutcepochnanoseconds#0 4",
+     "printed": [
+      "NaN"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/regexp_lastindex_inside_pair",
+   "group": "errata",
+   "title": "GetMatchStringStartAfterEnd: lastIndex inside a surrogate pair",
+   "line": "With /u and lastIndex on the second half of a surrogate pair, RegExpBuiltinExec starts the empty match at the pair's start, and GetMatchString's Assert (start before end) fails at step 1. No reading is chosen, so the run stops in both builds.",
+   "breakpoints": [
+    {
+     "alg": "sec-regexpbuiltinexec"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "RegExpBuiltinExec",
+       "path": "1"
+      },
+      {
+       "alg": "GetMatchString",
+       "path": "1",
+       "frames": [
+        "GetMatchString",
+        "RegExpBuiltinExec"
+       ]
+      }
+     ],
+     "end": "stop: erratum GetMatchStringStartAfterEnd sec-getmatchstring#0 1"
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "RegExpBuiltinExec",
+       "path": "1"
+      },
+      {
+       "alg": "GetMatchString",
+       "path": "1",
+       "frames": [
+        "GetMatchString",
+        "RegExpBuiltinExec"
+       ]
+      }
+     ],
+     "end": "stop: erratum GetMatchStringStartAfterEnd sec-getmatchstring#0 1"
+    }
+   }
+  },
+  {
+   "id": "run/promise_job_abrupt",
+   "group": "errata",
+   "title": "PromiseJobAbruptCompletion: a reaction job that throws",
+   "line": "A promise reaction job, made by NewPromiseReactionJob, returns a throw completion when the species constructor's resolve function throws, which a job must not do. No reading is chosen, so the run stops in both builds when the job returns.",
+   "breakpoints": [
+    {
+     "alg": "sec-newpromisereactionjob"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "NewPromiseReactionJob",
+       "path": "1",
+       "frames": [
+        "NewPromiseReactionJob",
+        "PerformPromiseThen"
+       ]
+      }
+     ],
+     "end": "stop: erratum PromiseJobAbruptCompletion sec-jobs -"
+    },
+    "literal": {
+     "pauses": [
+      {
+       "alg": "NewPromiseReactionJob",
+       "path": "1",
+       "frames": [
+        "NewPromiseReactionJob",
+        "PerformPromiseThen"
+       ]
+      }
+     ],
+     "end": "stop: erratum PromiseJobAbruptCompletion sec-jobs -"
+    }
+   }
+  },
+  {
+   "id": "run/import_defer_basic",
+   "group": "proposal",
+   "title": "import defer: a namespace evaluated at its first read",
+   "line": "With proposal-defer-import-eval, `import defer * as heavy` links heavy.mjs with the graph but leaves it unevaluated: InitializeEnvironment asks GetModuleNamespace for its ~defer~ namespace, and the first read of an export goes through the namespace's [[Get]] and GetModuleExportsList to EvaluateModuleSync. Reading %Symbol.toStringTag% does not evaluate it.",
+   "breakpoints": [
+    {
+     "alg": "sec-getmodulenamespace",
+     "path": "1"
+    },
+    {
+     "alg": "sec-EvaluateModuleSync",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "defer": {
+     "pauses": [
+      {
+       "alg": "GetModuleNamespace",
+       "path": "1",
+       "frames": [
+        "GetModuleNamespace",
+        "InitializeEnvironment",
+        "InnerModuleLinking"
+       ]
+      },
+      {
+       "alg": "EvaluateModuleSync",
+       "path": "1",
+       "frames": [
+        "EvaluateModuleSync",
+        "GetModuleExportsList",
+        "[[Get]]",
+        "GetValue"
+       ]
+      },
+      {
+       "alg": "EvaluateModuleSync",
+       "path": "1",
+       "frames": [
+        "EvaluateModuleSync",
+        "GetModuleExportsList",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "[object Deferred Module]",
+      "main starts; heavy evaluates; read 42; read again 42"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "run/import_defer_dynamic",
+   "group": "proposal",
+   "title": "import.defer(): a promise for an unevaluated namespace",
+   "line": "`import.defer()` loads and links the module, and ContinueDynamicImport's ~defer~ branch asks GatherAsynchronousTransitiveDependencies what must be evaluated first (nothing here) before it settles the promise. The module exports `then`, but a deferred namespace has no `then` (IsSymbolLikeNamespaceKey), so settling the promise does not evaluate it; reading `x` does.",
+   "breakpoints": [
+    {
+     "alg": "sec-ContinueDynamicImport",
+     "path": "1"
+    },
+    {
+     "alg": "sec-GatherAsynchronousTransitiveDependencies",
+     "path": "1"
+    },
+    {
+     "alg": "sec-IsSymbolLikeNamespaceKey",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "defer": {
+     "pauses": [
+      {
+       "alg": "ContinueDynamicImport",
+       "path": "1",
+       "frames": [
+        "ContinueDynamicImport",
+        "FinishLoadingImportedModule"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "ContinueDynamicImport"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[Get]]",
+        "Get",
+        "CreateResolvingFunctions"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[GetOwnProperty]]",
+        "OrdinaryGet",
+        "[[Get]]"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[HasProperty]]",
+        "HasProperty"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[GetOwnProperty]]",
+        "OrdinaryHasProperty",
+        "[[HasProperty]]"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "promise settled; then in ns: false; dep evaluates; x is 1"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "run/import_defer_tla",
+   "group": "proposal",
+   "title": "import defer and top-level await",
+   "line": "The proposal's README graph: c is deferred, but its dependency d awaits at top level, so InnerModuleEvaluation asks GatherAsynchronousTransitiveDependencies for c's asynchronous dependencies and evaluates d (and e) with the graph; f and c wait for the first read of c's namespace, which EvaluateModuleSync evaluates synchronously.",
+   "breakpoints": [
+    {
+     "alg": "sec-GatherAsynchronousTransitiveDependencies",
+     "path": "1"
+    },
+    {
+     "alg": "sec-EvaluateModuleSync",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "defer": {
+     "pauses": [
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "InnerModuleEvaluation",
+        "Evaluate"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies",
+        "InnerModuleEvaluation"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies",
+        "InnerModuleEvaluation"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies",
+        "InnerModuleEvaluation"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies"
+       ]
+      },
+      {
+       "alg": "EvaluateModuleSync",
+       "path": "1",
+       "frames": [
+        "EvaluateModuleSync",
+        "GetModuleExportsList",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "before access: b, e, d, a",
+      "after access: b, e, d, a, f, c"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "run/erratum_stringvalue_reserved_word",
+   "group": "errata-programs",
+   "title": "StringValueReservedWord: an escaped reserved word",
+   "line": "var \\u0069f spells the reserved word if with an escape; the default reading makes it a SyntaxError.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "run/erratum_lookahead_source_tokens",
+   "group": "errata-programs",
+   "title": "LookaheadSourceTokens: let and a newline",
+   "line": "After if (0) let and a line break, ExpressionStatement's lookahead reads the source's tokens past the inserted semicolon; the default reading gives no parse, a SyntaxError.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "run/erratum_html_close_comment_token",
+   "group": "errata-programs",
+   "title": "HTMLCloseCommentToken: --> on the first line",
+   "line": "On a host with B.1.1, a first-line --> is an HTMLCloseComment; the default reading takes it as a comment, and the program gives 1.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: 1"
+    }
+   }
+  },
+  {
+   "id": "run/erratum_annexb_regexp_order",
+   "group": "errata-programs",
+   "title": "AnnexBRegExpOrder: /\\b*/",
+   "line": "Under B.1.2's grammar the alternatives commit in order: \\b is an Assertion, which no quantifier follows, so the pattern is a SyntaxError.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "run/erratum_annexb_group_count",
+   "group": "errata-programs",
+   "title": "AnnexBGroupCount: /(a)\\1/",
+   "line": "Under B.1.2's grammar \\1 with one capturing group is a backreference: the group count comes from a committed parse.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: true"
+    }
+   }
+  },
+  {
+   "id": "run/erratum_annexb_modifier_early_errors",
+   "group": "errata-programs",
+   "title": "AnnexBModifierEarlyErrors: /(?ii:a)/",
+   "line": "§22.2.1.1's modifier rules apply to B.1.2's ExtendedAtom under the default reading: a repeated modifier is a SyntaxError.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "run/erratum_covered_node_parent",
+   "group": "errata-programs",
+   "title": "CoveredNodeParent: a tail call in parentheses",
+   "line": "The covered ParenthesizedExpression takes its cover's place in the tree, so return (f(n - 1)) is in tail position.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: 0"
+    }
+   }
+  },
+  {
+   "id": "run/builtin_async_return",
+   "group": "errata-programs",
+   "title": "BuiltinReturnCompletion: Array.fromAsync's result",
+   "line": "Array.fromAsync's promise is fulfilled with the array under the default reading of BuiltinCallOrConstruct step 10.b.iii.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "undefined",
+      "1,2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/errata_execute_module_dispose",
+   "group": "errata-programs",
+   "title": "ExecuteModuleAsyncDisposeResources: await using in a module",
+   "line": "A module with top-level await disposes its await using resources after its body under the default reading; read literally, never.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "end",
+      "disposed"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/regexp_identity_escape_join_controls",
+   "group": "errata-programs",
+   "title": "IdentityEscapeJoinControls: \\ before ZWNJ and ZWJ",
+   "line": "Without the u or v flag, a backslash before U+200C or U+200D is an IdentityEscape under the default reading.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "U+200C: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+      "U+200D: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+      "U+200B: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+      "U+200E: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+      "U+61: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError",
+      "U+B7: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/errata_lone_property_gc_assert_literal",
+   "group": "errata-programs",
+   "title": "LonePropertyGeneralCategoryAssert: /\\p{ASCII}/u",
+   "line": "A lone \\p{ASCII} is a binary property; under the default reading CompileToCharSet asks UnicodeMatchProperty for it.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "stop: erratum LonePropertyGeneralCategoryAssert sec-runtime-semantics-unicodematchpropertyvalue-p-v#0 2"
+    }
+   }
+  },
+  {
+   "id": "run/errata_allocate_sab_byte_length",
+   "group": "errata-programs",
+   "title": "AllocateSharedArrayBufferByteLengthStore: a growable SharedArrayBuffer",
+   "line": "grow reads the byte length that AllocateSharedArrayBuffer stored in a Shared Data Block.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: 2"
+    }
+   }
+  },
+  {
+   "id": "run/await_in_params_early_errors",
+   "group": "errata-programs",
+   "title": "ContainsAwaitCover: await in parameters",
+   "line": "The early errors \"X Contains AwaitExpression\" see an await expression, which parses as a cover.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "async function: SyntaxError",
+      "async function expression: SyntaxError",
+      "async generator: SyntaxError",
+      "async generator expression: SyntaxError",
+      "async method: SyntaxError",
+      "async generator method: SyntaxError",
+      "arrow in async body: SyntaxError",
+      "async arrow in async body: SyntaxError",
+      "AsyncFunction: SyntaxError",
+      "AsyncGeneratorFunction: SyntaxError",
+      "await in async body: no error",
+      "static block in async function: no error",
+      "var await in nested function: no error",
+      "async arrow parameters: no error",
+      "await in static block: SyntaxError",
+      "var await in static block function: no error"
+     ]
+    }
+   }
+  },
+  {
+   "id": "run/errata_split_code_units",
+   "group": "errata-programs",
+   "title": "SplitCodeUnitStrings: \"ab\".split(\"\")",
+   "line": "Each element is a String of one code unit under the default reading; read literally, the Array holds code units.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: \"string\""
+    }
+   }
+  },
+  {
+   "id": "run/errata_createintrinsics_async_argument",
+   "group": "errata-programs",
+   "title": "CreateIntrinsicsAsyncArgument: an accessor's name and Array.fromAsync",
+   "line": "Under the default reading a getter gets its prefix and Array.fromAsync is async.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: \"get size|true\""
+    }
+   }
+  },
+  {
+   "id": "run/errata_ischaracterclass_control_letter",
+   "group": "errata-programs",
+   "title": "IsCharacterClassControlLetter: /[\\c1-\\c5]/",
+   "line": "On a host with B.1.2, a class range between two \\c escapes asks IsCharacterClass of each; the default reading gives that production a row.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: true"
+    }
+   }
+  },
+  {
+   "id": "run/bigint_huge_left_shift",
+   "group": "errata-programs",
+   "title": "BigIntMaximumSize: 1n << 2n ** 31n",
+   "line": "The proposed text throws a RangeError past the implementation's maximum BigInt size; read as written, the engine stops at its own limit.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: RangeError"
+    }
+   }
+  }
+ ]
+}

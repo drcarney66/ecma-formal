@@ -1,0 +1,42 @@
+// The heap at `debugger` pauses. `{a: 1}` makes an object cell among the new cells (specHeap by
+// kind): its own property `a` with its attributes. `o.a = 2` changes `a`'s attribute Record:
+// the next pause's diff lists it, `a` is marked changed, and specDiff gives 1 → 2.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["debugger"]}}}
+{"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "description": "debugger statement"}}}
+// The first pause has no earlier one: no diff, and specDiff has no old value.
+{"send": {"command": "specDiff", "arguments": {"addr": 0}}}
+{"expect": {"type": "response", "command": "specDiff", "success": true, "body": {"addr": 0, "old": null, "new": {"kind": "${=k0}"}}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"spec": {"diff": {"newCells": ["${=lo}", "${=hi}"], "truncated": false, "stackChanged": false}}}}}
+{"send": {"command": "specHeap", "arguments": {"from": "${lo}", "count": 1000, "kind": "object"}}}
+{"expect": {"type": "response", "command": "specHeap", "success": true, "body": {"cells": [{"addr": "${=o}", "kind": "object", "type": "Object", "variablesReference": "${=oref}"}], "heapSize": "${hi}"}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${oref}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": ["...", {"name": "[[Prototype]]", "type": "Object"}, {"name": "[[Extensible]]", "value": "true"}, {"name": "a", "value": "1", "type": "data property (writable, enumerable, configurable)", "variablesReference": "${=aref}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${aref}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "sort"}, {"name": "[[Value]]", "value": "1"}, {"name": "[[Writable]]", "value": "true"}, {"name": "[[Enumerable]]", "value": "true"}, {"name": "[[Configurable]]", "value": "true"}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"spec": {"diff": {"newCells": ["${hi}", "${=hi2}"], "changed": ["${=ch}"], "truncated": false}}}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${oref}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": ["...", {"name": "a", "value": "2", "variablesReference": "${aref}", "presentationHint": {"attributes": ["changed"]}}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${aref}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "sort"}, {"name": "[[Value]]", "value": "2", "presentationHint": {"attributes": ["changed"]}}]}}}
+{"send": {"command": "specDiff", "arguments": {"addr": "${o}"}}}
+{"expect": {"type": "response", "command": "specDiff", "success": true, "body": {"addr": "${o}", "old": {"kind": "object", "variables": ["...", {"name": "a", "value": "1"}]}, "new": {"kind": "object", "variables": ["...", {"name": "a", "value": "2"}]}, "changed": ["a"]}}}
+// The model's state beside the heap.
+{"send": {"command": "specState"}}
+{"expect": {"type": "response", "command": "specState", "success": true, "body": {"agent": {"name": "agent", "variablesReference": "${=agent}"}, "roots": [{"production": "${=root}"}], "host": {"transitions": "${=tr}", "steps": "${=st}", "hostLog": "${=hl}"}}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 2", "exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

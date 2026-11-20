@@ -1,0 +1,190 @@
+<emu-clause id="formal-types">
+  <h1>Header Types</h1>
+  <p>Type phrases of the algorithm headers and record tables, as tests of a value.</p>
+
+  <emu-primitive id="prim-closurearity" name="ClosureArity">
+    <emu-signature>ClosureArity(_c_: an Abstract Closure): a non-negative integer</emu-signature>
+    <p>The number of parameters of _c_, as the step that creates it lists them (<emu-xref href="#sec-abstract-closure"></emu-xref>); 0 for an Abstract Closure "with no parameters".</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-recordfieldnames" name="RecordFieldNames">
+    <emu-signature>RecordFieldNames(_r_: a Record): a List of field names</emu-signature>
+    <p>A new List of the names of _r_'s fields (<emu-xref href="#sec-list-and-record-specification-type"></emu-xref>). The specification defines no order of a Record's fields, so the List's order is fixed by the field names alone (ascending by their index in the field table), never by the model, and no step may depend on it.</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-type-anything" kind="type" subject="_v_" rule="ht-anything">
+    <emu-pattern>anything</emu-pattern>
+    <emu-params>_v_: anything</emu-params>
+    <emu-alg>
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-abstract-closure" kind="type" subject="_v_" rule="ht-closure">
+    <emu-pattern>an Abstract Closure</emu-pattern>
+    <emu-params>_v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is an Abstract Closure, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-at-least" kind="type" subject="_v_" rule="ht-ge" alternatives="all">
+    <emu-pattern>an _t_ ≥ _lo_</emu-pattern>
+    <p>"a" and "an" are one article. A value of _t_ that is not less than _lo_.</p>
+    <emu-params>_t_: a type, _lo_: an extended mathematical value, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not a _t_, return *false*.
+      1. If _v_ ≥ _lo_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-promise" kind="type" subject="_v_" rule="ht-promise">
+    <emu-pattern>a promise</emu-pattern>
+    <p>A promise is a Promise object (<emu-xref href="#sec-promise-objects"></emu-xref>). Its only use, the AsyncDisposable interface table, states a requirement on conforming objects that is not enforced; the test describes that requirement and is never a runtime check on a value ECMAScript code supplies.</p>
+    <emu-params>_v_: anything</emu-params>
+    <emu-alg>
+      1. Return IsPromise(_v_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-syntax-errors" kind="type" subject="_v_" rule="a-list-syntax-errors">
+    <emu-pattern>a non-empty List of *SyntaxError* objects</emu-pattern>
+    <p>A *SyntaxError* object is an error object, one with an [[ErrorData]] internal slot (the sort "error"); its prototype is not a test, since ECMAScript code can change it.</p>
+    <emu-params>_v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not a List, return *false*.
+      1. If _v_ is empty, return *false*.
+      1. For each element _e_ of _v_, do
+        1. If _e_ is not an Object, return *false*.
+        1. If _e_ does not have an [[ErrorData]] internal slot, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+  <emu-phrase id="ph-type-closure-no-params" kind="type" subject="_v_" rule="closure-type-none">
+    <emu-pattern>an Abstract Closure with no parameters</emu-pattern>
+    <emu-params>_v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not an Abstract Closure, return *false*.
+      1. If ClosureArity(_v_) = 0, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-header-closure-no-params" kind="type" subject="_v_" rule="ht-closure-none">
+    <emu-pattern>an Abstract Closure with no parameters</emu-pattern>
+    <emu-params>_v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not an Abstract Closure, return *false*.
+      1. If ClosureArity(_v_) = 0, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-closure-two-params" kind="type" subject="_v_" rule="ht-closure-two">
+    <emu-pattern>an Abstract Closure with two parameters</emu-pattern>
+    <emu-params>_v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not an Abstract Closure, return *false*.
+      1. If ClosureArity(_v_) = 2, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-except" kind="type" subject="_v_" rule="ht-except">
+    <emu-pattern>any value except _t_</emu-pattern>
+    <emu-params>_t_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is a _t_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-but-not" kind="type" subject="_v_" rule="ht-but-not">
+    <emu-pattern>_t_, but not _u_</emu-pattern>
+    <p>_u_ is the alternatives excluded, as one type.</p>
+    <emu-params>_t_: a type, _u_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not a _t_, return *false*.
+      1. If _v_ is a _u_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-but-not-one" kind="type" subject="_v_" rule="ht-but-not-one">
+    <emu-pattern>_t_, but not _u_</emu-pattern>
+    <emu-params>_t_: a type, _u_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not a _t_, return *false*.
+      1. If _v_ is a _u_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-sequence-of" kind="type" subject="_v_" rule="ht-sequence-of" alternatives="all">
+    <emu-pattern>a sequence of _t_</emu-pattern>
+    <p>"a" and "an" are one article. A sequence is held as a List of its elements in order, as the sort "sequence of Unicode code points" is.</p>
+    <emu-params>_t_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not a List, return *false*.
+      1. For each element _e_ of _v_, do
+        1. If _e_ is not a _t_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-conforms-iterator-result" kind="type" subject="_v_" rule="ht-conforms-iterresult" alternatives="all">
+    <emu-pattern>an _t_ that conforms to the IteratorResult interface</emu-pattern>
+    <p>"a" and "an" are one article. An object conforms to an interface when it provides the properties the interface describes (<emu-xref href="#sec-iteration"></emu-xref>, <emu-xref href="#table-iteratorresult-interface-properties"></emu-xref>); what a property provides is observed only by reading it, which can run ECMAScript code, so conformance is a requirement on the value and is not tested: the test is _t_ alone. It cannot be tested where it is written (GeneratorYield's _iteratorResult_, <emu-xref href="#sec-generatoryield"></emu-xref>): the object can come from ECMAScript code, and only its [[Get]] observes what it provides.</p>
+    <emu-params>_t_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is a _t_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-function-returns" kind="type" subject="_v_" rule="ht-function-returns" alternatives="all">
+    <emu-pattern>a function that returns _t_</emu-pattern>
+    <p>"a" and "an" are one article; a function is a function object. What it returns is its behaviour when called, a requirement of the interface table on conforming objects that is not enforced: the test is "a function object" alone.</p>
+    <emu-params>_t_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is a function object, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-returns" kind="type" subject="_v_" rule="ht-tn-returns" alternatives="all">
+    <emu-pattern>a _t_ that returns _u_</emu-pattern>
+    <p>"a" and "an" are one article. What it returns is its behaviour when called, a requirement of the interface table on conforming objects that is not enforced: the test is _t_ alone.</p>
+    <emu-params>_t_: a type, _u_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is a _t_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-promise-for" kind="type" subject="_v_" rule="ht-promise-for">
+    <emu-pattern>a promise for _t_</emu-pattern>
+    <p>A promise is a Promise object (<emu-xref href="#sec-promise-objects"></emu-xref>). That it is a promise for _t_ (the value it is eventually fulfilled with) is a requirement of the interface table on conforming objects that is not enforced: the test is "a promise" alone.</p>
+    <emu-params>_t_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. Return IsPromise(_v_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-default" kind="type" subject="_v_" rule="ht-default">
+    <emu-pattern>_t_ (default value is _d_)</emu-pattern>
+    <p>The default value is the field's value in a Record created without one; it does not change which values the field may hold.</p>
+    <emu-params>_t_: a type, _d_: anything, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is a _t_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <p>Result types narrower than the headers': a typing of the operation's values, which its meaning ignores.</p>
+
+  <emu-result-type clause="sec-evaluation">either a normal completion containing either an ECMAScript language value, a Reference Record, a Private Name, ~empty~, or ~unused~, or an abrupt completion</emu-result-type>
+  <p>An expression evaluates to a value or a Reference Record, a class element name to a property key or a Private Name, a statement to a value or ~empty~ (<emu-xref href="#sec-evaluation"></emu-xref>). <emu-grammar>VariableDeclaration : BindingPattern Initializer</emu-grammar> evaluates to BindingInitialization's ~unused~.</p>
+</emu-clause>

@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- The debugger's test page and minimal console (tools/dbg/test.mjs); served by tools/dbg/serve.py. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ecma-dbg</title>
+<style>
+  body { font: 13px system-ui, sans-serif; margin: 1em; }
+  textarea, input { font: 12px ui-monospace, monospace; width: 100%; box-sizing: border-box; }
+  #log { font: 12px ui-monospace, monospace; white-space: pre-wrap; border: 1px solid #ccc; padding: .5em; height: 50vh; overflow: auto; }
+  button { margin: .2em .2em 0 0; }
+</style>
+</head>
+<body>
+<p id="status">loading the engine</p>
+<textarea id="source" rows="8">print("hi");
+var o = { a: 1 };
+o.a;
+</textarea>
+<div>
+  <button id="start">new session</button>
+  <button data-req="initialize">initialize</button>
+  <button data-req="launch">launch</button>
+  <button data-req="configurationDone">configurationDone</button>
+  <button data-req="continue">continue</button>
+  <button data-req="next">next</button>
+  <button data-req="stepIn">stepIn</button>
+  <button data-req="stepOut">stepOut</button>
+  <button data-req="pause">pause</button>
+  <button data-req="stackTrace">stackTrace</button>
+  <button data-req="disconnect">disconnect</button>
+</div>
+<p><input id="raw" placeholder='a request: {"command": "setSpecBreakpoints", "arguments": {...}}'></p>
+<div id="log"></div>
+<script type="module" src="test.mjs"></script>
+</body>
+</html>

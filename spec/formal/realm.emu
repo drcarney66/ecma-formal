@@ -1,0 +1,260 @@
+<emu-clause id="formal-realm">
+  <h1>The Built-in Objects of a Realm</h1>
+  <p>The specified objects, properties and intrinsic names a realm's creation reads (<emu-xref href="#sec-createintrinsics"></emu-xref>, <emu-xref href="#sec-setdefaultglobalbindings"></emu-xref>), and built-in function objects whose behaviour a bullet of their object's description, or their own clause's prose, states instead of an algorithm.</p>
+
+  <emu-clause id="formal-function-prototype" type="built-in function" behaviour-of="sec-properties-of-the-function-prototype-object">
+    <h1>%Function.prototype% ( )</h1>
+    <p>The Function prototype object "accepts any arguments and returns *undefined* when invoked" (<emu-xref href="#sec-properties-of-the-function-prototype-object"></emu-xref>).</p>
+    <emu-alg>
+      1. Return *undefined*.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-date.now" type="built-in function" behaviour-of="sec-date.now">
+    <h1>Date.now ( )</h1>
+    <p>This function "returns the time value designating the UTC date and time of the occurrence of the call to it" (<emu-xref href="#sec-date.now"></emu-xref>).</p>
+    <emu-alg>
+      1. Return the time value (UTC) identifying the current time.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-date.parse" type="built-in function" behaviour-of="sec-date.parse">
+    <h1>Date.parse ( _string_ )</h1>
+    <p>This function "applies the ToString operator to its argument. If ToString results in an abrupt completion the Completion Record is immediately returned. Otherwise, this function interprets the resulting String as a date and time" (<emu-xref href="#sec-date.parse"></emu-xref>): that interpretation is ParseDateString (<emu-xref href="#prim-parsedatestring"></emu-xref>).</p>
+    <emu-alg>
+      1. Let _s_ be ? ToString(_string_).
+      1. Return ParseDateString(_s_).
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-string.prototype.touppercase" type="built-in function" behaviour-of="sec-string.prototype.touppercase">
+    <h1>String.prototype.toUpperCase ( )</h1>
+    <p>This method "behaves in exactly the same way as `String.prototype.toLowerCase`, except that the String is mapped using the toUppercase algorithm of the Unicode Default Case Conversion" (<emu-xref href="#sec-string.prototype.touppercase"></emu-xref>): <emu-xref href="#sec-string.prototype.tolowercase"></emu-xref>'s steps with toUppercase (<emu-xref href="#prim-touppercase"></emu-xref>).</p>
+    <emu-alg>
+      1. Let _thisValue_ be the *this* value.
+      1. Perform ? RequireObjectCoercible(_thisValue_).
+      1. Let _string_ be ? ToString(_thisValue_).
+      1. Let _sText_ be StringToCodePoints(_string_).
+      1. Let _upperText_ be toUppercase(_sText_).
+      1. Let _uppercaseString_ be CodePointsToString(_upperText_).
+      1. Return _uppercaseString_.
+    </emu-alg>
+  </emu-clause>
+
+
+  <emu-primitive id="prim-intrinsicobjects" name="IntrinsicObjects">
+    <emu-signature>IntrinsicObjects(): a List of Records</emu-signature>
+    <p>The objects of <emu-xref href="#sec-createintrinsics"></emu-xref> step 2, one new Record each, in an order in which each comes after the objects its [[Prototype]] names: the well-known intrinsic objects of <emu-xref href="#table-well-known-intrinsic-objects"></emu-xref> and every object their properties hold, as clauses <emu-xref href="#sec-global-object"></emu-xref> through <emu-xref href="#sec-reflection"></emu-xref>, <emu-xref href="#sec-additional-built-in-properties"></emu-xref>, <emu-xref href="#sec-%throwtypeerror%"></emu-xref> and <emu-xref href="#sec-%foriniteratorprototype%-object"></emu-xref> specify them. Each Record has the fields [[Index]] (its position in the List), [[Names]] (a List of the [[Intrinsics]] field names it is recorded under: its intrinsic names, with and without the enclosing %), [[Prototype]] (the position of its [[Prototype]], or *null*), [[Exotic]] (the clause defining its kind of exotic object, or ~empty~), [[Extensible]], [[Slots]] (a List of its specified internal slots' names), [[SlotValues]] (a List of Records with fields [[Name]] and [[Value]], the specified values of those slots), and [[Properties]] (a List of its properties' Records, as ClauseProperties gives them, in document order, with [[Object]], [[Get]] and [[Set]] the positions of objects in the List). A built-in function object's Record also has [[Behaviour]] (its algorithm steps, or the clause that gives its behaviour), [[Length]], [[Name]] (its *"name"* property's key), [[Prefix]] (*"get"*, *"set"*, or ~empty~), [[Constructor]], [[Async]] (whether it is described as async), [[LengthAttributes]] and [[NameAttributes]] (Records with fields [[Writable]], [[Enumerable]] and [[Configurable]]); for any other object [[Behaviour]] is ~empty~.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-clauseproperties" name="ClauseProperties">
+    <emu-signature>ClauseProperties(_O_: an Object, _c_: a clause): a List of Records</emu-signature>
+    <p>The own properties that clause _c_ specifies for _O_, one new Record each, in document order: [[Key]] (a String or a well-known symbol), [[Kind]] (~data~ or ~accessor~), [[Value]] (a data property's specified value that is no object, or ~empty~), [[Object]] (~empty~), [[Intrinsic]] (the name with the enclosing % of the intrinsic object that is the value, or ~empty~), [[Created]] (the clause whose steps create the value, or ~empty~), [[GlobalThis]] (whether the value is _realm_.[[GlobalEnv]].[[GlobalThisValue]]), [[Get]] and [[Set]] (~empty~), [[Writable]], [[Enumerable]], [[Configurable]], [[Optional]] (whether the property is normative optional: specified in Annex B or in a normative-optional clause), [[Omittable]] (whether a host may omit it) and [[Clause]] (the clause specifying it).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-realmintrinsic" name="RealmIntrinsic">
+    <emu-signature>RealmIntrinsic(_realm_: a Realm Record, _name_: a String): an Object</emu-signature>
+    <p>The intrinsic object named _name_ that _realm_.[[Intrinsics]] records: the field of _realm_.[[Intrinsics]] whose name is _name_, set when the realm was created (<emu-xref href="#sec-well-known-intrinsic-objects"></emu-xref>). _name_ is the name with the enclosing % of one of the objects of IntrinsicObjects().</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-isintrinsicname" name="IsIntrinsicName">
+    <emu-signature>IsIntrinsicName(_n_: a String): a Boolean</emu-signature>
+    <p>Whether _n_ is this specification's name of an intrinsic object (<emu-xref href="#sec-well-known-intrinsic-objects"></emu-xref>): a name listed in the “Intrinsic Name” column of <emu-xref href="#table-well-known-intrinsic-objects"></emu-xref>, or such a name with the enclosing % around it extended by one or more parts *"."* _k_, each _k_ the key of a property, specified for the object the name before it names, whose value (an accessor property's: its getter's result, as if accessed before any code is evaluated) is an object.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-wellknownsymbol" name="WellKnownSymbol">
+    <emu-signature>WellKnownSymbol(_d_: a String): a Symbol</emu-signature>
+    <p>The well-known symbol whose [[Description]] is _d_ (<emu-xref href="#sec-well-known-symbols"></emu-xref>, <emu-xref href="#table-well-known-symbols"></emu-xref>): the value the specification names %_d_%. It is the same value in every realm.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-setfieldnamed" name="SetFieldNamed">
+    <emu-signature>SetFieldNamed(_r_: a Record or an Object, _f_: a field name, _v_: anything): ~unused~</emu-signature>
+    <p>Sets _r_'s field, or _r_'s internal slot, named _f_ to _v_.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-propertyorder" name="PropertyOrder">
+    <emu-signature>PropertyOrder(_O_: an Object, _properties_: a List of Records): a List of Records</emu-signature>
+    <p>The order in which the host creates the specified properties _properties_ of _O_: a new List whose elements are those of _properties_, each once, in an order the host chooses. The specification fixes no order of a built-in object's property creation (<emu-xref href="#sec-createintrinsics"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-omitsharedarraybuffer" name="OmitSharedArrayBuffer">
+    <emu-signature>OmitSharedArrayBuffer(): a Boolean</emu-signature>
+    <p>Whether the host omits the *"SharedArrayBuffer"* property of the global object (<emu-xref href="#sec-sharedarraybuffer-constructor"></emu-xref>). It is a fact of the host: every call gives the same answer.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-hostsupportsoptional" name="HostSupportsOptional">
+    <emu-signature>HostSupportsOptional(_c_: a clause): a Boolean</emu-signature>
+    <p>Whether a host that is not a web browser provides the normative optional feature that clause _c_ specifies. It is a fact of the host: every call with the same _c_ gives the same answer.</p>
+  </emu-primitive>
+
+  <emu-steps-name name="ArrayPrototypeUnscopables" clause="sec-array.prototype-%symbol.unscopables%"></emu-steps-name>
+
+  <emu-clause id="formal-propertyprovided" type="abstract operation">
+    <h1>
+      PropertyProvided (
+        _p_: a Record,
+      ): a Boolean
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>Whether the host provides the specified property _p_ (a Record as ClauseProperties gives it): a normative optional property only where the host is a web browser or otherwise supports it (<emu-xref href="#sec-additional-ecmascript-features-for-web-browsers"></emu-xref>), and the global object's *"SharedArrayBuffer"* property unless the host omits it.</dd>
+    </dl>
+    <emu-alg>
+      1. If _p_.[[Omittable]] is *true* and OmitSharedArrayBuffer() is *true*, return *false*.
+      1. If _p_.[[Optional]] is *false*, return *true*.
+      1. If the host is a web browser, return *true*.
+      1. Return HostSupportsOptional(_p_.[[Clause]]).
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-intrinsicpropertydescriptor" type="abstract operation">
+    <h1>
+      IntrinsicPropertyDescriptor (
+        _p_: a Record,
+        _objects_: a List of Objects,
+      ): a Property Descriptor
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The fully populated Property Descriptor of the specified property _p_ (a Record of IntrinsicObjects()), whose objects are those of _objects_ at the positions _p_ gives.</dd>
+    </dl>
+    <emu-alg>
+      1. If _p_.[[Kind]] is ~accessor~, then
+        1. If _p_.[[Get]] is ~empty~, let _getter_ be *undefined*; else let _getter_ be _objects_[_p_.[[Get]]].
+        1. If _p_.[[Set]] is ~empty~, let _setter_ be *undefined*; else let _setter_ be _objects_[_p_.[[Set]]].
+        1. Return the PropertyDescriptor { [[Getter]]: _getter_, [[Setter]]: _setter_, [[Enumerable]]: _p_.[[Enumerable]], [[Configurable]]: _p_.[[Configurable]] }.
+      1. If _p_.[[Object]] is not ~empty~, then
+        1. Let _value_ be _objects_[_p_.[[Object]]].
+      1. Else if _p_.[[Created]] is not ~empty~, then
+        1. Assert: _p_.[[Created]] is <emu-xref href="#sec-array.prototype-%symbol.unscopables%"></emu-xref>.
+        1. Let _value_ be ArrayPrototypeUnscopables().
+      1. Else,
+        1. Let _value_ be _p_.[[Value]].
+      1. Return the PropertyDescriptor { [[Value]]: _value_, [[Writable]]: _p_.[[Writable]], [[Enumerable]]: _p_.[[Enumerable]], [[Configurable]]: _p_.[[Configurable]] }.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-reading clause="sec-createintrinsics" steps="2" hashes="3d12c2f953d08043ab515e1e49ae09c6fb4d024fa5b9a0a3889740c44c26825b">
+    <emu-alg reading="definition">
+      1. Let _entries_ be IntrinsicObjects().
+      1. Let _objects_ be a new empty List.
+      1. For each Record _entry_ of _entries_, do
+        1. If _entry_.[[Prototype]] is *null*, let _proto_ be *null*; else let _proto_ be _objects_[_entry_.[[Prototype]]].
+        1. If _entry_.[[Behaviour]] is not ~empty~, then
+          1. Let _obj_ be CreateBuiltinFunction(_entry_.[[Behaviour]], _entry_.[[Length]], _entry_.[[Name]], _entry_.[[Slots]], _realmRecord_, _proto_, _entry_.[[Async]]).
+          1. If _entry_.[[Constructor]] is *true*, set _obj_.[[Construct]] to the definition specified in <emu-xref href="#sec-built-in-function-objects-construct-argumentslist-newtarget"></emu-xref>.
+        1. Else,
+          1. Let _obj_ be OrdinaryObjectCreate(_proto_, _entry_.[[Slots]]).
+          1. If _entry_.[[Exotic]] is <emu-xref href="#sec-array-exotic-objects"></emu-xref>, then
+            1. Set _obj_.[[DefineOwnProperty]] as specified in <emu-xref href="#sec-array-exotic-objects-defineownproperty-p-desc"></emu-xref>.
+          1. Else if _entry_.[[Exotic]] is <emu-xref href="#sec-string-exotic-objects"></emu-xref>, then
+            1. Set _obj_.[[GetOwnProperty]] as specified in <emu-xref href="#sec-string-exotic-objects-getownproperty-p"></emu-xref>.
+            1. Set _obj_.[[DefineOwnProperty]] as specified in <emu-xref href="#sec-string-exotic-objects-defineownproperty-p-desc"></emu-xref>.
+            1. Set _obj_.[[OwnPropertyKeys]] as specified in <emu-xref href="#sec-string-exotic-objects-ownpropertykeys"></emu-xref>.
+          1. Else if _entry_.[[Exotic]] is <emu-xref href="#sec-immutable-prototype-exotic-objects"></emu-xref>, then
+            1. Set _obj_.[[SetPrototypeOf]] to the definition specified in <emu-xref href="#sec-immutable-prototype-exotic-objects-setprototypeof-v"></emu-xref>.
+        1. For each Record _slot_ of _entry_.[[SlotValues]], do
+          1. Perform SetFieldNamed(_obj_, _slot_.[[Name]], _slot_.[[Value]]).
+        1. For each element _name_ of _entry_.[[Names]], do
+          1. Perform SetFieldNamed(_realmRecord_.[[Intrinsics]], _name_, _obj_).
+        1. Append _obj_ to _objects_.
+      1. For each Record _entry_ of _entries_, do
+        1. Let _obj_ be _objects_[_entry_.[[Index]]].
+        1. If _entry_.[[Behaviour]] is not ~empty~, then
+          1. Let _la_ be _entry_.[[LengthAttributes]].
+          1. Perform ! DefinePropertyOrThrow(_obj_, *"length"*, PropertyDescriptor { [[Writable]]: _la_.[[Writable]], [[Enumerable]]: _la_.[[Enumerable]], [[Configurable]]: _la_.[[Configurable]] }).
+          1. Let _na_ be _entry_.[[NameAttributes]].
+          1. Perform ! DefinePropertyOrThrow(_obj_, *"name"*, PropertyDescriptor { [[Writable]]: _na_.[[Writable]], [[Enumerable]]: _na_.[[Enumerable]], [[Configurable]]: _na_.[[Configurable]] }).
+        1. For each Record _p_ of PropertyOrder(_obj_, _entry_.[[Properties]]), do
+          1. If PropertyProvided(_p_) is *true*, perform OwnPropertyCreate(_obj_, _p_.[[Key]], IntrinsicPropertyDescriptor(_p_, _objects_), _p_.[[Kind]]).
+        1. Set _obj_.[[Extensible]] to _entry_.[[Extensible]].
+    </emu-alg>
+    <emu-note>
+      <p>The objects are created before any property, so that every property value exists when it is defined; each object after its [[Prototype]]. The order of each object's properties is the host's (PropertyOrder); each object has the specified properties, so they are added as they are (OwnPropertyCreate), not through the object's [[DefineOwnProperty]], and an Array or String exotic object gets its *"length"* property from its clause. *"length"* and *"name"* get the attributes the function's clause specifies after CreateBuiltinFunction creates them (<emu-xref href="#sec-%throwtypeerror%"></emu-xref>); [[Extensible]] is set last, after the properties. This is the literal reading of the erratum CreateIntrinsicsAsyncArgument (readings.emu): CreateBuiltinFunction gets _async_ in _prefix_'s position, as step 2 writes it.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-setdefaultglobalbindings" steps="2" hashes="828da84c299e20ef05a9e0b8047694edd8eec6c8c5245103f0409110ee64eb6f">
+    <emu-alg reading="definition">
+      1. For each Record _p_ of PropertyOrder(_global_, ClauseProperties(_global_, <emu-xref href="#sec-global-object"></emu-xref>)), do
+        1. If PropertyProvided(_p_) is *true*, then
+          1. Let _name_ be _p_.[[Key]].
+          1. If _p_.[[Intrinsic]] is not ~empty~, then
+            1. Let _value_ be RealmIntrinsic(_realmRecord_, _p_.[[Intrinsic]]).
+          1. Else if _p_.[[GlobalThis]] is *true*, then
+            1. Let _value_ be _realmRecord_.[[GlobalEnv]].[[GlobalThisValue]].
+          1. Else,
+            1. Let _value_ be _p_.[[Value]].
+          1. Let _propertyDesc_ be the PropertyDescriptor { [[Value]]: _value_, [[Writable]]: _p_.[[Writable]], [[Enumerable]]: _p_.[[Enumerable]], [[Configurable]]: _p_.[[Configurable]] }.
+          1. Perform ? DefinePropertyOrThrow(_global_, _name_, _propertyDesc_).
+    </emu-alg>
+    <emu-note>
+      <p>Steps 2.a-2.c in one: the properties' order is the host's (PropertyOrder); <emu-xref href="#sec-function-properties-of-the-global-object"></emu-xref>-<emu-xref href="#sec-other-properties-of-the-global-object"></emu-xref> give intrinsic objects, and *"globalThis"* is _realmRecord_.[[GlobalEnv]].[[GlobalThisValue]] (<emu-xref href="#sec-globalthis"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-modulenamespacecreate" steps="8" hashes="4e4dc773969734339f09a1f49b89dadb618a8f018338b9f388767966262265db">
+    <emu-alg reading="definition">
+      1. For each Record _p_ of PropertyOrder(_namespace_, ClauseProperties(_namespace_, <emu-xref href="#sec-module-namespace-objects"></emu-xref>)), do
+        1. Perform OwnPropertyCreate(_namespace_, _p_.[[Key]], PropertyDescriptor { [[Value]]: _p_.[[Value]], [[Writable]]: _p_.[[Writable]], [[Enumerable]]: _p_.[[Enumerable]], [[Configurable]]: _p_.[[Configurable]] }, ~data~).
+    </emu-alg>
+    <emu-note>
+      <p>A module namespace exotic object's [[IsExtensible]] is *false*, so its properties are created directly rather than by [[DefineOwnProperty]].</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-getprototypefromconstructor" steps="1" hashes="e2a55d6c05cb2d8f4e0bcea85e91511c0f67d4bf557dc2fd10721e9370c18ff5">
+    <emu-alg reading="definition">
+      1. Assert: IsIntrinsicName(_intrinsicDefaultProto_) is *true*.
+      1. Assert: The corresponding object must be an intrinsic that is intended to be used as the [[Prototype]] value of an object.
+    </emu-alg>
+    <emu-note>
+      <p>The first sentence is a test of the name; the second states what the caller intends the object for.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-ordinarycreatefromconstructor" steps="1" hashes="e2a55d6c05cb2d8f4e0bcea85e91511c0f67d4bf557dc2fd10721e9370c18ff5">
+    <emu-alg reading="definition">
+      1. Assert: IsIntrinsicName(_intrinsicDefaultProto_) is *true*.
+      1. Assert: The corresponding object must be an intrinsic that is intended to be used as the [[Prototype]] value of an object.
+    </emu-alg>
+    <emu-note>
+      <p>The first sentence is a test of the name; the second states what the caller intends the object for.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-getprototypefromconstructor" steps="6" hashes="2090ae8623a1d5004adf22b7ad923899d4633e9aed1a2e1bbda121617b84909b">
+    <emu-alg reading="definition">
+      1. Return RealmIntrinsic(_realm_, _intrinsicDefaultProto_).
+    </emu-alg>
+    <emu-note>
+      <p>The field of _realm_.[[Intrinsics]] that the name _intrinsicDefaultProto_ identifies, as RealmIntrinsic reads it.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-addrestrictedfunctionproperties" steps="1" hashes="6b608df0b1891d9f4cf7377cfe92d23e8665d7069e8626231000577752dc4564">
+    <emu-alg reading="definition">
+      1. Assert: _realm_.[[Intrinsics]] has a [[%ThrowTypeError%]] field and _realm_.[[Intrinsics]].[[%ThrowTypeError%]] is an Object.
+    </emu-alg>
+    <emu-note>
+      <p>The field exists, and it has been initialized when it holds the object CreateIntrinsics created for it.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-phrase id="ph-type-intrinsic-keys" kind="type" subject="_v_" rule="ht-intrinsic-keys">
+    <emu-pattern>a Record whose field names are intrinsic keys and whose values are objects</emu-pattern>
+    <p>The intrinsic keys are the names IntrinsicObjects() records each object under.</p>
+    <emu-params>_v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not a Record, return *false*.
+      1. Let _keys_ be a new empty List.
+      1. For each Record _entry_ of IntrinsicObjects(), do
+        1. Set _keys_ to the list-concatenation of _keys_ and _entry_.[[Names]].
+      1. For each element _f_ of RecordFieldNames(_v_), do
+        1. If _keys_ does not contain _f_, return *false*.
+        1. If Component(_v_, _f_) is not an Object, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+</emu-clause>

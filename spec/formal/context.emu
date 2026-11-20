@@ -1,0 +1,73 @@
+<emu-clause id="formal-context-reads">
+  <h1>Reads of the Execution Context Stack and the Running Evaluation</h1>
+  <p>Elements of the execution context stack other than the running execution context, the Parse Node being evaluated, and the arguments a built-in function was passed, as the steps name them.</p>
+
+  <emu-primitive id="prim-contextbelowtop" name="ContextBelowTop">
+    <emu-signature>ContextBelowTop(): an execution context or ~empty~</emu-signature>
+    <p>The second to top element of the execution context stack, or ~empty~ if the stack has fewer than two elements (<emu-xref href="#sec-execution-contexts"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-topmostscriptormodulecontext" name="TopmostScriptOrModuleContext">
+    <emu-signature>TopmostScriptOrModuleContext(): an execution context or ~empty~</emu-signature>
+    <p>The topmost execution context on the execution context stack whose ScriptOrModule component is not *null*, or ~empty~ if there is none.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-oncontextstack" name="OnContextStack">
+    <emu-signature>OnContextStack(_ctx_: an execution context): a Boolean</emu-signature>
+    <p>Whether _ctx_ is an element of the execution context stack (<emu-xref href="#sec-execution-contexts"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-currentproduction" name="CurrentProduction">
+    <emu-signature>CurrentProduction(): a Parse Node</emu-signature>
+    <p>The Parse Node being evaluated: of the applications of syntax-directed operations other than Early Errors that have begun and not yet completed, the one begun last.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-passedarguments" name="PassedArguments">
+    <emu-signature>PassedArguments(): a List of ECMAScript language values</emu-signature>
+    <p>The List of arguments that was passed to the running built-in function (<emu-xref href="#sec-built-in-function-objects"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-second-to-top-context" kind="expression">
+    <emu-pattern>the second to top element of the execution context stack</emu-pattern>
+    <p>The text assumes the stack has a second to top element.</p>
+    <emu-alg>
+      1. Let _c_ be ContextBelowTop().
+      1. Assert: _c_ is not ~empty~.
+      1. Return _c_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-topmost-script-or-module-context" kind="expression" meaning="TopmostScriptOrModuleContext()">
+    <emu-pattern>the topmost execution context on the execution context stack whose ScriptOrModule component is not *null*</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-production-being-evaluated" kind="expression" meaning="CurrentProduction()">
+    <emu-pattern>the syntactic production that is being evaluated</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-only-one-argument-passed" kind="condition">
+    <emu-pattern>only one argument was passed</emu-pattern>
+    <emu-alg>
+      1. If the number of elements in PassedArguments() is 1, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-reading clause="sec-getactivescriptormodule" steps="3" hashes="2310e80b61579c1275862cbf354710f79528278a2b434cc9b1c7c0224d712ab4">
+    <emu-alg reading="definition">
+      1. If _executionContext_ is ~empty~, return *null*.
+    </emu-alg>
+    <emu-note>
+      <p>"no such execution context" is the one step 2 looks for; when there is none, step 2's value is ~empty~.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-asyncgeneratoryield" steps="6" hashes="25623bf694fabbecb0d10f07f1a9de94c1db52fa23259147a6d219841cf9a8dc">
+    <emu-alg reading="definition">
+      1. Assert: ContextBelowTop() is not ~empty~.
+    </emu-alg>
+    <emu-note>
+      <p>The stack has at least two elements exactly when it has a second to top element.</p>
+    </emu-note>
+  </emu-reading>
+</emu-clause>

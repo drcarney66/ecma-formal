@@ -1,0 +1,9 @@
+[package]
+name = "spec-gen"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.95"
+description = "ECMA-262's algorithm notation (spec.html's emu-alg steps, headers, equations, rules) parsed into a concrete syntax tree that prints back byte for byte, and emitted as Lean data for lean/Ecma/Gen"
+
+[dependencies]
+jsgrammar = { path = "../jsgrammar" }

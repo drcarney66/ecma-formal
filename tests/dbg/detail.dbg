@@ -1,0 +1,53 @@
+// The machine's detail of a frame: its control and its continuations, innermost first. From
+// OrdinaryCallEvaluateBody 1, ten transitions reach the evaluation of EvaluateBody's second
+// argument: the control is the operand argList, the innermost continuation its place among the operands.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": [{"alg": "OrdinaryCallEvaluateBody", "path": "1"}]}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "OrdinaryCallEvaluateBody", "path": "1"}}}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": []}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step"}}}
+{"send": {"command": "scopes", "arguments": {"frameId": 0}}}
+{"expect": {"type": "response", "command": "scopes", "success": true, "body": {"scopes": [{"name": "Slots"}, {"name": "Step", "variablesReference": "${=step}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${step}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "text", "value": "Return ? EvaluateBody of func.[[ECMAScriptCode]] with arguments func and argList."}, {"name": "algorithm"}, {"name": "secId"}, {"name": "path", "value": "1"}, {"name": "kind"}, {"name": "run"}, {"name": "link"}, {"name": "control", "value": "operand: argList"}, {"name": "continuations", "value": "3", "variablesReference": "${=konts}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${konts}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "0", "value": "operand 2 of 2 of EvaluateBody of FunctionBody : FunctionStatementList[?Yield, ?Await] [18, 27)"}, {"name": "1", "value": "operand 1 of 1 of ? (ReturnIfAbrupt)"}, {"name": "2", "value": "operand 1 of 1 of return the value"}]}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

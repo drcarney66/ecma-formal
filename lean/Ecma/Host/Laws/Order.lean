@@ -1,0 +1,103 @@
+module
+
+public import Ecma.Host.Laws.Basic
+public import Ecma.Host.ForIn
+
+@[expose] public section
+
+/-!
+# The laws of sorting and enumeration
+
+The order SortIndexedProperties sorts in, the steps of EnumerateObjectProperties, and the order of the intrinsics' properties.
+-/
+
+namespace Ecma
+
+/-- SortStep's answer to call the comparator on the elements at `j` and `k`, the host's state then `st`: a new
+List « _j_, _k_, _st_ ». -/
+def sortCall {M : Model} (j k : Nat) (st : Val M) : Run M (Val M) :=
+  listOf [.math (M.ofNat j), .math (M.ofNat k), st]
+
+/-- SortStep's answer to finish with the order `σ`: a new Record whose [[Value]] is a new List of `σ`. -/
+def sortDone {M : Model} (σ : List Nat) : Run M (Val M) := do
+  let l ← listOf (σ.map fun i => .math (M.ofNat i))
+  return .ref (← alloc (.record Known.sRecord (M.recSet M.recEmpty Known.fValue l)))
+
+variable {M : Model}
+
+/-- The order a comparator's result gives (§23.1.3.30.1 <C, =C, >C): none for *NaN* and for ±∞,
+whose ℝ is not defined (§5.2.6). -/
+def cmpOrder (r : M.Num) : Option Ordering :=
+  match M.numView r with
+  | .posZero | .negZero => some .eq
+  | .finite m => some (if M.lt m (M.ofNat 0) then .lt else .gt)
+  | _ => none
+
+/-- §23.1.3.30.1: `c` is a consistent comparator for the elements at the indices less than `n`: a
+non-*NaN* Number for each pair, =C reflexive and symmetric, =C, <C and >C transitive. -/
+def consistentCmp (n : Nat) (c : Nat → Nat → M.Num) : Prop :=
+  (∀ a b, a < n → b < n → cmpOrder (c a b) ≠ none) ∧
+  (∀ a, a < n → cmpOrder (c a a) = some .eq) ∧
+  (∀ a b, a < n → b < n → cmpOrder (c a b) = some .eq → cmpOrder (c b a) = some .eq) ∧
+  ∀ (o : Ordering) a b d, a < n → b < n → d < n →
+    cmpOrder (c a b) = some o → cmpOrder (c b d) = some o → cmpOrder (c a d) = some o
+
+/-- §23.1.3.30.1: the order `σ` (new[_i_] is old[σ[_i_]], so π(_j_) is _j_'s index in `σ`) puts each
+element before every element it is <C, and before every later element it is =C (stable). -/
+def sortOrderOk (n : Nat) (c : Nat → Nat → M.Num) (σ : List Nat) : Prop :=
+  ∀ j k, j < n → k < n →
+    (cmpOrder (c j k) = some .lt → σ.idxOf j < σ.idxOf k) ∧
+    (j < k → cmpOrder (c j k) = some .eq → σ.idxOf j < σ.idxOf k)
+
+/-- One call of a sort of `n` elements: SortStep, given the host's state `st` and the result `res`, asks for a
+call on the elements at `j` and `k`, with the state `st'` it is given back. -/
+def sortCallStep (H : Host M) (n : Nat) (st res st' : Val M) (j k : Nat) : Prop :=
+  ∃ s r s', H.choice Known.pSortStep [.math (M.ofNat n), st, res] s = .ok r s' ∧ sortCall j k st' s = .ok r s'
+
+/-- A sort of `n` elements reaches SortStep's arguments `st` (the host's state) and `res` (the last call's
+result) by the calls `h`, oldest first, each with the Number it returned: it starts from ~empty~ and ~empty~,
+and each call SortStep asks for returns any Number. -/
+inductive SortReach (H : Host M) (n : Nat) : Val M → Val M → List (Nat × Nat × M.Num) → Prop where
+  | start : SortReach H n (.enum Known.eEmpty) (.enum Known.eEmpty) []
+  | call {st res h st' j k} (x : M.Num) : SortReach H n st res h → sortCallStep H n st res st' j k →
+      SortReach H n st' (.num x) (h ++ [(j, k, x)])
+
+/-- A sort of `n` elements goes from SortStep's arguments `b` to `a`: from arguments the sort reaches, a call
+whose result is any Number. -/
+def sortNext (H : Host M) (n : Nat) (a b : Val M × Val M) : Prop :=
+  (∃ h, SortReach H n b.1 b.2 h) ∧ ∃ j k x, sortCallStep H n b.1 b.2 a.1 j k ∧ a.2 = .num x
+
+/-- The laws of sorting and enumeration. -/
+structure Host.OrderLaws (H : Host M) : Prop where
+  /-- sec-sortindexedproperties step 4 and the paragraph after it:
+  "Sort items using an implementation-defined sequence of calls to sortCompare."
+  "Unless the sort order is specified to be implementation-defined, it must satisfy all of the following conditions"
+  Reading: at the host's state and the last result a sort of `n` elements reaches by the calls `h`, SortStep asks
+  for a call on two indices less than `n`, or answers a permutation that, for every consistent comparator giving
+  every result in `h`, meets its conditions; otherwise the order is the host's. -/
+  sortStep : ∀ n st res h s r s', SortReach H n st res h →
+    H.choice Known.pSortStep [.math (M.ofNat n), st, res] s = .ok r s' →
+    (∃ j k st', j < n ∧ k < n ∧ sortCall j k st' s = .ok r s') ∨
+    ∃ σ, σ.Perm (List.range n) ∧
+      (∀ c, consistentCmp n c → (∀ e ∈ h, c e.1 e.2.1 = e.2.2) → sortOrderOk n c σ) ∧ sortDone σ s = .ok r s'
+  /-- sec-sortindexedproperties steps 4–5:
+  "Sort items using an implementation-defined sequence of calls to sortCompare."
+  Reading: the sequence is finite: a sort makes finitely many calls, whatever their results. -/
+  sortStepEnds : ∀ n, WellFounded (sortNext H n)
+  /-- sec-enumerate-object-properties:
+  "The mechanics and order of enumerating the properties is not specified but must conform to the rules specified below."
+  "the iterator must behave as would the iterator given by CreateForInIterator(obj) until one of the following occurs"
+  Reading: after a history that obeyed the rules (`ForInRun`), ForInStep answers an action that obeys them
+  (`ForInRules`); and CreateForInIterator(_obj_)'s next action where no object of the chain is exotic, none
+  changed shape since the enumeration began (`State.shapeLog`), and every action so far was its. -/
+  forInStep : ∀ obj h s r s', H.choice Known.pForInStep [.obj obj, h] s = .ok r s' → ∀ es,
+    forInHist s h = some es → ForInRun obj es → ∃ act, actRecord act s = .ok r s' ∧ ForInRules obj es act ∧
+      (cfiApplies s obj h es → act = cfiNext obj es)
+  /-- sec-createintrinsics step 2:
+  "Set fields of realmRecord.[[Intrinsics]] with the values listed in"
+  Reading: PropertyOrder, the order an intrinsic's properties are created in, answers a new List of the given
+  properties, each once. -/
+  propertyOrder : ∀ o l s r s', H.choice Known.pPropertyOrder [o, l] s = .ok r s' →
+    ∃ xs ys, listElems s l = some xs ∧ ys.Perm xs ∧ listOf ys s = .ok r s'
+
+end Ecma

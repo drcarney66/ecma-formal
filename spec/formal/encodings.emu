@@ -1,0 +1,174 @@
+<emu-clause id="formal-encodings">
+  <h1>Byte Encodings</h1>
+  <p>NumericToRawBytes's encoding steps in the notation's own forms: each gives its bytes by two operations, the IEEE 754-2019 interchange encoding of a Number and the little-endian bytes of an integer, with the step's further sentences (the byte order, the NaN encoding) folded in.</p>
+
+  <emu-primitive id="prim-nanencoding" name="NaNEncoding">
+    <emu-signature>NaNEncoding(_value_: *NaN*, _w_: a positive integer, _p_: a positive integer): a non-negative integer</emu-signature>
+    <p>The host's choice of an IEEE 754-2019 binary interchange format Not-a-Number encoding, with an exponent field of _w_ bits and a precision of _p_ bits, for _value_ (<emu-xref href="#sec-numerictorawbytes"></emu-xref>): its exponent field is all ones and its trailing significand field is not zero. The same arguments always give the same encoding.</p>
+  </emu-primitive>
+
+  <emu-clause id="formal-ieeebits" type="abstract operation">
+    <h1>
+      IEEEBits (
+        _value_: a Number,
+        _w_: a positive integer,
+        _p_: a positive integer,
+      ): a non-negative integer
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The bits, as an integer, of the IEEE 754-2019 binary interchange format with an exponent field of _w_ bits and a precision of _p_ bits (binary16: 5 and 11; binary32: 8 and 24; binary64: 11 and 53) that encodes _value_, which that format represents exactly; a NaN's encoding is the host's choice.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _bias_ be 2<sup>_w_ - 1</sup> - 1.
+      1. If _value_ is *NaN*, return NaNEncoding(_value_, _w_, _p_).
+      1. If _value_ is *-0*<sub>𝔽</sub> or _value_ &lt; *-0*<sub>𝔽</sub>, let _sign_ be 2<sup>_w_ + _p_ - 1</sup>; else let _sign_ be 0.
+      1. If _value_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, return _sign_ + (2<sup>_w_</sup> - 1) × 2<sup>_p_ - 1</sup>.
+      1. Let _a_ be abs(ℝ(_value_)).
+      1. If _a_ = 0, return _sign_.
+      1. Let _e_ be 0.
+      1. Repeat, while 2<sup>_e_</sup> > _a_,
+        1. Set _e_ to _e_ - 1.
+      1. Repeat, while 2<sup>_e_ + 1</sup> ≤ _a_,
+        1. Set _e_ to _e_ + 1.
+      1. If _e_ &lt; 1 - _bias_, return _sign_ + _a_ / 2<sup>2 - _bias_ - _p_</sup>.
+      1. Return _sign_ + (_e_ + _bias_) × 2<sup>_p_ - 1</sup> + (_a_ / 2<sup>_e_ - _p_ + 1</sup> - 2<sup>_p_ - 1</sup>).
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-littleendianbytes" type="abstract operation">
+    <h1>
+      LittleEndianBytes (
+        _n_: a non-negative integer,
+        _size_: a non-negative integer,
+      ): a List of byte values
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The _size_ bytes of the binary encoding of _n_, least significant first.</dd>
+    </dl>
+    <emu-alg>
+      1. Assert: _n_ &lt; 2<sup>8 × _size_</sup>.
+      1. Let _bytes_ be a new empty List.
+      1. Let _m_ be _n_.
+      1. Repeat _size_ times:
+        1. Append _m_ modulo 256 to _bytes_.
+        1. Set _m_ to floor(_m_ / 256).
+      1. Return _bytes_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-reading clause="sec-numerictorawbytes" steps="1.a" hashes="eacbdf1a9b9c72af6faf186b9f9f054fccefa718b75095d0a73bfaf9088f428c">
+    <emu-alg reading="definition">
+      1. Let _rawBytes_ be LittleEndianBytes(IEEEBits(the result of converting _value_ to IEEE 754-2019 binary16 format using roundTiesToEven mode, 5, 11), 2).
+    </emu-alg>
+    <emu-note>
+      <p>The step allows any binary16 NaN encoding for *NaN*, the same each time; the host chooses it (NaNEncoding).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-numerictorawbytes" steps="2.a" hashes="8de29fdfc94bfacfa8b6fe54dedf748eb1970c768c6fb244598ecd2d6302b02e">
+    <emu-alg reading="definition">
+      1. Let _rawBytes_ be LittleEndianBytes(IEEEBits(the result of converting _value_ to IEEE 754-2019 binary32 format using roundTiesToEven mode, 8, 24), 4).
+    </emu-alg>
+    <emu-note>
+      <p>The step allows any binary32 NaN encoding for *NaN*, the same each time; the host chooses it (NaNEncoding).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-numerictorawbytes" steps="3.a" hashes="87e63cbc79dba9275de977dff6833baddea5d5c4c9609bfe52cd225f34650d77">
+    <emu-alg reading="definition">
+      1. Let _rawBytes_ be LittleEndianBytes(IEEEBits(_value_, 11, 53), 8).
+    </emu-alg>
+    <emu-note>
+      <p>The step allows any binary64 NaN encoding for *NaN*, the same each time; the host chooses it (NaNEncoding).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-numerictorawbytes" steps="4.d.i" hashes="48413391a2f858a855c80f4251f7e1073f04c35ad61c7eb5c2981a607783bf06">
+    <emu-alg reading="definition">
+      1. Let _rawBytes_ be LittleEndianBytes(_intValue_, _n_).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-numerictorawbytes" steps="4.e.i" hashes="8cb5bdb198525513e72dbf48e20efc23d41e353c6de816eccd65ab027983c354">
+    <emu-alg reading="definition">
+      1. Let _rawBytes_ be LittleEndianBytes(_intValue_ modulo 2<sup>8 × _n_</sup>, _n_).
+    </emu-alg>
+  </emu-reading>
+  <emu-reading clause="sec-decodefulllengthbase64chunk" steps="1" hashes="1141a55473ac28086cd170ffb86d10b2bf590d961ae399800bf4acd2158e173e">
+    <emu-alg reading="definition">
+      1. Let _standard_ be *"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"*.
+      1. Let _n_ be 0.
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; 4, in ascending order, do
+        1. Let _v_ be StringIndexOf(_standard_, the substring of _chunk_ from _i_ to _i_ + 1, 0).
+        1. Assert: _v_ is not ~not-found~.
+        1. Set _n_ to _n_ × 64 + _v_.
+      1. Let _byteSequence_ be « floor(_n_ / 65536), floor(_n_ / 256) modulo 256, _n_ modulo 256 ».
+    </emu-alg>
+    <emu-note>
+      <p>RFC 4648 section 4 encodes each 24-bit group, most significant bit first, as four 6-bit values indexed into its alphabet (Table 1); decoding takes each character's index. FromBase64 maps the base64url alphabet onto this one before it decodes.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-clause id="formal-base64encode" type="abstract operation">
+    <h1>
+      Base64Encode (
+        _bytes_: a List of byte values,
+        _alphabet_: a String,
+        _omitPadding_: a Boolean,
+      ): a String
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The encoding of _bytes_ by RFC 4648 section 4 over the 64-character _alphabet_: each group of three bytes, most significant bit first, gives four characters, each the alphabet's character at a 6-bit value; a final group of one or two bytes is filled with zero bits on the right to two or three characters, followed by two or one *"="* unless _omitPadding_ is *true*.</dd>
+    </dl>
+    <emu-alg>
+      1. Assert: the length of _alphabet_ is 64.
+      1. Let _out_ be the empty String.
+      1. Let _len_ be the number of elements in _bytes_.
+      1. Let _i_ be 0.
+      1. Repeat, while _i_ &lt; _len_,
+        1. Let _k_ be min(3, _len_ - _i_).
+        1. Let _n_ be 0.
+        1. For each integer _j_ such that 0 ≤ _j_ &lt; 3, in ascending order, do
+          1. If _j_ &lt; _k_, set _n_ to _n_ × 256 + _bytes_[_i_ + _j_]; else set _n_ to _n_ × 256.
+        1. For each integer _j_ such that 0 ≤ _j_ &lt; 4, in ascending order, do
+          1. If _j_ ≤ _k_, then
+            1. Let _v_ be floor(_n_ / 2<sup>6 × (3 - _j_)</sup>) modulo 64.
+            1. Set _out_ to the string-concatenation of _out_ and the substring of _alphabet_ from _v_ to _v_ + 1.
+          1. Else if _omitPadding_ is *false*, then
+            1. Set _out_ to the string-concatenation of _out_ and *"="*.
+        1. Set _i_ to _i_ + 3.
+      1. Return _out_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-reading clause="sec-uint8array.prototype.tobase64" steps="9.a" hashes="9e3577230b0b075b7580e3573d3349f7cc7e51e784c16e4b85690310cade4fe6">
+    <emu-alg reading="definition">
+      1. Let _outAscii_ be StringToCodePoints(Base64Encode(_toEncode_, *"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"*, _omitPadding_)).
+    </emu-alg>
+    <emu-note>
+      <p>The String literal is the base64 alphabet of RFC 4648 section 4 (Table 1), the character for each 6-bit value at its index; *"="* is its pad character.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-uint8array.prototype.tobase64" steps="10.b" hashes="b1d8420e656b1d71e99dbedb968c9a9851bc858c26893d703e6be57a48bcb78b">
+    <emu-alg reading="definition">
+      1. Let _outAscii_ be StringToCodePoints(Base64Encode(_toEncode_, *"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"*, _omitPadding_)).
+    </emu-alg>
+    <emu-note>
+      <p>The String literal is the base64url alphabet of RFC 4648 section 5 (Table 2): the base64 alphabet with *"-"* and *"_"* for values 62 and 63; the encoding is otherwise that of section 4, with the same pad character *"="*.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-numerictorawbytes" steps="4.b" hashes="3ea81fa3cd1e4b9897d0a6f9fe06d666337e22708f990d98a008960ddf089018">
+    <emu-alg reading="definition">
+      1. Let _conversionOperation_ be the Conversion Operation value specified in <emu-xref href="#table-the-typedarray-constructors"></emu-xref> for Element Type _type_.
+    </emu-alg>
+    <emu-note>
+      <p>The abstract operation named in the row's Conversion Operation cell is that cell's value.</p>
+    </emu-note>
+  </emu-reading>
+
+</emu-clause>

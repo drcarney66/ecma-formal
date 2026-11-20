@@ -1,0 +1,140 @@
+module
+
+public import Ecma.Grammar.Core
+
+@[expose] public section
+
+/-!
+# Strict mode code (§11.2.2)
+
+`strictCode V up t`: the source text the Parse Node `t` matches is strict mode code by the tree it is
+in, `up` being `t`'s ancestors, nearest first (sec-strict-mode-code). Module code, a |ClassDeclaration|
+or |ClassExpression|, global or eval code or a parsed function body whose Directive Prologue contains a
+Use Strict Directive (`prologueStrict`, sec-directive-prologues-and-the-use-strict-directive), and
+function code by its own Directive Prologue or the code containing its function form. A function form's
+node and a method's |ClassElementName| are the containing code. Strictness from outside the parse (eval
+code of a direct eval contained in strict mode code) is the parse context's, not the tree's.
+
+One definition, read through a view of a tree's Parse Nodes (`NodeView`): the parse relation reads it
+over its derivation trees (`Grammar.StrictCode`, for `NonStrictOk`), the machine over the model's Parse
+Nodes (the primitives StrictModeCode and HasUseStrictDirective, `Ecma.Prims.Nodes`).
+-/
+
+namespace Ecma.Grammar
+
+/-- What §11.2.1 and §11.2.2 read of a tree's Parse Nodes: a node's nonterminal, its children that are
+Parse Nodes of nonterminals (left to right), the span of source text it matched, whether that source
+text is a given sequence of code points, and a bound on the depth of the tree below it (more than each
+child's: the walks below go no deeper). -/
+structure NodeView (N : Type) where
+  isA : N → NT → Bool
+  kids : N → List N
+  span : N → Nat × Nat
+  textIs : N → List Nat → Bool
+  height : N → Nat
+
+/-- §11.2.2's function forms, each with function code of its own. -/
+def functionForms : List NT :=
+  [.FunctionDeclaration, .FunctionExpression, .GeneratorDeclaration, .GeneratorExpression,
+    .AsyncFunctionDeclaration, .AsyncFunctionExpression, .AsyncGeneratorDeclaration,
+    .AsyncGeneratorExpression, .MethodDefinition, .ArrowFunction, .AsyncArrowFunction]
+
+/-- The forms all parts of which are strict mode code. -/
+def classForms : List NT := [.ClassDeclaration, .ClassExpression]
+
+/-- The nonterminals from a function form down to its |FunctionBody|. -/
+def bodyPath : List NT :=
+  [.FunctionBody, .GeneratorBody, .AsyncFunctionBody, .AsyncGeneratorBody, .ConciseBody,
+    .AsyncConciseBody, .GeneratorMethod, .AsyncMethod, .AsyncGeneratorMethod]
+
+/-- The goals of a parse whose code is a function's body (CreateDynamicFunction's). -/
+def bodyGoals : List NT := [.FunctionBody, .GeneratorBody, .AsyncFunctionBody, .AsyncGeneratorBody]
+
+/-- The code points of a Use Strict Directive's |StringLiteral|: `"use strict"` and `'use strict'`. -/
+def useStrictTexts : List (List Nat) :=
+  ["\"use strict\"", "'use strict'"].map fun s => s.toList.map Char.toNat
+
+variable {N : Type} (V : NodeView N)
+
+/-- The node is an instance of one of the nonterminals. -/
+def NodeView.isIn (ns : List NT) (t : N) : Bool := ns.any (V.isA t)
+
+/-- A node of `m` spans `sp` within `t`, `t` included, each node on the way spanning it too, within
+depth `d`. -/
+def oneNode (m : NT) (sp : Nat × Nat) : Nat → N → Bool
+  | 0, _ => false
+  | d + 1, t => V.span t == sp && (V.isA t m || (V.kids t).any (oneNode m sp d))
+
+/-- §11.2.1: the |StatementListItem| `item` is a directive, an |ExpressionStatement| whose |Expression|
+is one |StringLiteral| token: `some u`, `u` whether it is a Use Strict Directive (its |StringLiteral|
+exactly `"use strict"` or `'use strict'`); none for another item. -/
+def directive (d : Nat) (item : N) : Option Bool :=
+  match V.kids item with
+  | [s] => if !V.isA s .Statement then none else match V.kids s with
+    | [es] => if !V.isA es .ExpressionStatement then none else match V.kids es with
+      | [e] =>
+        if V.isA e .Expression && oneNode V .StringLiteral (V.span e) d e then
+          some (useStrictTexts.any (V.textIs e))
+        else none
+      | _ => none
+    | _ => none
+  | _ => none
+
+/-- The |StatementListItem|s of `t` that are within no other, in source text order, read until one
+decides: `some true` at a Use Strict Directive, `some false` at an item that is no directive; none where
+each is a directive and none a Use Strict Directive. Within depth `d`. -/
+def prologueScan : Nat → N → Option Bool
+  | 0, _ => some false
+  | d + 1, t =>
+    if V.isA t .StatementListItem then
+      match directive V d t with
+      | some true => some true
+      | some false => none
+      | none => some false
+    else (V.kids t).findSome? (prologueScan d)
+
+/-- §11.2.1: the Directive Prologue of `body`, the longest initial sequence of its |StatementListItem|s
+that are directives, contains a Use Strict Directive. -/
+def prologueStrict (body : N) : Bool := prologueScan V (V.height body) body == some true
+
+/-- The |FunctionBody| of a function form or of a body goal's root (none for a concise body), within
+depth `d`. -/
+def bodyOf : Nat → N → Option N
+  | 0, _ => none
+  | d + 1, t =>
+    if V.isA t .FunctionBody then some t
+    else (V.kids t).findSome? fun k => if V.isIn bodyPath k then bodyOf d k else none
+
+/-- The function form `f`'s body begins with a Directive Prologue that contains a Use Strict Directive. -/
+def bodyStrict (f : N) : Bool := (bodyOf V (V.height f) f).any (prologueStrict V)
+
+/-- Down the path from a node to `t`, `s` the strictness of the code containing the path's first:
+a class form's parts are strict; below a function form its function code is, by its body or `s`,
+but for a method's |ClassElementName|, which is the code containing the method. -/
+def strictDown (s : Bool) : List N → Bool
+  | [] => s
+  | [t] => s || V.isIn classForms t
+  | f :: rest =>
+    if V.isIn classForms f then true
+    else if V.isIn functionForms f then
+      if V.isA f .MethodDefinition &&
+          (rest.takeWhile (!V.isIn (functionForms ++ classForms) ·)).any (V.isA · .ClassElementName) then
+        strictDown s rest
+      else strictDown (s || bodyStrict V f) rest
+    else strictDown s rest
+
+/-- §11.2.2 ("Code is interpreted as strict mode code in the following situations"), by the tree: the
+source text `t` matches is strict mode code, `up` being its ancestors nearest first: by the code of the
+root (the goal: a |Module|, a |Script|'s global or eval code, a parsed function body) and the forms from
+it down to `t`. -/
+def strictCode (up : List N) (t : N) : Bool :=
+  match up.reverse ++ [t] with
+  | [] => false
+  | root :: path =>
+    let top :=
+      if V.isA root .Module then true
+      else if V.isA root .Script then prologueStrict V root
+      else V.isIn bodyGoals root && bodyStrict V root
+    strictDown V top (root :: path)
+
+end Ecma.Grammar

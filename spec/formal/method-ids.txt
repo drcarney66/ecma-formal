@@ -1,0 +1,22 @@
+# The concrete-method name ids (`MethodId`; `Ecma.Gen.methods`), by the method's name.
+# The generator gives a name met its number here and a new one the next unused number, and writes this file
+# (scripts/gen_spec.py --write); one the text no longer has keeps its number, marked retired.
+# Do not renumber or reuse a line by hand.
+0	GetBindingValue
+1	SetMutableBinding
+2	InitializeBinding
+3	CreateMutableBinding
+4	HasBinding
+5	CreateImmutableBinding
+6	DeleteBinding
+7	HasThisBinding
+8	GetThisBinding
+9	ResolveExport
+10	WithBaseObject
+11	HasSuperBinding
+12	LoadRequestedModules
+13	Link
+14	Evaluate
+15	InitializeEnvironment
+16	ExecuteModule
+17	GetExportedNames

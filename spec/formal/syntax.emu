@@ -1,0 +1,760 @@
+<emu-clause id="formal-syntax">
+  <h1>Parse Nodes and Productions</h1>
+  <p>The phrases that find Parse Nodes inside a Parse Node, by the instances of a grammar symbol or production among the Parse Nodes it contains, and strict mode code with the Directive Prologue's Use Strict Directive.</p>
+
+  <emu-primitive id="prim-parsenodeswithin" name="ParseNodesWithin">
+    <emu-signature>ParseNodesWithin(_node_: a Parse Node): a List of Parse Nodes</emu-signature>
+    <p>A new List of _node_ and the Parse Nodes of nonterminals that it contains, in source text order with a node before its children (the model's descendants of _node_, after _node_); « _node_ » for a terminal's Parse Node. The Parse Nodes contained within _node_ include _node_: CountLeftCapturingParensWithin(|Atom|) of an |Atom| that is itself a left-capturing parenthesis counts it, as RepeatMatcher's clearing of the captures of the quantified |Atom| needs. Every phrase that reads the List asks for instances of a nonterminal or a production, so terminals' Parse Nodes are not listed.</p>
+  </emu-primitive>
+
+  <emu-clause id="formal-outermostinstances" type="abstract operation">
+    <h1>
+      OutermostInstances (
+        _symbol_: a grammar symbol,
+        _node_: a Parse Node,
+      ): a List of Parse Nodes
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The Parse Nodes that _node_ contains, other than _node_, that are instances of _symbol_ and are not contained within another such Parse Node, in source text order.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _found_ be a new empty List.
+      1. For each child node _child_ of _node_, do
+        1. If _child_ is an instance of _symbol_, append _child_ to _found_.
+        1. Else, set _found_ to the list-concatenation of _found_ and OutermostInstances(_symbol_, _child_).
+      1. Return _found_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-directlycontaininglist" type="abstract operation">
+    <h1>
+      DirectlyContainingList (
+        _node_: a Parse Node,
+        _symbol_: a nonterminal,
+      ): a Parse Node or ~empty~
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The instance of the list nonterminal _symbol_ that _node_ is directly contained in, or ~empty~ if there is none: _node_ is one of the list's items through productions with a single child node only (a |FunctionDeclaration| through |HoistableDeclaration|, |Declaration| and |StatementListItem|), and the list is the outermost of its own recursion.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _list_ be NearestEnclosing(_node_, « _symbol_ »).
+      1. If _list_ is ~empty~, return ~empty~.
+      1. Let _m_ be Parent(_node_).
+      1. Repeat, while _m_ is not _list_,
+        1. If the number of elements in ChildNodes(_m_) is not 1, return ~empty~.
+        1. Set _m_ to Parent(_m_).
+      1. Repeat, while Parent(_list_) is an instance of _symbol_,
+        1. Set _list_ to Parent(_list_).
+      1. Return _list_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-phrase id="ph-annexb-foreach" kind="step" rule="annexb-foreach">
+    <emu-pattern>For each _nt_ _d_ that is directly contained in the _sl_ of any _alts_ _x_ such that _root_ Contains _y_ is *true*, do</emu-pattern>
+    <p>The List the step's nested steps run over, _d_ bound to each element in turn: each instance of _nt_, in source text order, that is directly contained (DirectlyContainingList) in the _sl_ child of some Parse Node _x_ that is an instance of an element of _alts_ and that _root_ Contains (_y_ is the same variable as _x_). "Any" ranges over the Parse Nodes within _root_ (ParseNodesWithin), the only ones Contains reaches; for a node of B.3.3's productions, those of the |IfStatement| it is processed as (ParseNodesWithinProcessed), which Contains reads in its place.</p>
+    <emu-params>_nt_: a nonterminal, _d_: anything, _sl_: a nonterminal, _alts_: a List of nonterminals, _x_: anything, _root_: a Parse Node, _y_: anything</emu-params>
+    <emu-alg>
+      1. Let _found_ be a new empty List.
+      1. For each element _n_ of ParseNodesWithinProcessed(_root_), do
+        1. If _n_ is an instance of _nt_, then
+          1. Let _list_ be DirectlyContainingList(_n_, _sl_).
+          1. If _list_ is not ~empty~, then
+            1. Let _owner_ be Parent(_list_).
+            1. For each element _alt_ of _alts_, do
+              1. If _owner_ is an instance of _alt_ and _root_ Contains _owner_ is *true*, append _n_ to _found_.
+      1. Return _found_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-node-within" kind="expression" rule="node-within-the">
+    <emu-pattern>the _nt_ Parse Node contained within _node_</emu-pattern>
+    <p>The definite article: _node_ contains exactly one instance of _nt_.</p>
+    <emu-params>_nt_: a nonterminal, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Let _found_ be a new empty List.
+      1. For each element _n_ of ParseNodesWithin(_node_), do
+        1. If _n_ is an instance of _nt_, append _n_ to _found_.
+      1. Assert: the number of elements in _found_ is 1.
+      1. Return _found_[0].
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-first-node-within" kind="expression" rule="node-within-first">
+    <emu-pattern>the first _nt_ Parse Node contained within _node_</emu-pattern>
+    <emu-params>_nt_: a nonterminal, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Let _found_ be a new empty List.
+      1. For each element _n_ of ParseNodesWithin(_node_), do
+        1. If _n_ is an instance of _nt_, append _n_ to _found_.
+      1. Assert: _found_ is not empty.
+      1. Return _found_[0].
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-second-node-within" kind="expression" rule="node-within-second">
+    <emu-pattern>the second _nt_ Parse Node contained within _node_</emu-pattern>
+    <emu-params>_nt_: a nonterminal, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Let _found_ be a new empty List.
+      1. For each element _n_ of ParseNodesWithin(_node_), do
+        1. If _n_ is an instance of _nt_, append _n_ to _found_.
+      1. Assert: the number of elements in _found_ ≥ 2.
+      1. Return _found_[1].
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-count-nodes-within" kind="expression" rule="count-nodes-within">
+    <emu-pattern>the number of _p_ Parse Nodes contained within _node_</emu-pattern>
+    <emu-params>_p_: a production, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Let _count_ be 0.
+      1. For each element _n_ of ParseNodesWithin(_node_), do
+        1. If _n_ is an instance of _p_, set _count_ to _count_ + 1.
+      1. Return _count_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-count-nodes-before" kind="expression" rule="count-nodes-before">
+    <emu-pattern>the number of _p_ Parse Nodes contained within _root_ that either occur before _a_ or contain _b_</emu-pattern>
+    <p>A Parse Node occurs before _a_ when it precedes _a_ in source text order with a node before its children and does not contain _a_; a Parse Node does not contain itself (CountLeftCapturingParensBefore(|Atom|) does not count the |Atom|, whose capture is the next).</p>
+    <emu-params>_p_: a production, _root_: a Parse Node, _a_: a Parse Node, _b_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Let _nodes_ be ParseNodesWithin(_root_).
+      1. Assert: _nodes_ contains _a_.
+      1. Let _count_ be 0.
+      1. Let _seenA_ be *false*.
+      1. For each element _n_ of _nodes_, do
+        1. If _n_ is _a_, set _seenA_ to *true*.
+        1. If _n_ is an instance of _p_, then
+          1. Let _within_ be ParseNodesWithin(_n_).
+          1. Let _occursBefore_ be *false*.
+          1. If _seenA_ is *false* and _within_ does not contain _a_, set _occursBefore_ to *true*.
+          1. Let _containsB_ be *false*.
+          1. If _n_ is not _b_ and _within_ contains _b_, set _containsB_ to *true*.
+          1. If _occursBefore_ is *true* or _containsB_ is *true*, set _count_ to _count_ + 1.
+      1. Return _count_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-contains-node" kind="predicate" subject="_node_" rule="contains-node-a" alternatives="all">
+    <emu-pattern>contains a _nt_ Parse Node</emu-pattern>
+    <p>"a" and "an" are one article. A Parse Node contains the Parse Nodes contained within it other than itself.</p>
+    <emu-params>_nt_: a nonterminal, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. For each element _n_ of ParseNodesWithin(_node_), do
+        1. If _n_ is not _node_ and _n_ is an instance of _nt_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-contains-node" kind="predicate" subject="_node_" rule="not-contains-node-a" alternatives="all">
+    <emu-pattern>does not contain a _nt_ Parse Node</emu-pattern>
+    <p>"a" and "an" are one article.</p>
+    <emu-params>_nt_: a nonterminal, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. For each element _n_ of ParseNodesWithin(_node_), do
+        1. If _n_ is not _node_ and _n_ is an instance of _nt_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-contains-two-nodes" kind="predicate" subject="_node_" rule="not-contains-node-two">
+    <emu-pattern>does not contain two _nt_ Parse Nodes</emu-pattern>
+    <emu-params>_nt_: a nonterminal, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Let _count_ be 0.
+      1. For each element _n_ of ParseNodesWithin(_node_), do
+        1. If _n_ is not _node_ and _n_ is an instance of _nt_, set _count_ to _count_ + 1.
+      1. If _count_ ≥ 2, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-nt-of-a" kind="predicate" subject="_x_" rule="nt-of-a" alternatives="all">
+    <emu-pattern>is the _a_ of a _b_</emu-pattern>
+    <p>"a" and "an" are one article. _x_ is a child of a _b_ Parse Node, its _a_ child; that Parse Node, a _b_ containing _x_ with nothing between, is the nearest _b_ that contains _x_.</p>
+    <emu-params>_a_: a nonterminal, _b_: a nonterminal, _x_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Let _p_ be NearestEnclosing(_x_, « _b_ »).
+      1. If _p_ is ~empty~, return *false*.
+      1. For each child node _c_ of _p_, do
+        1. If _c_ is _x_ and _x_ is an instance of _a_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-items-in" kind="expression" rule="items-in">
+    <emu-pattern>the List of _nt_ items in _node_, in source text order</emu-pattern>
+    <p>The items of a list are its outermost instances of _nt_: an item's own Parse Nodes (a nested list's items among them) are not the list's.</p>
+    <emu-params>_nt_: a nonterminal, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Return OutermostInstances(_nt_, _node_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-nt-var" kind="expression" rule="nt-var">
+    <emu-pattern>_nt_ _x_</emu-pattern>
+    <emu-params>_nt_: a nonterminal, _x_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Assert: _x_ is an instance of _nt_.
+      1. Return _x_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-primitive id="prim-hasusestrictdirective" name="HasUseStrictDirective">
+    <emu-signature>HasUseStrictDirective(_body_: a |FunctionBody| or |ScriptBody| Parse Node): a Boolean</emu-signature>
+    <p>Whether the Directive Prologue of _body_ contains a Use Strict Directive (<emu-xref href="#sec-directive-prologues-and-the-use-strict-directive"></emu-xref>): the Directive Prologue is the longest initial sequence of the |StatementListItem|s of _body_ that are an |ExpressionStatement| whose |Expression| is one |StringLiteral| token, and a Use Strict Directive is one whose |StringLiteral| is exactly the code points `"use strict"` or `'use strict'`.</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-use-strict" kind="condition" rule="use-strict">
+    <emu-pattern>the Directive Prologue of _body_ contains a Use Strict Directive</emu-pattern>
+    <emu-params>_body_: a |FunctionBody| or |ScriptBody| Parse Node</emu-params>
+    <emu-alg>
+      1. Return HasUseStrictDirective(_body_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-primitive id="prim-strictmodecode" name="StrictModeCode">
+    <emu-signature>StrictModeCode(_node_: a Parse Node): a Boolean</emu-signature>
+    <p>Whether the source text matched by _node_ is strict mode code (<emu-xref href="#sec-strict-mode-code"></emu-xref>), by the code it is part of (<emu-xref href="#sec-types-of-source-code"></emu-xref>): strict from outside when the parser invocation that made _node_ was given that its source text is strict (StrictFromOutside); else by the tree _node_ is in, through every cover a parse of it is a reparse of. Module code and all parts of a |ClassDeclaration| or |ClassExpression| are strict mode code; global code and eval code when the |Script|'s Directive Prologue contains a Use Strict Directive; function code when the function form's body does, or the code containing the form is strict mode code; and the body of a function that CreateDynamicFunction parses on its own when its Directive Prologue does. A function form's own Parse Node, and a method's |ClassElementName|, are part of the code containing the form.</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-source-strict" kind="condition" rule="source-strict">
+    <emu-pattern>the source text matched by _node_ is strict mode code</emu-pattern>
+    <emu-params>_node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Return StrictModeCode(_node_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-that-non-strict" kind="condition" rule="that-non-strict">
+    <emu-pattern>that source text is non-strict code</emu-pattern>
+    <p>"That source text" is the source text matched by this production; non-strict code is code that is not strict mode code.</p>
+    <emu-params></emu-params>
+    <emu-alg>
+      1. If StrictModeCode(this Parse Node) is *true*, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-numeric-value-defined" kind="expression" rule="numeric-value-defined">
+    <emu-pattern>the NumericValue of _x_ as defined in _ref_</emu-pattern>
+    <p>The cross-reference names the clause that defines the static semantics NumericValue.</p>
+    <emu-params>_x_: a Parse Node, _ref_: anything</emu-params>
+    <emu-alg>
+      1. Return the NumericValue of _x_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-sv-defined" kind="expression" rule="sv-defined">
+    <emu-pattern>the SV of _x_ as defined in _ref_</emu-pattern>
+    <p>The cross-reference names the clause that defines the static semantics SV.</p>
+    <emu-params>_x_: a Parse Node, _ref_: anything</emu-params>
+    <emu-alg>
+      1. Return the SV of _x_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-tv-defined" kind="expression" rule="tv-defined">
+    <emu-pattern>the TV of _x_ as defined in _ref_</emu-pattern>
+    <p>The cross-reference names the clause that defines the static semantics TV.</p>
+    <emu-params>_x_: a Parse Node, _ref_: anything</emu-params>
+    <emu-alg>
+      1. Return the TV of _x_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-contains" kind="expression" rule="contains-infix">
+    <emu-pattern>_x_ Contains _symbol_</emu-pattern>
+    <p>The static semantics Contains (<emu-xref href="#sec-static-semantics-contains"></emu-xref>), which the spec writes infix. _symbol_ may be a Parse Node: then Contains holds when its walk reaches that node (InstanceOf of two Parse Nodes).</p>
+    <emu-params>_x_: a Parse Node, _symbol_: a grammar symbol or a Parse Node</emu-params>
+    <emu-alg>
+      1. Return Contains of _x_ with argument _symbol_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-contains-cond" kind="condition" rule="contains-cond">
+    <emu-pattern>_x_ Contains _symbol_</emu-pattern>
+    <p>As a condition: Contains (<emu-xref href="#sec-static-semantics-contains"></emu-xref>) is *true*.</p>
+    <emu-params>_x_: a Parse Node, _symbol_: a grammar symbol</emu-params>
+    <emu-alg>
+      1. Return Contains of _x_ with argument _symbol_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-token" kind="expression" rule="token-word">
+    <emu-pattern>the token _c_</emu-pattern>
+    <p>The terminal grammar symbol the code literal writes.</p>
+    <emu-params>_c_: a terminal symbol</emu-params>
+    <emu-alg>
+      1. Return _c_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-token-nt" kind="expression" rule="token-nt">
+    <emu-pattern>the _nt_ _c_</emu-pattern>
+    <p>The terminal grammar symbol the code literal writes; the nonterminal names the grammar's category for it (|ReservedWord| `super`).</p>
+    <emu-params>_nt_: a nonterminal, _c_: a terminal symbol</emu-params>
+    <emu-alg>
+      1. Return _c_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-nt-parse-node" kind="type" subject="_v_" rule="a-nt-node" alternatives="all">
+    <emu-pattern>a _nt_ Parse Node</emu-pattern>
+    <p>"a" and "an" are one article. A Parse Node of _nt_ is an instance of _nt_ (<emu-xref href="#sec-context-free-grammars"></emu-xref>).</p>
+    <emu-params>_nt_: a nonterminal, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not a Parse Node, return *false*.
+      1. If _v_ is an instance of _nt_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-clause id="formal-protopropertycount" type="abstract operation">
+    <h1>
+      ProtoPropertyCount (
+        _list_: a |PropertyDefinitionList| Parse Node,
+      ): a non-negative integer
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The number of _list_'s own entries of the form <emu-grammar>PropertyDefinition : PropertyName `:` AssignmentExpression</emu-grammar> whose PropName is *"__proto__"*.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _count_ be 0.
+      1. For each element _definition_ of OutermostInstances(|PropertyDefinition|, _list_), do
+        1. If _definition_ is <emu-grammar>PropertyDefinition : PropertyName `:` AssignmentExpression</emu-grammar> and the PropName of _definition_ is *"__proto__"*, set _count_ to _count_ + 1.
+      1. Return _count_.
+    </emu-alg>
+    <emu-note>
+      <p>The entries of the PropertyNameList of |PropertyDefinitionList| are the PropNames of its own |PropertyDefinition|s that have one, in order. "Those entries" are the entries that are *"__proto__"*, and "obtained from productions of the form" names the |PropertyDefinition| an entry came from. Two such entries are duplicates of each other, so the rule's two conditions hold together exactly when at least two of the list's own <emu-grammar>PropertyDefinition : PropertyName `:` AssignmentExpression</emu-grammar> entries have the PropName *"__proto__"*. The ObjectLiteral rule's reading in terms of this count keeps the rule's second sentence as it is.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-reading clause="sec-object-initializer-static-semantics-early-errors" grammar="ObjectLiteral : `{` PropertyDefinitionList `,`? `}`" rule="0" hash="2b500b2120c5f458b744cf80a26958c3448639912da421e7bc1e0b96efe81051">
+    <p reading="definition">It is a Syntax Error if ProtoPropertyCount(|PropertyDefinitionList|) ≥ 2. This rule is not applied if this |ObjectLiteral| is contained within a |Script| that is being parsed for ParseJSON (see step <emu-xref href="#step-json-parse-parse"></emu-xref> of ParseJSON).</p>
+  </emu-reading>
+  <emu-clause id="formal-isprivateaccessorpair" type="abstract operation">
+    <h1>
+      IsPrivateAccessorPair (
+        _list_: a |ClassElementList| Parse Node,
+        _name_: a String,
+      ): a Boolean
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>Among the entries of the PrivateBoundIdentifiers of _list_, _name_ is used once for a getter and once for a setter and in no other entries, and the getter and setter are either both static or both non-static.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _getters_ be 0.
+      1. Let _setters_ be 0.
+      1. Let _others_ be 0.
+      1. Let _getterStatic_ be *false*.
+      1. Let _setterStatic_ be *false*.
+      1. For each element _element_ of OutermostInstances(|ClassElement|, _list_), do
+        1. For each element _n_ of the PrivateBoundIdentifiers of _element_, do
+          1. If _n_ is _name_, then
+            1. Let _getter_ be *false*.
+            1. Let _setter_ be *false*.
+            1. If _element_ is <emu-grammar>ClassElement : MethodDefinition</emu-grammar> or _element_ is <emu-grammar>ClassElement : `static` MethodDefinition</emu-grammar>, then
+              1. Let _methods_ be OutermostInstances(|MethodDefinition|, _element_).
+              1. If _methods_[0] is <emu-grammar>MethodDefinition : `get` ClassElementName `(` `)` `{` FunctionBody `}`</emu-grammar>, set _getter_ to *true*.
+              1. If _methods_[0] is <emu-grammar>MethodDefinition : `set` ClassElementName `(` PropertySetParameterList `)` `{` FunctionBody `}`</emu-grammar>, set _setter_ to *true*.
+            1. If _getter_ is *true*, then
+              1. Set _getters_ to _getters_ + 1.
+              1. Set _getterStatic_ to IsStatic of _element_.
+            1. Else if _setter_ is *true*, then
+              1. Set _setters_ to _setters_ + 1.
+              1. Set _setterStatic_ to IsStatic of _element_.
+            1. Else,
+              1. Set _others_ to _others_ + 1.
+      1. If _getters_ = 1 and _setters_ = 1 and _others_ = 0 and _getterStatic_ is _setterStatic_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+    <emu-note>
+      <p>The entries of the PrivateBoundIdentifiers of a |ClassElementList| are those of its own |ClassElement|s, in order, at most one each; an entry is used for a getter or a setter when its |ClassElement| is a |MethodDefinition| of that form, `static` or not as IsStatic of the |ClassElement| says.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-clause id="formal-privateduplicatesareaccessorpairs" type="abstract operation">
+    <h1>
+      PrivateDuplicatesAreAccessorPairs (
+        _list_: a |ClassElementList| Parse Node,
+      ): a Boolean
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>Each name that occurs more than once in the PrivateBoundIdentifiers of _list_ is used once for a getter and once for a setter and in no other entries, and the getter and setter are either both static or both non-static.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _names_ be the PrivateBoundIdentifiers of _list_.
+      1. For each element _name_ of _names_, do
+        1. If _names_ contains more than one occurrence of _name_ and IsPrivateAccessorPair(_list_, _name_) is *false*, return *false*.
+      1. Return *true*.
+    </emu-alg>
+    <emu-note>
+      <p>"The name" in the ClassBody rule is the name of the duplicate entries; the rule holds for each such name.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-reading clause="sec-class-definitions-static-semantics-early-errors" grammar="ClassBody : ClassElementList" rule="1" hash="8d2e85c577b02017db562cab01eb2a342e98c214e7c91f716533b939d5462357">
+    <p reading="definition">It is a Syntax Error if the PrivateBoundIdentifiers of |ClassElementList| contains any duplicate entries, unless PrivateDuplicatesAreAccessorPairs(|ClassElementList|) is *true*.</p>
+  </emu-reading>
+
+  <emu-clause id="formal-duplicatesonlyfunctiondeclarations" type="abstract operation">
+    <h1>
+      DuplicatesOnlyFunctionDeclarations (
+        _node_: a Parse Node,
+      ): a Boolean
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>_node_ is a |StatementList| or a |CaseBlock|: the duplicate entries of its LexicallyDeclaredNames are only bound by FunctionDeclarations.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _names_ be the LexicallyDeclaredNames of _node_.
+      1. For each element _d_ of the LexicallyScopedDeclarations of _node_, do
+        1. For each element _n_ of the BoundNames of _d_, do
+          1. If _names_ contains more than one occurrence of _n_ and _d_ is not a |FunctionDeclaration| Parse Node, return *false*.
+      1. Return *true*.
+    </emu-alg>
+    <emu-note>
+      <p>The duplicate entries are every entry whose name occurs more than once, the first one included: the declarations that bind them are the LexicallyScopedDeclarations whose BoundNames contain that name, a |FunctionDeclaration| under a |LabelledStatement| among them.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-reading clause="sec-block-static-semantics-early-errors" grammar="Block : `{` StatementList `}`" rule="0" hash="a9822fccf15dd21c22d55b069830454aee560c02c23627f7507184267504e306">
+    <p reading="definition">It is a Syntax Error if the LexicallyDeclaredNames of |StatementList| contains any duplicate entries<span normative-optional>, unless the host is a web browser or otherwise supports <emu-xref href="#sec-block-level-function-declarations-web-legacy-compatibility-semantics" title></emu-xref>, and both of the following conditions are true: IsStrict(this production) is *false* and DuplicatesOnlyFunctionDeclarations(|StatementList|) is *true*</span>.</p>
+  </emu-reading>
+
+  <emu-reading clause="sec-switch-statement-static-semantics-early-errors" grammar="SwitchStatement : `switch` `(` Expression `)` CaseBlock" rule="0" hash="5e8f3fee108a4cbc95538c50d1d4de751563cd31ed85c78d7ab7b8c9235f806d">
+    <p reading="definition">It is a Syntax Error if the LexicallyDeclaredNames of |CaseBlock| contains any duplicate entries<span normative-optional>, unless the host is a web browser or otherwise supports <emu-xref href="#sec-block-level-function-declarations-web-legacy-compatibility-semantics" title></emu-xref>, and both of the following conditions are true: IsStrict(this production) is *false* and DuplicatesOnlyFunctionDeclarations(|CaseBlock|) is *true*</span>.</p>
+  </emu-reading>
+  <emu-clause id="formal-enclosingnodes" type="abstract operation">
+    <h1>
+      EnclosingNodes (
+        _node_: a Parse Node,
+      ): a List of Parse Nodes
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The Parse Nodes that contain _node_, other than _node_, nearest first.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _goal_ be GoalSymbolOf(_node_).
+      1. Let _nodes_ be a new empty List.
+      1. Let _n_ be _node_.
+      1. Repeat, while NearestEnclosing(_n_, « _goal_ ») is not ~empty~,
+        1. Set _n_ to Parent(_n_).
+        1. Append _n_ to _nodes_.
+      1. Return _nodes_.
+    </emu-alg>
+    <emu-note>
+      <p>The root of the parse tree is an instance of the goal symbol and contains every other Parse Node of the tree, so a Parse Node has a parent exactly when an instance of the goal symbol contains it.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-phrase id="ph-contained-within" kind="predicate" subject="_node_" rule="contained-within">
+    <emu-pattern>is contained within _t_</emu-pattern>
+    <p>Some Parse Node that contains _node_, other than _node_, is a _t_.</p>
+    <emu-params>_t_: a type, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. For each element _n_ of EnclosingNodes(_node_), do
+        1. If _n_ is a _t_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-nested" kind="predicate" subject="_node_" rule="not-nested">
+    <emu-pattern>is not nested, directly or indirectly (but not crossing function or _c_ initialization block boundaries), within _t_</emu-pattern>
+    <p>No Parse Node between _node_ and the nearest enclosing function or `static` initialization block boundary is a _t_. The statements of every function form lie in its |FunctionBody| (a |GeneratorBody|, an |AsyncFunctionBody|, an |AsyncGeneratorBody|, a |ConciseBody| and an |AsyncConciseBody| contain one), and those of a `static` block in its |ClassStaticBlockBody|; any other function boundary encloses that one, so these two nonterminals are the boundaries a statement meets first.</p>
+    <emu-params>_c_: a terminal symbol, _t_: a type, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Assert: _c_ is the token `static`.
+      1. For each element _n_ of EnclosingNodes(_node_), do
+        1. If _n_ is a _t_, return *false*.
+        1. If _n_ is a |FunctionBody| Parse Node or _n_ is a |ClassStaticBlockBody| Parse Node, return *true*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-nested-alt" kind="predicate" subject="_node_" rule="not-nested-alt">
+    <emu-pattern>is not nested, directly or indirectly (but not crossing function or _c_ initialization block boundaries), within _t_</emu-pattern>
+    <p>As "is not nested … within" one type (ph-not-nested), the alternatives being one type.</p>
+    <emu-params>_c_: a terminal symbol, _t_: a type, _node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Assert: _c_ is the token `static`.
+      1. For each element _n_ of EnclosingNodes(_node_), do
+        1. If _n_ is a _t_, return *false*.
+        1. If _n_ is a |FunctionBody| Parse Node or _n_ is a |ClassStaticBlockBody| Parse Node, return *true*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-contains-any-nts" kind="predicate" subject="_l_" rule="contains-any-nts">
+    <emu-pattern>contains any _nt_s</emu-pattern>
+    <emu-params>_nt_: a nonterminal, _l_: a List</emu-params>
+    <emu-alg>
+      1. For each element _e_ of _l_, do
+        1. If _e_ is a Parse Node and _e_ is an instance of _nt_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-source-matched" kind="condition" rule="source-matched">
+    <emu-pattern>any source text is matched by _node_</emu-pattern>
+    <p>Every Parse Node matches a source text, possibly empty, so the condition holds wherever its rule applies: the production may not be used.</p>
+    <emu-params>_node_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-reading clause="sec-isintailposition" steps="2 3" hashes="58cc6dea64cb1b402e339d89cba3ee5d13f1578e8168f5e50ed2637f74359e2f 0c961dbe19cba88e02f5ffce893887dbca734f4b9c5baf4745d1e56152822210">
+    <emu-alg reading="definition">
+      1. If NearestEnclosing(_call_, « |FunctionBody|, |ConciseBody|, |AsyncConciseBody| ») is ~empty~, return *false*.
+      1. Let _body_ be NearestEnclosing(_call_, « |FunctionBody|, |ConciseBody|, |AsyncConciseBody| »).
+    </emu-alg>
+  </emu-reading>
+  <emu-phrase id="ph-two-distinct" kind="condition" rule="two-distinct">
+    <emu-pattern>_p_ contains two distinct _nt_s _x_ and _y_ such that _c_ and such that _d_</emu-pattern>
+    <p>Two different Parse Nodes that _p_ contains, each an instance of _nt_; _c_ and _d_ are tested with _x_ and _y_ bound to them, in either order.</p>
+    <emu-params>_p_: a Parse Node, _nt_: a nonterminal, _x_: anything, _y_: anything, _c_: a condition on _x_ and _y_, _d_: a condition on _x_ and _y_</emu-params>
+    <emu-alg>
+      1. Let _found_ be a new empty List.
+      1. For each element _n_ of ParseNodesWithin(_p_), do
+        1. If _n_ is not _p_ and _n_ is an instance of _nt_, append _n_ to _found_.
+      1. For each element _m_ of _found_, do
+        1. For each element _k_ of _found_, do
+          1. If _m_ is not _k_ and _c_(_m_, _k_) is *true* and _d_(_m_, _k_) is *true*, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+  <emu-reading clause="sec-runtime-semantics-methoddefinitionevaluation" steps="5" hashes="1274ace31dd343b5db2f9a8d4014316de8ce10f738acfcb1a6367a250d6c6000">
+    <emu-alg reading="definition">
+      1. Let _formalParamList_ be ParseGoal(« », |FormalParameters|, *false*, *false*, *false*).
+      1. Assert: _formalParamList_ is an instance of the production <emu-grammar>FormalParameters : [empty]</emu-grammar>.
+    </emu-alg>
+    <emu-note>
+      <p>An instance of <emu-grammar>FormalParameters : [empty]</emu-grammar> matches the empty source text and has no children; the empty source text parses as one, and as no other |FormalParameters|.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-runtime-semantics-classfielddefinitionevaluation" steps="2.a" hashes="1274ace31dd343b5db2f9a8d4014316de8ce10f738acfcb1a6367a250d6c6000">
+    <emu-alg reading="definition">
+      1. Let _formalParamList_ be ParseGoal(« », |FormalParameters|, *false*, *false*, *false*).
+      1. Assert: _formalParamList_ is an instance of the production <emu-grammar>FormalParameters : [empty]</emu-grammar>.
+    </emu-alg>
+    <emu-note>
+      <p>An instance of <emu-grammar>FormalParameters : [empty]</emu-grammar> matches the empty source text and has no children; the empty source text parses as one, and as no other |FormalParameters|.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-runtime-semantics-classstaticblockdefinitionevaluation" steps="4" hashes="29e8d82d5a5e656cc771e21eef88e5a3e96573347c6862ba5735712126dfa7d0">
+    <emu-alg reading="definition">
+      1. Let _formalParams_ be ParseGoal(« », |FormalParameters|, *false*, *false*, *false*).
+      1. Assert: _formalParams_ is an instance of the production <emu-grammar>FormalParameters : [empty]</emu-grammar>.
+    </emu-alg>
+    <emu-note>
+      <p>An instance of <emu-grammar>FormalParameters : [empty]</emu-grammar> matches the empty source text and has no children; the empty source text parses as one, and as no other |FormalParameters|.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-static-semantics-lexicallydeclarednames" steps="1" hashes="b682b358cb93267710356f0894c3a08ace260c992557512f6be8b04a0969cf6d">
+    <emu-alg reading="definition">
+      1. If |ExportDeclaration| is <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>, return a new empty List.
+    </emu-alg>
+    <emu-note>
+      <p>`export` |VariableStatement| is the right-hand side of the production <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-static-semantics-vardeclarednames" steps="1" hashes="471366bd5de472ac0c954e1e89c7a24981a1dba8154b417d2433b220435e43fa">
+    <emu-alg reading="definition">
+      1. If |ExportDeclaration| is <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>, return the BoundNames of |ExportDeclaration|.
+    </emu-alg>
+    <emu-note>
+      <p>`export` |VariableStatement| is the right-hand side of the production <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-static-semantics-varscopeddeclarations" steps="1" hashes="48eb9af516ecd967b01def67762584487ba7556d1466fea6dfb366cf27923eac">
+    <emu-alg reading="definition">
+      1. If |ExportDeclaration| is <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>, return the VarScopedDeclarations of the |VariableStatement| of |ExportDeclaration|.
+    </emu-alg>
+    <emu-note>
+      <p>`export` |VariableStatement| is the right-hand side of the production <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-primitive id="prim-terminalalternatives" name="TerminalAlternatives">
+    <emu-signature>TerminalAlternatives(_nt_: a nonterminal): a List of Strings</emu-signature>
+    <p>A new List of the String values of the code points of each terminal that is a right-hand side of _nt_, whose right-hand sides are each one terminal written in a fixed-width font (<emu-xref href="#sec-grammar-notation"></emu-xref>), in the order the grammar lists them.</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-stringvalue-any-nt-except" kind="predicate" subject="_s_" rule="stringvalue-any-nt-except">
+    <emu-pattern>is the StringValue of any _nt_ except for _alts_</emu-pattern>
+    <p>StringValue has no row for _nt_'s productions: the literal text takes the StringValue of _nt_ itself, which stops (erratum StringValueReservedWord).</p>
+    <emu-params>_nt_: a nonterminal, _alts_: a List of Strings, _s_: a String</emu-params>
+    <emu-alg>
+      1. Let _v_ be the StringValue of _nt_.
+      1. If _alts_ does not contain _v_ and _s_ is _v_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-stringvalue-terminal-except" kind="predicate" subject="_s_" rule="stringvalue-terminal-except">
+    <emu-pattern>is the String value of any terminal of _nt_ except for _alts_</emu-pattern>
+    <p>The String value of a terminal is the String value of its code points, as test262 has it (an |IdentifierName| that spells a reserved word with escapes is an early error).</p>
+    <emu-params>_nt_: a nonterminal, _alts_: a List of Strings, _s_: a String</emu-params>
+    <emu-alg>
+      1. For each element _t_ of TerminalAlternatives(_nt_), do
+        1. If _alts_ does not contain _t_ and _s_ is _t_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-production-in" kind="predicate" subject="_n_" rule="production-in">
+    <emu-pattern>is an instance of a production in _g_</emu-pattern>
+    <p>A production in a clause is one its grammar definitions define, with those of an Annex B section that modifies the syntax of that clause (<emu-xref href="#sec-regular-expressions-patterns"></emu-xref>).</p>
+    <emu-params>_g_: a clause, _n_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Return InstanceOf(_n_, _g_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-clause id="formal-deleteoperandiserror" type="abstract operation">
+    <h1>
+      DeleteOperandIsError (
+        _operand_: a Parse Node,
+      ): a Boolean
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>Whether _operand_, used in place of the |UnaryExpression| of <emu-grammar>UnaryExpression : `delete` UnaryExpression</emu-grammar>, would produce a Syntax Error according to the rules of <emu-xref href="#sec-delete-operator-static-semantics-early-errors"></emu-xref>, the second applied recursively.</dd>
+    </dl>
+    <emu-alg>
+      1. If IsStrict(_operand_) is *true* and _operand_ is <emu-grammar>PrimaryExpression : IdentifierReference</emu-grammar>, <emu-grammar>MemberExpression : MemberExpression `.` PrivateIdentifier</emu-grammar>, <emu-grammar>CallExpression : CallExpression `.` PrivateIdentifier</emu-grammar>, <emu-grammar>OptionalChain : `?.` PrivateIdentifier</emu-grammar>, or <emu-grammar>OptionalChain : OptionalChain `.` PrivateIdentifier</emu-grammar>, return *true*.
+      1. Return ParenthesizedOperandIsError(_operand_).
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-parenthesizedoperandiserror" type="abstract operation">
+    <h1>
+      ParenthesizedOperandIsError (
+        _operand_: a Parse Node,
+      ): a Boolean
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>Whether _operand_ derives <emu-grammar>PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList</emu-grammar> and the |Expression| of the |ParenthesizedExpression| its |CoverParenthesizedExpressionAndArrowParameterList| covers would, used in place of the |UnaryExpression| of <emu-grammar>UnaryExpression : `delete` UnaryExpression</emu-grammar>, produce a Syntax Error according to the rules of <emu-xref href="#sec-delete-operator-static-semantics-early-errors"></emu-xref>.</dd>
+    </dl>
+    <emu-alg>
+      1. If _operand_ is not <emu-grammar>PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList</emu-grammar>, return *false*.
+      1. Let _cover_ be the first |CoverParenthesizedExpressionAndArrowParameterList| Parse Node contained within _operand_.
+      1. Let _expression_ be the |ParenthesizedExpression| that is covered by _cover_.
+      1. Return DeleteOperandIsError(the |Expression| of _expression_).
+    </emu-alg>
+    <emu-note>
+      <p>A Parse Node derives a production when it or a node of its chain of unit productions is an instance of it; each node of that chain has one child, so the first |CoverParenthesizedExpressionAndArrowParameterList| within _operand_ is the chain's.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-clause id="formal-parsenodeswithinprocessed" type="abstract operation">
+    <h1>
+      ParseNodesWithinProcessed (
+        _node_: a Parse Node,
+      ): a List of Parse Nodes
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>ParseNodesWithin(_node_), except that for a node of B.3.3's productions the Parse Nodes of the |IfStatement| it is processed as stand in place of its descendants.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _nodes_ be « _node_ ».
+      1. If _node_ is an instance of a production in <emu-xref href="#sec-functiondeclarations-in-ifstatement-statement-clauses"></emu-xref>, then
+        1. Let _ifStatement_ be the |IfStatement| that _node_ is processed as.
+        1. Return the list-concatenation of _nodes_ and ParseNodesWithinProcessed(_ifStatement_).
+      1. For each child node _child_ of _node_, do
+        1. Set _nodes_ to the list-concatenation of _nodes_ and ParseNodesWithinProcessed(_child_).
+      1. Return _nodes_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-phrase id="ph-annexb-replacing" kind="condition" rule="annexb-replacing">
+    <emu-pattern>replacing the _fd_ _funcDecl_ with a _vs_ that has _F_ as a _bi_ would not produce any Early Errors for _body_</emu-pattern>
+    <p>The source text of the parse that made _funcDecl_, with the source text _funcDecl_ matched replaced by that of a |VariableStatement| `var` _F_ `;`, parsed again with the same goal symbol and in the same context (strict from outside, for ParseJSON, of a direct eval); the replacement produces no Early Errors when that parse succeeds and EarlyErrorsOf finds none in it. _body_ (a |ScriptBody|, a |Script|, or a function object, whose code is its [[ECMAScriptCode]] with its [[FormalParameters]]) contains _funcDecl_ and is contained in the parse: the source text outside _body_ is unchanged and produced no Early Errors, and the replacement changes the declarations of no scope outside _body_. A |BindingIdentifier| spelled with the code points of _F_ has StringValue _F_.</p>
+    <emu-params>_fd_: a nonterminal, _funcDecl_: a Parse Node, _vs_: a nonterminal, _F_: a String, _bi_: a nonterminal, _body_: anything</emu-params>
+    <emu-alg>
+      1. Let _text_ be ReplacedSourceText(_funcDecl_, the string-concatenation of *"var "*, _F_, and *";"*).
+      1. Let _tree_ be ParseGoal(_text_, GoalSymbolOf(_funcDecl_), StrictFromOutside(_funcDecl_), InParseJSONScript(_funcDecl_), InDirectEval(_funcDecl_)).
+      1. If _tree_ is ~empty~, return *false*.
+      1. If EarlyErrorsOf(_tree_) is empty, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-primitive id="prim-setevaluationsteps" name="SetEvaluationSteps">
+    <emu-signature>SetEvaluationSteps(_node_: a Parse Node, _steps_: an Abstract Closure): ~unused~</emu-signature>
+    <p>From now on, _steps_ are the steps performed when _node_ is evaluated, in place of its Evaluation algorithm, until the next SetEvaluationSteps of _node_ (<emu-xref href="#sec-block-level-function-declarations-web-legacy-compatibility-semantics"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-evaluationstepsof" name="EvaluationStepsOf">
+    <emu-signature>EvaluationStepsOf(_node_: a Parse Node): an Abstract Closure or ~empty~</emu-signature>
+    <p>The _steps_ of the last SetEvaluationSteps(_node_, _steps_), or ~empty~ when there was none.</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-annexb-evaluated" kind="step" rule="annexb-evaluated">
+    <emu-pattern>When the _fd_ _funcDecl_ is evaluated, perform the following steps in place of the _fe_ Evaluation algorithm provided in _x_:</emu-pattern>
+    <p>The step's nested steps are _steps_, an Abstract Closure with no parameters that captures the variables they read. The Evaluation of _funcDecl_ (<emu-xref href="#sec-function-definitions-runtime-semantics-evaluation"></emu-xref>) performs the steps that the last such step for it gave in place of its own: an abrupt completion of theirs is its result, and otherwise it returns ~empty~ as its own does, since the steps' ~unused~ is not a completion value.</p>
+    <emu-params>_fd_: a nonterminal, _funcDecl_: a Parse Node, _fe_: a nonterminal, _x_: a clause, _steps_: an Abstract Closure</emu-params>
+    <emu-alg>
+      1. Perform SetEvaluationSteps(_funcDecl_, _steps_).
+      1. Return ~unused~.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-step-patch clause="sec-function-definitions-runtime-semantics-evaluation" alg="0" hash="c762cb4432b4e78b7867de86897be64f57f9f7b5f9fb65507dae80108cccc941">
+    <emu-alg>
+      1. Let _steps_ be EvaluationStepsOf(this Parse Node).
+      1. If _steps_ is not ~empty~, then
+        1. Let _result_ be _steps_().
+        1. If _result_ is an abrupt completion, return _result_.
+    </emu-alg>
+  </emu-step-patch>
+
+  <emu-phrase id="ph-derives-error" kind="condition" rule="derives-error">
+    <emu-pattern>_cover_ ultimately derives a phrase that, if used in place of _nt_, would produce a Syntax Error according to these rules</emu-pattern>
+    <p>The phrase is the second early error rule of `delete`: _cover_ is the |CoverParenthesizedExpressionAndArrowParameterList| of the derived |UnaryExpression| of this Parse Node, the phrase it derives is the |Expression| of the |ParenthesizedExpression| it covers, through every nested parenthesization as "this rule is recursively applied" says, and these rules are the two rules of <emu-xref href="#sec-delete-operator-static-semantics-early-errors"></emu-xref>.</p>
+    <emu-params>_cover_: a nonterminal, _nt_: a nonterminal</emu-params>
+    <emu-alg>
+      1. Return ParenthesizedOperandIsError(the |UnaryExpression| of this Parse Node).
+    </emu-alg>
+  </emu-phrase>
+
+  <p>An <code>emu-rule-reading</code> with an <code>id</code> is an interpreting reading of a grammar rule: it names the rule (clause id, nonterminal, and the SHA-256 of its definition's text) and gives the definition that replaces it (<code>reading="definition"</code>), in effect under every reading of the errata. An alternative that differs from a pinned one only in lookahead restrictions is that production.</p>
+
+  <emu-rule-reading id="reading-EscapedSurrogatePair" clause="sec-patterns" rule="RegExpUnicodeEscapeSequence" hash="16035025e4c93f5b3e25afa734581a1be9d3af3958a6c557dc07520038378ba8">
+    <emu-grammar type="definition" reading="definition">
+      RegExpUnicodeEscapeSequence[UnicodeMode] ::
+        [+UnicodeMode] `u` HexLeadSurrogate `\u` HexTrailSurrogate
+        [+UnicodeMode] `u` HexLeadSurrogate [lookahead &notin; { `\uDC`, `\uDc`, `\udC`, `\udc`, `\uDD`, `\uDd`, `\udD`, `\udd`, `\uDE`, `\uDe`, `\udE`, `\ude`, `\uDF`, `\uDf`, `\udF`, `\udf` }]
+        [+UnicodeMode] `u` HexTrailSurrogate
+        [+UnicodeMode] `u` HexNonSurrogate
+        [~UnicodeMode] `u` Hex4Digits
+        [+UnicodeMode] `u{` CodePoint `}`
+    </emu-grammar>
+    <emu-note>
+      <p>The paragraph after the definition associates each `\u` |HexTrailSurrogate| whose lead is ambiguous with the nearest `u` |HexLeadSurrogate| that would otherwise have none: the one just before it, so that an escaped pair is one escape. The lone lead's lookahead says so: it is not followed by `\u` and two hex digits that begin a |HexTrailSurrogate|. Where such a prefix is not followed by two more hex digits, the pattern has no parse under either form: in a context with a `u` |HexLeadSurrogate|, `\u` begins only a |RegExpUnicodeEscapeSequence|.</p>
+    </emu-note>
+  </emu-rule-reading>
+
+  <p>An <code>emu-reading</code> with a <code>grammar</code> outside an erratum adds a row the text leaves out to a syntax-directed operation; its note says why the row has no effect on any program's result.</p>
+
+  <emu-reading id="row-propname-coverinitializedname" clause="sec-static-semantics-propname" grammar="PropertyDefinition : CoverInitializedName">
+    <emu-alg>
+      1. Return the StringValue of the |IdentifierReference| of |CoverInitializedName|.
+    </emu-alg>
+    <emu-note>
+      <p>PropName has no definition for this production, and PropertyNameList asks for it of every |PropertyDefinition| of an |ObjectLiteral|. The row is the twin of the shorthand <emu-grammar>PropertyDefinition : IdentifierReference</emu-grammar>. No program's result depends on it: the early error rule for <emu-grammar>PropertyDefinition : CoverInitializedName</emu-grammar> rejects the program anyway, the *"__proto__"* rule counts only entries of the form <emu-grammar>PropertyDefinition : PropertyName `:` AssignmentExpression</emu-grammar>, and EarlyErrorsOf applies the |ObjectLiteral|'s rules only when the nodes it contains have no early error, so no run asks for the row. An editorial report: docs/spec-issues/29-propname-coverinitializedname.md.</p>
+    </emu-note>
+  </emu-reading>
+</emu-clause>

@@ -1,0 +1,20 @@
+// The `stop` filter: a run the machine cannot continue pauses at the step it stops in, its innermost frame
+// the paused step; continuing ends the run with ecma-run's stop outcome (exit code 3). The program reaches
+// GetUTCEpochNanoseconds step 4, an Assert that fails as the text is written (erratum GetUTCEpochNanosecondsNaN).
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["stop"]}}}
+{"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true, "body": {"breakpoints": [{"verified": true}]}}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "exception", "spec": {"secId": "${=sec}", "path": "${=path}", "stop": "erratum GetUTCEpochNanosecondsNaN"}}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"stackFrames": [{"spec": {"secId": "${sec}", "path": "${path}"}}, "...", {"name": "ScriptEvaluation"}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "${=outcome}", "exitCode": 3}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

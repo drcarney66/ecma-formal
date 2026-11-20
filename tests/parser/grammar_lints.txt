@@ -1,0 +1,14 @@
+# The grammar lints' accepted findings (scripts/jsgrammar.py --roundtrip,
+# //:jsgrammar_roundtrip_test; docs/parser/GRAMMAR.md, "Lints"). Each is
+# explained; a new finding is a generator bug or a candidate for the errata
+# line, never something to work around.
+#
+# BindingIdentifier[Yield, Await] (§13.1): no alternative passes or guards on
+# the parameters; its early errors (§13.1.1) read them ("It is a Syntax Error
+# if this production has a [Yield] parameter …").
+params: BindingIdentifier (spec.html block 18653): declares Yield but never uses it
+params: BindingIdentifier (spec.html block 18653): declares Await but never uses it
+# TemplateLiteral[Yield, Await, Tagged] (§13.2.8): the early error of §13.2.8.1
+# reads [Tagged] ("It is a Syntax Error if the [Tagged] parameter was not set
+# and NoSubstitutionTemplate Contains NotEscapeSequence").
+params: TemplateLiteral (spec.html block 19348): declares Tagged but never uses it

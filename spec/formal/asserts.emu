@@ -1,0 +1,137 @@
+<emu-clause id="formal-asserts">
+  <h1>Asserts</h1>
+  <p>Definition readings of the Assert steps whose condition is prose.</p>
+  <emu-reading clause="sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset" steps="8.h.vii.1" hashes="f6bc8fb527176c526cdfa948e7996874e8ba917cd7e75b1890393e34bdd87242">
+    <emu-alg reading="definition">
+      1. Assert: the number of elements in the BoundNames of _lhs_ is 1.
+    </emu-alg>
+    <emu-note>
+      <p>The names a |ForDeclaration| binds are its BoundNames; it binds a single name when there is one.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-runtime-semantics-scriptevaluation" steps="15" hashes="71a3e04f30e90f7367e0fbb61fa1e5647e3d63a4398dcc1877bebd0ff516867a">
+    <emu-alg reading="definition">
+      1. Assert: it is not the case that the execution context stack is empty.
+    </emu-alg>
+    <emu-note>
+      <p>"is not empty" is the negation of "is empty".</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-generatorstart" steps="4.e" hashes="e2a3ab5f97660fb3065f7032616e535457820bccaf242187dc0b86e5a565c42e">
+    <emu-alg reading="definition">
+      1. Assert: _result_ is either a normal completion, a return completion, or a throw completion.
+    </emu-alg>
+    <emu-note>
+      <p>_result_ is the completion of the body just evaluated; it threw an exception, performed an implicit return (a normal completion) or an explicit return. "If we return here" restates reaching the step.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-asyncgeneratorstart" steps="4.e" hashes="71b9e3cac1ed85fb19e87a9bdb9c9111b38edd89bbadb4a1df2b926700b795ba">
+    <emu-alg reading="definition">
+      1. Assert: _result_ is either a normal completion, a return completion, or a throw completion.
+    </emu-alg>
+    <emu-note>
+      <p>_result_ is the completion of the body just evaluated; it threw an exception, performed an implicit return (a normal completion) or an explicit return. "If we return here" restates reaching the step.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-asyncblockstart" steps="1.d" hashes="ac80043a8bc37298e829ba8e107f12bcc17c997159772b1dd90a25bbda41f805">
+    <emu-alg reading="definition">
+      1. Assert: _result_ is either a normal completion, a return completion, or a throw completion.
+    </emu-alg>
+    <emu-note>
+      <p>_result_ is the completion of the body just evaluated; it threw an exception, performed an implicit return (a normal completion) or an explicit return. "If we return here" and "all awaiting is done" restate reaching the step.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-ordinarycallbindthis" steps="8" hashes="d30ab9eb54502e093ea3538dc330e2a31db925927a94cf026c1c2da48b6928b1">
+    <emu-alg reading="definition">
+      1. Assert: _localEnv_.[[ThisBindingStatus]] is not ~initialized~.
+    </emu-alg>
+    <emu-note>
+      <p>The premise is the test at the step; the conclusion, that the next step completes normally, is the next step's own <code>!</code>.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-getexportednames" steps="6.a" hashes="b168b31234b81f3b4951ca5b9db872ad5ce2d08c052276f8b478a3541d595a5b">
+    <emu-alg reading="definition">
+      1. Assert: _module_.[[LocalExportEntries]] contains _exportEntry_.
+    </emu-alg>
+    <emu-note>
+      <p>"This export" is _exportEntry_. A module provides the direct binding for an export when the export's ExportEntry Record is one of its [[LocalExportEntries]], the entries that correspond to declarations that occur within the module (<emu-xref href="#table-additional-fields-of-source-text-module-records"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-getexportednames" steps="7.a" hashes="12a61c99f7be9c7a1f82961f093cc205fb8187ef1bbcbe71ae90a92459913e46">
+    <emu-alg reading="definition">
+      1. Assert: _module_.[[IndirectExportEntries]] contains _exportEntry_.
+    </emu-alg>
+    <emu-note>
+      <p>"This export" is _exportEntry_. A module imports a specific binding for an export when the export's ExportEntry Record is one of its [[IndirectExportEntries]], the reexports of imported entries (<emu-xref href="#table-additional-fields-of-source-text-module-records"></emu-xref>). Those include the `export * as ns from "mod"` entries, whose [[ImportName]] is ~namespace~ (<emu-xref href="#table-exportentry-records"></emu-xref>), which GetExportedNames reaches here.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-resolveexport" steps="5.a.i" hashes="b168b31234b81f3b4951ca5b9db872ad5ce2d08c052276f8b478a3541d595a5b">
+    <emu-alg reading="definition">
+      1. Assert: _module_.[[LocalExportEntries]] contains _exportEntry_.
+    </emu-alg>
+    <emu-note>
+      <p>"This export" is _exportEntry_. A module provides the direct binding for an export when the export's ExportEntry Record is one of its [[LocalExportEntries]], the entries that correspond to declarations that occur within the module (<emu-xref href="#table-additional-fields-of-source-text-module-records"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-resolveexport" steps="6.a.iii.1" hashes="642e6dbe8d50b6355090f20a77a6880bc25f9b46d880941ff0882846fb0aae80">
+    <emu-alg reading="definition">
+      1. Assert: _module_.[[LocalExportEntries]] does not contain _exportEntry_.
+    </emu-alg>
+    <emu-note>
+      <p>"This export" is _exportEntry_. A module provides the direct binding for an export when the export's ExportEntry Record is one of its [[LocalExportEntries]], the entries that correspond to declarations that occur within the module (<emu-xref href="#table-additional-fields-of-source-text-module-records"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-resolveexport" steps="6.a.iv" hashes="12a61c99f7be9c7a1f82961f093cc205fb8187ef1bbcbe71ae90a92459913e46">
+    <emu-alg reading="definition">
+      1. Assert: _module_.[[IndirectExportEntries]] contains _exportEntry_.
+    </emu-alg>
+    <emu-note>
+      <p>"This export" is _exportEntry_. A module imports a specific binding for an export when the export's ExportEntry Record is one of its [[IndirectExportEntries]], the reexports of imported entries (<emu-xref href="#table-additional-fields-of-source-text-module-records"></emu-xref>). Those include the `export * as ns from "mod"` entries, whose [[ImportName]] is ~namespace~ (<emu-xref href="#table-exportentry-records"></emu-xref>), which step 6.a.iii has already returned for.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-ParseJSON" steps="8" hashes="72c2d3e4a04be637d17f6d6612d7c81f6d2c7f3e36bcaa862b8b45c4bafae77e">
+    <emu-alg reading="definition">
+      1. If _result_ is an Object, then
+        1. Assert: _script_ Contains |ArrayLiteral| or _script_ Contains |ObjectLiteral|.
+      1. Else,
+        1. Assert: _result_ is either a String, a Number, or a Boolean, or _result_ is *null*.
+    </emu-alg>
+    <emu-note>
+      <p>_result_ is the value of the one |Expression| of _script_, a valid JSON text: a literal, a negated |NumericLiteral|, an |ArrayLiteral| or an |ObjectLiteral|. Only the last two have an Object as their value, the object they define, and a JSON text whose value is a literal contains neither.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-phrase id="ph-only-single-code-points" kind="predicate" subject="_cs_">
+    <emu-pattern>contains only single code points</emu-pattern>
+    <p>A CharSetElement that is not a List is a character; a List consists of a single character when it has one element. With the `u` or `v` flag that a |CharacterClassEscape| `P{` needs, a character is a code point.</p>
+    <emu-params>_cs_: a CharSet</emu-params>
+    <emu-alg>
+      1. Return CharSetAllSingle(_cs_).
+    </emu-alg>
+  </emu-phrase>
+  <emu-reading clause="sec-runsuspendedcontext" steps="5" hashes="a2217e53beead876b69e0992059a064c51886205efd7e3f915c18ea6e74bc734">
+    <emu-alg reading="definition">
+      1. Assert: OnContextStack(_context_) is *false* and _callerContext_ is the running execution context.
+    </emu-alg>
+    <emu-note>
+      <p>"When we reach this step" and "already", "again" restate reaching the step after step 3's push. _context_ has been removed from the stack when the stack no longer contains it.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-source-text-module-record-execute-module" steps="1" hashes="a9441812cbd1cf82242f3feeb6452b691dfd6f0ef316eeae67b9891cc79fff46">
+    <emu-alg reading="definition">
+      1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating~, ~evaluating-async~, or ~evaluated~, and _module_.[[Environment]] is not ~empty~.
+    </emu-alg>
+    <emu-note>
+      <p>[[Status]] records the module's progress through its lifecycle, ~linked~ and the states after it in that order (<emu-xref href="#table-cyclic-module-fields"></emu-xref>); InnerModuleLinking sets it to ~linked~ only after _module_.InitializeEnvironment() has set [[Environment]] and instantiated the declarations in it.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-phrase id="ph-named-exports-resolvable" kind="condition">
+    <emu-pattern>All named exports from _module_ are resolvable</emu-pattern>
+    <p>The named exports of _module_ are the ExportEntry Records of its [[LocalExportEntries]] and [[IndirectExportEntries]], each with a String [[ExportName]] (<emu-xref href="#table-additional-fields-of-source-text-module-records"></emu-xref>); a name a star export brings in may be ambiguous without an error. An export is resolvable when ResolveExport finds its binding.</p>
+    <emu-params>_module_: a Source Text Module Record</emu-params>
+    <emu-alg>
+      1. For each ExportEntry Record _e_ of the list-concatenation of _module_.[[LocalExportEntries]] and _module_.[[IndirectExportEntries]], do
+        1. If _module_.ResolveExport(_e_.[[ExportName]]) is not a ResolvedBinding Record, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+</emu-clause>

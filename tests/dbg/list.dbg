@@ -1,0 +1,37 @@
+// What print wrote arrives as output at the next pause, not only at the end. A List's elements
+// page by start and count, numbered from its origin: f's arguments List.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["debugger"]}}}
+{"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": [{"alg": "OrdinaryCallEvaluateBody", "path": "1"}]}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "output", "body": {"category": "stdout", "output": "one\n"}}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "description": "debugger statement"}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "output", "body": {"category": "stdout", "output": "two\n"}}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "description": "debugger statement"}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "OrdinaryCallEvaluateBody"}}}}
+{"send": {"command": "scopes", "arguments": {"frameId": 0}}}
+{"expect": {"type": "response", "command": "scopes", "success": true, "body": {"scopes": [{"name": "Slots", "variablesReference": "${=slots}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${slots}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "func"}, {"name": "argList", "type": "List (5)", "indexedVariables": 5, "variablesReference": "${=args}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${args}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "[0]", "value": "10"}, {"name": "[1]"}, {"name": "[2]"}, {"name": "[3]"}, {"name": "[4]", "value": "14"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${args}", "filter": "indexed", "start": 1, "count": 2}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "[1]", "value": "11", "type": "Number"}, {"name": "[2]", "value": "12"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${args}", "start": 3, "count": 9}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "[3]", "value": "13"}, {"name": "[4]", "value": "14"}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

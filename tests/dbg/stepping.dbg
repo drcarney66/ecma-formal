@@ -1,0 +1,43 @@
+// next, stepIn and stepOut by depth (the frames of the whole spec stack): from EvaluateCall
+// step 3 (depth 5), stepIn enters ArgumentListEvaluation and further in; stepOut stops at the
+// first step less deep; next at the next step no deeper.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": [{"alg": "sec-evaluatecall", "path": "3"}]}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"secId": "sec-evaluatecall", "path": "3", "depth": 5}}}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": []}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "ArgumentListEvaluation", "secId": "sec-runtime-semantics-argumentlistevaluation", "path": "1", "text": "Let ref be ? Evaluation of |AssignmentExpression|.", "depth": 6}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "secId": "sec-literals-runtime-semantics-evaluation", "path": "1", "depth": 7}}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1, "levels": 3}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"totalFrames": 7, "stackFrames": [{"name": "Evaluation", "spec": {"path": "1"}}, {"name": "ArgumentListEvaluation", "spec": {"path": "1"}}, {"name": "EvaluateCall", "spec": {"path": "3", "text": "Let argList be ? ArgumentListEvaluation of argumentListNode."}}]}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"secId": "ph-numeric-value-defined", "path": "1", "depth": 8}}}}
+{"send": {"command": "stepOut", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stepOut", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"secId": "sec-runtime-semantics-argumentlistevaluation", "path": "2", "depth": 6}}}}
+{"send": {"command": "stepOut", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stepOut", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"secId": "sec-evaluatecall", "path": "4", "depth": 5}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"secId": "sec-evaluatecall", "path": "5", "depth": 5}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"secId": "sec-evaluatecall", "path": "6", "depth": 5}}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 2", "exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

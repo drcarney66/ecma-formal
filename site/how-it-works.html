@@ -1,0 +1,140 @@
+<!-- title: How it works -->
+<!-- eyebrow: From spec.html to a specification in Lean, and to an engine that runs it -->
+<!-- lede: <p>The specification is read in two ways. Its algorithms, tables, early errors and grammars are generated from spec.html as data, and a machine defined once runs that data. What the algorithms take for granted, the values and the host, is stated as laws that quote the text.</p> -->
+
+<h2 id="whole">The whole</h2>
+
+<figure class="diagram" aria-labelledby="fig1-cap">
+<div class="svgbox">
+<svg viewBox="0 0 760 452" role="img" aria-label="The whole: spec.html and the overlay go into the generator, which writes the generated Lean data; Lower makes the code the machine runs; the machine takes a model and a host, each with laws that quote the text; the errata's readings are a parameter of the machine. Below, the engine, a model and a host of its own, is proved to implement the specification. Around them, the debugger runs the engine's machine step by step, and test262 runs on the engine.">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="dg-zone" x="300" y="6" width="454" height="276" rx="8"/>
+<text class="dg-zl" x="312" y="276">lean/Ecma: the specification layer</text>
+<rect class="dg-box spec" x="8" y="16" width="150" height="70" rx="5"/>
+<text class="dg-t" x="20" y="39">spec.html</text>
+<text class="dg-s" x="20" y="57">tc39/ecma262</text>
+<text class="dg-s" x="20" y="73">at {{ecma262}}</text>
+<rect class="dg-box spec" x="8" y="96" width="150" height="70" rx="5"/>
+<text class="dg-t" x="20" y="119">The overlay</text>
+<text class="dg-s" x="20" y="137">{{overlay_files}} files of readings</text>
+<text class="dg-s" x="20" y="154">{{errata}} errata</text>
+<path class="dg-a" d="M158,49 C176,49 176,74 190,80" marker-end="url(#ah)"/>
+<path class="dg-a" d="M158,120 C176,120 176,100 190,96" marker-end="url(#ah)"/>
+<rect class="dg-box" x="192" y="58" width="96" height="58" rx="5"/>
+<text class="dg-t" x="202" y="81">Generator</text>
+<text class="dg-s" x="202" y="99">in Rust</text>
+<path class="dg-a" d="M288,76 C302,76 302,52 316,50" marker-end="url(#ah)"/>
+<path class="dg-a" d="M288,100 C302,100 302,122 316,124" marker-end="url(#ah)"/>
+<rect class="dg-box lean" x="318" y="20" width="176" height="58" rx="5"/>
+<text class="dg-t" x="330" y="43">lean/Ecma/Gen</text>
+<text class="dg-s" x="330" y="61">{{gen_modules}} modules: algorithms</text>
+<rect class="dg-box lean" x="318" y="96" width="176" height="58" rx="5"/>
+<text class="dg-t" x="330" y="119">lean/Ecma/Grammar/Gen</text>
+<text class="dg-s" x="330" y="137">{{grammar_gen_modules}} modules: grammars</text>
+<path class="dg-a" d="M494,49 C514,49 514,74 530,80" marker-end="url(#ah)"/>
+<path class="dg-a" d="M494,125 C514,125 514,100 530,96" marker-end="url(#ah)"/>
+<rect class="dg-box lean" x="532" y="58" width="110" height="58" rx="5"/>
+<text class="dg-t" x="544" y="81">Lower</text>
+<text class="dg-s" x="544" y="99">code to run</text>
+<path class="dg-a" d="M587,116 L587,180" marker-end="url(#ah)"/>
+<rect class="dg-box lean" x="318" y="184" width="130" height="78" rx="5"/>
+<text class="dg-t" x="330" y="207">The model</text>
+<text class="dg-s" x="330" y="225">the values</text>
+<text class="dg-s" x="330" y="241">{{model_laws}} laws, quoted</text>
+<rect class="dg-box lean" x="522" y="184" width="130" height="78" rx="5"/>
+<text class="dg-t" x="534" y="207">The machine</text>
+<text class="dg-s" x="534" y="225">one transition</text>
+<text class="dg-m" x="534" y="243">Machine.step</text>
+<rect class="dg-box lean" x="664" y="184" width="84" height="78" rx="5"/>
+<text class="dg-t" x="674" y="207">The host</text>
+<text class="dg-s" x="674" y="225">{{host_laws}} laws,</text>
+<text class="dg-s" x="674" y="241">quoted</text>
+<path class="dg-a" d="M448,223 L518,223" marker-end="url(#ah)"/>
+<path class="dg-a" d="M664,223 L656,223" marker-end="url(#ah)"/>
+<path class="dg-a dg-dash" d="M158,150 C230,150 260,170 320,170 L515,170 C535,170 545,174 548,180" marker-end="url(#ah)"/>
+<text class="dg-l" x="118" y="196">the errata's readings:</text>
+<text class="dg-l" x="118" y="212">a parameter of the machine</text>
+<rect class="dg-box proved" x="318" y="330" width="434" height="80" rx="5"/>
+<text class="dg-t" x="330" y="353">The engine: lean/Engine</text>
+<text class="dg-s" x="330" y="371">a model and a host of its own, a parser, shortcuts</text>
+<text class="dg-m" x="330" y="389">theorem Engine.implements: it implements the specification</text>
+<text class="dg-s" x="330" y="404">Lean's {{axiom_count}} standard axioms trusted; {{runtime_pins}} pins checked at run time</text>
+<path class="dg-a" d="M535,330 L535,268" marker-end="url(#ah)"/>
+<text class="dg-l" x="542" y="304">implements</text>
+<rect class="dg-box" x="8" y="300" width="200" height="56" rx="5"/>
+<text class="dg-t" x="20" y="323">The debugger: ecma-dbg</text>
+<text class="dg-s" x="20" y="341">the machine, paused at its steps</text>
+<rect class="dg-box" x="8" y="376" width="200" height="56" rx="5"/>
+<text class="dg-t" x="20" y="399">test262</text>
+<text class="dg-s" x="20" y="417">TC39's tests, run on {{RUN}}</text>
+<path class="dg-a" d="M314,360 L212,334" marker-end="url(#ah)"/>
+<path class="dg-a" d="M314,390 L212,402" marker-end="url(#ah)"/>
+</svg>
+</div>
+<figcaption id="fig1-cap">spec.html is used unchanged; the overlay adds readings in the text's own notation. The generator writes the generated modules, which are never edited by hand. The machine, Lower, the model's and the host's laws are written by hand in <code>lean/Ecma</code>, every law quoting the sentence it reads, and nothing there fixes a model or a host. The engine is one model and host, proved to implement the specification; the debugger and test262 run it.</figcaption>
+</figure>
+
+<h2 id="pipeline">From the text to data</h2>
+
+<p>The specification's own source, spec.html, is pinned at a revision of tc39/ecma262 and used unchanged. What every generator, check and page reads is <em>the text</em> (<code>spec/proposals.txt</code>, <code>scripts/spec_text.py</code>): spec.html itself, or spec.html with the TC39 proposals that file names merged into it{{proposal_link}}. A generator written in Rust parses every algorithm step, algorithm body, equation, early-error rule and table into data, and writes that data as Lean modules: one module per clause in <code>lean/Ecma/Gen</code>, and the grammars in <code>lean/Ecma/Grammar/Gen</code>. These files are never edited by hand.</p>
+
+<p>The generator checks itself: printing the data it parsed gives back the HTML's text, for every step, body, equation, early-error bullet and table. The Lean side has a printer of the same notation (<code>Ecma.Print</code>, in <code>lean/Ecma/Notation/Print.lean</code>), and <code>scripts/bijection.py</code> checks that every generated item prints back to spec.html or the overlay byte for byte.</p>
+
+<h3 id="overlay">The overlay</h3>
+<p>Some of the text is prose a machine cannot run as it stands: a phrase such as "the String value whose code units are …", or a step that says what to find rather than how. The overlay (<code>spec/formal/*.emu</code>, {{overlay_files}} files) gives each such phrase or step a reading, written in the specification's own algorithm notation, attached to the clause and step it reads. The generator reads the overlay with spec.html; a reading becomes part of the data beside the text it reads, and the text itself is kept.</p>
+
+<h3 id="ids">Numbers that stay put</h3>
+<p>The generated data names what it refers to by number: a clause or algorithm, a syntax-directed operation, an erratum, a production, a nonterminal, a table, a sort, a phrase, a field. The numbers are kept in tables in the repository, {{id_tables}} files under <code>spec/formal</code> ({{id_tables_list}}). The generators read them: an entry met before keeps its number, a new one takes the next unused number, and one the text no longer has keeps its number, marked retired. So a change to the text changes only the generated modules that hold the change: a new clause or production renumbers nothing else, and a hand-written proof that names an algorithm by its number still names the same algorithm after the text moves on.</p>
+
+<h2 id="rule">What <code>lean/Ecma</code> may hold</h2>
+<p>The specification layer, <code>lean/Ecma</code>, holds three kinds of thing and nothing else:</p>
+<ol class="steps">
+<li><strong>What is generated from the HTML:</strong> the algorithms, tables, early errors, grammars and the starting realm.</li>
+<li><strong>What the notation means:</strong> the machine that runs an algorithm's steps, and the primitives of the notation (§5.2: Let, Set, If, Repeat, Assert, the <code>?</code> and <code>!</code> shorthands).</li>
+<li><strong>Requirements that quote their sentence:</strong> the laws of the model and of the host. A law is never stricter than the sentence it reads where the text is deliberately permissive, and never vacuous. Where a law is stricter, it goes on a list of proposed normative changes.</li>
+</ol>
+<p><code>lean/Ecma</code> has {{ecma_lines}} hand-written lines in {{ecma_files}} files outside the generated directories. It holds definitions and stated laws only: no theorems, no tactics, and no <code>partial</code> or <code>unsafe</code> definitions (<code>scripts/quick_check.py</code> checks this).</p>
+
+<h2 id="machine">From data to a machine</h2>
+<p>The data is the text's structure, and it does not yet run. <code>lean/Ecma/Lower</code> turns it into the program the machine runs: macros such as IfAbruptRejectPromise are expanded into the steps they "mean the same thing as"; each phrase becomes a call of its reading; the few steps that say what to choose ("Let <var>n</var>, <var>k</var>, and <var>s</var> be integers such that …") become steps that compute the choice; and each algorithm is written as linear code with its step numbers kept, so that every step the machine takes can be named by its clause and step.</p>
+<p><code>lean/Ecma/Machine</code> is a small-step machine over that code. Its configurations are the frames of the calls in progress, each with its algorithm, its Parse Node, its variables and the step it is at. One transition (<code>step</code>) is defined once, for every model and host. A run is a sequence of transitions that ends (<a href="implements.html#Machine.Runs"><code>Machine.Runs</code></a>).</p>
+
+<h2 id="model-host">The model and the host</h2>
+<p>The machine is stated over two parameters, and the specification layer fixes neither.</p>
+<p><strong>The model</strong> (<a href="model.html#Model"><code>Ecma.Model</code></a>) gives each sort of the specification a carrier and its operations: mathematical values, Numbers, BigInts, Strings, Symbols, Parse Nodes, Lists, Data Blocks, CharSets, Records, property tables and the store. Its laws (<a href="model.html#Model.Laws"><code>Model.Laws</code></a>, {{model_laws}} laws, among them <code>num</code>, which holds the {{num_laws}} laws of Numbers, and <code>bytes</code>, which holds the {{byte_laws}} laws of Data Blocks) say what the text assumes of them, for example that mathematical values are an ordered field and that Number arithmetic is IEEE 754-2019 binary64 with roundTiesToEven.</p>
+<p><strong>The host</strong> (<a href="host.html#Host"><code>Ecma.Host</code></a>) answers every host-defined and implementation-defined operation, by clause, and every choice the text leaves to the implementation, by primitive. Every call of the host is logged, and its {{host_laws}} laws (<a href="host.html#Host.WF"><code>Host.WF</code></a>) constrain what one call may answer given the state and the log before it: that a timeout job runs after at least its delay, that promise jobs run in the order they were scheduled, that Date.now answers a time value.</p>
+<p>Each law's documentation names its clause, quotes the governing sentence, and gives a one-line reading. <code>scripts/law_quotes.py</code> checks every quotation against the pinned spec.html. The reading pages set each law with its sentence first: see <a href="host.html#Host.TimeLaws.timeoutAfter"><code>timeoutAfter</code></a> for an example.</p>
+
+<h2 id="errata">Readings and errata</h2>
+<p>Where the text as written cannot be followed (an Assert that can fail, a case no step covers, a phrase that names a node the parse does not have), the overlay records an <em>erratum</em>: the text's place, and the readings that resolve it. There are {{errata}} (<code>spec/formal/errata.txt</code>): {{errata_defects}} defects of the text and {{errata_proposals}} proposed normative {{errata_proposals_noun}}. An erratum's readings are the text as written (<code>literal</code>), the reading test262's tests require (<code>test262</code>), and a proposed fix (<code>proposed</code>). The default is per erratum: {{errata_test262}} read as test262 requires, {{errata_literal}} literally, {{errata_proposed}} as proposed, and {{errata_pending}} whose resolution is not yet decided, which the machine reads {{errata_pending_reading}} until it is.</p>
+<p>{{errata_switch_spec}} errata are switched in the specification at run time: <code>{{RUN}} --reading literal</code> reads every erratum literally, and <code>--erratum Name=literal</code> one of them; the proofs hold for every choice of readings, which are a parameter of the machine. {{errata_switch_parser}} are switched only in the engine's parser (the specification's grammar has the test262 reading), and {{errata_switch_none}} have one reading. A program run under the literal text stops at the exact step where the text cannot be followed. Read literally, {{literal_build_kept_count}} errata stop nearly every program before it runs, so the debugger's build of the literal text keeps them, {{literal_build_kept}}, at their default reading.{{errata_sentence}}</p>
+
+<h2 id="engine">The engine</h2>
+<p><code>lean/Engine</code> is one concrete model of the specification: exact mathematical values, binary64 Numbers, UTF-16 Strings, arrays for Lists and the store; a parser over the generated grammars; a host with jobs, agents, modules and test262's <code>$262</code>; and shortcuts for particular algorithms, each proved to agree with the algorithm's steps. It has {{engine_lines}} lines outside its proofs, and {{proof_lines}} lines of proofs.</p>
+<p>The engine runs whole programs as <code>{{RUN}}</code> (a script, a module, or a bundle made by <code>{{BUNDLE}}</code>), runs {{t262_link}}, and drives the step debugger <code>{{DBG}}</code> ({{debugger_lines}} lines), which pauses at the specification's steps as a program runs. <a href="what-is-proved.html">What is proved</a> says exactly what the proofs establish about it.</p>
+
+<h2 id="example">One clause, end to end</h2>
+<p>§{{ex:num}} IsCallable is three steps. This is spec.html's text:</p>
+{{ex:spec}}
+<p><strong>The data.</strong> The generator writes the clause as one Lean value of type <code>Alg</code>, a definition of the module for §7.2 that nobody edits:</p>
+{{ex:gen}}
+<p>Each step is a term of the notation's syntax, and each number in it comes from a kept table: the algorithm's id <code>⟨{{ex:id}}, 0⟩</code> is clause {{ex:id}} of <code>clause-ids.txt</code>, <code>sec-iscallable</code>; sort {{ex:sort}} of <code>sort-ids.txt</code> is {{ex:sort_name}}, so step 1's test reads "is not an Object"; step 2's condition is phrase {{ex:phrase}} of <code>phrase-ids.txt</code>, <code>{{ex:phrase_name}}</code>, applied to the variable <var>arg</var> and field {{ex:field}} of <code>field-ids.txt</code>, [[{{ex:field_name}}]]: "has a [[Call]] internal method".</p>
+<p><strong>A step of the machine.</strong> Lower turns the body into the code the machine runs, with its step numbers kept. When EvaluateCall reaches "If IsCallable(<var>func</var>) is <b>false</b>", the machine pushes a frame for algorithm {{ex:id}} with <var>arg</var> bound to the callee. Each transition, <code>Ecma.Machine.step</code>, advances the top frame by one step: at step 2 it evaluates the condition on the callee's object in the store and either returns <b>true</b> to EvaluateCall's frame or goes on to step 3, which returns <b>false</b>. Every configuration names its clause and step, which is what lets the engine's theorem compare the engine's transitions with these, one configuration at a time.</p>
+<p><strong>In the debugger.</strong> The example {{ex:debugger}} calls a function and an ordinary object: the debugger pauses at IsCallable step 2 for the function and at step 3 for the object, with IsCallable over EvaluateCall in the spec stack, the step's text, and the value of <var>arg</var>.</p>
+
+<h2 id="sizes">Sizes</h2>
+<div class="tablebox">
+<table>
+<thead><tr><th>Part</th><th class="num">Files</th><th class="num">Lines</th><th>Written by</th></tr></thead>
+<tbody>
+<tr><td><code>lean/Ecma/Gen</code></td><td class="num">{{gen_modules}}</td><td class="num">{{gen_lines}}</td><td>the generator</td></tr>
+<tr><td><code>lean/Ecma/Grammar/Gen</code></td><td class="num">{{grammar_gen_modules}}</td><td class="num">{{grammar_gen_lines}}</td><td>the generator</td></tr>
+<tr><td><code>lean/Ecma</code>, the rest</td><td class="num">{{ecma_files}}</td><td class="num">{{ecma_lines}}</td><td>hand</td></tr>
+<tr><td><code>lean/Engine</code>, outside its proofs</td><td class="num">{{engine_files}}</td><td class="num">{{engine_lines}}</td><td>hand</td></tr>
+<tr><td><code>lean/Engine/Proofs</code></td><td class="num">{{proof_files}}</td><td class="num">{{proof_lines}}</td><td>hand</td></tr>
+<tr><td><code>lean/Debugger</code></td><td class="num">{{debugger_files}}</td><td class="num">{{debugger_lines}}</td><td>hand</td></tr>
+<tr><td><code>spec/formal/*.emu</code>, the overlay</td><td class="num">{{overlay_files}}</td><td class="num">{{overlay_lines}}</td><td>hand</td></tr>
+</tbody>
+</table>
+</div>
+<p class="muted">Lines are counted in this commit's sources. Not counted: <code>lean/Ecma/Unicode/Gen</code> and the <code>Unicode</code> library, which hold the Unicode Character Database's tables.</p>

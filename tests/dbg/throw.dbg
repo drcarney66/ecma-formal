@@ -1,0 +1,20 @@
+// The throw filter: a pause where the control starts escaping with a throw completion. ThrowStatement
+// Evaluation 3 throws; ScriptEvaluation 17's "? result" passes the same completion on: no second
+// pause.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["throw"]}}}
+{"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true, "body": {"breakpoints": [{"verified": true}]}}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "exception", "description": "throw", "spec": {"alg": "Evaluation", "secId": "sec-throw-statement-runtime-semantics-evaluation", "path": "3", "text": "Throw exprValue.", "filter": "throw"}}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"stackFrames": [{"id": 0, "name": "Evaluation", "source": {"name": "throw.js"}, "line": 1, "column": 1, "spec": {"node": {"production": "ThrowStatement : `throw` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`"}}}, {"id": 1, "name": "ScriptEvaluation"}], "totalFrames": 2}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "throw: 1", "exitCode": 1}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

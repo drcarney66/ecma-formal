@@ -1,0 +1,47 @@
+// A generator: stepIn at `it.next()` enters its body; next over `yield a` goes to the
+// caller, in %GeneratorPrototype%.next at the call expression (inBuiltin), then next to the call's
+// return; stepIn at the second `it.next()` resumes the body after the yield; stepOut from there
+// lands at the call again.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "spec": {"alg": "ParseScript", "path": "1"}, "js": {"contexts": 1}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 7, "column": 1, "endLine": 7, "endColumn": 14, "lo": 66, "hi": 79, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 8, "column": 1, "endLine": 8, "endColumn": 25, "lo": 80, "hi": 104, "contexts": 2}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 2, "column": 3, "endLine": 2, "endColumn": 13, "lo": 18, "hi": 28, "contexts": 4}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 3, "column": 3, "endLine": 3, "endColumn": 11, "lo": 31, "hi": 39, "contexts": 4}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "RunSuspendedContext", "path": "5"}, "js": {"line": 8, "column": 9, "endLine": 8, "endColumn": 18, "lo": 88, "hi": 97, "inBuiltin": "%GeneratorPrototype%.next", "contexts": 3, "statement": {"line": 8, "column": 1, "lo": 80, "hi": 104}}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "BuiltinCallOrConstruct", "path": "14"}, "js": {"line": 8, "column": 9, "endLine": 8, "endColumn": 18, "lo": 88, "hi": 97, "contexts": 2, "statement": {"line": 8, "column": 1, "lo": 80, "hi": 104}}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 9, "column": 1, "endLine": 9, "endColumn": 25, "lo": 105, "hi": 129, "contexts": 2}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 4, "column": 3, "endLine": 4, "endColumn": 13, "lo": 42, "hi": 52, "contexts": 4}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 5, "column": 3, "endLine": 5, "endColumn": 11, "lo": 55, "hi": 63, "contexts": 4}}}}
+{"send": {"command": "stepOut", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepOut", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "RunSuspendedContext", "path": "5"}, "js": {"line": 9, "column": 9, "endLine": 9, "endColumn": 18, "lo": 113, "hi": 122, "inBuiltin": "%GeneratorPrototype%.next", "contexts": 3, "statement": {"line": 9, "column": 1, "lo": 105, "hi": 129}}}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 3"}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

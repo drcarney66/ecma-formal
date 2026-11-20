@@ -1,0 +1,15 @@
+// continue to the end: the lines print wrote (output), then terminated with ecma-run's
+// outcome line and exit status.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "args": ["--checked"]}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"expect": {"type": "event", "event": "output", "body": {"category": "stdout", "output": "hi\nthere\n"}}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 1", "exitCode": 0}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": false, "message": "not paused"}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

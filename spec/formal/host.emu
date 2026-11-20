@@ -1,0 +1,625 @@
+<emu-clause id="formal-host-hooks">
+  <h1>Host Hooks Named by Readings</h1>
+  <p>Operations a reading's steps call that the pinned text leaves to the host.</p>
+
+  <emu-primitive id="prim-hostreporterrors" name="HostReportErrors">
+    <emu-signature>HostReportErrors(_errorList_: a List of ECMAScript language values): ~unused~</emu-signature>
+    <p>Host-defined (HTML's report-an-exception hook): reports each element of _errorList_ to the developer.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-hostinitializebuiltincontext" name="HostInitializeBuiltinContext">
+    <emu-signature>HostInitializeBuiltinContext(_calleeContext_: an execution context): ~unused~</emu-signature>
+    <p>Any necessary implementation-defined initialization of _calleeContext_ (<emu-xref href="#sec-builtincallorconstruct"></emu-xref> step 8).</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-builtin-context-init" kind="expression" meaning="HostInitializeBuiltinContext(_ctx_)">
+    <emu-pattern>any necessary implementation-defined initialization of _ctx_</emu-pattern>
+  </emu-phrase>
+
+  <emu-primitive id="prim-additionaltimeout" name="AdditionalTimeout">
+    <emu-signature>AdditionalTimeout(): a non-negative mathematical value</emu-signature>
+    <p>An implementation-defined non-negative mathematical value added to a waiter's timeout (<emu-xref href="#sec-dowait"></emu-xref> step 23).</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-additional-timeout" kind="expression" meaning="AdditionalTimeout()">
+    <emu-pattern>an implementation-defined non-negative mathematical value</emu-pattern>
+  </emu-phrase>
+
+  <emu-primitive id="prim-timezonenamesuffix" name="TimeZoneNameSuffix">
+    <emu-signature>TimeZoneNameSuffix(_tv_: a time value): a String</emu-signature>
+    <p>An implementation-defined String for the time zone name at _tv_: either the empty String or the string-concatenation of the code unit 0x0020 (SPACE), the code unit 0x0028 (LEFT PARENTHESIS), an implementation-defined time zone name, and the code unit 0x0029 (RIGHT PARENTHESIS) (<emu-xref href="#sec-timezoneestring"></emu-xref> step 9).</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-timezoneestring" steps="9" hashes="2ea3261c43ed3a88001eb502c65eda270af671a564d9b839ec15e5e028645e68">
+    <emu-alg reading="definition">
+      1. Let _timeZoneName_ be TimeZoneNameSuffix(_tv_).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-primitive id="prim-systemtimezonestring" name="SystemTimeZoneString">
+    <emu-signature>SystemTimeZoneString(): a String</emu-signature>
+    <p>The String representing the host environment's current time zone, either a primary time zone identifier or an offset time zone identifier (<emu-xref href="#sec-systemtimezoneidentifier"></emu-xref> step 2).</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-system-time-zone-string" kind="expression" meaning="SystemTimeZoneString()">
+    <emu-pattern>the String representing the host environment's current time zone, either a primary time zone identifier or an offset time zone identifier</emu-pattern>
+  </emu-phrase>
+
+  <emu-primitive id="prim-timenow" name="TimeNow">
+    <emu-signature>TimeNow(): a time value</emu-signature>
+    <p>The time value (UTC) identifying the current time: a finite integral Number from -8.64 × 10<sup>15</sup> to 8.64 × 10<sup>15</sup> (<emu-xref href="#sec-time-values-and-time-range"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-time-now" kind="expression" rule="time-now" meaning="TimeNow()">
+    <emu-pattern>the time value (UTC) identifying the current time</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-time-at-least" kind="condition">
+    <emu-pattern>_a_ ≥ _b_ (ignoring potential non-monotonicity of time values)</emu-pattern>
+    <p>The comparison of a time value read from the host's clock with a time computed from an earlier reading. The parenthesis says the comparison is expected to hold for a clock that does not run backward; a clock that does fails it as any other value would.</p>
+    <emu-params>_a_: a mathematical value, _b_: a mathematical value</emu-params>
+    <emu-alg>
+      1. If _a_ ≥ _b_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-primitive id="prim-spinwaithint" name="SpinWaitHint">
+    <emu-signature>SpinWaitHint(): ~unused~</emu-signature>
+    <p>If the execution environment of the ECMAScript implementation supports signaling to the operating system or CPU that the current executing code is in a spin-wait loop, sends that signal (<emu-xref href="#sec-atomics.pause"></emu-xref> step 1). It has no effect on ECMAScript state.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-atomics.pause" steps="1" hashes="a3c7d001d09422a3906d9816c705a7a72b11d8c849ac13b033abe467faef2642">
+    <emu-alg reading="definition">
+      1. Perform SpinWaitHint().
+    </emu-alg>
+  </emu-reading>
+
+  <emu-primitive id="prim-discardcontextresources" name="DiscardContextResources">
+    <emu-signature>DiscardContextResources(_context_: an execution context): ~unused~</emu-signature>
+    <p>Discards all resources associated with _context_ (<emu-xref href="#sec-preparefortailcall"></emu-xref> step 2). It has no effect on ECMAScript state.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-preparefortailcall" steps="2" hashes="d1eb3af0dfd0ee6b81581e67a1d0fad668854579d50bd88f956898235c14bfdd">
+    <emu-alg reading="definition">
+      1. Perform DiscardContextResources(the running execution context).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-primitive id="prim-hostglobalobject" name="HostGlobalObject">
+    <emu-signature>HostGlobalObject(_realm_: a Realm Record): an Object or ~empty~</emu-signature>
+    <p>If the host requires use of a specific object to serve as _realm_'s global object, that object, created in a host-defined manner; otherwise ~empty~ (<emu-xref href="#sec-initializehostdefinedrealm"></emu-xref> steps 11 and 12).</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-initializehostdefinedrealm" steps="11 12" hashes="20619eb33176292720543cecf14abf0256603a6a16a153c542443c78ca875b95 73d618bc9c48dd8d5d4a39344335170f2bcaf3ded63a8e768f84a0b5773818e8">
+    <emu-alg reading="definition">
+      1. Let _global_ be HostGlobalObject(_realm_).
+      1. If _global_ is ~empty~, set _global_ to OrdinaryObjectCreate(_realm_.[[Intrinsics]].[[%Object.prototype%]]).
+    </emu-alg>
+    <emu-note>
+      <p>Step 11's condition and step 11.a's object are one question to the host: it answers the object, or ~empty~ where it requires none.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-primitive id="prim-hostthisvalue" name="HostThisValue">
+    <emu-signature>HostThisValue(_realm_: a Realm Record): an Object or ~empty~</emu-signature>
+    <p>If the host requires that the `this` binding in _realm_'s global scope return an object other than the global object, that object, created in a host-defined manner; otherwise ~empty~ (<emu-xref href="#sec-initializehostdefinedrealm"></emu-xref> steps 13 and 14).</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-initializehostdefinedrealm" steps="13 14" hashes="4f8245af36c3a7e3f2513e121b55fe0de616d43e6ccf6f7557b0031ca6e91da2 73d618bc9c48dd8d5d4a39344335170f2bcaf3ded63a8e768f84a0b5773818e8">
+    <emu-alg reading="definition">
+      1. Let _thisValue_ be HostThisValue(_realm_).
+      1. If _thisValue_ is ~empty~, set _thisValue_ to _global_.
+    </emu-alg>
+    <emu-note>
+      <p>Step 13's condition and step 13.a's object are one question to the host, as for steps 11 and 12.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-primitive id="prim-hostglobalproperties" name="HostGlobalProperties">
+    <emu-signature>HostGlobalProperties(_realm_: a Realm Record, _global_: an Object): ~unused~</emu-signature>
+    <p>Creates any host-defined global object properties on _global_ (<emu-xref href="#sec-initializehostdefinedrealm"></emu-xref> step 18). It changes no existing value but _global_'s own properties; it may create new values for them.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-initializehostdefinedrealm" steps="18" hashes="38052a5b32d359281e63f32e77fbd53f8616cf0908ea6f1d73ae845a891f7cb9">
+    <emu-alg reading="definition">
+      1. Perform HostGlobalProperties(_realm_, _global_).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-primitive id="prim-hostextendintrinsics" name="HostExtendIntrinsics">
+    <emu-signature>HostExtendIntrinsics(_realm_: a Realm Record): ~unused~</emu-signature>
+    <p>Provides any properties not described in this specification, and values for them, for _realm_'s intrinsics, the objects its [[Intrinsics]] holds and the objects their properties hold (<emu-xref href="#sec-conformance"></emu-xref>, <emu-xref href="#sec-hosts-and-implementations"></emu-xref>): it only adds own properties to those objects, and may create new values for them; it changes no internal slot, no existing property and no other value, adds no own property to an object whose [[Extensible]] is not *true* (<emu-xref href="#sec-invariants-of-the-essential-internal-methods"></emu-xref>), and adds no own property that <emu-xref href="#sec-forbidden-extensions"></emu-xref> forbids (*"caller"* or *"arguments"* on a function object).</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-initializehostdefinedrealm" steps="2" hashes="ef4e6433db12c803070a8b4aea6f30c2020972d57f730a5ec6255a58ed4d2998">
+    <emu-alg reading="definition">
+      1. Perform CreateIntrinsics(_realm_).
+      1. Perform HostExtendIntrinsics(_realm_).
+    </emu-alg>
+    <emu-note>
+      <p>The latitude of <emu-xref href="#sec-conformance"></emu-xref> and <emu-xref href="#sec-hosts-and-implementations"></emu-xref>, for the objects CreateIntrinsics creates: the host's additional properties of the intrinsics, added once they exist.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-primitive id="prim-hostextendobject" name="HostExtendObject">
+    <emu-signature>HostExtendObject(_o_: an Object): ~unused~</emu-signature>
+    <p>Provides any properties not described in this specification, and values for them, for the object _o_ that the specification's steps have just created (<emu-xref href="#sec-conformance"></emu-xref>): it only adds own properties to _o_, and may create new values for them; it changes no internal slot, no existing property and no other value, adds no own property if _o_.[[Extensible]] is not *true* (<emu-xref href="#sec-invariants-of-the-essential-internal-methods"></emu-xref>), and adds no own property that <emu-xref href="#sec-forbidden-extensions"></emu-xref> forbids.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-error-message" steps="5" hashes="00fd980864f223971df7842c97bbcee9b01f0e93e4b5901d40d9e8ada961ff31">
+    <emu-alg reading="definition">
+      1. Perform HostExtendObject(_obj_).
+      1. Return _obj_.
+    </emu-alg>
+    <emu-note>
+      <p>The latitude of <emu-xref href="#sec-conformance"></emu-xref> for the error object the constructor creates: the host's additional own properties of it.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-nativeerror" steps="5" hashes="00fd980864f223971df7842c97bbcee9b01f0e93e4b5901d40d9e8ada961ff31">
+    <emu-alg reading="definition">
+      1. Perform HostExtendObject(_obj_).
+      1. Return _obj_.
+    </emu-alg>
+    <emu-note>
+      <p>The latitude of <emu-xref href="#sec-conformance"></emu-xref> for the error object the constructor creates: the host's additional own properties of it.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-aggregate-error" steps="7" hashes="00fd980864f223971df7842c97bbcee9b01f0e93e4b5901d40d9e8ada961ff31">
+    <emu-alg reading="definition">
+      1. Perform HostExtendObject(_obj_).
+      1. Return _obj_.
+    </emu-alg>
+    <emu-note>
+      <p>The latitude of <emu-xref href="#sec-conformance"></emu-xref> for the error object the constructor creates: the host's additional own properties of it.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-suppressederror" steps="6" hashes="00fd980864f223971df7842c97bbcee9b01f0e93e4b5901d40d9e8ada961ff31">
+    <emu-alg reading="definition">
+      1. Perform HostExtendObject(_obj_).
+      1. Return _obj_.
+    </emu-alg>
+    <emu-note>
+      <p>The latitude of <emu-xref href="#sec-conformance"></emu-xref> for the error object the constructor creates: the host's additional own properties of it.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-primitive id="prim-hostreportcleanuperror" name="HostReportCleanupError">
+    <emu-signature>HostReportCleanupError(_completion_: an abrupt completion): ~unused~</emu-signature>
+    <p>Any host-defined steps for reporting the error of _completion_ (<emu-xref href="#sec-host-cleanup-finalization-registry"></emu-xref> step 2).</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-host-cleanup-finalization-registry" steps="2" hashes="bd159cb8881522093001a52be8abec54aaecda90303d8b0352571c0bc2ededeb">
+    <emu-alg reading="definition">
+      1. If _cleanupResult_ is an abrupt completion, perform HostReportCleanupError(_cleanupResult_).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-primitive id="prim-maycleanup" name="MayCleanup">
+    <emu-signature>MayCleanup(_finalizationRegistry_: a FinalizationRegistry): a Record or ~empty~</emu-signature>
+    <p>The implementation's choice at <emu-xref href="#sec-cleanup-finalization-registry"></emu-xref> step 3: ~empty~ if it performs the steps no more, else any Record _cell_ that _finalizationRegistry_.[[Cells]] contains such that _cell_.[[WeakRefTarget]] is ~empty~ (step 3.a's choice). It is ~empty~ when there is no such Record. It has no effect on ECMAScript state.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-cleanup-finalization-registry" steps="3" hashes="b92369bee8f1550e2e7d7a3f6a3c2ac2b99445726abbb3c4cd0b0bf68f2700de">
+    <emu-alg reading="definition">
+      1. Let _cell_ be MayCleanup(_finalizationRegistry_).
+      1. Repeat, while _cell_ is not ~empty~,
+        1. Remove _cell_ from _finalizationRegistry_.[[Cells]].
+        1. Perform ? HostCallJobCallback(_callback_, *undefined*, « _cell_.[[HeldValue]] »).
+        1. Set _cell_ to MayCleanup(_finalizationRegistry_).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-primitive id="prim-hostjobcallbackdata" name="HostJobCallbackData">
+    <emu-signature>HostJobCallbackData(_callback_: a function object): anything</emu-signature>
+    <p>The host's [[HostDefined]] value of the JobCallback Record HostMakeJobCallback makes for _callback_ (<emu-xref href="#sec-hostmakejobcallback"></emu-xref>): ~empty~ in the default implementation. It changes only the heap, each object as <emu-xref href="#sec-invariants-of-the-essential-internal-methods"></emu-xref> allows; it may create new values.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-hostmakejobcallback" steps="1" hashes="62618fce290fd4906fd3e74e2d746ee1b6d88ed587c0742ce1a989872f249c6e">
+    <emu-alg reading="definition">
+      1. Return the JobCallback Record { [[Callback]]: _callback_, [[HostDefined]]: HostJobCallbackData(_callback_) }.
+    </emu-alg>
+    <emu-note>
+      <p>The JobCallback Record's [[Callback]] is _callback_ for every host; the host gives its [[HostDefined]] (HTML's incumbent settings and active script).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-primitive id="prim-hostpreparecalljobcallback" name="HostPrepareCallJobCallback">
+    <emu-signature>HostPrepareCallJobCallback(_jobCallback_: a JobCallback Record): ~unused~</emu-signature>
+    <p>The host's steps before HostCallJobCallback calls _jobCallback_.[[Callback]] (<emu-xref href="#sec-hostcalljobcallback"></emu-xref>; HTML's preparation to run a callback): none in the default implementation. They change only the heap, the execution context stack and the suspended context, each object as <emu-xref href="#sec-invariants-of-the-essential-internal-methods"></emu-xref> allows.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-hostcleanupcalljobcallback" name="HostCleanupCallJobCallback">
+    <emu-signature>HostCleanupCallJobCallback(_jobCallback_: a JobCallback Record): ~unused~</emu-signature>
+    <p>The host's steps after HostCallJobCallback's call of _jobCallback_.[[Callback]] returns (<emu-xref href="#sec-hostcalljobcallback"></emu-xref>; HTML's clean-up after running a callback): none in the default implementation. They change only the heap, the execution context stack and the suspended context, each object as <emu-xref href="#sec-invariants-of-the-essential-internal-methods"></emu-xref> allows.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-hostcalljobcallback" steps="2" hashes="f30a69a913a7d1838027a79c14e1279cab65e66dfe56944691b14b07c8e0c81f">
+    <emu-alg reading="definition">
+      1. Perform HostPrepareCallJobCallback(_jobCallback_).
+      1. Let _result_ be Completion(Call(_jobCallback_.[[Callback]], _thisValue_, _argList_)).
+      1. Perform HostCleanupCallJobCallback(_jobCallback_).
+      1. Return ? _result_.
+    </emu-alg>
+    <emu-note>
+      <p>HostCallJobCallback performs Call(_jobCallback_.[[Callback]], _thisValue_, _argList_) and returns its result for every host; the host's steps around the call are HTML's.</p>
+    </emu-note>
+  </emu-reading>
+</emu-clause>
+
+<emu-clause id="formal-host-dispositions">
+  <h1>Host Requirement Sentences Without a Meaning of Their Own</h1>
+  <p>Each <code>emu-host-law</code> says what the requirement sentences of a clause, of its paragraph <code>para</code> (counted from 0 among the clause's paragraphs), or of that paragraph's sentence <code>sent</code> (from 0) are; the most specific one holds. Class <code>law</code> names the <code>Host.WF</code> field that states the sentence; <code>theorem</code> is a property of the specification's own algorithms, a proof obligation and never assumed; <code>advice</code> is advice to programs; <code>scope</code> lies outside the base layer; <code>syntax</code> is carried by the grammar and its early errors; <code>nonfunctional</code> is about cost or safety, not results.</p>
+
+  <emu-host-law clause="sec-invariants-of-the-essential-internal-methods" class="theorem">Invariants of the essential internal methods: properties the specification's own objects must have; the host frame laws keep host steps to them.</emu-host-law>
+  <emu-host-law clause="sec-invariants-of-the-essential-internal-methods" para="1" sent="2" class="nonfunctional">Memory safety under a violation: not a property of results.</emu-host-law>
+  <emu-host-law clause="sec-invariants-of-the-essential-internal-methods" para="2" sent="0" class="law" law="hookFrame">No host step circumvents the invariants: a host-defined operation changes only the heap, each object as they allow and no other internal slot or cell, but for what it is given to change; choiceFrame, nextJobFrame, clearsKeptFrame, prepareJobFrame, cleanupJobFrame and debuggerAction bound the host's choices and job steps alike. Interfaces an implementation adds beyond this specification lie outside the base layer.</emu-host-law>
+  <emu-host-law clause="sec-completion-record-specification-type" class="theorem">Implementation-defined callables return a normal or a throw completion: a property of the model's calls.</emu-host-law>
+  <emu-host-law clause="sec-abstract-closure" class="theorem">An Abstract Closure's Completion Record is normal or throw: a property of the specification's closures.</emu-host-law>
+  <emu-host-law clause="sec-declarative-environment-records-createmutablebinding-n-d" class="theorem">A precondition every caller in the specification establishes.</emu-host-law>
+  <emu-host-law clause="sec-declarative-environment-records-createimmutablebinding-n-s" class="theorem">A precondition every caller in the specification establishes.</emu-host-law>
+  <emu-host-law clause="sec-declarative-environment-records-initializebinding-n-v" class="theorem">A precondition every caller in the specification establishes.</emu-host-law>
+  <emu-host-law clause="sec-global-environment-records-createmutablebinding-n-d" class="theorem">A precondition every caller in the specification establishes.</emu-host-law>
+  <emu-host-law clause="sec-global-environment-records-createimmutablebinding-n-s" class="theorem">A precondition every caller in the specification establishes.</emu-host-law>
+  <emu-host-law clause="sec-global-environment-records-initializebinding-n-v" class="theorem">A precondition every caller in the specification establishes.</emu-host-law>
+  <emu-host-law clause="sec-createimportbinding" class="theorem">A precondition every caller in the specification establishes.</emu-host-law>
+  <emu-host-law clause="sec-built-in-function-objects" class="theorem">Built-in function objects' slots and internal methods: properties of the specification's built-ins.</emu-host-law>
+  <emu-host-law clause="sec-abstract-module-records" class="theorem">Abstract Module Record methods' preconditions and results: properties of the specification's callers and module records.</emu-host-law>
+  <emu-host-law clause="sec-synthetic-module-records" class="theorem">A Synthetic Module Record's SetSyntheticExport leaves [[ExportNames]] as it is: a property of its algorithm.</emu-host-law>
+  <emu-host-law clause="sec-pattern-notation" class="theorem">A CaptureRange's [[StartIndex]] ≤ [[EndIndex]]: a property of the matcher algorithms.</emu-host-law>
+  <emu-host-law clause="sec-lastindex" class="theorem">lastIndex's attributes: a property of RegExpAlloc's definition.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.every" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.filter" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.find" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.findindex" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.findlast" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.findlastindex" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.foreach" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.includes" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.indexof" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.join" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.lastindexof" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-get-%typedarray%.prototype.length" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.map" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.reduce" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.reduceright" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.reverse" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.set" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.slice" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.some" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.sort" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.subarray" class="theorem">The method's own algorithm validates its *this* value.</emu-host-law>
+  <emu-host-law clause="sec-jobs" class="law" law="jobScheduled">The job the host runs is one a HostEnqueue…Job call scheduled, run at most once; the job loop asks for it only on an empty execution context stack.</emu-host-law>
+  <emu-host-law clause="sec-jobs" para="3" sent="0" class="law" law="prepareJobFrame">The job loop performs the host's preparation steps (Host.prepareJob) before each job; they change only the heap, the execution context stack and the suspended context.</emu-host-law>
+  <emu-host-law clause="sec-jobs" para="5" sent="0" class="law" law="jobCleanup">After the host's cleanup steps the execution context stack is empty.</emu-host-law>
+  <emu-host-law clause="sec-jobs" para="6" sent="0" class="theorem">The job loop invokes one job at a time: a property of the model's job loop.</emu-host-law>
+  <emu-host-law clause="sec-jobs" para="7" sent="0" class="theorem">The job loop runs each job to completion before it starts the next: a property of the model's job loop.</emu-host-law>
+  <emu-host-law clause="sec-jobs" para="8" sent="0" class="theorem">The Job Abstract Closures the specification creates return normal completions: a property of its algorithms.</emu-host-law>
+  <emu-host-law clause="sec-hostenqueuegenericjob" class="law" law="jobScheduled">Its jobs obey the requirements of Jobs: each scheduled job runs at most once.</emu-host-law>
+  <emu-host-law clause="sec-hostenqueuepromisejob" class="law" law="jobScheduled">Its jobs obey the requirements of Jobs: each scheduled job runs at most once.</emu-host-law>
+  <emu-host-law clause="sec-hostenqueuepromisejob" para="3" class="law" law="promiseJobPrepared">A job with a realm is invoked with a running execution context.</emu-host-law>
+  <emu-host-law clause="sec-hostenqueuepromisejob" para="4" class="law" law="promiseJobPrepared">A job with a realm is invoked with the active script or module at its scheduling.</emu-host-law>
+  <emu-host-law clause="sec-hostenqueuepromisejob" para="5" class="law" law="promiseJobsOrder">Promise jobs run in the order of the calls that scheduled them.</emu-host-law>
+  <emu-host-law clause="sec-hostenqueuetimeoutjob" class="law" law="jobScheduled">Its jobs obey the requirements of Jobs: each scheduled job runs at most once.</emu-host-law>
+  <emu-host-law clause="sec-host-cleanup-finalization-registry" class="law" law="jobScheduled">The cleanup job it schedules obeys the requirements of Jobs: it runs at most once.</emu-host-law>
+  <emu-host-law clause="sec-hosts-and-implementations" para="5" sent="1" class="theorem">The host-defined operations are the ones Annex D lists: a property of the specification's text.</emu-host-law>
+  <emu-host-law clause="sec-hosts-and-implementations" para="5" sent="2" class="law" law="hookCompletion">A host hook returns a normal or a throw completion.</emu-host-law>
+  <emu-host-law clause="sec-hosts-and-implementations" para="6" class="law" law="hookCompletion">A host hook returns a normal or a throw completion.</emu-host-law>
+  <emu-host-law clause="sec-hostmakejobcallback" para="1" class="theorem">The reading's Record has [[Callback]] _callback_ for every host: a property of its steps.</emu-host-law>
+  <emu-host-law clause="sec-hostmakejobcallback" para="3" class="law" law="jobCallbackDefault">A host every WebBrowser answer of whose log is false gives ~empty~ as [[HostDefined]] and changes nothing: the default implementation.</emu-host-law>
+  <emu-host-law clause="sec-hostcalljobcallback" para="1" class="theorem">The reading performs Call(_jobCallback_.[[Callback]], _thisValue_, _argList_) and returns its result for every host: a property of its steps.</emu-host-law>
+  <emu-host-law clause="sec-hostcalljobcallback" para="3" class="law" law="jobCallbackDefault">A host every WebBrowser answer of whose log is false performs no steps around the call: the default implementation.</emu-host-law>
+  <emu-host-law clause="sec-hostensurecanaddprivateelement" para="2" class="law" law="privateElementSameKind">Two calls with the same argument return the same kind of Completion Record.</emu-host-law>
+  <emu-host-law clause="sec-hostensurecanaddprivateelement" para="4" class="law" law="privateElementSameKind">Two calls with the same argument return the same kind of Completion Record.</emu-host-law>
+  <emu-host-law clause="sec-HostLoadImportedModule" para="1" class="theorem">The test host's HostLoadImportedModule is a host algorithm (Spec.Host.hostProg) whose steps meet the requirements below.</emu-host-law>
+  <emu-host-law clause="sec-HostLoadImportedModule" para="2" class="theorem">The test host's algorithm performs FinishLoadingImportedModule synchronously, with a normal completion of a Module Record ParseModule or ParseJSONModule gave or a throw completion.</emu-host-law>
+  <emu-host-law clause="sec-HostLoadImportedModule" para="6" class="theorem">The test host's module map is the host-call log: the Record for a specifier and *"type"* attribute, once added, is the one every later call finishes with.</emu-host-law>
+  <emu-host-law clause="sec-HostLoadImportedModule" para="7" class="theorem">For a *"type"* attribute *"json"* the test host's algorithm finishes with Completion(ParseJSONModule(source)), with the map's Record for the specifier and *"json"* (a normal ParseJSONModule result it added), or with a throw completion.</emu-host-law>
+  <emu-host-law clause="sec-HostLoadImportedModule" para="8" class="theorem">The test host's algorithm passes _payload_ to FinishLoadingImportedModule unchanged.</emu-host-law>
+  <emu-host-law clause="sec-hostgetsupportedimportattributes" para="2" class="law" law="supportedImportAttributes">Every call returns a List of the same Strings in the same order.</emu-host-law>
+  <emu-host-law clause="sec-hostgetsupportedimportattributes" para="3" class="law" law="supportedImportAttributes">Every call returns a List of the same Strings in the same order.</emu-host-law>
+  <emu-host-law clause="sec-hostgetsupportedimportattributes" para="4" class="law" law="supportedImportAttributes">Every call returns a List of the same Strings in the same order.</emu-host-law>
+  <emu-host-law clause="sec-hosthassourcetextavailable" para="2" class="law" law="hasSourceTextAvailable">A call with a _func_ returns what earlier calls with that _func_ returned.</emu-host-law>
+  <emu-host-law clause="sec-hosthassourcetextavailable" para="3" class="law" law="hasSourceTextAvailable">A call with a _func_ returns what earlier calls with that _func_ returned.</emu-host-law>
+  <emu-host-law clause="sec-hostresizearraybuffer" para="2" class="law" law="resizeArrayBuffer">The operation does not detach _buffer_ and, completing normally with ~handled~, leaves its byte length _newByteLength_.</emu-host-law>
+  <emu-host-law clause="sec-hostresizearraybuffer" para="3" class="law" law="resizeArrayBuffer">The operation does not detach _buffer_.</emu-host-law>
+  <emu-host-law clause="sec-hostresizearraybuffer" para="4" class="law" law="resizeArrayBuffer">Completing normally with ~handled~, it leaves _buffer_.[[ArrayBufferByteLength]] _newByteLength_.</emu-host-law>
+  <emu-host-law clause="sec-time-zone-identifiers" para="2" sent="0" class="law" law="availableNamedTimeZoneIds">*"UTC"* is an available named time zone identifier, and a primary one (isNonPrimaryTimeZoneId).</emu-host-law>
+  <emu-host-law clause="sec-getnamedtimezoneepochnanoseconds" class="law" law="namedTimeZoneEpochNs">The List's values are epoch nanoseconds counts in ascending order at which the zone's offsets give the input's wall-clock time: more than one if two instants give it, none if none does, one if exactly one does.</emu-host-law>
+  <emu-host-law clause="sec-getnamedtimezoneoffsetnanoseconds" class="law" law="namedTimeZoneOffsetNs">The offset is an integer; the UTC time zone's is 0.</emu-host-law>
+  <emu-host-law clause="sec-systemtimezoneidentifier" class="law" law="systemTimeZoneString">The host's time zone String is a primary time zone identifier or an offset time zone identifier.</emu-host-law>
+  <emu-host-law clause="sec-function-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-boolean-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-error-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-nativeerror-constructors" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-aggregate-error-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-suppressederror-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-number-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-date-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-string-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-regexp-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-array-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-typedarray-constructors" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-map-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-set-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-weakmap-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-weakset-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-arraybuffer-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-sharedarraybuffer-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-dataview-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-weak-ref-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-finalization-registry-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-disposablestack-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-asyncdisposablestack-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-promise-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-generatorfunction-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-asyncgeneratorfunction-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-async-function-constructor" class="advice">Advice to programs that subclass the constructor.</emu-host-law>
+  <emu-host-law clause="sec-iterable-interface" class="advice">The interface a program's objects conform to: advice to programs, not a requirement on the host.</emu-host-law>
+  <emu-host-law clause="sec-iterator-interface" class="advice">The interface a program's objects conform to: advice to programs, not a requirement on the host.</emu-host-law>
+  <emu-host-law clause="sec-asynciterable-interface" class="advice">The interface a program's objects conform to: advice to programs, not a requirement on the host.</emu-host-law>
+  <emu-host-law clause="sec-asynciterator-interface" class="advice">The interface a program's objects conform to: advice to programs, not a requirement on the host.</emu-host-law>
+  <emu-host-law clause="sec-object.prototype.tolocalestring" class="scope">ECMA-402 and what an implementation without it may do: outside the base layer.</emu-host-law>
+  <emu-host-law clause="sec-number.prototype.tolocalestring" class="scope">ECMA-402: outside the base layer; without it, the locale-sensitive result is the host choice LocaleNumberString.</emu-host-law>
+  <emu-host-law clause="sec-number.prototype.tolocalestring" para="2" class="theorem">Without ECMA-402 the steps read neither optional parameter: a property of the overlay's steps.</emu-host-law>
+  <emu-host-law clause="sec-bigint.prototype.tolocalestring" class="scope">ECMA-402: outside the base layer; without it, the locale-sensitive result is the host choice LocaleNumberString.</emu-host-law>
+  <emu-host-law clause="sec-bigint.prototype.tolocalestring" para="2" class="theorem">Without ECMA-402 the steps read neither optional parameter: a property of the overlay's steps.</emu-host-law>
+  <emu-host-law clause="sec-date.prototype.tolocaledatestring" class="scope">ECMA-402: outside the base layer; without it, the locale-sensitive result is the host choice LocaleDateString.</emu-host-law>
+  <emu-host-law clause="sec-date.prototype.tolocaledatestring" para="2" class="theorem">Without ECMA-402 the steps read neither optional parameter: a property of the overlay's steps.</emu-host-law>
+  <emu-host-law clause="sec-date.prototype.tolocalestring" class="scope">ECMA-402: outside the base layer; without it, the locale-sensitive result is the host choice LocaleDateString.</emu-host-law>
+  <emu-host-law clause="sec-date.prototype.tolocalestring" para="2" class="theorem">Without ECMA-402 the steps read neither optional parameter: a property of the overlay's steps.</emu-host-law>
+  <emu-host-law clause="sec-date.prototype.tolocaletimestring" class="scope">ECMA-402: outside the base layer; without it, the locale-sensitive result is the host choice LocaleDateString.</emu-host-law>
+  <emu-host-law clause="sec-date.prototype.tolocaletimestring" para="2" class="theorem">Without ECMA-402 the steps read neither optional parameter: a property of the overlay's steps.</emu-host-law>
+  <emu-host-law clause="sec-string.prototype.localecompare" class="scope">ECMA-402: outside the base layer; without it, the locale-sensitive result is the host choice LocaleCompare.</emu-host-law>
+  <emu-host-law clause="sec-string.prototype.localecompare" para="3" class="theorem">Without ECMA-402 the steps read neither optional parameter: a property of the overlay's steps.</emu-host-law>
+  <emu-host-law clause="sec-string.prototype.tolocalelowercase" class="scope">ECMA-402: outside the base layer; without it, the locale-sensitive result is the host choice LocaleLowercase.</emu-host-law>
+  <emu-host-law clause="sec-string.prototype.tolocalelowercase" para="3" class="theorem">Without ECMA-402 the steps read neither optional parameter: a property of the overlay's steps.</emu-host-law>
+  <emu-host-law clause="sec-string.prototype.tolocaleuppercase" class="scope">ECMA-402: outside the base layer; without it, the locale-sensitive result is the host choice LocaleUppercase.</emu-host-law>
+  <emu-host-law clause="sec-string.prototype.tolocaleuppercase" para="3" class="theorem">Without ECMA-402 the steps read neither optional parameter: a property of the overlay's steps.</emu-host-law>
+  <emu-host-law clause="sec-array.prototype.tolocalestring" class="scope">ECMA-402 and what an implementation without it may do: outside the base layer.</emu-host-law>
+  <emu-host-law clause="sec-%typedarray%.prototype.tolocalestring" class="scope">ECMA-402 and what an implementation without it may do: outside the base layer.</emu-host-law>
+  <emu-host-law clause="sec-availablenamedtimezoneidentifiers" class="scope">ECMA-402 and what an implementation without it may do: outside the base layer.</emu-host-law>
+  <emu-host-law clause="sec-preparefortailcall" para="0" class="law" law="contextResources">At a push onto the execution context stack, the host's resources run out only past a bound of its own on the contexts whose resources were not discarded (DiscardContextResources), so a chain of tail calls, which does not raise their count, never exhausts them by its length.</emu-host-law>
+  <emu-host-law clause="sec-agent-clusters" class="scope">Agent clusters and their embedding: outside the single-agent base layer.</emu-host-law>
+  <emu-host-law clause="sec-forbidden-extensions" class="scope">Forbidden extensions: about an implementation's extensions, outside the base layer.</emu-host-law>
+  <emu-host-law clause="sec-grouping-operator-static-semantics-early-errors" class="syntax">The cover grammar's refinement: the grammar and its early errors carry it.</emu-host-law>
+  <emu-host-law clause="sec-assignment-operators-static-semantics-early-errors" class="syntax">The cover grammar's refinement: the grammar and its early errors carry it.</emu-host-law>
+  <emu-host-law clause="sec-destructuring-assignment-static-semantics-early-errors" class="syntax">The cover grammar's refinement: the grammar and its early errors carry it.</emu-host-law>
+  <emu-host-law clause="sec-let-and-const-declarations-static-semantics-early-errors" class="syntax">The cover grammar's refinement: the grammar and its early errors carry it.</emu-host-law>
+  <emu-host-law clause="sec-for-in-and-for-of-statements-static-semantics-early-errors" class="syntax">The cover grammar's refinement: the grammar and its early errors carry it.</emu-host-law>
+  <emu-host-law clause="sec-arrow-function-definitions-static-semantics-early-errors" class="syntax">The cover grammar's refinement: the grammar and its early errors carry it.</emu-host-law>
+  <emu-host-law clause="sec-async-arrow-function-definitions-static-semantics-early-errors" class="syntax">The cover grammar's refinement: the grammar and its early errors carry it.</emu-host-law>
+  <emu-host-law clause="sec-literals-numeric-literals" class="syntax">A lexical restriction the grammar carries.</emu-host-law>
+  <emu-host-law clause="sec-patterns" para="2" class="syntax">The grammar carries it: under the overlay's reading of RegExpUnicodeEscapeSequence (reading-EscapedSurrogatePair), a lone lead is not followed by an escaped trail.</emu-host-law>
+  <emu-host-law clause="sec-map-objects" class="nonfunctional">Access time: a cost, not a result.</emu-host-law>
+  <emu-host-law clause="sec-set-objects" class="nonfunctional">Access time: a cost, not a result.</emu-host-law>
+  <emu-host-law clause="sec-weakmap-objects" class="nonfunctional">Access time: a cost, not a result.</emu-host-law>
+  <emu-host-law clause="sec-weakmap-objects" para="1" sent="2" class="scope">Means to observe a weak collection's contents an implementation might add lie outside the base layer.</emu-host-law>
+  <emu-host-law clause="sec-weakset-objects" class="nonfunctional">Access time: a cost, not a result.</emu-host-law>
+  <emu-host-law clause="sec-weakset-objects" para="1" sent="2" class="scope">Means to observe a weak collection's contents an implementation might add lie outside the base layer.</emu-host-law>
+</emu-clause>
+
+<emu-clause id="formal-host-debugger-source">
+  <h1>The Debugging Facility and Native Function Source Text</h1>
+  <p>Host choices of <emu-xref href="#sec-debugger-statement-runtime-semantics-evaluation"></emu-xref> and <emu-xref href="#sec-function.prototype.tostring"></emu-xref>.</p>
+
+  <emu-primitive id="prim-debuggerenabled" name="DebuggerEnabled">
+    <emu-signature>DebuggerEnabled(): a Boolean</emu-signature>
+    <p>Whether an implementation-defined debugging facility is available and enabled. A host whose answer is *true* runs DebuggerAction, which the invariants of the essential internal methods bound (<emu-xref href="#sec-invariants-of-the-essential-internal-methods"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-debuggeraction" name="DebuggerAction">
+    <emu-signature>DebuggerAction(): ~unused~</emu-signature>
+    <p>An implementation-defined debugging action. An implementation must not allow the invariants of the essential internal methods to be circumvented in any manner (<emu-xref href="#sec-invariants-of-the-essential-internal-methods"></emu-xref>), and the model reads this as: every object stays an object and keeps its internal slots but [[Extensible]] and [[Prototype]]; its [[Extensible]] only turns from *true* to *false*; an object whose [[Extensible]] is not *true* keeps its [[Prototype]] and gains no property; and a non-configurable property stays, its attributes changing only as the invariants of [[GetOwnProperty]] allow.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-nativefunctionsource" name="NativeFunctionSource">
+    <emu-signature>NativeFunctionSource(_func_: a function object): a String</emu-signature>
+    <p>An implementation-defined String source code representation of _func_. The representation must have the syntax of a |NativeFunction|. If _func_ has an [[InitialName]] internal slot, _func_.[[InitialName]] is a String, and _func_.[[InitialName]] is matched by |NativeFunctionAccessor?| |PropertyName|, the portion of the returned String that would be matched by |NativeFunctionAccessor?| |PropertyName| must be _func_.[[InitialName]]; a String is so matched when it is *"get"* or *"set"* (the portion is the name whether it is read as the |NativeFunctionAccessor| or as the |PropertyName|), or when the |NativeFunction| that follows `function ` with it has it as that portion. If _func_.[[InitialName]] is the empty String, the returned String has neither a |NativeFunctionAccessor| nor a |PropertyName|, so that its portion is empty (<emu-xref href="#erratum-NativeFunctionInitialName"></emu-xref>). The returned String is the string-concatenation of *"function "*, a name, and *"() { [native code] }"*, where the name is the empty String or, after *"get "*, *"set "* or nothing, an ASCII |IdentifierName| without escapes or *"[Symbol."*, one, and *"]"*; its portion matched by |NativeFunctionAccessor?| |PropertyName| is the name. This is narrower than the syntax of a |NativeFunction|, which also admits white space, line terminators and comments between its tokens and non-ASCII or escaped names: a host whose representation is one of those does not meet this law, and an [[InitialName]] that is matched but is not such a name has no String this law admits (a choice of the model, not a reading of the text: decisions.md, <code>nativefunctionsource-form</code>).</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-debugger-statement-runtime-semantics-evaluation" steps="1 1.a" hashes="64de63531870e0c3f62bb278fea9aa12fac8c9d5408ec8751c4348e52e37e351 5a953d6a8b05efc5a84e90125ddaa285edae7ef9b3f8e77b4aeb77b96cba4f76">
+    <emu-alg reading="definition">
+      1. If DebuggerEnabled() is *true*, then
+        1. Perform DebuggerAction().
+        1. Return a new implementation-defined Completion Record.
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-function.prototype.tostring" steps="3" hashes="e123217b503fa9ffe925e358f91a9ccb4e2394cf9feab1bd9d0062564ce105d7">
+    <emu-alg reading="definition">
+      1. If _func_ is a built-in function object, then
+        1. If _func_ has an [[InitialName]] internal slot and _func_.[[InitialName]] is a String, then
+          1. Let _name_ be _func_.[[InitialName]].
+          1. Let _matched_ be *false*.
+          1. If _name_ is *"get"* or _name_ is *"set"*, then
+            1. Set _matched_ to *true*.
+          1. Else if _name_ is not the empty String, then
+            1. Let _native_ be ParseGoal(StringToCodePoints(the string-concatenation of *"function "*, _name_, and *"() { [native code] }"*), |NativeFunction|, *false*, *false*, *false*).
+            1. Let _closed_ be ParseGoal(StringToCodePoints(the string-concatenation of *"function "*, _name_, the code unit 0x000A (LINE FEED), and *"() { [native code] }"*), |NativeFunction|, *false*, *false*, *false*).
+            1. If _native_ is not ~empty~, _closed_ is not ~empty~, and _native_ contains a |PropertyName| Parse Node, then
+              1. Let _key_ be CodePointsToString(the source text matched by the first |PropertyName| Parse Node contained within _native_).
+              1. If _native_ does not contain a |NativeFunctionAccessor| Parse Node, then
+                1. If _name_ is _key_, set _matched_ to *true*.
+              1. Else,
+                1. Let _accessor_ be CodePointsToString(the source text matched by the first |NativeFunctionAccessor| Parse Node contained within _native_).
+                1. Let _n_ be the length of _name_.
+                1. If the substring of _name_ from 0 to the length of _accessor_ is _accessor_ and the substring of _name_ from _n_ - the length of _key_ to _n_ is _key_, set _matched_ to *true*.
+          1. If _name_ is not the empty String and _matched_ is *false*, return an implementation-defined String source code representation of _func_. The representation must have the syntax of a |NativeFunction|. Additionally, if _func_ has an [[InitialName]] internal slot and _func_.[[InitialName]] is a String, the portion of the returned String that would be matched by |NativeFunctionAccessor?| |PropertyName| must be _func_.[[InitialName]].
+        1. Return NativeFunctionSource(_func_).
+    </emu-alg>
+    <emu-note>
+      <p>_matched_ is whether _name_ is matched by |NativeFunctionAccessor?| |PropertyName| with nothing before or after it: _name_ is *"get"* or *"set"* (the |NativeFunction| is ambiguous, and either way its portion is _name_), or the |NativeFunction| that follows `function ` with _name_ parses and its portion matched by |NativeFunctionAccessor?| |PropertyName| is all of _name_. That portion starts at _name_'s start exactly when _name_ starts with its accessor (or is its key), and ends at _name_'s end exactly when _name_ ends with its key and _closed_ parses: _native_'s key can end _name_ without ending its portion only where a `//` comment in _name_ hides the appended *"() { [native code] }"*, and then _closed_, whose line feed ends the comment, does not parse. Where _name_ is matched, or is the empty String (a |NativeFunction| without a |NativeFunctionAccessor| or a |PropertyName|), NativeFunctionSource's law is the step's requirement, narrowed to its form (decisions.md, <code>nativefunctionsource-form</code>). Otherwise no String meets the requirement, and the pinned text is left as it is (<emu-xref href="#erratum-NativeFunctionInitialName"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-function.prototype.tostring" steps="4" hashes="515690cd6fc93ef5a3003fdfc96de8479ec080b17d17046e19a25303eca8c29d">
+    <emu-alg reading="definition">
+      1. If _func_ is an Object and IsCallable(_func_) is *true*, return NativeFunctionSource(_func_).
+    </emu-alg>
+    <emu-note>
+      <p>The step's requirement that the representation have the syntax of a |NativeFunction| is NativeFunctionSource's law, narrowed to its form (decisions.md, <code>nativefunctionsource-form</code>).</p>
+    </emu-note>
+  </emu-reading>
+</emu-clause>
+
+<emu-clause id="formal-host-regexp-source">
+  <h1>The Source Text of a Regular Expression</h1>
+  <p>The host choice of <emu-xref href="#sec-escaperegexppattern"></emu-xref>.</p>
+
+  <emu-primitive id="prim-escapepattern" name="EscapePattern">
+    <emu-signature>EscapePattern(_pattern_: a String, _flags_: a String): a String</emu-signature>
+    <p>A String in the form of the |Pattern| that _flags_ selects, equivalent to _pattern_ interpreted as UTF-16 encoded Unicode code points, in which certain code points are escaped. The Abstract Closure that would result from evaluating it as that |Pattern| must behave identically to the one _pattern_ gives, and the string-concatenation of *"/"*, it, *"/"*, and _flags_ must be parsable as a |RegularExpressionLiteral| whose body it is. It is a function of _pattern_ and _flags_: multiple calls with the same values produce identical results.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-escaperegexppattern" steps="4 5" hashes="c71828c3c3c465ff240c2a492e5e2b9ecf8840ef103966046fe271eeea2111c6 f60aefb7834699ed6ed624cb1664b39217741dadc2229762b10de7db19d6db1c">
+    <emu-alg reading="definition">
+      1. Let _escapedPattern_ be EscapePattern(_pattern_, _flags_).
+    </emu-alg>
+    <emu-note>
+      <p>Step 5 constrains the choice of step 4 and takes no action of its own. The form, the escapes of step 5, the identical behaviour and the identical results for the same _pattern_ and _flags_ are EscapePattern's law; step 5's examples are informative.</p>
+    </emu-note>
+  </emu-reading>
+</emu-clause>
+
+<emu-clause id="formal-host-locale">
+  <h1>Locale-Sensitive Methods Without ECMA-402</h1>
+  <p>Host choices of the methods whose specification, for an implementation without the ECMA-402 Internationalization API, leaves their locale-sensitive result to the host environment's current locale.</p>
+
+  <emu-primitive id="prim-localeuppercase" name="LocaleUppercase">
+    <emu-signature>LocaleUppercase(_cps_: a List of code points): a List of code points</emu-signature>
+    <p>A new List of the code points of _cps_ mapped to upper case by the conventions of the host environment's current locale (<emu-xref href="#sec-string.prototype.tolocaleuppercase"></emu-xref>): toUppercase(_cps_), except in the few cases (such as Turkish) where the rules for that language conflict with the regular Unicode case mappings.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-localelowercase" name="LocaleLowercase">
+    <emu-signature>LocaleLowercase(_cps_: a List of code points): a List of code points</emu-signature>
+    <p>A new List of the code points of _cps_ mapped to lower case by the conventions of the host environment's current locale (<emu-xref href="#sec-string.prototype.tolocalelowercase"></emu-xref>): toLowercase(_cps_), except in the few cases (such as Turkish) where the rules for that language conflict with the regular Unicode case mappings.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-localecompare" name="LocaleCompare">
+    <emu-signature>LocaleCompare(_string_: a String, _thatValue_: a String): a Number</emu-signature>
+    <p>The result, other than *NaN*, of an implementation-defined locale-sensitive comparison of _string_ with _thatValue_ (<emu-xref href="#sec-string.prototype.localecompare"></emu-xref>): negative when _string_ is ordered before _thatValue_, positive when it is ordered after, and zero otherwise, by an ordering of all Strings that every call follows (a consistent comparator defining a total ordering); *+0*<sub>𝔽</sub> when the two are canonically equivalent according to the Unicode Standard. It has no effect on ECMAScript state.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-localenumberstring" name="LocaleNumberString">
+    <emu-signature>LocaleNumberString(_x_: a Number or a BigInt): a String or ~empty~</emu-signature>
+    <p>A String that represents _x_ formatted according to the conventions of the host environment's current locale, or ~empty~ where the host returns the same thing as `toString` (<emu-xref href="#sec-number.prototype.tolocalestring"></emu-xref>, <emu-xref href="#sec-bigint.prototype.tolocalestring"></emu-xref>). It has no effect on ECMAScript state.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-localedatestring" name="LocaleDateString">
+    <emu-signature>LocaleDateString(_portion_: a portion (~date~, ~time~ or ~all~), _thisValue_: an ECMAScript language value): a String, ~empty~ or ~throw~</emu-signature>
+    <p>A String that represents the “date” portion (~date~), the “time” portion (~time~) or the whole (~all~) of the Date _thisValue_ in the current time zone in a convenient, human-readable form that corresponds to the conventions of the host environment's current locale, or ~empty~ where the host returns the form `toDateString`, `toTimeString` or `toString` returns (<emu-xref href="#sec-date.prototype.tolocaledatestring"></emu-xref>, <emu-xref href="#sec-date.prototype.tolocaletimestring"></emu-xref>, <emu-xref href="#sec-date.prototype.tolocalestring"></emu-xref>). These methods are not generic: their *this* value "must be an object that has a [[DateValue]] internal slot" (<emu-xref href="#sec-properties-of-the-date-prototype-object"></emu-xref>), and the text gives no consequence for any other value, for which the host gives a String or ~throw~ (a *TypeError*, as every algorithmic Date method throws); ~empty~ only for an object with a [[DateValue]] internal slot. It has no effect on ECMAScript state.</p>
+  </emu-primitive>
+
+  <emu-clause id="formal-string.prototype.tolocaleuppercase" type="built-in function" behaviour-of="sec-string.prototype.tolocaleuppercase">
+    <h1>String.prototype.toLocaleUpperCase ( [ _reserved1_ [ , _reserved2_ ] ] )</h1>
+    <p>This method "works exactly the same as `toUpperCase` except that it is intended to yield a locale-sensitive result corresponding with conventions of the host environment's current locale" (<emu-xref href="#sec-string.prototype.tolocaleuppercase"></emu-xref>): <emu-xref href="#formal-string.prototype.touppercase"></emu-xref>'s steps with LocaleUppercase. They read neither optional parameter.</p>
+    <emu-alg>
+      1. Let _thisValue_ be the *this* value.
+      1. Perform ? RequireObjectCoercible(_thisValue_).
+      1. Let _string_ be ? ToString(_thisValue_).
+      1. Let _sText_ be StringToCodePoints(_string_).
+      1. Let _upperText_ be LocaleUppercase(_sText_).
+      1. Let _uppercaseString_ be CodePointsToString(_upperText_).
+      1. Return _uppercaseString_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-string.prototype.tolocalelowercase" type="built-in function" behaviour-of="sec-string.prototype.tolocalelowercase">
+    <h1>String.prototype.toLocaleLowerCase ( [ _reserved1_ [ , _reserved2_ ] ] )</h1>
+    <p>This method "works exactly the same as `toLowerCase` except that it is intended to yield a locale-sensitive result corresponding with conventions of the host environment's current locale" (<emu-xref href="#sec-string.prototype.tolocalelowercase"></emu-xref>): <emu-xref href="#sec-string.prototype.tolowercase"></emu-xref>'s steps with LocaleLowercase. They read neither optional parameter.</p>
+    <emu-alg>
+      1. Let _thisValue_ be the *this* value.
+      1. Perform ? RequireObjectCoercible(_thisValue_).
+      1. Let _string_ be ? ToString(_thisValue_).
+      1. Let _sText_ be StringToCodePoints(_string_).
+      1. Let _lowerText_ be LocaleLowercase(_sText_).
+      1. Let _lowercaseString_ be CodePointsToString(_lowerText_).
+      1. Return _lowercaseString_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-reading clause="sec-string.prototype.localecompare" steps="4" hashes="0bc7eeb6c32daeeeaf9d86911dbc57ffdae22c2236d17d438925628370fbaab0">
+    <emu-alg reading="definition">
+      1. Let _thatValue_ be ? ToString(_that_).
+      1. Return LocaleCompare(_string_, _thatValue_).
+    </emu-alg>
+    <emu-note>
+      <p>The steps prepare the Strings "before performing the comparisons"; the method "returns a Number other than *NaN* representing the result of" the comparison of _string_ with _thatValue_, which is LocaleCompare's. The steps read neither optional parameter.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-clause id="formal-number.prototype.tolocalestring" type="built-in function" behaviour-of="sec-number.prototype.tolocalestring">
+    <h1>Number.prototype.toLocaleString ( [ _reserved1_ [ , _reserved2_ ] ] )</h1>
+    <p>This method "produces a String value that represents this Number value formatted according to the conventions of the host environment's current locale"; "it is permissible, but not encouraged, for it to return the same thing as `toString`" (<emu-xref href="#sec-number.prototype.tolocalestring"></emu-xref>). "This Number value" is ThisNumberValue of the *this* value (<emu-xref href="#sec-properties-of-the-number-prototype-object"></emu-xref>). The steps read neither optional parameter.</p>
+    <emu-alg>
+      1. Let _x_ be ? ThisNumberValue(*this* value).
+      1. Let _s_ be LocaleNumberString(_x_).
+      1. If _s_ is ~empty~, return Number::toString(_x_, 10).
+      1. Return _s_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-bigint.prototype.tolocalestring" type="built-in function" behaviour-of="sec-bigint.prototype.tolocalestring">
+    <h1>BigInt.prototype.toLocaleString ( [ _reserved1_ [ , _reserved2_ ] ] )</h1>
+    <p>This method "produces a String value that represents this BigInt value formatted according to the conventions of the host environment's current locale"; "it is permissible, but not encouraged, for it to return the same thing as `toString`" (<emu-xref href="#sec-bigint.prototype.tolocalestring"></emu-xref>). "This BigInt value" is ThisBigIntValue of the *this* value (<emu-xref href="#sec-properties-of-the-bigint-prototype-object"></emu-xref>). The steps read neither optional parameter.</p>
+    <emu-alg>
+      1. Let _x_ be ? ThisBigIntValue(*this* value).
+      1. Let _s_ be LocaleNumberString(_x_).
+      1. If _s_ is ~empty~, return BigInt::toString(_x_, 10).
+      1. Return _s_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-date.prototype.tolocaledatestring" type="built-in function" behaviour-of="sec-date.prototype.tolocaledatestring">
+    <h1>Date.prototype.toLocaleDateString ( [ _reserved1_ [ , _reserved2_ ] ] )</h1>
+    <p>This method "returns a String value. The contents of the String are implementation-defined, but are intended to represent the “date” portion of the Date in the current time zone in a convenient, human-readable form that corresponds to the conventions of the host environment's current locale" (<emu-xref href="#sec-date.prototype.tolocaledatestring"></emu-xref>): LocaleDateString's, or `toDateString`'s form (<emu-xref href="#sec-date.prototype.todatestring"></emu-xref>). The steps read neither optional parameter.</p>
+    <emu-alg>
+      1. Let _dateObj_ be the *this* value.
+      1. Let _s_ be LocaleDateString(~date~, _dateObj_).
+      1. If _s_ is ~throw~, throw a *TypeError* exception.
+      1. If _s_ is ~empty~, then
+        1. Perform ? RequireInternalSlot(_dateObj_, [[DateValue]]).
+        1. Let _tv_ be _dateObj_.[[DateValue]].
+        1. If _tv_ is *NaN*, return *"Invalid Date"*.
+        1. Let _t_ be LocalTime(_tv_).
+        1. Return DateString(_t_).
+      1. Return _s_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-date.prototype.tolocalestring" type="built-in function" behaviour-of="sec-date.prototype.tolocalestring">
+    <h1>Date.prototype.toLocaleString ( [ _reserved1_ [ , _reserved2_ ] ] )</h1>
+    <p>This method "returns a String value. The contents of the String are implementation-defined, but are intended to represent the Date in the current time zone in a convenient, human-readable form that corresponds to the conventions of the host environment's current locale" (<emu-xref href="#sec-date.prototype.tolocalestring"></emu-xref>): LocaleDateString's, or `toString`'s form (<emu-xref href="#sec-date.prototype.tostring"></emu-xref>). The steps read neither optional parameter.</p>
+    <emu-alg>
+      1. Let _dateObj_ be the *this* value.
+      1. Let _s_ be LocaleDateString(~all~, _dateObj_).
+      1. If _s_ is ~throw~, throw a *TypeError* exception.
+      1. If _s_ is ~empty~, then
+        1. Perform ? RequireInternalSlot(_dateObj_, [[DateValue]]).
+        1. Let _tv_ be _dateObj_.[[DateValue]].
+        1. Return ToDateString(_tv_).
+      1. Return _s_.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-date.prototype.tolocaletimestring" type="built-in function" behaviour-of="sec-date.prototype.tolocaletimestring">
+    <h1>Date.prototype.toLocaleTimeString ( [ _reserved1_ [ , _reserved2_ ] ] )</h1>
+    <p>This method "returns a String value. The contents of the String are implementation-defined, but are intended to represent the “time” portion of the Date in the current time zone in a convenient, human-readable form that corresponds to the conventions of the host environment's current locale" (<emu-xref href="#sec-date.prototype.tolocaletimestring"></emu-xref>): LocaleDateString's, or `toTimeString`'s form (<emu-xref href="#sec-date.prototype.totimestring"></emu-xref>). The steps read neither optional parameter.</p>
+    <emu-alg>
+      1. Let _dateObj_ be the *this* value.
+      1. Let _s_ be LocaleDateString(~time~, _dateObj_).
+      1. If _s_ is ~throw~, throw a *TypeError* exception.
+      1. If _s_ is ~empty~, then
+        1. Perform ? RequireInternalSlot(_dateObj_, [[DateValue]]).
+        1. Let _tv_ be _dateObj_.[[DateValue]].
+        1. If _tv_ is *NaN*, return *"Invalid Date"*.
+        1. Let _localTime_ be LocalTime(_tv_).
+        1. Return the string-concatenation of TimeString(_localTime_) and TimeZoneString(_tv_).
+      1. Return _s_.
+    </emu-alg>
+  </emu-clause>
+</emu-clause>

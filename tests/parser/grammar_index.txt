@@ -1,0 +1,1779 @@
+# The grammar data's index: what only the generator computes (crates/jsgrammar),
+# so the round trip to spec.html's text cannot check it. //:jsgrammar_roundtrip_test
+# requires the report's index lines (//:jsgrammar_report, without their `@@`) to
+# be these, line for line, in order. Each line here was reviewed against
+# spec.html 726ec8a4 (docs/parser/GRAMMAR.md, "The index"), the `prod` lines
+# again against b1eaed82f (`jsgrammar --prods`; no program writes the report
+# the other lines are compared with); after a pin move or a generator change,
+# review each changed line before recording it.
+#
+# count NAME N                the counts of GRAMMAR.md's conventions
+# kind CLAUSE LINE KIND       each block: main, supplemental COVER, or
+#                             overlay SECTION MODE CONDITION (Annex B);
+#                             json.emu's after spec.html's, at its lines
+# goal SYMBOL LINE            the goal symbols spec.html names (first mention),
+#                             then json.emu's (its line there)
+# cover C -> R LINE in PROD   the supplemental-grammar covers (§5.1.4)
+# semi CLASS POS in PROD      §12.10's class of each `;` of the syntactic grammar
+# restated OVERLAY LHS :: ALT the alternatives an `extend` overlay restates
+#                             (counted once by the union)
+# prod ID GRAMMAR MASK NAME   GL's production ids: one per right-hand side, the
+#                             written production NAME with its optional symbols
+#                             present (1) or absent (0) per MASK (- for none);
+#                             a renumbering is a reviewed diff of these lines
+count productions.NumericString 50
+count rules.NumericString 16
+count productions.Lexical 442
+count rules.Lexical 105
+count productions.Syntactic 471
+count rules.Syntactic 202
+count productions.RegExp 198
+count rules.RegExp 59
+count productions.AnnexB 89
+count rules.AnnexB 29
+count blocks 96
+count rules 438
+count nonterminals 426
+count nonterminals.enumerated 426
+count parameters 13
+count oneOf 32
+count lookahead 42
+count noLineTerminatorHere 27
+count butNot 25
+count butOnlyIf 6
+count phrase 6
+count empty 9
+count optional 135
+count guarded 66
+count labels 6
+count overlayRules 29
+count supplementalBlocks 6
+count goals 38
+count covers 7
+count semicolons 28
+count semicolons.insertable 18
+count semicolons.doWhile 1
+count semicolons.emptyStatement 1
+count semicolons.forHeader 5
+count semicolons.forHeaderIfDeclaration 3
+count blocks.NumericString 3
+count blocks.Lexical 16
+count blocks.Syntactic 62
+count blocks.RegExp 5
+count blocks.AnnexB 4
+kind sec-tonumber-applied-to-the-string-type 5198 main
+kind sec-stringintegerliteral-grammar 5648 main
+kind sec-source-text 16657 main
+kind sec-ecmascript-language-lexical-grammar 16900 main
+kind sec-white-space 17031 main
+kind sec-line-terminators 17110 main
+kind sec-comments 17135 main
+kind sec-hashbang 17175 main
+kind sec-tokens 17184 main
+kind sec-names-and-keywords 17205 main
+kind sec-keywords-and-reserved-words 17334 main
+kind sec-punctuators 17369 main
+kind sec-null-literals 17409 main
+kind sec-boolean-literals 17418 main
+kind sec-literals-numeric-literals 17428 main
+kind sec-literals-string-literals 17724 main
+kind sec-literals-regular-expression-literals 18109 main
+kind sec-template-literal-lexical-components 18179 main
+kind sec-identifiers 18653 main
+kind sec-primary-expression 18839 main
+kind sec-primary-expression 18869 supplemental CoverParenthesizedExpressionAndArrowParameterList
+kind sec-primary-expression-literals 18894 main
+kind sec-array-initializer 18931 main
+kind sec-object-initializer 19051 main
+kind sec-template-literals 19348 main
+kind sec-left-hand-side-expressions 19608 main
+kind sec-left-hand-side-expressions 19692 supplemental CoverCallExpressionAndAsyncArrowHead
+kind sec-update-expressions 20408 main
+kind sec-unary-operators 20530 main
+kind sec-exp-operator 20726 main
+kind sec-multiplicative-operators 20746 main
+kind sec-additive-operators 20775 main
+kind sec-bitwise-shift-operators 20816 main
+kind sec-relational-operators 20876 main
+kind sec-equality-operators 20995 main
+kind sec-binary-bitwise-operators 21073 main
+kind sec-binary-logical-operators 21107 main
+kind sec-conditional-operator 21163 main
+kind sec-assignment-operators 21190 main
+kind sec-destructuring-assignment 21451 supplemental LeftHandSideExpression
+kind sec-comma-operator 21775 main
+kind sec-ecmascript-language-statements-and-declarations 21800 main
+kind sec-block 21868 main
+kind sec-let-and-const-declarations 21990 main
+kind sec-let-and-const-declarations 22021 supplemental CoverAwaitExpressionAndAwaitUsingDeclarationHead
+kind sec-variable-statement 22146 main
+kind sec-destructuring-binding-patterns 22202 main
+kind sec-empty-statement 22343 main
+kind sec-expression-statement 22360 main
+kind sec-if-statement 22381 main
+kind sec-iteration-statements 22436 main
+kind sec-do-while-statement 22498 main
+kind sec-while-statement 22541 main
+kind sec-for-statement 22584 main
+kind sec-for-in-and-for-of-statements 22725 main
+kind sec-continue-statement 23300 main
+kind sec-break-statement 23337 main
+kind sec-return-statement 23370 main
+kind sec-with-statement 23402 main
+kind sec-switch-statement 23448 main
+kind sec-labelled-statements 23625 main
+kind sec-throw-statement 23741 main
+kind sec-try-statement 23760 main
+kind sec-debugger-statement 23860 main
+kind sec-parameter-lists 23890 main
+kind sec-function-definitions 24186 main
+kind sec-arrow-function-definitions 24398 main
+kind sec-arrow-function-definitions 24419 supplemental CoverParenthesizedExpressionAndArrowParameterList
+kind sec-method-definitions 24520 main
+kind sec-generator-function-definitions 24731 main
+kind sec-async-generator-function-definitions 24990 main
+kind sec-class-definitions 25161 main
+kind sec-async-function-definitions 25924 main
+kind sec-async-arrow-function-definitions 26116 main
+kind sec-async-arrow-function-definitions 26138 supplemental CoverCallExpressionAndAsyncArrowHead
+kind sec-scripts 26638 main
+kind sec-modules 26921 main
+kind sec-imports 29719 main
+kind sec-exports 29919 main
+kind sec-function.prototype.tostring 31987 main
+kind sec-time-zone-offset-strings 34918 main
+kind sec-patterns 37199 main
+kind sec-patterns 37312 main
+kind sec-patterns 37433 main
+kind sec-patterns 37463 main
+kind sec-patterns 37467 main
+kind sec-html-like-comments 53978 overlay B.1.1 extend notModule
+kind sec-regular-expressions-patterns 54041 overlay B.1.2 replace always
+kind sec-functiondeclarations-in-ifstatement-statement-clauses 54760 overlay B.3.3 extend nonStrict
+kind sec-initializers-in-forin-statement-heads 54782 overlay B.3.5 extend nonStrict
+kind formal-json 6 main
+kind formal-json 21 main
+kind formal-json 33 main
+kind formal-json 47 main
+kind formal-json 58 main
+kind formal-json 89 main
+goal InputElementDiv 639
+goal InputElementTemplateTail 639
+goal InputElementRegExp 639
+goal InputElementRegExpOrTemplateTail 639
+goal InputElementHashbangOrRegExp 639
+goal Pattern 641
+goal StringNumericLiteral 647
+goal Script 653
+goal Module 653
+goal StringIntegerLiteral 5637
+goal StrDecimalLiteral 30707
+goal HexDigits[~Sep] 30914
+goal FunctionExpression 31792
+goal FunctionBody[~Yield, ~Await] 31793
+goal FormalParameters[~Yield, ~Await] 31794
+goal GeneratorExpression 31798
+goal GeneratorBody 31799
+goal FormalParameters[+Yield, ~Await] 31800
+goal AsyncFunctionExpression 31804
+goal AsyncFunctionBody 31805
+goal FormalParameters[~Yield, +Await] 31806
+goal AsyncGeneratorExpression 31811
+goal AsyncGeneratorBody 31812
+goal FormalParameters[+Yield, +Await] 31813
+goal NativeFunction 31982
+goal UTCOffset 34977
+goal Pattern[+UnicodeMode, +UnicodeSetsMode, +NamedCaptureGroups] 39499
+goal Pattern[+UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups] 39501
+goal Pattern[~UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups] 39503
+goal Pattern[~UnicodeMode, ~UnicodeSetsMode, ~NamedCaptureGroups] 54295
+goal AssignmentPattern 19119
+goal ParenthesizedExpression 19582
+goal AwaitUsingDeclarationHead 22054
+goal ArrowFormalParameters 24444
+goal AsyncArrowHead 26155
+goal CallMemberExpression 19692
+goal AwaitExpression 20552
+goal JSONText 3
+cover CoverParenthesizedExpressionAndArrowParameterList -> ParenthesizedExpression 18869 in PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
+cover CoverCallExpressionAndAsyncArrowHead -> CallMemberExpression 19692 in CallExpression : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]
+cover CoverAwaitExpressionAndAwaitUsingDeclarationHead -> AwaitExpression 20552 in UnaryExpression : [+Await] CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield]
+cover LeftHandSideExpression -> AssignmentPattern 21451 in AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `=` AssignmentExpression[?In, ?Yield, ?Await]
+cover CoverAwaitExpressionAndAwaitUsingDeclarationHead -> AwaitUsingDeclarationHead 22021 in AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield] [no LineTerminator here] BindingList[?In, ?Yield, +Await, ~Pattern] `;`
+cover CoverParenthesizedExpressionAndArrowParameterList -> ArrowFormalParameters 24419 in ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
+cover CoverCallExpressionAndAsyncArrowHead -> AsyncArrowHead 26138 in AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]
+semi forHeaderIfDeclaration 2 in LexicalDeclaration : LetOrConst BindingList[?In, ?Yield, ?Await, +Pattern] `;`
+semi forHeaderIfDeclaration 3 in UsingDeclaration : `using` [no LineTerminator here] BindingList[?In, ?Yield, ?Await, ~Pattern] `;`
+semi forHeaderIfDeclaration 3 in AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield] [no LineTerminator here] BindingList[?In, ?Yield, +Await, ~Pattern] `;`
+semi insertable 2 in VariableStatement : `var` VariableDeclarationList[+In, ?Yield, ?Await] `;`
+semi emptyStatement 0 in EmptyStatement : `;`
+semi insertable 2 in ExpressionStatement : [lookahead ∉ { `{`, `function`, `async` [no LineTerminator here] `function`, `class`, `let` `[` }] Expression[+In, ?Yield, ?Await] `;`
+semi doWhile 6 in DoWhileStatement : `do` Statement[?Yield, ?Await, ?Return] `while` `(` Expression[+In, ?Yield, ?Await] `)` `;`
+semi forHeader 4 in ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+semi forHeader 6 in ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+semi forHeader 4 in ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+semi forHeader 6 in ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+semi forHeader 4 in ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+semi insertable 1 in ContinueStatement : `continue` `;`
+semi insertable 3 in ContinueStatement : `continue` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`
+semi insertable 1 in BreakStatement : `break` `;`
+semi insertable 3 in BreakStatement : `break` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`
+semi insertable 1 in ReturnStatement : `return` `;`
+semi insertable 3 in ReturnStatement : `return` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`
+semi insertable 3 in ThrowStatement : `throw` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`
+semi insertable 1 in DebuggerStatement : `debugger` `;`
+semi insertable 1 in ClassElement : FieldDefinition[?Yield, ?Await] `;`
+semi insertable 2 in ClassElement : `static` FieldDefinition[?Yield, ?Await] `;`
+semi insertable 0 in ClassElement : `;`
+semi insertable 4 in ImportDeclaration : `import` ImportClause FromClause WithClause? `;`
+semi insertable 3 in ImportDeclaration : `import` ModuleSpecifier WithClause? `;`
+semi insertable 4 in ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`
+semi insertable 2 in ExportDeclaration : `export` NamedExports `;`
+semi insertable 4 in ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`
+count keys 1418
+count prods 1538
+restated overlay B.1.1 extend notModule InputElementHashbangOrRegExp :: WhiteSpace
+restated overlay B.1.1 extend notModule InputElementHashbangOrRegExp :: LineTerminator
+restated overlay B.1.1 extend notModule InputElementHashbangOrRegExp :: Comment
+restated overlay B.1.1 extend notModule InputElementHashbangOrRegExp :: CommonToken
+restated overlay B.1.1 extend notModule InputElementHashbangOrRegExp :: HashbangComment
+restated overlay B.1.1 extend notModule InputElementHashbangOrRegExp :: RegularExpressionLiteral
+restated overlay B.1.1 extend notModule Comment :: MultiLineComment
+restated overlay B.1.1 extend notModule Comment :: SingleLineComment
+prod 0 NumericString 0 StringNumericLiteral ::: StrWhiteSpace?
+prod 1 NumericString 1 StringNumericLiteral ::: StrWhiteSpace?
+prod 2 NumericString 00 StringNumericLiteral ::: StrWhiteSpace? StrNumericLiteral StrWhiteSpace?
+prod 3 NumericString 01 StringNumericLiteral ::: StrWhiteSpace? StrNumericLiteral StrWhiteSpace?
+prod 4 NumericString 10 StringNumericLiteral ::: StrWhiteSpace? StrNumericLiteral StrWhiteSpace?
+prod 5 NumericString 11 StringNumericLiteral ::: StrWhiteSpace? StrNumericLiteral StrWhiteSpace?
+prod 6 NumericString 0 StrWhiteSpace ::: StrWhiteSpaceChar StrWhiteSpace?
+prod 7 NumericString 1 StrWhiteSpace ::: StrWhiteSpaceChar StrWhiteSpace?
+prod 8 NumericString - StrWhiteSpaceChar ::: WhiteSpace
+prod 9 NumericString - StrWhiteSpaceChar ::: LineTerminator
+prod 10 NumericString - StrNumericLiteral ::: StrDecimalLiteral
+prod 11 NumericString - StrNumericLiteral ::: NonDecimalIntegerLiteral[~Sep]
+prod 12 NumericString - StrDecimalLiteral ::: StrUnsignedDecimalLiteral
+prod 13 NumericString - StrDecimalLiteral ::: `+` StrUnsignedDecimalLiteral
+prod 14 NumericString - StrDecimalLiteral ::: `-` StrUnsignedDecimalLiteral
+prod 15 NumericString - StrUnsignedDecimalLiteral ::: `Infinity`
+prod 16 NumericString 00 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] `.` DecimalDigits[~Sep]? ExponentPart[~Sep]?
+prod 17 NumericString 01 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] `.` DecimalDigits[~Sep]? ExponentPart[~Sep]?
+prod 18 NumericString 10 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] `.` DecimalDigits[~Sep]? ExponentPart[~Sep]?
+prod 19 NumericString 11 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] `.` DecimalDigits[~Sep]? ExponentPart[~Sep]?
+prod 20 NumericString 0 StrUnsignedDecimalLiteral ::: `.` DecimalDigits[~Sep] ExponentPart[~Sep]?
+prod 21 NumericString 1 StrUnsignedDecimalLiteral ::: `.` DecimalDigits[~Sep] ExponentPart[~Sep]?
+prod 22 NumericString 0 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] ExponentPart[~Sep]?
+prod 23 NumericString 1 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] ExponentPart[~Sep]?
+prod 24 NumericString 0 StringIntegerLiteral ::: StrWhiteSpace?
+prod 25 NumericString 1 StringIntegerLiteral ::: StrWhiteSpace?
+prod 26 NumericString 00 StringIntegerLiteral ::: StrWhiteSpace? StrIntegerLiteral StrWhiteSpace?
+prod 27 NumericString 01 StringIntegerLiteral ::: StrWhiteSpace? StrIntegerLiteral StrWhiteSpace?
+prod 28 NumericString 10 StringIntegerLiteral ::: StrWhiteSpace? StrIntegerLiteral StrWhiteSpace?
+prod 29 NumericString 11 StringIntegerLiteral ::: StrWhiteSpace? StrIntegerLiteral StrWhiteSpace?
+prod 30 NumericString - StrIntegerLiteral ::: SignedInteger[~Sep]
+prod 31 NumericString - StrIntegerLiteral ::: NonDecimalIntegerLiteral[~Sep]
+prod 32 NumericString - UTCOffset ::: ASCIISign Hour
+prod 33 NumericString - UTCOffset ::: ASCIISign Hour HourSubcomponents[+Extended]
+prod 34 NumericString - UTCOffset ::: ASCIISign Hour HourSubcomponents[~Extended]
+prod 35 NumericString - ASCIISign ::: `+`
+prod 36 NumericString - ASCIISign ::: `-`
+prod 37 NumericString - Hour ::: `0` DecimalDigit
+prod 38 NumericString - Hour ::: `1` DecimalDigit
+prod 39 NumericString - Hour ::: `20`
+prod 40 NumericString - Hour ::: `21`
+prod 41 NumericString - Hour ::: `22`
+prod 42 NumericString - Hour ::: `23`
+prod 43 NumericString - HourSubcomponents ::: TimeSeparator[?Extended] MinuteSecond
+prod 44 NumericString 0 HourSubcomponents ::: TimeSeparator[?Extended] MinuteSecond TimeSeparator[?Extended] MinuteSecond TemporalDecimalFraction?
+prod 45 NumericString 1 HourSubcomponents ::: TimeSeparator[?Extended] MinuteSecond TimeSeparator[?Extended] MinuteSecond TemporalDecimalFraction?
+prod 46 NumericString - TimeSeparator ::: [+Extended] `:`
+prod 47 NumericString - TimeSeparator ::: [~Extended] [empty]
+prod 48 NumericString - MinuteSecond ::: `0` DecimalDigit
+prod 49 NumericString - MinuteSecond ::: `1` DecimalDigit
+prod 50 NumericString - MinuteSecond ::: `2` DecimalDigit
+prod 51 NumericString - MinuteSecond ::: `3` DecimalDigit
+prod 52 NumericString - MinuteSecond ::: `4` DecimalDigit
+prod 53 NumericString - MinuteSecond ::: `5` DecimalDigit
+prod 54 NumericString - TemporalDecimalFraction ::: TemporalDecimalSeparator DecimalDigit
+prod 55 NumericString - TemporalDecimalFraction ::: TemporalDecimalSeparator DecimalDigit DecimalDigit
+prod 56 NumericString - TemporalDecimalFraction ::: TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit
+prod 57 NumericString - TemporalDecimalFraction ::: TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit DecimalDigit
+prod 58 NumericString - TemporalDecimalFraction ::: TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit
+prod 59 NumericString - TemporalDecimalFraction ::: TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit
+prod 60 NumericString - TemporalDecimalFraction ::: TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit
+prod 61 NumericString - TemporalDecimalFraction ::: TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit
+prod 62 NumericString - TemporalDecimalFraction ::: TemporalDecimalSeparator DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit DecimalDigit
+prod 63 NumericString - TemporalDecimalSeparator ::: `.`
+prod 64 NumericString - TemporalDecimalSeparator ::: `,`
+prod 65 Lexical - SourceCharacter :: > any Unicode code point
+prod 66 Lexical - InputElementDiv :: WhiteSpace
+prod 67 Lexical - InputElementDiv :: LineTerminator
+prod 68 Lexical - InputElementDiv :: Comment
+prod 69 Lexical - InputElementDiv :: CommonToken
+prod 70 Lexical - InputElementDiv :: DivPunctuator
+prod 71 Lexical - InputElementDiv :: RightBracePunctuator
+prod 72 Lexical - InputElementRegExp :: WhiteSpace
+prod 73 Lexical - InputElementRegExp :: LineTerminator
+prod 74 Lexical - InputElementRegExp :: Comment
+prod 75 Lexical - InputElementRegExp :: CommonToken
+prod 76 Lexical - InputElementRegExp :: RightBracePunctuator
+prod 77 Lexical - InputElementRegExp :: RegularExpressionLiteral
+prod 78 Lexical - InputElementRegExpOrTemplateTail :: WhiteSpace
+prod 79 Lexical - InputElementRegExpOrTemplateTail :: LineTerminator
+prod 80 Lexical - InputElementRegExpOrTemplateTail :: Comment
+prod 81 Lexical - InputElementRegExpOrTemplateTail :: CommonToken
+prod 82 Lexical - InputElementRegExpOrTemplateTail :: RegularExpressionLiteral
+prod 83 Lexical - InputElementRegExpOrTemplateTail :: TemplateSubstitutionTail
+prod 84 Lexical - InputElementTemplateTail :: WhiteSpace
+prod 85 Lexical - InputElementTemplateTail :: LineTerminator
+prod 86 Lexical - InputElementTemplateTail :: Comment
+prod 87 Lexical - InputElementTemplateTail :: CommonToken
+prod 88 Lexical - InputElementTemplateTail :: DivPunctuator
+prod 89 Lexical - InputElementTemplateTail :: TemplateSubstitutionTail
+prod 90 Lexical - InputElementHashbangOrRegExp :: WhiteSpace
+prod 91 Lexical - InputElementHashbangOrRegExp :: LineTerminator
+prod 92 Lexical - InputElementHashbangOrRegExp :: Comment
+prod 93 Lexical - InputElementHashbangOrRegExp :: CommonToken
+prod 94 Lexical - InputElementHashbangOrRegExp :: HashbangComment
+prod 95 Lexical - InputElementHashbangOrRegExp :: RegularExpressionLiteral
+prod 96 Lexical - WhiteSpace :: <TAB>
+prod 97 Lexical - WhiteSpace :: <VT>
+prod 98 Lexical - WhiteSpace :: <FF>
+prod 99 Lexical - WhiteSpace :: <ZWNBSP>
+prod 100 Lexical - WhiteSpace :: <USP>
+prod 101 Lexical - LineTerminator :: <LF>
+prod 102 Lexical - LineTerminator :: <CR>
+prod 103 Lexical - LineTerminator :: <LS>
+prod 104 Lexical - LineTerminator :: <PS>
+prod 105 Lexical - LineTerminatorSequence :: <LF>
+prod 106 Lexical - LineTerminatorSequence :: <CR> [lookahead != <LF>]
+prod 107 Lexical - LineTerminatorSequence :: <LS>
+prod 108 Lexical - LineTerminatorSequence :: <PS>
+prod 109 Lexical - LineTerminatorSequence :: <CR> <LF>
+prod 110 Lexical - Comment :: MultiLineComment
+prod 111 Lexical - Comment :: SingleLineComment
+prod 112 Lexical 0 MultiLineComment :: `/*` MultiLineCommentChars? `*/`
+prod 113 Lexical 1 MultiLineComment :: `/*` MultiLineCommentChars? `*/`
+prod 114 Lexical 0 MultiLineCommentChars :: MultiLineNotAsteriskChar MultiLineCommentChars?
+prod 115 Lexical 1 MultiLineCommentChars :: MultiLineNotAsteriskChar MultiLineCommentChars?
+prod 116 Lexical 0 MultiLineCommentChars :: `*` PostAsteriskCommentChars?
+prod 117 Lexical 1 MultiLineCommentChars :: `*` PostAsteriskCommentChars?
+prod 118 Lexical 0 PostAsteriskCommentChars :: MultiLineNotForwardSlashOrAsteriskChar MultiLineCommentChars?
+prod 119 Lexical 1 PostAsteriskCommentChars :: MultiLineNotForwardSlashOrAsteriskChar MultiLineCommentChars?
+prod 120 Lexical 0 PostAsteriskCommentChars :: `*` PostAsteriskCommentChars?
+prod 121 Lexical 1 PostAsteriskCommentChars :: `*` PostAsteriskCommentChars?
+prod 122 Lexical - MultiLineNotAsteriskChar :: SourceCharacter but not `*`
+prod 123 Lexical - MultiLineNotForwardSlashOrAsteriskChar :: SourceCharacter but not one of `/` or `*`
+prod 124 Lexical 0 SingleLineComment :: `//` SingleLineCommentChars?
+prod 125 Lexical 1 SingleLineComment :: `//` SingleLineCommentChars?
+prod 126 Lexical 0 SingleLineCommentChars :: SingleLineCommentChar SingleLineCommentChars?
+prod 127 Lexical 1 SingleLineCommentChars :: SingleLineCommentChar SingleLineCommentChars?
+prod 128 Lexical - SingleLineCommentChar :: SourceCharacter but not LineTerminator
+prod 129 Lexical 0 HashbangComment :: `#!` SingleLineCommentChars?
+prod 130 Lexical 1 HashbangComment :: `#!` SingleLineCommentChars?
+prod 131 Lexical - CommonToken :: IdentifierName
+prod 132 Lexical - CommonToken :: PrivateIdentifier
+prod 133 Lexical - CommonToken :: Punctuator
+prod 134 Lexical - CommonToken :: NumericLiteral
+prod 135 Lexical - CommonToken :: StringLiteral
+prod 136 Lexical - CommonToken :: Template
+prod 137 Lexical - PrivateIdentifier :: `#` IdentifierName
+prod 138 Lexical - IdentifierName :: IdentifierStart
+prod 139 Lexical - IdentifierName :: IdentifierName IdentifierPart
+prod 140 Lexical - IdentifierStart :: IdentifierStartChar
+prod 141 Lexical - IdentifierStart :: `\` UnicodeEscapeSequence
+prod 142 Lexical - IdentifierPart :: IdentifierPartChar
+prod 143 Lexical - IdentifierPart :: `\` UnicodeEscapeSequence
+prod 144 Lexical - IdentifierStartChar :: UnicodeIDStart
+prod 145 Lexical - IdentifierStartChar :: `$`
+prod 146 Lexical - IdentifierStartChar :: `_`
+prod 147 Lexical - IdentifierPartChar :: UnicodeIDContinue
+prod 148 Lexical - IdentifierPartChar :: `$`
+prod 149 Lexical - AsciiLetter :: `a`
+prod 150 Lexical - AsciiLetter :: `b`
+prod 151 Lexical - AsciiLetter :: `c`
+prod 152 Lexical - AsciiLetter :: `d`
+prod 153 Lexical - AsciiLetter :: `e`
+prod 154 Lexical - AsciiLetter :: `f`
+prod 155 Lexical - AsciiLetter :: `g`
+prod 156 Lexical - AsciiLetter :: `h`
+prod 157 Lexical - AsciiLetter :: `i`
+prod 158 Lexical - AsciiLetter :: `j`
+prod 159 Lexical - AsciiLetter :: `k`
+prod 160 Lexical - AsciiLetter :: `l`
+prod 161 Lexical - AsciiLetter :: `m`
+prod 162 Lexical - AsciiLetter :: `n`
+prod 163 Lexical - AsciiLetter :: `o`
+prod 164 Lexical - AsciiLetter :: `p`
+prod 165 Lexical - AsciiLetter :: `q`
+prod 166 Lexical - AsciiLetter :: `r`
+prod 167 Lexical - AsciiLetter :: `s`
+prod 168 Lexical - AsciiLetter :: `t`
+prod 169 Lexical - AsciiLetter :: `u`
+prod 170 Lexical - AsciiLetter :: `v`
+prod 171 Lexical - AsciiLetter :: `w`
+prod 172 Lexical - AsciiLetter :: `x`
+prod 173 Lexical - AsciiLetter :: `y`
+prod 174 Lexical - AsciiLetter :: `z`
+prod 175 Lexical - AsciiLetter :: `A`
+prod 176 Lexical - AsciiLetter :: `B`
+prod 177 Lexical - AsciiLetter :: `C`
+prod 178 Lexical - AsciiLetter :: `D`
+prod 179 Lexical - AsciiLetter :: `E`
+prod 180 Lexical - AsciiLetter :: `F`
+prod 181 Lexical - AsciiLetter :: `G`
+prod 182 Lexical - AsciiLetter :: `H`
+prod 183 Lexical - AsciiLetter :: `I`
+prod 184 Lexical - AsciiLetter :: `J`
+prod 185 Lexical - AsciiLetter :: `K`
+prod 186 Lexical - AsciiLetter :: `L`
+prod 187 Lexical - AsciiLetter :: `M`
+prod 188 Lexical - AsciiLetter :: `N`
+prod 189 Lexical - AsciiLetter :: `O`
+prod 190 Lexical - AsciiLetter :: `P`
+prod 191 Lexical - AsciiLetter :: `Q`
+prod 192 Lexical - AsciiLetter :: `R`
+prod 193 Lexical - AsciiLetter :: `S`
+prod 194 Lexical - AsciiLetter :: `T`
+prod 195 Lexical - AsciiLetter :: `U`
+prod 196 Lexical - AsciiLetter :: `V`
+prod 197 Lexical - AsciiLetter :: `W`
+prod 198 Lexical - AsciiLetter :: `X`
+prod 199 Lexical - AsciiLetter :: `Y`
+prod 200 Lexical - AsciiLetter :: `Z`
+prod 201 Lexical - UnicodeIDStart :: > any Unicode code point with the Unicode property “ID_Start”
+prod 202 Lexical - UnicodeIDContinue :: > any Unicode code point with the Unicode property “ID_Continue”
+prod 203 Lexical - ReservedWord :: `await`
+prod 204 Lexical - ReservedWord :: `break`
+prod 205 Lexical - ReservedWord :: `case`
+prod 206 Lexical - ReservedWord :: `catch`
+prod 207 Lexical - ReservedWord :: `class`
+prod 208 Lexical - ReservedWord :: `const`
+prod 209 Lexical - ReservedWord :: `continue`
+prod 210 Lexical - ReservedWord :: `debugger`
+prod 211 Lexical - ReservedWord :: `default`
+prod 212 Lexical - ReservedWord :: `delete`
+prod 213 Lexical - ReservedWord :: `do`
+prod 214 Lexical - ReservedWord :: `else`
+prod 215 Lexical - ReservedWord :: `enum`
+prod 216 Lexical - ReservedWord :: `export`
+prod 217 Lexical - ReservedWord :: `extends`
+prod 218 Lexical - ReservedWord :: `false`
+prod 219 Lexical - ReservedWord :: `finally`
+prod 220 Lexical - ReservedWord :: `for`
+prod 221 Lexical - ReservedWord :: `function`
+prod 222 Lexical - ReservedWord :: `if`
+prod 223 Lexical - ReservedWord :: `import`
+prod 224 Lexical - ReservedWord :: `in`
+prod 225 Lexical - ReservedWord :: `instanceof`
+prod 226 Lexical - ReservedWord :: `new`
+prod 227 Lexical - ReservedWord :: `null`
+prod 228 Lexical - ReservedWord :: `return`
+prod 229 Lexical - ReservedWord :: `super`
+prod 230 Lexical - ReservedWord :: `switch`
+prod 231 Lexical - ReservedWord :: `this`
+prod 232 Lexical - ReservedWord :: `throw`
+prod 233 Lexical - ReservedWord :: `true`
+prod 234 Lexical - ReservedWord :: `try`
+prod 235 Lexical - ReservedWord :: `typeof`
+prod 236 Lexical - ReservedWord :: `var`
+prod 237 Lexical - ReservedWord :: `void`
+prod 238 Lexical - ReservedWord :: `while`
+prod 239 Lexical - ReservedWord :: `with`
+prod 240 Lexical - ReservedWord :: `yield`
+prod 241 Lexical - Punctuator :: OptionalChainingPunctuator
+prod 242 Lexical - Punctuator :: OtherPunctuator
+prod 243 Lexical - OptionalChainingPunctuator :: `?.` [lookahead ∉ DecimalDigit]
+prod 244 Lexical - OtherPunctuator :: `{`
+prod 245 Lexical - OtherPunctuator :: `(`
+prod 246 Lexical - OtherPunctuator :: `)`
+prod 247 Lexical - OtherPunctuator :: `[`
+prod 248 Lexical - OtherPunctuator :: `]`
+prod 249 Lexical - OtherPunctuator :: `.`
+prod 250 Lexical - OtherPunctuator :: `...`
+prod 251 Lexical - OtherPunctuator :: `;`
+prod 252 Lexical - OtherPunctuator :: `,`
+prod 253 Lexical - OtherPunctuator :: `<`
+prod 254 Lexical - OtherPunctuator :: `>`
+prod 255 Lexical - OtherPunctuator :: `<=`
+prod 256 Lexical - OtherPunctuator :: `>=`
+prod 257 Lexical - OtherPunctuator :: `==`
+prod 258 Lexical - OtherPunctuator :: `!=`
+prod 259 Lexical - OtherPunctuator :: `===`
+prod 260 Lexical - OtherPunctuator :: `!==`
+prod 261 Lexical - OtherPunctuator :: `+`
+prod 262 Lexical - OtherPunctuator :: `-`
+prod 263 Lexical - OtherPunctuator :: `*`
+prod 264 Lexical - OtherPunctuator :: `%`
+prod 265 Lexical - OtherPunctuator :: `**`
+prod 266 Lexical - OtherPunctuator :: `++`
+prod 267 Lexical - OtherPunctuator :: `--`
+prod 268 Lexical - OtherPunctuator :: `<<`
+prod 269 Lexical - OtherPunctuator :: `>>`
+prod 270 Lexical - OtherPunctuator :: `>>>`
+prod 271 Lexical - OtherPunctuator :: `&`
+prod 272 Lexical - OtherPunctuator :: `|`
+prod 273 Lexical - OtherPunctuator :: `^`
+prod 274 Lexical - OtherPunctuator :: `!`
+prod 275 Lexical - OtherPunctuator :: `~`
+prod 276 Lexical - OtherPunctuator :: `&&`
+prod 277 Lexical - OtherPunctuator :: `||`
+prod 278 Lexical - OtherPunctuator :: `??`
+prod 279 Lexical - OtherPunctuator :: `?`
+prod 280 Lexical - OtherPunctuator :: `:`
+prod 281 Lexical - OtherPunctuator :: `=`
+prod 282 Lexical - OtherPunctuator :: `+=`
+prod 283 Lexical - OtherPunctuator :: `-=`
+prod 284 Lexical - OtherPunctuator :: `*=`
+prod 285 Lexical - OtherPunctuator :: `%=`
+prod 286 Lexical - OtherPunctuator :: `**=`
+prod 287 Lexical - OtherPunctuator :: `<<=`
+prod 288 Lexical - OtherPunctuator :: `>>=`
+prod 289 Lexical - OtherPunctuator :: `>>>=`
+prod 290 Lexical - OtherPunctuator :: `&=`
+prod 291 Lexical - OtherPunctuator :: `|=`
+prod 292 Lexical - OtherPunctuator :: `^=`
+prod 293 Lexical - OtherPunctuator :: `&&=`
+prod 294 Lexical - OtherPunctuator :: `||=`
+prod 295 Lexical - OtherPunctuator :: `??=`
+prod 296 Lexical - OtherPunctuator :: `=>`
+prod 297 Lexical - DivPunctuator :: `/`
+prod 298 Lexical - DivPunctuator :: `/=`
+prod 299 Lexical - RightBracePunctuator :: `}`
+prod 300 Lexical - NullLiteral :: `null`
+prod 301 Lexical - BooleanLiteral :: `true`
+prod 302 Lexical - BooleanLiteral :: `false`
+prod 303 Lexical - NumericLiteralSeparator :: `_`
+prod 304 Lexical - NumericLiteral :: DecimalLiteral
+prod 305 Lexical - NumericLiteral :: DecimalBigIntegerLiteral
+prod 306 Lexical - NumericLiteral :: NonDecimalIntegerLiteral[+Sep]
+prod 307 Lexical - NumericLiteral :: NonDecimalIntegerLiteral[+Sep] BigIntLiteralSuffix
+prod 308 Lexical - NumericLiteral :: LegacyOctalIntegerLiteral
+prod 309 Lexical - DecimalBigIntegerLiteral :: `0` BigIntLiteralSuffix
+prod 310 Lexical 0 DecimalBigIntegerLiteral :: NonZeroDigit DecimalDigits[+Sep]? BigIntLiteralSuffix
+prod 311 Lexical 1 DecimalBigIntegerLiteral :: NonZeroDigit DecimalDigits[+Sep]? BigIntLiteralSuffix
+prod 312 Lexical - DecimalBigIntegerLiteral :: NonZeroDigit NumericLiteralSeparator DecimalDigits[+Sep] BigIntLiteralSuffix
+prod 313 Lexical - NonDecimalIntegerLiteral :: BinaryIntegerLiteral[?Sep]
+prod 314 Lexical - NonDecimalIntegerLiteral :: OctalIntegerLiteral[?Sep]
+prod 315 Lexical - NonDecimalIntegerLiteral :: HexIntegerLiteral[?Sep]
+prod 316 Lexical - BigIntLiteralSuffix :: `n`
+prod 317 Lexical 00 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?
+prod 318 Lexical 01 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?
+prod 319 Lexical 10 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?
+prod 320 Lexical 11 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?
+prod 321 Lexical 0 DecimalLiteral :: `.` DecimalDigits[+Sep] ExponentPart[+Sep]?
+prod 322 Lexical 1 DecimalLiteral :: `.` DecimalDigits[+Sep] ExponentPart[+Sep]?
+prod 323 Lexical 0 DecimalLiteral :: DecimalIntegerLiteral ExponentPart[+Sep]?
+prod 324 Lexical 1 DecimalLiteral :: DecimalIntegerLiteral ExponentPart[+Sep]?
+prod 325 Lexical - DecimalIntegerLiteral :: DecimalDigit
+prod 326 Lexical 0 DecimalIntegerLiteral :: NonZeroDigit NumericLiteralSeparator? DecimalDigits[+Sep]
+prod 327 Lexical 1 DecimalIntegerLiteral :: NonZeroDigit NumericLiteralSeparator? DecimalDigits[+Sep]
+prod 328 Lexical - DecimalIntegerLiteral :: NonOctalDecimalIntegerLiteral
+prod 329 Lexical - DecimalDigits :: DecimalDigit
+prod 330 Lexical - DecimalDigits :: DecimalDigits[?Sep] DecimalDigit
+prod 331 Lexical - DecimalDigits :: [+Sep] DecimalDigits[+Sep] NumericLiteralSeparator DecimalDigit
+prod 332 Lexical - DecimalDigit :: `0`
+prod 333 Lexical - DecimalDigit :: `1`
+prod 334 Lexical - DecimalDigit :: `2`
+prod 335 Lexical - DecimalDigit :: `3`
+prod 336 Lexical - DecimalDigit :: `4`
+prod 337 Lexical - DecimalDigit :: `5`
+prod 338 Lexical - DecimalDigit :: `6`
+prod 339 Lexical - DecimalDigit :: `7`
+prod 340 Lexical - DecimalDigit :: `8`
+prod 341 Lexical - DecimalDigit :: `9`
+prod 342 Lexical - NonZeroDigit :: `1`
+prod 343 Lexical - NonZeroDigit :: `2`
+prod 344 Lexical - NonZeroDigit :: `3`
+prod 345 Lexical - NonZeroDigit :: `4`
+prod 346 Lexical - NonZeroDigit :: `5`
+prod 347 Lexical - NonZeroDigit :: `6`
+prod 348 Lexical - NonZeroDigit :: `7`
+prod 349 Lexical - NonZeroDigit :: `8`
+prod 350 Lexical - NonZeroDigit :: `9`
+prod 351 Lexical - ExponentPart :: ExponentIndicator SignedInteger[?Sep]
+prod 352 Lexical - ExponentIndicator :: `e`
+prod 353 Lexical - ExponentIndicator :: `E`
+prod 354 Lexical - SignedInteger :: DecimalDigits[?Sep]
+prod 355 Lexical - SignedInteger :: `+` DecimalDigits[?Sep]
+prod 356 Lexical - SignedInteger :: `-` DecimalDigits[?Sep]
+prod 357 Lexical - BinaryIntegerLiteral :: `0b` BinaryDigits[?Sep]
+prod 358 Lexical - BinaryIntegerLiteral :: `0B` BinaryDigits[?Sep]
+prod 359 Lexical - BinaryDigits :: BinaryDigit
+prod 360 Lexical - BinaryDigits :: BinaryDigits[?Sep] BinaryDigit
+prod 361 Lexical - BinaryDigits :: [+Sep] BinaryDigits[+Sep] NumericLiteralSeparator BinaryDigit
+prod 362 Lexical - BinaryDigit :: `0`
+prod 363 Lexical - BinaryDigit :: `1`
+prod 364 Lexical - OctalIntegerLiteral :: `0o` OctalDigits[?Sep]
+prod 365 Lexical - OctalIntegerLiteral :: `0O` OctalDigits[?Sep]
+prod 366 Lexical - OctalDigits :: OctalDigit
+prod 367 Lexical - OctalDigits :: OctalDigits[?Sep] OctalDigit
+prod 368 Lexical - OctalDigits :: [+Sep] OctalDigits[+Sep] NumericLiteralSeparator OctalDigit
+prod 369 Lexical - LegacyOctalIntegerLiteral :: `0` OctalDigit
+prod 370 Lexical - LegacyOctalIntegerLiteral :: LegacyOctalIntegerLiteral OctalDigit
+prod 371 Lexical 0 NonOctalDecimalIntegerLiteral :: `0` LegacyOctalLikeDecimalDigits? NonOctalDigit
+prod 372 Lexical 1 NonOctalDecimalIntegerLiteral :: `0` LegacyOctalLikeDecimalDigits? NonOctalDigit
+prod 373 Lexical - NonOctalDecimalIntegerLiteral :: NonOctalDecimalIntegerLiteral DecimalDigit
+prod 374 Lexical - LegacyOctalLikeDecimalDigits :: OctalDigit
+prod 375 Lexical - LegacyOctalLikeDecimalDigits :: LegacyOctalLikeDecimalDigits OctalDigit
+prod 376 Lexical - OctalDigit :: `0`
+prod 377 Lexical - OctalDigit :: `1`
+prod 378 Lexical - OctalDigit :: `2`
+prod 379 Lexical - OctalDigit :: `3`
+prod 380 Lexical - OctalDigit :: `4`
+prod 381 Lexical - OctalDigit :: `5`
+prod 382 Lexical - OctalDigit :: `6`
+prod 383 Lexical - OctalDigit :: `7`
+prod 384 Lexical - NonOctalDigit :: `8`
+prod 385 Lexical - NonOctalDigit :: `9`
+prod 386 Lexical - HexIntegerLiteral :: `0x` HexDigits[?Sep]
+prod 387 Lexical - HexIntegerLiteral :: `0X` HexDigits[?Sep]
+prod 388 Lexical - HexDigits :: HexDigit
+prod 389 Lexical - HexDigits :: HexDigits[?Sep] HexDigit
+prod 390 Lexical - HexDigits :: [+Sep] HexDigits[+Sep] NumericLiteralSeparator HexDigit
+prod 391 Lexical - HexDigit :: `0`
+prod 392 Lexical - HexDigit :: `1`
+prod 393 Lexical - HexDigit :: `2`
+prod 394 Lexical - HexDigit :: `3`
+prod 395 Lexical - HexDigit :: `4`
+prod 396 Lexical - HexDigit :: `5`
+prod 397 Lexical - HexDigit :: `6`
+prod 398 Lexical - HexDigit :: `7`
+prod 399 Lexical - HexDigit :: `8`
+prod 400 Lexical - HexDigit :: `9`
+prod 401 Lexical - HexDigit :: `a`
+prod 402 Lexical - HexDigit :: `b`
+prod 403 Lexical - HexDigit :: `c`
+prod 404 Lexical - HexDigit :: `d`
+prod 405 Lexical - HexDigit :: `e`
+prod 406 Lexical - HexDigit :: `f`
+prod 407 Lexical - HexDigit :: `A`
+prod 408 Lexical - HexDigit :: `B`
+prod 409 Lexical - HexDigit :: `C`
+prod 410 Lexical - HexDigit :: `D`
+prod 411 Lexical - HexDigit :: `E`
+prod 412 Lexical - HexDigit :: `F`
+prod 413 Lexical 0 StringLiteral :: `"` DoubleStringCharacters? `"`
+prod 414 Lexical 1 StringLiteral :: `"` DoubleStringCharacters? `"`
+prod 415 Lexical 0 StringLiteral :: `'` SingleStringCharacters? `'`
+prod 416 Lexical 1 StringLiteral :: `'` SingleStringCharacters? `'`
+prod 417 Lexical 0 DoubleStringCharacters :: DoubleStringCharacter DoubleStringCharacters?
+prod 418 Lexical 1 DoubleStringCharacters :: DoubleStringCharacter DoubleStringCharacters?
+prod 419 Lexical 0 SingleStringCharacters :: SingleStringCharacter SingleStringCharacters?
+prod 420 Lexical 1 SingleStringCharacters :: SingleStringCharacter SingleStringCharacters?
+prod 421 Lexical - DoubleStringCharacter :: SourceCharacter but not one of `"` or `\` or LineTerminator
+prod 422 Lexical - DoubleStringCharacter :: <LS>
+prod 423 Lexical - DoubleStringCharacter :: <PS>
+prod 424 Lexical - DoubleStringCharacter :: `\` EscapeSequence
+prod 425 Lexical - DoubleStringCharacter :: LineContinuation
+prod 426 Lexical - SingleStringCharacter :: SourceCharacter but not one of `'` or `\` or LineTerminator
+prod 427 Lexical - SingleStringCharacter :: <LS>
+prod 428 Lexical - SingleStringCharacter :: <PS>
+prod 429 Lexical - SingleStringCharacter :: `\` EscapeSequence
+prod 430 Lexical - SingleStringCharacter :: LineContinuation
+prod 431 Lexical - LineContinuation :: `\` LineTerminatorSequence
+prod 432 Lexical - EscapeSequence :: CharacterEscapeSequence
+prod 433 Lexical - EscapeSequence :: `0` [lookahead ∉ DecimalDigit]
+prod 434 Lexical - EscapeSequence :: LegacyOctalEscapeSequence
+prod 435 Lexical - EscapeSequence :: NonOctalDecimalEscapeSequence
+prod 436 Lexical - EscapeSequence :: HexEscapeSequence
+prod 437 Lexical - EscapeSequence :: UnicodeEscapeSequence
+prod 438 Lexical - CharacterEscapeSequence :: SingleEscapeCharacter
+prod 439 Lexical - CharacterEscapeSequence :: NonEscapeCharacter
+prod 440 Lexical - SingleEscapeCharacter :: `'`
+prod 441 Lexical - SingleEscapeCharacter :: `"`
+prod 442 Lexical - SingleEscapeCharacter :: `\`
+prod 443 Lexical - SingleEscapeCharacter :: `b`
+prod 444 Lexical - SingleEscapeCharacter :: `f`
+prod 445 Lexical - SingleEscapeCharacter :: `n`
+prod 446 Lexical - SingleEscapeCharacter :: `r`
+prod 447 Lexical - SingleEscapeCharacter :: `t`
+prod 448 Lexical - SingleEscapeCharacter :: `v`
+prod 449 Lexical - NonEscapeCharacter :: SourceCharacter but not one of EscapeCharacter or LineTerminator
+prod 450 Lexical - EscapeCharacter :: SingleEscapeCharacter
+prod 451 Lexical - EscapeCharacter :: DecimalDigit
+prod 452 Lexical - EscapeCharacter :: `x`
+prod 453 Lexical - EscapeCharacter :: `u`
+prod 454 Lexical - LegacyOctalEscapeSequence :: `0` [lookahead ∈ { `8`, `9` }]
+prod 455 Lexical - LegacyOctalEscapeSequence :: NonZeroOctalDigit [lookahead ∉ OctalDigit]
+prod 456 Lexical - LegacyOctalEscapeSequence :: ZeroToThree OctalDigit [lookahead ∉ OctalDigit]
+prod 457 Lexical - LegacyOctalEscapeSequence :: FourToSeven OctalDigit
+prod 458 Lexical - LegacyOctalEscapeSequence :: ZeroToThree OctalDigit OctalDigit
+prod 459 Lexical - NonZeroOctalDigit :: OctalDigit but not `0`
+prod 460 Lexical - ZeroToThree :: `0`
+prod 461 Lexical - ZeroToThree :: `1`
+prod 462 Lexical - ZeroToThree :: `2`
+prod 463 Lexical - ZeroToThree :: `3`
+prod 464 Lexical - FourToSeven :: `4`
+prod 465 Lexical - FourToSeven :: `5`
+prod 466 Lexical - FourToSeven :: `6`
+prod 467 Lexical - FourToSeven :: `7`
+prod 468 Lexical - NonOctalDecimalEscapeSequence :: `8`
+prod 469 Lexical - NonOctalDecimalEscapeSequence :: `9`
+prod 470 Lexical - HexEscapeSequence :: `x` HexDigit HexDigit
+prod 471 Lexical - UnicodeEscapeSequence :: `u` Hex4Digits
+prod 472 Lexical - UnicodeEscapeSequence :: `u{` CodePoint `}`
+prod 473 Lexical - Hex4Digits :: HexDigit HexDigit HexDigit HexDigit
+prod 474 Lexical - RegularExpressionLiteral :: `/` RegularExpressionBody `/` RegularExpressionFlags
+prod 475 Lexical - RegularExpressionBody :: RegularExpressionFirstChar RegularExpressionChars
+prod 476 Lexical - RegularExpressionChars :: [empty]
+prod 477 Lexical - RegularExpressionChars :: RegularExpressionChars RegularExpressionChar
+prod 478 Lexical - RegularExpressionFirstChar :: RegularExpressionNonTerminator but not one of `*` or `\` or `/` or `[`
+prod 479 Lexical - RegularExpressionFirstChar :: RegularExpressionBackslashSequence
+prod 480 Lexical - RegularExpressionFirstChar :: RegularExpressionClass
+prod 481 Lexical - RegularExpressionChar :: RegularExpressionNonTerminator but not one of `\` or `/` or `[`
+prod 482 Lexical - RegularExpressionChar :: RegularExpressionBackslashSequence
+prod 483 Lexical - RegularExpressionChar :: RegularExpressionClass
+prod 484 Lexical - RegularExpressionBackslashSequence :: `\` RegularExpressionNonTerminator
+prod 485 Lexical - RegularExpressionNonTerminator :: SourceCharacter but not LineTerminator
+prod 486 Lexical - RegularExpressionClass :: `[` RegularExpressionClassChars `]`
+prod 487 Lexical - RegularExpressionClassChars :: [empty]
+prod 488 Lexical - RegularExpressionClassChars :: RegularExpressionClassChars RegularExpressionClassChar
+prod 489 Lexical - RegularExpressionClassChar :: RegularExpressionNonTerminator but not one of `]` or `\`
+prod 490 Lexical - RegularExpressionClassChar :: RegularExpressionBackslashSequence
+prod 491 Lexical - RegularExpressionFlags :: [empty]
+prod 492 Lexical - RegularExpressionFlags :: RegularExpressionFlags IdentifierPartChar
+prod 493 Lexical - Template :: NoSubstitutionTemplate
+prod 494 Lexical - Template :: TemplateHead
+prod 495 Lexical 0 NoSubstitutionTemplate :: ``` TemplateCharacters? ```
+prod 496 Lexical 1 NoSubstitutionTemplate :: ``` TemplateCharacters? ```
+prod 497 Lexical 0 TemplateHead :: ``` TemplateCharacters? `${`
+prod 498 Lexical 1 TemplateHead :: ``` TemplateCharacters? `${`
+prod 499 Lexical - TemplateSubstitutionTail :: TemplateMiddle
+prod 500 Lexical - TemplateSubstitutionTail :: TemplateTail
+prod 501 Lexical 0 TemplateMiddle :: `}` TemplateCharacters? `${`
+prod 502 Lexical 1 TemplateMiddle :: `}` TemplateCharacters? `${`
+prod 503 Lexical 0 TemplateTail :: `}` TemplateCharacters? ```
+prod 504 Lexical 1 TemplateTail :: `}` TemplateCharacters? ```
+prod 505 Lexical 0 TemplateCharacters :: TemplateCharacter TemplateCharacters?
+prod 506 Lexical 1 TemplateCharacters :: TemplateCharacter TemplateCharacters?
+prod 507 Lexical - TemplateCharacter :: `$` [lookahead != `{`]
+prod 508 Lexical - TemplateCharacter :: `\` TemplateEscapeSequence
+prod 509 Lexical - TemplateCharacter :: `\` NotEscapeSequence
+prod 510 Lexical - TemplateCharacter :: LineContinuation
+prod 511 Lexical - TemplateCharacter :: LineTerminatorSequence
+prod 512 Lexical - TemplateCharacter :: SourceCharacter but not one of ``` or `\` or `$` or LineTerminator
+prod 513 Lexical - TemplateEscapeSequence :: CharacterEscapeSequence
+prod 514 Lexical - TemplateEscapeSequence :: `0` [lookahead ∉ DecimalDigit]
+prod 515 Lexical - TemplateEscapeSequence :: HexEscapeSequence
+prod 516 Lexical - TemplateEscapeSequence :: UnicodeEscapeSequence
+prod 517 Lexical - NotEscapeSequence :: `0` DecimalDigit
+prod 518 Lexical - NotEscapeSequence :: DecimalDigit but not `0`
+prod 519 Lexical - NotEscapeSequence :: `x` [lookahead ∉ HexDigit]
+prod 520 Lexical - NotEscapeSequence :: `x` HexDigit [lookahead ∉ HexDigit]
+prod 521 Lexical - NotEscapeSequence :: `u` [lookahead ∉ HexDigit] [lookahead != `{`]
+prod 522 Lexical - NotEscapeSequence :: `u` HexDigit [lookahead ∉ HexDigit]
+prod 523 Lexical - NotEscapeSequence :: `u` HexDigit HexDigit [lookahead ∉ HexDigit]
+prod 524 Lexical - NotEscapeSequence :: `u` HexDigit HexDigit HexDigit [lookahead ∉ HexDigit]
+prod 525 Lexical - NotEscapeSequence :: `u` `{` [lookahead ∉ HexDigit]
+prod 526 Lexical - NotEscapeSequence :: `u` `{` NotCodePoint [lookahead ∉ HexDigit]
+prod 527 Lexical - NotEscapeSequence :: `u` `{` CodePoint [lookahead ∉ HexDigit] [lookahead != `}`]
+prod 528 Lexical - NotCodePoint :: HexDigits[~Sep] [> but only if the MV of |HexDigits| > 0x10FFFF]
+prod 529 Lexical - CodePoint :: HexDigits[~Sep] [> but only if the MV of |HexDigits| ≤ 0x10FFFF]
+prod 530 Syntactic - IdentifierReference : Identifier
+prod 531 Syntactic - IdentifierReference : [~Yield] `yield`
+prod 532 Syntactic - IdentifierReference : [~Await] `await`
+prod 533 Syntactic - BindingIdentifier : Identifier
+prod 534 Syntactic - BindingIdentifier : `yield`
+prod 535 Syntactic - BindingIdentifier : `await`
+prod 536 Syntactic - LabelIdentifier : Identifier
+prod 537 Syntactic - LabelIdentifier : [~Yield] `yield`
+prod 538 Syntactic - LabelIdentifier : [~Await] `await`
+prod 539 Syntactic - Identifier : IdentifierName but not ReservedWord
+prod 540 Syntactic - PrimaryExpression : `this`
+prod 541 Syntactic - PrimaryExpression : IdentifierReference[?Yield, ?Await]
+prod 542 Syntactic - PrimaryExpression : Literal
+prod 543 Syntactic - PrimaryExpression : ArrayLiteral[?Yield, ?Await]
+prod 544 Syntactic - PrimaryExpression : ObjectLiteral[?Yield, ?Await]
+prod 545 Syntactic - PrimaryExpression : FunctionExpression
+prod 546 Syntactic - PrimaryExpression : ClassExpression[?Yield, ?Await]
+prod 547 Syntactic - PrimaryExpression : GeneratorExpression
+prod 548 Syntactic - PrimaryExpression : AsyncFunctionExpression
+prod 549 Syntactic - PrimaryExpression : AsyncGeneratorExpression
+prod 550 Syntactic - PrimaryExpression : RegularExpressionLiteral
+prod 551 Syntactic - PrimaryExpression : TemplateLiteral[?Yield, ?Await, ~Tagged]
+prod 552 Syntactic - PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
+prod 553 Syntactic - CoverParenthesizedExpressionAndArrowParameterList : `(` `)`
+prod 554 Syntactic 0 CoverParenthesizedExpressionAndArrowParameterList : `(` Expression[+In, ?Yield, ?Await] `,`? `)`
+prod 555 Syntactic 1 CoverParenthesizedExpressionAndArrowParameterList : `(` Expression[+In, ?Yield, ?Await] `,`? `)`
+prod 556 Syntactic - CoverParenthesizedExpressionAndArrowParameterList : `(` `...` BindingIdentifier[?Yield, ?Await] `)`
+prod 557 Syntactic - CoverParenthesizedExpressionAndArrowParameterList : `(` `...` BindingPattern[?Yield, ?Await] `)`
+prod 558 Syntactic - CoverParenthesizedExpressionAndArrowParameterList : `(` Expression[+In, ?Yield, ?Await] `,` `...` BindingIdentifier[?Yield, ?Await] `)`
+prod 559 Syntactic - CoverParenthesizedExpressionAndArrowParameterList : `(` Expression[+In, ?Yield, ?Await] `,` `...` BindingPattern[?Yield, ?Await] `)`
+prod 560 Syntactic - ParenthesizedExpression : `(` Expression[+In, ?Yield, ?Await] `)`
+prod 561 Syntactic - Literal : NullLiteral
+prod 562 Syntactic - Literal : BooleanLiteral
+prod 563 Syntactic - Literal : NumericLiteral
+prod 564 Syntactic - Literal : StringLiteral
+prod 565 Syntactic 0 ArrayLiteral : `[` Elision? `]`
+prod 566 Syntactic 1 ArrayLiteral : `[` Elision? `]`
+prod 567 Syntactic - ArrayLiteral : `[` ElementList[?Yield, ?Await] `]`
+prod 568 Syntactic 0 ArrayLiteral : `[` ElementList[?Yield, ?Await] `,` Elision? `]`
+prod 569 Syntactic 1 ArrayLiteral : `[` ElementList[?Yield, ?Await] `,` Elision? `]`
+prod 570 Syntactic 0 ElementList : Elision? AssignmentExpression[+In, ?Yield, ?Await]
+prod 571 Syntactic 1 ElementList : Elision? AssignmentExpression[+In, ?Yield, ?Await]
+prod 572 Syntactic 0 ElementList : Elision? SpreadElement[?Yield, ?Await]
+prod 573 Syntactic 1 ElementList : Elision? SpreadElement[?Yield, ?Await]
+prod 574 Syntactic 0 ElementList : ElementList[?Yield, ?Await] `,` Elision? AssignmentExpression[+In, ?Yield, ?Await]
+prod 575 Syntactic 1 ElementList : ElementList[?Yield, ?Await] `,` Elision? AssignmentExpression[+In, ?Yield, ?Await]
+prod 576 Syntactic 0 ElementList : ElementList[?Yield, ?Await] `,` Elision? SpreadElement[?Yield, ?Await]
+prod 577 Syntactic 1 ElementList : ElementList[?Yield, ?Await] `,` Elision? SpreadElement[?Yield, ?Await]
+prod 578 Syntactic - Elision : `,`
+prod 579 Syntactic - Elision : Elision `,`
+prod 580 Syntactic - SpreadElement : `...` AssignmentExpression[+In, ?Yield, ?Await]
+prod 581 Syntactic - ObjectLiteral : `{` `}`
+prod 582 Syntactic 0 ObjectLiteral : `{` PropertyDefinitionList[?Yield, ?Await] `,`? `}`
+prod 583 Syntactic 1 ObjectLiteral : `{` PropertyDefinitionList[?Yield, ?Await] `,`? `}`
+prod 584 Syntactic - PropertyDefinitionList : PropertyDefinition[?Yield, ?Await]
+prod 585 Syntactic - PropertyDefinitionList : PropertyDefinitionList[?Yield, ?Await] `,` PropertyDefinition[?Yield, ?Await]
+prod 586 Syntactic - PropertyDefinition : IdentifierReference[?Yield, ?Await]
+prod 587 Syntactic - PropertyDefinition : CoverInitializedName[?Yield, ?Await]
+prod 588 Syntactic - PropertyDefinition : PropertyName[?Yield, ?Await] `:` AssignmentExpression[+In, ?Yield, ?Await]
+prod 589 Syntactic - PropertyDefinition : MethodDefinition[?Yield, ?Await]
+prod 590 Syntactic - PropertyDefinition : `...` AssignmentExpression[+In, ?Yield, ?Await]
+prod 591 Syntactic - PropertyName : LiteralPropertyName
+prod 592 Syntactic - PropertyName : ComputedPropertyName[?Yield, ?Await]
+prod 593 Syntactic - LiteralPropertyName : IdentifierName
+prod 594 Syntactic - LiteralPropertyName : StringLiteral
+prod 595 Syntactic - LiteralPropertyName : NumericLiteral
+prod 596 Syntactic - ComputedPropertyName : `[` AssignmentExpression[+In, ?Yield, ?Await] `]`
+prod 597 Syntactic - CoverInitializedName : IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]
+prod 598 Syntactic - Initializer : `=` AssignmentExpression[?In, ?Yield, ?Await]
+prod 599 Syntactic - TemplateLiteral : NoSubstitutionTemplate
+prod 600 Syntactic - TemplateLiteral : SubstitutionTemplate[?Yield, ?Await]
+prod 601 Syntactic - SubstitutionTemplate : TemplateHead Expression[+In, ?Yield, ?Await] TemplateSpans[?Yield, ?Await]
+prod 602 Syntactic - TemplateSpans : TemplateTail
+prod 603 Syntactic - TemplateSpans : TemplateMiddleList[?Yield, ?Await] TemplateTail
+prod 604 Syntactic - TemplateMiddleList : TemplateMiddle Expression[+In, ?Yield, ?Await]
+prod 605 Syntactic - TemplateMiddleList : TemplateMiddleList[?Yield, ?Await] TemplateMiddle Expression[+In, ?Yield, ?Await]
+prod 606 Syntactic - MemberExpression : PrimaryExpression[?Yield, ?Await]
+prod 607 Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`
+prod 608 Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` IdentifierName
+prod 609 Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]
+prod 610 Syntactic - MemberExpression : SuperProperty[?Yield, ?Await]
+prod 611 Syntactic - MemberExpression : MetaProperty
+prod 612 Syntactic - MemberExpression : `new` MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+prod 613 Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` PrivateIdentifier
+prod 614 Syntactic - SuperProperty : `super` `[` Expression[+In, ?Yield, ?Await] `]`
+prod 615 Syntactic - SuperProperty : `super` `.` IdentifierName
+prod 616 Syntactic - MetaProperty : NewTarget
+prod 617 Syntactic - MetaProperty : ImportMeta
+prod 618 Syntactic - NewTarget : `new` `.` `target`
+prod 619 Syntactic - ImportMeta : `import` `.` `meta`
+prod 620 Syntactic - NewExpression : MemberExpression[?Yield, ?Await]
+prod 621 Syntactic - NewExpression : `new` NewExpression[?Yield, ?Await]
+prod 622 Syntactic - CallExpression : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]
+prod 623 Syntactic - CallExpression : SuperCall[?Yield, ?Await]
+prod 624 Syntactic - CallExpression : ImportCall[?Yield, ?Await]
+prod 625 Syntactic - CallExpression : CallExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+prod 626 Syntactic - CallExpression : CallExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`
+prod 627 Syntactic - CallExpression : CallExpression[?Yield, ?Await] `.` IdentifierName
+prod 628 Syntactic - CallExpression : CallExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]
+prod 629 Syntactic - CallExpression : CallExpression[?Yield, ?Await] `.` PrivateIdentifier
+prod 630 Syntactic - SuperCall : `super` Arguments[?Yield, ?Await]
+prod 631 Syntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
+prod 632 Syntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
+prod 633 Syntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
+prod 634 Syntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
+prod 635 Syntactic - Arguments : `(` `)`
+prod 636 Syntactic 0 Arguments : `(` ArgumentList[?Yield, ?Await] `,`? `)`
+prod 637 Syntactic 1 Arguments : `(` ArgumentList[?Yield, ?Await] `,`? `)`
+prod 638 Syntactic - ArgumentList : AssignmentExpression[+In, ?Yield, ?Await]
+prod 639 Syntactic - ArgumentList : `...` AssignmentExpression[+In, ?Yield, ?Await]
+prod 640 Syntactic - ArgumentList : ArgumentList[?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await]
+prod 641 Syntactic - ArgumentList : ArgumentList[?Yield, ?Await] `,` `...` AssignmentExpression[+In, ?Yield, ?Await]
+prod 642 Syntactic - OptionalExpression : MemberExpression[?Yield, ?Await] OptionalChain[?Yield, ?Await]
+prod 643 Syntactic - OptionalExpression : CallExpression[?Yield, ?Await] OptionalChain[?Yield, ?Await]
+prod 644 Syntactic - OptionalExpression : OptionalExpression[?Yield, ?Await] OptionalChain[?Yield, ?Await]
+prod 645 Syntactic - OptionalChain : `?.` Arguments[?Yield, ?Await]
+prod 646 Syntactic - OptionalChain : `?.` `[` Expression[+In, ?Yield, ?Await] `]`
+prod 647 Syntactic - OptionalChain : `?.` IdentifierName
+prod 648 Syntactic - OptionalChain : `?.` TemplateLiteral[?Yield, ?Await, +Tagged]
+prod 649 Syntactic - OptionalChain : `?.` PrivateIdentifier
+prod 650 Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] Arguments[?Yield, ?Await]
+prod 651 Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`
+prod 652 Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `.` IdentifierName
+prod 653 Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]
+prod 654 Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `.` PrivateIdentifier
+prod 655 Syntactic - LeftHandSideExpression : NewExpression[?Yield, ?Await]
+prod 656 Syntactic - LeftHandSideExpression : CallExpression[?Yield, ?Await]
+prod 657 Syntactic - LeftHandSideExpression : OptionalExpression[?Yield, ?Await]
+prod 658 Syntactic - CallMemberExpression : MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+prod 659 Syntactic - UpdateExpression : LeftHandSideExpression[?Yield, ?Await]
+prod 660 Syntactic - UpdateExpression : LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `++`
+prod 661 Syntactic - UpdateExpression : LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `--`
+prod 662 Syntactic - UpdateExpression : `++` UnaryExpression[?Yield, ?Await]
+prod 663 Syntactic - UpdateExpression : `--` UnaryExpression[?Yield, ?Await]
+prod 664 Syntactic - UnaryExpression : UpdateExpression[?Yield, ?Await]
+prod 665 Syntactic - UnaryExpression : `delete` UnaryExpression[?Yield, ?Await]
+prod 666 Syntactic - UnaryExpression : `void` UnaryExpression[?Yield, ?Await]
+prod 667 Syntactic - UnaryExpression : `typeof` UnaryExpression[?Yield, ?Await]
+prod 668 Syntactic - UnaryExpression : `+` UnaryExpression[?Yield, ?Await]
+prod 669 Syntactic - UnaryExpression : `-` UnaryExpression[?Yield, ?Await]
+prod 670 Syntactic - UnaryExpression : `~` UnaryExpression[?Yield, ?Await]
+prod 671 Syntactic - UnaryExpression : `!` UnaryExpression[?Yield, ?Await]
+prod 672 Syntactic - UnaryExpression : [+Await] CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield]
+prod 673 Syntactic - CoverAwaitExpressionAndAwaitUsingDeclarationHead : `await` UnaryExpression[?Yield, +Await]
+prod 674 Syntactic - ExponentiationExpression : UnaryExpression[?Yield, ?Await]
+prod 675 Syntactic - ExponentiationExpression : UpdateExpression[?Yield, ?Await] `**` ExponentiationExpression[?Yield, ?Await]
+prod 676 Syntactic - MultiplicativeExpression : ExponentiationExpression[?Yield, ?Await]
+prod 677 Syntactic - MultiplicativeExpression : MultiplicativeExpression[?Yield, ?Await] MultiplicativeOperator ExponentiationExpression[?Yield, ?Await]
+prod 678 Syntactic - MultiplicativeOperator : `*`
+prod 679 Syntactic - MultiplicativeOperator : `/`
+prod 680 Syntactic - MultiplicativeOperator : `%`
+prod 681 Syntactic - AdditiveExpression : MultiplicativeExpression[?Yield, ?Await]
+prod 682 Syntactic - AdditiveExpression : AdditiveExpression[?Yield, ?Await] `+` MultiplicativeExpression[?Yield, ?Await]
+prod 683 Syntactic - AdditiveExpression : AdditiveExpression[?Yield, ?Await] `-` MultiplicativeExpression[?Yield, ?Await]
+prod 684 Syntactic - ShiftExpression : AdditiveExpression[?Yield, ?Await]
+prod 685 Syntactic - ShiftExpression : ShiftExpression[?Yield, ?Await] `<<` AdditiveExpression[?Yield, ?Await]
+prod 686 Syntactic - ShiftExpression : ShiftExpression[?Yield, ?Await] `>>` AdditiveExpression[?Yield, ?Await]
+prod 687 Syntactic - ShiftExpression : ShiftExpression[?Yield, ?Await] `>>>` AdditiveExpression[?Yield, ?Await]
+prod 688 Syntactic - RelationalExpression : ShiftExpression[?Yield, ?Await]
+prod 689 Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `<` ShiftExpression[?Yield, ?Await]
+prod 690 Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `>` ShiftExpression[?Yield, ?Await]
+prod 691 Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `<=` ShiftExpression[?Yield, ?Await]
+prod 692 Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `>=` ShiftExpression[?Yield, ?Await]
+prod 693 Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `instanceof` ShiftExpression[?Yield, ?Await]
+prod 694 Syntactic - RelationalExpression : [+In] RelationalExpression[+In, ?Yield, ?Await] `in` ShiftExpression[?Yield, ?Await]
+prod 695 Syntactic - RelationalExpression : [+In] PrivateIdentifier `in` ShiftExpression[?Yield, ?Await]
+prod 696 Syntactic - EqualityExpression : RelationalExpression[?In, ?Yield, ?Await]
+prod 697 Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `==` RelationalExpression[?In, ?Yield, ?Await]
+prod 698 Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `!=` RelationalExpression[?In, ?Yield, ?Await]
+prod 699 Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `===` RelationalExpression[?In, ?Yield, ?Await]
+prod 700 Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `!==` RelationalExpression[?In, ?Yield, ?Await]
+prod 701 Syntactic - BitwiseANDExpression : EqualityExpression[?In, ?Yield, ?Await]
+prod 702 Syntactic - BitwiseANDExpression : BitwiseANDExpression[?In, ?Yield, ?Await] `&` EqualityExpression[?In, ?Yield, ?Await]
+prod 703 Syntactic - BitwiseXORExpression : BitwiseANDExpression[?In, ?Yield, ?Await]
+prod 704 Syntactic - BitwiseXORExpression : BitwiseXORExpression[?In, ?Yield, ?Await] `^` BitwiseANDExpression[?In, ?Yield, ?Await]
+prod 705 Syntactic - BitwiseORExpression : BitwiseXORExpression[?In, ?Yield, ?Await]
+prod 706 Syntactic - BitwiseORExpression : BitwiseORExpression[?In, ?Yield, ?Await] `|` BitwiseXORExpression[?In, ?Yield, ?Await]
+prod 707 Syntactic - LogicalANDExpression : BitwiseORExpression[?In, ?Yield, ?Await]
+prod 708 Syntactic - LogicalANDExpression : LogicalANDExpression[?In, ?Yield, ?Await] `&&` BitwiseORExpression[?In, ?Yield, ?Await]
+prod 709 Syntactic - LogicalORExpression : LogicalANDExpression[?In, ?Yield, ?Await]
+prod 710 Syntactic - LogicalORExpression : LogicalORExpression[?In, ?Yield, ?Await] `||` LogicalANDExpression[?In, ?Yield, ?Await]
+prod 711 Syntactic - CoalesceExpression : CoalesceExpressionHead[?In, ?Yield, ?Await] `??` BitwiseORExpression[?In, ?Yield, ?Await]
+prod 712 Syntactic - CoalesceExpressionHead : CoalesceExpression[?In, ?Yield, ?Await]
+prod 713 Syntactic - CoalesceExpressionHead : BitwiseORExpression[?In, ?Yield, ?Await]
+prod 714 Syntactic - ShortCircuitExpression : LogicalORExpression[?In, ?Yield, ?Await]
+prod 715 Syntactic - ShortCircuitExpression : CoalesceExpression[?In, ?Yield, ?Await]
+prod 716 Syntactic - ConditionalExpression : ShortCircuitExpression[?In, ?Yield, ?Await]
+prod 717 Syntactic - ConditionalExpression : ShortCircuitExpression[?In, ?Yield, ?Await] `?` AssignmentExpression[+In, ?Yield, ?Await] `:` AssignmentExpression[?In, ?Yield, ?Await]
+prod 718 Syntactic - AssignmentExpression : ConditionalExpression[?In, ?Yield, ?Await]
+prod 719 Syntactic - AssignmentExpression : [+Yield] YieldExpression[?In, ?Await]
+prod 720 Syntactic - AssignmentExpression : ArrowFunction[?In, ?Yield, ?Await]
+prod 721 Syntactic - AssignmentExpression : AsyncArrowFunction[?In, ?Yield, ?Await]
+prod 722 Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `=` AssignmentExpression[?In, ?Yield, ?Await]
+prod 723 Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] AssignmentOperator AssignmentExpression[?In, ?Yield, ?Await]
+prod 724 Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `&&=` AssignmentExpression[?In, ?Yield, ?Await]
+prod 725 Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `||=` AssignmentExpression[?In, ?Yield, ?Await]
+prod 726 Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `??=` AssignmentExpression[?In, ?Yield, ?Await]
+prod 727 Syntactic - AssignmentOperator : `*=`
+prod 728 Syntactic - AssignmentOperator : `/=`
+prod 729 Syntactic - AssignmentOperator : `%=`
+prod 730 Syntactic - AssignmentOperator : `+=`
+prod 731 Syntactic - AssignmentOperator : `-=`
+prod 732 Syntactic - AssignmentOperator : `<<=`
+prod 733 Syntactic - AssignmentOperator : `>>=`
+prod 734 Syntactic - AssignmentOperator : `>>>=`
+prod 735 Syntactic - AssignmentOperator : `&=`
+prod 736 Syntactic - AssignmentOperator : `^=`
+prod 737 Syntactic - AssignmentOperator : `|=`
+prod 738 Syntactic - AssignmentOperator : `**=`
+prod 739 Syntactic - AssignmentPattern : ObjectAssignmentPattern[?Yield, ?Await]
+prod 740 Syntactic - AssignmentPattern : ArrayAssignmentPattern[?Yield, ?Await]
+prod 741 Syntactic - ObjectAssignmentPattern : `{` `}`
+prod 742 Syntactic - ObjectAssignmentPattern : `{` AssignmentRestProperty[?Yield, ?Await] `}`
+prod 743 Syntactic 0 ObjectAssignmentPattern : `{` AssignmentPropertyList[?Yield, ?Await] `,`? `}`
+prod 744 Syntactic 1 ObjectAssignmentPattern : `{` AssignmentPropertyList[?Yield, ?Await] `,`? `}`
+prod 745 Syntactic - ObjectAssignmentPattern : `{` AssignmentPropertyList[?Yield, ?Await] `,` AssignmentRestProperty[?Yield, ?Await] `}`
+prod 746 Syntactic 00 ArrayAssignmentPattern : `[` Elision? AssignmentRestElement[?Yield, ?Await]? `]`
+prod 747 Syntactic 01 ArrayAssignmentPattern : `[` Elision? AssignmentRestElement[?Yield, ?Await]? `]`
+prod 748 Syntactic 10 ArrayAssignmentPattern : `[` Elision? AssignmentRestElement[?Yield, ?Await]? `]`
+prod 749 Syntactic 11 ArrayAssignmentPattern : `[` Elision? AssignmentRestElement[?Yield, ?Await]? `]`
+prod 750 Syntactic - ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `]`
+prod 751 Syntactic 00 ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `,` Elision? AssignmentRestElement[?Yield, ?Await]? `]`
+prod 752 Syntactic 01 ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `,` Elision? AssignmentRestElement[?Yield, ?Await]? `]`
+prod 753 Syntactic 10 ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `,` Elision? AssignmentRestElement[?Yield, ?Await]? `]`
+prod 754 Syntactic 11 ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `,` Elision? AssignmentRestElement[?Yield, ?Await]? `]`
+prod 755 Syntactic - AssignmentRestProperty : `...` DestructuringAssignmentTarget[?Yield, ?Await]
+prod 756 Syntactic - AssignmentPropertyList : AssignmentProperty[?Yield, ?Await]
+prod 757 Syntactic - AssignmentPropertyList : AssignmentPropertyList[?Yield, ?Await] `,` AssignmentProperty[?Yield, ?Await]
+prod 758 Syntactic - AssignmentElementList : AssignmentElisionElement[?Yield, ?Await]
+prod 759 Syntactic - AssignmentElementList : AssignmentElementList[?Yield, ?Await] `,` AssignmentElisionElement[?Yield, ?Await]
+prod 760 Syntactic 0 AssignmentElisionElement : Elision? AssignmentElement[?Yield, ?Await]
+prod 761 Syntactic 1 AssignmentElisionElement : Elision? AssignmentElement[?Yield, ?Await]
+prod 762 Syntactic 0 AssignmentProperty : IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 763 Syntactic 1 AssignmentProperty : IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 764 Syntactic - AssignmentProperty : PropertyName[?Yield, ?Await] `:` AssignmentElement[?Yield, ?Await]
+prod 765 Syntactic 0 AssignmentElement : DestructuringAssignmentTarget[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 766 Syntactic 1 AssignmentElement : DestructuringAssignmentTarget[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 767 Syntactic - AssignmentRestElement : `...` DestructuringAssignmentTarget[?Yield, ?Await]
+prod 768 Syntactic - DestructuringAssignmentTarget : LeftHandSideExpression[?Yield, ?Await]
+prod 769 Syntactic - Expression : AssignmentExpression[?In, ?Yield, ?Await]
+prod 770 Syntactic - Expression : Expression[?In, ?Yield, ?Await] `,` AssignmentExpression[?In, ?Yield, ?Await]
+prod 771 Syntactic - Statement : BlockStatement[?Yield, ?Await, ?Return]
+prod 772 Syntactic - Statement : VariableStatement[?Yield, ?Await]
+prod 773 Syntactic - Statement : EmptyStatement
+prod 774 Syntactic - Statement : ExpressionStatement[?Yield, ?Await]
+prod 775 Syntactic - Statement : IfStatement[?Yield, ?Await, ?Return]
+prod 776 Syntactic - Statement : BreakableStatement[?Yield, ?Await, ?Return]
+prod 777 Syntactic - Statement : ContinueStatement[?Yield, ?Await]
+prod 778 Syntactic - Statement : BreakStatement[?Yield, ?Await]
+prod 779 Syntactic - Statement : [+Return] ReturnStatement[?Yield, ?Await]
+prod 780 Syntactic - Statement : WithStatement[?Yield, ?Await, ?Return]
+prod 781 Syntactic - Statement : LabelledStatement[?Yield, ?Await, ?Return]
+prod 782 Syntactic - Statement : ThrowStatement[?Yield, ?Await]
+prod 783 Syntactic - Statement : TryStatement[?Yield, ?Await, ?Return]
+prod 784 Syntactic - Statement : DebuggerStatement
+prod 785 Syntactic - Declaration : HoistableDeclaration[?Yield, ?Await, ~Default]
+prod 786 Syntactic - Declaration : ClassDeclaration[?Yield, ?Await, ~Default]
+prod 787 Syntactic - Declaration : LexicalDeclaration[+In, ?Yield, ?Await]
+prod 788 Syntactic - HoistableDeclaration : FunctionDeclaration[?Yield, ?Await, ?Default]
+prod 789 Syntactic - HoistableDeclaration : GeneratorDeclaration[?Yield, ?Await, ?Default]
+prod 790 Syntactic - HoistableDeclaration : AsyncFunctionDeclaration[?Yield, ?Await, ?Default]
+prod 791 Syntactic - HoistableDeclaration : AsyncGeneratorDeclaration[?Yield, ?Await, ?Default]
+prod 792 Syntactic - BreakableStatement : IterationStatement[?Yield, ?Await, ?Return]
+prod 793 Syntactic - BreakableStatement : SwitchStatement[?Yield, ?Await, ?Return]
+prod 794 Syntactic - BlockStatement : Block[?Yield, ?Await, ?Return]
+prod 795 Syntactic 0 Block : `{` StatementList[?Yield, ?Await, ?Return]? `}`
+prod 796 Syntactic 1 Block : `{` StatementList[?Yield, ?Await, ?Return]? `}`
+prod 797 Syntactic - StatementList : StatementListItem[?Yield, ?Await, ?Return]
+prod 798 Syntactic - StatementList : StatementList[?Yield, ?Await, ?Return] StatementListItem[?Yield, ?Await, ?Return]
+prod 799 Syntactic - StatementListItem : Statement[?Yield, ?Await, ?Return]
+prod 800 Syntactic - StatementListItem : Declaration[?Yield, ?Await]
+prod 801 Syntactic - LexicalDeclaration : LetOrConst BindingList[?In, ?Yield, ?Await, +Pattern] `;`
+prod 802 Syntactic - LexicalDeclaration : UsingDeclaration[?In, ?Yield, ?Await]
+prod 803 Syntactic - LexicalDeclaration : [+Await] AwaitUsingDeclaration[?In, ?Yield]
+prod 804 Syntactic - LetOrConst : `let`
+prod 805 Syntactic - LetOrConst : `const`
+prod 806 Syntactic - UsingDeclaration : `using` [no LineTerminator here] BindingList[?In, ?Yield, ?Await, ~Pattern] `;`
+prod 807 Syntactic - AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield] [no LineTerminator here] BindingList[?In, ?Yield, +Await, ~Pattern] `;`
+prod 808 Syntactic - BindingList : LexicalBinding[?In, ?Yield, ?Await, ?Pattern]
+prod 809 Syntactic - BindingList : BindingList[?In, ?Yield, ?Await, ?Pattern] `,` LexicalBinding[?In, ?Yield, ?Await, ?Pattern]
+prod 810 Syntactic 0 LexicalBinding : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
+prod 811 Syntactic 1 LexicalBinding : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
+prod 812 Syntactic - LexicalBinding : [+Pattern] BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]
+prod 813 Syntactic - AwaitUsingDeclarationHead : `await` [no LineTerminator here] `using`
+prod 814 Syntactic - VariableStatement : `var` VariableDeclarationList[+In, ?Yield, ?Await] `;`
+prod 815 Syntactic - VariableDeclarationList : VariableDeclaration[?In, ?Yield, ?Await]
+prod 816 Syntactic - VariableDeclarationList : VariableDeclarationList[?In, ?Yield, ?Await] `,` VariableDeclaration[?In, ?Yield, ?Await]
+prod 817 Syntactic 0 VariableDeclaration : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
+prod 818 Syntactic 1 VariableDeclaration : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?
+prod 819 Syntactic - VariableDeclaration : BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]
+prod 820 Syntactic - BindingPattern : ObjectBindingPattern[?Yield, ?Await]
+prod 821 Syntactic - BindingPattern : ArrayBindingPattern[?Yield, ?Await]
+prod 822 Syntactic - ObjectBindingPattern : `{` `}`
+prod 823 Syntactic - ObjectBindingPattern : `{` BindingRestProperty[?Yield, ?Await] `}`
+prod 824 Syntactic 0 ObjectBindingPattern : `{` BindingPropertyList[?Yield, ?Await] `,`? `}`
+prod 825 Syntactic 1 ObjectBindingPattern : `{` BindingPropertyList[?Yield, ?Await] `,`? `}`
+prod 826 Syntactic - ObjectBindingPattern : `{` BindingPropertyList[?Yield, ?Await] `,` BindingRestProperty[?Yield, ?Await] `}`
+prod 827 Syntactic 00 ArrayBindingPattern : `[` Elision? BindingRestElement[?Yield, ?Await]? `]`
+prod 828 Syntactic 01 ArrayBindingPattern : `[` Elision? BindingRestElement[?Yield, ?Await]? `]`
+prod 829 Syntactic 10 ArrayBindingPattern : `[` Elision? BindingRestElement[?Yield, ?Await]? `]`
+prod 830 Syntactic 11 ArrayBindingPattern : `[` Elision? BindingRestElement[?Yield, ?Await]? `]`
+prod 831 Syntactic - ArrayBindingPattern : `[` BindingElementList[?Yield, ?Await] `]`
+prod 832 Syntactic 00 ArrayBindingPattern : `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`
+prod 833 Syntactic 01 ArrayBindingPattern : `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`
+prod 834 Syntactic 10 ArrayBindingPattern : `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`
+prod 835 Syntactic 11 ArrayBindingPattern : `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`
+prod 836 Syntactic - BindingRestProperty : `...` BindingIdentifier[?Yield, ?Await]
+prod 837 Syntactic - BindingPropertyList : BindingProperty[?Yield, ?Await]
+prod 838 Syntactic - BindingPropertyList : BindingPropertyList[?Yield, ?Await] `,` BindingProperty[?Yield, ?Await]
+prod 839 Syntactic - BindingElementList : BindingElisionElement[?Yield, ?Await]
+prod 840 Syntactic - BindingElementList : BindingElementList[?Yield, ?Await] `,` BindingElisionElement[?Yield, ?Await]
+prod 841 Syntactic 0 BindingElisionElement : Elision? BindingElement[?Yield, ?Await]
+prod 842 Syntactic 1 BindingElisionElement : Elision? BindingElement[?Yield, ?Await]
+prod 843 Syntactic - BindingProperty : SingleNameBinding[?Yield, ?Await]
+prod 844 Syntactic - BindingProperty : PropertyName[?Yield, ?Await] `:` BindingElement[?Yield, ?Await]
+prod 845 Syntactic - BindingElement : SingleNameBinding[?Yield, ?Await]
+prod 846 Syntactic 0 BindingElement : BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 847 Syntactic 1 BindingElement : BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 848 Syntactic 0 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 849 Syntactic 1 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 850 Syntactic - BindingRestElement : `...` BindingIdentifier[?Yield, ?Await]
+prod 851 Syntactic - BindingRestElement : `...` BindingPattern[?Yield, ?Await]
+prod 852 Syntactic - EmptyStatement : `;`
+prod 853 Syntactic - ExpressionStatement : [lookahead ∉ { `{`, `function`, `async` [no LineTerminator here] `function`, `class`, `let` `[` }] Expression[+In, ?Yield, ?Await] `;`
+prod 854 Syntactic - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` Statement[?Yield, ?Await, ?Return]
+prod 855 Syntactic - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] [lookahead != `else`]
+prod 856 Syntactic - IterationStatement : DoWhileStatement[?Yield, ?Await, ?Return]
+prod 857 Syntactic - IterationStatement : WhileStatement[?Yield, ?Await, ?Return]
+prod 858 Syntactic - IterationStatement : ForStatement[?Yield, ?Await, ?Return]
+prod 859 Syntactic - IterationStatement : ForInOfStatement[?Yield, ?Await, ?Return]
+prod 860 Syntactic - DoWhileStatement : `do` Statement[?Yield, ?Await, ?Return] `while` `(` Expression[+In, ?Yield, ?Await] `)` `;`
+prod 861 Syntactic - WhileStatement : `while` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 862 Syntactic 000 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 863 Syntactic 001 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 864 Syntactic 010 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 865 Syntactic 011 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 866 Syntactic 100 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 867 Syntactic 101 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 868 Syntactic 110 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 869 Syntactic 111 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 870 Syntactic 00 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 871 Syntactic 01 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 872 Syntactic 10 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 873 Syntactic 11 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 874 Syntactic 00 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 875 Syntactic 01 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 876 Syntactic 10 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 877 Syntactic 11 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]
+prod 878 Syntactic - ForInOfStatement : `for` `(` [lookahead != `let` `[`] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 879 Syntactic - ForInOfStatement : `for` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 880 Syntactic - ForInOfStatement : `for` `(` ForDeclaration[?Yield, ?Await, ~Using] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 881 Syntactic - ForInOfStatement : `for` `(` [lookahead ∉ { `let`, `async` `of` }] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 882 Syntactic - ForInOfStatement : `for` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 883 Syntactic - ForInOfStatement : `for` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 884 Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `let`] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 885 Syntactic - ForInOfStatement : [+Await] `for` `await` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 886 Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 887 Syntactic - ForDeclaration : LetOrConst ForBinding[?Yield, ?Await, +Pattern]
+prod 888 Syntactic - ForDeclaration : [+Using] `using` [no LineTerminator here] ForBinding[?Yield, ?Await, ~Pattern]
+prod 889 Syntactic - ForDeclaration : [+Using, +Await] `await` [no LineTerminator here] `using` [no LineTerminator here] ForBinding[?Yield, +Await, ~Pattern]
+prod 890 Syntactic - ForBinding : BindingIdentifier[?Yield, ?Await]
+prod 891 Syntactic - ForBinding : [+Pattern] BindingPattern[?Yield, ?Await]
+prod 892 Syntactic - ContinueStatement : `continue` `;`
+prod 893 Syntactic - ContinueStatement : `continue` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`
+prod 894 Syntactic - BreakStatement : `break` `;`
+prod 895 Syntactic - BreakStatement : `break` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`
+prod 896 Syntactic - ReturnStatement : `return` `;`
+prod 897 Syntactic - ReturnStatement : `return` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`
+prod 898 Syntactic - WithStatement : `with` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 899 Syntactic - SwitchStatement : `switch` `(` Expression[+In, ?Yield, ?Await] `)` CaseBlock[?Yield, ?Await, ?Return]
+prod 900 Syntactic 0 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? `}`
+prod 901 Syntactic 1 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? `}`
+prod 902 Syntactic 00 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`
+prod 903 Syntactic 01 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`
+prod 904 Syntactic 10 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`
+prod 905 Syntactic 11 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`
+prod 906 Syntactic - CaseClauses : CaseClause[?Yield, ?Await, ?Return]
+prod 907 Syntactic - CaseClauses : CaseClauses[?Yield, ?Await, ?Return] CaseClause[?Yield, ?Await, ?Return]
+prod 908 Syntactic 0 CaseClause : `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?
+prod 909 Syntactic 1 CaseClause : `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?
+prod 910 Syntactic 0 DefaultClause : `default` `:` StatementList[?Yield, ?Await, ?Return]?
+prod 911 Syntactic 1 DefaultClause : `default` `:` StatementList[?Yield, ?Await, ?Return]?
+prod 912 Syntactic - LabelledStatement : LabelIdentifier[?Yield, ?Await] `:` LabelledItem[?Yield, ?Await, ?Return]
+prod 913 Syntactic - LabelledItem : Statement[?Yield, ?Await, ?Return]
+prod 914 Syntactic - LabelledItem : FunctionDeclaration[?Yield, ?Await, ~Default]
+prod 915 Syntactic - ThrowStatement : `throw` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`
+prod 916 Syntactic - TryStatement : `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return]
+prod 917 Syntactic - TryStatement : `try` Block[?Yield, ?Await, ?Return] Finally[?Yield, ?Await, ?Return]
+prod 918 Syntactic - TryStatement : `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return] Finally[?Yield, ?Await, ?Return]
+prod 919 Syntactic - Catch : `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]
+prod 920 Syntactic - Catch : `catch` Block[?Yield, ?Await, ?Return]
+prod 921 Syntactic - Finally : `finally` Block[?Yield, ?Await, ?Return]
+prod 922 Syntactic - CatchParameter : BindingIdentifier[?Yield, ?Await]
+prod 923 Syntactic - CatchParameter : BindingPattern[?Yield, ?Await]
+prod 924 Syntactic - DebuggerStatement : `debugger` `;`
+prod 925 Syntactic - UniqueFormalParameters : FormalParameters[?Yield, ?Await]
+prod 926 Syntactic - FormalParameters : [empty]
+prod 927 Syntactic - FormalParameters : FunctionRestParameter[?Yield, ?Await]
+prod 928 Syntactic - FormalParameters : FormalParameterList[?Yield, ?Await]
+prod 929 Syntactic - FormalParameters : FormalParameterList[?Yield, ?Await] `,`
+prod 930 Syntactic - FormalParameters : FormalParameterList[?Yield, ?Await] `,` FunctionRestParameter[?Yield, ?Await]
+prod 931 Syntactic - FormalParameterList : FormalParameter[?Yield, ?Await]
+prod 932 Syntactic - FormalParameterList : FormalParameterList[?Yield, ?Await] `,` FormalParameter[?Yield, ?Await]
+prod 933 Syntactic - FunctionRestParameter : BindingRestElement[?Yield, ?Await]
+prod 934 Syntactic - FormalParameter : BindingElement[?Yield, ?Await]
+prod 935 Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
+prod 936 Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
+prod 937 Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
+prod 938 Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
+prod 939 Syntactic - FunctionBody : FunctionStatementList[?Yield, ?Await]
+prod 940 Syntactic 0 FunctionStatementList : StatementList[?Yield, ?Await, +Return]?
+prod 941 Syntactic 1 FunctionStatementList : StatementList[?Yield, ?Await, +Return]?
+prod 942 Syntactic - ArrowFunction : ArrowParameters[?Yield, ?Await] [no LineTerminator here] `=>` ConciseBody[?In]
+prod 943 Syntactic - ArrowParameters : BindingIdentifier[?Yield, ?Await]
+prod 944 Syntactic - ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
+prod 945 Syntactic - ConciseBody : [lookahead != `{`] ExpressionBody[?In, ~Await]
+prod 946 Syntactic - ConciseBody : `{` FunctionBody[~Yield, ~Await] `}`
+prod 947 Syntactic - ExpressionBody : AssignmentExpression[?In, ~Yield, ?Await]
+prod 948 Syntactic - ArrowFormalParameters : `(` UniqueFormalParameters[?Yield, ?Await] `)`
+prod 949 Syntactic - MethodDefinition : ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`
+prod 950 Syntactic - MethodDefinition : GeneratorMethod[?Yield, ?Await]
+prod 951 Syntactic - MethodDefinition : AsyncMethod[?Yield, ?Await]
+prod 952 Syntactic - MethodDefinition : AsyncGeneratorMethod[?Yield, ?Await]
+prod 953 Syntactic - MethodDefinition : `get` ClassElementName[?Yield, ?Await] `(` `)` `{` FunctionBody[~Yield, ~Await] `}`
+prod 954 Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`
+prod 955 Syntactic - PropertySetParameterList : FormalParameter[~Yield, ~Await]
+prod 956 Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
+prod 957 Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
+prod 958 Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
+prod 959 Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
+prod 960 Syntactic - GeneratorMethod : `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`
+prod 961 Syntactic - GeneratorBody : FunctionBody[+Yield, ~Await]
+prod 962 Syntactic - YieldExpression : `yield`
+prod 963 Syntactic - YieldExpression : `yield` [no LineTerminator here] AssignmentExpression[?In, +Yield, ?Await]
+prod 964 Syntactic - YieldExpression : `yield` [no LineTerminator here] `*` AssignmentExpression[?In, +Yield, ?Await]
+prod 965 Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+prod 966 Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+prod 967 Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+prod 968 Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+prod 969 Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`
+prod 970 Syntactic - AsyncGeneratorBody : FunctionBody[+Yield, +Await]
+prod 971 Syntactic - ClassDeclaration : `class` BindingIdentifier[?Yield, ?Await] ClassTail[?Yield, ?Await]
+prod 972 Syntactic - ClassDeclaration : [+Default] `class` ClassTail[?Yield, ?Await]
+prod 973 Syntactic 0 ClassExpression : `class` BindingIdentifier[?Yield, ?Await]? ClassTail[?Yield, ?Await]
+prod 974 Syntactic 1 ClassExpression : `class` BindingIdentifier[?Yield, ?Await]? ClassTail[?Yield, ?Await]
+prod 975 Syntactic 00 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`
+prod 976 Syntactic 01 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`
+prod 977 Syntactic 10 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`
+prod 978 Syntactic 11 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`
+prod 979 Syntactic - ClassHeritage : `extends` LeftHandSideExpression[?Yield, ?Await]
+prod 980 Syntactic - ClassBody : ClassElementList[?Yield, ?Await]
+prod 981 Syntactic - ClassElementList : ClassElement[?Yield, ?Await]
+prod 982 Syntactic - ClassElementList : ClassElementList[?Yield, ?Await] ClassElement[?Yield, ?Await]
+prod 983 Syntactic - ClassElement : MethodDefinition[?Yield, ?Await]
+prod 984 Syntactic - ClassElement : `static` MethodDefinition[?Yield, ?Await]
+prod 985 Syntactic - ClassElement : FieldDefinition[?Yield, ?Await] `;`
+prod 986 Syntactic - ClassElement : `static` FieldDefinition[?Yield, ?Await] `;`
+prod 987 Syntactic - ClassElement : ClassStaticBlock
+prod 988 Syntactic - ClassElement : `;`
+prod 989 Syntactic 0 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 990 Syntactic 1 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?
+prod 991 Syntactic - ClassElementName : PropertyName[?Yield, ?Await]
+prod 992 Syntactic - ClassElementName : PrivateIdentifier
+prod 993 Syntactic - ClassStaticBlock : `static` `{` ClassStaticBlockBody `}`
+prod 994 Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList
+prod 995 Syntactic 0 ClassStaticBlockStatementList : StatementList[~Yield, +Await, ~Return]?
+prod 996 Syntactic 1 ClassStaticBlockStatementList : StatementList[~Yield, +Await, ~Return]?
+prod 997 Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+prod 998 Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+prod 999 Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+prod 1000 Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+prod 1001 Syntactic - AsyncMethod : `async` [no LineTerminator here] ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`
+prod 1002 Syntactic - AsyncFunctionBody : FunctionBody[~Yield, +Await]
+prod 1003 Syntactic - AwaitExpression : `await` UnaryExpression[?Yield, +Await]
+prod 1004 Syntactic - AsyncArrowFunction : `async` [no LineTerminator here] AsyncArrowBindingIdentifier[?Yield] [no LineTerminator here] `=>` AsyncConciseBody[?In]
+prod 1005 Syntactic - AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]
+prod 1006 Syntactic - AsyncConciseBody : [lookahead != `{`] ExpressionBody[?In, +Await]
+prod 1007 Syntactic - AsyncConciseBody : `{` AsyncFunctionBody `}`
+prod 1008 Syntactic - AsyncArrowBindingIdentifier : BindingIdentifier[?Yield, +Await]
+prod 1009 Syntactic - CoverCallExpressionAndAsyncArrowHead : MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]
+prod 1010 Syntactic - AsyncArrowHead : `async` [no LineTerminator here] ArrowFormalParameters[~Yield, +Await]
+prod 1011 Syntactic 0 Script : ScriptBody?
+prod 1012 Syntactic 1 Script : ScriptBody?
+prod 1013 Syntactic - ScriptBody : StatementList[~Yield, ~Await, ~Return]
+prod 1014 Syntactic 0 Module : ModuleBody?
+prod 1015 Syntactic 1 Module : ModuleBody?
+prod 1016 Syntactic - ModuleBody : ModuleItemList
+prod 1017 Syntactic - ModuleItemList : ModuleItem
+prod 1018 Syntactic - ModuleItemList : ModuleItemList ModuleItem
+prod 1019 Syntactic - ModuleItem : ImportDeclaration
+prod 1020 Syntactic - ModuleItem : ExportDeclaration
+prod 1021 Syntactic - ModuleItem : StatementListItem[~Yield, +Await, ~Return]
+prod 1022 Syntactic - ModuleExportName : IdentifierName
+prod 1023 Syntactic - ModuleExportName : StringLiteral
+prod 1024 Syntactic 0 ImportDeclaration : `import` ImportClause FromClause WithClause? `;`
+prod 1025 Syntactic 1 ImportDeclaration : `import` ImportClause FromClause WithClause? `;`
+prod 1026 Syntactic 0 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`
+prod 1027 Syntactic 1 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`
+prod 1028 Syntactic - ImportClause : ImportedDefaultBinding
+prod 1029 Syntactic - ImportClause : NameSpaceImport
+prod 1030 Syntactic - ImportClause : NamedImports
+prod 1031 Syntactic - ImportClause : ImportedDefaultBinding `,` NameSpaceImport
+prod 1032 Syntactic - ImportClause : ImportedDefaultBinding `,` NamedImports
+prod 1033 Syntactic - ImportedDefaultBinding : ImportedBinding
+prod 1034 Syntactic - NameSpaceImport : `*` `as` ImportedBinding
+prod 1035 Syntactic - NamedImports : `{` `}`
+prod 1036 Syntactic 0 NamedImports : `{` ImportsList `,`? `}`
+prod 1037 Syntactic 1 NamedImports : `{` ImportsList `,`? `}`
+prod 1038 Syntactic - FromClause : `from` ModuleSpecifier
+prod 1039 Syntactic - ImportsList : ImportSpecifier
+prod 1040 Syntactic - ImportsList : ImportsList `,` ImportSpecifier
+prod 1041 Syntactic - ImportSpecifier : ImportedBinding
+prod 1042 Syntactic - ImportSpecifier : ModuleExportName `as` ImportedBinding
+prod 1043 Syntactic - ModuleSpecifier : StringLiteral
+prod 1044 Syntactic - ImportedBinding : BindingIdentifier[~Yield, +Await]
+prod 1045 Syntactic - WithClause : `with` `{` `}`
+prod 1046 Syntactic 0 WithClause : `with` `{` WithEntries `,`? `}`
+prod 1047 Syntactic 1 WithClause : `with` `{` WithEntries `,`? `}`
+prod 1048 Syntactic - WithEntries : AttributeKey `:` StringLiteral
+prod 1049 Syntactic - WithEntries : AttributeKey `:` StringLiteral `,` WithEntries
+prod 1050 Syntactic - AttributeKey : IdentifierName
+prod 1051 Syntactic - AttributeKey : StringLiteral
+prod 1052 Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`
+prod 1053 Syntactic 1 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`
+prod 1054 Syntactic - ExportDeclaration : `export` NamedExports `;`
+prod 1055 Syntactic - ExportDeclaration : `export` VariableStatement[~Yield, +Await]
+prod 1056 Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]
+prod 1057 Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]
+prod 1058 Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]
+prod 1059 Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`
+prod 1060 Syntactic - ExportFromClause : `*`
+prod 1061 Syntactic - ExportFromClause : `*` `as` ModuleExportName
+prod 1062 Syntactic - ExportFromClause : NamedExports
+prod 1063 Syntactic - NamedExports : `{` `}`
+prod 1064 Syntactic 0 NamedExports : `{` ExportsList `,`? `}`
+prod 1065 Syntactic 1 NamedExports : `{` ExportsList `,`? `}`
+prod 1066 Syntactic - ExportsList : ExportSpecifier
+prod 1067 Syntactic - ExportsList : ExportsList `,` ExportSpecifier
+prod 1068 Syntactic - ExportSpecifier : ModuleExportName
+prod 1069 Syntactic - ExportSpecifier : ModuleExportName `as` ModuleExportName
+prod 1070 Syntactic 00 NativeFunction : `function` NativeFunctionAccessor? PropertyName[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` `[` `native` `code` `]` `}`
+prod 1071 Syntactic 01 NativeFunction : `function` NativeFunctionAccessor? PropertyName[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` `[` `native` `code` `]` `}`
+prod 1072 Syntactic 10 NativeFunction : `function` NativeFunctionAccessor? PropertyName[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` `[` `native` `code` `]` `}`
+prod 1073 Syntactic 11 NativeFunction : `function` NativeFunctionAccessor? PropertyName[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` `[` `native` `code` `]` `}`
+prod 1074 Syntactic - NativeFunctionAccessor : `get`
+prod 1075 Syntactic - NativeFunctionAccessor : `set`
+prod 1076 RegExp - Pattern :: Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+prod 1077 RegExp - Disjunction :: Alternative[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+prod 1078 RegExp - Disjunction :: Alternative[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `|` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+prod 1079 RegExp - Alternative :: [empty]
+prod 1080 RegExp - Alternative :: Alternative[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] Term[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+prod 1081 RegExp - Term :: Assertion[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+prod 1082 RegExp - Term :: Atom[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+prod 1083 RegExp - Term :: Atom[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] Quantifier
+prod 1084 RegExp - Assertion :: `^`
+prod 1085 RegExp - Assertion :: `$`
+prod 1086 RegExp - Assertion :: `\b`
+prod 1087 RegExp - Assertion :: `\B`
+prod 1088 RegExp - Assertion :: `(?=` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1089 RegExp - Assertion :: `(?!` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1090 RegExp - Assertion :: `(?<=` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1091 RegExp - Assertion :: `(?<!` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1092 RegExp - Quantifier :: QuantifierPrefix
+prod 1093 RegExp - Quantifier :: QuantifierPrefix `?`
+prod 1094 RegExp - QuantifierPrefix :: `*`
+prod 1095 RegExp - QuantifierPrefix :: `+`
+prod 1096 RegExp - QuantifierPrefix :: `?`
+prod 1097 RegExp - QuantifierPrefix :: `{` DecimalDigits[~Sep] `}`
+prod 1098 RegExp - QuantifierPrefix :: `{` DecimalDigits[~Sep] `,}`
+prod 1099 RegExp - QuantifierPrefix :: `{` DecimalDigits[~Sep] `,` DecimalDigits[~Sep] `}`
+prod 1100 RegExp - Atom :: PatternCharacter
+prod 1101 RegExp - Atom :: `.`
+prod 1102 RegExp - Atom :: `\` AtomEscape[?UnicodeMode, ?NamedCaptureGroups]
+prod 1103 RegExp - Atom :: CharacterClass[?UnicodeMode, ?UnicodeSetsMode]
+prod 1104 RegExp 0 Atom :: `(` GroupSpecifier[?UnicodeMode]? Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1105 RegExp 1 Atom :: `(` GroupSpecifier[?UnicodeMode]? Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1106 RegExp - Atom :: `(?` RegularExpressionModifiers `:` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1107 RegExp - Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1108 RegExp - RegularExpressionModifiers :: [empty]
+prod 1109 RegExp - RegularExpressionModifiers :: RegularExpressionModifiers RegularExpressionModifier
+prod 1110 RegExp - RegularExpressionModifier :: `i`
+prod 1111 RegExp - RegularExpressionModifier :: `m`
+prod 1112 RegExp - RegularExpressionModifier :: `s`
+prod 1113 RegExp - SyntaxCharacter :: `^`
+prod 1114 RegExp - SyntaxCharacter :: `$`
+prod 1115 RegExp - SyntaxCharacter :: `\`
+prod 1116 RegExp - SyntaxCharacter :: `.`
+prod 1117 RegExp - SyntaxCharacter :: `*`
+prod 1118 RegExp - SyntaxCharacter :: `+`
+prod 1119 RegExp - SyntaxCharacter :: `?`
+prod 1120 RegExp - SyntaxCharacter :: `(`
+prod 1121 RegExp - SyntaxCharacter :: `)`
+prod 1122 RegExp - SyntaxCharacter :: `[`
+prod 1123 RegExp - SyntaxCharacter :: `]`
+prod 1124 RegExp - SyntaxCharacter :: `{`
+prod 1125 RegExp - SyntaxCharacter :: `}`
+prod 1126 RegExp - SyntaxCharacter :: `|`
+prod 1127 RegExp - PatternCharacter :: SourceCharacter but not SyntaxCharacter
+prod 1128 RegExp - AtomEscape :: DecimalEscape
+prod 1129 RegExp - AtomEscape :: CharacterClassEscape[?UnicodeMode]
+prod 1130 RegExp - AtomEscape :: CharacterEscape[?UnicodeMode]
+prod 1131 RegExp - AtomEscape :: [+NamedCaptureGroups] `k` GroupName[?UnicodeMode]
+prod 1132 RegExp - CharacterEscape :: ControlEscape
+prod 1133 RegExp - CharacterEscape :: `c` AsciiLetter
+prod 1134 RegExp - CharacterEscape :: `0` [lookahead ∉ DecimalDigit]
+prod 1135 RegExp - CharacterEscape :: HexEscapeSequence
+prod 1136 RegExp - CharacterEscape :: RegExpUnicodeEscapeSequence[?UnicodeMode]
+prod 1137 RegExp - CharacterEscape :: IdentityEscape[?UnicodeMode]
+prod 1138 RegExp - ControlEscape :: `f`
+prod 1139 RegExp - ControlEscape :: `n`
+prod 1140 RegExp - ControlEscape :: `r`
+prod 1141 RegExp - ControlEscape :: `t`
+prod 1142 RegExp - ControlEscape :: `v`
+prod 1143 RegExp - GroupSpecifier :: `?` GroupName[?UnicodeMode]
+prod 1144 RegExp - GroupName :: `<` RegExpIdentifierName[?UnicodeMode] `>`
+prod 1145 RegExp - RegExpIdentifierName :: RegExpIdentifierStart[?UnicodeMode]
+prod 1146 RegExp - RegExpIdentifierName :: RegExpIdentifierName[?UnicodeMode] RegExpIdentifierPart[?UnicodeMode]
+prod 1147 RegExp - RegExpIdentifierStart :: IdentifierStartChar
+prod 1148 RegExp - RegExpIdentifierStart :: `\` RegExpUnicodeEscapeSequence[+UnicodeMode]
+prod 1149 RegExp - RegExpIdentifierStart :: [~UnicodeMode] UnicodeLeadSurrogate UnicodeTrailSurrogate
+prod 1150 RegExp - RegExpIdentifierPart :: IdentifierPartChar
+prod 1151 RegExp - RegExpIdentifierPart :: `\` RegExpUnicodeEscapeSequence[+UnicodeMode]
+prod 1152 RegExp - RegExpIdentifierPart :: [~UnicodeMode] UnicodeLeadSurrogate UnicodeTrailSurrogate
+prod 1153 RegExp - RegExpUnicodeEscapeSequence :: [+UnicodeMode] `u` HexLeadSurrogate `\u` HexTrailSurrogate
+prod 1154 RegExp - RegExpUnicodeEscapeSequence :: [+UnicodeMode] `u` HexLeadSurrogate
+prod 1155 RegExp - RegExpUnicodeEscapeSequence :: [+UnicodeMode] `u` HexTrailSurrogate
+prod 1156 RegExp - RegExpUnicodeEscapeSequence :: [+UnicodeMode] `u` HexNonSurrogate
+prod 1157 RegExp - RegExpUnicodeEscapeSequence :: [~UnicodeMode] `u` Hex4Digits
+prod 1158 RegExp - RegExpUnicodeEscapeSequence :: [+UnicodeMode] `u{` CodePoint `}`
+prod 1159 RegExp - UnicodeLeadSurrogate :: > any Unicode code point in the inclusive interval from U+D800 to U+DBFF
+prod 1160 RegExp - UnicodeTrailSurrogate :: > any Unicode code point in the inclusive interval from U+DC00 to U+DFFF
+prod 1161 RegExp - HexLeadSurrogate :: Hex4Digits [> but only if the MV of |Hex4Digits| is in the inclusive interval from 0xD800 to 0xDBFF]
+prod 1162 RegExp - HexTrailSurrogate :: Hex4Digits [> but only if the MV of |Hex4Digits| is in the inclusive interval from 0xDC00 to 0xDFFF]
+prod 1163 RegExp - HexNonSurrogate :: Hex4Digits [> but only if the MV of |Hex4Digits| is not in the inclusive interval from 0xD800 to 0xDFFF]
+prod 1164 RegExp - IdentityEscape :: [+UnicodeMode] SyntaxCharacter
+prod 1165 RegExp - IdentityEscape :: [+UnicodeMode] `/`
+prod 1166 RegExp - IdentityEscape :: [~UnicodeMode] SourceCharacter but not UnicodeIDContinue
+prod 1167 RegExp 0 DecimalEscape :: NonZeroDigit DecimalDigits[~Sep]? [lookahead ∉ DecimalDigit]
+prod 1168 RegExp 1 DecimalEscape :: NonZeroDigit DecimalDigits[~Sep]? [lookahead ∉ DecimalDigit]
+prod 1169 RegExp - CharacterClassEscape :: `d`
+prod 1170 RegExp - CharacterClassEscape :: `D`
+prod 1171 RegExp - CharacterClassEscape :: `s`
+prod 1172 RegExp - CharacterClassEscape :: `S`
+prod 1173 RegExp - CharacterClassEscape :: `w`
+prod 1174 RegExp - CharacterClassEscape :: `W`
+prod 1175 RegExp - CharacterClassEscape :: [+UnicodeMode] `p{` UnicodePropertyValueExpression `}`
+prod 1176 RegExp - CharacterClassEscape :: [+UnicodeMode] `P{` UnicodePropertyValueExpression `}`
+prod 1177 RegExp - UnicodePropertyValueExpression :: UnicodePropertyName `=` UnicodePropertyValue
+prod 1178 RegExp - UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue
+prod 1179 RegExp - UnicodePropertyName :: UnicodePropertyNameCharacters
+prod 1180 RegExp 0 UnicodePropertyNameCharacters :: UnicodePropertyNameCharacter UnicodePropertyNameCharacters?
+prod 1181 RegExp 1 UnicodePropertyNameCharacters :: UnicodePropertyNameCharacter UnicodePropertyNameCharacters?
+prod 1182 RegExp - UnicodePropertyValue :: UnicodePropertyValueCharacters
+prod 1183 RegExp - LoneUnicodePropertyNameOrValue :: UnicodePropertyValueCharacters
+prod 1184 RegExp 0 UnicodePropertyValueCharacters :: UnicodePropertyValueCharacter UnicodePropertyValueCharacters?
+prod 1185 RegExp 1 UnicodePropertyValueCharacters :: UnicodePropertyValueCharacter UnicodePropertyValueCharacters?
+prod 1186 RegExp - UnicodePropertyValueCharacter :: UnicodePropertyNameCharacter
+prod 1187 RegExp - UnicodePropertyValueCharacter :: DecimalDigit
+prod 1188 RegExp - UnicodePropertyNameCharacter :: AsciiLetter
+prod 1189 RegExp - UnicodePropertyNameCharacter :: `_`
+prod 1190 RegExp - CharacterClass :: `[` [lookahead != `^`] ClassContents[?UnicodeMode, ?UnicodeSetsMode] `]`
+prod 1191 RegExp - CharacterClass :: `[^` ClassContents[?UnicodeMode, ?UnicodeSetsMode] `]`
+prod 1192 RegExp - ClassContents :: [empty]
+prod 1193 RegExp - ClassContents :: [~UnicodeSetsMode] NonemptyClassRanges[?UnicodeMode]
+prod 1194 RegExp - ClassContents :: [+UnicodeSetsMode] ClassSetExpression
+prod 1195 RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode]
+prod 1196 RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode] NonemptyClassRangesNoDash[?UnicodeMode]
+prod 1197 RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]
+prod 1198 RegExp - NonemptyClassRangesNoDash :: ClassAtom[?UnicodeMode]
+prod 1199 RegExp - NonemptyClassRangesNoDash :: ClassAtomNoDash[?UnicodeMode] NonemptyClassRangesNoDash[?UnicodeMode]
+prod 1200 RegExp - NonemptyClassRangesNoDash :: ClassAtomNoDash[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]
+prod 1201 RegExp - ClassAtom :: `-`
+prod 1202 RegExp - ClassAtom :: ClassAtomNoDash[?UnicodeMode]
+prod 1203 RegExp - ClassAtomNoDash :: SourceCharacter but not one of `\` or `]` or `-`
+prod 1204 RegExp - ClassAtomNoDash :: `\` ClassEscape[?UnicodeMode]
+prod 1205 RegExp - ClassEscape :: `b`
+prod 1206 RegExp - ClassEscape :: [+UnicodeMode] `-`
+prod 1207 RegExp - ClassEscape :: CharacterClassEscape[?UnicodeMode]
+prod 1208 RegExp - ClassEscape :: CharacterEscape[?UnicodeMode]
+prod 1209 RegExp - ClassSetExpression :: ClassUnion
+prod 1210 RegExp - ClassSetExpression :: ClassIntersection
+prod 1211 RegExp - ClassSetExpression :: ClassSubtraction
+prod 1212 RegExp 0 ClassUnion :: ClassSetRange ClassUnion?
+prod 1213 RegExp 1 ClassUnion :: ClassSetRange ClassUnion?
+prod 1214 RegExp 0 ClassUnion :: ClassSetOperand ClassUnion?
+prod 1215 RegExp 1 ClassUnion :: ClassSetOperand ClassUnion?
+prod 1216 RegExp - ClassIntersection :: ClassSetOperand `&&` [lookahead != `&`] ClassSetOperand
+prod 1217 RegExp - ClassIntersection :: ClassIntersection `&&` [lookahead != `&`] ClassSetOperand
+prod 1218 RegExp - ClassSubtraction :: ClassSetOperand `--` ClassSetOperand
+prod 1219 RegExp - ClassSubtraction :: ClassSubtraction `--` ClassSetOperand
+prod 1220 RegExp - ClassSetRange :: ClassSetCharacter `-` ClassSetCharacter
+prod 1221 RegExp - ClassSetOperand :: NestedClass
+prod 1222 RegExp - ClassSetOperand :: ClassStringDisjunction
+prod 1223 RegExp - ClassSetOperand :: ClassSetCharacter
+prod 1224 RegExp - NestedClass :: `[` [lookahead != `^`] ClassContents[+UnicodeMode, +UnicodeSetsMode] `]`
+prod 1225 RegExp - NestedClass :: `[^` ClassContents[+UnicodeMode, +UnicodeSetsMode] `]`
+prod 1226 RegExp - NestedClass :: `\` CharacterClassEscape[+UnicodeMode]
+prod 1227 RegExp - ClassStringDisjunction :: `\q{` ClassStringDisjunctionContents `}`
+prod 1228 RegExp - ClassStringDisjunctionContents :: ClassString
+prod 1229 RegExp - ClassStringDisjunctionContents :: ClassString `|` ClassStringDisjunctionContents
+prod 1230 RegExp - ClassString :: [empty]
+prod 1231 RegExp - ClassString :: NonEmptyClassString
+prod 1232 RegExp 0 NonEmptyClassString :: ClassSetCharacter NonEmptyClassString?
+prod 1233 RegExp 1 NonEmptyClassString :: ClassSetCharacter NonEmptyClassString?
+prod 1234 RegExp - ClassSetCharacter :: [lookahead ∉ ClassSetReservedDoublePunctuator] SourceCharacter but not ClassSetSyntaxCharacter
+prod 1235 RegExp - ClassSetCharacter :: `\` CharacterEscape[+UnicodeMode]
+prod 1236 RegExp - ClassSetCharacter :: `\` ClassSetReservedPunctuator
+prod 1237 RegExp - ClassSetCharacter :: `\b`
+prod 1238 RegExp - ClassSetReservedDoublePunctuator :: `&&`
+prod 1239 RegExp - ClassSetReservedDoublePunctuator :: `!!`
+prod 1240 RegExp - ClassSetReservedDoublePunctuator :: `##`
+prod 1241 RegExp - ClassSetReservedDoublePunctuator :: `$$`
+prod 1242 RegExp - ClassSetReservedDoublePunctuator :: `%%`
+prod 1243 RegExp - ClassSetReservedDoublePunctuator :: `**`
+prod 1244 RegExp - ClassSetReservedDoublePunctuator :: `++`
+prod 1245 RegExp - ClassSetReservedDoublePunctuator :: `,,`
+prod 1246 RegExp - ClassSetReservedDoublePunctuator :: `..`
+prod 1247 RegExp - ClassSetReservedDoublePunctuator :: `::`
+prod 1248 RegExp - ClassSetReservedDoublePunctuator :: `;;`
+prod 1249 RegExp - ClassSetReservedDoublePunctuator :: `<<`
+prod 1250 RegExp - ClassSetReservedDoublePunctuator :: `==`
+prod 1251 RegExp - ClassSetReservedDoublePunctuator :: `>>`
+prod 1252 RegExp - ClassSetReservedDoublePunctuator :: `??`
+prod 1253 RegExp - ClassSetReservedDoublePunctuator :: `@@`
+prod 1254 RegExp - ClassSetReservedDoublePunctuator :: `^^`
+prod 1255 RegExp - ClassSetReservedDoublePunctuator :: ````
+prod 1256 RegExp - ClassSetReservedDoublePunctuator :: `~~`
+prod 1257 RegExp - ClassSetSyntaxCharacter :: `(`
+prod 1258 RegExp - ClassSetSyntaxCharacter :: `)`
+prod 1259 RegExp - ClassSetSyntaxCharacter :: `[`
+prod 1260 RegExp - ClassSetSyntaxCharacter :: `]`
+prod 1261 RegExp - ClassSetSyntaxCharacter :: `{`
+prod 1262 RegExp - ClassSetSyntaxCharacter :: `}`
+prod 1263 RegExp - ClassSetSyntaxCharacter :: `/`
+prod 1264 RegExp - ClassSetSyntaxCharacter :: `-`
+prod 1265 RegExp - ClassSetSyntaxCharacter :: `\`
+prod 1266 RegExp - ClassSetSyntaxCharacter :: `|`
+prod 1267 RegExp - ClassSetReservedPunctuator :: `&`
+prod 1268 RegExp - ClassSetReservedPunctuator :: `-`
+prod 1269 RegExp - ClassSetReservedPunctuator :: `!`
+prod 1270 RegExp - ClassSetReservedPunctuator :: `#`
+prod 1271 RegExp - ClassSetReservedPunctuator :: `%`
+prod 1272 RegExp - ClassSetReservedPunctuator :: `,`
+prod 1273 RegExp - ClassSetReservedPunctuator :: `:`
+prod 1274 RegExp - ClassSetReservedPunctuator :: `;`
+prod 1275 RegExp - ClassSetReservedPunctuator :: `<`
+prod 1276 RegExp - ClassSetReservedPunctuator :: `=`
+prod 1277 RegExp - ClassSetReservedPunctuator :: `>`
+prod 1278 RegExp - ClassSetReservedPunctuator :: `@`
+prod 1279 RegExp - ClassSetReservedPunctuator :: ```
+prod 1280 RegExp - ClassSetReservedPunctuator :: `~`
+prod 1281 AnnexB - InputElementHashbangOrRegExp :: WhiteSpace
+prod 1282 AnnexB - InputElementHashbangOrRegExp :: LineTerminator
+prod 1283 AnnexB - InputElementHashbangOrRegExp :: Comment
+prod 1284 AnnexB - InputElementHashbangOrRegExp :: CommonToken
+prod 1285 AnnexB - InputElementHashbangOrRegExp :: HashbangComment
+prod 1286 AnnexB - InputElementHashbangOrRegExp :: RegularExpressionLiteral
+prod 1287 AnnexB - InputElementHashbangOrRegExp :: HTMLCloseComment
+prod 1288 AnnexB - Comment :: MultiLineComment
+prod 1289 AnnexB - Comment :: SingleLineComment
+prod 1290 AnnexB - Comment :: SingleLineHTMLOpenComment
+prod 1291 AnnexB - Comment :: SingleLineHTMLCloseComment
+prod 1292 AnnexB - Comment :: SingleLineDelimitedComment
+prod 1293 AnnexB 000 MultiLineComment :: `/*` FirstCommentLine? LineTerminator MultiLineCommentChars? `*/` HTMLCloseComment?
+prod 1294 AnnexB 001 MultiLineComment :: `/*` FirstCommentLine? LineTerminator MultiLineCommentChars? `*/` HTMLCloseComment?
+prod 1295 AnnexB 010 MultiLineComment :: `/*` FirstCommentLine? LineTerminator MultiLineCommentChars? `*/` HTMLCloseComment?
+prod 1296 AnnexB 011 MultiLineComment :: `/*` FirstCommentLine? LineTerminator MultiLineCommentChars? `*/` HTMLCloseComment?
+prod 1297 AnnexB 100 MultiLineComment :: `/*` FirstCommentLine? LineTerminator MultiLineCommentChars? `*/` HTMLCloseComment?
+prod 1298 AnnexB 101 MultiLineComment :: `/*` FirstCommentLine? LineTerminator MultiLineCommentChars? `*/` HTMLCloseComment?
+prod 1299 AnnexB 110 MultiLineComment :: `/*` FirstCommentLine? LineTerminator MultiLineCommentChars? `*/` HTMLCloseComment?
+prod 1300 AnnexB 111 MultiLineComment :: `/*` FirstCommentLine? LineTerminator MultiLineCommentChars? `*/` HTMLCloseComment?
+prod 1301 AnnexB - FirstCommentLine :: SingleLineDelimitedCommentChars
+prod 1302 AnnexB 0 SingleLineHTMLOpenComment :: `<!--` SingleLineCommentChars?
+prod 1303 AnnexB 1 SingleLineHTMLOpenComment :: `<!--` SingleLineCommentChars?
+prod 1304 AnnexB - SingleLineHTMLCloseComment :: LineTerminatorSequence HTMLCloseComment
+prod 1305 AnnexB 0 SingleLineDelimitedComment :: `/*` SingleLineDelimitedCommentChars? `*/`
+prod 1306 AnnexB 1 SingleLineDelimitedComment :: `/*` SingleLineDelimitedCommentChars? `*/`
+prod 1307 AnnexB 000 HTMLCloseComment :: WhiteSpaceSequence? SingleLineDelimitedCommentSequence? `-->` SingleLineCommentChars?
+prod 1308 AnnexB 001 HTMLCloseComment :: WhiteSpaceSequence? SingleLineDelimitedCommentSequence? `-->` SingleLineCommentChars?
+prod 1309 AnnexB 010 HTMLCloseComment :: WhiteSpaceSequence? SingleLineDelimitedCommentSequence? `-->` SingleLineCommentChars?
+prod 1310 AnnexB 011 HTMLCloseComment :: WhiteSpaceSequence? SingleLineDelimitedCommentSequence? `-->` SingleLineCommentChars?
+prod 1311 AnnexB 100 HTMLCloseComment :: WhiteSpaceSequence? SingleLineDelimitedCommentSequence? `-->` SingleLineCommentChars?
+prod 1312 AnnexB 101 HTMLCloseComment :: WhiteSpaceSequence? SingleLineDelimitedCommentSequence? `-->` SingleLineCommentChars?
+prod 1313 AnnexB 110 HTMLCloseComment :: WhiteSpaceSequence? SingleLineDelimitedCommentSequence? `-->` SingleLineCommentChars?
+prod 1314 AnnexB 111 HTMLCloseComment :: WhiteSpaceSequence? SingleLineDelimitedCommentSequence? `-->` SingleLineCommentChars?
+prod 1315 AnnexB 0 SingleLineDelimitedCommentChars :: SingleLineNotAsteriskChar SingleLineDelimitedCommentChars?
+prod 1316 AnnexB 1 SingleLineDelimitedCommentChars :: SingleLineNotAsteriskChar SingleLineDelimitedCommentChars?
+prod 1317 AnnexB 0 SingleLineDelimitedCommentChars :: `*` SingleLinePostAsteriskCommentChars?
+prod 1318 AnnexB 1 SingleLineDelimitedCommentChars :: `*` SingleLinePostAsteriskCommentChars?
+prod 1319 AnnexB - SingleLineNotAsteriskChar :: SourceCharacter but not one of `*` or LineTerminator
+prod 1320 AnnexB 0 SingleLinePostAsteriskCommentChars :: SingleLineNotForwardSlashOrAsteriskChar SingleLineDelimitedCommentChars?
+prod 1321 AnnexB 1 SingleLinePostAsteriskCommentChars :: SingleLineNotForwardSlashOrAsteriskChar SingleLineDelimitedCommentChars?
+prod 1322 AnnexB 0 SingleLinePostAsteriskCommentChars :: `*` SingleLinePostAsteriskCommentChars?
+prod 1323 AnnexB 1 SingleLinePostAsteriskCommentChars :: `*` SingleLinePostAsteriskCommentChars?
+prod 1324 AnnexB - SingleLineNotForwardSlashOrAsteriskChar :: SourceCharacter but not one of `/` or `*` or LineTerminator
+prod 1325 AnnexB 0 WhiteSpaceSequence :: WhiteSpace WhiteSpaceSequence?
+prod 1326 AnnexB 1 WhiteSpaceSequence :: WhiteSpace WhiteSpaceSequence?
+prod 1327 AnnexB 00 SingleLineDelimitedCommentSequence :: SingleLineDelimitedComment WhiteSpaceSequence? SingleLineDelimitedCommentSequence?
+prod 1328 AnnexB 01 SingleLineDelimitedCommentSequence :: SingleLineDelimitedComment WhiteSpaceSequence? SingleLineDelimitedCommentSequence?
+prod 1329 AnnexB 10 SingleLineDelimitedCommentSequence :: SingleLineDelimitedComment WhiteSpaceSequence? SingleLineDelimitedCommentSequence?
+prod 1330 AnnexB 11 SingleLineDelimitedCommentSequence :: SingleLineDelimitedComment WhiteSpaceSequence? SingleLineDelimitedCommentSequence?
+prod 1331 AnnexB - Term :: [+UnicodeMode] Assertion[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+prod 1332 AnnexB - Term :: [+UnicodeMode] Atom[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] Quantifier
+prod 1333 AnnexB - Term :: [+UnicodeMode] Atom[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]
+prod 1334 AnnexB - Term :: [~UnicodeMode] QuantifiableAssertion[?NamedCaptureGroups] Quantifier
+prod 1335 AnnexB - Term :: [~UnicodeMode] Assertion[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups]
+prod 1336 AnnexB - Term :: [~UnicodeMode] ExtendedAtom[?NamedCaptureGroups] Quantifier
+prod 1337 AnnexB - Term :: [~UnicodeMode] ExtendedAtom[?NamedCaptureGroups]
+prod 1338 AnnexB - Assertion :: `^`
+prod 1339 AnnexB - Assertion :: `$`
+prod 1340 AnnexB - Assertion :: `\b`
+prod 1341 AnnexB - Assertion :: `\B`
+prod 1342 AnnexB - Assertion :: [+UnicodeMode] `(?=` Disjunction[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1343 AnnexB - Assertion :: [+UnicodeMode] `(?!` Disjunction[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1344 AnnexB - Assertion :: [~UnicodeMode] QuantifiableAssertion[?NamedCaptureGroups]
+prod 1345 AnnexB - Assertion :: `(?<=` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1346 AnnexB - Assertion :: `(?<!` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1347 AnnexB - QuantifiableAssertion :: `(?=` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1348 AnnexB - QuantifiableAssertion :: `(?!` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1349 AnnexB - ExtendedAtom :: `.`
+prod 1350 AnnexB - ExtendedAtom :: `\` AtomEscape[~UnicodeMode, ?NamedCaptureGroups]
+prod 1351 AnnexB - ExtendedAtom :: `\` [lookahead == `c`]
+prod 1352 AnnexB - ExtendedAtom :: CharacterClass[~UnicodeMode, ~UnicodeSetsMode]
+prod 1353 AnnexB 0 ExtendedAtom :: `(` GroupSpecifier[~UnicodeMode]? Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1354 AnnexB 1 ExtendedAtom :: `(` GroupSpecifier[~UnicodeMode]? Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1355 AnnexB - ExtendedAtom :: `(?` RegularExpressionModifiers `:` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1356 AnnexB - ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`
+prod 1357 AnnexB - ExtendedAtom :: InvalidBracedQuantifier
+prod 1358 AnnexB - ExtendedAtom :: ExtendedPatternCharacter
+prod 1359 AnnexB - InvalidBracedQuantifier :: `{` DecimalDigits[~Sep] `}`
+prod 1360 AnnexB - InvalidBracedQuantifier :: `{` DecimalDigits[~Sep] `,}`
+prod 1361 AnnexB - InvalidBracedQuantifier :: `{` DecimalDigits[~Sep] `,` DecimalDigits[~Sep] `}`
+prod 1362 AnnexB - ExtendedPatternCharacter :: SourceCharacter but not one of `^` `$` `\` `.` `*` `+` `?` `(` `)` `[` `|`
+prod 1363 AnnexB - AtomEscape :: [+UnicodeMode] DecimalEscape
+prod 1364 AnnexB - AtomEscape :: [~UnicodeMode] DecimalEscape [> but only if the CapturingGroupNumber of |DecimalEscape| is ≤ CountLeftCapturingParensWithin(the |Pattern| containing |DecimalEscape|)]
+prod 1365 AnnexB - AtomEscape :: CharacterClassEscape[?UnicodeMode]
+prod 1366 AnnexB - AtomEscape :: CharacterEscape[?UnicodeMode, ?NamedCaptureGroups]
+prod 1367 AnnexB - AtomEscape :: [+NamedCaptureGroups] `k` GroupName[?UnicodeMode]
+prod 1368 AnnexB - CharacterEscape :: ControlEscape
+prod 1369 AnnexB - CharacterEscape :: `c` AsciiLetter
+prod 1370 AnnexB - CharacterEscape :: `0` [lookahead ∉ DecimalDigit]
+prod 1371 AnnexB - CharacterEscape :: HexEscapeSequence
+prod 1372 AnnexB - CharacterEscape :: RegExpUnicodeEscapeSequence[?UnicodeMode]
+prod 1373 AnnexB - CharacterEscape :: [~UnicodeMode] LegacyOctalEscapeSequence
+prod 1374 AnnexB - CharacterEscape :: IdentityEscape[?UnicodeMode, ?NamedCaptureGroups]
+prod 1375 AnnexB - IdentityEscape :: [+UnicodeMode] SyntaxCharacter
+prod 1376 AnnexB - IdentityEscape :: [+UnicodeMode] `/`
+prod 1377 AnnexB - IdentityEscape :: [~UnicodeMode] SourceCharacterIdentityEscape[?NamedCaptureGroups]
+prod 1378 AnnexB - SourceCharacterIdentityEscape :: [~NamedCaptureGroups] SourceCharacter but not `c`
+prod 1379 AnnexB - SourceCharacterIdentityEscape :: [+NamedCaptureGroups] SourceCharacter but not one of `c` or `k`
+prod 1380 AnnexB - ClassAtomNoDash :: SourceCharacter but not one of `\` or `]` or `-`
+prod 1381 AnnexB - ClassAtomNoDash :: `\` ClassEscape[?UnicodeMode, ?NamedCaptureGroups]
+prod 1382 AnnexB - ClassAtomNoDash :: `\` [lookahead == `c`]
+prod 1383 AnnexB - ClassEscape :: `b`
+prod 1384 AnnexB - ClassEscape :: [+UnicodeMode] `-`
+prod 1385 AnnexB - ClassEscape :: [~UnicodeMode] `c` ClassControlLetter
+prod 1386 AnnexB - ClassEscape :: CharacterClassEscape[?UnicodeMode]
+prod 1387 AnnexB - ClassEscape :: CharacterEscape[?UnicodeMode, ?NamedCaptureGroups]
+prod 1388 AnnexB - ClassControlLetter :: DecimalDigit
+prod 1389 AnnexB - ClassControlLetter :: `_`
+prod 1390 AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` Statement[?Yield, ?Await, ?Return]
+prod 1391 AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` FunctionDeclaration[?Yield, ?Await, ~Default]
+prod 1392 AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` FunctionDeclaration[?Yield, ?Await, ~Default]
+prod 1393 AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] [lookahead != `else`]
+prod 1394 AnnexB - ForInOfStatement : `for` `(` `var` BindingIdentifier[?Yield, ?Await] Initializer[~In, ?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]
+prod 1395 JSON - JSONText :: JSONElement
+prod 1396 JSON 00 JSONElement :: JSONWhiteSpace? JSONValue JSONWhiteSpace?
+prod 1397 JSON 01 JSONElement :: JSONWhiteSpace? JSONValue JSONWhiteSpace?
+prod 1398 JSON 10 JSONElement :: JSONWhiteSpace? JSONValue JSONWhiteSpace?
+prod 1399 JSON 11 JSONElement :: JSONWhiteSpace? JSONValue JSONWhiteSpace?
+prod 1400 JSON 0 JSONWhiteSpace :: JSONWhiteSpaceCharacter JSONWhiteSpace?
+prod 1401 JSON 1 JSONWhiteSpace :: JSONWhiteSpaceCharacter JSONWhiteSpace?
+prod 1402 JSON - JSONWhiteSpaceCharacter :: <TAB>
+prod 1403 JSON - JSONWhiteSpaceCharacter :: <LF>
+prod 1404 JSON - JSONWhiteSpaceCharacter :: <CR>
+prod 1405 JSON - JSONWhiteSpaceCharacter :: ` `
+prod 1406 JSON - JSONValue :: JSONObject
+prod 1407 JSON - JSONValue :: JSONArray
+prod 1408 JSON - JSONValue :: JSONNumber
+prod 1409 JSON - JSONValue :: JSONString
+prod 1410 JSON - JSONValue :: `true`
+prod 1411 JSON - JSONValue :: `false`
+prod 1412 JSON - JSONValue :: `null`
+prod 1413 JSON 0 JSONObject :: `{` JSONWhiteSpace? `}`
+prod 1414 JSON 1 JSONObject :: `{` JSONWhiteSpace? `}`
+prod 1415 JSON - JSONObject :: `{` JSONMembers `}`
+prod 1416 JSON - JSONMembers :: JSONMember
+prod 1417 JSON - JSONMembers :: JSONMember `,` JSONMembers
+prod 1418 JSON 00 JSONMember :: JSONWhiteSpace? JSONString JSONWhiteSpace? `:` JSONElement
+prod 1419 JSON 01 JSONMember :: JSONWhiteSpace? JSONString JSONWhiteSpace? `:` JSONElement
+prod 1420 JSON 10 JSONMember :: JSONWhiteSpace? JSONString JSONWhiteSpace? `:` JSONElement
+prod 1421 JSON 11 JSONMember :: JSONWhiteSpace? JSONString JSONWhiteSpace? `:` JSONElement
+prod 1422 JSON 0 JSONArray :: `[` JSONWhiteSpace? `]`
+prod 1423 JSON 1 JSONArray :: `[` JSONWhiteSpace? `]`
+prod 1424 JSON - JSONArray :: `[` JSONElements `]`
+prod 1425 JSON - JSONElements :: JSONElement
+prod 1426 JSON - JSONElements :: JSONElement `,` JSONElements
+prod 1427 JSON 000 JSONNumber :: `-`? JSONInteger JSONFraction? JSONExponent?
+prod 1428 JSON 001 JSONNumber :: `-`? JSONInteger JSONFraction? JSONExponent?
+prod 1429 JSON 010 JSONNumber :: `-`? JSONInteger JSONFraction? JSONExponent?
+prod 1430 JSON 011 JSONNumber :: `-`? JSONInteger JSONFraction? JSONExponent?
+prod 1431 JSON 100 JSONNumber :: `-`? JSONInteger JSONFraction? JSONExponent?
+prod 1432 JSON 101 JSONNumber :: `-`? JSONInteger JSONFraction? JSONExponent?
+prod 1433 JSON 110 JSONNumber :: `-`? JSONInteger JSONFraction? JSONExponent?
+prod 1434 JSON 111 JSONNumber :: `-`? JSONInteger JSONFraction? JSONExponent?
+prod 1435 JSON - JSONInteger :: `0`
+prod 1436 JSON 0 JSONInteger :: JSONNonZeroDigit JSONDigits?
+prod 1437 JSON 1 JSONInteger :: JSONNonZeroDigit JSONDigits?
+prod 1438 JSON 0 JSONDigits :: JSONDigit JSONDigits?
+prod 1439 JSON 1 JSONDigits :: JSONDigit JSONDigits?
+prod 1440 JSON - JSONDigit :: `0`
+prod 1441 JSON - JSONDigit :: `1`
+prod 1442 JSON - JSONDigit :: `2`
+prod 1443 JSON - JSONDigit :: `3`
+prod 1444 JSON - JSONDigit :: `4`
+prod 1445 JSON - JSONDigit :: `5`
+prod 1446 JSON - JSONDigit :: `6`
+prod 1447 JSON - JSONDigit :: `7`
+prod 1448 JSON - JSONDigit :: `8`
+prod 1449 JSON - JSONDigit :: `9`
+prod 1450 JSON - JSONNonZeroDigit :: `1`
+prod 1451 JSON - JSONNonZeroDigit :: `2`
+prod 1452 JSON - JSONNonZeroDigit :: `3`
+prod 1453 JSON - JSONNonZeroDigit :: `4`
+prod 1454 JSON - JSONNonZeroDigit :: `5`
+prod 1455 JSON - JSONNonZeroDigit :: `6`
+prod 1456 JSON - JSONNonZeroDigit :: `7`
+prod 1457 JSON - JSONNonZeroDigit :: `8`
+prod 1458 JSON - JSONNonZeroDigit :: `9`
+prod 1459 JSON - JSONFraction :: `.` JSONDigits
+prod 1460 JSON 0 JSONExponent :: JSONExponentIndicator JSONSign? JSONDigits
+prod 1461 JSON 1 JSONExponent :: JSONExponentIndicator JSONSign? JSONDigits
+prod 1462 JSON - JSONExponentIndicator :: `e`
+prod 1463 JSON - JSONExponentIndicator :: `E`
+prod 1464 JSON - JSONSign :: `+`
+prod 1465 JSON - JSONSign :: `-`
+prod 1466 JSON 0 JSONString :: `"` JSONStringCharacters? `"`
+prod 1467 JSON 1 JSONString :: `"` JSONStringCharacters? `"`
+prod 1468 JSON 0 JSONStringCharacters :: JSONStringCharacter JSONStringCharacters?
+prod 1469 JSON 1 JSONStringCharacters :: JSONStringCharacter JSONStringCharacters?
+prod 1470 JSON - JSONStringCharacter :: JSONCodePoint but not one of `"` or `\` or JSONControlCharacter
+prod 1471 JSON - JSONStringCharacter :: `\` JSONEscape
+prod 1472 JSON - JSONEscape :: JSONSingleEscapeCharacter
+prod 1473 JSON - JSONEscape :: `u` JSONHexDigit JSONHexDigit JSONHexDigit JSONHexDigit
+prod 1474 JSON - JSONSingleEscapeCharacter :: `"`
+prod 1475 JSON - JSONSingleEscapeCharacter :: `\`
+prod 1476 JSON - JSONSingleEscapeCharacter :: `/`
+prod 1477 JSON - JSONSingleEscapeCharacter :: `b`
+prod 1478 JSON - JSONSingleEscapeCharacter :: `f`
+prod 1479 JSON - JSONSingleEscapeCharacter :: `n`
+prod 1480 JSON - JSONSingleEscapeCharacter :: `r`
+prod 1481 JSON - JSONSingleEscapeCharacter :: `t`
+prod 1482 JSON - JSONHexDigit :: `0`
+prod 1483 JSON - JSONHexDigit :: `1`
+prod 1484 JSON - JSONHexDigit :: `2`
+prod 1485 JSON - JSONHexDigit :: `3`
+prod 1486 JSON - JSONHexDigit :: `4`
+prod 1487 JSON - JSONHexDigit :: `5`
+prod 1488 JSON - JSONHexDigit :: `6`
+prod 1489 JSON - JSONHexDigit :: `7`
+prod 1490 JSON - JSONHexDigit :: `8`
+prod 1491 JSON - JSONHexDigit :: `9`
+prod 1492 JSON - JSONHexDigit :: `a`
+prod 1493 JSON - JSONHexDigit :: `b`
+prod 1494 JSON - JSONHexDigit :: `c`
+prod 1495 JSON - JSONHexDigit :: `d`
+prod 1496 JSON - JSONHexDigit :: `e`
+prod 1497 JSON - JSONHexDigit :: `f`
+prod 1498 JSON - JSONHexDigit :: `A`
+prod 1499 JSON - JSONHexDigit :: `B`
+prod 1500 JSON - JSONHexDigit :: `C`
+prod 1501 JSON - JSONHexDigit :: `D`
+prod 1502 JSON - JSONHexDigit :: `E`
+prod 1503 JSON - JSONHexDigit :: `F`
+prod 1504 JSON - JSONControlCharacter :: `&#x0000;`
+prod 1505 JSON - JSONControlCharacter :: `&#x0001;`
+prod 1506 JSON - JSONControlCharacter :: `&#x0002;`
+prod 1507 JSON - JSONControlCharacter :: `&#x0003;`
+prod 1508 JSON - JSONControlCharacter :: `&#x0004;`
+prod 1509 JSON - JSONControlCharacter :: `&#x0005;`
+prod 1510 JSON - JSONControlCharacter :: `&#x0006;`
+prod 1511 JSON - JSONControlCharacter :: `&#x0007;`
+prod 1512 JSON - JSONControlCharacter :: `&#x0008;`
+prod 1513 JSON - JSONControlCharacter :: `&#x0009;`
+prod 1514 JSON - JSONControlCharacter :: `&#x000A;`
+prod 1515 JSON - JSONControlCharacter :: `&#x000B;`
+prod 1516 JSON - JSONControlCharacter :: `&#x000C;`
+prod 1517 JSON - JSONControlCharacter :: `&#x000D;`
+prod 1518 JSON - JSONControlCharacter :: `&#x000E;`
+prod 1519 JSON - JSONControlCharacter :: `&#x000F;`
+prod 1520 JSON - JSONControlCharacter :: `&#x0010;`
+prod 1521 JSON - JSONControlCharacter :: `&#x0011;`
+prod 1522 JSON - JSONControlCharacter :: `&#x0012;`
+prod 1523 JSON - JSONControlCharacter :: `&#x0013;`
+prod 1524 JSON - JSONControlCharacter :: `&#x0014;`
+prod 1525 JSON - JSONControlCharacter :: `&#x0015;`
+prod 1526 JSON - JSONControlCharacter :: `&#x0016;`
+prod 1527 JSON - JSONControlCharacter :: `&#x0017;`
+prod 1528 JSON - JSONControlCharacter :: `&#x0018;`
+prod 1529 JSON - JSONControlCharacter :: `&#x0019;`
+prod 1530 JSON - JSONControlCharacter :: `&#x001A;`
+prod 1531 JSON - JSONControlCharacter :: `&#x001B;`
+prod 1532 JSON - JSONControlCharacter :: `&#x001C;`
+prod 1533 JSON - JSONControlCharacter :: `&#x001D;`
+prod 1534 JSON - JSONControlCharacter :: `&#x001E;`
+prod 1535 JSON - JSONControlCharacter :: `&#x001F;`
+prod 1536 JSON - JSONCodePoint :: > any Unicode code point

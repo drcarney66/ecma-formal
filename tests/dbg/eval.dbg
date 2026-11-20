@@ -1,0 +1,65 @@
+// eval and Function code as sources of their own: each parse made after launch that is a Script
+// (eval #k) or a dynamic function's whole text (Function #k), with sourceReference its parse's
+// stamp + 1 and its root node's text as its text (`source`). A line breakpoint by sourceReference
+// is refused before its parse exists. stepIn by statement from line 2 enters the direct eval's code
+// (contexts 3), whose frames, `js` and JS stack frame (eval) name its source with positions in it;
+// the steps in it; `next` off its end lands at the eval call. Once `new Function` ran, a line
+// breakpoint in its body by sourceReference resolves (its parameters' and body's parses, which run,
+// are positioned in the whole text), breakpointLocations lists its statements, and it is hit in the
+// function `anonymous`.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "js": {"contexts": 1}}}}
+{"send": {"command": "setBreakpoints", "arguments": {"source": {"path": "${program}"}, "breakpoints": [{"line": 2}]}}}
+{"expect": {"type": "response", "command": "setBreakpoints", "success": true, "body": {"breakpoints": [{"id": 1, "verified": false, "line": 2, "message": "pending"}]}}}
+{"send": {"command": "setBreakpoints", "arguments": {"source": {"sourceReference": 6}, "breakpoints": [{"line": 4}]}}}
+{"expect": {"type": "response", "command": "setBreakpoints", "success": false, "message": "unknown source"}}
+{"send": {"command": "source", "arguments": {"sourceReference": 3}}}
+{"expect": {"type": "response", "command": "source", "success": false, "message": "unknown source"}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "breakpoint", "body": {"reason": "changed", "breakpoint": {"id": 1, "verified": true, "line": 2, "column": 1, "source": {"name": "eval.js", "path": "${program}"}}}}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "hitBreakpointIds": [1], "js": {"source": {"name": "eval.js", "path": "${program}"}, "line": 2, "column": 1, "lo": 11, "hi": 49, "contexts": 2}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"secId": "sec-variable-statement-runtime-semantics-evaluation", "path": "1"}, "js": {"source": {"name": "eval #1", "sourceReference": 3}, "line": 1, "column": 1, "endLine": 1, "endColumn": 15, "lo": 0, "hi": 14, "statement": {"line": 1, "column": 1, "lo": 0, "hi": 14}, "contexts": 3}}}}
+{"send": {"command": "source", "arguments": {"sourceReference": 3}}}
+{"expect": {"type": "response", "command": "source", "success": true, "body": {"content": "var c = a + 1;\nc * 2"}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1, "view": "js"}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"totalFrames": 3, "contexts": 3, "stackFrames": [{"id": 0, "name": "(eval)", "source": {"name": "eval #1", "sourceReference": 3}, "line": 1, "column": 1, "endLine": 1, "endColumn": 15, "lo": 0, "hi": 14, "spec": {"frames": {"lo": 0}, "site": "eval"}}, {"id": 1, "name": "(script)", "source": {"name": "eval.js", "path": "${program}"}, "line": 2, "column": 9, "lo": 19, "hi": 48}, {"id": 2, "name": "(host)", "line": 0}]}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1, "levels": 1}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"stackFrames": [{"id": 0, "name": "Evaluation", "source": {"name": "eval #1", "sourceReference": 3}, "line": 1, "column": 1, "endLine": 1, "endColumn": 15, "lo": 0, "hi": 14, "spec": {"node": {"production": "VariableStatement : `var` VariableDeclarationList[+In, ?Yield, ?Await] `;`"}}}]}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "js": {"source": {"name": "eval #1", "sourceReference": 3}, "line": 2, "column": 1, "endLine": 2, "endColumn": 6, "lo": 15, "hi": 20, "contexts": 3}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "PerformEval"}, "js": {"source": {"name": "eval.js", "path": "${program}"}, "line": 2, "column": 9, "lo": 19, "hi": 48, "statement": {"line": 2, "column": 1}, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "js": {"source": {"name": "eval.js", "path": "${program}"}, "line": 3, "column": 1, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "js": {"source": {"name": "eval.js", "path": "${program}"}, "line": 4, "column": 1, "contexts": 2}}}}
+{"send": {"command": "setBreakpoints", "arguments": {"source": {"sourceReference": 6}, "breakpoints": [{"line": 4}]}}}
+{"expect": {"type": "response", "command": "setBreakpoints", "success": true, "body": {"breakpoints": [{"id": 2, "verified": true, "line": 4, "column": 1, "source": {"name": "Function #1", "sourceReference": 6}}]}}}
+{"send": {"command": "breakpointLocations", "arguments": {"source": {"sourceReference": 6}, "line": 1, "endLine": 5}}}
+{"expect": {"type": "response", "command": "breakpointLocations", "success": true, "body": {"breakpoints": [{"line": 3, "column": 1}, {"line": 4, "column": 1}]}}}
+{"send": {"command": "source", "arguments": {"source": {"sourceReference": 6}}}}
+{"expect": {"type": "response", "command": "source", "success": true, "body": {"content": "function anonymous(x\n) {\nvar y = x + 1;\nreturn y * 2;\n}"}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "hitBreakpointIds": [2], "spec": {"secId": "sec-return-statement-runtime-semantics-evaluation"}, "js": {"source": {"name": "Function #1", "sourceReference": 6}, "line": 4, "column": 1, "endLine": 4, "endColumn": 14, "lo": 40, "hi": 53, "contexts": 3}}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1, "view": "js"}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"totalFrames": 3, "contexts": 3, "stackFrames": [{"id": 0, "name": "anonymous", "source": {"name": "Function #1", "sourceReference": 6}, "line": 4, "column": 1, "spec": {"site": "call"}}, {"id": 1, "name": "(script)", "source": {"name": "eval.js", "path": "${program}"}, "line": 4, "column": 9}, {"id": 2, "name": "(host)", "line": 0}]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "output", "body": {"category": "stdout", "output": "10\n"}}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: undefined", "exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

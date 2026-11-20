@@ -1,0 +1,68 @@
+<emu-clause id="formal-timezones">
+  <h1>Time Zone Facts</h1>
+  <p>What the implementation's time zone support is, as the steps of AvailableNamedTimeZoneIdentifiers, SystemTimeZoneIdentifier and UTC ask it: facts the host gives, each with what the text says of it.</p>
+
+  <emu-primitive id="prim-supportsonlyutc" name="SupportsOnlyUTC">
+    <emu-signature>SupportsOnlyUTC(): a Boolean</emu-signature>
+    <p>Whether the implementation only supports the UTC time zone (<emu-xref href="#sec-systemtimezoneidentifier"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-hastimezonerules" name="HasTimeZoneRules">
+    <emu-signature>HasTimeZoneRules(): a Boolean</emu-signature>
+    <p>Whether the implementation includes local political rules for any time zones (<emu-xref href="#sec-availablenamedtimezoneidentifiers"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-availablenamedtimezoneids" name="AvailableNamedTimeZoneIds">
+    <emu-signature>AvailableNamedTimeZoneIds(): a List of Strings</emu-signature>
+    <p>A new List of the implementation's available named time zone identifiers, each once, sorted according to lexicographic code unit order.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-isnonprimarytimezoneid" name="IsNonPrimaryTimeZoneId">
+    <emu-signature>IsNonPrimaryTimeZoneId(_id_: a String): a Boolean</emu-signature>
+    <p>Whether _id_ is a non-primary time zone identifier in this implementation.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-primarytimezoneid" name="PrimaryTimeZoneId">
+    <emu-signature>PrimaryTimeZoneId(_id_: a String): a String</emu-signature>
+    <p>The primary time zone identifier associated with the non-primary time zone identifier _id_: an available named time zone identifier that is not non-primary.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-lasttransitionbefore" name="LastTransitionBefore">
+    <emu-signature>LastTransitionBefore(_id_: a String, _t_: a Number): an integral Number or ~empty~</emu-signature>
+    <p>The largest integral Number less than _t_ for which GetNamedTimeZoneEpochNanoseconds(_id_, …) of its date and time fields is not empty, the last local time before the transition at _t_; ~empty~ if there is none.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-availablenamedtimezoneidentifiers" steps="1" hashes="635f2c2d64ccadcba6130ca85e37afd3ed428b8581a336f9bdc24455f14dcc40">
+    <emu-alg reading="definition">
+      1. If HasTimeZoneRules() is *false*, then
+        1. Return « the Time Zone Identifier Record { [[Identifier]]: *"UTC"*, [[PrimaryIdentifier]]: *"UTC"* } ».
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-availablenamedtimezoneidentifiers" steps="2" hashes="dd93479bc54d1632ce0e0dd9911e500b1b1a57fa6e03cc61248ceae32f50c3a0">
+    <emu-alg reading="definition">
+      1. Let _identifiers_ be AvailableNamedTimeZoneIds().
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-availablenamedtimezoneidentifiers" steps="4.b 4.b.i" hashes="d60e467de2cc1432eb1b2fe3c9f2b96861612b490b0a3aac368355b39f138848 2cb92e0536aaf5f54f9533410f18072b306665c23b72e4b2f89dd590bcc06ec9">
+    <emu-alg reading="definition">
+      1. If IsNonPrimaryTimeZoneId(_identifier_) is *true* and _identifier_ is not *"UTC"*, then
+        1. Set _primary_ to PrimaryTimeZoneId(_identifier_).
+        1. NOTE: An implementation may need to resolve _identifier_ iteratively to obtain the primary time zone identifier.
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-systemtimezoneidentifier" steps="1" hashes="dd8751a9aed35ccc60fd72241569231ca1833ad417f66f94b8589614f01508dd">
+    <emu-alg reading="definition">
+      1. If SupportsOnlyUTC() is *true*, return *"UTC"*.
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-utc-t" steps="4.d.ii" hashes="b57f7517257b276644e0f001a03ee311b857f59099fdeaf296f419e0c4ec239c">
+    <emu-alg reading="definition">
+      1. Let _tBefore_ be LastTransitionBefore(_systemTimeZoneIdentifier_, _t_).
+      1. Let _possibleInstantsBefore_ be GetNamedTimeZoneEpochNanoseconds(_systemTimeZoneIdentifier_, YearFromTime(_tBefore_), MonthFromTime(_tBefore_) + 1, DateFromTime(_tBefore_), HourFromTime(_tBefore_), MinuteFromTime(_tBefore_), SecondFromTime(_tBefore_), MillisecondFromTime(_tBefore_), 0, 0).
+    </emu-alg>
+  </emu-reading>
+</emu-clause>

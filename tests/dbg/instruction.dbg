@@ -1,0 +1,24 @@
+// stepIn with granularity "instruction": one transition (the step stays ParseScript's 1 while
+// its expression is evaluated); a plain stepIn then goes on to the next step entered.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "spec": {"secId": "sec-parse-script", "path": "1", "steps": 1, "transitions": 13}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"secId": "sec-parse-script", "path": "1", "steps": 1, "transitions": 14}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "instruction"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"secId": "sec-parse-script", "path": "1", "steps": 1, "transitions": 15}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "ParseText", "secId": "sec-parsetext", "path": "1", "depth": 2, "steps": 2}}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 1", "exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

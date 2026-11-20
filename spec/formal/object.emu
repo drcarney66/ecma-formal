@@ -1,0 +1,451 @@
+<emu-clause id="formal-object-store">
+  <h1>Ordinary Object Properties</h1>
+  <p>The own properties of an object, as the steps of ordinary objects' internal methods name them. Each phrase below is the steps' own wording; its meaning is a primitive of the Object sort.</p>
+
+  <emu-primitive id="prim-ownpropertylookup" name="OwnPropertyLookup">
+    <emu-signature>OwnPropertyLookup(_O_: an Object, _P_: a property key): an own property</emu-signature>
+    <p>The own property of _O_ whose key is _P_. _O_ has such a property.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-ownpropertyhas" name="OwnPropertyHas">
+    <emu-signature>OwnPropertyHas(_O_: an Object, _P_: a property key): a Boolean</emu-signature>
+    <p>Whether _O_ has an own property whose key is _P_.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-ownpropertycreate" name="OwnPropertyCreate">
+    <emu-signature>OwnPropertyCreate(_O_: an Object, _P_: a property key, _Desc_: a Property Descriptor, _kind_: ~accessor~ or ~data~): ~unused~</emu-signature>
+    <p>Adds to _O_ an own _kind_ property with key _P_, last in property creation order, each of whose attributes is the corresponding field of _Desc_ if _Desc_ has that field, or else the attribute's default value (<emu-xref href="#table-object-property-attributes"></emu-xref>). _O_ has no own property with key _P_.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-ownpropertyreplace" name="OwnPropertyReplace">
+    <emu-signature>OwnPropertyReplace(_O_: an Object, _P_: a property key, _Desc_: a Property Descriptor, _kind_: ~accessor~ or ~data~, _configurable_: a Boolean, _enumerable_: a Boolean): ~unused~</emu-signature>
+    <p>Replaces _O_'s own property with key _P_, in place in property creation order, by a _kind_ property whose [[Configurable]] and [[Enumerable]] attributes are _configurable_ and _enumerable_ and each of whose other attributes is the corresponding field of _Desc_ if _Desc_ has that field, or else the attribute's default value.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-ownpropertysetattribute" name="OwnPropertySetAttribute">
+    <emu-signature>OwnPropertySetAttribute(_O_: an Object, _P_: a property key, _Desc_: a Property Descriptor): ~unused~</emu-signature>
+    <p>For each field of _Desc_, sets the attribute of the same name of _O_'s own property with key _P_ to the field's value.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-ownpropertyremove" name="OwnPropertyRemove">
+    <emu-signature>OwnPropertyRemove(_O_: an Object, _P_: a property key): ~unused~</emu-signature>
+    <p>Removes _O_'s own property with key _P_; the other properties keep their creation order.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-hasnofields" name="HasNoFields">
+    <emu-signature>HasNoFields(_Desc_: a Property Descriptor): a Boolean</emu-signature>
+    <p>Whether _Desc_ has none of the fields of <emu-xref href="#table-object-property-attributes"></emu-xref>.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-isordinarymethod" name="IsOrdinaryMethod">
+    <emu-signature>IsOrdinaryMethod(_m_: an internal method, _definition_: a clause): a Boolean</emu-signature>
+    <p>Whether _m_ is the internal method that the clause _definition_ defines.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-evaluatebuiltin" name="EvaluateBuiltin">
+    <emu-signature>EvaluateBuiltin(_F_: a built-in function object, _thisArgument_: an ECMAScript language value or ~uninitialized~, _argumentsList_: a List of ECMAScript language values, _newTarget_: a constructor or *undefined*): a Completion Record</emu-signature>
+    <p>The Completion Record that is the result of evaluating _F_ in a manner that conforms to the specification of _F_ (<emu-xref href="#step-call-builtin-function-result"></emu-xref>). If _thisArgument_ is ~uninitialized~, the *this* value is uninitialized; else _thisArgument_ provides the *this* value. _argumentsList_ provides the named parameters. _newTarget_ provides the NewTarget value.</p>
+    <p>[[Behaviour]] is a formal, unobservable slot of built-in function objects holding _behaviour_ as CreateBuiltinFunction got it.</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-evaluate-builtin" kind="expression" meaning="EvaluateBuiltin(_func_, _thisArg_, _argList_, _newTarget_)">
+    <emu-pattern>the Completion Record that is <emu-meta effects="user-code">the result of evaluating</emu-meta> _func_ in a manner that conforms to the specification of _func_. If _thisArg_ is ~uninitialized~, the *this* value is uninitialized; else _thisArg_ provides the *this* value. _argList_ provides the named parameters. _newTarget_ provides the NewTarget value</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-own-property-whose-key" kind="expression" meaning="OwnPropertyLookup(_O_, _P_)">
+    <emu-pattern>_O_'s own property whose key is _P_</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-create-own-accessor-property" kind="step" meaning="OwnPropertyCreate(_O_, _P_, _Desc_, ~accessor~)">
+    <emu-pattern>Create an own accessor property named _P_ of object _O_ whose [[Getter]], [[Setter]], [[Enumerable]], and [[Configurable]] attributes are set to the value of the corresponding field in _Desc_ if _Desc_ has that field, or to the attribute's <emu-xref href="#table-object-property-attributes">default value</emu-xref> otherwise.</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-create-own-data-property" kind="step" meaning="OwnPropertyCreate(_O_, _P_, _Desc_, ~data~)">
+    <emu-pattern>Create an own data property named _P_ of object _O_ whose [[Value]], [[Writable]], [[Enumerable]], and [[Configurable]] attributes are set to the value of the corresponding field in _Desc_ if _Desc_ has that field, or to the attribute's <emu-xref href="#table-object-property-attributes">default value</emu-xref> otherwise.</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-replace-with-accessor-property" kind="step" meaning="OwnPropertyReplace(_O_, _P_, _Desc_, ~accessor~, _configurable_, _enumerable_)">
+    <emu-pattern>Replace the property named _P_ of object _O_ with an accessor property whose [[Configurable]] and [[Enumerable]] attributes are set to _configurable_ and _enumerable_, respectively, and whose [[Getter]] and [[Setter]] attributes are set to the value of the corresponding field in _Desc_ if _Desc_ has that field, or to the attribute's <emu-xref href="#table-object-property-attributes">default value</emu-xref> otherwise.</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-replace-with-data-property" kind="step" meaning="OwnPropertyReplace(_O_, _P_, _Desc_, ~data~, _configurable_, _enumerable_)">
+    <emu-pattern>Replace the property named _P_ of object _O_ with a data property whose [[Configurable]] and [[Enumerable]] attributes are set to _configurable_ and _enumerable_, respectively, and whose [[Value]] and [[Writable]] attributes are set to the value of the corresponding field in _Desc_ if _Desc_ has that field, or to the attribute's <emu-xref href="#table-object-property-attributes">default value</emu-xref> otherwise.</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-set-attributes-from-fields" kind="step" meaning="OwnPropertySetAttribute(_O_, _P_, _Desc_)">
+    <emu-pattern>For each field name _F_ of _Desc_, set the attribute named _F_ of the property named _P_ of object _O_ to the value of _Desc_'s _F_ field.</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-remove-own-property" kind="step" meaning="OwnPropertyRemove(_O_, _P_)">
+    <emu-pattern>Remove the own property with name _P_ from _O_.</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-has-no-fields" kind="condition" meaning="HasNoFields(_Desc_)">
+    <emu-pattern>_Desc_ does not have any fields</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-ordinary-method" kind="predicate" subject="_m_" meaning="not IsOrdinaryMethod(_m_, _definition_)">
+    <emu-pattern>is not the ordinary object internal method defined in _definition_</emu-pattern>
+  </emu-phrase>
+
+  <emu-phrase id="ph-has-attribute-values" kind="predicate" subject="_p_" rule="attr-values">
+    <emu-pattern>has attribute values _r_</emu-pattern>
+    <p>For each attribute (<emu-xref href="#table-object-property-attributes"></emu-xref>) that _r_ has as a field, _p_ has that field with the same value.</p>
+    <emu-params>_r_: a Record, _p_: a Property Descriptor</emu-params>
+    <emu-alg>
+      1. If _r_ has a [[Value]] field, then
+        1. If _p_ does not have a [[Value]] field, return *false*.
+        1. If SameValue(_p_.[[Value]], _r_.[[Value]]) is *false*, return *false*.
+      1. If _r_ has a [[Writable]] field, then
+        1. If _p_ does not have a [[Writable]] field, return *false*.
+        1. If SameValue(_p_.[[Writable]], _r_.[[Writable]]) is *false*, return *false*.
+      1. If _r_ has a [[Get]] field, then
+        1. If _p_ does not have a [[Get]] field, return *false*.
+        1. If SameValue(_p_.[[Get]], _r_.[[Get]]) is *false*, return *false*.
+      1. If _r_ has a [[Set]] field, then
+        1. If _p_ does not have a [[Set]] field, return *false*.
+        1. If SameValue(_p_.[[Set]], _r_.[[Set]]) is *false*, return *false*.
+      1. If _r_ has a [[Enumerable]] field, then
+        1. If _p_ does not have a [[Enumerable]] field, return *false*.
+        1. If SameValue(_p_.[[Enumerable]], _r_.[[Enumerable]]) is *false*, return *false*.
+      1. If _r_ has a [[Configurable]] field, then
+        1. If _p_ does not have a [[Configurable]] field, return *false*.
+        1. If SameValue(_p_.[[Configurable]], _r_.[[Configurable]]) is *false*, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-has-slot-or" kind="predicate" subject="_O_" rule="has-slot-or" alternatives="all">
+    <emu-pattern>has a _f_ or _g_ internal slot</emu-pattern>
+    <p>"a" and "an" are the same article.</p>
+    <emu-params>_f_: an internal slot name, _g_: an internal slot name, _O_: an Object</emu-params>
+    <emu-alg>
+      1. If _O_ does not have a _f_ internal slot and _O_ does not have a _g_ internal slot, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-intrinsic-function" kind="expression" rule="intrinsic-fn">
+    <emu-pattern>the intrinsic function _f_</emu-pattern>
+    <emu-params>_f_: a function object</emu-params>
+    <emu-alg>
+      1. Assert: IsCallable(_f_) is *true*.
+      1. Return _f_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-no-registry-entry" kind="predicate" subject="_l_" rule="no-entry">
+    <emu-pattern>does not currently contain an entry for _x_</emu-pattern>
+    <p>An entry for a String is a GlobalSymbolRegistry Record whose [[Key]] is that String; an entry for a Symbol, one whose [[Symbol]] is that Symbol.</p>
+    <emu-params>_x_: a String or a Symbol, _l_: a List of GlobalSymbolRegistry Records</emu-params>
+    <emu-alg>
+      1. For each element _e_ of _l_, do
+        1. If _x_ is a String and _e_.[[Key]] is _x_, return *false*.
+        1. If _x_ is a Symbol and SameValue(_e_.[[Symbol]], _x_) is *true*, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-replace-in" kind="step" rule="replace-in">
+    <emu-pattern>Replace _old_ in _l_ with _new_.</emu-pattern>
+    <emu-params>_old_: anything, _l_: a List, _new_: anything</emu-params>
+    <emu-alg>
+      1. Replace the element of _l_ whose value is _old_ with an element whose value is _new_.
+      1. Return ~unused~.
+    </emu-alg>
+  </emu-phrase>
+</emu-clause>
+
+<emu-clause id="formal-object-contexts">
+  <h1>Execution Contexts and Conditions</h1>
+  <p>Phrases of the steps about execution contexts, and the connective "if and only if".</p>
+
+  <emu-phrase id="ph-is-now" kind="predicate" subject="_x_" rule="now">
+    <emu-pattern>is now _y_</emu-pattern>
+    <p>"now": at this step; the subject is the value that _y_ denotes here.</p>
+    <emu-params>_y_: anything, _x_: anything</emu-params>
+    <emu-alg>
+      1. If _x_ is _y_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-generator-context" kind="predicate" subject="_ctx_" rule="generator-ctx">
+    <emu-pattern>is the execution context of a generator</emu-pattern>
+    <p>Execution contexts that represent the evaluation of a generator have a Generator component (<emu-xref href="#table-additional-state-components-for-generator-execution-contexts"></emu-xref>).</p>
+    <emu-params>_ctx_: an execution context</emu-params>
+    <emu-alg>
+      1. If _ctx_ has a Generator component, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-iff" kind="condition" rule="iff">
+    <emu-pattern>_a_ if and only if _b_</emu-pattern>
+    <p>Each side is a condition; the whole holds when both hold or neither does.</p>
+    <emu-params>_a_: a Boolean, _b_: a Boolean</emu-params>
+    <emu-alg>
+      1. If _a_ is _b_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+  <emu-reading clause="sec-toobject" steps="2" hashes="6f5462d94c848b38fd4bb42c01b39b7bb3eedeb2d7a6ca4856c478d475fda9b4">
+    <emu-alg reading="definition">
+      1. If _arg_ is a Boolean, then
+        1. Let _obj_ be OrdinaryObjectCreate(%Boolean.prototype%, « [[BooleanData]] »).
+        1. Set _obj_.[[BooleanData]] to _arg_.
+        1. Return _obj_.
+    </emu-alg>
+    <emu-note>
+      <p>A new Boolean object is an ordinary object whose prototype is %Boolean.prototype% (<emu-xref href="#sec-boolean-objects"></emu-xref>), with a [[BooleanData]] internal slot.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-toobject" steps="3" hashes="325d9f2422d45ef33b3a01ce19f81e175e8113f0c0e43733979541358f766d6c">
+    <emu-alg reading="definition">
+      1. If _arg_ is a Number, then
+        1. Let _obj_ be OrdinaryObjectCreate(%Number.prototype%, « [[NumberData]] »).
+        1. Set _obj_.[[NumberData]] to _arg_.
+        1. Return _obj_.
+    </emu-alg>
+    <emu-note>
+      <p>A new Number object is an ordinary object whose prototype is %Number.prototype% (<emu-xref href="#sec-number-objects"></emu-xref>), with a [[NumberData]] internal slot.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-toobject" steps="4" hashes="ff880bc94d21751cac5504a3be916cac28399e2c15745d2580a2718f6e474b64">
+    <emu-alg reading="definition">
+      1. If _arg_ is a String, return StringCreate(_arg_, %String.prototype%).
+    </emu-alg>
+    <emu-note>
+      <p>A new String object for _arg_ is a String exotic object (<emu-xref href="#sec-stringcreate"></emu-xref>) whose [[StringData]] is _arg_ and whose prototype is %String.prototype%.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-toobject" steps="5" hashes="d140e30a7f315726f773a6d151230a6c6e5baefd0fb2261a0f44bb89d981d70d">
+    <emu-alg reading="definition">
+      1. If _arg_ is a Symbol, then
+        1. Let _obj_ be OrdinaryObjectCreate(%Symbol.prototype%, « [[SymbolData]] »).
+        1. Set _obj_.[[SymbolData]] to _arg_.
+        1. Return _obj_.
+    </emu-alg>
+    <emu-note>
+      <p>A new Symbol object is an ordinary object whose prototype is %Symbol.prototype% (<emu-xref href="#sec-symbol-objects"></emu-xref>), with a [[SymbolData]] internal slot.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-toobject" steps="6" hashes="8e1f4c487c914e92ff54ca74bb2afca07a2240b61909ecb1d6c255f1d66ac12a">
+    <emu-alg reading="definition">
+      1. If _arg_ is a BigInt, then
+        1. Let _obj_ be OrdinaryObjectCreate(%BigInt.prototype%, « [[BigIntData]] »).
+        1. Set _obj_.[[BigIntData]] to _arg_.
+        1. Return _obj_.
+    </emu-alg>
+    <emu-note>
+      <p>A new BigInt object is an ordinary object whose prototype is %BigInt.prototype% (<emu-xref href="#sec-bigint-objects"></emu-xref>), with a [[BigIntData]] internal slot.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-arguments-exotic-objects-get-p-receiver" steps="4" hashes="927785eb26e935d536efee10478e05b02178d285c9cb25caea4f58803bd671d7">
+    <emu-alg reading="definition">
+      1. Assert: _map_ has an own property with key _propertyKey_.
+    </emu-alg>
+    <emu-note>
+      <p>The formal parameter mappings of an arguments object are the own properties of its [[ParameterMap]] (CreateMappedArgumentsObject); one for _propertyKey_ is an own property with that key.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-array" steps="10" hashes="64a576aa78bb7ccbc822b3bf91a48f58808157d808cc2d66f084b032106058cf">
+    <emu-alg reading="definition">
+      1. Assert: ℝ(OrdinaryGetOwnProperty(_array_, *"length"*).[[Value]]) = _numberOfArgs_.
+    </emu-alg>
+    <emu-note>
+      <p>The *"length"* property of an Array is an own data property; its value is the [[Value]] of its Property Descriptor.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-createmappedargumentsobject" steps="1" hashes="bedfe5ca0a59d9b0bc3cb468c8d07a833939f421ef38849aa50ac58d72cf71b6">
+    <emu-alg reading="definition">
+      1. Assert: IsSimpleParameterList of _formals_ is *true*.
+    </emu-alg>
+    <emu-note>
+      <p>IsSimpleParameterList is *false* exactly when the parameter list has a rest parameter, a binding pattern or an initializer. The second sentence allows duplicate identifiers; it is a remark, not a condition.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-createnonenumerabledatapropertyorthrow" steps="1" hashes="cb3db66851288aff24ed5f935b6e2c6c77443dc8f7e20efaf8957f13ecf4a2cf">
+    <emu-alg reading="definition">
+      1. Assert: _obj_ is an extensible ordinary object with no non-configurable properties.
+    </emu-alg>
+    <emu-note>
+      <p>"ordinary, extensible" names the same two sorts as "extensible ordinary".</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-definemethodproperty" steps="1" hashes="4f9909cdf298222e8a9e156e505dfd1dd24ef153fad7ec56b0fa7f3b7fb4a334">
+    <emu-alg reading="definition">
+      1. Assert: _homeObj_ is an extensible ordinary object.
+    </emu-alg>
+    <emu-note>
+      <p>The same two sorts, ordinary and extensible.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-functiondeclarationinstantiation" steps="20.d" hashes="7643ef21480f6d05c5bb4c754bb74ab7bfc9d4e7dece2d4d7cce42318dd90400">
+    <emu-alg reading="definition">
+      1. Assert: the VariableEnvironment of _calleeContext_ is _calleeEnv_.
+    </emu-alg>
+    <emu-note>
+      <p>Two Environment Records are the same when they are the same value.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-runtime-semantics-propertydefinitionevaluation" steps="4" hashes="cb3db66851288aff24ed5f935b6e2c6c77443dc8f7e20efaf8957f13ecf4a2cf">
+    <emu-alg reading="definition">
+      1. Assert: _obj_ is an extensible ordinary object with no non-configurable properties.
+    </emu-alg>
+    <emu-note>
+      <p>"ordinary, extensible" names the same two sorts as "extensible ordinary".</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-runtime-semantics-propertydefinitionevaluation" steps="8" hashes="cb3db66851288aff24ed5f935b6e2c6c77443dc8f7e20efaf8957f13ecf4a2cf">
+    <emu-alg reading="definition">
+      1. Assert: _obj_ is an extensible ordinary object with no non-configurable properties.
+    </emu-alg>
+    <emu-note>
+      <p>"ordinary, extensible" names the same two sorts as "extensible ordinary".</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-typedarray" steps="7.d.i" hashes="ca3395f24651d46df1eae4771cc84ba9ce33c181a9229b6ddb0441b9faac2ccf">
+    <emu-alg reading="definition">
+      1. Assert: _firstArg_ is an Object.
+      1. Assert: _firstArg_ does not have a [[TypedArrayName]] internal slot.
+      1. Assert: _firstArg_ does not have an [[ArrayBufferData]] internal slot.
+    </emu-alg>
+    <emu-note>
+      <p>"does not have either X or Y" excludes both slots.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-typedarraycreatefromconstructor" steps="3" hashes="9e9c0cc879fc2a0b1f1b42639f0a708c0cbc05b6099231c222b221933243da0d">
+    <emu-alg reading="definition">
+      1. Assert: _ta_ has [[ViewedArrayBuffer]], [[TypedArrayName]], [[ContentType]], [[ByteLength]], [[ByteOffset]], and [[ArrayLength]] internal slots.
+    </emu-alg>
+    <emu-note>
+      <p>The internal slots that the referenced clause names for each TypedArray instance.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-phrase id="ph-exactly-one-private-name" kind="condition">
+    <emu-pattern>Exactly one element of _l_ is a Private Name whose [[Description]] is _d_</emu-pattern>
+    <p>Exactly one element meets the condition when the count of those that do is 1.</p>
+    <emu-params>_l_: a List of Private Names, _d_: a String</emu-params>
+    <emu-alg>
+      1. Let _n_ be 0.
+      1. For each element _pn_ of _l_, do
+        1. If _pn_.[[Description]] is _d_, set _n_ to _n_ + 1.
+      1. If _n_ = 1, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-no-own-properties" kind="type" subject="_v_" rule="a-with-no-own-props" alternatives="all">
+    <emu-pattern>an _t_ with no own properties</emu-pattern>
+    <p>"a" and "an" are one article. Properties are an object's.</p>
+    <emu-params>_t_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not a _t_, return *false*.
+      1. If _v_ is not an Object, return *false*.
+      1. For each own property key _P_ of _v_ such that _P_ is a property key, in ascending chronological order of property creation, do
+        1. Return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-type-no-non-configurable-properties" kind="type" subject="_v_" rule="a-with-no-nc-props" alternatives="all">
+    <emu-pattern>an _t_ with no non-configurable properties</emu-pattern>
+    <p>"a" and "an" are one article. Properties are an object's own properties; a property is non-configurable when its [[Configurable]] attribute is *false*.</p>
+    <emu-params>_t_: a type, _v_: anything</emu-params>
+    <emu-alg>
+      1. If _v_ is not a _t_, return *false*.
+      1. If _v_ is not an Object, return *false*.
+      1. For each own property key _P_ of _v_ such that _P_ is a property key, in ascending chronological order of property creation, do
+        1. If OrdinaryGetOwnProperty(_v_, _P_).[[Configurable]] is *false*, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-new-symbol-whose-description" kind="expression" rule="new-symbol-whose">
+    <emu-pattern>a new Symbol whose [[Description]] is _d_</emu-pattern>
+    <emu-params>_d_: a String or *undefined*</emu-params>
+    <emu-alg>
+      1. Return NewSymbol(_d_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-new-private-name-whose-description" kind="expression" rule="new-private-name-whose">
+    <emu-pattern>a new Private Name whose [[Description]] is _d_</emu-pattern>
+    <emu-params>_d_: a String</emu-params>
+    <emu-alg>
+      1. Let _n_ be a new Private Name.
+      1. Set _n_.[[Description]] to _d_.
+      1. Return _n_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-new-builtin-function" kind="expression">
+    <emu-pattern>a new built-in function object that, when called, performs the action described by _B_ using the provided arguments as the values of the corresponding parameters specified by _B_. The new function object has internal slots whose names are the elements of _S_, and an [[InitialName]] internal slot</emu-pattern>
+    <emu-params>_B_: an Abstract Closure, a set of algorithm steps, or some other definition of a function's behaviour provided in this specification, _S_: a List of names of internal slots</emu-params>
+    <emu-alg>
+      1. Let _func_ be MakeBasicObject(the list-concatenation of _S_ and « [[InitialName]], [[Behaviour]] »).
+      1. Set _func_.[[Call]] to the definition specified in <emu-xref href="#sec-built-in-function-objects-call-thisargument-argumentslist"></emu-xref>.
+      1. Set _func_.[[Behaviour]] to _B_.
+      1. Return _func_.
+    </emu-alg>
+  </emu-phrase>
+  <emu-phrase id="ph-set-methods" kind="step" rule="set-methods" alternatives="all">
+    <emu-pattern>Set _O_'s essential internal methods to the definitions specified in _x_.</emu-pattern>
+    <p>The clause names the methods: the default ordinary object definitions are those of <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots"></emu-xref>. "Except for [[Call]] and [[Construct]]" names the methods of <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots"></emu-xref> that a Proxy has only when its target has them, which the step does not set either way.</p>
+    <emu-params>_O_: an Object, _x_: a clause</emu-params>
+    <emu-alg>
+      1. If _x_ is <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots"></emu-xref>, then
+        1. Set _O_.[[GetPrototypeOf]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof"></emu-xref>.
+        1. Set _O_.[[SetPrototypeOf]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v"></emu-xref>.
+        1. Set _O_.[[IsExtensible]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-isextensible"></emu-xref>.
+        1. Set _O_.[[PreventExtensions]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-preventextensions"></emu-xref>.
+        1. Set _O_.[[GetOwnProperty]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-getownproperty-p"></emu-xref>.
+        1. Set _O_.[[DefineOwnProperty]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-defineownproperty-p-desc"></emu-xref>.
+        1. Set _O_.[[HasProperty]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p"></emu-xref>.
+        1. Set _O_.[[Get]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-get-p-receiver"></emu-xref>.
+        1. Set _O_.[[Set]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-set-p-v-receiver"></emu-xref>.
+        1. Set _O_.[[Delete]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-delete-p"></emu-xref>.
+        1. Set _O_.[[OwnPropertyKeys]] to the definition specified in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots-ownpropertykeys"></emu-xref>.
+      1. Else if _x_ is <emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>, then
+        1. Set _O_.[[GetPrototypeOf]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-getprototypeof"></emu-xref>.
+        1. Set _O_.[[SetPrototypeOf]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-setprototypeof-v"></emu-xref>.
+        1. Set _O_.[[IsExtensible]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-isextensible"></emu-xref>.
+        1. Set _O_.[[PreventExtensions]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-preventextensions"></emu-xref>.
+        1. Set _O_.[[GetOwnProperty]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-getownproperty-p"></emu-xref>.
+        1. Set _O_.[[DefineOwnProperty]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-defineownproperty-p-desc"></emu-xref>.
+        1. Set _O_.[[HasProperty]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-hasproperty-p"></emu-xref>.
+        1. Set _O_.[[Get]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver"></emu-xref>.
+        1. Set _O_.[[Set]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-set-p-v-receiver"></emu-xref>.
+        1. Set _O_.[[Delete]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-delete-p"></emu-xref>.
+        1. Set _O_.[[OwnPropertyKeys]] to the definition specified in <emu-xref href="#sec-module-namespace-exotic-objects-ownpropertykeys"></emu-xref>.
+      1. Else,
+        1. Assert: _x_ is <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots"></emu-xref>.
+        1. Set _O_.[[GetPrototypeOf]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-getprototypeof"></emu-xref>.
+        1. Set _O_.[[SetPrototypeOf]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-setprototypeof-v"></emu-xref>.
+        1. Set _O_.[[IsExtensible]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-isextensible"></emu-xref>.
+        1. Set _O_.[[PreventExtensions]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-preventextensions"></emu-xref>.
+        1. Set _O_.[[GetOwnProperty]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-getownproperty-p"></emu-xref>.
+        1. Set _O_.[[DefineOwnProperty]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-defineownproperty-p-desc"></emu-xref>.
+        1. Set _O_.[[HasProperty]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-hasproperty-p"></emu-xref>.
+        1. Set _O_.[[Get]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver"></emu-xref>.
+        1. Set _O_.[[Set]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-set-p-v-receiver"></emu-xref>.
+        1. Set _O_.[[Delete]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-delete-p"></emu-xref>.
+        1. Set _O_.[[OwnPropertyKeys]] to the definition specified in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots-ownpropertykeys"></emu-xref>.
+      1. Return ~unused~.
+    </emu-alg>
+  </emu-phrase>
+  <emu-reading clause="sec-makebasicobject" steps="2" hashes="211079398817b4188b19bfa63191f74581f182056d6358967567d86f8f561508">
+    <emu-alg reading="definition">
+      1. Let _obj_ be MakeObject(_internalSlotsList_).
+    </emu-alg>
+  </emu-reading>
+  <emu-reading clause="sec-createbuiltinfunction" steps="4" hashes="01089aad01aece0a5a97c27060c1b61c96257d77a8e90f8c077109849b9ec21b">
+    <emu-alg reading="definition">
+      1. Let _internalSlotsList_ be BuiltinFunctionSlots().
+    </emu-alg>
+    <emu-note>
+      <p>The slots of every ordinary object (<emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots"></emu-xref>), [[Prototype]] and [[Extensible]], and those of <emu-xref href="#sec-built-in-function-objects"></emu-xref>: [[Realm]], [[InitialName]] and [[Async]].</p>
+    </emu-note>
+  </emu-reading>
+</emu-clause>

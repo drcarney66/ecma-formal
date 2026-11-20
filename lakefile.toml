@@ -1,0 +1,52 @@
+# Lean comes from the flake's dev shell (lean-toolchain records the same version for editors).
+name = "ecma-formal"
+defaultTargets = ["ecma-dbg", "ecma-run", "ecma-bundle", "ecma-print", "Unicode", "Ecma", "Engine", "Debugger"]
+
+# The Unicode Character Database's tables (Unicode/Gen) and operations: no dependency on Ecma.
+[[lean_lib]]
+name = "Unicode"
+srcDir = "lean"
+globs = ["Unicode.+"]
+
+# The specification: the grammars and the algorithm notation as data (Gen: generated from spec.html),
+# the abstract model and its laws, the host's laws, and the step semantics. No concrete model.
+[[lean_lib]]
+name = "Ecma"
+srcDir = "lean"
+globs = ["Ecma.+"]
+
+# One concrete model of the specification, its parser and host, and its command line.
+[[lean_lib]]
+name = "Engine"
+srcDir = "lean"
+globs = ["Engine.+"]
+
+# The spec-step debugger over the engine.
+[[lean_lib]]
+name = "Debugger"
+srcDir = "lean"
+globs = ["Debugger.+"]
+
+# A whole JS program, run by the engine.
+[[lean_exe]]
+name = "ecma-run"
+srcDir = "lean"
+root = "Engine.Cli.Main"
+
+# A directory's modules as one bundle, main.mjs the entry point.
+[[lean_exe]]
+name = "ecma-bundle"
+srcDir = "lean"
+root = "Engine.Cli.Bundle"
+
+# The spec-step debugger.
+[[lean_exe]]
+name = "ecma-dbg"
+srcDir = "lean"
+root = "Debugger.Main"
+
+# The specification's data printed back as its text, for scripts/bijection.py: imports only Ecma.
+[[lean_exe]]
+name = "ecma-print"
+srcDir = "lean"
+root = "SpecPrint"

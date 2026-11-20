@@ -1,0 +1,29 @@
+// Breakpoints by sec-id and step path, by an algorithm's name (its first step) and by
+// sec-id#idx; ones that resolve to nothing are not verified.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": [{"alg": "sec-evaluatecall", "path": "3"}]}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true, "body": {"breakpoints": [{"verified": true, "path": "3", "resolved": ["sec-evaluatecall#0"]}]}}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "EvaluateCall", "secId": "sec-evaluatecall", "path": "3", "text": "Let argList be ? ArgumentListEvaluation of argumentListNode."}}}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": [{"alg": "PrepareForOrdinaryCall"}]}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true, "body": {"breakpoints": [{"verified": true, "alg": "PrepareForOrdinaryCall", "path": "1", "resolved": ["sec-prepareforordinarycall#0"]}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "PrepareForOrdinaryCall", "secId": "sec-prepareforordinarycall", "path": "1"}}}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": [{"alg": "sec-ordinarycallevaluatebody#0", "path": "1"}, {"alg": "NoSuchAlgorithm"}, {"alg": "sec-call", "path": "2.x.y"}]}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true, "body": {"breakpoints": [{"verified": true, "resolved": ["sec-ordinarycallevaluatebody#0"]}, {"verified": false, "message": "no such algorithm"}, {"verified": false, "message": "bad step path"}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "OrdinaryCallEvaluateBody", "secId": "sec-ordinarycallevaluatebody", "path": "1", "text": "Return ? EvaluateBody of func.[[ECMAScriptCode]] with arguments func and argList."}}}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": []}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true, "body": {"breakpoints": []}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 2", "exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

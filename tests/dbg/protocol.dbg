@@ -1,0 +1,23 @@
+// Requests out of place and unknown ones are refused; `source` instead of a program file;
+// ecma-run's options are checked; the end of the input ends the engine.
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "request_seq": 1, "command": "continue", "success": false, "message": "not paused"}}
+{"send": {"command": "frobnicate"}}
+{"expect": {"type": "response", "request_seq": 2, "command": "frobnicate", "success": false, "message": "unknown request frobnicate"}}
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"source": "throw 1;", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "spec": {"secId": "sec-parse-script"}}}}
+{"send": {"command": "launch", "arguments": {"source": "1;"}}}
+{"expect": {"type": "response", "command": "launch", "success": false, "message": "already launched"}}
+{"send": {"command": "pause"}}
+{"expect": {"type": "response", "command": "pause", "success": true}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "throw: 1", "exitCode": 1}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": false, "message": "not paused"}}

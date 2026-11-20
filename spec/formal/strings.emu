@@ -1,0 +1,483 @@
+<emu-clause id="formal-strings">
+  <h1>Strings</h1>
+  <p>The notation of String values and code units that the steps use without defining it.</p>
+
+  <emu-primitive id="prim-tolowercase" name="toLowercase">
+    <emu-signature>toLowercase(_cps_: a List of code points): a List of code points</emu-signature>
+    <p>The code points of _cps_ mapped by toLowercase of the Unicode Default Case Conversion algorithm (The Unicode Standard, Section 3.13, Default Case Algorithms, R2): each code point's full lowercase mapping, U+03A3 (GREEK CAPITAL LETTER SIGMA) in the context Final_Sigma mapping to U+03C2 (GREEK SMALL LETTER FINAL SIGMA). A new List.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-touppercase" name="toUppercase">
+    <emu-signature>toUppercase(_cps_: a List of code points): a List of code points</emu-signature>
+    <p>The code points of _cps_ mapped by toUppercase of the Unicode Default Case Conversion algorithm (The Unicode Standard, Section 3.13, Default Case Algorithms, R1): each code point's full uppercase mapping. A new List.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-string.prototype.tolowercase" steps="5" hashes="e1074a6cfc8664c68ea50b2a342e58daac3bd58b28690b4b515f716b67b7a564">
+    <emu-alg reading="definition">
+      1. Let _lowerText_ be toLowercase(_sText_).
+    </emu-alg>
+    <emu-note>
+      <p>toLowercase is the Unicode Default Case Conversion algorithm's (<emu-xref href="#prim-tolowercase"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-phrase id="ph-same-code-units" kind="condition">
+    <emu-pattern>_x_ and _y_ have the same length and the same code units in the same positions</emu-pattern>
+    <emu-params>_x_: a String, _y_: a String</emu-params>
+    <emu-alg>
+      1. If the length of _x_ ≠ the length of _y_, return *false*.
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _x_, in ascending order, do
+        1. If the code unit at index _i_ within _x_ is not the code unit at index _i_ within _y_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+  <emu-phrase id="ph-string-solely" kind="expression" rule="string-solely">
+    <emu-pattern>the String value consisting solely of _c_</emu-pattern>
+    <emu-params>_c_: a code unit</emu-params>
+    <emu-alg>
+      1. Return the String value consisting of _c_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-repeat-to-length" kind="expression">
+    <emu-pattern>the String value consisting of repeated concatenations of _s_ truncated to length _n_</emu-pattern>
+    <emu-params>_s_: a String, _n_: a non-negative integer</emu-params>
+    <emu-alg>
+      1. Assert: _s_ is not the empty String.
+      1. Let _r_ be StringRepeat(_s_, floor(_n_ / the length of _s_) + 1).
+      1. Return the substring of _r_ from 0 to _n_.
+    </emu-alg>
+  </emu-phrase>
+  <emu-phrase id="ph-copies-appended" kind="expression">
+    <emu-pattern>the String value that is made from _n_ copies of _s_ appended together</emu-pattern>
+    <emu-params>_n_: a non-negative integer, _s_: a String</emu-params>
+    <emu-alg>
+      1. Return StringRepeat(_s_, _n_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-primitive id="prim-stringrepeat" name="StringRepeat">
+    <emu-signature>StringRepeat(_s_: a String, _n_: a non-negative integer): a String</emu-signature>
+    <p>The String value that is made from _n_ copies of _s_ appended together: the string-concatenation of _n_ copies of _s_, the empty String for _n_ = 0 (<emu-xref href="#sec-ecmascript-language-types-string-type"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-stringtoolarge" name="StringTooLarge">
+    <emu-signature>StringTooLarge(_len_: a non-negative integer): a Boolean</emu-signature>
+    <p>Host-defined (under erratum StringMaximumLength): whether a String of length _len_ exceeds the implementation's maximum String length (at most 2<sup>53</sup> - 1; <emu-xref href="#sec-ecmascript-language-types-string-type"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-dollar-one-digit" kind="condition">
+    <emu-pattern>_t_ starts with *"$"* followed by 1 or more decimal digits</emu-pattern>
+    <emu-params>_t_: a String</emu-params>
+    <emu-alg>
+      1. If the length of _t_ &lt; 2, return *false*.
+      1. If the numeric value of the code unit at index 0 within _t_ ≠ 0x0024, return *false*.
+      1. If the numeric value of the code unit at index 1 within _t_ is in the inclusive interval from 0x0030 to 0x0039, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-dollar-two-digits" kind="condition">
+    <emu-pattern>_t_ starts with *"$"* followed by 2 or more decimal digits</emu-pattern>
+    <emu-params>_t_: a String</emu-params>
+    <emu-alg>
+      1. If the length of _t_ &lt; 3, return *false*.
+      1. If the numeric value of the code unit at index 0 within _t_ ≠ 0x0024, return *false*.
+      1. If the numeric value of the code unit at index 1 within _t_ is not in the inclusive interval from 0x0030 to 0x0039, return *false*.
+      1. If the numeric value of the code unit at index 2 within _t_ is in the inclusive interval from 0x0030 to 0x0039, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-sole-code-unit" kind="expression">
+    <emu-pattern>the sole code unit of _s_</emu-pattern>
+    <emu-params>_s_: a String</emu-params>
+    <emu-alg>
+      1. Assert: the length of _s_ is 1.
+      1. Return the code unit at index 0 within _s_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-in-base64-alphabet" kind="predicate" subject="_c_" literals="spelled">
+    <emu-pattern>is not an element of the standard base64 alphabet</emu-pattern>
+    <p>The alphabet is the definition of the standard base64 alphabet (dfn standard-base64-alphabet): "The standard base64 alphabet is *"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"*".</p>
+    <emu-params>_c_: a code unit</emu-params>
+    <emu-alg>
+      1. Let _alphabet_ be *"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"*.
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _alphabet_, in ascending order, do
+        1. If the code unit at index _i_ within _alphabet_ is _c_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+  <emu-phrase id="ph-utf8-encode" kind="expression">
+    <emu-pattern>the List of octets resulting by applying the UTF-8 transformation to _cp_</emu-pattern>
+    <emu-params>_cp_: a code point</emu-params>
+    <emu-alg>
+      1. Assert: _cp_ is not in the inclusive interval from 0xD800 to 0xDFFF.
+      1. If _cp_ ≤ 0x7F, return « _cp_ ».
+      1. If _cp_ ≤ 0x7FF, return « 0xC0 + floor(_cp_ / 64), 0x80 + (_cp_ modulo 64) ».
+      1. If _cp_ ≤ 0xFFFF, return « 0xE0 + floor(_cp_ / 4096), 0x80 + (floor(_cp_ / 64) modulo 64), 0x80 + (_cp_ modulo 64) ».
+      1. Return « 0xF0 + floor(_cp_ / 262144), 0x80 + (floor(_cp_ / 4096) modulo 64), 0x80 + (floor(_cp_ / 64) modulo 64), 0x80 + (_cp_ modulo 64) ».
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-utf8-decode" kind="expression">
+    <emu-pattern>the code point obtained by applying the UTF-8 transformation to _octets_, that is, from a List of octets into a 21-bit value</emu-pattern>
+    <emu-params>_octets_: a List of integers</emu-params>
+    <emu-alg>
+      1. Let _n_ be the number of elements in _octets_.
+      1. Assert: _n_ is in the inclusive interval from 1 to 4.
+      1. If _n_ = 1, return _octets_[0].
+      1. If _n_ = 2, let _cp_ be _octets_[0] modulo 32.
+      1. Else if _n_ = 3, let _cp_ be _octets_[0] modulo 16.
+      1. Else, let _cp_ be _octets_[0] modulo 8.
+      1. For each integer _k_ such that 1 ≤ _k_ &lt; _n_, in ascending order, do
+        1. Set _cp_ to _cp_ × 64 + (_octets_[_k_] modulo 64).
+      1. Return _cp_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-valid-utf8" kind="predicate" subject="_octets_">
+    <emu-pattern>does not contain a valid UTF-8 encoding of a Unicode code point</emu-pattern>
+    <emu-params>_octets_: a List of integers</emu-params>
+    <emu-alg>
+      1. Let _n_ be the number of elements in _octets_.
+      1. If _n_ is not in the inclusive interval from 1 to 4, return *true*.
+      1. Let _lead_ be _octets_[0].
+      1. If _n_ = 1 and _lead_ > 0x7F, return *true*.
+      1. If _n_ = 2 and _lead_ is not in the inclusive interval from 0xC0 to 0xDF, return *true*.
+      1. If _n_ = 3 and _lead_ is not in the inclusive interval from 0xE0 to 0xEF, return *true*.
+      1. If _n_ = 4 and _lead_ is not in the inclusive interval from 0xF0 to 0xF7, return *true*.
+      1. For each integer _k_ such that 1 ≤ _k_ &lt; _n_, in ascending order, do
+        1. If _octets_[_k_] is not in the inclusive interval from 0x80 to 0xBF, return *true*.
+      1. Let _cp_ be the code point obtained by applying the UTF-8 transformation to _octets_, that is, from a List of octets into a 21-bit value.
+      1. If _n_ = 2 and _cp_ &lt; 0x80, return *true*.
+      1. If _n_ = 3 and _cp_ &lt; 0x800, return *true*.
+      1. If _n_ = 4 and _cp_ &lt; 0x10000, return *true*.
+      1. If _cp_ > 0x10FFFF, return *true*.
+      1. If _cp_ is in the inclusive interval from 0xD800 to 0xDFFF, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-code-unit-replaced" kind="expression">
+    <emu-pattern>the String value that is the same as _s_ except that each occurrence of _c_ in _t_ has been replaced with the six code unit sequence _r_</emu-pattern>
+    <emu-params>_s_: a String, _c_: a code unit, _t_: a String, _r_: a String</emu-params>
+    <emu-alg>
+      1. Assert: _s_ is _t_.
+      1. Assert: the length of _r_ is 6.
+      1. Let _result_ be the empty String.
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _s_, in ascending order, do
+        1. If the code unit at index _i_ within _s_ is _c_, set _result_ to the string-concatenation of _result_ and _r_.
+        1. Else, set _result_ to the string-concatenation of _result_ and the substring of _s_ from _i_ to _i_ + 1.
+      1. Return _result_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-last-code-unit" kind="expression">
+    <emu-pattern>the last code unit of _s_</emu-pattern>
+    <emu-params>_s_: a String</emu-params>
+    <emu-alg>
+      1. Assert: _s_ is not the empty String.
+      1. Return the code unit at index the length of _s_ - 1 within _s_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-json-first-unit" kind="predicate" subject="_c_">
+    <emu-pattern>is not either an ASCII lowercase letter code unit (0x0061 through 0x007A, inclusive), an ASCII digit code unit (0x0030 through 0x0039, inclusive), 0x0022 (QUOTATION MARK), or 0x002D (HYPHEN-MINUS)</emu-pattern>
+    <emu-params>_c_: a code unit</emu-params>
+    <emu-alg>
+      1. If _c_ is in the inclusive interval from 0x0061 to 0x007A, return *false*.
+      1. If _c_ is in the inclusive interval from 0x0030 to 0x0039, return *false*.
+      1. If _c_ = 0x0022, return *false*.
+      1. If _c_ = 0x002D, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-json-last-unit" kind="predicate" subject="_c_">
+    <emu-pattern>is not either an ASCII lowercase letter code unit (0x0061 through 0x007A, inclusive), an ASCII digit code unit (0x0030 through 0x0039, inclusive), or 0x0022 (QUOTATION MARK)</emu-pattern>
+    <emu-params>_c_: a code unit</emu-params>
+    <emu-alg>
+      1. If _c_ is in the inclusive interval from 0x0061 to 0x007A, return *false*.
+      1. If _c_ is in the inclusive interval from 0x0030 to 0x0039, return *false*.
+      1. If _c_ = 0x0022, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-ascii-word-characters" kind="expression" rule="ascii-word" literals="spelled">
+    <emu-pattern>the ASCII word characters</emu-pattern>
+    <p>The String is the definition of the ASCII word characters (dfn ASCII-word-characters, sec-ecmascript-language-types-string-type): "every letter and number in the Unicode Basic Latin block along with U+005F (LOW LINE)", the String it then gives.</p>
+    <emu-params></emu-params>
+    <emu-alg>
+      1. Return *"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_"*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-upper-hex" kind="expression" rule="string-repr-upper-hex" literals="spelled">
+    <emu-pattern>the String representation of _n_, formatted as an uppercase hexadecimal number</emu-pattern>
+    <p>The digits are those of "an uppercase hexadecimal number" (Encode, sec-encode; escape, sec-escape-string): 0 through 9, then A through F for the values 10 through 15.</p>
+    <emu-params>_n_: a non-negative integer</emu-params>
+    <emu-alg>
+      1. If _n_ = 0, return *"0"*.
+      1. Let _digits_ be *"0123456789ABCDEF"*.
+      1. Let _s_ be the empty String.
+      1. Let _m_ be _n_.
+      1. Repeat, while _m_ > 0,
+        1. Let _d_ be _m_ modulo 16.
+        1. Set _s_ to the string-concatenation of the substring of _digits_ from _d_ to _d_ + 1 and _s_.
+        1. Set _m_ to floor(_m_ / 16).
+      1. Return _s_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-lower-hex" kind="expression" rule="string-repr-lower-hex">
+    <emu-pattern>the String representation of _n_, formatted as a lowercase hexadecimal number</emu-pattern>
+    <emu-params>_n_: a non-negative integer</emu-params>
+    <emu-alg>
+      1. Return the representation of _n_ using radix 16.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-decimal-string" kind="expression" rule="string-repr-decimal">
+    <emu-pattern>the String representation of _n_, formatted as a decimal number</emu-pattern>
+    <emu-params>_n_: a non-negative integer</emu-params>
+    <emu-alg>
+      1. Return the representation of _n_ using radix 10.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-units-not-in" kind="predicate" subject="_s_" rule="any-units-not-in" alternatives="all">
+    <emu-pattern>contains any code units which are not in _t_</emu-pattern>
+    <p>"code unit" and "code units" are the singular and plural of one noun.</p>
+    <emu-params>_t_: a String, _s_: a String</emu-params>
+    <emu-alg>
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _s_, in ascending order, do
+        1. If _t_ does not contain the substring of _s_ from _i_ to _i_ + 1, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-is-single-code-point" kind="predicate" subject="_s_" rule="is-single-cp">
+    <emu-pattern>is the single code point _c_</emu-pattern>
+    <p>A source text is the single code point _c_ when it is a sequence of exactly one code point, _c_.</p>
+    <emu-params>_c_: a code point, _s_: a List of code points</emu-params>
+    <emu-alg>
+      1. If the number of elements in _s_ is not 1, return *false*.
+      1. If _s_[0] is _c_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-same-code-point-twice" kind="predicate" subject="_s_" rule="same-cp-twice">
+    <emu-pattern>contains the same code point more than once</emu-pattern>
+    <emu-params>_s_: a List of code points</emu-params>
+    <emu-alg>
+      1. Let _seen_ be a new empty List.
+      1. For each element _c_ of _s_, do
+        1. If _seen_ contains _c_, return *true*.
+        1. Append _c_ to _seen_.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-code-point-also-in" kind="condition" rule="cp-also-in">
+    <emu-pattern>any code point in _a_ is also contained in _b_</emu-pattern>
+    <emu-params>_a_: a List of code points, _b_: a List of code points</emu-params>
+    <emu-alg>
+      1. For each element _c_ of _a_, do
+        1. If _b_ contains _c_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-code-points-of" kind="expression" rule="cps-of">
+    <emu-pattern>the code points of _s_</emu-pattern>
+    <emu-params>_s_: a List of code points</emu-params>
+    <emu-alg>
+      1. Return a copy of _s_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-surrogate-value" kind="predicate" subject="_cp_" rule="surrogate-value">
+    <emu-pattern>has the same numeric value as a leading surrogate or trailing surrogate</emu-pattern>
+    <emu-params>_cp_: a code point</emu-params>
+    <emu-alg>
+      1. If _cp_ is in the inclusive interval from 0xD800 to 0xDFFF, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-value-less-than" kind="predicate" subject="_cp_" rule="value-less-than">
+    <emu-pattern>has a numeric value less than _v_</emu-pattern>
+    <emu-params>_v_: a code unit or a code point, _cp_: a code point</emu-params>
+    <emu-alg>
+      1. If _cp_ &lt; _v_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-units-other-than" kind="predicate" subject="_s_" rule="any-units-other-than" alternatives="all">
+    <emu-pattern>contains any code unit other than _alts_</emu-pattern>
+    <p>"code unit" and "code units" are the singular and plural of one noun.</p>
+    <emu-params>_alts_: a List of Strings, _s_: a String</emu-params>
+    <emu-alg>
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _s_, in ascending order, do
+        1. If _alts_ does not contain the substring of _s_ from _i_ to _i_ + 1, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-points-other-than" kind="predicate" subject="_s_" rule="any-points-other-than" alternatives="all">
+    <emu-pattern>contains any code points other than _alts_</emu-pattern>
+    <p>"code point" and "code points" are the singular and plural of one noun.</p>
+    <emu-params>_alts_: a List of Strings, _s_: a String or a List of code points</emu-params>
+    <emu-alg>
+      1. If _s_ is a String, let _cps_ be StringToCodePoints(_s_); else let _cps_ be _s_.
+      1. For each element _cp_ of _cps_, do
+        1. If _alts_ does not contain CodePointsToString(« _cp_ »), return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-unit-more-than-once" kind="predicate" subject="_s_" rule="unit-more-than-once-units">
+    <emu-pattern>contains any code unit more than once</emu-pattern>
+    <emu-params>_s_: a String</emu-params>
+    <emu-alg>
+      1. Let _seen_ be a new empty List.
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _s_, in ascending order, do
+        1. Let _u_ be the code unit at index _i_ within _s_.
+        1. If _seen_ contains _u_, return *true*.
+        1. Append _u_ to _seen_.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-point-more-than-once" kind="predicate" subject="_s_" rule="unit-more-than-once-points">
+    <emu-pattern>contains any code point more than once</emu-pattern>
+    <emu-params>_s_: a String or a List of code points</emu-params>
+    <emu-alg>
+      1. If _s_ is a String, let _cps_ be StringToCodePoints(_s_); else let _cps_ be _s_.
+      1. Let _seen_ be a new empty List.
+      1. For each element _cp_ of _cps_, do
+        1. If _seen_ contains _cp_, return *true*.
+        1. Append _cp_ to _seen_.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-occurrences-of" kind="expression" rule="occurrences">
+    <emu-pattern>_n_ occurrences of _c_</emu-pattern>
+    <emu-params>_n_: a non-negative integer, _c_: a code unit</emu-params>
+    <emu-alg>
+      1. Return StringRepeat(the String value consisting solely of _c_, _n_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-first-code-units" kind="expression" rule="cus-first">
+    <emu-pattern>the first _k_ code units of _s_</emu-pattern>
+    <emu-params>_k_: a non-negative integer, _s_: a String</emu-params>
+    <emu-alg>
+      1. Assert: _k_ ≤ the length of _s_.
+      1. Return the substring of _s_ from 0 to _k_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-other-code-units" kind="expression" rule="cus-other" alternatives="all">
+    <emu-pattern>the other _k_ code units of _s_</emu-pattern>
+    <p>"the other _k_ code units" (after "the first …" of the same String) and "the remaining _k_ code units" (after "the first code unit") both name the last _k_ code units.</p>
+    <emu-params>_k_: a non-negative integer, _s_: a String</emu-params>
+    <emu-alg>
+      1. Assert: _k_ ≤ the length of _s_.
+      1. Return the substring of _s_ from the length of _s_ - _k_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-trim-leading" kind="expression" rule="trim-leading">
+    <emu-pattern>the String value that is a copy of _s_ with leading white space removed</emu-pattern>
+    <p>White space is the union of |WhiteSpace| and |LineTerminator| (TrimString's description), whose code points are RightHandSideCharacters(« |WhiteSpace|, |LineTerminator| »); each code point of _s_ is tested directly and a lone surrogate is not white space.</p>
+    <emu-params>_s_: a String</emu-params>
+    <emu-alg>
+      1. Let _ws_ be RightHandSideCharacters(« |WhiteSpace|, |LineTerminator| »).
+      1. Let _len_ be the length of _s_.
+      1. Let _i_ be 0.
+      1. Repeat, while _i_ &lt; _len_,
+        1. Let _cp_ be CodePointAt(_s_, _i_).
+        1. If _cp_.[[IsUnpairedSurrogate]] is *true* or _ws_ does not contain _cp_.[[CodePoint]], return the substring of _s_ from _i_.
+        1. If _cp_.[[CodeUnitCount]] is 2, set _i_ to _i_ + 2; else set _i_ to _i_ + 1.
+      1. Return the empty String.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-trim-trailing" kind="expression" rule="trim-trailing">
+    <emu-pattern>the String value that is a copy of _s_ with trailing white space removed</emu-pattern>
+    <p>White space is the union of |WhiteSpace| and |LineTerminator| (TrimString's description), whose code points are RightHandSideCharacters(« |WhiteSpace|, |LineTerminator| »); scanning backwards from the end of _s_ inspects each trailing UTF-16 code point and treats lone surrogates as non-white space.</p>
+    <emu-params>_s_: a String</emu-params>
+    <emu-alg>
+      1. Let _ws_ be RightHandSideCharacters(« |WhiteSpace|, |LineTerminator| »).
+      1. Let _end_ be the length of _s_.
+      1. Repeat, while _end_ > 0,
+        1. Let _u_ be the numeric value of the code unit at index _end_ - 1 within _s_.
+        1. Let _start_ be _end_ - 1.
+        1. If _end_ ≥ 2 and _u_ is in the inclusive interval from 0xDC00 to 0xDFFF, then
+          1. Let _hi_ be the numeric value of the code unit at index _end_ - 2 within _s_.
+          1. If _hi_ is in the inclusive interval from 0xD800 to 0xDBFF, set _start_ to _end_ - 2.
+        1. Let _cp_ be CodePointAt(_s_, _start_).
+        1. If _cp_.[[IsUnpairedSurrogate]] is *true* or _ws_ does not contain _cp_.[[CodePoint]], return the substring of _s_ from 0 to _end_.
+        1. Set _end_ to _start_.
+      1. Return the empty String.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-trim-both" kind="expression" rule="trim-both">
+    <emu-pattern>the String value that is a copy of _s_ with both leading and trailing white space removed</emu-pattern>
+    <emu-params>_s_: a String</emu-params>
+    <emu-alg>
+      1. Let _t_ be the String value that is a copy of _s_ with leading white space removed.
+      1. Return the String value that is a copy of _t_ with trailing white space removed.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-starts-dollar-quote" kind="condition">
+    <emu-pattern>_t_ starts with *"$'"* (0x0024 (DOLLAR SIGN) followed by 0x0027 (APOSTROPHE))</emu-pattern>
+    <p>The parenthetical names the literal's two code units; it adds no test.</p>
+    <emu-params>_t_: a String</emu-params>
+    <emu-alg>
+      1. If _t_ starts with *"$'"*, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-reading clause="sec-createdynamicfunction" steps="13.c.ii" hashes="a10bdb59b8990357303c5ecbbcca03a77a1388d063f821dcf58f808292e659c1">
+    <emu-alg reading="definition">
+      1. Set _joinedParamsString_ to the string-concatenation of _joinedParamsString_, *","*, and _nextArgString_.
+    </emu-alg>
+    <emu-note>
+      <p>*","* is the String of the one code unit 0x002C (COMMA), which the parenthetical names.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-primitive id="prim-unicodenormalize" name="UnicodeNormalize">
+    <emu-signature>UnicodeNormalize(_string_: a String, _form_: a String): a String</emu-signature>
+    <p>The String value that is the result of normalizing _string_ into the normalization form named by _form_, one of *"NFC"*, *"NFD"*, *"NFKC"* or *"NFKD"*, as specified in the latest Unicode Standard, Normalization Forms: StringToCodePoints(_string_) normalized, then CodePointsToString of the result.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-string.prototype.normalize" steps="7" hashes="beb7a988652f7422582b74533803e9a16fefe2f4c076bcfd714e259d0cbd021d">
+    <emu-alg reading="definition">
+      1. Let _normal_ be UnicodeNormalize(_string_, _form_).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-encodeforregexpescape" steps="5.e" hashes="deeda741e8efeb31d2b9bb6411999c355130c8f3bb993f48e915c6aafe75b14e">
+    <emu-alg reading="definition">
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _codeUnits_, in ascending order, do
+        1. Let _codeUnit_ be the code unit at index _i_ within _codeUnits_.
+        1. Set _escaped_ to the string-concatenation of _escaped_ and UnicodeEscape(_codeUnit_).
+    </emu-alg>
+    <emu-note>
+      <p>_codeUnits_ is a String; its code units are its elements, in order.</p>
+    </emu-note>
+  </emu-reading>
+
+</emu-clause>

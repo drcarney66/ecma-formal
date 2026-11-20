@@ -1,0 +1,9 @@
+/.lake/
+/target/
+/dist/
+/build/
+/result
+__pycache__/
+.DS_Store
+/todo/
+/.claude/

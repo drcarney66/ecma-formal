@@ -1,0 +1,18 @@
+// stopOnEntry: the first step after setup, ParseScript's step 1, alone on the stack.
+{"send": {"command": "initialize", "arguments": {"adapterID": "ecma-dbg"}}}
+{"expect": {"type": "response", "command": "initialize", "success": true, "body": {"supportsConfigurationDoneRequest": true, "supportsSpecBreakpoints": true, "exceptionBreakpointFilters": [{"filter": "stop"}]}}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "threadId": 1, "spec": {"alg": "ParseScript", "secId": "sec-parse-script", "path": "1", "text": "Let script be ParseText(sourceText, |Script|).", "depth": 1, "steps": 1}}}}
+{"send": {"command": "threads"}}
+{"expect": {"type": "response", "command": "threads", "success": true, "body": {"threads": [{"id": 1, "name": "agent"}]}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"totalFrames": 1, "stackFrames": [{"id": 0, "name": "ParseScript", "spec": {"secId": "sec-parse-script", "idx": 0, "path": "1", "text": "Let script be ParseText(sourceText, |Script|).", "kind": "steps", "run": 0}}]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true, "body": {"allThreadsContinued": true}}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 1", "exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

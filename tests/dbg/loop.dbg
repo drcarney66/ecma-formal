@@ -1,0 +1,40 @@
+// Statement stepping through loops: next stops at the for statement, at its head's
+// `let i = 0` (a LexicalDeclaration), then at the body's statement on each of the three
+// iterations; a while loop's statement body once.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "spec": {"alg": "ParseScript", "path": "1"}, "js": {"contexts": 1}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 1, "column": 1, "endLine": 1, "endColumn": 11, "lo": 0, "hi": 10, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 2, "column": 1, "endLine": 4, "endColumn": 2, "lo": 11, "hi": 55, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 2, "column": 6, "endLine": 2, "endColumn": 16, "lo": 16, "hi": 26, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 3, "column": 3, "endLine": 3, "endColumn": 13, "lo": 43, "hi": 53, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 3, "column": 3, "endLine": 3, "endColumn": 13, "lo": 43, "hi": 53, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 3, "column": 3, "endLine": 3, "endColumn": 13, "lo": 43, "hi": 53, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 5, "column": 1, "endLine": 5, "endColumn": 25, "lo": 56, "hi": 80, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 5, "column": 15, "endLine": 5, "endColumn": 25, "lo": 70, "hi": 80, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 1"}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

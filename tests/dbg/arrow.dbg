@@ -1,0 +1,27 @@
+// An arrow with an expression body: stepIn at the call stops at the ExpressionBody (its
+// Evaluation, a statement node); next returns to the call expression in the caller.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "spec": {"alg": "ParseScript", "path": "1"}, "js": {"contexts": 1}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 1, "column": 1, "endLine": 1, "endColumn": 23, "lo": 0, "hi": 22, "contexts": 2}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 2, "column": 1, "endLine": 2, "endColumn": 15, "lo": 23, "hi": 37, "contexts": 2}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "Evaluation", "path": "1"}, "js": {"line": 1, "column": 17, "endLine": 1, "endColumn": 22, "lo": 16, "hi": 21, "contexts": 3}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "spec": {"alg": "[[Call]]", "path": "8"}, "js": {"line": 2, "column": 9, "endLine": 2, "endColumn": 14, "lo": 31, "hi": 36, "contexts": 2, "statement": {"line": 2, "column": 1, "lo": 23, "hi": 37}}}}}
+{"send": {"command": "next", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "next", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: undefined"}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

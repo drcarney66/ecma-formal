@@ -1,0 +1,121 @@
+<!doctype html>
+<!-- The debugger's UI (tools/dbg/ui/app.mjs); served by tools/dbg/serve.py --page ui/index.html. The site's
+     debugger page (scripts/site_pages.py) is this body under the site's header, with data-root and data-engine set. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ecma-dbg</title>
+<link rel="stylesheet" href="style.css">
+<!-- Cross-origin isolation from a service worker where the server gives none; a no-op where it does. -->
+<script src="../coi-serviceworker.js"></script>
+</head>
+<body class="dbg" data-state="idle">
+<div id="dbg-head" class="dbg-ui">
+  <div id="controls">
+    <button id="btn-start" title="a new session on the program">▶ start</button>
+    <button id="btn-continue" title="F8">▶ continue (F8)</button>
+    <button id="btn-pause">⏸ pause</button>
+    <button id="btn-jsnext" title="F10: the next statement no deeper, or the caller">next (F10)</button>
+    <button id="btn-jsin" title="F11: the next statement">in (F11)</button>
+    <button id="btn-jsout" title="Shift+F11: out to the caller">out (⇧F11)</button>
+    <button id="btn-next" title="Alt+F10: the next spec step no deeper">step next (⌥F10)</button>
+    <button id="btn-in" title="Alt+F11: the next spec step">step in (⌥F11)</button>
+    <button id="btn-out" title="Alt+Shift+F11: the first spec step less deep">step out (⌥⇧F11)</button>
+    <button id="btn-instruction" title="F9: one transition">instruction (F9)</button>
+    <button id="btn-stop" title="end the session">■ stop</button>
+    <label><input type="checkbox" id="stop-on-entry"> stop on entry</label>
+  </div>
+  <div id="build-row">
+    <label for="build">Build</label>
+    <select id="build" title="the debugger's build: changing it reloads the page with the same example"></select>
+    <span id="build-note"></span>
+  </div>
+  <div id="status">loading</div>
+  <p id="narrow">The debugger's panes need a window at least 60rem wide; here they are stacked one under another.</p>
+</div>
+<div id="unsupported" hidden>
+  <h2>This browser cannot run the debugger</h2>
+  <p id="unsupported-why"></p>
+  <p id="unsupported-what"></p>
+  <p id="unsupported-examples"></p>
+  <pre id="unsupported-source" class="code" hidden></pre>
+</div>
+<div id="panes" class="dbg-ui">
+  <section id="source-pane" class="pane">
+    <h2>Source <span id="program-name"></span></h2>
+    <div class="tools">
+      <select id="examples"></select>
+      <input type="file" id="open-file" accept=".js,.mjs,text/javascript">
+      <button id="edit">edit</button>
+      <button id="apply" hidden>apply and start</button>
+      <button id="cancel" hidden>cancel</button>
+    </div>
+    <nav id="source-tabs" hidden></nav>
+    <div id="source" class="code"></div>
+    <textarea id="editor" class="code" spellcheck="false" hidden></textarea>
+  </section>
+  <section id="console-pane" class="pane">
+    <h2>Console <button id="clear-console">clear</button></h2>
+    <div id="console" class="code"></div>
+  </section>
+  <section id="jsstack-pane" class="pane">
+    <h2>JS stack <span id="jsstack-count"></span></h2>
+    <ol id="jsstack"></ol>
+  </section>
+  <section id="stack-pane" class="pane">
+    <h2>Spec stack <span id="stack-count"></span></h2>
+    <ol id="stack"></ol>
+    <button id="more-frames" hidden>more frames</button>
+  </section>
+  <section id="step-pane" class="pane">
+    <h2>Step</h2>
+    <div id="step"></div>
+  </section>
+  <section id="right-pane" class="pane">
+    <nav id="tabs">
+      <button data-tab="inspect" class="on">Inspector</button>
+      <button data-tab="heap">Heap</button>
+      <button data-tab="state">State</button>
+    </nav>
+    <div id="inspect-pane" class="tab">
+      <div id="diff"></div>
+      <ul id="inspect" class="tree"></ul>
+    </div>
+    <div id="heap-pane" class="tab" hidden>
+      <div class="tools">
+        <select id="heap-kind" title="the cells' kind">
+          <option value="">all kinds</option>
+          <option value="record">record</option>
+          <option value="list">list</option>
+          <option value="object">object</option>
+          <option value="env">env</option>
+        </select>
+        <button id="heap-prev" title="the previous page">◀</button>
+        <span id="heap-range"></span>
+        <button id="heap-next" title="the next page">▶</button>
+        <button id="heap-new" title="the cells new since the last pause">new</button>
+        <button id="heap-changed" title="the cells changed since the last pause">changed</button>
+        <input id="heap-addr" placeholder="#address" size="8">
+        <button id="heap-go">go</button>
+      </div>
+      <div id="heap-diff"></div>
+      <ul id="heap" class="tree"></ul>
+    </div>
+    <div id="state-pane" class="tab" hidden>
+      <div id="state"></div>
+    </div>
+  </section>
+  <section id="breakpoints-pane" class="pane">
+    <h2>Breakpoints</h2>
+    <ul id="breakpoints"></ul>
+    <div class="tools">
+      <input id="bp-alg" placeholder="algorithm: sec-id, sec-id#idx or name">
+      <input id="bp-path" placeholder="step (2.a)" size="6">
+      <button id="bp-add">add</button>
+    </div>
+    <div id="filters"></div>
+  </section>
+</div>
+<script type="module" src="app.mjs"></script>
+</body>
+</html>

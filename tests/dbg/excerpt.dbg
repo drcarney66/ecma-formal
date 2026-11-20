@@ -1,0 +1,26 @@
+// A frame's Parse Node: its production, span and excerpt (the program's text it covers), and the
+// frame's source position from the node's start. A frame without a node has no source.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": [{"alg": "sec-evaluatecall", "path": "3"}]}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "EvaluateCall", "path": "3"}}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"stackFrames": [{"id": 0, "name": "EvaluateCall", "line": 0, "column": 0}, {"id": 1, "name": "Evaluation", "source": {"name": "excerpt.js", "path": "${program}"}, "line": 4, "column": 1, "spec": {"secId": "sec-function-calls-runtime-semantics-evaluation", "path": "9", "node": {"production": "CallExpression : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]", "lo": 30, "hi": 34}}}, {"id": 2, "name": "Evaluation", "line": 4, "column": 1, "spec": {"node": {"lo": 30, "hi": 35}}}, {"id": 3, "name": "Evaluation", "line": 1, "column": 1, "spec": {"node": {"lo": 0, "hi": 35}}}, {"id": 4, "name": "ScriptEvaluation", "line": 0, "column": 0}]}}}
+{"send": {"command": "scopes", "arguments": {"frameId": 1}}}
+{"expect": {"type": "response", "command": "scopes", "success": true, "body": {"scopes": [{"name": "Slots"}, {"name": "Step", "variablesReference": "${=step}"}, {"name": "Node", "variablesReference": "${=node}"}, {"name": "Execution contexts"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${node}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "production", "value": "CallExpression : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]"}, {"name": "nonterminal", "value": "CallExpression"}, {"name": "span", "value": "[30, 34)"}, {"name": "lo", "value": "30"}, {"name": "hi", "value": "34"}, {"name": "parse"}, {"name": "excerpt", "value": "f(2)", "type": "source text"}, {"name": "line", "value": "4"}, {"name": "column", "value": "1"}]}}}
+// The Step scope: the pinned text, where it is, and the live draft's link (D12).
+{"send": {"command": "variables", "arguments": {"variablesReference": "${step}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "text", "value": "Return ? EvaluateCall(func, ref, args, tailCall)."}, {"name": "algorithm", "value": "Evaluation"}, {"name": "secId", "value": "sec-function-calls-runtime-semantics-evaluation"}, {"name": "path", "value": "9"}, {"name": "kind", "value": "steps rc boundary"}, {"name": "run", "value": "0"}, {"name": "link", "value": "https://tc39.es/ecma262/#sec-function-calls-runtime-semantics-evaluation", "type": "live draft; may differ from the pinned text"}, {"name": "control", "value": "waiting for its callee"}]}}}
+// The innermost frame has no Parse Node: no Node scope.
+{"send": {"command": "scopes", "arguments": {"frameId": 0}}}
+{"expect": {"type": "response", "command": "scopes", "success": true, "body": {"scopes": [{"name": "Slots"}, {"name": "Step"}, {"name": "Execution contexts"}]}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

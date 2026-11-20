@@ -1,0 +1,25 @@
+// `pause` while a long run goes on: the client sets the poll channel, the engine reads it every
+// 4096 transitions and pauses (reason `pause`), then answers the request; `continue` clears the
+// channel, so the run goes on until a second `pause`. The loops run for about ten seconds
+// (8,100 iterations, about a millisecond each), long enough for both pauses.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"sleep": 1000}
+{"send": {"command": "pause", "arguments": {"threadId": 1}}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "pause", "threadId": 1}}}
+{"expect": {"type": "response", "command": "pause", "success": true}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1, "levels": 1}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"sleep": 500}
+{"send": {"command": "pause", "arguments": {"threadId": 1}}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "pause", "threadId": 1}}}
+{"expect": {"type": "response", "command": "pause", "success": true}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

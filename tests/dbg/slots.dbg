@@ -1,0 +1,37 @@
+// Slots by name at a known step: OrdinaryGet 3, for `o` (the global object's binding), then
+// for `o.x`. The Slots scope lists the algorithm's variables as the frame holds them (the ones
+// not yet bound read `unbound`, D11); a Record's slot expands to its sort, then its fields
+// (address + 1).
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true, "body": {"exceptionBreakpointFilters": [{"filter": "stop"}, {"filter": "throw"}, {"filter": "debugger"}]}}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": [{"alg": "OrdinaryGet", "path": "3"}]}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "OrdinaryGet", "path": "3", "text": "If IsDataDescriptor(propertyDesc) is true, return propertyDesc.[[Value]]."}}}}
+{"send": {"command": "scopes", "arguments": {"frameId": 0}}}
+{"expect": {"type": "response", "command": "scopes", "success": true, "body": {"scopes": [{"name": "Slots", "variablesReference": "${=slots}", "presentationHint": "locals", "namedVariables": 6}, {"name": "Step"}, {"name": "Execution contexts"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${slots}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "obj", "type": "Object"}, {"name": "propertyKey", "value": "\"o\"", "type": "String", "variablesReference": 0}, {"name": "receiver"}, {"name": "propertyDesc", "type": "Property Descriptor"}, {"name": "parent", "value": "unbound", "type": "unbound"}, {"name": "getter", "value": "unbound"}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "OrdinaryGet", "path": "3"}}}}
+{"send": {"command": "scopes", "arguments": {"frameId": 0}}}
+{"expect": {"type": "response", "command": "scopes", "success": true, "body": {"scopes": [{"name": "Slots", "variablesReference": "${=slots}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${slots}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "obj", "value": "${=o}", "variablesReference": "${=oref}"}, {"name": "propertyKey", "value": "\"x\""}, {"name": "receiver", "value": "${o}", "variablesReference": "${oref}"}, {"name": "propertyDesc", "type": "Property Descriptor", "variablesReference": "${=desc}"}, {"name": "parent", "value": "unbound"}, {"name": "getter", "value": "unbound"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${desc}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "sort", "value": "Property Descriptor"}, {"name": "[[Value]]", "value": "1", "type": "Number"}, {"name": "[[Writable]]", "value": "true", "type": "Boolean"}, {"name": "[[Enumerable]]", "value": "true"}, {"name": "[[Configurable]]", "value": "true"}]}}}
+{"send": {"command": "setSpecBreakpoints", "arguments": {"breakpoints": []}}}
+{"expect": {"type": "response", "command": "setSpecBreakpoints", "success": true}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 1", "exitCode": 0}}}
+// Outside a pause, the views are refused.
+{"send": {"command": "variables", "arguments": {"variablesReference": "${slots}"}}}
+{"expect": {"type": "response", "command": "variables", "success": false, "message": "not paused"}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

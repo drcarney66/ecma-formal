@@ -1,0 +1,490 @@
+<emu-clause id="formal-memory">
+  <h1>Data Blocks, Bytes and Buffers</h1>
+  <p>The notation of byte Lists, Data Blocks and buffer slots that the steps use without defining it. A byte is an integer in the inclusive interval from 0 to 255; the bytes of a little-endian encoding are least significant first.</p>
+
+  <emu-phrase id="ph-bytes-decode-binary16" kind="expression" rule="bytes-decode-binary16">
+    <emu-pattern>the byte elements of _bytes_ concatenated and interpreted as a little-endian bit string encoding of an IEEE 754-2019 binary16 value</emu-pattern>
+    <p>Every binary16 value is a Number value; every NaN encoding gives *NaN*.</p>
+    <emu-params>_bytes_: a List of byte values</emu-params>
+    <emu-alg>
+      1. Assert: the number of elements in _bytes_ is 2.
+      1. Let _n_ be 0.
+      1. Let _place_ be 1.
+      1. For each element _b_ of _bytes_, do
+        1. Set _n_ to _n_ + _b_ × _place_.
+        1. Set _place_ to _place_ × 256.
+      1. Let _sign_ be floor(_n_ / 2<sup>15</sup>).
+      1. Let _biased_ be floor(_n_ / 2<sup>10</sup>) modulo 2<sup>5</sup>.
+      1. Let _fraction_ be _n_ modulo 2<sup>10</sup>.
+      1. If _biased_ = 2<sup>5</sup> - 1, then
+        1. If _fraction_ ≠ 0, return *NaN*.
+        1. If _sign_ = 1, return *-∞*<sub>𝔽</sub>.
+        1. Return *+∞*<sub>𝔽</sub>.
+      1. If _biased_ = 0, let _v_ be _fraction_ × 2<sup>-24</sup>; else let _v_ be (2<sup>10</sup> + _fraction_) × 2<sup>_biased_ - 25</sup>.
+      1. If _sign_ = 1, then
+        1. If _v_ = 0, return *-0*<sub>𝔽</sub>.
+        1. Return 𝔽(-_v_).
+      1. Return 𝔽(_v_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-bytes-decode-binary32" kind="expression" rule="bytes-decode-binary32">
+    <emu-pattern>the byte elements of _bytes_ concatenated and interpreted as a little-endian bit string encoding of an IEEE 754-2019 binary32 value</emu-pattern>
+    <p>Every binary32 value is a Number value; every NaN encoding gives *NaN*.</p>
+    <emu-params>_bytes_: a List of byte values</emu-params>
+    <emu-alg>
+      1. Assert: the number of elements in _bytes_ is 4.
+      1. Let _n_ be 0.
+      1. Let _place_ be 1.
+      1. For each element _b_ of _bytes_, do
+        1. Set _n_ to _n_ + _b_ × _place_.
+        1. Set _place_ to _place_ × 256.
+      1. Let _sign_ be floor(_n_ / 2<sup>31</sup>).
+      1. Let _biased_ be floor(_n_ / 2<sup>23</sup>) modulo 2<sup>8</sup>.
+      1. Let _fraction_ be _n_ modulo 2<sup>23</sup>.
+      1. If _biased_ = 2<sup>8</sup> - 1, then
+        1. If _fraction_ ≠ 0, return *NaN*.
+        1. If _sign_ = 1, return *-∞*<sub>𝔽</sub>.
+        1. Return *+∞*<sub>𝔽</sub>.
+      1. If _biased_ = 0, let _v_ be _fraction_ × 2<sup>-149</sup>; else let _v_ be (2<sup>23</sup> + _fraction_) × 2<sup>_biased_ - 150</sup>.
+      1. If _sign_ = 1, then
+        1. If _v_ = 0, return *-0*<sub>𝔽</sub>.
+        1. Return 𝔽(-_v_).
+      1. Return 𝔽(_v_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-bytes-decode-binary64" kind="expression" rule="bytes-decode-binary64">
+    <emu-pattern>the byte elements of _bytes_ concatenated and interpreted as a little-endian bit string encoding of an IEEE 754-2019 binary64 value</emu-pattern>
+    <p>A binary64 value is a Number value; every NaN encoding gives *NaN*.</p>
+    <emu-params>_bytes_: a List of byte values</emu-params>
+    <emu-alg>
+      1. Assert: the number of elements in _bytes_ is 8.
+      1. Let _n_ be 0.
+      1. Let _place_ be 1.
+      1. For each element _b_ of _bytes_, do
+        1. Set _n_ to _n_ + _b_ × _place_.
+        1. Set _place_ to _place_ × 256.
+      1. Let _sign_ be floor(_n_ / 2<sup>63</sup>).
+      1. Let _biased_ be floor(_n_ / 2<sup>52</sup>) modulo 2<sup>11</sup>.
+      1. Let _fraction_ be _n_ modulo 2<sup>52</sup>.
+      1. If _biased_ = 2<sup>11</sup> - 1, then
+        1. If _fraction_ ≠ 0, return *NaN*.
+        1. If _sign_ = 1, return *-∞*<sub>𝔽</sub>.
+        1. Return *+∞*<sub>𝔽</sub>.
+      1. If _biased_ = 0, let _v_ be _fraction_ × 2<sup>-1074</sup>; else let _v_ be (2<sup>52</sup> + _fraction_) × 2<sup>_biased_ - 1075</sup>.
+      1. If _sign_ = 1, then
+        1. If _v_ = 0, return *-0*<sub>𝔽</sub>.
+        1. Return 𝔽(-_v_).
+      1. Return 𝔽(_v_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-bytes-decode-signed" kind="expression" rule="bytes-decode-signed">
+    <emu-pattern>the byte elements of _bytes_ concatenated and interpreted as a bit string encoding of a binary little-endian two's complement number of bit length _len_</emu-pattern>
+    <emu-params>_bytes_: a List of byte values, _len_: a positive integer</emu-params>
+    <emu-alg>
+      1. Assert: _len_ = 8 × the number of elements in _bytes_.
+      1. Let _n_ be 0.
+      1. Let _place_ be 1.
+      1. For each element _b_ of _bytes_, do
+        1. Set _n_ to _n_ + _b_ × _place_.
+        1. Set _place_ to _place_ × 256.
+      1. If _n_ ≥ 2<sup>_len_ - 1</sup>, return _n_ - 2<sup>_len_</sup>.
+      1. Return _n_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-bytes-decode-unsigned" kind="expression" rule="bytes-decode-unsigned">
+    <emu-pattern>the byte elements of _bytes_ concatenated and interpreted as a bit string encoding of an unsigned little-endian binary number</emu-pattern>
+    <emu-params>_bytes_: a List of byte values</emu-params>
+    <emu-alg>
+      1. Let _n_ be 0.
+      1. Let _place_ be 1.
+      1. For each element _b_ of _bytes_, do
+        1. Set _n_ to _n_ + _b_ × _place_.
+        1. Set _place_ to _place_ × 256.
+      1. Return _n_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-sufficient-bytes" kind="condition" rule="sufficient-bytes">
+    <emu-pattern>There are sufficient bytes in _arrayBuffer_ starting at _byteIndex_ to represent a value of _type_</emu-pattern>
+    <p>The bytes in a buffer are those of its [[ArrayBufferData]] Data Block; a value of a TypedArray element type takes that type's Element Size bytes.</p>
+    <emu-params>_arrayBuffer_: an ArrayBuffer or a SharedArrayBuffer, _byteIndex_: a non-negative integer, _type_: a TypedArray element type</emu-params>
+    <emu-alg>
+      1. Let _block_ be _arrayBuffer_.[[ArrayBufferData]].
+      1. Let _elementSize_ be the Element Size value specified in <emu-xref href="#table-the-typedarray-constructors"></emu-xref> for Element Type _type_.
+      1. If _byteIndex_ + _elementSize_ ≤ the number of bytes in _block_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-list-of-length" kind="expression" rule="list-of-length">
+    <emu-pattern>a List of length _n_ whose elements are _l_</emu-pattern>
+    <emu-params>_n_: a non-negative integer, _l_: a List</emu-params>
+    <emu-alg>
+      1. Assert: the number of elements in _l_ is _n_.
+      1. Return a copy of _l_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-bytes-from" kind="expression" rule="bytes-from-at">
+    <emu-pattern>the sequence of _n_ bytes starting with _block_[_i_]</emu-pattern>
+    <emu-params>_n_: a non-negative integer, _block_: a Data Block, _i_: a non-negative integer</emu-params>
+    <emu-alg>
+      1. Return a List whose elements are bytes from _block_ at indices in the interval from _i_ (inclusive) to _i_ + _n_ (exclusive).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-append-fields" kind="step" rule="append-fields">
+    <emu-pattern>Append _fields_ to _l_.</emu-pattern>
+    <emu-params>_fields_: a List of internal slot names, _l_: a List</emu-params>
+    <emu-alg>
+      1. For each element _f_ of _fields_, do
+        1. Append _f_ to _l_.
+      1. Return ~unused~.
+    </emu-alg>
+  </emu-phrase>
+  <emu-phrase id="ph-no-waiter-with" kind="condition">
+    <emu-pattern>There is no Waiter Record in _l_ whose [[PromiseCapability]] field is _p_ and whose [[AgentSignifier]] field is _a_</emu-pattern>
+    <p>No element of _l_ has both fields equal to the ones named.</p>
+    <emu-params>_l_: a List of Waiter Records, _p_: a PromiseCapability Record or ~blocking~, _a_: an agent signifier</emu-params>
+    <emu-alg>
+      1. For each element _w_ of _l_, do
+        1. If _w_.[[PromiseCapability]] is _p_ and _w_.[[AgentSignifier]] is _a_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+  <emu-reading clause="sec-composewriteeventbytes" steps="3.a" hashes="a3e6a7bf1e526cbe9245688ce52a8cfba4dd814accc1dc51401428d3ca6a146f">
+    <emu-alg reading="definition">
+      1. Assert: _writeEvent_.[[ByteIndex]] ≤ _byteLocation_ &lt; _writeEvent_.[[ByteIndex]] + _writeEvent_.[[ElementSize]].
+    </emu-alg>
+    <emu-note>
+      <p>The memory range of an event is the integers from its [[ByteIndex]] (inclusive) to [[ByteIndex]] + [[ElementSize]] (exclusive) (<emu-xref href="#sec-memory-model-fundamentals"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-copydatablockbytes" steps="1" hashes="ae447756f6c0aeaeca194f73853e257b7fed5752a74fbc37d351ff5f6be5e5be">
+    <emu-alg reading="definition">
+      1. Assert: _fromBlock_ is not _toBlock_.
+    </emu-alg>
+    <emu-note>
+      <p>Two blocks are distinct values when they are not the same value.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-getmodifysetvalueinbuffer" steps="3" hashes="db75a12dadebb9e2e48ccfc3ca34e7d2bebd407e4a4e78275f075104a07b1758">
+    <emu-alg reading="definition">
+      1. If IsBigIntElementType(_type_) is *true*, then
+        1. Assert: _value_ is a BigInt.
+      1. Else,
+        1. Assert: _value_ is a Number.
+    </emu-alg>
+    <emu-note>
+      <p>The two cases of the step, as an If step.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-getvaluefrombuffer" steps="7" hashes="3df0abb7f394b0928804842aa3f54db7aa313bbf67bfa441e267ae9f3a22ece6">
+    <emu-alg reading="definition">
+      1. Assert: the number of elements in _rawValue_ is _elementSize_.
+    </emu-alg>
+    <emu-note>
+      <p>The step's condition, unchanged.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-getwaiterlist" steps="1" hashes="f8bbf25dcbd985144aec2cb7831496e69c8bc8998797d51325ff9c867946b785">
+    <emu-alg reading="definition">
+      1. Assert: 0 ≤ _i_ &lt; the number of bytes in _block_ and 0 ≤ _i_ + 3 &lt; the number of bytes in _block_.
+    </emu-alg>
+    <emu-note>
+      <p>A valid byte offset within the memory of a block is an index of one of its bytes.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-setvalueinbuffer" steps="3" hashes="db75a12dadebb9e2e48ccfc3ca34e7d2bebd407e4a4e78275f075104a07b1758">
+    <emu-alg reading="definition">
+      1. If IsBigIntElementType(_type_) is *true*, then
+        1. Assert: _value_ is a BigInt.
+      1. Else,
+        1. Assert: _value_ is a Number.
+    </emu-alg>
+    <emu-note>
+      <p>The two cases of the step, as an If step.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-tear-free-aligned-reads" steps="1.a.i" hashes="43326e0a76c53f72790a2a3bd0d47d1222107d477bc6e854a0e21627dad78a72">
+    <emu-alg reading="definition">
+      1. Assert: the remainder of dividing _readEvent_.[[ByteIndex]] by _readEvent_.[[ElementSize]] is 0.
+    </emu-alg>
+    <emu-note>
+      <p>The step's condition, unchanged.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-phrase id="ph-list-of-write-events" kind="predicate" subject="_l_">
+    <emu-pattern>is a List of WriteSharedMemory or ReadModifyWriteSharedMemory events with length equal to _n_</emu-pattern>
+    <p>The element type and the length, as two conditions.</p>
+    <emu-params>_n_: a non-negative integer, _l_: a List</emu-params>
+    <emu-alg>
+      1. If the number of elements in _l_ ≠ _n_, return *false*.
+      1. For each element _w_ of _l_, do
+        1. If _w_ is not a WriteSharedMemory event and _w_ is not a ReadModifyWriteSharedMemory event, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+  <emu-reading clause="sec-frombase64" steps="10.a" hashes="1b9929f2548c45aeee061728747a5bd59d0878c6c53e153d65d3f7548360d3c0">
+    <emu-alg reading="definition">
+      1. Assert: the number of elements in _bytes_ modulo 3 = 0.
+    </emu-alg>
+    <emu-note>
+      <p>Evenly divisible by 3: the remainder modulo 3 is 0.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-decode" steps="4.c.viii.5" hashes="64f4488a3d3da88a1c687479449ee42c818bd902bf35eab330926187d60123d9">
+    <emu-alg reading="definition">
+      1. Assert: the number of elements in _octets_ is _n_.
+    </emu-alg>
+    <emu-note>
+      <p>The length of a List is its number of elements.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-phrase id="ph-overlapping-memory-ranges" kind="condition">
+    <emu-pattern>_e_ and _f_ have overlapping memory ranges</emu-pattern>
+    <p>Overlapping memory ranges (<emu-xref href="#sec-memory-model-fundamentals"></emu-xref>): the same [[Block]], ranges not equal, and a common byte index; an event's memory range is the integers from its [[ByteIndex]] (inclusive) to [[ByteIndex]] + [[ElementSize]] (exclusive).</p>
+    <emu-params>_e_: a Shared Data Block event, _f_: a Shared Data Block event</emu-params>
+    <emu-alg>
+      1. If _e_.[[Block]] is not _f_.[[Block]], return *false*.
+      1. If _e_.[[ByteIndex]] = _f_.[[ByteIndex]] and _e_.[[ElementSize]] = _f_.[[ElementSize]], return *false*.
+      1. If _e_.[[ByteIndex]] &lt; _f_.[[ByteIndex]] + _f_.[[ElementSize]] and _f_.[[ByteIndex]] &lt; _e_.[[ByteIndex]] + _e_.[[ElementSize]], return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-disjoint-memory-ranges" kind="condition">
+    <emu-pattern>_e_ and _f_ do not have disjoint memory ranges</emu-pattern>
+    <p>Disjoint memory ranges (<emu-xref href="#sec-memory-model-fundamentals"></emu-xref>): not the same [[Block]], or ranges neither equal nor overlapping; ranges are equal when [[Block]], [[ByteIndex]] and [[ElementSize]] are the same.</p>
+    <emu-params>_e_: a Shared Data Block event, _f_: a Shared Data Block event</emu-params>
+    <emu-alg>
+      1. If _e_.[[Block]] is not _f_.[[Block]], return *false*.
+      1. If _e_.[[ByteIndex]] = _f_.[[ByteIndex]] and _e_.[[ElementSize]] = _f_.[[ElementSize]], return *true*.
+      1. If _e_ and _f_ have overlapping memory ranges, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-the-case" kind="condition" rule="not-the-case" alternatives="all">
+    <emu-pattern>it is not the case that _c_</emu-pattern>
+    <p>"both" only announces the conjunction that follows; with or without it, the condition is the negation of _c_.</p>
+    <emu-params>_c_: a Boolean</emu-params>
+    <emu-alg>
+      1. If _c_ is *true*, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-reading clause="sec-races" steps="1.a.i" hashes="c831c5ccb468d7a831d7baf3e4ed00a07b4540b017e029dc82e1a21441be6494">
+    <emu-alg reading="definition">
+      1. If _eventA_ is a WriteSharedMemory event or _eventA_ is a ReadModifyWriteSharedMemory event, then
+        1. If _eventB_ is a WriteSharedMemory event or _eventB_ is a ReadModifyWriteSharedMemory event, then
+          1. If _eventA_ and _eventB_ do not have disjoint memory ranges, return *true*.
+    </emu-alg>
+    <emu-note>
+      <p>The step's three conditions as nested Ifs; "either a WriteSharedMemory or ReadModifyWriteSharedMemory event" is one of the two event kinds.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-valid-chosen-reads" steps="1.g" hashes="58bd9d3b6e41441cf90a8d7d40b69045f0ce35f7d9ec016015e6b5ddf55a4130">
+    <emu-alg reading="definition">
+      1. Let _someDiffers_ be *false*.
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; _chosenLength_, in ascending order, do
+        1. If _chosenValue_[_i_] ≠ _readValue_[_i_], set _someDiffers_ to *true*.
+      1. If _someDiffers_ is *true*, then
+        1. Return *false*.
+    </emu-alg>
+    <emu-note>
+      <p>"for some integer _i_ in the interval": a flag set by a loop over the interval, then the step's If.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-phrase id="ph-new-data-block" kind="expression" rule="new-data-block">
+    <emu-pattern>a new Data Block value consisting of _n_ bytes</emu-pattern>
+    <p>A Data Block value is created with a fixed number of bytes that each have the initial value 0 (<emu-xref href="#sec-data-blocks"></emu-xref>).</p>
+    <emu-params>_n_: a non-negative integer</emu-params>
+    <emu-alg>
+      1. Return NewDataBlock(_n_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-primitive id="prim-newdatablock" name="NewDataBlock">
+    <emu-signature>NewDataBlock(_n_: a non-negative integer): a Data Block</emu-signature>
+    <p>A new Data Block of _n_ bytes, each 0 (<emu-xref href="#sec-data-blocks"></emu-xref>): a new Data Block cell of the store holding the model's _n_ zero bytes (`bytesZero`).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-setallbytes" name="SetAllBytes">
+    <emu-signature>SetAllBytes(_block_: a Data Block, _v_: a byte value): ~unused~</emu-signature>
+    <p>Sets every byte of _block_ to _v_: its Data Block cell of the store has every byte set to _v_ (`bytesFill`), preserving its length.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-canallocate" name="CanAllocate">
+    <emu-signature>CanAllocate(_n_: a non-negative integer, _shared_: a Boolean): a Boolean</emu-signature>
+    <p>Whether it is possible to create a Data Block (if _shared_ is *true*, a Shared Data Block) consisting of _n_ bytes: the host's fact, which the specification does not constrain (<emu-xref href="#sec-createbytedatablock"></emu-xref>, <emu-xref href="#sec-createsharedbytedatablock"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-createbytedatablock" steps="2" hashes="26fc4ecefb1a09f7e630eb1477b0133241f6bca725bda64f40c3cbe26b9b0f15">
+    <emu-alg reading="definition">
+      1. If CanAllocate(_size_, *false*) is *false*, throw a *RangeError* exception.
+      1. Let _dataBlock_ be a new Data Block value consisting of _size_ bytes.
+    </emu-alg>
+  </emu-reading>
+
+  <emu-primitive id="prim-designateshared" name="DesignateShared">
+    <emu-signature>DesignateShared(_block_: a Data Block): a Shared Data Block</emu-signature>
+    <p>_block_, a Data Block that no value refers to yet, designated a Shared Data Block (<emu-xref href="#sec-data-blocks"></emu-xref>): from then on it is a Shared Data Block, with the same bytes.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-createsharedbytedatablock" steps="1" hashes="1ec2e49eac89aa480db680a60234e0e8d005893599379aaf518df5faaa50ebf7">
+    <emu-alg reading="definition">
+      1. If CanAllocate(_size_, *true*) is *false*, throw a *RangeError* exception.
+      1. Let _dataBlock_ be DesignateShared(a new Data Block value consisting of _size_ bytes).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-clause id="formal-singleagentreadbytes" type="abstract operation">
+    <h1>
+      SingleAgentReadBytes (
+        _execution_: a candidate execution,
+        _eventsRecord_: an Agent Events Record,
+        _block_: a Shared Data Block,
+        _byteIndex_: a non-negative integer,
+        _elementSize_: a non-negative integer,
+      ): a List of byte values
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The bytes that a read of _elementSize_ bytes of _block_ from _byteIndex_, appended next to _eventsRecord_.[[EventList]], reads in a valid execution when _eventsRecord_ is the only Agent Events Record of _execution_: each byte from the last WriteSharedMemory or ReadModifyWriteSharedMemory event of the [[EventList]] that has it in its memory range, as ComposeWriteEventBytes composes it.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _bytes_ be a new empty List.
+      1. For each integer _byteLocation_ such that _byteIndex_ ≤ _byteLocation_ &lt; _byteIndex_ + _elementSize_, in ascending order, do
+        1. Let _latest_ be ~empty~.
+        1. For each element _event_ of _eventsRecord_.[[EventList]], do
+          1. If _event_ is a WriteSharedMemory event or _event_ is a ReadModifyWriteSharedMemory event, then
+            1. If _event_.[[Block]] is _block_ and _event_.[[ByteIndex]] ≤ _byteLocation_ and _byteLocation_ &lt; _event_.[[ByteIndex]] + _event_.[[ElementSize]], set _latest_ to _event_.
+        1. Assert: _latest_ is not ~empty~.
+        1. Let _payloadIndex_ be _byteLocation_ - _latest_.[[ByteIndex]].
+        1. If _latest_ is a WriteSharedMemory event, then
+          1. Append _latest_.[[Payload]][_payloadIndex_] to _bytes_.
+        1. Else,
+          1. Let _chosenValueRecord_ be the element of _execution_.[[ChosenValues]] whose [[Event]] field is _latest_.
+          1. Let _modifyOp_ be _latest_.[[ModifyOp]].
+          1. Let _bytesModified_ be _modifyOp_(_chosenValueRecord_.[[ChosenValue]], _latest_.[[Payload]]).
+          1. Append _bytesModified_[_payloadIndex_] to _bytes_.
+      1. Return _bytes_.
+    </emu-alg>
+    <emu-note>
+      <p>With one agent, is-agent-order-before is the List order of its [[EventList]] (spec.html 53198) and happens-before contains it (53286), so it is a strict total order on the events. Coherent reads then forbid reading a byte from a later write (53329) or from a write followed by another write of the byte before the read (53331); every byte has a write, the ~init~ events of CreateSharedByteDataBlock. Valid chosen reads make the chosen value the value read (53308-53315), and a ReadModifyWriteSharedMemory event writes [[ModifyOp]] of its chosen value and [[Payload]] (53158). The value is the only one a valid execution allows (by agent order alone). With more than one agent the choice stays open, outside the base layer.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-primitive id="prim-choosereadsbytesfrom" name="ChooseReadsBytesFrom">
+    <emu-signature>ChooseReadsBytesFrom(_execution_: a candidate execution, _eventsRecord_: an Agent Events Record, _block_: a Shared Data Block, _byteIndex_: a non-negative integer, _elementSize_: a non-negative integer): a List of either WriteSharedMemory or ReadModifyWriteSharedMemory events</emu-signature>
+    <p>The host's choice of reads-bytes-from (<emu-xref href="#sec-reads-bytes-from"></emu-xref>) for a read of _elementSize_ bytes of _block_ from _byteIndex_ that the surrounding agent appends next to _eventsRecord_.[[EventList]]: a new List of _elementSize_ events of the [[EventList]]s of _execution_.[[EventsRecords]], the one at index _i_ a WriteSharedMemory or ReadModifyWriteSharedMemory event whose [[Block]] is _block_ and whose memory range contains _byteIndex_ + _i_, such that _execution_ with the read has a valid execution in which the read reads those bytes from them (<emu-xref href="#sec-valid-executions"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-clause id="formal-choosesharedbytes" type="abstract operation">
+    <h1>
+      ChooseSharedBytes (
+        _execution_: a candidate execution,
+        _eventsRecord_: an Agent Events Record,
+        _block_: a Shared Data Block,
+        _byteIndex_: a non-negative integer,
+        _elementSize_: a non-negative integer,
+      ): a List of byte values
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The bytes that a read of _elementSize_ bytes of _block_ from _byteIndex_, appended next to _eventsRecord_.[[EventList]], reads when _execution_ has more than one Agent Events Record: each byte from the write event the host chooses for it (ChooseReadsBytesFrom), as ComposeWriteEventBytes composes it.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _writes_ be ChooseReadsBytesFrom(_execution_, _eventsRecord_, _block_, _byteIndex_, _elementSize_).
+      1. Let _bytes_ be a new empty List.
+      1. Let _byteLocation_ be _byteIndex_.
+      1. For each element _writeEvent_ of _writes_, do
+        1. Let _payloadIndex_ be _byteLocation_ - _writeEvent_.[[ByteIndex]].
+        1. If _writeEvent_ is a WriteSharedMemory event, then
+          1. Append _writeEvent_.[[Payload]][_payloadIndex_] to _bytes_.
+        1. Else,
+          1. Let _chosenValueRecord_ be the element of _execution_.[[ChosenValues]] whose [[Event]] field is _writeEvent_.
+          1. Let _modifyOp_ be _writeEvent_.[[ModifyOp]].
+          1. Let _bytesModified_ be _modifyOp_(_chosenValueRecord_.[[ChosenValue]], _writeEvent_.[[Payload]]).
+          1. Append _bytesModified_[_payloadIndex_] to _bytes_.
+        1. Set _byteLocation_ to _byteLocation_ + 1.
+      1. Return _bytes_.
+    </emu-alg>
+    <emu-note>
+      <p>ComposeWriteEventBytes takes a ReadModifyWriteSharedMemory event's bytes read from ValueOfReadEvent, whose reads-bytes-from the candidate execution does not record. Valid chosen reads make that value the event's [[ChosenValue]] (spec.html 53308-53315), so in a valid execution the bytes are the same.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-reading clause="sec-getrawbytesfromsharedblock" steps="6" hashes="ebc05d8b586a3a5168562370462309e68e9d77f322e5993af7a1765eb26fa68d">
+    <emu-alg reading="definition">
+      1. If the number of elements in _execution_.[[EventsRecords]] is 1, then
+        1. Let _rawValue_ be SingleAgentReadBytes(_execution_, _eventsRecord_, _block_, _byteIndex_, _elementSize_).
+      1. Else,
+        1. If EnteredCriticalSections() is empty, perform AgentInterleave().
+        1. Let _rawValue_ be ChooseSharedBytes(_execution_, _eventsRecord_, _block_, _byteIndex_, _elementSize_).
+    </emu-alg>
+    <emu-note>
+      <p>With one agent the memory model leaves one value (<emu-xref href="#formal-singleagentreadbytes"></emu-xref>). With more, the host may first run another agent (<emu-xref href="#formal-agent-interleave"></emu-xref>), and then chooses the write events the read reads from (<emu-xref href="#formal-choosesharedbytes"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-getmodifysetvalueinbuffer" steps="9.c" hashes="fb916c9d6d0330a17284a9abad718d22e94518cb086d6f5a0c55e5f2b0adfcc5">
+    <emu-alg reading="definition">
+      1. If the number of elements in _execution_.[[EventsRecords]] is 1, then
+        1. Let _rawBytesRead_ be SingleAgentReadBytes(_execution_, _eventsRecord_, _block_, _byteIndex_, _elementSize_).
+      1. Else,
+        1. If EnteredCriticalSections() is empty, perform AgentInterleave().
+        1. Let _rawBytesRead_ be ChooseSharedBytes(_execution_, _eventsRecord_, _block_, _byteIndex_, _elementSize_).
+    </emu-alg>
+    <emu-note>
+      <p>With one agent the memory model leaves one value (<emu-xref href="#formal-singleagentreadbytes"></emu-xref>). With more, the host may first run another agent (<emu-xref href="#formal-agent-interleave"></emu-xref>), and then chooses the write events the read reads from (<emu-xref href="#formal-choosesharedbytes"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-atomiccompareexchangeinsharedblock" steps="4" hashes="fb916c9d6d0330a17284a9abad718d22e94518cb086d6f5a0c55e5f2b0adfcc5">
+    <emu-alg reading="definition">
+      1. If the number of elements in _execution_.[[EventsRecords]] is 1, then
+        1. Let _rawBytesRead_ be SingleAgentReadBytes(_execution_, _eventsRecord_, _block_, _byteIndexInBuffer_, _elementSize_).
+      1. Else,
+        1. If EnteredCriticalSections() is empty, perform AgentInterleave().
+        1. Let _rawBytesRead_ be ChooseSharedBytes(_execution_, _eventsRecord_, _block_, _byteIndexInBuffer_, _elementSize_).
+    </emu-alg>
+    <emu-note>
+      <p>With one agent the memory model leaves one value (<emu-xref href="#formal-singleagentreadbytes"></emu-xref>). With more, the host may first run another agent (<emu-xref href="#formal-agent-interleave"></emu-xref>), and then chooses the write events the read reads from (<emu-xref href="#formal-choosesharedbytes"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-copydatablockbytes" steps="6.a.iv" hashes="1cc01ce7500326d4952f774a6b9f27fb1af2886935b2decf3c5598cdb734a764">
+    <emu-alg reading="definition">
+      1. If the number of elements in _execution_.[[EventsRecords]] is 1, then
+        1. Let _bytes_ be SingleAgentReadBytes(_execution_, _eventsRecord_, _fromBlock_, _fromIndex_, 1).
+      1. Else,
+        1. If EnteredCriticalSections() is empty, perform AgentInterleave().
+        1. Let _bytes_ be ChooseSharedBytes(_execution_, _eventsRecord_, _fromBlock_, _fromIndex_, 1).
+    </emu-alg>
+    <emu-note>
+      <p>With one agent the memory model leaves one value (<emu-xref href="#formal-singleagentreadbytes"></emu-xref>). With more, the host may first run another agent (<emu-xref href="#formal-agent-interleave"></emu-xref>), and then chooses the write events the read reads from (<emu-xref href="#formal-choosesharedbytes"></emu-xref>).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-allocatearraybuffer" steps="9.a" hashes="a1bc0125574359917acdaf4404202bb96a8743246cdbb61480f1115989928ac6">
+    <emu-alg reading="definition">
+      1. If CanAllocate(_maxByteLength_, *false*) is *false*, throw a *RangeError* exception.
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-sharedarraybuffer.prototype.grow" steps="12.f" hashes="12902378035fbfaef34fe42455f403d31f442ea05f6cdf334c41249b0e57f54a">
+    <emu-alg reading="definition">
+      1. If CanAllocate(_byteLengthDelta_, *true*) is *false*, throw a *RangeError* exception.
+    </emu-alg>
+  </emu-reading>
+
+</emu-clause>

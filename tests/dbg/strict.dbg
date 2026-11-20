@@ -1,0 +1,21 @@
+// A string literal that opens the script but continues on the next line is no Use Strict
+// Directive: the code is not strict.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["debugger"]}}}
+{"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "description": "debugger statement"}}}
+{"send": {"command": "scopes", "arguments": {"frameId": 0}}}
+{"expect": {"type": "response", "command": "scopes", "success": true, "body": {"scopes": ["...", {"name": "Execution contexts", "variablesReference": "${=ctxs}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${ctxs}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": ["...", {"name": "strict", "value": "false (no Use Strict Directive)"}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

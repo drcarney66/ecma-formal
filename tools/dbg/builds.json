@@ -1,0 +1,19 @@
+{
+  "comment": "The debugger's builds (tools/dbg/ui/builds.mjs): the selector's entries, in order. scripts/build_site.py copies this table into the site and adds a build given by --build NAME=PATH[,ARG...]. `args` come before an example's own arguments in every launch.",
+  "builds": [
+    {
+      "id": "spec",
+      "label": "The specification",
+      "description": "The machine with every erratum at its default reading.",
+      "wasm": "ecma-dbg-web.wasm",
+      "args": []
+    },
+    {
+      "id": "literal",
+      "label": "The literal text",
+      "description": "The same machine with every erratum read as the text is written, so that a run stops where the text gives no answer. Three are kept at their default reading, because read literally they stop almost every program before it runs: CreateIntrinsicsAsyncArgument while the realm is set up, StringValueReservedWord at any identifier and CoveredNodeParent at any call or parenthesised expression.",
+      "wasm": "ecma-dbg-web.wasm",
+      "args": ["--reading", "literal", "--erratum", "CreateIntrinsicsAsyncArgument=test262", "--erratum", "StringValueReservedWord=test262", "--erratum", "CoveredNodeParent=test262"]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+# The grammar residue: what of spec.html's grammars is not data with a meaning
+# defined by the notation (docs/parser/GRAMMAR.md, "Residue"), by the
+# channel that carries it. //:jsgrammar_roundtrip_test requires the (b) rows
+# to be exactly the data's declared primitives (the Phrase constructors and
+# the code point names no table row gives a single code point), and each (c)
+# row's sentence to be in its clause's own prose. Nothing here is a stub: a
+# (b) item is a primitive the derivation relation declares, a (c) item a definition over
+# Derives that cites its sentence.
+#
+# b phrase CTOR                 a descriptive phrase or a `[> but only if …]` condition
+# b codepoint NAME              a code point class
+# c NAME | CLAUSE | SENTENCE    prose about the grammars' meaning
+b phrase anyCodePoint
+b phrase idStart
+b phrase idContinue
+b phrase leadSurrogate
+b phrase trailSurrogate
+b phrase mvAbove10FFFF
+b phrase mvAtMost10FFFF
+b phrase mvLead
+b phrase mvTrail
+b phrase mvNonSurrogate
+b phrase groupNumberAtMostCount
+b codepoint USP
+c tokens | sec-lexical-and-regexp-grammars | Input elements other than white space and comments form the terminal symbols for the syntactic grammar for ECMAScript and are called ECMAScript <em>tokens</em>.
+c longest-match | sec-ecmascript-language-lexical-grammar | The source text is scanned from left to right, repeatedly taking the longest possible sequence of code points as the next input element.
+c lexical-goal | sec-ecmascript-language-lexical-grammar | The |InputElementRegExpOrTemplateTail| goal is used in syntactic grammar contexts where a |RegularExpressionLiteral|, a |TemplateMiddle|, or a |TemplateTail| is permitted.
+c comment-line-terminator | sec-comments | if a |MultiLineComment| contains a line terminator code point, then the entire comment is considered to be a |LineTerminator| for purposes of parsing by the syntactic grammar.
+c hashbang-discarded | sec-hashbang | Hashbang Comments are location-sensitive and like other types of comments are discarded from the stream of input elements for the syntactic grammar.
+c numeric-literal-follow | sec-literals-numeric-literals | The |SourceCharacter| immediately following a |NumericLiteral| must not be an |IdentifierStart| or |DecimalDigit|.
+c asi-rule-1 | sec-rules-of-automatic-semicolon-insertion | a token (called the <em>offending token</em>) is encountered that is not allowed by any production of the grammar, then a semicolon is automatically inserted before the offending token if one or more of the following conditions is true:
+c asi-rule-2 | sec-rules-of-automatic-semicolon-insertion | the end of the input stream of tokens is encountered and the parser is unable to parse the input token stream as a single instance of the goal nonterminal, then a semicolon is automatically inserted at the end of the input stream.
+c asi-rule-3 | sec-rules-of-automatic-semicolon-insertion | but the production is a <em>restricted production</em>
+c asi-overriding | sec-rules-of-automatic-semicolon-insertion | However, there is an additional overriding condition on the preceding rules:
+c html-close-comment-line-terminator | sec-html-like-comments | a |SingleLineHTMLCloseComment| is considered to be a |LineTerminator| for purposes of parsing by the syntactic grammar.
+c regexp-ordered-alternatives | sec-regular-expressions-patterns | When parsing using the following grammar, each alternative is considered only if previous production alternatives do not match.
+c strict-mode-code | sec-strict-mode-code | Global code is strict mode code if it begins with a Directive Prologue that contains a Use Strict Directive.

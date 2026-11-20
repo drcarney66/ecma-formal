@@ -1,0 +1,106 @@
+<emu-clause id="formal-dates">
+  <h1>Date Time Strings</h1>
+  <p>The Date Time String Format's representation of a time value that toISOString returns, in the notation's own forms.</p>
+
+  <emu-clause id="formal-isdatetimerepresentable" type="abstract operation">
+    <h1>
+      IsDateTimeRepresentable (
+        _tv_: a finite time value,
+      ): a Boolean
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>Whether the year in which _tv_ falls can be written in the Date Time String Format: as four decimal digits from 0000 to 9999, or as an expanded year of a sign and six decimal digits (<emu-xref href="#sec-expanded-years"></emu-xref>).</dd>
+    </dl>
+    <emu-alg>
+      1. Let _year_ be YearFromTime(_tv_).
+      1. If _year_ is in the inclusive interval from -999999 to 999999, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-clause id="formal-datetimestring" type="abstract operation">
+    <h1>
+      DateTimeString (
+        _tv_: a finite time value,
+        _expanded_: a Boolean,
+      ): a String
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>_tv_ in the Date Time String Format `YYYY-MM-DDTHH:mm:ss.sssZ` on the UTC time scale, with every format element and the UTC offset representation *"Z"*. A year from 0 to 9999 is written as four digits where _expanded_ is *false*; any other year, and every year where _expanded_ is *true*, as an expanded year, *"+"* or *"-"* followed by six digits (<emu-xref href="#sec-expanded-years"></emu-xref>).</dd>
+    </dl>
+    <emu-alg>
+      1. Assert: IsDateTimeRepresentable(_tv_) is *true*.
+      1. Let _year_ be YearFromTime(_tv_).
+      1. If _expanded_ is *false* and _year_ is in the inclusive interval from 0 to 9999, let _yearString_ be ToZeroPaddedDecimalString(_year_, 4).
+      1. Else if _year_ ≥ 0, let _yearString_ be the string-concatenation of *"+"* and ToZeroPaddedDecimalString(_year_, 6).
+      1. Else, let _yearString_ be the string-concatenation of *"-"* and ToZeroPaddedDecimalString(-_year_, 6).
+      1. Let _month_ be ToZeroPaddedDecimalString(MonthFromTime(_tv_) + 1, 2).
+      1. Let _day_ be ToZeroPaddedDecimalString(DateFromTime(_tv_), 2).
+      1. Let _hour_ be ToZeroPaddedDecimalString(HourFromTime(_tv_), 2).
+      1. Let _minute_ be ToZeroPaddedDecimalString(MinuteFromTime(_tv_), 2).
+      1. Let _second_ be ToZeroPaddedDecimalString(SecondFromTime(_tv_), 2).
+      1. Let _ms_ be ToZeroPaddedDecimalString(MillisecondFromTime(_tv_), 3).
+      1. Let _date_ be the string-concatenation of _yearString_, *"-"*, _month_, *"-"*, and _day_.
+      1. Let _time_ be the string-concatenation of _hour_, *":"*, _minute_, *":"*, _second_, *"."*, and _ms_.
+      1. Return the string-concatenation of _date_, *"T"*, _time_, and *"Z"*.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-reading clause="sec-date.prototype.toisostring" steps="6" hashes="7b3dbfca848e49296a64186a0cfe3df2472306391fc35dcb791455f9ba60d408">
+    <emu-alg reading="definition">
+      1. If IsDateTimeRepresentable(_tv_) is *false*, throw a *RangeError* exception.
+    </emu-alg>
+  </emu-reading>
+
+  <emu-primitive id="prim-expandedyearform" name="ExpandedYearForm">
+    <emu-signature>ExpandedYearForm(_tv_: a finite time value): a Boolean</emu-signature>
+    <p>Whether the host writes the year of _tv_, one from 0 to 9999, as an expanded year (<emu-xref href="#sec-expanded-years"></emu-xref>) in the String toISOString returns: `YYYY` is "four decimal digits from 0000 to 9999, or as an expanded year" (<emu-xref href="#sec-date-time-string-format"></emu-xref>), and toISOString's step 7 does not say which. A year outside that interval is always expanded. It has no effect on ECMAScript state.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-date.prototype.toisostring" steps="7" hashes="dea820a5fea06e4f54de6748cda89d51e7c894039211715c0b275e372d80dc5f">
+    <emu-alg reading="definition">
+      1. Let _expanded_ be *true*.
+      1. If YearFromTime(_tv_) is in the inclusive interval from 0 to 9999, set _expanded_ to ExpandedYearForm(_tv_).
+      1. Return DateTimeString(_tv_, _expanded_).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-makeday" steps="8" hashes="552f0f00f0c3d4de839ab57e4fb758f30e487dc192dd778b3cca0cc1bbe99461">
+    <emu-alg reading="definition">
+      1. Let _inLeapYear_ be DayFromYear(ℝ(_balancedYear_) + 1) - DayFromYear(ℝ(_balancedYear_)) - 365.
+      1. If _balancedMonthMV_ = 0, let _dayWithinYear_ be 0.
+      1. Else if _balancedMonthMV_ = 1, let _dayWithinYear_ be 31.
+      1. Else if _balancedMonthMV_ = 2, let _dayWithinYear_ be 59 + _inLeapYear_.
+      1. Else if _balancedMonthMV_ = 3, let _dayWithinYear_ be 90 + _inLeapYear_.
+      1. Else if _balancedMonthMV_ = 4, let _dayWithinYear_ be 120 + _inLeapYear_.
+      1. Else if _balancedMonthMV_ = 5, let _dayWithinYear_ be 151 + _inLeapYear_.
+      1. Else if _balancedMonthMV_ = 6, let _dayWithinYear_ be 181 + _inLeapYear_.
+      1. Else if _balancedMonthMV_ = 7, let _dayWithinYear_ be 212 + _inLeapYear_.
+      1. Else if _balancedMonthMV_ = 8, let _dayWithinYear_ be 243 + _inLeapYear_.
+      1. Else if _balancedMonthMV_ = 9, let _dayWithinYear_ be 273 + _inLeapYear_.
+      1. Else if _balancedMonthMV_ = 10, let _dayWithinYear_ be 304 + _inLeapYear_.
+      1. Else, let _dayWithinYear_ be 334 + _inLeapYear_.
+      1. Let _firstDay_ be DayFromYear(ℝ(_balancedYear_)) + _dayWithinYear_.
+      1. NOTE: The Number nearest the middle of the day _firstDay_ lies in that day whenever some finite integral Number does.
+      1. Let _tv_ be 𝔽(MillisecondsPerDay × _firstDay_ + MillisecondsPerDay / 2).
+      1. If _tv_ is not finite, return *NaN*.
+      1. If YearFromTime(_tv_) ≠ ℝ(_balancedYear_), return *NaN*.
+      1. If MonthFromTime(_tv_) ≠ _balancedMonthMV_, return *NaN*.
+      1. If DateFromTime(_tv_) ≠ 1, return *NaN*.
+    </emu-alg>
+  </emu-reading>
+
+  <emu-primitive id="prim-parsedatestring" name="ParseDateString">
+    <emu-signature>ParseDateString(_s_: a String): a Number</emu-signature>
+    <p>The result of parsing _s_ as a date, in exactly the same manner as for the `parse` method (<emu-xref href="#sec-date.parse"></emu-xref>): the host's interpretation of _s_ as a date and time, the UTC time value corresponding to it. A String in the Date Time String Format (<emu-xref href="#sec-date-time-string-format"></emu-xref>) is parsed according to that format; for any other String the host may fall back to implementation-specific heuristics or formats; an unrecognizable String, or one with out-of-bounds format element values, gives *NaN*.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-date" steps="4.c.ii.2" hashes="6a3dcb319260ae347506808df1bd5f82f7dedd3259f67a360299da100e39f321">
+    <emu-alg reading="definition">
+      1. Let _tv_ be ParseDateString(_primitive_).
+    </emu-alg>
+  </emu-reading>
+
+</emu-clause>

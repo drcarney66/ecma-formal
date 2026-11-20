@@ -1,0 +1,27 @@
+<emu-clause id="formal-sort">
+  <h1>Sorting</h1>
+  <p>SortIndexedProperties's sort as a host strategy: the host picks each call to _sortCompare_ from its own state and the result of the call before it, and then the order.</p>
+
+  <emu-primitive id="prim-sortstep" name="SortStep">
+    <emu-signature>SortStep(_n_: a non-negative integer, _state_: anything, _result_: anything): a List or a Record</emu-signature>
+    <p>The host's next step in sorting _n_ elements, from its own state _state_ and the Number _result_ that the call it last asked for returned; at the start both are ~empty~. The step is either a List « _j_, _k_, _next_ »: the next call to make, on the elements at indices _j_ and _k_ less than _n_, and the state _next_ the host is given back with that call's result; or a Record whose [[Value]] is the order: a List of the indices less than _n_, each once, the index of each element in the order it is to have. If some consistent comparator for the elements gives the result of every call the sort made, the order meets the conditions after SortIndexedProperties for each such comparator. A host makes only finitely many calls, whatever their results.</p>
+  </emu-primitive>
+
+  <emu-reading clause="sec-sortindexedproperties" steps="4" hashes="b783ab82e11ea39f8f39629a4f8c53b32a86a897ab8d9f9b4c0201dd69dab32f">
+    <emu-alg reading="definition">
+      1. Let _next_ be SortStep(the number of elements in _items_, ~empty~, ~empty~).
+      1. Repeat, while _next_ is a List,
+        1. Let _result_ be _sortCompare_(_items_[_next_[0]], _items_[_next_[1]]).
+        1. If _result_ is an abrupt completion, return _result_.
+        1. Let _order_ be ℝ(_result_).
+        1. Set _next_ to SortStep(the number of elements in _items_, _next_[2], _result_).
+      1. Let _sorted_ be a new empty List.
+      1. For each element _i_ of _next_.[[Value]], do
+        1. Append _items_[_i_] to _sorted_.
+      1. Set _items_ to _sorted_.
+    </emu-alg>
+    <emu-note>
+      <p>The host keeps what it needs of the results as its state, which the steps hand back to it with each result; the requirement on the order speaks of every call the sort made. The host sees only the results of the calls, so an order that meets the conditions for every consistent comparator giving those results is exactly one that meets them for the comparator called. A call that returns an abrupt completion returns it from SortIndexedProperties, and no further call is made. When no consistent comparator gives the results, the order is the host's. This is the literal reading of the erratum SortInfiniteComparator (readings.emu): _order_ is the ℝ the definition of a consistent comparator applies to each result.</p>
+    </emu-note>
+  </emu-reading>
+</emu-clause>

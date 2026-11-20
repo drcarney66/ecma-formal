@@ -1,0 +1,19 @@
+// The debugger filter: a pause at the DebuggerStatement's Evaluation, step 1, once; the step's
+// reading ("If DebuggerEnabled() is true") is numbered within it, so it does not pause again.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["debugger"]}}}
+{"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true, "body": {"breakpoints": [{"verified": true}]}}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "description": "debugger statement", "spec": {"alg": "Evaluation", "secId": "sec-debugger-statement-runtime-semantics-evaluation", "path": "1", "filter": "debugger"}}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1, "levels": 1}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"stackFrames": [{"id": 0, "source": {"name": "debugger.js"}, "line": 2, "column": 1, "spec": {"node": {"production": "DebuggerStatement : `debugger` `;`", "lo": 11, "hi": 20}}}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: 1", "exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

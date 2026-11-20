@@ -1,0 +1,414 @@
+<emu-clause id="formal-parse">
+  <h1>Parsing and Early Errors</h1>
+  <p>ParseText's steps 2–4 in the notation's own forms: the parse is a primitive whose meaning is the grammar's derivation relation, and the early error rules are applied by an algorithm over the parse tree.</p>
+
+  <emu-primitive id="prim-parsegoal" name="ParseGoal">
+    <emu-signature>ParseGoal(_sourceText_: a sequence of Unicode code points, _goalSymbol_: a nonterminal in one of the ECMAScript grammars, _strict_: a Boolean, _json_: a Boolean, _direct_: a Boolean): a Parse Node or ~empty~</emu-signature>
+    <p>The Parse Node, an instance of _goalSymbol_, at the root of the parse tree of _sourceText_ with _goalSymbol_ as the goal symbol (<emu-xref href="#sec-context-free-grammars"></emu-xref>, <emu-xref href="#sec-grammar-notation"></emu-xref>), or ~empty~ if _sourceText_ cannot be parsed so. Each call creates new Parse Nodes. Early errors are not considered. The new Parse Nodes record the invocation's context: whether its source text is strict from outside (_strict_; a direct eval in strict mode code) and whether it is parsed for ParseJSON (_json_) and whether it is PerformEval's with _direct_ *true* (_direct_: eval code being processed by a direct eval). A parse with no outside context passes *false* for all three.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-mustcoverchild" name="MustCoverChild">
+    <emu-signature>MustCoverChild(_node_: a Parse Node, _child_: a Parse Node): a Boolean</emu-signature>
+    <p>*true* if an early error rule associated with the production of which _node_ is an instance, whose conditions hold, states that _child_ must cover a nonterminal (<emu-xref href="#sec-static-semantic-rules"></emu-xref>); otherwise *false*.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-hasparam" name="HasParam">
+    <emu-signature>HasParam(_node_: a Parse Node, _p_: a grammar parameter): a Boolean</emu-signature>
+    <p>Whether the grammar parameter _p_ was set when _node_ was parsed: the production of which _node_ is an instance was used with _p_ as a parameter (<emu-xref href="#sec-grammatical-parameters"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-goalsymbolof" name="GoalSymbolOf">
+    <emu-signature>GoalSymbolOf(_node_: a Parse Node): a nonterminal</emu-signature>
+    <p>The goal symbol of the parse that produced _node_: the nonterminal of that parse's root (<emu-xref href="#sec-syntactic-grammar"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-nearestenclosing" name="NearestEnclosing">
+    <emu-signature>NearestEnclosing(_node_: a Parse Node, _symbols_: a List of nonterminals): a Parse Node or ~empty~</emu-signature>
+    <p>The nearest Parse Node that contains _node_ and is an instance of an element of _symbols_, _node_ itself excluded, or ~empty~ if there is none: the parent of a cover's reparse is the covering node's parent, which it stands in place of (<emu-xref href="#sec-static-semantic-rules"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-indirecteval" name="InDirectEval">
+    <emu-signature>InDirectEval(_node_: a Parse Node): a Boolean</emu-signature>
+    <p>Whether _node_ is in eval code being processed by a direct eval: the parser invocation that made _node_ was PerformEval's with _direct_ *true* (<emu-xref href="#sec-performeval"></emu-xref>).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-replacedsourcetext" name="ReplacedSourceText">
+    <emu-signature>ReplacedSourceText(_node_: a Parse Node, _replacement_: a String): a sequence of Unicode code points</emu-signature>
+    <p>A new sequence of the code points of the source text that the root Parse Node of the parser invocation that made _node_ matched (the white space and comments before its first and after its last input element left out, which give no Early Errors), with the source text that _node_ matched replaced by the code points of _replacement_ (<emu-xref href="#sec-stringtocodepoints"></emu-xref>). The source text of a cover's reparse is the source text the covering node matched, in the source text of the invocation that made the covering node, and so on through every cover (<emu-xref href="#sec-static-semantic-rules"></emu-xref>); the |IfStatement| a node of <emu-xref href="#sec-functiondeclarations-in-ifstatement-statement-clauses"></emu-xref>'s productions is processed as matched that node's source text with a `{` before and a `}` after each |FunctionDeclaration| child, and a point of its source text is the point of the node's source text it stands at, the braces left out.</p>
+  </emu-primitive>
+
+  <emu-clause id="formal-earlyerrorsof" type="abstract operation">
+    <h1>
+      EarlyErrorsOf (
+        _node_: a Parse Node,
+      ): a List of *SyntaxError* objects
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The early errors of the Parse Nodes _node_ contains, in source text order; if they have none, those of _node_ itself. For a node of B.3.3's productions, those of the |IfStatement| it is processed as.</dd>
+    </dl>
+    <emu-alg>
+      1. If _node_ is an instance of a production in <emu-xref href="#sec-functiondeclarations-in-ifstatement-statement-clauses"></emu-xref>, return EarlyErrorsOf(the |IfStatement| that _node_ is processed as).
+      1. Let _errors_ be a new empty List.
+      1. For each child node _child_ of _node_, do
+        1. If _child_ is an instance of a nonterminal, then
+          1. If MustCoverChild(_node_, _child_) is *false*, set _errors_ to the list-concatenation of _errors_ and EarlyErrorsOf(_child_).
+      1. If _errors_ is not empty, return _errors_.
+      1. Return Early Errors of _node_.
+    </emu-alg>
+    <emu-note>
+      <p>Early Errors of _node_ applies the early error rules associated with the production of which _node_ is an instance, and only those: it has no implicit chain-production definition, since the children's rules are applied by the loop. Its result is a List with a newly created *SyntaxError* object for each rule whose condition holds, in the order of the rules, the rules that say a child must cover a nonterminal first and the others only if those report none. A rule that says a node must cover another nonterminal reparses it, and the rules of the reparsed node are applied as the rule says; no rules are applied to the covering node or its descendants (<emu-xref href="#sec-static-semantic-rules"></emu-xref>), so the loop skips a child a rule of _node_ says must cover a nonterminal. The children of a Parse Node include the Parse Nodes of the lexical derivation of a token that is an instance of a lexical nonterminal (<emu-xref href="#sec-lexical-and-regexp-grammars"></emu-xref>).</p>
+      <p>A node's rules are applied only when the nodes it contains have no early errors, so a rule never meets a cover that a contained node's rule says must cover a nonterminal it does not cover: the static semantics through the cover (Contains, BoundNames, …) take "the |X| that is covered by" it, which presumes that it does (`([...x = []]) => {}`, whose |ArrowParameters| is no |ArrowFormalParameters|). The List is then not every early error, but it is not empty exactly when there is one.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-clause id="formal-early-errors-cover-rules-first">
+    <h1>A Node's Must-Cover Rules First</h1>
+    <p>Early Errors of _node_ applies first those of its rules that say a child of _node_ must cover a nonterminal (<emu-xref href="#sec-static-semantic-rules"></emu-xref>). If they report early errors, those are its result; otherwise its result is that of the production's other rules, in their order. A cover that does not cover the nonterminal is the node's early error, and the other rules read static semantics through the cover (Contains, BoundNames, …), which take "the |X| that is covered by" it (`async (...x = []) => {}`, whose |CoverCallExpressionAndAsyncArrowHead| is no |AsyncArrowHead|). The rules of the covered node and of its descendants are applied as EarlyErrorsOf applies them.</p>
+  </emu-clause>
+
+  <emu-clause id="formal-parsetextin" type="abstract operation">
+    <h1>
+      ParseTextIn (
+        _sourceText_: a String or a sequence of Unicode code points,
+        _goalSymbol_: a nonterminal in one of the ECMAScript grammars,
+        _strict_: a Boolean,
+        _json_: a Boolean,
+        _direct_: a Boolean,
+      ): a Parse Node or a non-empty List of *SyntaxError* objects
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>ParseText (<emu-xref href="#sec-parsetext"></emu-xref>) for a parser invocation in the context that _strict_, _json_ and _direct_ give: whether the source text is strict from outside (a direct eval in strict mode code), whether it is parsed for ParseJSON and whether it is eval code being processed by a direct eval, which early error rules consult.</dd>
+    </dl>
+    <emu-alg>
+      1. If _sourceText_ is a String, set _sourceText_ to StringToCodePoints(_sourceText_).
+      1. Let _tree_ be ParseGoal(_sourceText_, _goalSymbol_, _strict_, _json_, _direct_).
+      1. If _tree_ is ~empty~, return « a newly created *SyntaxError* object ».
+      1. Let _errors_ be EarlyErrorsOf(_tree_).
+      1. If _errors_ is empty, return _tree_.
+      1. Return _errors_.
+    </emu-alg>
+    <emu-note>
+      <p>Step 5 of ParseText leaves the number and order of the errors implementation-defined, and its step 2 allows parsing and early error detection to interleave. This takes one choice: no early errors are sought when the parse fails, and otherwise those of EarlyErrorsOf are reported, in its order: at least one when there is an early error. Any choice is observably the same to ECMAScript code, which sees only that a *SyntaxError* is thrown.</p>
+    </emu-note>
+  </emu-clause>
+
+  <emu-reading clause="sec-parsetext" steps="2 3 4 5" hashes="8b20aa960a78f7e822fe36e0148c45e5f792fb436cb35a205c5ab8f68ed5bb35 a4e2ce1dba0a47bfd6b40fffce6074549aad7647b00744da70d59d39a02a1c18 5e40800fc7bd659ed6fb923043d033568a9505b79173409949d29bd96f014709 ae507753257765f626d589e6631c95614ce1847b8061dc4872d276664c727cd3">
+    <emu-alg reading="definition">
+      1. Return ParseTextIn(_sourceText_, _goalSymbol_, *false*, *false*, *false*).
+    </emu-alg>
+    <emu-note>
+      <p>A call of ParseText is a parser invocation with no outside context; the two call sites that have one (PerformEval and ParseJSON) call ParseTextIn. Step 3's NOTE says what parsing a nonterminal of the syntactic grammar includes, which ParseTextIn does.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-parsefloat-string" steps="4" hashes="e3690425157ab9f6b91a442db674401efbc4c35f62285f05ecf8ac9906dea4cd">
+    <emu-alg reading="definition">
+      1. Let _len_ be the length of _trimmedString_.
+      1. Let _i_ be 0.
+      1. If _i_ &lt; _len_, then
+        1. Let _sign_ be the numeric value of the code unit at index _i_ within _trimmedString_.
+        1. If _sign_ = 0x002B or _sign_ = 0x002D, set _i_ to _i_ + 1.
+      1. Let _end_ be 0.
+      1. If _i_ + 8 ≤ _len_ and the substring of _trimmedString_ from _i_ to _i_ + 8 is *"Infinity"*, then
+        1. Set _end_ to _i_ + 8.
+      1. Else,
+        1. Let _hasDigits_ be *false*.
+        1. Let _done_ be *false*.
+        1. Repeat, while _i_ &lt; _len_ and _done_ is *false*,
+          1. Let _u_ be the numeric value of the code unit at index _i_ within _trimmedString_.
+          1. If _u_ is in the inclusive interval from 0x0030 to 0x0039, then
+            1. Set _hasDigits_ to *true*.
+            1. Set _i_ to _i_ + 1.
+          1. Else,
+            1. Set _done_ to *true*.
+        1. If _i_ &lt; _len_, then
+          1. Let _dot_ be the numeric value of the code unit at index _i_ within _trimmedString_.
+          1. If _dot_ = 0x002E, then
+            1. Set _i_ to _i_ + 1.
+            1. Let _fracStart_ be _i_.
+            1. Set _done_ to *false*.
+            1. Repeat, while _i_ &lt; _len_ and _done_ is *false*,
+              1. Let _u_ be the numeric value of the code unit at index _i_ within _trimmedString_.
+              1. If _u_ is in the inclusive interval from 0x0030 to 0x0039, set _i_ to _i_ + 1; else set _done_ to *true*.
+            1. If _i_ > _fracStart_, set _hasDigits_ to *true*.
+        1. If _hasDigits_ is *false*, return *NaN*.
+        1. Set _end_ to _i_.
+        1. If _i_ &lt; _len_, then
+          1. Let _exp_ be the numeric value of the code unit at index _i_ within _trimmedString_.
+          1. If _exp_ = 0x0065 or _exp_ = 0x0045, then
+            1. Let _j_ be _i_ + 1.
+            1. If _j_ &lt; _len_, then
+              1. Let _es_ be the numeric value of the code unit at index _j_ within _trimmedString_.
+              1. If _es_ = 0x002B or _es_ = 0x002D, set _j_ to _j_ + 1.
+            1. Let _expStart_ be _j_.
+            1. Set _done_ to *false*.
+            1. Repeat, while _j_ &lt; _len_ and _done_ is *false*,
+              1. Let _u_ be the numeric value of the code unit at index _j_ within _trimmedString_.
+              1. If _u_ is in the inclusive interval from 0x0030 to 0x0039, set _j_ to _j_ + 1; else set _done_ to *true*.
+            1. If _j_ > _expStart_, set _end_ to _j_.
+      1. Let _trimmedPrefix_ be StringToCodePoints(the substring of _trimmedString_ from 0 to _end_).
+    </emu-alg>
+    <emu-note>
+      <p>Scans _trimmedString_ once in linear time for the longest |StrDecimalLiteral| prefix, returning *NaN* when none exists.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading id="definition-sec-parsehexoctet-3" clause="sec-parsehexoctet" steps="3 4 5 6 7 8" hashes="19b228e4340bc774aba32d535554707b9c46d10a9f1694fa03df9490e15d25f8 65bf11c317c0826b163bc58b2f62892963374977c1a7ae1ffd501ac4900589ef 937198fc4893d3db49d446c1995c1dd6c80b41efb741bfda3ca89062ee43eb7b 225d9e570599068716701b966472dd5ac5627e8e62309728b0cc846d65fbd2f2 af450d815c23b813e48b3b650b52f1af480c7377e5d5731e71a87d6583a80cc7 8076031643c4e0d11c66ca8876301b229c3e66a4146f8db501e9a917273c8dc8">
+    <emu-alg reading="definition">
+      1. Let _d0_ be RadixDigitValue(the code unit at index _position_ within _string_).
+      1. Let _d1_ be RadixDigitValue(the code unit at index _position_ + 1 within _string_).
+      1. If _d0_ is not ~empty~ and _d1_ is not ~empty~ and _d0_ &lt; 16 and _d1_ &lt; 16, return 16 × _d0_ + _d1_.
+      1. Let _hexDigits_ be the substring of _string_ from _position_ to _position_ + 2.
+      1. Let _parseResult_ be ParseText(_hexDigits_, |HexDigits[~Sep]|).
+      1. Assert: _parseResult_ is not a Parse Node.
+      1. Return _parseResult_.
+    </emu-alg>
+    <emu-note>
+      <p>Two hexadecimal digits (RadixDigitValue below 16) have MV 16 × _d0_ + _d1_; otherwise ParseText(_hexDigits_, |HexDigits[~Sep]|) produces its non-empty List of *SyntaxError* objects.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-phrase id="ph-matched-by" kind="predicate" subject="_x_" rule="matched-by-pos">
+    <emu-pattern>is matched by _nt_</emu-pattern>
+    <p>A code point (or a character, by its value) is matched by a nonterminal when the sequence of that one code point is an instance of it; a String, when its code points are.</p>
+    <emu-params>_nt_: a nonterminal, _x_: a code point, a character or a String</emu-params>
+    <emu-alg>
+      1. If _x_ is a String, let _text_ be StringToCodePoints(_x_); else let _text_ be « _x_ ».
+      1. If ParseGoal(_text_, _nt_, *false*, *false*, *false*) is ~empty~, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-matched-by" kind="predicate" subject="_x_" rule="matched-by-not">
+    <emu-pattern>is not matched by _nt_</emu-pattern>
+    <emu-params>_nt_: a nonterminal, _x_: a code point, a character or a String</emu-params>
+    <emu-alg>
+      1. If _x_ is matched by _nt_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-this-production" kind="expression" rule="this-production" alternatives="all">
+    <emu-pattern>this production</emu-pattern>
+    <p>"this production" and "this phrase" both name the Parse Node the rule or algorithm applies to (§5.2.4: the Parse Node of the production at hand).</p>
+    <emu-params></emu-params>
+    <emu-alg>
+      1. Return this Parse Node.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-enclosing-nt" kind="expression" rule="enclosing-nt">
+    <emu-pattern>the enclosing _nt_</emu-pattern>
+    <p>The nearest _nt_ Parse Node that contains the Parse Node the rule or algorithm applies to.</p>
+    <emu-params>_nt_: a nonterminal</emu-params>
+    <emu-alg>
+      1. Let _n_ be NearestEnclosing(this Parse Node, « _nt_ »).
+      1. Assert: _n_ is not ~empty~.
+      1. Return _n_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-this-nt" kind="expression" rule="this-nt-node">
+    <emu-pattern>this _nt_</emu-pattern>
+    <p>The Parse Node the rule or algorithm applies to, named by the nonterminal it is an instance of.</p>
+    <emu-params>_nt_: a nonterminal</emu-params>
+    <emu-alg>
+      1. Assert: this Parse Node is an instance of _nt_.
+      1. Return this Parse Node.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-some-cp-matched" kind="predicate" subject="_x_" rule="not-some-cp-matched" alternatives="all">
+    <emu-pattern>is not some Unicode code point matched by _nt_</emu-pattern>
+    <p>"some code point matched by" and "the numeric value of some code point matched by" name one test, a code point being its numeric value (§6.1.4), and "Unicode" adds nothing: _x_ is not matched by _nt_.</p>
+    <emu-params>_nt_: a nonterminal, _x_: a code point or an integer</emu-params>
+    <emu-alg>
+      1. If _x_ is matched by _nt_, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-matched-by-either" kind="predicate" subject="_x_" rule="matched-by-either">
+    <emu-pattern>is matched by either _alts_</emu-pattern>
+    <emu-params>_alts_: a List of nonterminals, _x_: a code point</emu-params>
+    <emu-alg>
+      1. For each element _nt_ of _alts_, do
+        1. If _x_ is matched by _nt_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-reading clause="sec-performeval" steps="12" hashes="e36140cbffdb9eb47c1b55f847b7719ef7edd66d32d4bf13095ee686df57dc56">
+    <emu-alg reading="definition">
+      1. If _direct_ is ~direct-eval~, let _directEval_ be *true*; else let _directEval_ be *false*.
+      1. Let _script_ be ParseTextIn(_sourceString_, |Script|, _strictCaller_, *false*, _directEval_).
+      1. If _script_ is a List of errors, throw a *SyntaxError* exception.
+      1. If _script_ Contains |ScriptBody| is *false*, return *undefined*.
+      1. Let _body_ be the |ScriptBody| of _script_.
+      1. If _inFunc_ is *false* and _body_ Contains |NewTarget|, throw a *SyntaxError* exception.
+      1. If _inMethod_ is *false* and _body_ Contains |SuperProperty|, throw a *SyntaxError* exception.
+      1. If _inDerivedCtor_ is *false* and _body_ Contains |SuperCall|, throw a *SyntaxError* exception.
+      1. If _inClassFieldInitializer_ is *true* and ContainsArguments of _body_ is *true*, throw a *SyntaxError* exception.
+    </emu-alg>
+    <emu-note>
+      <p>ParseText's parse is in the context of the eval: strict from outside when _strictCaller_ is, and eval code processed by a direct eval when _direct_ is ~direct-eval~ (ParseTextIn). The substeps' order is implementation-defined; this reading takes the written one. Any order is observably the same: each abrupt substep throws a *SyntaxError*, none has another effect, and the one normal exit (no |ScriptBody|, so *undefined*) admits no error to race it.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-json.rawjson" steps="6" hashes="168c177bcad8fddada10855086e5f34f23c252de00b6a29210a7f82c433384df">
+    <emu-alg reading="definition">
+      1. Assert: _parseResult_.[[Value]] is either a String, a Number, or a Boolean, or _parseResult_.[[Value]] is *null*.
+    </emu-alg>
+    <emu-note>
+      <p>The alternatives are three types and a value; the value is its own condition.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-performeval" steps="1" hashes="b345fdb548453620506ed03357c481d1362db2864deb57732e63186413f633ed">
+    <emu-alg reading="definition">
+      1. Assert: _direct_ is ~direct-eval~ or _strictCaller_ is *false*.
+    </emu-alg>
+    <emu-note>
+      <p>"If A, then B" holds when A does not hold or B does.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-ParseJSON" steps="3" hashes="16baccfac731dd4ee4b2b1bc4f59da37a55c8534051f7576ae4563a0c18e9063">
+    <emu-alg reading="definition">
+      1. Let _script_ be ParseTextIn(_scriptString_, |Script|, *false*, *true*, *false*).
+    </emu-alg>
+    <emu-note>
+      <p>This is the parser invocation the early error rules call "being parsed for ParseJSON" (the step's id is their reference).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-phrase id="ph-parsed-for-parsejson" kind="predicate" subject="_n_" rule="parsed-for-json">
+    <emu-pattern>is being parsed for ParseJSON</emu-pattern>
+    <emu-params>_n_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Return InParseJSONScript(_n_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-reading clause="sec-grouping-operator-runtime-semantics-evaluation" steps="1" hashes="0d07224c35d944d765b081980e8dd77f3e1121c4c2782e8d36e29c810554d015">
+    <emu-alg reading="definition">
+      1. Return ? Evaluation of |Expression|.
+    </emu-alg>
+    <emu-note>
+      <p>The step's second sentence says what the first returns: Evaluation of |Expression| may be a Reference Record, and it is returned as is.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset" steps="8.g.ii.1" hashes="6812e5c80db8f7c04a319e59feadaf4263d4a8ff167ffdb8c7d261d83f8d8bd5">
+    <emu-alg reading="definition">
+      1. Let _lhsRef_ be Completion(Evaluation of _lhs_).
+    </emu-alg>
+    <emu-note>
+      <p>The parenthesis says that _lhs_ is evaluated once per iteration of the loop.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-serializejsonobject" steps="1" hashes="f4ef3863877e01c5f1d521adf97a9aecf40920ac3ba18201699369aec814f211">
+    <emu-alg reading="definition">
+      1. If _state_.[[Stack]] contains _value_, throw a *TypeError* exception.
+    </emu-alg>
+    <emu-note>
+      <p>The because-clause is the reason: _value_ already being serialized means the structure is cyclical.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-serializejsonobject" steps="10.a.i" hashes="73711879e359b9dfa9fb824a8f6d57fd86a0999b8405ce548073861feb34a9cc">
+    <emu-alg reading="definition">
+      1. Let _properties_ be the empty String.
+      1. Let _first_ be *true*.
+      1. For each element _part_ of _partial_, do
+        1. If _first_ is *true*, set _first_ to *false*.
+        1. Else, set _properties_ to the string-concatenation of _properties_ and the code unit 0x002C (COMMA).
+        1. Set _properties_ to the string-concatenation of _properties_ and _part_.
+    </emu-alg>
+    <emu-note>
+      <p>The elements in order, with the code unit 0x002C (COMMA) between each adjacent pair and not before the first or after the last.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-serializejsonobject" steps="10.b.ii" hashes="10f72d4817179225bba1d511da17f3705d65dc70f9a9006373213b5d2cf17e3e">
+    <emu-alg reading="definition">
+      1. Let _properties_ be the empty String.
+      1. Let _first_ be *true*.
+      1. For each element _part_ of _partial_, do
+        1. If _first_ is *true*, set _first_ to *false*.
+        1. Else, set _properties_ to the string-concatenation of _properties_ and _separator_.
+        1. Set _properties_ to the string-concatenation of _properties_ and _part_.
+    </emu-alg>
+    <emu-note>
+      <p>The elements in order, with _separator_ between each adjacent pair and not before the first or after the last.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-serializejsonarray" steps="1" hashes="f4ef3863877e01c5f1d521adf97a9aecf40920ac3ba18201699369aec814f211">
+    <emu-alg reading="definition">
+      1. If _state_.[[Stack]] contains _value_, throw a *TypeError* exception.
+    </emu-alg>
+    <emu-note>
+      <p>The because-clause is the reason: _value_ already being serialized means the structure is cyclical.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-serializejsonarray" steps="10.a.i" hashes="73711879e359b9dfa9fb824a8f6d57fd86a0999b8405ce548073861feb34a9cc">
+    <emu-alg reading="definition">
+      1. Let _properties_ be the empty String.
+      1. Let _first_ be *true*.
+      1. For each element _part_ of _partial_, do
+        1. If _first_ is *true*, set _first_ to *false*.
+        1. Else, set _properties_ to the string-concatenation of _properties_ and the code unit 0x002C (COMMA).
+        1. Set _properties_ to the string-concatenation of _properties_ and _part_.
+    </emu-alg>
+    <emu-note>
+      <p>The elements in order, with the code unit 0x002C (COMMA) between each adjacent pair and not before the first or after the last.</p>
+    </emu-note>
+  </emu-reading>
+  <emu-reading clause="sec-serializejsonarray" steps="10.b.ii" hashes="10f72d4817179225bba1d511da17f3705d65dc70f9a9006373213b5d2cf17e3e">
+    <emu-alg reading="definition">
+      1. Let _properties_ be the empty String.
+      1. Let _first_ be *true*.
+      1. For each element _part_ of _partial_, do
+        1. If _first_ is *true*, set _first_ to *false*.
+        1. Else, set _properties_ to the string-concatenation of _properties_ and _separator_.
+        1. Set _properties_ to the string-concatenation of _properties_ and _part_.
+    </emu-alg>
+    <emu-note>
+      <p>The elements in order, with _separator_ between each adjacent pair and not before the first or after the last.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-quotejsonstring" steps="2.a.i" hashes="214341976bbe8fc505b49ae4c183fa597a1942153e5a96df371b40f162920e8c">
+    <emu-alg reading="definition">
+      1. Set _product_ to the string-concatenation of _product_ and the Escape Sequence value specified in <emu-xref href="#table-json-single-character-escapes"></emu-xref> for Code Point _codePoint_.
+    </emu-alg>
+    <emu-note>
+      <p>The corresponding row is the one whose “Code Point” entry is _codePoint_, which step 2.a found in that column.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-phrase id="ph-in-json-evaluated-script" kind="predicate" subject="_n_">
+    <emu-pattern>is contained within a |Script| that is being evaluated for ParseJSON (see step <emu-xref href="#step-json-parse-eval"></emu-xref> of ParseJSON)</emu-pattern>
+    <p>The |Script| ParseJSON evaluates is the one its parser invocation made (<emu-xref href="#sec-ParseJSON"></emu-xref>), and a Parse Node is contained within it exactly when that invocation made the node.</p>
+    <emu-params>_n_: a Parse Node</emu-params>
+    <emu-alg>
+      1. Return InParseJSONScript(_n_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-reading clause="sec-shallowestcontainedjsonvalue" steps="6.d.i.2.a" hashes="16c6fedeb765bb1e6024f70b01f6a0f07af838a205674e39db223223a46d2dc8">
+    <emu-alg reading="definition">
+      1. If Parent(_candidate_) is not a |UnaryExpression| Parse Node, set _unaryExpr_ to _candidate_.
+    </emu-alg>
+  </emu-reading>
+  <emu-reading clause="sec-shallowestcontainedjsonvalue" steps="6.d.i.3.a" hashes="2219639d3899a1f18997c80f6bf02b5a8289986a20b04189ffa39b813026899f">
+    <emu-alg reading="definition">
+      1. Assert: ParseNodesWithin(_unaryExpr_) contains _candidate_.
+    </emu-alg>
+  </emu-reading>
+  <emu-reading clause="sec-shallowestcontainedjsonvalue" steps="6.d.ii.1" hashes="38f1dc158ae9c66ae27d02924b97f4bca293c803fb036603f2da862f0d5aba3f">
+    <emu-alg reading="definition">
+      1. Let _children_ be ChildNodes(_candidate_).
+    </emu-alg>
+  </emu-reading>
+
+</emu-clause>

@@ -1,0 +1,574 @@
+{
+ "comment": "The errata page's data beside the overlay's (scripts/errata_page.py). `anchors`: for an erratum whose readings are a note (no step, rule or row of the text to anchor), the sentences of spec.html it is about, each checked to occur in its clause. `programs`: the programs that show an erratum, each with the outcome it must have under each reading it is run under (`end`: the result line; `printed`: the lines `print` wrote), run at build time on the native ecma-run.",
+ "anchors": {
+  "UnitChainChild": [
+   {
+    "clause": "sec-islabelledfunction",
+    "where": "steps 1 and 2",
+    "quote": "If _stmt_ is not a |LabelledStatement|, return *false*. … Let _item_ be the |LabelledItem| of _stmt_."
+   }
+  ],
+  "LookaheadSourceTokens": [
+   {
+    "clause": "sec-lookahead-restrictions",
+    "quote": "If the phrase “[lookahead = _seq_]” appears in the right-hand side of a production, it indicates that the production may only be used if the token sequence _seq_ is a prefix of the immediately following input token sequence."
+   },
+   {
+    "clause": "sec-automatic-semicolon-insertion",
+    "quote": "These situations are described by saying that semicolons are automatically inserted into the source code token stream in those situations."
+   }
+  ],
+  "HTMLCloseCommentToken": [
+   {
+    "clause": "sec-html-like-comments",
+    "where": "the definition of |InputElementHashbangOrRegExp|",
+    "block": "grammar",
+    "quote": "InputElementHashbangOrRegExp ::\n  WhiteSpace\n  LineTerminator\n  Comment\n  CommonToken\n  HashbangComment\n  RegularExpressionLiteral\n  HTMLCloseComment"
+   },
+   {
+    "clause": "sec-lexical-and-regexp-grammars",
+    "quote": "Input elements other than white space and comments form the terminal symbols for the syntactic grammar for ECMAScript and are called ECMAScript <em>tokens</em>."
+   }
+  ],
+  "AnnexBRegExpOrder": [
+   {
+    "clause": "sec-regular-expressions-patterns",
+    "quote": "When parsing using the following grammar, each alternative is considered only if previous production alternatives do not match."
+   }
+  ],
+  "AnnexBGroupCount": [
+   {
+    "clause": "sec-regular-expressions-patterns",
+    "where": "the condition on |AtomEscape| :: |DecimalEscape|",
+    "quote": "[~UnicodeMode] DecimalEscape [> but only if the CapturingGroupNumber of |DecimalEscape| is ≤ CountLeftCapturingParensWithin(the |Pattern| containing |DecimalEscape|)]"
+   }
+  ],
+  "CoveredNodeParent": [
+   {
+    "clause": "sec-syntactic-grammar",
+    "quote": "The sequence of tokens originally matched by _p_ is parsed again using _n_ as the goal symbol."
+   },
+   {
+    "clause": "sec-isintailposition",
+    "where": "step 2",
+    "quote": "Let _body_ be the |FunctionBody|, |ConciseBody|, or |AsyncConciseBody| that most closely contains _call_."
+   }
+  ],
+  "RacesNotBoth": [
+   {
+    "clause": "sec-races",
+    "where": "step 1.a",
+    "quote": "If it is not the case that both _eventA_ happens-before _eventB_ in _execution_ and _eventB_ happens-before _eventA_ in _execution_, then"
+   }
+  ],
+  "InitHappensBeforeOverlap": [
+   {
+    "clause": "sec-happens-before",
+    "where": "the third condition",
+    "quote": "SharedDataBlockEventSet(_execution_) contains both _eventA_ and _eventB_, _eventA_.[[Order]] is ~init~, and _eventA_ and _eventB_ have overlapping memory ranges."
+   }
+  ],
+  "MemoryRangeSameBlock": [
+   {
+    "clause": "sec-reads-bytes-from",
+    "quote": "Each event _writeEvent_ with index _i_ in _writes_ has _readEvent_.[[ByteIndex]] + _i_ in its memory range."
+   }
+  ]
+ },
+ "programs": {
+  "UnitChainChild": [
+   {
+    "program": "run/erratum_unit_chain_child",
+    "outcomes": {
+     "test262": {
+      "end": "throw: SyntaxError"
+     },
+     "literal": {
+      "end": "stop: sortError sec-islabelledfunction#0 2"
+     }
+    }
+   }
+  ],
+  "StringValueReservedWord": [
+   {
+    "program": "run/erratum_stringvalue_reserved_word",
+    "outcomes": {
+     "test262": {
+      "end": "throw: SyntaxError"
+     },
+     "literal": {
+      "end": "stop: sortError ph-stringvalue-any-nt-except#0 1"
+     }
+    }
+   }
+  ],
+  "LookaheadSourceTokens": [
+   {
+    "program": "run/erratum_lookahead_source_tokens",
+    "outcomes": {
+     "test262": {
+      "end": "throw: SyntaxError"
+     },
+     "literal": {
+      "end": "stop: residue formal-parsetextin#0 2"
+     }
+    }
+   }
+  ],
+  "HTMLCloseCommentToken": [
+   {
+    "program": "run/erratum_html_close_comment_token",
+    "outcomes": {
+     "test262": {
+      "end": "normal: 1"
+     },
+     "literal": {
+      "end": "stop: residue formal-parsetextin#0 2"
+     }
+    }
+   }
+  ],
+  "AnnexBRegExpOrder": [
+   {
+    "program": "run/erratum_annexb_regexp_order",
+    "outcomes": {
+     "test262": {
+      "end": "throw: SyntaxError"
+     },
+     "literal": {
+      "end": "stop: residue formal-parsetextin#0 2"
+     }
+    }
+   }
+  ],
+  "AnnexBGroupCount": [
+   {
+    "program": "run/erratum_annexb_group_count",
+    "outcomes": {
+     "test262": {
+      "end": "normal: true"
+     },
+     "literal": {
+      "end": "stop: residue formal-parsetextin#0 2"
+     }
+    }
+   }
+  ],
+  "AnnexBModifierEarlyErrors": [
+   {
+    "program": "run/erratum_annexb_modifier_early_errors",
+    "outcomes": {
+     "test262": {
+      "end": "throw: SyntaxError"
+     },
+     "literal": {
+      "end": "normal: [object #N]"
+     }
+    }
+   }
+  ],
+  "CoveredNodeParent": [
+   {
+    "program": "run/erratum_covered_node_parent",
+    "outcomes": {
+     "test262": {
+      "end": "normal: 0"
+     },
+     "literal": {
+      "end": "stop: residue sec-grouping-operator-static-semantics-early-errors#0 ?"
+     }
+    }
+   }
+  ],
+  "NumberMultiplyZeroSign": [
+   {
+    "program": "run/number_multiply_zero_sign",
+    "outcomes": {
+     "proposed": {
+      "end": "normal: undefined",
+      "printed": [
+       "-Infinity,-Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity"
+      ]
+     },
+     "literal": {
+      "end": "normal: undefined",
+      "printed": [
+       "Infinity,Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity"
+      ]
+     }
+    }
+   }
+  ],
+  "GatherAvailableAncestorsEmptyCycleRoot": [
+   {
+    "program": "run/module_erratum_cycle_root",
+    "outcomes": {
+     "literal": {
+      "end": "stop: erratum GatherAvailableAncestorsEmptyCycleRoot sec-gather-available-ancestors#0 1.a"
+     },
+     "proposed": {
+      "end": "throw: Error: c",
+      "printed": [
+       "b"
+      ]
+     }
+    }
+   }
+  ],
+  "BuiltinReturnCompletion": [
+   {
+    "program": "run/builtin_async_return",
+    "outcomes": {
+     "test262": {
+      "end": "normal: undefined",
+      "printed": [
+       "undefined",
+       "1,2"
+      ]
+     },
+     "literal": {
+      "end": "normal: undefined",
+      "printed": [
+       "undefined"
+      ]
+     }
+    }
+   }
+  ],
+  "ExecuteModuleAsyncDisposeResources": [
+   {
+    "program": "run/errata_execute_module_dispose",
+    "outcomes": {
+     "test262": {
+      "end": "normal: undefined",
+      "printed": [
+       "end",
+       "disposed"
+      ]
+     },
+     "literal": {
+      "end": "normal: undefined",
+      "printed": [
+       "end"
+      ]
+     }
+    }
+   }
+  ],
+  "DoWaitSyncTimeout": [
+   {
+    "program": "run/atomics_wait_sync_timeout",
+    "outcomes": {
+     "test262": {
+      "end": "normal: undefined",
+      "printed": [
+       "timed-out,timed-out,true,true,0 ; not-equal"
+      ]
+     },
+     "literal": {
+      "end": "stop: erratum DoWaitSyncTimeout sec-addwaiter#0 2"
+     }
+    }
+   }
+  ],
+  "GetUTCEpochNanosecondsNaN": [
+   {
+    "program": "run/date_utc_large_local_time",
+    "outcomes": {
+     "literal": {
+      "end": "stop: erratum GetUTCEpochNanosecondsNaN sec-getutcepochnanoseconds#0 4"
+     },
+     "proposed": {
+      "end": "normal: undefined",
+      "printed": [
+       "NaN",
+       "NaN"
+      ]
+     }
+    }
+   }
+  ],
+  "GetMatchStringStartAfterEnd": [
+   {
+    "program": "run/regexp_lastindex_inside_pair",
+    "outcomes": {
+     "literal": {
+      "end": "stop: erratum GetMatchStringStartAfterEnd sec-getmatchstring#0 1"
+     },
+     "proposed": {
+      "end": "normal: [object #N]"
+     }
+    }
+   }
+  ],
+  "AsyncBlockStartAwaitResult": [
+   {
+    "program": "dbg/async",
+    "outcomes": {
+     "test262": {
+      "end": "normal: [object #N]",
+      "printed": [
+       "2"
+      ]
+     },
+     "literal": {
+      "end": "stop: erratum AsyncBlockStartAwaitResult sec-asyncblockstart#0 4"
+     }
+    }
+   }
+  ],
+  "PromiseJobAbruptCompletion": [
+   {
+    "program": "run/promise_job_abrupt",
+    "outcomes": {
+     "literal": {
+      "end": "stop: erratum PromiseJobAbruptCompletion sec-jobs -"
+     },
+     "proposed": {
+      "end": "normal: [object #N]",
+      "printed": [
+       "handler 1",
+       "a later Job"
+      ]
+     }
+    }
+   }
+  ],
+  "SyntheticModuleLinkResets": [
+   {
+    "program": "run/module_json_relink",
+    "outcomes": {
+     "literal": {
+      "end": "normal: undefined",
+      "printed": [
+       "main sees 1",
+       "probe sees undefined",
+       "after other: 1"
+      ]
+     },
+     "proposed": {
+      "end": "normal: undefined",
+      "printed": [
+       "main sees 1",
+       "probe sees 1",
+       "after other: 1"
+      ]
+     }
+    }
+   }
+  ],
+  "CreateDynamicFunctionPrivateIdentifiers": [
+   {
+    "program": "run/dynamic_function_private_identifiers",
+    "outcomes": {
+     "proposed": {
+      "end": "normal: undefined",
+      "printed": [
+       "body: SyntaxError",
+       "params: SyntaxError",
+       "generator body: SyntaxError"
+      ]
+     },
+     "test262": {
+      "end": "normal: undefined",
+      "printed": [
+       "body: SyntaxError",
+       "params: no error",
+       "generator body: SyntaxError"
+      ]
+     },
+     "literal": {
+      "end": "normal: undefined",
+      "printed": [
+       "body: no error",
+       "params: no error",
+       "generator body: no error"
+      ]
+     }
+    }
+   }
+  ],
+  "IdentityEscapeJoinControls": [
+   {
+    "program": "run/regexp_identity_escape_join_controls",
+    "outcomes": {
+     "proposed": {
+      "end": "normal: undefined",
+      "printed": [
+       "U+200C: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+       "U+200D: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+       "U+200B: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+       "U+200E: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+       "U+61: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError",
+       "U+B7: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError"
+      ]
+     },
+     "literal": {
+      "end": "normal: undefined",
+      "printed": [
+       "U+200C: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError",
+       "U+200D: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError",
+       "U+200B: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+       "U+200E: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+       "U+61: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError",
+       "U+B7: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError"
+      ]
+     }
+    }
+   }
+  ],
+  "LonePropertyGeneralCategoryAssert": [
+   {
+    "program": "run/errata_lone_property_gc_assert_literal",
+    "outcomes": {
+     "test262": {
+      "end": "normal: true"
+     },
+     "literal": {
+      "end": "stop: erratum LonePropertyGeneralCategoryAssert sec-runtime-semantics-unicodematchpropertyvalue-p-v#0 2"
+     }
+    }
+   }
+  ],
+  "AllocateSharedArrayBufferByteLengthStore": [
+   {
+    "program": "run/errata_allocate_sab_byte_length",
+    "outcomes": {
+     "test262": {
+      "end": "normal: 2"
+     },
+     "literal": {
+      "end": "stop: sortError sec-setvalueinbuffer#0 4"
+     }
+    }
+   }
+  ],
+  "ContainsAwaitCover": [
+   {
+    "program": "run/await_in_params_early_errors",
+    "outcomes": {
+     "test262": {
+      "end": "normal: undefined",
+      "printed": [
+       "async function: SyntaxError",
+       "async function expression: SyntaxError",
+       "async generator: SyntaxError",
+       "async generator expression: SyntaxError",
+       "async method: SyntaxError",
+       "async generator method: SyntaxError",
+       "arrow in async body: SyntaxError",
+       "async arrow in async body: SyntaxError",
+       "AsyncFunction: SyntaxError",
+       "AsyncGeneratorFunction: SyntaxError",
+       "await in async body: no error",
+       "static block in async function: no error",
+       "var await in nested function: no error",
+       "async arrow parameters: no error",
+       "await in static block: SyntaxError",
+       "var await in static block function: no error"
+      ]
+     },
+     "literal": {
+      "end": "normal: undefined",
+      "printed": [
+       "async function: no error",
+       "async function expression: no error",
+       "async generator: no error",
+       "async generator expression: no error",
+       "async method: no error",
+       "async generator method: no error",
+       "arrow in async body: no error",
+       "async arrow in async body: no error",
+       "AsyncFunction: no error",
+       "AsyncGeneratorFunction: no error",
+       "await in async body: no error",
+       "static block in async function: no error",
+       "var await in nested function: no error",
+       "async arrow parameters: no error",
+       "await in static block: SyntaxError",
+       "var await in static block function: no error"
+      ]
+     }
+    }
+   }
+  ],
+  "SplitCodeUnitStrings": [
+   {
+    "program": "run/errata_split_code_units",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"string\""
+     },
+     "literal": {
+      "end": "stop: sortError sec-typeof-operator-runtime-semantics-evaluation#0 13"
+     }
+    }
+   }
+  ],
+  "CreateIntrinsicsAsyncArgument": [
+   {
+    "program": "run/errata_createintrinsics_async_argument",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"get size|true\""
+     },
+     "literal": {
+      "end": "stop: erratum CreateIntrinsicsAsyncArgument sec-setfunctionname#0 5.a"
+     }
+    }
+   }
+  ],
+  "SortInfiniteComparator": [
+   {
+    "program": "run/errata_sort_infinite_comparator",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"1,2,3|3,2,1\""
+     },
+     "literal": {
+      "end": "stop: sortError sec-sortindexedproperties#0 4..ccxlii.2.c"
+     }
+    }
+   }
+  ],
+  "UnregisterIteratesCopy": [
+   {
+    "program": "run/errata_unregister_two_cells",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"true|false\""
+     },
+     "literal": {
+      "end": "normal: \"true|true\""
+     }
+    }
+   }
+  ],
+  "IsCharacterClassControlLetter": [
+   {
+    "program": "run/errata_ischaracterclass_control_letter",
+    "outcomes": {
+     "test262": {
+      "end": "normal: true"
+     },
+     "literal": {
+      "end": "stop: sortError row-ischaracterclass-classcontrolletter#0 1"
+     }
+    }
+   }
+  ],
+  "BigIntMaximumSize": [
+   {
+    "program": "run/bigint_huge_left_shift",
+    "outcomes": {
+     "proposed": {
+      "end": "throw: RangeError"
+     },
+     "literal": {
+      "end": "stop: implLimit sec-numeric-types-bigint-leftShift#0 2..cclxxviii.2"
+     }
+    }
+   }
+  ]
+ }
+}

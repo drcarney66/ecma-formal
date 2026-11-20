@@ -1,0 +1,33 @@
+// A `let` binding in its TDZ, then initialized: the running execution context's
+// [[LexicalEnvironment]] (the global Environment Record), its [[DeclarativeRecord]], binding x.
+// The script's code is strict by its Use Strict Directive.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["debugger"]}}}
+{"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "description": "debugger statement"}}}
+{"send": {"command": "scopes", "arguments": {"frameId": 0}}}
+{"expect": {"type": "response", "command": "scopes", "success": true, "body": {"scopes": ["...", {"name": "Execution contexts", "variablesReference": "${=ctxs}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${ctxs}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": ["...", {"name": "running execution context", "variablesReference": "${=ctx}"}, {"name": "strict", "value": "true (a Use Strict Directive)"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${ctx}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": ["...", {"name": "[[LexicalEnvironment]]", "type": "Global Environment Record", "variablesReference": "${=global}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${global}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": ["...", {"name": "sort", "value": "Global Environment Record", "type": "sort"}, {"name": "[[DeclarativeRecord]]", "type": "Declarative Environment Record", "variablesReference": "${=decl}"}]}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${decl}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": [{"name": "kind", "value": "Declarative Environment Record", "type": "sort"}, "...", {"name": "x", "value": "TDZ", "type": "mutable, uninitialized (TDZ)"}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint"}}}
+{"send": {"command": "variables", "arguments": {"variablesReference": "${decl}"}}}
+{"expect": {"type": "response", "command": "variables", "success": true, "body": {"variables": ["...", {"name": "x", "value": "1", "type": "mutable, initialized", "presentationHint": {"attributes": ["changed"]}}]}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "terminated", "body": {"exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

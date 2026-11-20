@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/spec-gen",
+  "crates/jsgrammar",
+  "crates/test262-runner",
+]

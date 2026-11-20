@@ -1,0 +1,8 @@
+[package]
+name = "test262-runner"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.95"
+description = "Run tc39/test262 on ecma-run and compare with an expected-results file"
+
+[dependencies]

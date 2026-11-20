@@ -1,0 +1,69 @@
+module
+
+public import Ecma.Host.Laws.Basic
+
+@[expose] public section
+
+/-!
+# The law of EscapeRegExpPattern
+
+EscapePattern's String (sec-escaperegexppattern step 5), over code units.
+-/
+
+namespace Ecma
+
+variable {M : Model}
+
+/-- A LineTerminator's code unit (§12.3): LF, CR, LS, PS. -/
+def lineTerminatorUnit (c : Nat) : Bool := c == 0x0A || c == 0x0D || c == 0x2028 || c == 0x2029
+
+/-- What follows the `\` in a LineTerminator's escape: `n`, `r`, `u2028`, `u2029`. -/
+def terminatorEscape (c : Nat) : List Nat :=
+  if c == 0x0A then [110] else if c == 0x0D then [114] else if c == 0x2028 then [117, 50, 48, 50, 56]
+  else [117, 50, 48, 50, 57]
+
+/-- `Escaped b p e`: `e` is `p` with code units escaped (§22.2.6.13.1 step 5): a `/` kept or written `\/`, a
+LineTerminator written as its escape (`terminatorEscape`), every other unit kept. `b`: the unit before is an
+unescaped `\`, so that a LineTerminator after it is written as the escape's letters alone. -/
+inductive Escaped : Bool → List Nat → List Nat → Prop
+  | nil (b) : Escaped b [] []
+  | keep {b c p e} : lineTerminatorUnit c = false → Escaped (!b && c == 92) p e → Escaped b (c :: p) (c :: e)
+  | slash {p e} : Escaped false p e → Escaped false (47 :: p) (92 :: 47 :: e)
+  | terminator {c p e} : lineTerminatorUnit c = true → Escaped false p e →
+      Escaped false (c :: p) (92 :: terminatorEscape c ++ e)
+  | terminatorAfter {c p e} : lineTerminatorUnit c = true → Escaped false p e →
+      Escaped true (c :: p) (terminatorEscape c ++ e)
+
+/-- EscapePattern's String for the pattern `p`, as code units: the empty pattern as `(?:)`, any other escaped. -/
+def EscapeOf (p e : List Nat) : Prop := (p = [] ∧ e = [40, 63, 58, 41]) ∨ (p ≠ [] ∧ Escaped false p e)
+
+/-- One scan of `e` for `BodySafe`: no LineTerminator, and each `/` follows an unescaped `\` or is within a class.
+`esc`: the unit before is an unescaped `\`; `cls`: within a class, where `[` is a character and `]` closes it. -/
+def bodySafe : (esc cls : Bool) → List Nat → Bool
+  | _, _, [] => true
+  | true, cls, c :: e => !lineTerminatorUnit c && bodySafe false cls e
+  | false, cls, c :: e => !lineTerminatorUnit c && (cls || c != 47) &&
+      bodySafe (c == 92) (if c == 91 then true else if c == 93 then false else cls) e
+
+/-- As far as `/` and LineTerminators go, `e` can be the text of a |RegularExpressionBody| (§12.9.5): it is not
+empty, holds no LineTerminator, and each `/` follows an unescaped `\` or is within a class `[`…`]`
+(|RegularExpressionClass|). Where a class or an escape is left open at the end is not checked: that is not a
+|Pattern| either. -/
+def BodySafe (e : List Nat) : Prop := e ≠ [] ∧ bodySafe false false e = true
+
+/-- The law of EscapeRegExpPattern. -/
+structure Host.RegExpLaws (H : Host M) : Prop where
+  /-- sec-escaperegexppattern steps 4–5:
+  "Let escapedPattern be a String in the form of a patternSymbol equivalent to pattern interpreted as UTF-16 encoded Unicode code points"
+  "Multiple calls to this abstract operation using the same values for pattern and flags must produce identical results."
+  "The code points / or any LineTerminator occurring in the pattern shall be escaped in escapedPattern as necessary to ensure that the string-concatenation of "/", escapedPattern, "/", and flags can be parsed (in an appropriate lexical context) as a RegularExpressionLiteral"
+  Reading: EscapePattern answers a String _S_, the same for the same _pattern_ and _flags_ at every call, the
+  state as it was: _pattern_ with each `/` kept or written `\/` and each LineTerminator written as its escape,
+  the empty pattern as `(?:)` (`EscapeOf`), which as far as `/` and LineTerminators go can be a
+  |RegularExpressionBody| (`BodySafe`). That _S_ "must behave identically" is the specification's claim about its
+  own semantics, no law: it was proved of this engine's escape at the git tag `escape-sim-proved`. -/
+  escapePattern : ∀ pattern flags s r s', H.choice Known.pEscapePattern [.str pattern, .str flags] s = .ok r s' →
+    s' = s ∧ (∃ S, r = .str S ∧ ∃ p e, unitsAre pattern p ∧ unitsAre S e ∧ EscapeOf p e ∧ BodySafe e) ∧
+      ∀ s2 r2 s2', H.choice Known.pEscapePattern [.str pattern, .str flags] s2 = .ok r2 s2' → r2 = r
+
+end Ecma

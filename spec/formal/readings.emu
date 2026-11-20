@@ -1,0 +1,492 @@
+<emu-clause id="formal-readings">
+  <h1>Errata Readings</h1>
+  <p>spec.html is tc39/ecma262 at b1eaed82f (external/ecma262). Each erratum of its text, with its resolution (`literal`, `test262`, `proposed` or `pending`), its kind (<code>kind</code>: a defect of the text, or <code>proposal</code>, a proposed normative change) and where its readings are switched (<code>switch</code>: in the specification layer, at run time; <code>parser</code>, only in the engine's parser, the specification's grammar having the test262 reading; <code>none</code>, one reading only); a <code>proposed</code> erratum's meaning reads its proposed text. A <code>literal</code> erratum says where its text stops a run (<code>stops</code>, space-separated): <code>sec-id@path</code>, the step (an Assert, a <code>!</code> or a step with no result) of the clause's algorithm, with <code>[caller]</code> only when the innermost caller is that clause; <code>-</code> for the path is the job loop's check of §9.5 (a Job's abrupt completion) or, in a clause with no algorithm, the clause's conditions, and <code>stops=""</code> says the text never stops. An <code>emu-reading</code> names the step it reads differently (clause id, step path, and the SHA-256 of the step's text as spec.html has it) and gives the steps of the other readings (<code>reading="test262 proposed"</code>: one set of steps for both); an <code>emu-rule-reading</code> names a grammar rule (clause id, nonterminal, and the SHA-256 of its definition's text) and gives the definition that replaces it. An erratum whose text has no step to anchor, or whose step is a permanent Assert (permanent.emu), gives its proposed text in a note. An <code>emu-orphan-row</code> names an equation row (clause id and grammar key) whose production the grammar does not have: the row is kept with no production, so it is never applied.</p>
+
+  <emu-erratum id="erratum-UnitChainChild" name="UnitChainChild" resolution="test262">
+    <emu-note>
+      <p>"the |X| of _n_" names a child of _n_ (§5.1.2 gives a node only its right-hand side's children), so IsLabelledFunction 1-2 never find the |LabelledStatement| under a |Statement| node: read by §5.1.2 alone, step 1 returns *false* for every |Statement| node and `if (1) l: function f() {}` is valid; test262's labelled-fn-stmt*.js require a SyntaxError. The model reads "_n_ is a |X|" through the unit chain (decisions.md, <code>child-of-through-unit-chain</code>), so its literal reading passes step 1 and stops (a sort error) at step 2, where _n_'s production has no |X|. The test262 and proposed reading: |X| is taken from the first node of _n_'s unit chain whose production has one.</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-StringValueReservedWord" name="StringValueReservedWord" resolution="test262">
+    <emu-reading clause="sec-identifiers-static-semantics-early-errors" grammar="Identifier : IdentifierName but not ReservedWord" rule="2" hash="9e9b027f4006536ceb3cdfc0758c2cfc6330bea1d4a94510b5dc0f3c553d25f8">
+      <p reading="test262">It is a Syntax Error if the StringValue of |IdentifierName| is the String value of any terminal of |ReservedWord| except for `yield` or `await`.</p>
+      <p reading="proposed">It is a Syntax Error if the StringValue of |IdentifierName| is the String value of any terminal of |ReservedWord| except for `yield` or `await`.</p>
+    </emu-reading>
+    <emu-note>
+      <p>"the StringValue of any |ReservedWord| except for `yield` or `await`" takes the StringValue of a |ReservedWord|, for which StringValue has no row. The literal text stops there. The test262 and proposed reading: the StringValue of a terminal is the String value of its code points (test262's val-*-via-escape-*.js require a SyntaxError for an |IdentifierName| that spells a reserved word with escapes).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-LookaheadSourceTokens" name="LookaheadSourceTokens" resolution="test262" switch="parser">
+    <emu-note>
+      <p>A lookahead restriction reads "the immediately following input token sequence" (§5.1.6.7), and §12.10 inserts semicolons "into the source code token stream": the text does not say whether an inserted semicolon is a token a lookahead reads. Read as one, `if (0) let` LF `[a] = 0;` is a sentence. The literal text stops wherever a lookahead reads at an inserted semicolon. The test262 and proposed reading: a lookahead reads the source's tokens, past the semicolons §12.10 inserted (test262's let-array-with-newline.js require a SyntaxError).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-HTMLCloseCommentToken" name="HTMLCloseCommentToken" resolution="test262" switch="parser" stops="">
+    <emu-note>
+      <p>B.1.1 adds |HTMLCloseComment| as an alternative of |InputElementHashbangOrRegExp| of its own, not under |Comment|, and §5.1.3 drops only white space and comments from the input elements: literally a first-line `-->` is a token that no syntactic production has, and the |Script| has no parse (a SyntaxError). The test262 and proposed reading: an |HTMLCloseComment| input element is a comment (test262's single-line-html-close-first-line-{1,2,3}.js).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-AnnexBRegExpOrder" name="AnnexBRegExpOrder" resolution="test262" switch="parser">
+    <emu-note>
+      <p>B.1.2's "each alternative is considered only if previous production alternatives do not match" says neither what an alternative matches nor how nested choices combine, and without an order its grammar is ambiguous (`/a{1}/`, `/\b*/`, `/\1/`). The literal text stops on a pattern with more than one parse. The test262 and proposed reading: commitment: a node of a nonterminal B.1.2 restates uses an alternative only if no earlier alternative of it derives any span from the node's start (tc39/ecma262 #2228; test262's annexB/built-ins/RegExp).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-AnnexBGroupCount" name="AnnexBGroupCount" resolution="test262" switch="parser">
+    <emu-note>
+      <p>B.1.2's condition on `AtomEscape :: DecimalEscape`, "the CapturingGroupNumber of |DecimalEscape| is ≤ CountLeftCapturingParensWithin(the |Pattern| containing |DecimalEscape|)", reads the |Pattern| whose parse the condition itself decides. The literal text stops on a pattern with more than one parse. The test262 and proposed reading: stratified: the count is that of a committed parse of the input as Pattern[~UnicodeMode, ~UnicodeSetsMode, ~NamedCaptureGroups] with the condition true (test262's legacy-octal-escape.js).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-AnnexBModifierEarlyErrors" name="AnnexBModifierEarlyErrors" resolution="test262" stops="">
+    <emu-reading clause="sec-patterns-static-semantics-early-errors" grammar="Atom :: `(?` RegularExpressionModifiers `:` Disjunction `)`" rule="0" hash="de074fd20221412e1e732774639fbfaa209b923b7d5128318558fd9fd4ce2149" also="ExtendedAtom :: `(?` RegularExpressionModifiers `:` Disjunction `)`" also-clause="sec-regular-expressions-patterns">
+      <p reading="test262">It is a Syntax Error if the source text matched by |RegularExpressionModifiers| contains the same code point more than once.</p>
+      <p reading="proposed">It is a Syntax Error if the source text matched by |RegularExpressionModifiers| contains the same code point more than once.</p>
+    </emu-reading>
+    <emu-reading clause="sec-patterns-static-semantics-early-errors" grammar="Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`" rule="0" hash="99f9426d2a00e4c2d89c39a8a9187ff69ce335884ce1c179aad00c8a1877023b" also="ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`" also-clause="sec-regular-expressions-patterns">
+      <p reading="test262">It is a Syntax Error if the source text matched by the first |RegularExpressionModifiers| and the source text matched by the second |RegularExpressionModifiers| are both empty.</p>
+      <p reading="proposed">It is a Syntax Error if the source text matched by the first |RegularExpressionModifiers| and the source text matched by the second |RegularExpressionModifiers| are both empty.</p>
+    </emu-reading>
+    <emu-reading clause="sec-patterns-static-semantics-early-errors" grammar="Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`" rule="1" hash="34e695b15210f7a947d34742058ac05cc18ddd55d84bfec1aec422d9bd475351" also="ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`" also-clause="sec-regular-expressions-patterns">
+      <p reading="test262">It is a Syntax Error if the source text matched by the first |RegularExpressionModifiers| contains the same code point more than once.</p>
+      <p reading="proposed">It is a Syntax Error if the source text matched by the first |RegularExpressionModifiers| contains the same code point more than once.</p>
+    </emu-reading>
+    <emu-reading clause="sec-patterns-static-semantics-early-errors" grammar="Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`" rule="2" hash="a65661ccf4f3095bb123a149b3d012a61f00b78a5580fafb4897ad621dfddbef" also="ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`" also-clause="sec-regular-expressions-patterns">
+      <p reading="test262">It is a Syntax Error if the source text matched by the second |RegularExpressionModifiers| contains the same code point more than once.</p>
+      <p reading="proposed">It is a Syntax Error if the source text matched by the second |RegularExpressionModifiers| contains the same code point more than once.</p>
+    </emu-reading>
+    <emu-reading clause="sec-patterns-static-semantics-early-errors" grammar="Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`" rule="3" hash="045f57a8cfc1935e9db562dc0bdf1290c55cfe5a7f150bacfe1a00b6de645993" also="ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`" also-clause="sec-regular-expressions-patterns">
+      <p reading="test262">It is a Syntax Error if any code point in the source text matched by the first |RegularExpressionModifiers| is also contained in the source text matched by the second |RegularExpressionModifiers|.</p>
+      <p reading="proposed">It is a Syntax Error if any code point in the source text matched by the first |RegularExpressionModifiers| is also contained in the source text matched by the second |RegularExpressionModifiers|.</p>
+    </emu-reading>
+    <emu-note>
+      <p>§22.2.1.1's modifier rules are on |Atom|'s productions; under B.1.2's grammar `(?ii:a)` is an |ExtendedAtom|, for which B.1.2.1 adds no such rule, so literally `/(?ii:a)/`, `/(?-:a)/` and `/(?i-i:a)/` are valid patterns without the u or v flag on a B.1.2 host. The test262 and proposed reading: §22.2.1.1's rules of the two modifier productions of |Atom| apply to the |ExtendedAtom| productions with the same right-hand sides.</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-CoveredNodeParent" name="CoveredNodeParent" resolution="test262" switch="parser" stops="">
+    <emu-note>
+      <p>§5.1.5 reparses a cover with _n_ as goal, so the covered node roots a tree of its own: "contained within", "most closely contains" and "the parent of" (IsInTailPosition 2, MightBothParticipate 1, ShallowestContainedJSONValue 6.d) fail for a node inside it, and read literally `return (f(n - 1))` is no tail call. The test262 and proposed reading: the covered node takes the cover's place in the tree, its parent being the cover's parent (test262's tco-pos.js).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-NumberMultiplyZeroSign" name="NumberMultiplyZeroSign" resolution="pending">
+    <emu-reading clause="sec-numeric-types-number-multiply" step="6" hash="bf494290554527194297689763c3b1d306b77f5da221d93ebb6375254b410fbe">
+      <emu-alg reading="proposed">
+        1. If _x_ is *+0*<sub>𝔽</sub> and _y_ &lt; *-0*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>.
+        1. If _y_ is *+0*<sub>𝔽</sub> and _x_ &lt; *-0*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>.
+        1. Return 𝔽(ℝ(_x_) × ℝ(_y_)).
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-GatherAvailableAncestorsEmptyCycleRoot" name="GatherAvailableAncestorsEmptyCycleRoot" resolution="literal" stops="sec-gather-available-ancestors@1.a">
+    <emu-reading clause="sec-gather-available-ancestors" step="1.a" hash="0860702b9d379ca5fa107927412746a1c2a79047407e3ad1e2a0e1d7d7da48c3">
+      <emu-alg reading="proposed">
+        1. If _execList_ does not contain _ancestorModule_ and _ancestorModule_.[[EvaluationError]] is ~empty~, then
+          1. Assert: _ancestorModule_.[[Status]] is ~evaluating-async~.
+          1. Assert: _ancestorModule_.[[CycleRoot]] is not ~empty~.
+          1. If _ancestorModule_.[[CycleRoot]].[[EvaluationError]] is ~empty~, then
+            1. Assert: _ancestorModule_.[[AsyncEvaluationOrder]] is an integer.
+            1. Assert: _ancestorModule_.[[PendingAsyncDependencies]] > 0.
+            1. Set _ancestorModule_.[[PendingAsyncDependencies]] to _ancestorModule_.[[PendingAsyncDependencies]] - 1.
+            1. If _ancestorModule_.[[PendingAsyncDependencies]] = 0, then
+              1. Append _ancestorModule_ to _execList_.
+              1. If _ancestorModule_.[[HasTLA]] is *false*, perform GatherAvailableAncestors(_ancestorModule_, _execList_).
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-BuiltinReturnCompletion" name="BuiltinReturnCompletion" resolution="test262">
+    <emu-reading clause="sec-builtincallorconstruct" step="10.b.iii" hash="46a9fb945a3e146d9e1c65aa4766ce52244b36aa07013908d72f32d912307faf">
+      <emu-alg reading="test262 proposed">
+        1. If _result_ is a normal completion, return ReturnCompletion(_result_.[[Value]]).
+        1. Return ? _result_.
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-ExecuteModuleAsyncDisposeResources" name="ExecuteModuleAsyncDisposeResources" resolution="test262">
+    <emu-reading clause="sec-source-text-module-record-execute-module" step="4.b" hash="a76dd4ac067881ca327b0805bde72f6ff64aaebcaea9a834ba5ca4300c9859a8">
+      <emu-alg reading="test262 proposed">
+        1. Let _env_ be _module_.[[Environment]].
+        1. Let _asyncBody_ be a new Abstract Closure with no parameters that captures _module_ and _env_ and performs the following steps when called:
+          1. Let _result_ be Completion(Evaluation of _module_.[[ECMAScriptCode]]).
+          1. Set _result_ to Completion(DisposeResources(_env_.[[DisposableResourceStack]], _result_)).
+          1. Return Completion(_result_).
+        1. Perform AsyncBlockStart(_capability_, _asyncBody_, _moduleContext_).
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-ParseTextErrorObjects" name="ParseTextErrorObjects" resolution="literal" stops="">
+    <emu-reading clause="sec-parsetext" step="5" hash="ae507753257765f626d589e6631c95614ce1847b8061dc4872d276664c727cd3">
+      <emu-alg reading="proposed">
+        1. Return « a newly created *SyntaxError* object ».
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-parsepattern" step="2.a" hash="2e595c1f981fd9534b39e2eb6dd07810357e2d85d918ef1c706cbad72793eaa0">
+      <emu-alg reading="proposed">
+        1. Let _parseResult_ be « a newly created *SyntaxError* object ».
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-parsepattern-annexb" step="1.a" hash="2e595c1f981fd9534b39e2eb6dd07810357e2d85d918ef1c706cbad72793eaa0">
+      <emu-alg reading="proposed">
+        1. Let _parseResult_ be « a newly created *SyntaxError* object ».
+      </emu-alg>
+    </emu-reading>
+    <emu-note>
+      <p>The pinned text says ParseText and ParsePattern return "a List of one or more *SyntaxError* objects" (with an implementation-defined number and order when multiple errors exist), without specifying the Realm Record or concrete error objects. Every caller only checks whether the List is non-empty and throws a fresh *SyntaxError* of its own (or, for ParseScript/ParseModule hosts, takes an element), so the proposed reading returns a single newly created *SyntaxError* object in the current realm (docs/spec-issues/05-parsetext-error-objects.md).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-DoWaitSyncTimeout" name="DoWaitSyncTimeout" resolution="test262" stops="sec-addwaiter@2">
+    <emu-reading clause="sec-dowait" step="28.a" hash="7ca12b3af9b6d28901a0a372c8a7ee61cac666508d4c4c6a5061bbe3f97130a0">
+      <emu-alg reading="test262">
+        1. Perform SuspendThisAgent(_waiterList_, _waiterRecord_).
+        1. If _waiterList_.[[Waiters]] contains _waiterRecord_, then
+          1. Set _waiterRecord_.[[Result]] to *"timed-out"*.
+          1. Perform RemoveWaiter(_waiterList_, _waiterRecord_).
+      </emu-alg>
+      <emu-alg reading="proposed">
+        1. Perform SuspendThisAgent(_waiterList_, _waiterRecord_).
+        1. If _waiterList_.[[Waiters]] contains _waiterRecord_, then
+          1. NOTE: The agent woke because of the timeout: NotifyWaiter is performed only on a Waiter Record that RemoveWaiters has removed.
+          1. Set _waiterRecord_.[[Result]] to *"timed-out"*.
+          1. Perform RemoveWaiter(_waiterList_, _waiterRecord_).
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-AtomicsWaitAsyncTimeoutAssert" name="AtomicsWaitAsyncTimeoutAssert" resolution="literal" stops="sec-enqueueatomicswaitasynctimeoutjob@1.b.ii">
+    <emu-reading clause="sec-enqueueatomicswaitasynctimeoutjob" step="1.b.ii" hash="47d491363ca698558fbbe060f2077d623ad99761bd3024ab1af9d1db9b2881e6">
+      <emu-alg reading="proposed">
+        1. Assert: _timeOfJobExecution_ ≥ 𝔽(_waiterRecord_.[[TimeoutTime]]) rounded down to an integral Number (ignoring potential non-monotonicity of time values).
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-AtomicsWaitAsyncTimeoutNegativeDelay" name="AtomicsWaitAsyncTimeoutNegativeDelay" resolution="literal" stops="sec-enqueueatomicswaitasynctimeoutjob@4">
+    <emu-reading clause="sec-enqueueatomicswaitasynctimeoutjob" step="4" hash="c21a24a0f2fa993e1bff580c6dd932db6a8f7d01c2f6b223968cce1898bb7002">
+      <emu-alg reading="proposed">
+        1. Let _delay_ be 𝔽(_waiterRecord_.[[TimeoutTime]]) - _now_.
+        1. If _delay_ &lt; *+0*<sub>𝔽</sub>, set _delay_ to *+0*<sub>𝔽</sub>.
+        1. Perform HostEnqueueTimeoutJob(_timeoutJob_, _currentRealm_, _delay_).
+      </emu-alg>
+      <emu-note>
+        <p>_now_ is read after DoWait's reading from which [[TimeoutTime]] was computed, so the literal difference is negative when the clock has advanced past [[TimeoutTime]], and HostEnqueueTimeoutJob takes a non-negative finite Number. The proposed reading clamps the text's own difference at zero, so that _now_ + _delay_ is 𝔽([[TimeoutTime]]) whenever the delay is positive: the Job runs no earlier than that time value, which is what AtomicsWaitAsyncTimeoutAssert's proposed Assert needs. Clamping the exact difference instead (𝔽(max([[TimeoutTime]] - ℝ(_now_), 0))) can round the delay down across a millisecond that 𝔽([[TimeoutTime]]) rounds up to.</p>
+      </emu-note>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-GetUTCEpochNanosecondsNaN" name="GetUTCEpochNanosecondsNaN" resolution="literal" stops="sec-getutcepochnanoseconds@4">
+    <emu-reading clause="sec-utc-t" step="1" hash="3327ec316d69f2ef5da0fb88b1a9654f73202ac15a35a076657ca2fd8f4c658b">
+      <emu-alg reading="proposed">
+        1. If _t_ is not a finite Number, return *NaN*.
+        1. If MakeDay(𝔽(YearFromTime(_t_)), 𝔽(MonthFromTime(_t_)), *1*<sub>𝔽</sub>) is *NaN*, return *NaN*.
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-GetMatchStringStartAfterEnd" name="GetMatchStringStartAfterEnd" resolution="literal" stops="sec-getmatchstring@1[sec-regexpbuiltinexec]">
+    <emu-reading clause="sec-regexpbuiltinexec" step="13.b" hash="1c7295d3ca6fd9963ab6fa7967366ddd5861e8917efd52e4b6a177b4ae847bf8">
+      <emu-alg reading="proposed">
+        1. Let _inputIndex_ be the index into _input_ of the character that was obtained from element _lastIndex_ of _string_.
+        1. If _fullUnicode_ is *true*, set _lastIndex_ to GetStringIndex(_string_, _inputIndex_).
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-AsyncBlockStartAwaitResult" name="AsyncBlockStartAwaitResult" resolution="test262" stops="sec-asyncblockstart@4">
+    <emu-reading clause="sec-asyncblockstart" step="4" hash="67571a36e736676227d044ade46d0a8fe925e02544ae09e992e454886bb678c1">
+      <emu-alg reading="test262 proposed">
+        1. Assert: _result_ is either ~unused~ or ~empty~.
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-PromiseJobAbruptCompletion" name="PromiseJobAbruptCompletion" resolution="literal" stops="sec-jobs@-[sec-newpromisereactionjob]">
+    <emu-reading clause="sec-newpromisereactionjob" step="1.h" hash="e8f8508699037f00260e4715a3bc241ca39100f70146edd74411e518c8f29a07">
+      <emu-alg reading="proposed">
+        1. If _handlerResult_ is an abrupt completion, then
+          1. Let _settleResult_ be Completion(Call(_promiseCapability_.[[Reject]], *undefined*, « _handlerResult_.[[Value]] »)).
+        1. Else,
+          1. Let _settleResult_ be Completion(Call(_promiseCapability_.[[Resolve]], *undefined*, « _handlerResult_.[[Value]] »)).
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-newpromisereactionjob" step="1.i" hash="3cb8a03d32f509d4e5eaf0b8fe876755b6cd84fd1af3f934492d4cc633d2b161">
+      <emu-alg reading="proposed">
+        1. If _settleResult_ is an abrupt completion, perform HostReportErrors(« _settleResult_.[[Value]] »).
+        1. Return ~empty~.
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-NativeFunctionInitialName" name="NativeFunctionInitialName" resolution="literal" stops="">
+    <emu-reading clause="sec-function.prototype.tostring" step="3" hash="e123217b503fa9ffe925e358f91a9ccb4e2394cf9feab1bd9d0062564ce105d7">
+      <emu-alg reading="proposed">
+        1. If _func_ is a built-in function object, return NativeFunctionSource(_func_).
+      </emu-alg>
+      <emu-note>
+        <p>The proposed text: "If _func_ is a built-in function object, return an implementation-defined String source code representation of _func_. The representation must have the syntax of a |NativeFunction|. Additionally, if _func_ has an [[InitialName]] internal slot, _func_.[[InitialName]] is a String, and _func_.[[InitialName]] is matched by |NativeFunctionAccessor?| |PropertyName|, the portion of the returned String that would be matched by |NativeFunctionAccessor?| |PropertyName| must be _func_.[[InitialName]]." Both requirements are NativeFunctionSource's law.</p>
+      </emu-note>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-SyntheticModuleLinkResets" name="SyntheticModuleLinkResets" resolution="literal" stops="">
+    <emu-reading clause="sec-smr-Link" step="1" hash="e0ae4c9d25e50a3925f2761b4c2f3063451ca69ddf5e2a4c101043086d2b4467">
+      <emu-alg reading="proposed">
+        1. If _module_.[[Environment]] is not ~empty~, return ~unused~.
+        1. Let _realm_ be _module_.[[Realm]].
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-CreateDynamicFunctionPrivateIdentifiers" name="CreateDynamicFunctionPrivateIdentifiers" resolution="proposed">
+    <emu-reading clause="sec-createdynamicfunction" step="25" hash="ac388b566835ea3e0612827ae9be1d8e5c765f781e4b594e6fdf90e4adb024f2">
+      <emu-alg reading="test262">
+        1. If _expr_ is a List of errors, throw a *SyntaxError* exception.
+        1. If AllPrivateIdentifiersValid of _body_ with argument « » is *false*, throw a *SyntaxError* exception.
+      </emu-alg>
+      <emu-alg reading="proposed">
+        1. If _expr_ is a List of errors, throw a *SyntaxError* exception.
+        1. If AllPrivateIdentifiersValid of _body_ with argument « » is *false*, throw a *SyntaxError* exception.
+        1. If AllPrivateIdentifiersValid of _params_ with argument « » is *false*, throw a *SyntaxError* exception.
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-IdentityEscapeJoinControls" name="IdentityEscapeJoinControls" resolution="test262" kind="proposal">
+    <emu-rule-reading clause="sec-patterns" rule="IdentityEscape" hash="720c17925783d691e8bd3b652bacf85c9a103882c6be1eddaeabde52a48953b3">
+      <emu-grammar type="definition" reading="test262 proposed">
+        IdentityEscape[UnicodeMode] ::
+          [+UnicodeMode] SyntaxCharacter
+          [+UnicodeMode] `/`
+          [~UnicodeMode] SourceCharacter but not UnicodeIDContinue
+          [~UnicodeMode] `&#x200C;`
+          [~UnicodeMode] `&#x200D;`
+      </emu-grammar>
+    </emu-rule-reading>
+    <emu-note>
+      <p>Since Unicode 15.1 added &lt;ZWNJ&gt; (U+200C) and &lt;ZWJ&gt; (U+200D) to ID_Continue, `IdentityEscape[~UnicodeMode] :: SourceCharacter but not UnicodeIDContinue` makes `/\\&#x200C;/` and `/\\&#x200D;/` SyntaxErrors outside §B.1.2 without an Annex F record; the test262 and proposed reading aligns the main grammar with §B.1.2 and pre-15.1 behaviour by admitting both code points as identity escapes (docs/spec-issues/21-identityescape-zwnj-zwj.md).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-LonePropertyGeneralCategoryAssert" name="LonePropertyGeneralCategoryAssert" resolution="test262" stops="sec-runtime-semantics-unicodematchpropertyvalue-p-v@2[sec-compiletocharset]">
+    <emu-reading clause="sec-compiletocharset" step="2" hash="7897c9e98cf01a409d27539047d26682c44c56177b627e4a844ef9063b50c2e0">
+      <emu-alg reading="test262 proposed">
+        1. If _s_ is a Unicode property value or property value alias for the General_Category (gc) property listed in <a href="https://unicode.org/Public/UCD/latest/ucd/PropertyValueAliases.txt"><code>PropertyValueAliases.txt</code></a>, then
+          1. Let _v_ be UnicodeMatchPropertyValue(StringToCodePoints(*"General_Category"*), _s_).
+          1. Return the CharSet containing all Unicode code points whose character database definition includes the property “General_Category” with value _v_.
+      </emu-alg>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-AllocateSharedArrayBufferByteLengthStore" name="AllocateSharedArrayBufferByteLengthStore" resolution="test262">
+    <emu-reading clause="sec-allocatesharedarraybuffer" step="9.c" hash="c4a0ad89df2b39d7fd249447a41f9f2fe0f4236a0d72b296cb187bbf5f64014e">
+      <emu-alg reading="test262 proposed">
+        1. Let _agentRecord_ be the Agent Record of the surrounding agent.
+        1. Let _rawBytes_ be NumericToRawBytes(~biguint64~, ℤ(_byteLength_), _agentRecord_.[[LittleEndian]]).
+        1. Let _execution_ be _agentRecord_.[[CandidateExecution]].
+        1. Let _eventsRecord_ be the Agent Events Record of _execution_.[[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier().
+        1. Append WriteSharedMemory { [[Order]]: ~seq-cst~, [[NoTear]]: *true*, [[Block]]: _byteLengthBlock_, [[ByteIndex]]: 0, [[ElementSize]]: 8, [[Payload]]: _rawBytes_ } to _eventsRecord_.[[EventList]].
+      </emu-alg>
+      <emu-note>
+        <p>SetValueInBuffer takes an ArrayBuffer or SharedArrayBuffer (its step 4 reads [[ArrayBufferData]]); _byteLengthBlock_ is a Shared Data Block, which ArrayBufferByteLength and SharedArrayBuffer.prototype.grow read with GetRawBytesFromSharedBlock. The reading writes it as SetValueInBuffer's shared branch would (IsNoTearConfiguration(~biguint64~, ~seq-cst~) is *true*). test262 constructs growable SharedArrayBuffers (built-ins/SharedArrayBuffer/prototype/grow).</p>
+      </emu-note>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-ContainsAwaitCover" name="ContainsAwaitCover" resolution="test262">
+    <emu-reading clause="sec-static-semantics-contains" step="1.a" hash="f0ef147bbc66dbcbf214e0de5d086da28bf2478e65cc3bda23f4aad879ddafa8">
+      <emu-alg reading="test262 proposed">
+        1. If _child_ is an instance of _symbol_, return *true*.
+        1. If _symbol_ is |AwaitExpression| and this Parse Node is an instance of the production <emu-grammar>UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead</emu-grammar>, return *true*.
+      </emu-alg>
+      <emu-note>
+        <p>An `await` expression parses as <emu-grammar>UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead</emu-grammar>, and |AwaitExpression| is only the cover's refined interpretation, so the default definition never meets an |AwaitExpression| and every early error rule "X Contains |AwaitExpression|" holds vacuously. test262 requires them (built-ins/AsyncGeneratorFunction/instance-await-expr-in-param.js, language/expressions/async-generator/early-errors-expression-formals-contains-await-expr.js, language/expressions/async-arrow-function/await-as-param-nested-arrow-body-position.js). The reading counts the cover of that production, and not the cover of an |AwaitUsingDeclaration|, as an |AwaitExpression|. The proposed text is the equivalent Contains row for <emu-grammar>UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead</emu-grammar>: "1. If _symbol_ is |AwaitExpression|, return *true*. 2. Let _expr_ be the |AwaitExpression| that is covered by |CoverAwaitExpressionAndAwaitUsingDeclarationHead|. 3. Return _expr_ Contains _symbol_."</p>
+      </emu-note>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-SplitCodeUnitStrings" name="SplitCodeUnitStrings" resolution="test262">
+    <emu-reading clause="sec-string.prototype.split" step="10.d" hash="38754dbf8daeaa13ccda7f51588afc5f755ec15766fc6cab45142ef54f791afb">
+      <emu-alg reading="test262 proposed">
+        1. Let _codeUnits_ be a new empty List.
+        1. For each integer _i_ such that 0 ≤ _i_ &lt; _outLength_, in ascending order, do
+          1. Append the substring of _head_ from _i_ to _i_ + 1 to _codeUnits_.
+      </emu-alg>
+      <emu-note>
+        <p>The literal step passes a List of code units to CreateArrayFromList, whose parameter is a List of ECMAScript language values; a code unit is not one. test262 requires the Array's elements to be the Strings of one code unit each (built-ins/String/prototype/split/separator-empty-string-instance-is-string.js), as the method's description says: "any _separator_ coerced to the empty String splits the *this* value into individual code units".</p>
+      </emu-note>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-RacesNotBoth" name="RacesNotBoth" resolution="literal" switch="none" stops="">
+    <emu-note>
+      <p>Step 1.a of Races (sec-races) is always true: an execution's happens-before is a strict partial order, so _eventA_ and _eventB_ never both happen-before each other, and any two conflicting events race. The memory model's meaning (Ecma.MemoryModel.Race) reads the literal text. The proposed text of step 1.a: "If neither _eventA_ happens-before _eventB_ in _execution_ nor _eventB_ happens-before _eventA_ in _execution_, then".</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-InitHappensBeforeOverlap" name="InitHappensBeforeOverlap" resolution="literal" switch="none" stops="">
+    <emu-note>
+      <p>The third condition of happens-before orders an ~init~ write only before events whose memory ranges are *overlapping*, and "overlapping" excludes equal ranges, so a 1-byte event at an ~init~ event's byte is not ordered after it. The proposed text: "SharedDataBlockEventSet(_execution_) contains both _eventA_ and _eventB_, _eventA_.[[Order]] is ~init~, _eventA_ and _eventB_ are not the same Shared Data Block event, and _eventA_ and _eventB_ do not have disjoint memory ranges."</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-MemoryRangeSameBlock" name="MemoryRangeSameBlock" resolution="proposed" switch="none">
+    <emu-note>
+      <p>A memory range is a Set of integers, the byte indices from [[ByteIndex]], with no [[Block]] in it, so reads-bytes-from's "has _readEvent_.[[ByteIndex]] + _i_ in its memory range" and coherent reads' "has _byteLocation_ in its memory range" (step 1.c.ii) admit a write to another Shared Data Block at the same index. The proposed text, which the memory model's meaning (Ecma.MemoryModel.Rbf.Valid, CoherentReads) reads: "Each event _writeEvent_ with index _i_ in _writes_ has _readEvent_.[[Block]] as its [[Block]] and _readEvent_.[[ByteIndex]] + _i_ in its memory range", and in step 1.c.ii "a WriteSharedMemory or ReadModifyWriteSharedMemory event _value_ whose [[Block]] is _readEvent_.[[Block]] and that has _byteLocation_ in its memory range".</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-CreateIntrinsicsAsyncArgument" name="CreateIntrinsicsAsyncArgument" resolution="test262" stops="sec-setfunctionname@5.a[sec-createbuiltinfunction]">
+    <emu-reading clause="sec-createintrinsics" step="2" hash="3d12c2f953d08043ab515e1e49ae09c6fb4d024fa5b9a0a3889740c44c26825b">
+      <emu-alg reading="test262 proposed">
+        1. Let _entries_ be IntrinsicObjects().
+        1. Let _objects_ be a new empty List.
+        1. For each Record _entry_ of _entries_, do
+          1. If _entry_.[[Prototype]] is *null*, let _proto_ be *null*; else let _proto_ be _objects_[_entry_.[[Prototype]]].
+          1. If _entry_.[[Behaviour]] is not ~empty~, then
+            1. If _entry_.[[Prefix]] is ~empty~, let _obj_ be CreateBuiltinFunction(_entry_.[[Behaviour]], _entry_.[[Length]], _entry_.[[Name]], _entry_.[[Slots]], _realmRecord_, _proto_); else let _obj_ be CreateBuiltinFunction(_entry_.[[Behaviour]], _entry_.[[Length]], _entry_.[[Name]], _entry_.[[Slots]], _realmRecord_, _proto_, _entry_.[[Prefix]]).
+            1. Set _obj_.[[Async]] to _entry_.[[Async]].
+            1. If _entry_.[[Constructor]] is *true*, set _obj_.[[Construct]] to the definition specified in <emu-xref href="#sec-built-in-function-objects-construct-argumentslist-newtarget"></emu-xref>.
+          1. Else,
+            1. Let _obj_ be OrdinaryObjectCreate(_proto_, _entry_.[[Slots]]).
+            1. If _entry_.[[Exotic]] is <emu-xref href="#sec-array-exotic-objects"></emu-xref>, then
+              1. Set _obj_.[[DefineOwnProperty]] as specified in <emu-xref href="#sec-array-exotic-objects-defineownproperty-p-desc"></emu-xref>.
+            1. Else if _entry_.[[Exotic]] is <emu-xref href="#sec-string-exotic-objects"></emu-xref>, then
+              1. Set _obj_.[[GetOwnProperty]] as specified in <emu-xref href="#sec-string-exotic-objects-getownproperty-p"></emu-xref>.
+              1. Set _obj_.[[DefineOwnProperty]] as specified in <emu-xref href="#sec-string-exotic-objects-defineownproperty-p-desc"></emu-xref>.
+              1. Set _obj_.[[OwnPropertyKeys]] as specified in <emu-xref href="#sec-string-exotic-objects-ownpropertykeys"></emu-xref>.
+            1. Else if _entry_.[[Exotic]] is <emu-xref href="#sec-immutable-prototype-exotic-objects"></emu-xref>, then
+              1. Set _obj_.[[SetPrototypeOf]] to the definition specified in <emu-xref href="#sec-immutable-prototype-exotic-objects-setprototypeof-v"></emu-xref>.
+          1. For each Record _slot_ of _entry_.[[SlotValues]], do
+            1. Perform SetFieldNamed(_obj_, _slot_.[[Name]], _slot_.[[Value]]).
+          1. For each element _name_ of _entry_.[[Names]], do
+            1. Perform SetFieldNamed(_realmRecord_.[[Intrinsics]], _name_, _obj_).
+          1. Append _obj_ to _objects_.
+        1. For each Record _entry_ of _entries_, do
+          1. Let _obj_ be _objects_[_entry_.[[Index]]].
+          1. If _entry_.[[Behaviour]] is not ~empty~, then
+            1. Let _la_ be _entry_.[[LengthAttributes]].
+            1. Perform ! DefinePropertyOrThrow(_obj_, *"length"*, PropertyDescriptor { [[Writable]]: _la_.[[Writable]], [[Enumerable]]: _la_.[[Enumerable]], [[Configurable]]: _la_.[[Configurable]] }).
+            1. Let _na_ be _entry_.[[NameAttributes]].
+            1. Perform ! DefinePropertyOrThrow(_obj_, *"name"*, PropertyDescriptor { [[Writable]]: _na_.[[Writable]], [[Enumerable]]: _na_.[[Enumerable]], [[Configurable]]: _na_.[[Configurable]] }).
+          1. For each Record _p_ of PropertyOrder(_obj_, _entry_.[[Properties]]), do
+            1. If PropertyProvided(_p_) is *true*, perform OwnPropertyCreate(_obj_, _p_.[[Key]], IntrinsicPropertyDescriptor(_p_, _objects_), _p_.[[Kind]]).
+          1. Set _obj_.[[Extensible]] to _entry_.[[Extensible]].
+      </emu-alg>
+      <emu-note>
+        <p>Step 2 creates each built-in function by "CreateBuiltinFunction(_steps_, _length_, _name_, _slots_, _realmRecord_, _proto_, _async_)", which passes _async_ as CreateBuiltinFunction's _prefix_ and gives no accessor its prefix; read literally (realm.emu), SetFunctionName concatenates a Boolean and realm creation stops. test262 requires both: built-ins/Array/fromAsync/ (an async function) and built-ins/Map/prototype/size/name.js (*"get size"*). The proposed text: "CreateBuiltinFunction(_steps_, _length_, _name_, _slots_, _realmRecord_, _proto_, _prefix_, _async_), where _prefix_ is *"get"* or *"set"* for a get or set accessor function of a built-in property and ~empty~ otherwise", with an ~empty~ _prefix_ read as not present.</p>
+      </emu-note>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-SortInfiniteComparator" name="SortInfiniteComparator" resolution="test262">
+    <emu-reading clause="sec-sortindexedproperties" step="4" hash="b783ab82e11ea39f8f39629a4f8c53b32a86a897ab8d9f9b4c0201dd69dab32f">
+      <emu-alg reading="test262 proposed">
+        1. Let _next_ be SortStep(the number of elements in _items_, ~empty~, ~empty~).
+        1. Repeat, while _next_ is a List,
+          1. Let _result_ be _sortCompare_(_items_[_next_[0]], _items_[_next_[1]]).
+          1. If _result_ is an abrupt completion, return _result_.
+          1. Set _next_ to SortStep(the number of elements in _items_, _next_[2], _result_).
+        1. Let _sorted_ be a new empty List.
+        1. For each element _i_ of _next_.[[Value]], do
+          1. Append _items_[_i_] to _sorted_.
+        1. Set _items_ to _sorted_.
+      </emu-alg>
+      <emu-note>
+        <p>The definition of a consistent comparator reads each result as ℝ(_comparator_(_a_, _b_)), which has no value for ±∞; the literal reading (sort.emu) stops there. No test262 test has a comparator return ±∞. The test262 reading has no ℝ step: by SortStep's law (sort.emu) no consistent comparator gives a ±∞ result, so the order is the host's, and both test hosts order by the result's sign. The proposed text compares the Number itself with *+0*<sub>𝔽</sub> where the text takes ℝ of it, in the sort order's two conditions ("if _sortCompare_(old[_j_], old[_k_]) &lt; *+0*<sub>𝔽</sub>", "… = *+0*<sub>𝔽</sub>") and in the definition of a consistent comparator ("_a_ &lt;<sub>C</sub> _b_ means _comparator_(_a_, _b_) &lt; *+0*<sub>𝔽</sub>", likewise for =<sub>C</sub> and &gt;<sub>C</sub>).</p>
+      </emu-note>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-UnregisterIteratesCopy" name="UnregisterIteratesCopy" resolution="test262" stops="">
+    <emu-reading clause="sec-finalization-registry.prototype.unregister" step="5" hash="6123c86eed37f5637ab7255478a0a289c7b7f26f79c1322502b629b4e0220b7d">
+      <emu-alg reading="test262 proposed">
+        1. Let _cells_ be a copy of _finalizationRegistry_.[[Cells]].
+        1. For each Record { [[WeakRefTarget]], [[HeldValue]], [[UnregisterToken]] } _cell_ of _cells_, do
+          1. If _cell_.[[UnregisterToken]] is not ~empty~ and SameValue(_cell_.[[UnregisterToken]], _unregisterToken_) is *true*, then
+            1. Remove _cell_ from _finalizationRegistry_.[[Cells]].
+            1. Set _removed_ to *true*.
+      </emu-alg>
+      <emu-note>
+        <p>The literal step removes from the List it iterates, and the For each convention does not say which element comes next; read literally, the cell after a removed one is skipped. test262 requires every cell with the token to go (built-ins/FinalizationRegistry/prototype/unregister/unregister-object-token.js and unregister-symbol-token.js register two cells with one token in a row). The proposed text iterates a copy, as above.</p>
+      </emu-note>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-IsCharacterClassControlLetter" name="IsCharacterClassControlLetter" resolution="test262">
+    <emu-reading id="row-ischaracterclass-classcontrolletter" clause="sec-patterns-static-semantics-is-character-class-annexb" grammar="ClassEscape :: `c` ClassControlLetter">
+      <emu-alg reading="test262 proposed">
+        1. Return *false*.
+      </emu-alg>
+      <emu-note>
+        <p>IsCharacterClass has no definition for this production of §B.1.2, whose CharacterValue §B.1.2.4 gives, and §B.1.2.1's range rules ask for it of every |ClassAtom| of a range: `/[\c1-\c5]/`. The literal text stops there (it asks IsCharacterClass of |ClassControlLetter|, which has no definition either). The row is the twin of <emu-grammar>ClassEscape :: CharacterEscape</emu-grammar>'s: the escape is one character. No test262 test has `\c` and a digit or `_` at a range's end; annexB/language/literals/regexp/class-escape.js reads `[\c1]` as U+0011.</p>
+      </emu-note>
+    </emu-reading>
+  </emu-erratum>
+  <emu-erratum id="erratum-BigIntMaximumSize" name="BigIntMaximumSize" resolution="proposed" kind="proposal">
+    <emu-reading clause="sec-numeric-types-bigint-exponentiate" step="3" hash="21e37337db9fdd8f776617415c853d773472016115008a087d38de7636056dc6">
+      <emu-alg reading="proposed">
+        1. If BigIntTooLarge(*"exponentiate"*, _base_, _exponent_) is *true*, throw a *RangeError* exception.
+        1. Return _base_ raised to the power _exponent_.
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-numeric-types-bigint-leftShift" step="2" hash="3215d7cf5dd21ed387505ab71e6a5748cce28b16deb6eb033f25d1d5f3eb7b47">
+      <emu-alg reading="proposed">
+        1. If _x_ is *0*<sub>ℤ</sub> or _y_ is *0*<sub>ℤ</sub>, return _x_.
+        1. If BigIntTooLarge(*"leftShift"*, _x_, _y_) is *true*, throw a *RangeError* exception.
+        1. Return _x_ × *2*<sub>ℤ</sub><sup>_y_</sup>.
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-numeric-types-bigint-multiply" step="1" hash="9fe2fac3e380ecc1cce933629199e178bec8349142f326933bc542f4d9cf8620">
+      <emu-alg reading="proposed">
+        1. If BigIntTooLarge(*"multiply"*, _x_, _y_) is *true*, throw a *RangeError* exception.
+        1. Return _x_ × _y_.
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-numeric-types-bigint-add" step="1" hash="30546d3f66008573943fb9dfd103819735d3229ca54b1ab0899b0782d6002486">
+      <emu-alg reading="proposed">
+        1. If BigIntTooLarge(*"add"*, _x_, _y_) is *true*, throw a *RangeError* exception.
+        1. Return _x_ + _y_.
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-numeric-types-bigint-subtract" step="1" hash="3ee1a94497fd28cdf5e2e708df4e8fd5ae9e6297e7b388f77097f959a61104ab">
+      <emu-alg reading="proposed">
+        1. If BigIntTooLarge(*"subtract"*, _x_, _y_) is *true*, throw a *RangeError* exception.
+        1. Return _x_ - _y_.
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-bigint.asuintn" step="3" hash="5d8ddfed12721cfe3fc2fae0c250b5b9203c7009805df9e3df7df47d570f638f">
+      <emu-alg reading="proposed">
+        1. If _bits_ = 0 or _bigint_ is *0*<sub>ℤ</sub>, return *0*<sub>ℤ</sub>.
+        1. If _bigint_ > *0*<sub>ℤ</sub> and _bits_ ≥ 4 × (DecimalExponent(ℝ(_bigint_)) + 1), return _bigint_.
+        1. If BigIntTooLarge(*"asUintN"*, _bigint_, ℤ(_bits_)) is *true*, throw a *RangeError* exception.
+        1. Return ℤ(ℝ(_bigint_) modulo 2<sup>_bits_</sup>).
+      </emu-alg>
+    </emu-reading>
+    <emu-note>
+      <p>§6.1.6.2 says a BigInt "may be any size and is not limited to a particular bit-width", and BigInt::exponentiate, BigInt::leftShift, BigInt::multiply, BigInt::add, BigInt::subtract and BigInt.asUintN return their exact results whatever their size; every implementation has a maximum size and throws a *RangeError* past it (V8 at 2<sup>30</sup> bits). The proposed text, in each of the six before its result is formed: "If the result would exceed the implementation's maximum BigInt size, throw a *RangeError* exception." The host says whether it would (BigIntTooLarge). The literal text forms the result whatever its size, so an implementation gives up at a limit of its own. Not a defect of the text: a proposed normative change, which says what every implementation does (docs/spec-issues/51-bigint-maximum-size.md).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-StringMaximumLength" name="StringMaximumLength" resolution="proposed" kind="defect">
+    <emu-reading clause="sec-string.prototype.repeat" step="7" hash="7b5d920c788068d0d3cf079c039efecc29f25aa94ac4bfa37254bef6e4dcc641">
+      <emu-alg reading="proposed">
+        1. If StringTooLarge(_n_ × the length of _string_) is *true*, throw a *RangeError* exception.
+        1. Return the String value that is made from _n_ copies of _string_ appended together.
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-stringpaddingbuiltinsimpl" step="7" hash="c528eb9f808bf17e2e96fc2f76cb11f612ca2bc0f3033d20cc73d624374b56e9">
+      <emu-alg reading="proposed">
+        1. If _fillString_ is not the empty String and StringTooLarge(_intMaxLength_) is *true*, throw a *RangeError* exception.
+        1. Return StringPad(_string_, _intMaxLength_, _fillString_, _placement_).
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-string.prototype.concat" step="5.b" hash="cf401e78063d8f80b2674119ba81f6808a877e7db8b28af9652e5ce50004676b">
+      <emu-alg reading="proposed">
+        1. If StringTooLarge(the length of _result_ + the length of _nextString_) is *true*, throw a *RangeError* exception.
+        1. Set _result_ to the string-concatenation of _result_ and _nextString_.
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-applystringornumericbinaryoperator" step="1.c.iii" hash="c695dc0558333df2a8778c270eb169cca0d9f474c932910f72b3eb734b38d53c">
+      <emu-alg reading="proposed">
+        1. If StringTooLarge(the length of _leftString_ + the length of _rightString_) is *true*, throw a *RangeError* exception.
+        1. Return the string-concatenation of _leftString_ and _rightString_.
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-joinindexedproperties" step="4.a" hash="92547d0bea8e1bc0777a69fd4d8159c1b8cbcb1d7648d4a6ec743dd96e8b7933">
+      <emu-alg reading="proposed">
+        1. If _k_ > 0, then
+          1. If StringTooLarge(the length of _result_ + the length of _separator_) is *true*, throw a *RangeError* exception.
+          1. Set _result_ to the string-concatenation of _result_ and _separator_.
+      </emu-alg>
+    </emu-reading>
+    <emu-reading clause="sec-joinindexedproperties" step="4.d.iii" hash="290b82cca70fc9351123ab12a4760382f8e2b8d9b98d93db8d3e1e4539a62769">
+      <emu-alg reading="proposed">
+        1. If StringTooLarge(the length of _result_ + the length of _elementString_) is *true*, throw a *RangeError* exception.
+        1. Set _result_ to the string-concatenation of _result_ and _elementString_.
+      </emu-alg>
+    </emu-reading>
+    <emu-note>
+      <p>§6.1.4 defines the String type as sequences of up to 2<sup>53</sup> - 1 16-bit code units and leaves the operations' behaviour unspecified when a result would exceed an implementation's smaller maximum String length; every engine throws a *RangeError* past its limit (V8 2<sup>28</sup> on 32-bit targets and 2<sup>29</sup> - 24 on 64-bit, SpiderMonkey 2<sup>30</sup> - 2, JavaScriptCore 2<sup>31</sup> - 1). The proposed text checks StringTooLarge before constructing the String and throws a *RangeError* exception when *true* (docs/spec-issues/53-string-maximum-length.md).</p>
+    </emu-note>
+  </emu-erratum>
+  <emu-erratum id="erratum-MVDecimalIntegerLiteralZero" name="MVDecimalIntegerLiteralZero" resolution="literal" switch="none" stops="">
+    <emu-orphan-row clause="sec-static-semantics-mv" grammar="DecimalIntegerLiteral :: `0`"></emu-orphan-row>
+    <emu-note>
+      <p>§12.9.3 defines |DecimalIntegerLiteral| as "|DecimalDigit|", "|NonZeroDigit| |NumericLiteralSeparator|? |DecimalDigits|[+Sep]" and "|NonOctalDecimalIntegerLiteral|", and has no production <emu-grammar>DecimalIntegerLiteral :: `0`</emu-grammar>; §12.9.3.2 MV still has the row "The MV of <emu-grammar>DecimalIntegerLiteral :: `0`</emu-grammar> is 0." The row names no production of the grammar, so it is never applied: the MV of the literal `0` is that of <emu-grammar>DecimalIntegerLiteral :: DecimalDigit</emu-grammar>, the MV of its |DecimalDigit|, which is 0. Both readings agree. The proposed text: delete the row (docs/spec-issues/52-mv-decimalintegerliteral-zero.md).</p>
+    </emu-note>
+  </emu-erratum>
+</emu-clause>

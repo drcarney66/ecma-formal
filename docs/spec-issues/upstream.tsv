@@ -1,0 +1,154 @@
+writeup	kind	ref	state	date	title	checked_on
+01	pull	4072	open	2026-11-09	Normative: Fix the sign of zero results in Number::multiply	2026-11-19
+01	pull	2700	merged	2022-03-27	Editorial: Handled -0 case in 'Number::multiply'	2026-11-19
+01	commit	4ef927684	exists	2022-03-26	Editorial: Handled -0 case in 'Number::multiply' (#2700)	2026-11-19
+01	search	"Number::multiply"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+02	issue	3766	open	2026-03-16	m.[[CycleRoot]] can be null in GatherAvailableAncestors	2026-11-19
+02	pull	3769	open	2026-03-18	Normative: Do not read from empty [[CycleRoot]] in GatherAvailableAncestors	2026-11-19
+03	pull	4074	open	2026-11-10	Normative: Fix async built-in functions resolving to undefined	2026-11-19
+03	pull	2942	merged	2025-12-18	Editorial: support built-in async functions	2026-11-19
+03	commit	7029ed1b2	exists	2025-12-17	Editorial: support built-in async functions (#2942)	2026-11-19
+03	search	"BuiltinCallOrConstruct"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+04	issue	4039	open	2026-10-29	Disposers are not run for modules with top-level await	2026-11-19
+04	pull	4007	closed-unmerged	2026-10-25	Normative: dispose resources during async module evaluation	2026-11-19
+04	pull	3000	merged	2026-06-24	Normative: Add `using` and `await using` Declarations, SuppressedError, DisposableStack, and AsyncDisposableStack	2026-11-19
+04	commit	f792966f2	exists	2026-06-24	Normative: Add `using` and `await using` Declarations, SuppressedError, DisposableStack, and AsyncDisposableStack (#3000)	2026-11-19
+05	issue	3868	open	2026-05-17	How should ParseText results be consumed?	2026-11-19
+05	issue	1462	open	2019-03-01	Current Realm record when creating new objects in [[Construct]]	2026-11-19
+05	pull	3956	merged	2026-10-30	Editorial: Clarify parsing	2026-11-19
+05	commit	21e4774e4	exists	2026-10-30	Editorial: Directly relate ParseText to parsing (#3956)	2026-11-19
+05	search	"ParseText" with realm and with SyntaxError	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+06	issue	3328	open	2024-05-15	Typo in step 7 of the SuspendThisAgent abstract operation	2026-11-19
+06	search	"DoWait"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+07	issue	3978	closed	2026-09-17	TypedArray copy methods can reach abrupt element writes after RAB shrink	2026-11-19
+07	pull	3979	merged	2026-10-16	Editorial: fix incorrect assertion in TA.prototype.{filter,with}	2026-11-19
+07	commit	4feb0272b	exists	2026-10-16	Editorial: fix incorrect assertion in TA.prototype.{filter,with} (#3979)	2026-11-19
+08	issue	4066	closed	2026-11-08	Incorrect `!` assertion on recursive `IsLooselyEqual` calls in steps 9–10	2026-11-19
+08	pull	4067	merged	2026-11-08	Editorial: Fix incorrect ! in IsLooselyEqual	2026-11-19
+08	commit	8a3e4aae7	exists	2026-11-07	Editorial: Fix incorrect ! in IsLooselyEqual (#4067)	2026-11-19
+09	pull	3049	merged	2023-06-14	Normative: Add Atomics.waitAsync	2026-11-19
+09	commit	3330e231b	exists	2023-06-14	Normative: Add Atomics.waitAsync (#3049)	2026-11-19
+09	search	"EnqueueAtomicsWaitAsyncTimeoutJob", whose one hit renames aliases, and "HostEnqueueTimeoutJob"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+10	pull	3464	open	2024-10-29	Editorial: Add "local-offset time value" for time values with local time zone offset applied	2026-11-19
+10	issue	1087	open	2018-02-01	MakeDay should be more explicit how unreasonably large numbers are handled	2026-11-19
+10	issue	3992	open	2026-10-15	DayWithinYear AO can return -1 due to floating point errors	2026-11-19
+10	issue	4086	open	2026-11-17	Argument type of UTC and TimeString should be integral Number	2026-11-19
+10	pull	3995	open	2026-10-17	Editorial: relax/restrict some Date AO types appropriately	2026-11-19
+11	issue	128	open	2015-10-26	Unicode RegExp with index points trail surrogate in surrogate pair is not covered in the spec	2026-11-19
+11	issue	2511	open	2021-09-11	Underspecified behavior of global unicode regular expressions with lastIndex inside a surrogate pair	2026-11-19
+12	issue	3435	open	2024-10-02	editorial: mismatch between `Await` transfer-of-control and `AsyncBlockStart`	2026-11-19
+12	pull	3846	merged	2026-06-24	Editorial: Factor out AO RunCallerContext()	2026-11-19
+12	commit	45a667175	exists	2026-06-24	Editorial: Factor out RunCallerContext AO (#3846)	2026-11-19
+12	pull	4018	closed-unmerged	2026-10-25	Editorial: align async block assertions with Await suspension	2026-11-19
+12	pull	3604	open	2025-05-15	Editorial: fix note in AsyncBlockStart to not assume its argument is a function	2026-11-19
+13	pull	2772	draft	2022-05-09	Remove Job from Promise Resolve Functions	2026-11-19
+13	search	"NewPromiseReactionJob"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+14	pull	2695	open	2022-03-16	Normative: Allow toString of a built-in function to output a computed property name	2026-11-19
+15	issue	3989	open	2026-09-28	Bug: Link() and Evaluate() on synthetic module records should be idempotent	2026-11-19
+19	search	"HostLoadImportedModule" with "same result", "ShallowestContainedJSONValue", "ECMA-404", "HostEnqueueTimeoutJob", "WeakRef" with "Execution", and "LR(1)"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+20	pull	1668	merged	2021-05-12	Normative: Add public and private class fields, static class features, private methods & getters/setters	2026-11-19
+20	issue	3080	closed	2023-05-28	MakePrivateReference and ResolvePrivateIdentifier assert that outer private environment can't be null	2026-11-19
+20	search	"CreateDynamicFunction" with private, no hits, and "AllPrivateIdentifiersValid"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+21	issue	3073	closed	2024-02-21	[Informative] Observable changes because of Unicode 15.1	2026-11-19
+21	pull	3074	merged	2024-02-21	Editorial: Remove special-casing of U+200C and U+200D	2026-11-19
+21	commit	467819a42	exists	2024-02-21	Editorial: Remove special-casing of U+200C and U+200D (#3074)	2026-11-19
+21	search	"IdentityEscape"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+22	pull	4064	merged	2026-11-08	Editorial: Fix an incorrect alias name in reads-bytes-from	2026-11-19
+22	commit	d8cb87726	exists	2026-11-07	Editorial: Fix an incorrect alias name in reads-bytes-from (#4064)	2026-11-19
+22	pull	3789	merged	2026-04-24	Editorial: rename single-letter and initial-capital aliases	2026-11-19
+22	commit	bab3fbf29	exists	2026-04-24	Editorial: rename single-letter and initial-capital aliases (#3789)	2026-11-19
+22	pull	4025	closed-unmerged	2026-10-25	Editorial: refer to readEvent in the reads-bytes-from constraint	2026-11-19
+23	pull	4021	closed-unmerged	2026-10-25	Normative: exclude happens-before ordered events from races	2026-11-19
+23	pull	3321	merged	2024-05-23	Editorial: Rework memory model relations	2026-11-19
+23	commit	1babaf809	exists	2024-05-23	Editorial: Rework memory model relations (#3321)	2026-11-19
+23	search	"not the case that both" and "Races"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+24	issue	3586	open	2025-05-04	UnicodeMatchPropertyValue assertion fails by UnicodePropertyValueExpression	2026-11-19
+24	pull	3587	open	2025-05-04	Editorial: Fix incorrect use of UnicodeMatchPropertyValue	2026-11-19
+25	pull	2274	draft	2021-01-13	Editorial: Express some 'bitwise' Number methods more explicitly	2026-11-19
+25	pull	3987	merged	2026-10-23	Editorial: Align {BigIntBitwiseOp,NumberBitwiseOp,ByteListBitwiseOp}	2026-11-19
+25	commit	02f2b1fad	exists	2026-10-22	Editorial: Align BigIntBitwiseOp with {NumberBitwiseOp,ByteListBitwiseOp} (#3987)	2026-11-19
+25	commit	40ce6f206	exists	2026-10-22	Editorial: Format references to bitwise AND/XOR/OR operations (#3987)	2026-11-19
+26	pull	3221	merged	2025-01-09	Normative: Add RegExp Modifiers	2026-11-19
+26	commit	f55b18095	exists	2025-01-08	Normative: Add RegExp Modifiers (#3221)	2026-11-19
+26	search	"RegularExpressionModifiers" and for modifiers with "Annex B"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+27	issue	3567	open	2025-04-17	Remove language about choosing same encoding for NaNs in NumericToRawBytes	2026-11-19
+28	search	"ToBigInt" with Boolean	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+29	issue	2607	open	2022-01-03	Editorial: missing syntax error (involving CoverCallExpressionAndAsyncArrowHead)	2026-11-19
+29	search	"CoverInitializedName" and "PropName"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+31	issue	3172	open	2023-09-12	Call SortCompare only on actual elements	2026-11-19
+31	search	"consistent comparator" and for comparator with Infinity	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+32	issue	1865	open	2020-02-04	"StringValue of ReservedWord" is used but not defined	2026-11-19
+33	issue	3534	open	2025-02-10	CreateIntrinsics isn't passing prefix to CreateBuiltinFunction for builtin getters/setters	2026-11-19
+33	issue	4046	open	2026-10-29	Editorial: CreateBuiltinFunction call in CreateIntrinsics passes wrong parameters	2026-11-19
+33	pull	4022	closed-unmerged	2026-10-25	Editorial: initialize intrinsic async flags without passing them as prefixes	2026-11-19
+33	pull	2833	open	2022-07-20	Editorial: Specify _prefix_ for non-specific uses of CreateBuiltinFunction	2026-11-19
+33	pull	2942	merged	2025-12-18	Editorial: support built-in async functions	2026-11-19
+33	commit	7029ed1b2	exists	2025-12-17	Editorial: support built-in async functions (#2942)	2026-11-19
+34	issue	3924	closed	2026-10-09	RevalidateAtomicAccess only bounds-checks the element's first byte, permitting an OOB atomic access	2026-11-19
+34	pull	3926	merged	2026-10-09	Normative: Update RevalidateAtomicAccess to account for all bytes of a TypedArray element	2026-11-19
+34	commit	5e0f8b33b	exists	2026-10-09	Normative: Update RevalidateAtomicAccess to account for all bytes of a TypedArray element (#3926)	2026-11-19
+34	test262-pull	5106	open	2026-08-16	Atomics: Test RevalidateAtomicAccess with barely-too-short ArrayBuffers	2026-11-19
+35	pull	3000	merged	2026-06-24	Normative: Add `using` and `await using` Declarations, SuppressedError, DisposableStack, and AsyncDisposableStack	2026-11-19
+35	commit	f792966f2	exists	2026-06-24	Normative: Add `using` and `await using` Declarations, SuppressedError, DisposableStack, and AsyncDisposableStack (#3000)	2026-11-19
+35	issue	917	closed	2018-03-20	await in parameters	2026-11-19
+35	search	"CoverAwaitExpressionAndAwaitUsingDeclarationHead", no hits	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+36	issue	1811	closed	2019-12-18	Chain production definition	2026-11-19
+36	search	"IsLabelledFunction", whose one hit is a Temporal pull request	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+37	pull	2144	merged	2021-10-15	Editorial: refactor `IsStringPrefix` and `String.prototype.split` to use `StringIndexOf`; remove `SplitMatch`	2026-11-19
+37	commit	82438c337	exists	2021-10-15	Editorial: refactor `IsStringPrefix` and `String.prototype.split` to use `StringIndexOf`; remove `SplitMatch` (#2144)	2026-11-19
+37	pull	2975	merged	2026-10-30	Editorial: Improve the explanation of split methods	2026-11-19
+37	commit	cb866719b	exists	2026-10-30	Editorial: Improve the explanation of split methods (#2975)	2026-11-19
+37	issue	3261	closed	2024-08-26	"substring of" used with potentially out of bounds end in String.prototype.split()	2026-11-19
+37	search	split with "empty separator" and with "code units"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+38	commit	7461eea82	exists	2015-09-22	Initial commit of spec in Ecmarkup format	2026-11-19
+38	pull	3789	merged	2026-04-24	Editorial: rename single-letter and initial-capital aliases	2026-11-19
+38	commit	bab3fbf29	exists	2026-04-24	Editorial: rename single-letter and initial-capital aliases (#3789)	2026-11-19
+38	search	"OrdinarySetWithOwnDescriptor"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+39	issue	2421	closed	2026-07-02	Early Error rules and covering grammars	2026-11-19
+39	pull	3227	merged	2026-07-02	Editorial: Don't check a cover for early errors	2026-11-19
+39	commit	020735388	exists	2026-07-02	Editorial: Don't check a cover for early errors (#3227)	2026-11-19
+39	pull	3223	open	2023-11-18	Editorial: Separate cover grammar text into a subsection with autolink targets	2026-11-19
+39	search	"must cover" and "CoverInitializedName"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+40	pull	2445	open	2021-06-27	Editorial: Eliminate order-disambiguation from Annex B Pattern-grammar	2026-11-19
+40	pull	2228	merged	2020-12-01	Editorial: Swap 2 alternatives of Term in Annex B	2026-11-19
+40	commit	67dc0c208	exists	2020-12-01	Editorial: Swap 2 alternatives of Term in Annex B (#2228)	2026-11-19
+41	pull	3244	merged	2024-02-14	Normative: Allow Annex B scripts to start with `-->`	2026-11-19
+41	commit	197f1245a	exists	2024-02-14	Normative: Allow Annex B scripts to start with `-->` (#3244)	2026-11-19
+41	test262-pull	4002	merged	2024-02-10	Add tests for `-->` in the first line	2026-11-19
+41	search	"HTMLCloseComment"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+42	issue	1595	open	2019-06-19	Annex B reform next steps	2026-11-19
+42	search	"HTML-like comments" with Module; the one hit, issue #1595 (open, 2019-06), "Annex B reform next steps", does not raise it in its description	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+43	pull	4023	closed-unmerged	2026-10-25	Editorial: initialize shared byte-length data with a memory event	2026-11-19
+43	pull	3116	merged	2023-10-12	Normative: Add resizable ArrayBuffer and growable SharedArrayBuffer	2026-11-19
+43	commit	a9ae96eda	exists	2023-10-12	Normative: Add resizable ArrayBuffer and growable SharedArrayBuffer (#3116)	2026-11-19
+43	pull	3976	open	2026-09-14	Editorial: Use "Internal Slots" tables for more object types	2026-11-19
+43	search	"AllocateSharedArrayBuffer"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+44	issue	3269	open	2024-01-25	Suggestion: `[no ASI if lookahead ...]` constraint instead of SS rules for OptionalChain	2026-11-19
+44	search	lookahead with "semicolon insertion"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+45	pull	2089	merged	2020-08-05	Normative: Add Weakrefs and FinalizationRegistry	2026-11-19
+45	commit	71c089717	exists	2020-08-05	Normative: Add Weakrefs and FinalizationRegistry (#2089)	2026-11-19
+45	search	FinalizationRegistry with unregister	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+46	pull	3223	open	2023-11-18	Editorial: Separate cover grammar text into a subsection with autolink targets	2026-11-19
+46	search	"must cover" and "IsInTailPosition"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+47	issue	2222	open	2020-11-03	Promise.prototype.finally should use onFinally's realm for newly creating functions	2026-11-19
+47	pull	1597	merged	2020-03-09	Layering: Allow hosts to cleanly specify Promise Job semantics	2026-11-19
+47	commit	c59502090	exists	2020-03-09	Layering: Allow hosts to cleanly specify Promise Job semantics (#1597)	2026-11-19
+47	pull	1984	merged	2020-08-08	Layering: Refine execution context requirements for Jobs	2026-11-19
+47	commit	a59a820d3	exists	2020-08-07	Layering: Refine execution context requirements for Jobs (#1984)	2026-11-19
+47	search	"HostEnqueuePromiseJob"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+48	pull	3321	merged	2024-05-23	Editorial: Rework memory model relations	2026-11-19
+48	commit	1babaf809	exists	2024-05-23	Editorial: Rework memory model relations (#3321)	2026-11-19
+48	pull	3396	merged	2025-11-04	Editorial: Miscellaneous improvements to memory model/(Shared)ArrayBuffer/TypedArray	2026-11-19
+48	commit	f1bdd8c02	exists	2025-11-03	Editorial: Introduce term "memory range" to provide links for Shared Data Block event comparison (#3396)	2026-11-19
+48	search	"happens-before" with init, and "overlapping"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+49	pull	2445	open	2021-06-27	Editorial: Eliminate order-disambiguation from Annex B Pattern-grammar	2026-11-19
+49	search	"IsCharacterClass" and "ClassControlLetter"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+50	search	"memory range"; the hits rename or link the term	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+51	issue	1391	open	2019-01-03	Extending defining out-of-memory beyond ArrayBuffer	2026-11-19
+51	issue	4063	closed	2026-10-31	Specify that exceeding resource limits may throw	2026-11-19
+51	search	BigInt with "maximum size" and with "size limit"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+52	commit	78ea84c0f	exists	2026-10-09	Editorial: Replace `0` and |NonZeroDigit| alternative productions with |DecimalDigit| (#3988)	2026-11-19
+52	pull	3988	merged	2026-10-09	Editorial: Clean up some numeric literal text	2026-11-19
+52	search	"DecimalIntegerLiteral"	searched	2026-11-19	tc39/ecma262 issues and pull requests	2026-11-19
+53	issue	4063	closed	2026-10-31	Specify that exceeding resource limits may throw	2026-11-20
+53	search	String with "maximum length" and "RangeError"	searched	2026-11-20	tc39/ecma262 issues and pull requests	2026-11-20

@@ -1,0 +1,701 @@
+<emu-clause id="formal-numbers">
+  <h1>Numbers and Bit Strings</h1>
+  <p>The notation of the Number type's operations that the steps use without defining it. A 32-bit two's complement bit string is the integer in the interval from 0 (inclusive) to 2<sup>32</sup> (exclusive) whose unsigned binary representation it is. The bitwise AND, XOR and OR operations apply to two such integers, or to two bytes, bit by bit.</p>
+
+  <emu-primitive id="prim-approxinteger" name="ApproxInteger">
+    <emu-signature>ApproxInteger(_x_: a mathematical value): an integer</emu-signature>
+    <p>An implementation-approximated integer representing _x_: the host's choice, as for an implementation-approximated Number value.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-approxpower" name="ApproxPower">
+    <emu-signature>ApproxPower(_base_: a Number, _exponent_: a Number): a Number</emu-signature>
+    <p>An implementation-approximated Number value representing the result of raising ℝ(_base_) to the ℝ(_exponent_) power: the host's choice, as for an implementation-approximated Number value (<emu-xref href="#sec-numeric-types-number-exponentiate"></emu-xref> step 13). The step calls it with finite Numbers other than *+0*<sub>𝔽</sub> and *-0*<sub>𝔽</sub>, _base_ positive or _exponent_ integral.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-biginttoolarge" name="BigIntTooLarge">
+    <emu-signature>BigIntTooLarge(_operation_: a String, _x_: a BigInt, _y_: a BigInt): a Boolean</emu-signature>
+    <p>Whether the BigInt that the BigInt type's numeric method named _operation_ (*"exponentiate"*, *"leftShift"* or *"multiply"*) returns for _x_ and _y_ would exceed the implementation's maximum BigInt size: the host's choice. The specification sets no maximum (<emu-xref href="#sec-ecmascript-language-types-bigint-type"></emu-xref>: "The value may be any size and is not limited to a particular bit-width"); the proposed reading of erratum BigIntMaximumSize asks it.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-mathfn" name="MathFn">
+    <emu-signature>MathFn(_f_: a non-negative integer, _x_: a mathematical value): a mathematical value</emu-signature>
+    <p>The value at _x_ of the function that _f_ indexes among "the ( cosine | sine | tangent | cube root | square root | exponential function | hyperbolic cosine | hyperbolic sine | hyperbolic tangent | inverse cosine | inverse sine | inverse tangent | inverse hyperbolic cosine | inverse hyperbolic sine | inverse hyperbolic tangent ) of _x_", counted from 0. The steps call it only on the function's domain. The square root is exact (the model's square root); every step that uses another of the functions takes an implementation-approximated value of it, so those are opaque: no law states their values.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-decimalexponent" name="DecimalExponent">
+    <emu-signature>DecimalExponent(_x_: a mathematical value): an integer</emu-signature>
+    <p>The integer _e_ such that 10<sup>_e_</sup> ≤ _x_ &lt; 10<sup>_e_ + 1</sup>, for _x_ > 0: the place of the first significant digit of the decimal representation of _x_ (the units digit's is 0).</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-inttoradix" name="IntToRadix">
+    <emu-signature>IntToRadix(_n_: a non-negative integer, _radix_: an integer): a String</emu-signature>
+    <p>The representation of _n_ using radix _radix_ in positional notation without leading zeroes, with digits from the first _radix_ code units of *"0123456789abcdefghijklmnopqrstuvwxyz"*, for _n_ ≥ 0 and _radix_ in the inclusive interval from 2 to 36.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-numberdigitsexponent" name="NumberDigitsExponent">
+    <emu-signature>NumberDigitsExponent(_x_: a Number, _radix_: an integer): an integer</emu-signature>
+    <p>The _n_ of the integers _n_, _k_ and _s_ that Number::toString's step <emu-xref href="#step-number-tostring-intermediate-values"></emu-xref> lets be such that _k_ ≥ 1, _radix_<sup>_k_ - 1</sup> ≤ _s_ &lt; _radix_<sup>_k_</sup>, 𝔽(_s_ × _radix_<sup>_n_ - _k_</sup>) is _x_, and _k_ is as small as possible, for a finite Number _x_ > *+0*<sub>𝔽</sub> and _radix_ in the inclusive interval from 2 to 36. The three integers are the implementation's function of _x_ and _radix_: where the condition leaves the least significant digit of _s_ open, the implementation's choice, the same at every call.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-numberdigitscount" name="NumberDigitsCount">
+    <emu-signature>NumberDigitsCount(_x_: a Number, _radix_: an integer): a positive integer</emu-signature>
+    <p>The _k_ of the same three integers as NumberDigitsExponent(_x_, _radix_): the number of digits of _s_.</p>
+  </emu-primitive>
+
+  <emu-primitive id="prim-numberdigitssignificand" name="NumberDigitsSignificand">
+    <emu-signature>NumberDigitsSignificand(_x_: a Number, _radix_: an integer): a positive integer</emu-signature>
+    <p>The _s_ of the same three integers as NumberDigitsExponent(_x_, _radix_).</p>
+  </emu-primitive>
+
+  <emu-phrase id="ph-bit-string-32" kind="expression" rule="bitstring">
+    <emu-pattern>the 32-bit two's complement bit string representing _x_</emu-pattern>
+    <emu-params>_x_: an integer</emu-params>
+    <emu-alg>
+      1. Assert: _x_ is in the inclusive interval from -2<sup>31</sup> to 2<sup>31</sup> - 1.
+      1. Return ToFixedSizeInteger(_x_, ~unsigned~, 32).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-integer-of-bit-string-32" kind="expression">
+    <emu-pattern>the integer represented by the 32-bit two's complement bit string _bits_</emu-pattern>
+    <emu-params>_bits_: an integer</emu-params>
+    <emu-alg>
+      1. Assert: _bits_ is in the inclusive interval from 0 to 2<sup>32</sup> - 1.
+      1. Return ToFixedSizeInteger(_bits_, ~signed~, 32).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-number-floor" kind="expression">
+    <emu-pattern>the greatest (closest to +∞) integral Number value that is not greater than _n_</emu-pattern>
+    <emu-params>_n_: a Number</emu-params>
+    <emu-alg>
+      1. Assert: _n_ is finite.
+      1. If _n_ is either *+0*<sub>𝔽</sub> or *-0*<sub>𝔽</sub>, return _n_.
+      1. Return 𝔽(floor(ℝ(_n_))).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-number-ceil" kind="expression">
+    <emu-pattern>the smallest (closest to -∞) integral Number value that is not less than _n_</emu-pattern>
+    <emu-params>_n_: a Number</emu-params>
+    <emu-alg>
+      1. Assert: _n_ is finite.
+      1. If _n_ is either *+0*<sub>𝔽</sub> or *-0*<sub>𝔽</sub>, return _n_.
+      1. If _n_ &lt; *-0*<sub>𝔽</sub> and _n_ > *-1*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>.
+      1. Return 𝔽(-floor(-ℝ(_n_))).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-number-round" kind="expression">
+    <emu-pattern>the integral Number closest to _n_, preferring the Number closer to +∞ in the case of a tie</emu-pattern>
+    <emu-params>_n_: a Number</emu-params>
+    <emu-alg>
+      1. Assert: _n_ is finite.
+      1. If _n_ is either *+0*<sub>𝔽</sub> or *-0*<sub>𝔽</sub>, return _n_.
+      1. If _n_ &lt; *-0*<sub>𝔽</sub> and _n_ ≥ *-0.5*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>.
+      1. Return 𝔽(floor(ℝ(_n_) + 0.5)).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-number-trunc" kind="expression">
+    <emu-pattern>the integral Number nearest _n_ in the direction of *+0*<sub>𝔽</sub></emu-pattern>
+    <emu-params>_n_: a Number</emu-params>
+    <emu-alg>
+      1. Assert: _n_ is finite.
+      1. If _n_ is either *+0*<sub>𝔽</sub> or *-0*<sub>𝔽</sub>, return _n_.
+      1. If _n_ &lt; *-0*<sub>𝔽</sub> and _n_ > *-1*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>.
+      1. Return 𝔽(truncate(ℝ(_n_))).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-leading-zero-bits-32" kind="expression">
+    <emu-pattern>the number of leading zero bits in the unsigned 32-bit binary representation of _n_</emu-pattern>
+    <emu-params>_n_: an integral Number</emu-params>
+    <emu-alg>
+      1. Assert: ℝ(_n_) is in the inclusive interval from 0 to 2<sup>32</sup> - 1.
+      1. Let _m_ be ℝ(_n_).
+      1. Let _p_ be 32.
+      1. Repeat, while _m_ > 0,
+        1. Set _m_ to floor(_m_ / 2).
+        1. Set _p_ to _p_ - 1.
+      1. Return _p_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-raised-to-the-power" kind="expression">
+    <emu-pattern>_base_ raised to the power _exponent_</emu-pattern>
+    <emu-params>_base_: a BigInt, _exponent_: a BigInt</emu-params>
+    <emu-alg>
+      1. Assert: _exponent_ ≥ *0*<sub>ℤ</sub>.
+      1. Return ℤ(ℝ(_base_)<sup>ℝ(_exponent_)</sup>).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-base-16-value" kind="expression">
+    <emu-pattern>the integer value represented by _hexits_ in base-16 notation, using the letters *A* through *F* and *a* through *f* for digits with values 10 through 15</emu-pattern>
+    <emu-params>_hexits_: a String</emu-params>
+    <emu-alg>
+      1. Let _n_ be 0.
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _hexits_, in ascending order, do
+        1. Assert: *"0123456789abcdefABCDEF"* contains the substring of _hexits_ from _i_ to _i_ + 1.
+        1. Let _c_ be the numeric value of the code unit at index _i_ within _hexits_.
+        1. If _c_ ≥ 0x0061, let _d_ be _c_ - 0x0061 + 10.
+        1. Else if _c_ ≥ 0x0041, let _d_ be _c_ - 0x0041 + 10.
+        1. Else, let _d_ be _c_ - 0x0030.
+        1. Set _n_ to 16 × _n_ + _d_.
+      1. Return _n_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-leading-one-bits" kind="expression">
+    <emu-pattern>the number of leading 1 bits in _octet_</emu-pattern>
+    <emu-params>_octet_: an integer</emu-params>
+    <emu-alg>
+      1. Assert: _octet_ is in the inclusive interval from 0 to 255.
+      1. Let _n_ be 0.
+      1. Let _bit_ be 128.
+      1. Repeat, while _bit_ ≥ 1 and floor(_octet_ / _bit_) modulo 2 = 1,
+        1. Set _n_ to _n_ + 1.
+        1. Set _bit_ to _bit_ / 2.
+      1. Return _n_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-twenty-significant-digits" kind="condition">
+    <emu-pattern>the decimal representation of _n_ has 20 or fewer significant digits</emu-pattern>
+    <emu-params>_n_: a mathematical value</emu-params>
+    <emu-alg>
+      1. Assert: _n_ ≥ 0.
+      1. Assert: there is an integer _k_ ≥ 0 such that _n_ × 10<sup>_k_</sup> is an integer.
+      1. If _n_ = 0, return *true*.
+      1. Let _e_ be DecimalExponent(_n_).
+      1. If _n_ × 10<sup>19 - _e_</sup> is an integer, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-zero-after-twentieth" kind="expression">
+    <emu-pattern>the mathematical value denoted by the result of replacing each significant digit in the decimal representation of _n_ after the 20th with a 0 digit</emu-pattern>
+    <emu-params>_n_: a mathematical value</emu-params>
+    <emu-alg>
+      1. Assert: _n_ > 0.
+      1. Let _scale_ be 10<sup>19 - DecimalExponent(_n_)</sup>.
+      1. Return floor(_n_ × _scale_) / _scale_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-zero-after-twentieth-incremented" kind="expression">
+    <emu-pattern>the mathematical value denoted by the result of replacing each significant digit in the decimal representation of _n_ after the 20th with a 0 digit and then incrementing it at the 20th position (with carrying as necessary)</emu-pattern>
+    <emu-params>_n_: a mathematical value</emu-params>
+    <emu-alg>
+      1. Assert: _n_ > 0.
+      1. Let _scale_ be 10<sup>19 - DecimalExponent(_n_)</sup>.
+      1. Return (floor(_n_ × _scale_) + 1) / _scale_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-decimal-digits" kind="expression" rule="decimal-digits">
+    <emu-pattern>the String value consisting of the digits of the decimal representation of _n_ (in order, with no leading zeroes)</emu-pattern>
+    <emu-params>_n_: a non-negative integer</emu-params>
+    <emu-alg>
+      1. Return IntToRadix(_n_, 10).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-to-binary32" kind="expression" rule="ieee-convert-32" alternatives="all">
+    <emu-pattern>the result of converting _n_ to IEEE 754-2019 binary32 format using roundTiesToEven mode</emu-pattern>
+    <p>Converting to a binary interchange format rounds by roundTiesToEven, IEEE 754-2019's default, whether or not the phrase names the mode.</p>
+    <emu-params>_n_: a Number</emu-params>
+    <emu-alg>
+      1. If _n_ is not finite, return _n_.
+      1. If _n_ is either *+0*<sub>𝔽</sub> or *-0*<sub>𝔽</sub>, return _n_.
+      1. Let _a_ be abs(ℝ(_n_)).
+      1. Let _e_ be 0.
+      1. Repeat, while 2<sup>_e_</sup> > _a_,
+        1. Set _e_ to _e_ - 1.
+      1. Repeat, while 2<sup>_e_ + 1</sup> ≤ _a_,
+        1. Set _e_ to _e_ + 1.
+      1. If _e_ &lt; -126, set _e_ to -126.
+      1. Let _q_ be 2<sup>_e_ - 23</sup>.
+      1. Let _m_ be _a_ / _q_.
+      1. Let _r_ be floor(_m_).
+      1. If _m_ - _r_ > 0.5, set _r_ to _r_ + 1.
+      1. Else if _m_ - _r_ = 0.5 and _r_ modulo 2 = 1, set _r_ to _r_ + 1.
+      1. Let _v_ be _r_ × _q_.
+      1. If _v_ ≥ 2<sup>128</sup>, then
+        1. If _n_ &lt; *-0*<sub>𝔽</sub>, return *-∞*<sub>𝔽</sub>.
+        1. Return *+∞*<sub>𝔽</sub>.
+      1. If _v_ = 0, then
+        1. If _n_ &lt; *-0*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>.
+        1. Return *+0*<sub>𝔽</sub>.
+      1. If _n_ &lt; *-0*<sub>𝔽</sub>, return 𝔽(-_v_).
+      1. Return 𝔽(_v_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-to-binary16" kind="expression" rule="ieee-convert-16" alternatives="all">
+    <emu-pattern>the result of converting _n_ to IEEE 754-2019 binary16 format using roundTiesToEven mode</emu-pattern>
+    <p>Converting to a binary interchange format rounds by roundTiesToEven, IEEE 754-2019's default, whether or not the phrase names the mode.</p>
+    <emu-params>_n_: a Number</emu-params>
+    <emu-alg>
+      1. If _n_ is not finite, return _n_.
+      1. If _n_ is either *+0*<sub>𝔽</sub> or *-0*<sub>𝔽</sub>, return _n_.
+      1. Let _a_ be abs(ℝ(_n_)).
+      1. Let _e_ be 0.
+      1. Repeat, while 2<sup>_e_</sup> > _a_,
+        1. Set _e_ to _e_ - 1.
+      1. Repeat, while 2<sup>_e_ + 1</sup> ≤ _a_,
+        1. Set _e_ to _e_ + 1.
+      1. If _e_ &lt; -14, set _e_ to -14.
+      1. Let _q_ be 2<sup>_e_ - 10</sup>.
+      1. Let _m_ be _a_ / _q_.
+      1. Let _r_ be floor(_m_).
+      1. If _m_ - _r_ > 0.5, set _r_ to _r_ + 1.
+      1. Else if _m_ - _r_ = 0.5 and _r_ modulo 2 = 1, set _r_ to _r_ + 1.
+      1. Let _v_ be _r_ × _q_.
+      1. If _v_ ≥ 2<sup>16</sup>, then
+        1. If _n_ &lt; *-0*<sub>𝔽</sub>, return *-∞*<sub>𝔽</sub>.
+        1. Return *+∞*<sub>𝔽</sub>.
+      1. If _v_ = 0, then
+        1. If _n_ &lt; *-0*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>.
+        1. Return *+0*<sub>𝔽</sub>.
+      1. If _n_ &lt; *-0*<sub>𝔽</sub>, return 𝔽(-_v_).
+      1. Return 𝔽(_v_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-to-binary64" kind="expression" rule="ieee-convert-64" alternatives="all">
+    <emu-pattern>the result of converting _n_ to IEEE 754-2019 binary64 format</emu-pattern>
+    <p>A Number is a binary64 value already, so the conversion is exact in either mode.</p>
+    <emu-params>_n_: a Number</emu-params>
+    <emu-alg>
+      1. Return _n_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-number-corresponding" kind="expression" rule="number-corr">
+    <emu-pattern>the ECMAScript Number value corresponding to _n_</emu-pattern>
+    <emu-params>_n_: a Number</emu-params>
+    <emu-alg>
+      1. Assert: _n_ is a Number.
+      1. Return _n_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-representation-radix" kind="expression" rule="repr-radix" literals="spelled">
+    <emu-pattern>the representation of _n_ using radix _radix_</emu-pattern>
+    <p>The digits are those of Number::toString's and BigInt::toString's descriptions (sec-numeric-types-number-tostring, sec-numeric-types-bigint-tostring): "The digits used in the representation of a number using radix _r_ are taken from the first _r_ code units of *"0123456789abcdefghijklmnopqrstuvwxyz"* in order."</p>
+    <emu-params>_n_: a non-negative integer or a BigInt, _radix_: an integer</emu-params>
+    <emu-alg>
+      1. If _n_ is a BigInt, set _n_ to ℝ(_n_).
+      1. Assert: _n_ is an integer and _n_ ≥ 0 and _radix_ is in the inclusive interval from 2 to 36.
+      1. Return IntToRadix(_n_, _radix_).
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-decimal-representation" kind="expression" rule="repr-decimal">
+    <emu-pattern>the decimal representation of _n_</emu-pattern>
+    <emu-params>_n_: a non-negative integer</emu-params>
+    <emu-alg>
+      1. Return the representation of _n_ using radix 10.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-single-digit" kind="expression" rule="digits-single">
+    <emu-pattern>the single digit of _n_</emu-pattern>
+    <emu-params>_n_: a non-negative integer</emu-params>
+    <emu-alg>
+      1. Assert: _n_ &lt; 10.
+      1. Return the decimal representation of _n_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-most-significant-digit" kind="expression" rule="digits-most-significant">
+    <emu-pattern>the most significant digit of _s_</emu-pattern>
+    <emu-params>_s_: a String</emu-params>
+    <emu-alg>
+      1. Assert: _s_ is not the empty String.
+      1. Return the substring of _s_ from 0 to 1.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-k-digits" kind="expression" rule="digits-n">
+    <emu-pattern>the _k_ digits of _s_</emu-pattern>
+    <emu-params>_k_: a non-negative integer, _s_: a String</emu-params>
+    <emu-alg>
+      1. Assert: the length of _s_ is _k_.
+      1. Return _s_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-most-significant-k-digits" kind="expression" rule="digits-most-significant-n">
+    <emu-pattern>the most significant _k_ digits of _s_</emu-pattern>
+    <emu-params>_k_: a non-negative integer, _s_: a String</emu-params>
+    <emu-alg>
+      1. Assert: _k_ ≤ the length of _s_.
+      1. Return the substring of _s_ from 0 to _k_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-remaining-k-digits" kind="expression" rule="digits-remaining-n">
+    <emu-pattern>the remaining _k_ digits of _s_</emu-pattern>
+    <emu-params>_k_: a non-negative integer, _s_: a String</emu-params>
+    <emu-alg>
+      1. Assert: _k_ ≤ the length of _s_.
+      1. Return the substring of _s_ from the length of _s_ - _k_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-code-unit-of" kind="expression" rule="code-unit-of">
+    <emu-pattern>the code unit of _s_</emu-pattern>
+    <emu-params>_s_: a String</emu-params>
+    <emu-alg>
+      1. Assert: the length of _s_ is 1.
+      1. Return the code unit at index 0 within _s_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-code-units-of" kind="expression" rule="code-units-of-seq">
+    <emu-pattern>the code units of _s_</emu-pattern>
+    <emu-params>_s_: a String</emu-params>
+    <emu-alg>
+      1. Return _s_.
+    </emu-alg>
+  </emu-phrase>
+
+  <p>Number::leftShift, signedRightShift, unsignedRightShift and bitwiseNOT name operations on Numbers that the specification does not define, and only each step's further sentence fixes the 32-bit view; read whole, each step is the arithmetic below.</p>
+
+  <emu-reading clause="sec-numeric-types-number-leftShift" steps="4" hashes="8c721dd49b34acc3dde9d8dd46503cbad7ff6b21ca543ddee8e4a54c8f64e499">
+    <emu-alg reading="definition">
+        1. Return 𝔽(ToFixedSizeInteger(ℝ(_leftNumber_) × 2<sup>_shiftCount_</sup>, ~signed~, 32)).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-numeric-types-number-signedRightShift" steps="4" hashes="988d2a0e98c8075da940c12b86ffd9fcf2586b4a9c955595d9cb9316ec686b7d">
+    <emu-alg reading="definition">
+        1. Return 𝔽(floor(ℝ(_leftNumber_) / 2<sup>_shiftCount_</sup>)).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-numeric-types-number-unsignedRightShift" steps="4" hashes="9fe05de0d70bfb4c36ebd67736d97e68782462f59b49392aee9ad25673b1dc8a">
+    <emu-alg reading="definition">
+        1. Return 𝔽(floor(ℝ(_leftNumber_) / 2<sup>_shiftCount_</sup>)).
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-numeric-types-number-bitwiseNOT" steps="2" hashes="4f956b6f7e499fed0c38b7812e36c73c59988cb76a875a90d3063e4d91d0fc22">
+    <emu-alg reading="definition">
+        1. Return 𝔽(-ℝ(_oldValue_) - 1).
+    </emu-alg>
+  </emu-reading>
+  <emu-reading clause="sec-number.prototype.tofixed" steps="11.a" hashes="be72e046cf9105f6af8950f6d1dbf5a9fc77bd98e46345a32b3ab4660f727a32">
+    <emu-alg reading="definition">
+      1. Let _intValue_ be floor(_number_ × 10<sup>_fractionCount_</sup> + 0.5).
+    </emu-alg>
+    <emu-note>
+      <p>The integer closest to _number_ × 10<sup>_fractionCount_</sup>, the larger one on a tie, as the step and its tie-break sentence say.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-number.prototype.toprecision" steps="11.a" hashes="974f5c822f35eb75b63769a1986627db3fb0aff932c5ac6501a926df371bf859">
+    <emu-alg reading="definition">
+      1. Let _exponent_ be 0.
+      1. Repeat, while 10<sup>_exponent_</sup> > _number_,
+        1. Set _exponent_ to _exponent_ - 1.
+      1. Repeat, while 10<sup>_exponent_ + 1</sup> ≤ _number_,
+        1. Set _exponent_ to _exponent_ + 1.
+      1. Let _intSignificand_ be floor(_number_ / 10<sup>_exponent_ - _precisionCount_ + 1</sup> + 0.5).
+      1. If _intSignificand_ = 10<sup>_precisionCount_</sup>, then
+        1. Set _intSignificand_ to _intSignificand_ / 10.
+        1. Set _exponent_ to _exponent_ + 1.
+    </emu-alg>
+    <emu-note>
+      <p>The step's condition has exactly one solution once its tie-break sentence is applied: the exponent is the one of _number_'s leading digit, and the significand is _number_ scaled to _precisionCount_ digits and rounded half up (to the larger value on a tie); a significand that rounds up to 10<sup>_precisionCount_</sup> moves to the next exponent, where it denotes the same value.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-number.prototype.toexponential" steps="11.a.i" hashes="69c999f5de82b7d3ad0baf5bbd5d7955d15ad22d63e0619c4342b69d370bfa4d">
+    <emu-alg reading="definition">
+      1. Let _exponent_ be 0.
+      1. Repeat, while 10<sup>_exponent_</sup> > _number_,
+        1. Set _exponent_ to _exponent_ - 1.
+      1. Repeat, while 10<sup>_exponent_ + 1</sup> ≤ _number_,
+        1. Set _exponent_ to _exponent_ + 1.
+      1. Let _intSignificand_ be floor(_number_ / 10<sup>_exponent_ - _fractionCount_</sup> + 0.5).
+      1. If _intSignificand_ = 10<sup>_fractionCount_ + 1</sup>, then
+        1. Set _intSignificand_ to _intSignificand_ / 10.
+        1. Set _exponent_ to _exponent_ + 1.
+    </emu-alg>
+    <emu-note>
+      <p>The step's condition has exactly one solution once its tie-break sentence is applied: the exponent is the one of _number_'s leading digit, and the significand is _number_ scaled to _fractionCount_ + 1 digits and rounded half up (to the larger value on a tie); a significand that rounds up to 10<sup>_fractionCount_ + 1</sup> moves to the next exponent, where it denotes the same value.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-math.hypot" steps="7" hashes="e02e01ee15cb727eaf2af4a749f4ef28d5798f953a63a97b5641aa220d135e5e">
+    <emu-alg reading="definition">
+      1. Let _sum_ be 0.
+      1. For each element _number_ of _coerced_, do
+        1. Set _sum_ to _sum_ + ℝ(_number_) × ℝ(_number_).
+      1. Return an implementation-approximated Number value representing the square root of _sum_.
+    </emu-alg>
+  </emu-reading>
+
+  <emu-reading clause="sec-numeric-types-number-exponentiate" steps="13" hashes="af3165eff2126aad7d601ddd5942f1a64c26ac55a28cd70124d4383617feddfc">
+    <emu-alg reading="definition">
+      1. Return ApproxPower(_base_, _exponent_).
+    </emu-alg>
+    <emu-note>
+      <p>The step's value is any Number the implementation takes to represent the power ("an implementation-approximated Number value"), so it is one question to the host, a function of the two Numbers; the steps above decide every case with a non-finite or zero operand, and a negative _base_ with a non-integral _exponent_. No exact power is formed.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-phrase id="ph-num-pi" kind="expression" rule="num-pi">
+    <emu-pattern>_k_ π</emu-pattern>
+    <emu-params>_k_: an integer</emu-params>
+    <emu-alg>
+      1. Return _k_ × π.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-if-and-if" kind="expression" rule="if-and-if">
+    <emu-pattern>_a_ if _c_ and _b_ if _d_</emu-pattern>
+    <p>The two cases cover every value of the step: one of _c_ and _d_ holds.</p>
+    <emu-params>_a_: anything, _c_: a Boolean, _b_: anything, _d_: a Boolean</emu-params>
+    <emu-alg>
+      1. If _c_ is *true*, return _a_.
+      1. Assert: _d_ is *true*.
+      1. Return _b_.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-clause id="formal-radixdigitvalue" type="abstract operation">
+    <h1>
+      RadixDigitValue (
+        _c_: a code unit,
+      ): a non-negative integer or ~empty~
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>The value of _c_ as a digit, with the letters A through Z and a through z for the values 10 through 35, as step 14 of parseInt (<emu-xref href="#sec-parseint-string-radix"></emu-xref>) gives them, or ~empty~ if _c_ is no digit.</dd>
+    </dl>
+    <emu-alg>
+      1. Let _n_ be the numeric value of _c_.
+      1. If _n_ is in the inclusive interval from 0x0030 to 0x0039, return _n_ - 0x0030.
+      1. If _n_ is in the inclusive interval from 0x0041 to 0x005A, return _n_ - 0x0041 + 10.
+      1. If _n_ is in the inclusive interval from 0x0061 to 0x007A, return _n_ - 0x0061 + 10.
+      1. Return ~empty~.
+    </emu-alg>
+  </emu-clause>
+
+  <emu-reading clause="sec-parseint-string-radix" steps="11" hashes="db6fa78d1d3e2f6d6cfbe4b88e19823f08a1f2d5cb0229c26912df26a15e02ef">
+    <emu-alg reading="definition">
+      1. Let _end_ be the length of _trimmedString_.
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _trimmedString_, in descending order, do
+        1. Let _d_ be RadixDigitValue(the code unit at index _i_ within _trimmedString_).
+        1. If _d_ is ~empty~, set _end_ to _i_.
+        1. Else if _d_ ≥ _radixMV_, set _end_ to _i_.
+    </emu-alg>
+    <emu-note>
+      <p>A radix-_radixMV_ digit is a code unit whose RadixDigitValue is less than _radixMV_ (step 14 gives the letters' values); the indices are visited from the last, so _end_ ends at the first code unit that is not one.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-parseint-string-radix" steps="14" hashes="ceadb0b84fcf58694b722f96f6ed6f114067289d0e24290a7a49bffb91a2b21c">
+    <emu-alg reading="definition">
+      1. Let _mathInt_ be 0.
+      1. For each integer _i_ such that 0 ≤ _i_ &lt; the length of _numberString_, in ascending order, do
+        1. Let _d_ be RadixDigitValue(the code unit at index _i_ within _numberString_).
+        1. Set _mathInt_ to _mathInt_ × _radixMV_ + _d_.
+      1. If _radixMV_ = 10 and _mathInt_ ≥ 10<sup>20</sup>, then
+        1. Let _q_ be 10<sup>DecimalExponent(_mathInt_) - 19</sup>.
+        1. Set _mathInt_ to an implementation-defined choice of either _mathInt_ or floor(_mathInt_ / _q_) × _q_.
+      1. If _radixMV_ is not one of 2, 4, 8, 10, 16, or 32, set _mathInt_ to ApproxInteger(_mathInt_).
+    </emu-alg>
+    <emu-note>
+      <p>The step's parenthesis gives two latitudes. _numberString_ has more than 20 significant digits exactly when _mathInt_ ≥ 10<sup>20</sup>, and _q_ is then 10 to the number of its digits after the 20th; replacing every one of them by 0 is one implementation-defined choice, as in RoundMVResult. Replacing only some of them gives a value between the truncation and the exact value, whose difference is below 10<sup>-20</sup> of either, so 𝔽 of it is 𝔽 of one of them: the one choice allows every result the sentence does. In the other radices the value may be approximated, which the host does.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-numeric-types-number-tostring" steps="5" hashes="e0d70f271fc2ddfa01bbfc199d36338c4318ea060b22824ae54149f39113e87a">
+    <emu-alg reading="definition">
+      1. Let _n_ be NumberDigitsExponent(_x_, _radix_).
+      1. Let _k_ be NumberDigitsCount(_x_, _radix_).
+      1. Let _s_ be NumberDigitsSignificand(_x_, _radix_).
+    </emu-alg>
+    <emu-note>
+      <p>The step's integers are a function of _x_ and _radix_ that meets the step's condition with _k_ as small as possible; _x_ is finite and positive here. The condition does not always determine the least significant digit of _s_, and which of the tuples is taken is the implementation's, the same for the same _x_ and _radix_ (the step's NOTE gives a rule, informatively). The step's "Note that" sentence is a remark.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-number.prototype.toexponential" steps="11.b.i" hashes="cf1db85657f55eeeb422bab73766e0f332a4c7df5295ffbdbcfcf48cf0198c19">
+    <emu-alg reading="definition">
+      1. Let _exponent_ be NumberDigitsExponent(𝔽(_number_), 10) - 1.
+      1. Let _ff_ be NumberDigitsCount(𝔽(_number_), 10) - 1.
+      1. Let _intSignificand_ be NumberDigitsSignificand(𝔽(_number_), 10).
+    </emu-alg>
+    <emu-note>
+      <p>The step is Number::toString's step <emu-xref href="#step-number-tostring-intermediate-values"></emu-xref> at radix 10 for the Number 𝔽(_number_), _number_ > 0 here: its condition is that one's with _exponent_ = _n_ - 1, _ff_ = _k_ - 1 and _intSignificand_ = _s_, and _ff_ is as small as possible exactly when _k_ is. The step's "Note that" sentence is a remark.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-phrase id="ph-ge" kind="predicate" subject="_x_" rule="ge">
+    <emu-pattern>is greater than or equal to _y_</emu-pattern>
+    <emu-params>_y_: an extended mathematical value, _x_: an extended mathematical value</emu-params>
+    <emu-alg>
+      1. If _x_ ≥ _y_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-gt" kind="predicate" subject="_x_" rule="gt">
+    <emu-pattern>is strictly greater than _y_</emu-pattern>
+    <emu-params>_y_: an extended mathematical value, _x_: an extended mathematical value</emu-params>
+    <emu-alg>
+      1. If _x_ > _y_, return *true*.
+      1. Return *false*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-phrase id="ph-not-infinity-or-integral" kind="predicate" subject="_x_">
+    <emu-pattern>is not one of *+∞<sub>𝔽</sub>*, *-∞<sub>𝔽</sub>*, or an integral Number</emu-pattern>
+    <p>_x_ is neither of the two infinities nor an integral Number: *NaN*, a finite Number that is not integral, or not a Number.</p>
+    <emu-params>_x_: an ECMAScript language value</emu-params>
+    <emu-alg>
+      1. If _x_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, return *false*.
+      1. If _x_ is an integral Number, return *false*.
+      1. Return *true*.
+    </emu-alg>
+  </emu-phrase>
+
+  <emu-reading clause="sec-numeric-types-number-unaryMinus" steps="2" hashes="fdbc617ec8a3e4c3f3b835d55360055996a7efcb88c9772b1fb869dedcf99d98">
+    <emu-alg reading="definition">
+      1. If _number_ is *+0*<sub>𝔽</sub>, return *-0*<sub>𝔽</sub>.
+      1. If _number_ is *-0*<sub>𝔽</sub>, return *+0*<sub>𝔽</sub>.
+      1. If _number_ is *+∞*<sub>𝔽</sub>, return *-∞*<sub>𝔽</sub>.
+      1. If _number_ is *-∞*<sub>𝔽</sub>, return *+∞*<sub>𝔽</sub>.
+      1. Return 𝔽(-ℝ(_number_)).
+    </emu-alg>
+    <emu-note>
+      <p>The Number with _number_'s magnitude and the opposite sign, case by case; a finite non-zero Number's negation is exactly representable.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-numeric-types-bigint-leftShift" steps="1" hashes="43616daba1df24378ef22788eaa7ca9578789465a1f7eab9c8a287c8d99842b5">
+    <emu-alg reading="definition">
+      1. If _y_ &lt; *0*<sub>ℤ</sub>, then
+        1. If _x_ is *0*<sub>ℤ</sub>, return *0*<sub>ℤ</sub>.
+        1. Let _bound_ be 4 × (DecimalExponent(abs(ℝ(_x_))) + 1).
+        1. If -ℝ(_y_) ≥ _bound_, then
+          1. If _x_ > *0*<sub>ℤ</sub>, return *0*<sub>ℤ</sub>.
+          1. Return *-1*<sub>ℤ</sub>.
+        1. Return ℤ(floor(ℝ(_x_) / 2<sup>-ℝ(_y_)</sup>)).
+    </emu-alg>
+    <emu-note>
+      <p>Since |ℝ(_x_)| &lt; 10<sup>DecimalExponent(abs(ℝ(_x_))) + 1</sup> &lt; 2<sup>_bound_</sup>, right-shifting by at least _bound_ bits gives *0*<sub>ℤ</sub> for positive _x_ and *-1*<sub>ℤ</sub> for negative _x_ without forming 2<sup>-ℝ(_y_)</sup>.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-numeric-types-bigint-leftShift" steps="2" hashes="3215d7cf5dd21ed387505ab71e6a5748cce28b16deb6eb033f25d1d5f3eb7b47">
+    <emu-alg reading="definition">
+      1. If _x_ is *0*<sub>ℤ</sub> or _y_ is *0*<sub>ℤ</sub>, return _x_.
+      1. Return _x_ × *2*<sub>ℤ</sub><sup>_y_</sup>.
+    </emu-alg>
+    <emu-note>
+      <p>Shifting *0*<sub>ℤ</sub> or shifting by *0*<sub>ℤ</sub> bits returns _x_ directly without raising 2 to ℝ(_y_).</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading clause="sec-bigint.asuintn" steps="3" hashes="5d8ddfed12721cfe3fc2fae0c250b5b9203c7009805df9e3df7df47d570f638f">
+    <emu-alg reading="definition">
+      1. If _bits_ = 0 or _bigint_ is *0*<sub>ℤ</sub>, return *0*<sub>ℤ</sub>.
+      1. If _bigint_ > *0*<sub>ℤ</sub> and _bits_ ≥ 4 × (DecimalExponent(ℝ(_bigint_)) + 1), return _bigint_.
+      1. Return ℤ(ℝ(_bigint_) modulo 2<sup>_bits_</sup>).
+    </emu-alg>
+    <emu-note>
+      <p>For non-negative _bigint_ &lt; 2<sup>_bits_</sup>, ℝ(_bigint_) modulo 2<sup>_bits_</sup> is ℝ(_bigint_), checked against the bit bound 4 × (DecimalExponent(ℝ(_bigint_)) + 1) without forming 2<sup>_bits_</sup>.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading id="definition-sec-bigint.asintn-3" clause="sec-bigint.asintn" steps="3 4 5" hashes="6445bb182bc1993fe1d445b7a802611c76672827ca77fad261c16c414b3ad1ac e90e742640d8ac42cd648f87842c5d9fc41ee654205d6f077ee20ce0f9109803 b7e08c53bbc0d27d812bae366540b72a6f0b61393a91f46a49de35f54ea042b5">
+    <emu-alg reading="definition">
+      1. If _bits_ = 0 or _bigint_ is *0*<sub>ℤ</sub>, return *0*<sub>ℤ</sub>.
+      1. Let _bound_ be 4 × (DecimalExponent(abs(ℝ(_bigint_))) + 1).
+      1. If _bits_ - 1 ≥ _bound_, return _bigint_.
+      1. Let _mod_ be ℝ(_bigint_) modulo 2<sup>_bits_</sup>.
+      1. If _mod_ ≥ 2<sup>_bits_ - 1</sup>, return ℤ(_mod_ - 2<sup>_bits_</sup>).
+      1. Return ℤ(_mod_).
+    </emu-alg>
+    <emu-note>
+      <p>Since |ℝ(_bigint_)| &lt; 2<sup>_bound_</sup>, if _bits_ - 1 ≥ _bound_ then -2<sup>_bits_ - 1</sup> &lt; ℝ(_bigint_) &lt; 2<sup>_bits_ - 1</sup>, so _bigint_ is unchanged without forming 2<sup>_bits_</sup>.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-clause id="formal-rounddecimalmv" type="abstract operation">
+    <h1>
+      RoundDecimalMV (
+        _m_: a non-negative integer,
+        _k_: an integer,
+      ): a Number
+    </h1>
+    <dl class="header">
+      <dt>description</dt>
+      <dd>Equivalent to RoundMVResult(_m_ × 10<sup>_k_</sup>), clamping exponents far outside binary64's range so extreme powers of 10 are never formed.</dd>
+    </dl>
+    <emu-alg>
+      1. If _m_ = 0, return *+0*<sub>𝔽</sub>.
+      1. Let _e_ be DecimalExponent(_m_) + _k_.
+      1. If _e_ > 309, return *+∞*<sub>𝔽</sub>.
+      1. If _e_ &lt; -325, return *+0*<sub>𝔽</sub>.
+      1. Return RoundMVResult(_m_ × 10<sup>_k_</sup>).
+    </emu-alg>
+  </emu-clause>
+
+  <emu-reading id="definition-sec-runtime-semantics-stringnumericvalue-5" clause="sec-runtime-semantics-stringnumericvalue" steps="5" hashes="4ab2b50baaec530cd30a32b3fa2d294bb2f85698a7a532023f2271742c48deb1">
+    <emu-alg reading="definition">
+      1. Return RoundDecimalMV(_a_ × 10<sup>_n_</sup> + _b_, _e_ - _n_).
+    </emu-alg>
+    <emu-note>
+      <p>Rewrites (_a_ + _b_ × 10<sup>-_n_</sup>) × 10<sup>_e_</sup> as (_a_ × 10<sup>_n_</sup> + _b_) × 10<sup>_e_ - _n_</sup> via RoundDecimalMV without raising 10 to _e_.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading id="definition-sec-runtime-semantics-stringnumericvalue-6" clause="sec-runtime-semantics-stringnumericvalue" steps="4" hashes="771a224717e373d996b7d0ae0727ace48cacaf258cd8997b1b49e3ce9efceae7">
+    <emu-alg reading="definition">
+      1. Return RoundDecimalMV(_b_, _e_ - _n_).
+    </emu-alg>
+    <emu-note>
+      <p>Calls RoundDecimalMV on _b_ and _e_ - _n_ so extreme exponents overflow or underflow without forming 10<sup>_e_ - _n_</sup>.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading id="definition-sec-runtime-semantics-stringnumericvalue-7" clause="sec-runtime-semantics-stringnumericvalue" steps="3" hashes="8ed4fdec1f964717bf3d9ff0334b6bf725a8c2e71987f8632133e57e6b45edb9">
+    <emu-alg reading="definition">
+      1. Return RoundDecimalMV(_a_, _e_).
+    </emu-alg>
+    <emu-note>
+      <p>Calls RoundDecimalMV on _a_ and _e_ so extreme exponents overflow or underflow without forming 10<sup>_e_</sup>.</p>
+    </emu-note>
+  </emu-reading>
+
+  <emu-reading id="definition-sec-numericvalue-1" clause="sec-numericvalue" steps="1" hashes="0eda13d9c53a7dda8ff51ee2ece09f4891e3692ec90aed71a49a052f4eca9b2a">
+    <emu-alg reading="definition">
+      1. Let _d_ be |DecimalLiteral|.
+      1. Assert: _d_ is a Parse Node.
+      1. If _d_ is an instance of the production <emu-grammar>DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits</emu-grammar> or _d_ is an instance of the production <emu-grammar>DecimalLiteral :: DecimalIntegerLiteral `.`</emu-grammar> or _d_ is an instance of the production <emu-grammar>DecimalLiteral :: `.` DecimalDigits</emu-grammar> or _d_ is an instance of the production <emu-grammar>DecimalLiteral :: DecimalIntegerLiteral</emu-grammar>, return RoundMVResult(MV of _d_).
+      1. Let _e_ be the MV of the |ExponentPart| of _d_.
+      1. If _d_ is an instance of the production <emu-grammar>DecimalLiteral :: `.` DecimalDigits ExponentPart</emu-grammar>, let _a_ be 0; else let _a_ be the MV of the |DecimalIntegerLiteral| of _d_.
+      1. If _d_ is an instance of the production <emu-grammar>DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits ExponentPart</emu-grammar> or _d_ is an instance of the production <emu-grammar>DecimalLiteral :: `.` DecimalDigits ExponentPart</emu-grammar>, then
+        1. Let _fd_ be the |DecimalDigits| of _d_.
+        1. Let _b_ be the MV of _fd_.
+        1. Let _n_ be the number of code points in _fd_, excluding all occurrences of |NumericLiteralSeparator|.
+      1. Else,
+        1. Let _b_ be 0.
+        1. Let _n_ be 0.
+      1. Return RoundDecimalMV(_a_ × 10<sup>_n_</sup> + _b_, _e_ - _n_).
+    </emu-alg>
+    <emu-note>
+      <p>Dispatches the four |DecimalLiteral| productions with an |ExponentPart| through RoundDecimalMV so extreme exponents overflow or underflow without forming 10<sup>_e_</sup>.</p>
+    </emu-note>
+  </emu-reading>
+
+</emu-clause>

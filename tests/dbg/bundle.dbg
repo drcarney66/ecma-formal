@@ -1,0 +1,40 @@
+// A d8 bundle (`// JS_BUNDLE_MODULE...` markers, found in the text) opens as its module graph: at
+// arm, a `loadedSource` event for the entry module (the program, under its marker's name) and one
+// for each other module, a source of its own (sourceReference 2^30 + i) whose text `source` gives
+// before its parse. A line breakpoint in the entry is hit; stepIn by statement enters lib/show.mjs
+// and lib/math.mjs, positioned in their own texts, and the JS stack names each module's source.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}", "stopOnEntry": true}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "loadedSource", "body": {"reason": "new", "source": {"name": "main.mjs", "path": "${program}"}}}}
+{"expect": {"type": "event", "event": "loadedSource", "body": {"reason": "new", "source": {"name": "lib/math.mjs", "sourceReference": 1073741824}}}}
+{"expect": {"type": "event", "event": "loadedSource", "body": {"reason": "new", "source": {"name": "lib/show.mjs", "sourceReference": 1073741825}}}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "entry", "js": {"contexts": 1}}}}
+{"send": {"command": "source", "arguments": {"sourceReference": 0}}}
+{"expect": {"type": "response", "command": "source", "success": true, "body": {"content": "import { show } from \"./lib/show.mjs\";\nshow(21);\n"}}}
+{"send": {"command": "source", "arguments": {"sourceReference": 1073741825}}}
+{"expect": {"type": "response", "command": "source", "success": true, "body": {"content": "import { double } from \"./math.mjs\";\nexport function show(x) {\n  print(double(x));\n}\n"}}}
+{"send": {"command": "setBreakpoints", "arguments": {"source": {"path": "${program}"}, "breakpoints": [{"line": 2}]}}}
+{"expect": {"type": "response", "command": "setBreakpoints", "success": true, "body": {"breakpoints": [{"id": 1, "verified": false, "line": 2, "message": "pending"}]}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "breakpoint", "body": {"reason": "changed", "breakpoint": {"id": 1, "verified": true, "line": 2, "column": 1, "source": {"name": "main.mjs", "path": "${program}"}}}}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "hitBreakpointIds": [1], "js": {"source": {"name": "main.mjs", "path": "${program}"}, "line": 2, "column": 1, "lo": 39, "hi": 48}}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "js": {"source": {"name": "lib/show.mjs", "sourceReference": 1073741825}, "line": 3, "column": 3, "lo": 65, "hi": 82}}}}
+{"send": {"command": "stackTrace", "arguments": {"threadId": 1, "view": "js"}}}
+{"expect": {"type": "response", "command": "stackTrace", "success": true, "body": {"stackFrames": [{"id": 0, "name": "show", "source": {"name": "lib/show.mjs", "sourceReference": 1073741825}, "line": 3, "column": 3}, {"id": 1, "name": "(module)", "source": {"name": "main.mjs", "path": "${program}"}, "line": 2, "column": 1}, "..."]}}}
+{"send": {"command": "stepIn", "arguments": {"threadId": 1, "granularity": "statement"}}}
+{"expect": {"type": "response", "command": "stepIn", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "step", "js": {"source": {"name": "lib/math.mjs", "sourceReference": 1073741824}, "line": 2, "column": 3, "lo": 30, "hi": 43}}}}
+{"send": {"command": "continue", "arguments": {"threadId": 1}}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "output", "body": {"category": "stdout", "output": "42\n"}}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: undefined", "exitCode": 0}}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}
