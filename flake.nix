@@ -295,7 +295,6 @@
             pkgs.rustc
             pkgs.rustfmt
             pkgs.clippy
-            pkgs.rust-analyzer
             python
             pkgs.ruff
             node
