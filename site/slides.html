@@ -1,0 +1,269 @@
+<!-- title: Making <code>spec.html</code> executable -->
+<!-- eyebrow: 117th Meeting of Ecma TC39 · November 30 – December 3, 2026 · James M Snell &amp; Dan Carney -->
+<!-- lede: <p>Formalization's time has come: ECMA-262's algorithms, grammars, tables, and early errors can be compiled directly from <code>spec.html</code> into a machine-checked Lean 4 specification, a proved engine, and a browser spec-step debugger that proposal champions and committee delegates can use immediately.</p> -->
+
+<div class="deck-bar" id="deck-bar" role="region" aria-label="Slide controls">
+  <div class="deck-bar-left">
+    <button type="button" class="theme deck-btn" id="deck-prev" title="Previous slide (Left arrow)">← Prev</button>
+    <span class="deck-pos" id="deck-pos" aria-live="polite">8 slides</span>
+    <button type="button" class="theme deck-btn" id="deck-next" title="Next slide (Right arrow or Space)">Next →</button>
+  </div>
+  <div class="deck-progress" aria-hidden="true"><span id="deck-progress-fill"></span></div>
+  <div class="deck-bar-right">
+    <span class="deck-hint muted">Keys: <kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> <kbd>f</kbd></span>
+    <button type="button" class="theme deck-btn deck-present-btn" id="deck-present" aria-pressed="false" title="Toggle single-slide presentation mode (f)">Present</button>
+  </div>
+</div>
+
+<div class="deck" id="deck">
+
+<section class="slide" id="slide-thesis" data-slide="1">
+  <div class="slide-head">
+    <span class="slide-num">01 / 08 · Overview</span>
+    <h2 id="thesis">Formalization's time has come — and TC39 can use it today</h2>
+  </div>
+  <p class="slide-lead">For decades, formal semantics of JavaScript lived in separate repositories, written in separate notations, months or years behind <code>spec.html</code>. This project flips the relationship: <strong><code>spec.html</code> is the source of truth</strong>, and execution, static checking, interactive debugging, and machine-checked proofs flow directly from it.</p>
+  <ul class="facts slide-facts" aria-label="Project headline metrics">
+    <li><b>{{gen_modules}}</b><span>generated Lean modules ({{gen_lines}} lines) compiled directly from <code>spec.html</code></span></li>
+    <li><b>0</b><span>generated lines checked into git — proposal branches diff only hand-written deltas</span></li>
+    <li><b>{{proposals_117_count}} / {{proposals_117_count}}</b><span>ECMA-262 proposals on the TC39 #117 agenda merged, proved, and runnable in the browser</span></li>
+    <li><b>{{errata}}</b><span>ECMA-262 errata catalogued with switchable literal vs. consensus readings</span></li>
+  </ul>
+  <div class="cards two">
+    <div class="card-box">
+      <h3>Theme 1 · Why now?</h3>
+      <p>ECMA-262's structured Ecmarkup discipline, round-trip code generation, Lean 4's programmable kernel, and AI-assisted proof maintenance let a proved engine track every plenary agenda instead of freezing at an older edition.</p>
+    </div>
+    <div class="card-box">
+      <h3>Theme 2 · Immediate usability for TC39</h3>
+      <p>Champions and editors do not need to write Lean to benefit: merging a <code>spec.emu</code> draft immediately checks grammar/SDO coverage, record field types, prose residues, and produces a shareable browser debugger build.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="slide-why-now" data-slide="2">
+  <div class="slide-head">
+    <span class="slide-num">02 / 08 · Why Formalization's Time Has Come</span>
+    <h2 id="why-now">What kept formal specs out of TC39 workflows — and what changed</h2>
+  </div>
+  <div class="tablebox">
+    <table>
+      <thead>
+        <tr>
+          <th>Past bottleneck</th>
+          <th>How <code>ecma-formal</code> solves it</th>
+          <th>Standing guarantee</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Manual translation drift</strong><br><span class="muted">Hand-porting 2,300+ algorithms fell behind every TC39 meeting.</span></td>
+          <td>Rust generators (<code>spec-gen</code>, <code>jsgrammar</code>) compile <code>spec.html</code> algorithms, grammars, tables, and early errors into pure Lean data (<code>lean/Ecma/Gen</code>).</td>
+          <td><code>ecma-print</code> prints every generated item back to <code>spec.html</code> byte-for-byte (<code>scripts/bijection.py</code>: 0 discrepancies).</td>
+        </tr>
+        <tr>
+          <td><strong>Opaque prose assumptions</strong><br><span class="muted">Implicit numeric, Unicode, or host invariants hidden in helper code.</span></td>
+          <td>Where English is axiomatic rather than algorithmic, <code>lean/Ecma</code> states explicit laws ({{model_laws}} model laws, {{host_laws}} host laws), each quoting its governing sentence.</td>
+          <td><code>scripts/law_quotes.py</code> verifies every quoted sentence against pinned <code>spec.html</code>.</td>
+        </tr>
+        <tr>
+          <td><strong>Unreviewable 50k-line diffs</strong><br><span class="muted">Checking generated files into git obscured what a proposal actually changed.</span></td>
+          <td>All <code>Gen/</code> directories and derived reports are gitignored and produced in one deterministic phase (<code>scripts/generate.py</code>).</td>
+          <td>Every proposal branch diff contains <strong>0 generated files</strong> — only overlay readings, host hooks, and proofs.</td>
+        </tr>
+        <tr>
+          <td><strong>Proof maintenance cost</strong><br><span class="muted">A 5-line spec edit could break thousands of lines of brittle tactics.</span></td>
+          <td><code>lean/Ecma</code> has no tactics or concrete representation; <code>Engine.implements</code> proves simulation once over the machine, and {{proposals_117_zero_proofs}} of {{proposals_117_count}} #117 proposals needed <strong>0 new proof lines</strong>.</td>
+          <td>Relies on Lean's {{axiom_count}} standard axioms ({{axioms}}), 0 <code>sorry</code>, 0 <code>native_decide</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="slide" id="slide-architecture" data-slide="3">
+  <div class="slide-head">
+    <span class="slide-num">03 / 08 · Architecture</span>
+    <h2 id="architecture">One pipeline from <code>spec.html</code> to Lean proofs and Wasm64</h2>
+  </div>
+  <figure class="diagram" aria-label="Pipeline from spec.html and proposal spec.emu to Lean specification, proved engine, and lazy-loaded browser debugger">
+    <div class="svgbox">
+      <svg viewBox="0 0 820 230" role="img" aria-label="spec.html plus proposal spec.emu feed apply_proposal.py and scripts/generate.py into lean/Ecma, which feeds lean/Engine (proved via Engine.implements and Engine.run_sound) and lean/Debugger (lazy-loaded Wasm64 in the browser).">
+        <defs><marker id="sah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+        <rect class="dg-box spec" x="10" y="20" width="175" height="82" rx="6"/>
+        <text class="dg-t" x="22" y="45">tc39/ecma262 spec.html</text>
+        <text class="dg-s" x="22" y="65">+ proposal spec.emu</text>
+        <text class="dg-m" x="22" y="85">apply_proposal.py</text>
+
+        <rect class="dg-box spec" x="10" y="122" width="175" height="82" rx="6"/>
+        <text class="dg-t" x="22" y="147">Reading overlay</text>
+        <text class="dg-s" x="22" y="167">spec/formal/*.emu</text>
+        <text class="dg-s" x="22" y="185">{{overlay_files}} files · {{errata}} errata</text>
+
+        <path class="dg-a" d="M185,61 L225,95" marker-end="url(#sah)"/>
+        <path class="dg-a" d="M185,163 L225,125" marker-end="url(#sah)"/>
+
+        <rect class="dg-box" x="230" y="72" width="150" height="78" rx="6"/>
+        <text class="dg-t" x="242" y="98">scripts/generate.py</text>
+        <text class="dg-s" x="242" y="118">spec-gen &amp; jsgrammar</text>
+        <text class="dg-s" x="242" y="136">bijection + type check</text>
+
+        <path class="dg-a" d="M380,111 L415,111" marker-end="url(#sah)"/>
+
+        <rect class="dg-box lean" x="420" y="20" width="185" height="184" rx="6"/>
+        <text class="dg-t" x="432" y="45">lean/Ecma (Specification)</text>
+        <text class="dg-s" x="432" y="67">• Gen/ data (gitignored)</text>
+        <text class="dg-s" x="432" y="87">• Machine.step semantics</text>
+        <text class="dg-s" x="432" y="107">• Model.Laws &amp; Host.WF</text>
+        <text class="dg-s" x="432" y="127">• Ecma.Implements relation</text>
+        <text class="dg-m" x="432" y="153">0 theorems · 0 tactics</text>
+        <text class="dg-m" x="432" y="173">no Engine imports</text>
+
+        <path class="dg-a" d="M605,68 L640,68" marker-end="url(#sah)"/>
+        <path class="dg-a" d="M605,158 L640,158" marker-end="url(#sah)"/>
+
+        <rect class="dg-box proved" x="645" y="20" width="165" height="84" rx="6"/>
+        <text class="dg-t" x="657" y="45">lean/Engine (Proved)</text>
+        <text class="dg-m" x="657" y="66">Engine.implements</text>
+        <text class="dg-m" x="657" y="84">Engine.run_sound</text>
+
+        <rect class="dg-box lean" x="645" y="120" width="165" height="84" rx="6"/>
+        <text class="dg-t" x="657" y="145">lean/Debugger (Wasm64)</text>
+        <text class="dg-s" x="657" y="165">Lazy-loaded per build</text>
+        <text class="dg-s" x="657" y="183">0 B upfront download</text>
+      </svg>
+    </div>
+  </figure>
+  <dl class="split">
+    <dt>Ecma.Implements</dt>
+    <dd><p>Requires three things of an implementation: its values satisfy <a href="model.html#Model.Laws"><code>Model.Laws</code></a>, its host satisfies <a href="host.html#Host.WF"><code>Host.WF</code></a>, and every transition matches zero or more steps of <code>Machine.step</code> (or stops at an explicit resource ceiling). Proved unconditionally in <a href="what-is-proved.html#theorems"><code>Engine.implements</code></a> and <a href="what-is-proved.html#run-sound"><code>Engine.run_sound</code></a>.</p></dd>
+    <dt>Lazy Wasm64</dt>
+    <dd><p>Hosting baseline ECMA-262, literal-errata mode, and 14 proposal builds means 16 Wasm64 binaries (~13 MB each). The debugger UI fetches and compiles <strong>0 Wasm bytes on page load</strong>, streaming only the selected build via <code>WebAssembly.compileStreaming</code> and caching compiled modules across switches.</p></dd>
+  </dl>
+</section>
+
+<section class="slide" id="slide-tools" data-slide="4">
+  <div class="slide-head">
+    <span class="slide-num">04 / 08 · Immediate Usability Tools</span>
+    <h2 id="tools">Four tools champions, reviewers, and editors can use right now</h2>
+  </div>
+  <ul class="cards two">
+    <li>
+      <h3>1. Mechanical merge &amp; Ecmarkup audit</h3>
+      <p><code>scripts/apply_proposal.py</code> merges a proposal's <code>spec.emu</code> <code>&lt;ins&gt;</code>/<code>&lt;del&gt;</code> patch onto current <code>spec.html</code>. Every drifted context line, missing clause target, deleted-but-referenced AO, or unplaced block becomes an explicit, auditable resolution.</p>
+    </li>
+    <li>
+      <h3>2. Static sort, slot &amp; SDO checking</h3>
+      <p><code>spec-gen</code> type-checks every step against Record field tables, internal slots, Completion Records, and grammar productions — immediately catching missing <code>BoundNames</code> rows, <code>*undefined*</code> vs. <code>~empty~</code> mix-ups, and untyped built-in headers.</p>
+    </li>
+    <li>
+      <h3>3. Browser spec-step debugger</h3>
+      <p>Pause on any <code>sec-*</code> clause step or JS line; step in, over, out, or <strong>step back</strong>; inspect the live ECMA-262 algorithm stack beside JS frames, lexical bindings, and heap records; switch builds in place to compare baseline vs. proposal.</p>
+    </li>
+    <li>
+      <h3>4. Executable errata &amp; spec-issue explorer</h3>
+      <p>When literal <code>spec.html</code> disagrees with implementations or Test262, both readings live side by side in <code>&lt;emu-erratum&gt;</code>. Anyone can run a reproduction under <code>--literal</code> vs. default reading in {{slides_errata_link}} and <a href="spec-issues/">Spec issues</a>.</p>
+    </li>
+  </ul>
+</section>
+
+<section class="slide" id="slide-agenda-117" data-slide="5">
+  <div class="slide-head">
+    <span class="slide-num">05 / 08 · TC39 #117 Agenda Coverage &amp; Diff Sizes</span>
+    <h2 id="agenda-117">All 14 ECMA-262 proposals at TC39 #117: LOC proofs vs. algorithms/English</h2>
+  </div>
+  <p>We built compliant branches (<code>Engine.implements</code> &amp; <code>Engine.run_sound</code> proved, <code>quick_check.py</code> passing, Wasm64 debugger compiled) for every ECMA-262 proposal on the <a href="https://github.com/tc39/agendas/blob/main/2026/11.md">November 2026 agenda</a> (Stages 0–3, excluding ECMA-402 <code>Intl</code> items). With <code>Gen/</code> gitignored, here is the entire hand-written diff of each branch against <code>main</code>:</p>
+  {{proposals_117_totals}}
+  {{proposals_117_chart}}
+  {{proposals_117_table}}
+</section>
+
+<section class="slide" id="slide-findings" data-slide="6">
+  <div class="slide-head">
+    <span class="slide-num">06 / 08 · Findings Across Today's Agenda</span>
+    <h2 id="findings">Real spec &amp; markup bugs caught while building the 14 branches</h2>
+  </div>
+  <p>Making a proposal executable tests paths human reviewers rarely trace by eye — early-error SDO dispatch, JSON/Synthetic module records, completion unwrapping, and rebase drift against current <code>spec.html</code>:</p>
+  <div class="tablebox">
+    <table>
+      <thead>
+        <tr>
+          <th>Proposal (Stage)</th>
+          <th>What mechanical merge + <code>spec-gen</code> + execution caught</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong><code>import defer</code> PR #97</strong><br><span class="badge proved">Stage 3</span></td>
+          <td>Missing <code>BoundNames</code> SDO row for <code>import defer</code> (halts every module at early errors); <code>[[DeferredNamespace]]</code> omitted from both <code>ParseModule</code> (in PR #97) and <code>CreateDefaultExportSyntheticModule</code> (JSON modules); <code>ModuleRequestsEqual</code> deleted while still called in 6 unshown clauses.</td>
+        </tr>
+        <tr>
+          <td><strong><code>Import Text</code></strong><br><span class="badge proved">Stage 3 → 4</span></td>
+          <td>Invalid HTML structure (<code>&lt;ol&gt;</code> placed directly inside <code>&lt;ul&gt;</code> outside any <code>&lt;li&gt;</code> in <code>HostLoadImportedModule</code>) and copied <code>[[Specifer]]</code> typo.</td>
+        </tr>
+        <tr>
+          <td><strong><code>Immutable ArrayBuffers</code></strong><br><span class="badge rd">Stage 2.7 → 3</span></td>
+          <td>Wrote <code>*undefined*</code> instead of <code>~empty~</code> for <code>[[ArrayBufferDetachKey]]</code> and instead of <code>~unused~</code> in <code>SetViewValue</code>; omitted <code>type="built-in function"</code> on all 3 new <code>ArrayBuffer.prototype</code> methods; prose field read instead of <code>_agentRecord_.[[LittleEndian]]</code>.</td>
+        </tr>
+        <tr>
+          <td><strong><code>JSON.parse</code> PR #27</strong><br><span class="badge rd">Stage 2.7</span></td>
+          <td>Calls undefined 3-argument overload <code>GetBooleanOption(..., ~reject~, ...)</code> and has an undeclared normative dependency on unmerged ECMA-262 PR #3933 (<code>JSONEvaluation</code> refactoring).</td>
+        </tr>
+        <tr>
+          <td><strong><code>ESM Phase Imports</code> PR #65</strong><br><span class="badge rd">Stage 2.7</span></td>
+          <td>Written as a delta against unmerged <code>proposal-source-phase-imports</code> rather than ECMA-262; literal <code>1. ...</code> elided steps in <code>ContinueDynamicImport</code> &amp; <code>InitializeEnvironment</code>; missing <code>&lt;dfn&gt;%ModuleSource%&lt;/dfn&gt;</code> and built-in headers.</td>
+        </tr>
+        <tr>
+          <td><strong><code>Deferred Re-exports</code></strong><br><span class="badge rd">Stage 2.7</span></td>
+          <td>Nested <code>&lt;ins&gt;</code> inside <code>&lt;ins class="block"&gt;</code>, double spaces in 4 algorithm steps, <code>. Else,</code> mid-step conditional in <code>GetModuleNamespace</code>, and mixed record-predicate phrasing across 6 module AOs.</td>
+        </tr>
+        <tr>
+          <td><strong><code>Error.code</code>, <code>fma</code>, <code>Composites</code></strong><br><span class="badge owed">Stage 2</span></td>
+          <td><code>Error.code</code>: wrong clause IDs (<code>#sec-suppressed-error*</code> vs. <code>#sec-suppressederror*</code>) and assumed <code>SuppressedError</code> already took <code>_options_</code>. <code>fma</code>: unescaped <code>&lt;</code> inside <code>&lt;emu-alg&gt;</code>. <code>Composites</code>: global <code>*"Composite"*</code> in Table 6 without §19.2 clause or <code>InitializeHostDefinedRealm</code> setup for <code>[[CompositeRegistry]]</code>.</td>
+        </tr>
+        <tr>
+          <td><strong><code>Cancellation</code> &amp; Stage 0 items</strong><br><span class="badge none">Stage 1 &amp; 0</span></td>
+          <td><code>Cancellation</code> PR #35: dangling Web IDL <code>%EventTarget%</code> intrinsic and missing Annex D host hook summary. <code>Iterator.prototype.transfer</code>: surfaced generator closure's hidden <code>_genContext_</code> back-pointer that must rebind to <code>_transferred_</code>. <code>popcount</code>: missing <code>type="built-in function"</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="slide" id="slide-demos" data-slide="7">
+  <div class="slide-head">
+    <span class="slide-num">07 / 08 · Live Interactive Demos</span>
+    <h2 id="demos">Step through TC39 #117 proposals live in the browser</h2>
+  </div>
+  <p>Each link below opens the browser debugger with breakpoints pre-set inside the proposal's own specification algorithm. Watch the Network tab: only the ~13 MB <code>.wasm</code> binary for the proposal you click is fetched and compiled on demand.</p>
+  {{proposals_117_demos}}
+</section>
+
+<section class="slide" id="slide-workflow" data-slide="8">
+  <div class="slide-head">
+    <span class="slide-num">08 / 08 · Workflow &amp; Discussion</span>
+    <h2 id="workflow">How champions &amp; editors can adopt this — and questions for TC39</h2>
+  </div>
+  <div class="cards two">
+    <div class="card-box">
+      <h3>4 steps on a proposal branch</h3>
+      <ol class="steps">
+        <li>Point <code>spec/proposals.txt</code> at your <code>spec.emu</code> and resolve any rebase questions from <code>apply_proposal.py</code>.</li>
+        <li>Run <code>scripts/generate.py</code> to check grammar coverage, Record/slot types, and round-trip printing.</li>
+        <li>If the proposal needs a new host hook or math primitive, implement it in <code>lean/Engine</code> and run <code>lake build &amp;&amp; scripts/quick_check.py</code>.</li>
+        <li>Run <code>scripts/build_wasm.py</code> to publish a lazy-loaded browser debugger link alongside your explainer and slides.</li>
+      </ol>
+    </div>
+    <div class="card-box">
+      <h3>Questions for the committee (45m discussion)</h3>
+      <ul>
+        <li><strong>Proposal CI check:</strong> Would champions welcome an opt-in GitHub Action running <code>apply_proposal.py</code> + <code>spec-gen</code> on proposal PRs prior to Stage 2.7 / Stage 3 reviewers' sign-off?</li>
+        <li><strong>PR debugger previews:</strong> Should normative ECMA-262 PRs and agenda proposals link an interactive spec-step debugger preview for plenary review?</li>
+        <li><strong>Standing errata triage:</strong> How would the editors like to consume the {{slides_errata_count_link}} and <a href="spec-issues/">spec-issue write-ups</a> surfaced by the bijection and Test262 runs?</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note"><strong>Explore everything offline or in the browser:</strong> <a href="how-it-works.html">How it works</a> · <a href="what-is-proved.html">What is proved</a> · {{slides_examples_link}} · {{slides_errata_link}} · {{slides_proposal_link}}.</p>
+</section>
+
+</div>

@@ -1,0 +1,665 @@
+{
+ "meeting": "117th Meeting of Ecma TC39 (November 30 – December 3, 2026)",
+ "agenda": "https://github.com/tc39/agendas/blob/main/2026/11.md",
+ "base": "main",
+ "proposals": [
+  {
+   "id": "defer-import-eval",
+   "build": "defer",
+   "branch": "proposal-defer-import-eval",
+   "stage": "3",
+   "title": "import defer (with PR #97 cycle/TLA fix)",
+   "presenter": "Nicolò Ribaudo",
+   "repo": "https://github.com/tc39/proposal-defer-import-eval",
+   "example": "run/import_defer_basic",
+   "status": "ready",
+   "commit": "fbb700b",
+   "merge_base": "1565c55",
+   "proposal_commit": "f19b6c5",
+   "spec_lines": 2461,
+   "diff": {
+    "algorithms": {
+     "added": 231,
+     "removed": 9,
+     "files": 8
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 11,
+     "removed": 22,
+     "files": 7
+    },
+    "meta": {
+     "added": 104,
+     "removed": 25,
+     "files": 7
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "import-text",
+   "build": "import-text",
+   "branch": "proposal-import-text",
+   "stage": "3",
+   "title": "Import Text (for Stage 4)",
+   "presenter": "Eemeli Aro",
+   "repo": "https://github.com/tc39/proposal-import-text",
+   "example": "dbg/proposal_import_text",
+   "status": "ready",
+   "commit": "27a6953",
+   "merge_base": "1565c55",
+   "proposal_commit": "1b9e238",
+   "spec_lines": 112,
+   "diff": {
+    "algorithms": {
+     "added": 6,
+     "removed": 4,
+     "files": 2
+    },
+    "model": {
+     "added": 4,
+     "removed": 0,
+     "files": 1
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 11,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 5,
+     "removed": 6,
+     "files": 3
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "thenable-curtailment",
+   "build": "thenable-curtailment",
+   "branch": "proposal-thenable-curtailment",
+   "stage": "3",
+   "title": "Thenable Curtailment (PRs #22 & #26)",
+   "presenter": "Matthew Gaudet",
+   "repo": "https://github.com/tc39/proposal-thenable-curtailment",
+   "example": "dbg/proposal_thenable_curtailment",
+   "status": "ready",
+   "commit": "c0068bf",
+   "merge_base": "1565c55",
+   "proposal_commit": "33a725b",
+   "spec_lines": 267,
+   "diff": {
+    "algorithms": {
+     "added": 36,
+     "removed": 0,
+     "files": 2
+    },
+    "model": {
+     "added": 2,
+     "removed": 1,
+     "files": 1
+    },
+    "proofs": {
+     "added": 1,
+     "removed": 1,
+     "files": 1
+    },
+    "tests": {
+     "added": 43,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 5,
+     "removed": 6,
+     "files": 3
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "deferred-reexports",
+   "build": "deferred-reexports",
+   "branch": "proposal-deferred-reexports",
+   "stage": "2.7",
+   "title": "Deferred Re-exports (export defer)",
+   "presenter": "Nicolò Ribaudo",
+   "repo": "https://github.com/tc39/proposal-deferred-reexports",
+   "example": "dbg/proposal_deferred_reexports",
+   "status": "ready",
+   "commit": "9deb3f5",
+   "merge_base": "1565c55",
+   "proposal_commit": "a4fd2f3",
+   "spec_lines": 3901,
+   "diff": {
+    "algorithms": {
+     "added": 359,
+     "removed": 27,
+     "files": 13
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 28,
+     "removed": 17,
+     "files": 4
+    },
+    "meta": {
+     "added": 110,
+     "removed": 31,
+     "files": 8
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "json-parseimmutable",
+   "build": "json-parseimmutable",
+   "branch": "proposal-json-parseimmutable",
+   "stage": "2.7",
+   "title": "JSON.parse Options (PR #27 nullPrototypeObjects)",
+   "presenter": "Peter Klecha",
+   "repo": "https://github.com/tc39/proposal-json-parseimmutable",
+   "example": "dbg/proposal_json_parseimmutable",
+   "status": "ready",
+   "commit": "5041aaa",
+   "merge_base": "1565c55",
+   "proposal_commit": "",
+   "spec_lines": 193,
+   "diff": {
+    "algorithms": {
+     "added": 195,
+     "removed": 1,
+     "files": 3
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 52,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 6,
+     "removed": 7,
+     "files": 4
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "esm-phase-imports",
+   "build": "esm-phase-imports",
+   "branch": "proposal-esm-phase-imports",
+   "stage": "2.7",
+   "title": "ESM Phase Imports (PR #65)",
+   "presenter": "Guy Bedford",
+   "repo": "https://github.com/tc39/proposal-esm-phase-imports",
+   "example": "dbg/proposal_esm_phase_imports",
+   "status": "ready",
+   "commit": "626640a",
+   "merge_base": "1565c55",
+   "proposal_commit": "f0ab861",
+   "spec_lines": 1589,
+   "diff": {
+    "algorithms": {
+     "added": 972,
+     "removed": 9,
+     "files": 6
+    },
+    "model": {
+     "added": 11,
+     "removed": 4,
+     "files": 1
+    },
+    "proofs": {
+     "added": 1,
+     "removed": 1,
+     "files": 1
+    },
+    "tests": {
+     "added": 26,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 78,
+     "removed": 45,
+     "files": 17
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "immutable-arraybuffer",
+   "build": "immutable-arraybuffer",
+   "branch": "proposal-immutable-arraybuffer",
+   "stage": "2.7",
+   "title": "Immutable ArrayBuffers (for Stage 3)",
+   "presenter": "Richard Gibson",
+   "repo": "https://github.com/tc39/proposal-immutable-arraybuffer",
+   "example": "dbg/proposal_immutable_arraybuffer",
+   "status": "ready",
+   "commit": "82c2bde",
+   "merge_base": "1565c55",
+   "proposal_commit": "ca3f880",
+   "spec_lines": 1158,
+   "diff": {
+    "algorithms": {
+     "added": 135,
+     "removed": 5,
+     "files": 4
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 43,
+     "removed": 1,
+     "files": 2
+    },
+    "meta": {
+     "added": 69,
+     "removed": 46,
+     "files": 17
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "error-code-property",
+   "build": "error-code-property",
+   "branch": "proposal-error-code-property",
+   "stage": "2",
+   "title": "Error code property (to Stage 2.7)",
+   "presenter": "James M Snell",
+   "repo": "https://github.com/tc39/proposal-error-code-property",
+   "example": "dbg/proposal_error_code_property",
+   "status": "ready",
+   "commit": "6549def",
+   "merge_base": "1565c55",
+   "proposal_commit": "cbaccf6",
+   "spec_lines": 133,
+   "diff": {
+    "algorithms": {
+     "added": 14,
+     "removed": 1,
+     "files": 2
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 48,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 5,
+     "removed": 6,
+     "files": 3
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "fma",
+   "build": "fma",
+   "branch": "proposal-fma",
+   "stage": "2",
+   "title": "Math.fusedMultiplyAdd (to Stage 2.7)",
+   "presenter": "Waldemar Horwat",
+   "repo": "https://github.com/tc39/proposal-fma",
+   "example": "dbg/proposal_fma",
+   "status": "ready",
+   "commit": "6a128c8",
+   "merge_base": "1565c55",
+   "proposal_commit": "45bb4d9",
+   "spec_lines": 74,
+   "diff": {
+    "algorithms": {
+     "added": 38,
+     "removed": 0,
+     "files": 2
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 66,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 29,
+     "removed": 29,
+     "files": 14
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "composites",
+   "build": "composites",
+   "branch": "proposal-composites",
+   "stage": "2",
+   "title": "Composites",
+   "presenter": "Ashley Claymore",
+   "repo": "https://github.com/tc39/proposal-composites",
+   "example": "dbg/proposal_composites",
+   "status": "ready",
+   "commit": "4a6461f",
+   "merge_base": "1565c55",
+   "proposal_commit": "03b7388",
+   "spec_lines": 325,
+   "diff": {
+    "algorithms": {
+     "added": 199,
+     "removed": 0,
+     "files": 3
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 45,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 29,
+     "removed": 29,
+     "files": 14
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "cancellation",
+   "build": "cancellation",
+   "branch": "proposal-cancellation",
+   "stage": "1",
+   "title": "Cancellation: AbortController & AbortSignal (PR #35)",
+   "presenter": "Kevin Gibbons",
+   "repo": "https://github.com/tc39/proposal-cancellation",
+   "example": "dbg/proposal_cancellation",
+   "status": "ready",
+   "commit": "831df1a",
+   "merge_base": "1565c55",
+   "proposal_commit": "1230cc9",
+   "spec_lines": 986,
+   "diff": {
+    "algorithms": {
+     "added": 118,
+     "removed": 1,
+     "files": 4
+    },
+    "model": {
+     "added": 4,
+     "removed": 1,
+     "files": 1
+    },
+    "proofs": {
+     "added": 2,
+     "removed": 1,
+     "files": 1
+    },
+    "tests": {
+     "added": 61,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 63,
+     "removed": 40,
+     "files": 15
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "iterator-transfer",
+   "build": "iterator-transfer",
+   "branch": "proposal-iterator-transfer",
+   "stage": "0",
+   "title": "Iterator.prototype.transfer",
+   "presenter": "James M Snell",
+   "repo": "https://github.com/jasnell/proposal-iterator-transfer",
+   "example": "dbg/proposal_iterator_transfer",
+   "status": "ready",
+   "commit": "cf4e6d0",
+   "merge_base": "1565c55",
+   "proposal_commit": "",
+   "spec_lines": 90,
+   "diff": {
+    "algorithms": {
+     "added": 93,
+     "removed": 0,
+     "files": 2
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 91,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 28,
+     "removed": 29,
+     "files": 14
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "trim-chars",
+   "build": "trim-chars",
+   "branch": "proposal-trim-chars",
+   "stage": "0",
+   "title": "Trim Specific Characters",
+   "presenter": "Eemeli Aro",
+   "repo": "https://github.com/eemeli/proposal-trim-chars",
+   "example": "dbg/proposal_trim_chars",
+   "status": "ready",
+   "commit": "f0b67db",
+   "merge_base": "1565c55",
+   "proposal_commit": "e1c8811",
+   "spec_lines": 85,
+   "diff": {
+    "algorithms": {
+     "added": 71,
+     "removed": 45,
+     "files": 3
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 40,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 9,
+     "removed": 14,
+     "files": 4
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  },
+  {
+   "id": "popcount",
+   "build": "popcount",
+   "branch": "proposal-popcount",
+   "stage": "0",
+   "title": "Bitwise counting (Math.popcount32 / Math.ctz32)",
+   "presenter": "Richard Gibson",
+   "repo": "https://github.com/js-choi/proposal-popcount",
+   "example": "dbg/proposal_popcount",
+   "status": "ready",
+   "commit": "45a487b",
+   "merge_base": "1565c55",
+   "proposal_commit": "b1d30a6",
+   "spec_lines": 31,
+   "diff": {
+    "algorithms": {
+     "added": 39,
+     "removed": 0,
+     "files": 2
+    },
+    "model": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "proofs": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    },
+    "tests": {
+     "added": 43,
+     "removed": 0,
+     "files": 1
+    },
+    "meta": {
+     "added": 28,
+     "removed": 29,
+     "files": 14
+    },
+    "generated": {
+     "added": 0,
+     "removed": 0,
+     "files": 0
+    }
+   }
+  }
+ ]
+}

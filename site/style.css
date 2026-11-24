@@ -544,3 +544,60 @@ table.issues td:nth-child(4) { min-width: 8rem; font-size: 0.85em; }
 table.issues td:nth-child(4) code { overflow-wrap: anywhere; }
 @media (max-width: 40rem) { table.issues td:nth-child(4) { min-width: 0; } }
 table.wt td code { overflow-wrap: normal; white-space: nowrap; }
+
+/* TC39 #117 presentation deck (slides.html) */
+.deck-bar {
+  position: sticky; top: 3.1rem; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem;
+  background: color-mix(in srgb, var(--paper) 94%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border: 1px solid var(--rule); border-radius: 8px; padding: 0.45rem 0.75rem; margin: 0 0 1.5rem;
+}
+html:not(.js) .deck-bar { display: none; }
+.deck-bar-left, .deck-bar-right { display: flex; align-items: center; gap: 0.45rem; }
+.deck-pos { font-size: var(--step--1); font-variant-numeric: tabular-nums; font-weight: 600; min-width: 5.5rem; text-align: center; }
+.deck-progress { flex: 1 1 8rem; height: 0.35rem; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.deck-progress > span { display: block; height: 100%; width: 12.5%; background: var(--accent); transition: width 0.2s ease; }
+.deck-hint { font-size: 0.78rem; }
+.deck-hint kbd { background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 0.05rem 0.3rem; font-size: 0.75rem; }
+@media (max-width: 48rem) { .deck-hint { display: none; } }
+
+.slide {
+  border: 1px solid var(--rule); border-radius: 10px; padding: 1.5rem 1.75rem 1.75rem; margin: 0 0 1.75rem;
+  background: var(--paper); box-shadow: 0 2px 10px rgb(0 0 0 / 0.03);
+}
+.slide-head { border-bottom: 1px solid var(--rule); padding-bottom: 0.75rem; margin-bottom: 1rem; }
+.slide-num { display: block; font: 600 0.76rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 0.25rem; }
+.slide h2 { margin: 0; font-size: 1.55rem; }
+.slide p, .slide li { max-width: 78ch; }
+.slide-lead { font-size: 1.08rem; line-height: 1.6; }
+.slide-facts { margin: 1rem 0 1.25rem; }
+.card-box { border: 1px solid var(--rule); border-radius: 6px; padding: 0.95rem 1.1rem; background: var(--surface); }
+.card-box h3 { margin: 0 0 0.4rem; font-size: 1.02rem; }
+.card-box p { margin: 0; font-size: 0.95rem; }
+.card-box ul, .card-box ol { margin: 0.35rem 0 0; font-size: 0.93rem; }
+
+/* Stacked horizontal LOC bar chart */
+.loc-chart { border: 1px solid var(--rule); border-radius: 6px; padding: 0.85rem 1rem; margin: 1rem 0 1.25rem; background: var(--surface); }
+.loc-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; font-size: 0.82rem; margin-bottom: 0.65rem; color: var(--ink-2); }
+.seg-alg { background: var(--quote); }
+.seg-mod { background: var(--accent); }
+.seg-prf { background: var(--proved); }
+.loc-row { display: grid; grid-template-columns: 14.5rem minmax(6rem, 1fr) 10.5rem; align-items: center; gap: 0.6rem; padding: 0.2rem 0; font-size: 0.82rem; }
+.loc-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.loc-label code { background: none; padding: 0; }
+.loc-track { display: flex; height: 0.72rem; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.loc-seg { display: block; height: 100%; }
+.loc-val { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 48rem) {
+  .loc-row { grid-template-columns: 1fr; gap: 0.15rem; padding: 0.35rem 0; border-top: 1px solid var(--rule); }
+  .loc-val { text-align: left; }
+}
+.prop117-table td { vertical-align: middle; }
+
+/* Full-viewport single-slide presentation mode */
+html.deck-present .bar, html.deck-present main > header.title, html.deck-present .foot { display: none; }
+html.deck-present .page.wide { max-width: 86rem; padding-block: 0.75rem 1.5rem; }
+html.deck-present .page.wide main { max-width: 86rem; }
+html.deck-present .deck-bar { top: 0.5rem; margin-bottom: 0.9rem; }
+html.deck-present .slide { display: none; min-height: calc(100vh - 5.2rem); font-size: 1.06rem; padding: 2rem 2.4rem; margin: 0; }
+html.deck-present .slide.active { display: block; }
+html.deck-present .slide h2 { font-size: 1.85rem; }

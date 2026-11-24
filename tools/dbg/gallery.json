@@ -26,6 +26,11 @@
    "intro": "Three programs that use the syntax of tc39/proposal-defer-import-eval. Under the specification's build each is a SyntaxError, since ECMA-262 has no such syntax. Under the build \"Proposal: import defer\", made from a branch where the proposal's text is merged into the specification's, each runs, and the breakpoints stop in the proposal's own algorithms."
   },
   {
+   "id": "proposals-117",
+   "title": "TC39 #117 agenda proposals (November 2026)",
+   "intro": "Thirteen more ECMA-262 proposals from the 117th TC39 plenary agenda (Stages 0–3, alongside import defer above). Each runs under its own lazy-loaded WebAssembly build and pauses inside the proposal's specification algorithm; under the baseline specification build each shows how ECMA-262 behaves today."
+  },
+  {
    "id": "errata-programs",
    "title": "The errata page's programs",
    "intro": "The programs the errata page runs that show an erratum and are not above, with no breakpoints set: each opens under the specification's build. The errata page links each also with its erratum's other reading."
@@ -1540,6 +1545,594 @@
     "spec": {
      "pauses": [],
      "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_import_text",
+   "group": "proposals-117",
+   "title": "Stage 3: Import Text (with { type: \"text\" })",
+   "line": "HostLoadImportedModule dispatches on the type: \"text\" import attribute to CreateTextModule, wrapping the UTF-8 decoded text in a Synthetic Module Record shared between static and dynamic imports.",
+   "args": [
+    "--bundle"
+   ],
+   "breakpoints": [
+    {
+     "alg": "sec-create-text-module",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "import-text": {
+     "pauses": [
+      {
+       "alg": "CreateTextModule",
+       "path": "1",
+       "frames": [
+        "CreateTextModule",
+        "InnerModuleLoading",
+        "LoadRequestedModules"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "Hello from ECMA-262 Import Text! | cached=true"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_thenable_curtailment",
+   "group": "proposals-117",
+   "title": "Stage 3: Thenable Curtailment",
+   "line": "Promise.resolve inspects whether looking up \"then\" could run user code via RequiresDeferredPromiseResolution, then dispatches user-defined thenables through PerformPromiseResolveThenable.",
+   "breakpoints": [
+    {
+     "alg": "sec-perform-promise-resolve-thenable",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "thenable-curtailment": {
+     "pauses": [
+      {
+       "alg": "PerformPromiseResolveThenable",
+       "path": "1",
+       "frames": [
+        "PerformPromiseResolveThenable",
+        "NewPromiseResolveThenableJob"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "then-called -> microtask -> resolved:42"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "then-called -> microtask -> resolved:42"
+     ]
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_deferred_reexports",
+   "group": "proposals-117",
+   "title": "Stage 2.7: Deferred Re-exports (export defer)",
+   "line": "Importing barrel.mjs links export defer { x } from \"./heavy.mjs\" without evaluating heavy.mjs; reading barrel.x triggers EnsureDeferredExportEvaluated on the module namespace.",
+   "args": [
+    "--bundle"
+   ],
+   "breakpoints": [
+    {
+     "alg": "sec-EnsureDeferredExportEvaluated",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "deferred-reexports": {
+     "pauses": [
+      {
+       "alg": "EnsureDeferredExportEvaluated",
+       "path": "1",
+       "frames": [
+        "EnsureDeferredExportEvaluated",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "after barrel import: barrel",
+      "after reading barrel.x=99: barrel,heavy"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_json_parseimmutable",
+   "group": "proposals-117",
+   "title": "Stage 2.7: JSON.parse Options (freeze & nullPrototypeObjects)",
+   "line": "CreateJSONParseOptions validates the options bag for { freeze: true } and { nullPrototypeObjects: true }, producing frozen null-prototype graphs or mutable null-prototype objects.",
+   "breakpoints": [
+    {
+     "alg": "sec-createjsonparseoptions",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "json-parseimmutable": {
+     "pauses": [
+      {
+       "alg": "CreateJSONParseOptions",
+       "path": "1",
+       "frames": [
+        "CreateJSONParseOptions",
+        "JSON.parse",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "CreateJSONParseOptions",
+       "path": "1",
+       "frames": [
+        "CreateJSONParseOptions",
+        "JSON.parse",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "frozen=true, proto=null, ownProto=true, nullMutable=2"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "frozen=false, proto=[object Object], ownProto=true, nullMutable=2"
+     ]
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_esm_phase_imports",
+   "group": "proposals-117",
+   "title": "Stage 2.7: ESM Phase Imports (import source & ModuleSource)",
+   "line": "import source and import.source() bind a ModuleSource object inheriting from %AbstractModuleSource%; dynamic import(depSrc) unwraps its Module Source Record via GetModuleSourceRecord and coalesces evaluation.",
+   "args": [
+    "--bundle"
+   ],
+   "breakpoints": [
+    {
+     "alg": "sec-getmodulesourcerecord",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "esm-phase-imports": {
+     "pauses": [
+      {
+       "alg": "GetModuleSourceRecord",
+       "path": "1",
+       "frames": [
+        "GetModuleSourceRecord",
+        "EvaluateImportCall"
+       ]
+      },
+      {
+       "alg": "GetModuleSourceRecord",
+       "path": "1",
+       "frames": [
+        "GetModuleSourceRecord",
+        "get %AbstractModuleSource%.prototype [ %Symbol.toStringTag% ]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "ModuleSource, sameSource=true, sameNs=true, runs=1, answer=42"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_immutable_arraybuffer",
+   "group": "proposals-117",
+   "title": "Stage 2.7: Immutable ArrayBuffers",
+   "line": "sliceToImmutable copies a subrange and transferToImmutable detaches the source buffer into a new buffer with [[ArrayBufferDetachKey]] ~immutable~, causing TypedArray writes to throw a TypeError.",
+   "breakpoints": [
+    {
+     "alg": "sec-arraybuffer.prototype.transfertoimmutable",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "immutable-arraybuffer": {
+     "pauses": [
+      {
+       "alg": "ArrayBuffer.prototype.transferToImmutable",
+       "path": "1",
+       "frames": [
+        "ArrayBuffer.prototype.transferToImmutable",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "slice=20,30, detached=true, immutable=true, writeThrew=true"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_error_code_property",
+   "group": "proposals-117",
+   "title": "Stage 2: Error.code property",
+   "line": "Error, NativeError, and SuppressedError constructors delegate to InstallErrorOwnProperties, installing non-enumerable code alongside cause from the options object.",
+   "breakpoints": [
+    {
+     "alg": "sec-installerrorownproperties",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "error-code-property": {
+     "pauses": [
+      {
+       "alg": "InstallErrorOwnProperties",
+       "path": "1",
+       "frames": [
+        "InstallErrorOwnProperties",
+        "Error",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "InstallErrorOwnProperties",
+       "path": "1",
+       "frames": [
+        "InstallErrorOwnProperties",
+        "TypeError",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "InstallErrorOwnProperties",
+       "path": "1",
+       "frames": [
+        "InstallErrorOwnProperties",
+        "SuppressedError",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "code=ECONNREFUSED, enumerable=false, suppressedCode=EDISPOSE"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_fma",
+   "group": "proposals-117",
+   "title": "Stage 2: Math.fusedMultiplyAdd",
+   "line": "For a = 1 + 2^-52 and b = 1 - 2^-52, naive a * b + (-1) rounds a * b to 1 first and yields 0; Math.fusedMultiplyAdd computes a * b + c in R with a single rounding, preserving -2^-104.",
+   "breakpoints": [
+    {
+     "alg": "sec-math.fusedMultiplyAdd",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "fma": {
+     "pauses": [
+      {
+       "alg": "Math.fusedMultiplyAdd",
+       "path": "1",
+       "frames": [
+        "Math.fusedMultiplyAdd",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "naive=0, fma=-4.930380657631324e-32, exactMatch=true"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_composites",
+   "group": "proposals-117",
+   "title": "Stage 2: Composites",
+   "line": "Composite(...) canonicalizes integer-index keys before lexicographic string keys, freezes the object with null prototype, and interns structural duplicates in the Realm's [[CompositeRegistry]].",
+   "breakpoints": [
+    {
+     "alg": "sec-composite-function-arg",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "composites": {
+     "pauses": [
+      {
+       "alg": "Composite",
+       "path": "1",
+       "frames": [
+        "Composite",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "Composite",
+       "path": "1",
+       "frames": [
+        "Composite",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "Composite",
+       "path": "1",
+       "frames": [
+        "Composite",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "interned=true | keys=2,10,x,y | inSet=true"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: ReferenceError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_cancellation",
+   "group": "proposals-117",
+   "title": "Stage 1: Cancellation (AbortController & AbortSignal)",
+   "line": "new AbortController() allocates an AbortSignal via CreateAbortSignal; a block-scoped using registration disposes cleanly before ac.abort(\"timeout\") runs SignalAbort and rejects Atomics.waitAsync.",
+   "breakpoints": [
+    {
+     "alg": "sec-createabortsignal",
+     "path": "1"
+    },
+    {
+     "alg": "sec-signalabort",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "cancellation": {
+     "pauses": [
+      {
+       "alg": "CreateAbortSignal",
+       "path": "1",
+       "frames": [
+        "CreateAbortSignal",
+        "AbortController",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "SignalAbort",
+       "path": "1",
+       "frames": [
+        "SignalAbort",
+        "AbortController.prototype.abort",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "aborted:timeout, waitAsync:timeout"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: ReferenceError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_iterator_transfer",
+   "group": "proposals-117",
+   "title": "Stage 0: Iterator.prototype.transfer",
+   "line": "Iterator.prototype.transfer moves a suspended generator's state and execution context onto a fresh Generator instance while marking the source generator ~completed~.",
+   "breakpoints": [
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "iterator-transfer": {
+     "pauses": [
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "1",
+       "frames": [
+        "Iterator.prototype.transfer",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "a=first, origDone=true, b=second, finallyRuns=1"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_trim_chars",
+   "group": "proposals-117",
+   "title": "Stage 0: Trim Specific Characters",
+   "line": "String.prototype.trim accepts an optional characters string and trims matching Unicode code points via StringToCodePoints rather than UTF-16 code units, preserving astral characters that share a surrogate.",
+   "breakpoints": [
+    {
+     "alg": "sec-trimstring",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "trim-chars": {
+     "pauses": [
+      {
+       "alg": "TrimString",
+       "path": "1",
+       "frames": [
+        "TrimString",
+        "String.prototype.trim",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "TrimString",
+       "path": "1",
+       "frames": [
+        "TrimString",
+        "String.prototype.trim",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "path=ecma-262, astralPreserved=true"
+     ]
+    },
+    "spec": {
+     "pauses": [
+      {
+       "alg": "TrimString",
+       "path": "1",
+       "frames": [
+        "TrimString",
+        "String.prototype.trim",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "TrimString",
+       "path": "1",
+       "frames": [
+        "TrimString",
+        "String.prototype.trim",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "path=/__ecma-262__/, astralPreserved=true"
+     ]
+    }
+   }
+  },
+  {
+   "id": "dbg/proposal_popcount",
+   "group": "proposals-117",
+   "title": "Stage 0: Bitwise counting (Math.popcount32 & Math.ctz32)",
+   "line": "Math.popcount32 counts 1 bits and Math.ctz32 counts trailing 0 bits of ToUint32(n), returning 32 when the 32-bit unsigned value is 0.",
+   "breakpoints": [
+    {
+     "alg": "sec-math.popcount32",
+     "path": "1"
+    },
+    {
+     "alg": "sec-math.ctz32",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "popcount": {
+     "pauses": [
+      {
+       "alg": "Math.popcount32",
+       "path": "1",
+       "frames": [
+        "Math.popcount32",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "Math.ctz32",
+       "path": "1",
+       "frames": [
+        "Math.ctz32",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "Math.ctz32",
+       "path": "1",
+       "frames": [
+        "Math.ctz32",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "popcount32(0xaaaaaaaa)=16, ctz32(0)=32, ctz32(12)=2"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
     }
    }
   },

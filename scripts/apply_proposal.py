@@ -164,6 +164,21 @@ def blocks(text, start, end):
 
 INS = re.compile(r"<ins\b[^>]*>(.*?)</ins>", re.S)
 DEL = re.compile(r"<del\b[^>]*>(.*?)</del>", re.S)
+INNER_INS = re.compile(r"<ins\b[^>]*>((?:(?!</?(?:ins|del)\b).)*)</ins>", re.S)
+INNER_DEL = re.compile(r"<del\b[^>]*>((?:(?!</?(?:ins|del)\b).)*)</del>", re.S)
+
+
+def strip_nested(line, keep):
+    prev = None
+    while prev != line:
+        prev = line
+        if keep == "new":
+            line = INNER_DEL.sub("", line)
+            line = INNER_INS.sub(lambda m: m.group(1), line)
+        else:
+            line = INNER_INS.sub("", line)
+            line = INNER_DEL.sub(lambda m: m.group(1), line)
+    return line
 
 
 def resolve(s, keep):
@@ -171,12 +186,7 @@ def resolve(s, keep):
     A line made empty by the removal, or left as a bare step marker, is removed."""
     out_lines = []
     for line in split_keep_markup_lines(s):
-        if keep == "new":
-            r = DEL.sub("", line)
-            r = INS.sub(lambda m: m.group(1), r)
-        else:
-            r = INS.sub("", line)
-            r = DEL.sub(lambda m: m.group(1), r)
+        r = strip_nested(line, keep)
         if r != line and (r.strip() == "" or re.fullmatch(r"\s*1\.\s*", r) or re.fullmatch(r"\s*\d+\.\s*", r)):
             # the whole line was markup: drop it (and a line the markup spans keeps its other lines)
             continue
@@ -184,6 +194,9 @@ def resolve(s, keep):
     res = "".join(out_lines)
     # a table row whose every cell the removal emptied goes too
     res = re.sub(r"[ \t]*<tr\b[^>]*>\s*(?:<t[dh]\b[^>]*>\s*</t[dh]>\s*)+</tr>[ \t]*\n?", "", res)
+    if res != s:
+        res = re.sub(r"(<t[dh]\b[^>]*>\n)[ \t]+\n", r"\1", res)
+        res = re.sub(r"\n[ \t]+(\n[ \t]*</t[dh]>)", r"\1", res)
     return res
 
 
@@ -523,9 +536,10 @@ class Merger:
                 self.log["unmarked_new"].append(f"{cid} block {i}: {norm(old)[:90]}")
                 old = ""
             if emptyish(old) and has_markup(raw) or old == "":
-                # an insertion; already upstream?
+                # an insertion; already upstream? (Never match a pending SDO grammar's paired alg against a later row!)
+                paired_sdo_alg = bool(pending and pending[-1][0] == i - 1 and pending[-1][1] == "emu-grammar" and kind == "emu-alg")
                 nn = norm(new)
-                j = next((k for k in range(last + 1, len(bblocks)) if bnorm[k] == nn), None)
+                j = None if paired_sdo_alg else next((k for k in range(last + 1, len(bblocks)) if bnorm[k] == nn), None)
                 if j is not None:
                     self.log["already"].append(f"{cid} block {i} ({kind}) already in base")
                     last = j
@@ -754,8 +768,11 @@ class Merger:
 
     def insert_block_after(self, cid, i, kind, anchor, new, ps=None, gap="\n"):
         ind = line_indent(self.base, anchor)
-        delta = ind - (line_indent(self.prop, ps) if ps is not None else ind)
-        t = reindent(new.strip("\n"), delta)
+        new_s = new.strip("\n")
+        first_ind = len(new_s) - len(new_s.lstrip(" "))
+        prop_ind = first_ind if first_ind > 0 else (line_indent(self.prop, ps) if ps is not None else ind)
+        delta = ind - prop_ind
+        t = reindent(new_s.lstrip(" "), delta)
         self.edits.append((anchor, anchor, gap + " " * ind + t, f"{cid} block {i} inserted"))
         self.log["blocks_inserted"].append(f"{cid}#{i} {kind}")
 
@@ -775,9 +792,9 @@ class Merger:
             brows = [(m.start() + bs, m.end() + bs, loose(m.group(0))) for m in TR.finditer(bt)]
             thead_end = bt.find("</thead>")
             thead_abs = (bs + thead_end + len("</thead>")) if thead_end >= 0 else -1
-            prows = [m.group(0) for m in TR.finditer(raw)]
+            prows = [(m.start(), m.group(0)) for m in TR.finditer(raw)]
             edits, prev, ok = [], None, True
-            for r_idx, pr in enumerate(prows):
+            for r_idx, (pr_pos, pr) in enumerate(prows):
                 o, n = resolve(pr, "old"), resolve(pr, "new")
                 if emptyish(re.sub(r"<tr\b[^>]*>|</tr>|<t[dh]\b[^>]*>|</t[dh]>", "", o)):
                     if prev is None:
@@ -787,13 +804,18 @@ class Merger:
                     if thead_abs >= 0 and prev[1] <= thead_abs:
                         has_more_old = any(
                             not emptyish(re.sub(r"<tr\b[^>]*>|</tr>|<t[dh]\b[^>]*>|</t[dh]>", "", resolve(rem, "old")))
-                            for rem in prows[r_idx + 1:]
+                            for _, rem in prows[r_idx + 1:]
                         )
                         if not has_more_old and len(brows) > 1:
                             anchor, ind_pos = brows[-1][1], brows[-1][0]
                         else:
                             anchor = thead_abs
-                    edits.append((anchor, anchor, "\n" + " " * line_indent(self.base, ind_pos) + n.strip(), "row added"))
+                            if len(brows) > 1:
+                                ind_pos = brows[1][0]
+                    base_ind = line_indent(self.base, ind_pos)
+                    delta = base_ind - line_indent(raw, pr_pos)
+                    row_txt = reindent(n.strip("\n"), delta).strip()
+                    edits.append((anchor, anchor, "\n" + " " * base_ind + row_txt, "row added"))
                     self.log["table_rows"].append(f"{cid}#{i}: row added")
                     continue
                 lo = loose(o)
@@ -802,7 +824,9 @@ class Merger:
                     ok = False
                     break
                 if has_markup(pr):
-                    edits.append((hit[0], hit[1], n.strip(), "row changed"))
+                    delta = line_indent(self.base, hit[0]) - line_indent(raw, pr_pos)
+                    row_txt = reindent(n.strip("\n"), delta).strip()
+                    edits.append((hit[0], hit[1], row_txt, "row changed"))
                     self.log["table_rows"].append(f"{cid}#{i}: row changed")
                 prev = hit
             if ok:
@@ -842,6 +866,14 @@ class Merger:
             if otext is not None and norm(hit[0]) != norm(otext):
                 if ntext is not None and norm(hit[0]) == norm(ntext):
                     self.log["already"].append(f"{cid} grammar {lhs} already in base")
+                    used = k
+                    continue
+                if ntext is not None and norm(ntext) == norm(otext) and self.resolution("ignore", cid, i):
+                    self.log["resolved"].append(f"ignore {cid} {i} ({lhs})")
+                    used = k
+                    continue
+                if self.resolution("keep-base", cid, i):
+                    self.log["resolved"].append(f"keep-base {cid} {i} ({lhs})")
                     used = k
                     continue
                 self.refuse(cid, i, f"definition grammar: rule {lhs} differs from the base", otext, hit[0])

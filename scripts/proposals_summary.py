@@ -33,7 +33,7 @@ AGENDA_117 = [
         "title": "import defer (with PR #97 cycle/TLA fix)",
         "presenter": "Nicolò Ribaudo",
         "repo": "https://github.com/tc39/proposal-defer-import-eval",
-        "example": "proposal/import-defer-basic",
+        "example": "run/import_defer_basic",
     },
     {
         "id": "import-text",
@@ -43,7 +43,7 @@ AGENDA_117 = [
         "title": "Import Text (for Stage 4)",
         "presenter": "Eemeli Aro",
         "repo": "https://github.com/tc39/proposal-import-text",
-        "example": "proposal/import-text",
+        "example": "dbg/proposal_import_text",
     },
     {
         "id": "thenable-curtailment",
@@ -53,7 +53,7 @@ AGENDA_117 = [
         "title": "Thenable Curtailment (PRs #22 & #26)",
         "presenter": "Matthew Gaudet",
         "repo": "https://github.com/tc39/proposal-thenable-curtailment",
-        "example": "proposal/thenable-curtailment",
+        "example": "dbg/proposal_thenable_curtailment",
     },
     {
         "id": "deferred-reexports",
@@ -63,7 +63,7 @@ AGENDA_117 = [
         "title": "Deferred Re-exports (export defer)",
         "presenter": "Nicolò Ribaudo",
         "repo": "https://github.com/tc39/proposal-deferred-reexports",
-        "example": "proposal/deferred-reexports",
+        "example": "dbg/proposal_deferred_reexports",
     },
     {
         "id": "json-parseimmutable",
@@ -73,7 +73,7 @@ AGENDA_117 = [
         "title": "JSON.parse Options (PR #27 nullPrototypeObjects)",
         "presenter": "Peter Klecha",
         "repo": "https://github.com/tc39/proposal-json-parseimmutable",
-        "example": "proposal/json-parseimmutable",
+        "example": "dbg/proposal_json_parseimmutable",
     },
     {
         "id": "esm-phase-imports",
@@ -83,7 +83,7 @@ AGENDA_117 = [
         "title": "ESM Phase Imports (PR #65)",
         "presenter": "Guy Bedford",
         "repo": "https://github.com/tc39/proposal-esm-phase-imports",
-        "example": "proposal/esm-phase-imports",
+        "example": "dbg/proposal_esm_phase_imports",
     },
     {
         "id": "immutable-arraybuffer",
@@ -93,7 +93,7 @@ AGENDA_117 = [
         "title": "Immutable ArrayBuffers (for Stage 3)",
         "presenter": "Richard Gibson",
         "repo": "https://github.com/tc39/proposal-immutable-arraybuffer",
-        "example": "proposal/immutable-arraybuffer",
+        "example": "dbg/proposal_immutable_arraybuffer",
     },
     {
         "id": "error-code-property",
@@ -103,7 +103,7 @@ AGENDA_117 = [
         "title": "Error code property (to Stage 2.7)",
         "presenter": "James M Snell",
         "repo": "https://github.com/tc39/proposal-error-code-property",
-        "example": "proposal/error-code-property",
+        "example": "dbg/proposal_error_code_property",
     },
     {
         "id": "fma",
@@ -113,7 +113,7 @@ AGENDA_117 = [
         "title": "Math.fusedMultiplyAdd (to Stage 2.7)",
         "presenter": "Waldemar Horwat",
         "repo": "https://github.com/tc39/proposal-fma",
-        "example": "proposal/fma",
+        "example": "dbg/proposal_fma",
     },
     {
         "id": "composites",
@@ -123,7 +123,7 @@ AGENDA_117 = [
         "title": "Composites",
         "presenter": "Ashley Claymore",
         "repo": "https://github.com/tc39/proposal-composites",
-        "example": "proposal/composites",
+        "example": "dbg/proposal_composites",
     },
     {
         "id": "cancellation",
@@ -133,7 +133,7 @@ AGENDA_117 = [
         "title": "Cancellation: AbortController & AbortSignal (PR #35)",
         "presenter": "Kevin Gibbons",
         "repo": "https://github.com/tc39/proposal-cancellation",
-        "example": "proposal/cancellation",
+        "example": "dbg/proposal_cancellation",
     },
     {
         "id": "iterator-transfer",
@@ -143,7 +143,7 @@ AGENDA_117 = [
         "title": "Iterator.prototype.transfer",
         "presenter": "James M Snell",
         "repo": "https://github.com/jasnell/proposal-iterator-transfer",
-        "example": "proposal/iterator-transfer",
+        "example": "dbg/proposal_iterator_transfer",
     },
     {
         "id": "trim-chars",
@@ -153,7 +153,7 @@ AGENDA_117 = [
         "title": "Trim Specific Characters",
         "presenter": "Eemeli Aro",
         "repo": "https://github.com/eemeli/proposal-trim-chars",
-        "example": "proposal/trim-chars",
+        "example": "dbg/proposal_trim_chars",
     },
     {
         "id": "popcount",
@@ -163,7 +163,7 @@ AGENDA_117 = [
         "title": "Bitwise counting (Math.popcount32 / Math.ctz32)",
         "presenter": "Richard Gibson",
         "repo": "https://github.com/js-choi/proposal-popcount",
-        "example": "proposal/popcount",
+        "example": "dbg/proposal_popcount",
     },
 ]
 
@@ -185,7 +185,7 @@ def classify(path: str) -> str:
         return "model"
     if (path.startswith("spec/formal/") and path.endswith(".emu")) or path.startswith("spec/proposals/"):
         return "algorithms"
-    if path.startswith("tests/"):
+    if path.startswith("tests/") and not path.endswith(".expected"):
         return "tests"
     return "meta"
 
@@ -211,16 +211,36 @@ def inspect_branch(entry: dict, base: str) -> dict:
     spec_lines = 0
     try:
         props_txt = git("show", f"{head}:spec/proposals.txt")
-        for line in props_txt.splitlines():
-            parts = line.split("#", 1)[0].split()
-            if parts:
-                ppath = parts[1]
-                ls = git("ls-tree", head, ppath).strip()
+        prop_lines = [
+            ln.split("#", 1)[0].split()
+            for ln in props_txt.splitlines()
+            if ln.split("#", 1)[0].split()
+        ]
+        # Prefer the line matching entry['id'] when multiple proposals are chained
+        ordered = sorted(prop_lines, key=lambda ps: 0 if ps[0] == entry["id"] else 1)
+        for parts in ordered:
+            ppath = parts[1]
+            # Check if ppath is inside a submodule gitlink (e.g. external/proposal-fma/spec.emu)
+            sub_parts = Path(ppath).parts
+            if len(sub_parts) >= 2 and sub_parts[0] == "external":
+                sub_dir = f"{sub_parts[0]}/{sub_parts[1]}"
+                sub_rel = "/".join(sub_parts[2:]) or "spec.emu"
+                ls = git("ls-tree", head, sub_dir).strip()
                 if ls.startswith("160000 "):
-                    pcommit = ls.split()[2][:7]
-                elif ls:
-                    blob = git("show", f"{head}:{ppath}")
-                    spec_lines = len(blob.splitlines())
+                    full_sha = ls.split()[2]
+                    pcommit = full_sha[:7]
+                    wt_file = ROOT / "build/worktrees" / entry["id"] / sub_dir / sub_rel
+                    ext_file = ROOT / sub_dir / sub_rel
+                    for cand in (wt_file, ext_file):
+                        if cand.exists():
+                            spec_lines = len(cand.read_text().splitlines())
+                            break
+                    break
+            ls = git("ls-tree", head, ppath).strip()
+            if ls and not ls.startswith("160000 ") and spec_lines == 0:
+                blob = git("show", f"{head}:{ppath}")
+                spec_lines = len(blob.splitlines())
+                break
     except subprocess.CalledProcessError:
         pass
 
@@ -249,9 +269,10 @@ def main() -> int:
         "base": a.base,
         "proposals": rows,
     }
-    a.out.parent.mkdir(parents=True, exist_ok=True)
-    a.out.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
-    print(f"{a.out.relative_to(ROOT)}: {len(ready)}/{len(rows)} proposal branches ready")
+    out_path = a.out.resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
+    print(f"{out_path.relative_to(ROOT)}: {len(ready)}/{len(rows)} proposal branches ready")
     for r in ready:
         d = r["diff"]
         print(f"  {r['id']:22} [S{r['stage']:3}] alg=+{d['algorithms']['added']}/-{d['algorithms']['removed']}  "

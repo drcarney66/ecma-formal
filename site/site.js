@@ -124,5 +124,74 @@
       }, { rootMargin: "-10% 0px -80% 0px" });
       Object.keys(links).forEach(function (id) { var el = document.getElementById(id); if (el) obs.observe(el); });
     }
+
+    // Slide deck controls and single-slide presentation mode (slides.html).
+    var deck = document.getElementById("deck");
+    if (deck) {
+      var slides = Array.prototype.slice.call(deck.querySelectorAll(".slide"));
+      var posEl = document.getElementById("deck-pos");
+      var fillEl = document.getElementById("deck-progress-fill");
+      var prevBtn = document.getElementById("deck-prev");
+      var nextBtn = document.getElementById("deck-next");
+      var presBtn = document.getElementById("deck-present");
+      var idx = 0;
+      var presenting = false;
+      var syncDeck = function () {
+        slides.forEach(function (s, i) { s.classList.toggle("active", i === idx); });
+        if (posEl) posEl.textContent = "Slide " + (idx + 1) + " / " + slides.length;
+        if (fillEl) fillEl.style.width = (((idx + 1) / slides.length) * 100).toFixed(1) + "%";
+        if (prevBtn) prevBtn.disabled = idx === 0;
+        if (nextBtn) nextBtn.disabled = idx === slides.length - 1;
+        if (presBtn) {
+          presBtn.setAttribute("aria-pressed", presenting ? "true" : "false");
+          presBtn.textContent = presenting ? "Exit present (Esc)" : "Present";
+        }
+      };
+      var goTo = function (n) {
+        idx = Math.max(0, Math.min(slides.length - 1, n));
+        syncDeck();
+        if (presenting) window.scrollTo(0, 0);
+        else slides[idx].scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+      var setPresent = function (on) {
+        presenting = on;
+        root.classList.toggle("deck-present", on);
+        syncDeck();
+        if (on) window.scrollTo(0, 0);
+        else slides[idx].scrollIntoView({ block: "start" });
+      };
+      if (prevBtn) prevBtn.addEventListener("click", function () { goTo(idx - 1); });
+      if (nextBtn) nextBtn.addEventListener("click", function () { goTo(idx + 1); });
+      if (presBtn) presBtn.addEventListener("click", function () { setPresent(!presenting); });
+      if ("IntersectionObserver" in window) {
+        var sobs = new IntersectionObserver(function (entries) {
+          if (presenting) return;
+          entries.forEach(function (en) {
+            if (en.isIntersecting) {
+              var k = slides.indexOf(en.target);
+              if (k >= 0) { idx = k; syncDeck(); }
+            }
+          });
+        }, { rootMargin: "-20% 0px -55% 0px" });
+        slides.forEach(function (s) { sobs.observe(s); });
+      }
+      document.addEventListener("keydown", function (e) {
+        if (e.altKey || e.ctrlKey || e.metaKey) return;
+        var tag = e.target && e.target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (e.key === "f" || e.key === "F") { e.preventDefault(); setPresent(!presenting); }
+        else if (e.key === "Escape" && presenting) { e.preventDefault(); setPresent(false); }
+        else if (e.key === "ArrowRight" || e.key === "PageDown" || (e.key === " " && tag !== "BUTTON" && tag !== "A")) {
+          e.preventDefault(); goTo(idx + 1);
+        } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+          e.preventDefault(); goTo(idx - 1);
+        } else if (e.key === "Home" && presenting) {
+          e.preventDefault(); goTo(0);
+        } else if (e.key === "End" && presenting) {
+          e.preventDefault(); goTo(slides.length - 1);
+        }
+      });
+      syncDeck();
+    }
   });
 })();
