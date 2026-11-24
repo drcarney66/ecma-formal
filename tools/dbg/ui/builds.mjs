@@ -33,6 +33,20 @@ export function chooseBuild(builds, id) {
   return builds.find((b) => b.id === id) ?? builds[0];
 }
 
+// The build to switch to when `example` is picked from the menu: a proposal example switches to its
+// primary build (`Object.keys(example.builds)[0]` when not the default `builds[0]`), and any example
+// whose `builds` omits `currentBuild.id` switches to its first available build in `builds`.
+export function exampleBuild(example, currentBuild, builds) {
+  if (!example?.builds || typeof example.builds !== "object" || !builds?.length) return currentBuild;
+  const supported = Object.keys(example.builds).filter((id) => builds.some((b) => b.id === id));
+  if (!supported.length) return currentBuild;
+  const primary = supported[0];
+  if (primary !== builds[0].id || !supported.includes(currentBuild?.id)) {
+    return chooseBuild(builds, primary);
+  }
+  return currentBuild;
+}
+
 // A launch's arguments: the build's, then the program's (an example's own, then `?args=`).
 export function launchArgs(build, programArgs = []) {
   return [...(build?.args ?? []), ...(programArgs ?? [])];

@@ -12,7 +12,7 @@
 
 import { DbgClient } from "../client.mjs";
 import { BreakpointsPane, MemoryStorage, loadConfig } from "./breakpoints.mjs";
-import { FALLBACK, chooseBuild, pageURL, parseArgs, readBuilds, storageKey } from "./builds.mjs";
+import { FALLBACK, chooseBuild, exampleBuild, pageURL, parseArgs, readBuilds, storageKey } from "./builds.mjs";
 import { ConsolePane } from "./console.mjs";
 import { $, el } from "./dom.mjs";
 import { findExample, menuGroups, programOf } from "./gallery.mjs";
@@ -30,15 +30,22 @@ const params = new URLSearchParams(location.search);
 const test = params.has("test");
 const worker = (params.get("engine") ?? document.body.dataset.engine ?? "").startsWith("worker");
 const root = new URL(document.body.dataset.root ?? "../", location.href);
+const version = document.body.dataset.version ?? "";
 
 const ISOLATION_WAIT_MS = 10000;
 const SPEC_GROUP = "docs/spec-issues";
 const SAMPLE = { name: "program.js", source: 'function f(a) {\n  return a + 1;\n}\nprint(f(1));\n' };
 
+function assetURL(name) {
+  const u = new URL(name, root);
+  if (version) u.searchParams.set("v", version);
+  return u;
+}
+
 // A JSON file of the debugger's directory, or null.
 async function json(name) {
   try {
-    const r = await fetch(new URL(name, root));
+    const r = await fetch(assetURL(name), { cache: "no-cache" });
     return r.ok ? await r.json() : null;
   } catch {
     return null;
@@ -53,14 +60,18 @@ async function isolation() {
   throw new Error("the page is not cross-origin isolated (COOP and COEP, or coi-serviceworker.js)");
 }
 
-async function client(build, onLoadState) {
+function makeClient(build, onLoadState) {
   if (worker) {
-    await isolation();
-    const c = DbgClient.lazy(new URL(build.wasm, root));
+    const c = DbgClient.lazy(assetURL(build.wasm));
     c.onLoadState = onLoadState ?? null;
     return c;
   }
   return DbgClient.connect(root);
+}
+
+async function client(build, onLoadState) {
+  if (worker) await isolation();
+  return makeClient(build, onLoadState);
 }
 
 // The test bundle (dbg-tests.json, scripts/dbg_browser_bundle.py), if served, and its programs as examples.
@@ -108,7 +119,7 @@ async function demos(model) {
 // one sets its breakpoints and filters, clears the line breakpoints and sets stop on entry, so
 // that `continue` goes to the report's step.
 async function specExamples(model) {
-  const r = await fetch(new URL("spec-examples.json", root)).catch(() => null);
+  const r = await fetch(assetURL("spec-examples.json"), { cache: "no-cache" }).catch(() => null);
   if (!r?.ok) return [];
   const { examples } = await r.json();
   const setup = (e) => () => {
@@ -274,18 +285,25 @@ async function main() {
     buildArgs: build.args,
   });
   globalThis.dbg = { model, build };
-  selector(builds, build, async (next) => {
-    if (next.id === build.id) return;
+  const setBuild = (next) => {
+    if (!next || next.id === build.id) return false;
     if (model.session) model.stop();
     build = next;
     store = storageKey(build.id);
     globalThis.dbg.build = build;
+    $("build").value = build.id;
     $("build-note").textContent = build.description;
-    history.replaceState(null, "", pageURL(location.href, { build: build.id }, builds));
     model.listings.clear();
     model.config.buildArgs = build.args;
-    model.client = await client(build, () => update());
+    model.client = makeClient(build, () => update());
+    return true;
+  };
+  selector(builds, build, (next) => {
+    const hadSession = model.session !== null || model.state === "terminated";
+    if (!setBuild(next)) return;
+    history.replaceState(null, "", pageURL(location.href, { build: build.id }, builds));
     update();
+    if (!test && hadSession && model.config.program) model.start();
   });
   // An example's setup: its breakpoints, line breakpoints and filters, stop on entry cleared.
   const setupOf = (e) => () => {
@@ -306,10 +324,14 @@ async function main() {
   tabs(model, { heap: new HeapPane(model), state: new StatePane(model) });
   new ConsolePane(model);
   new BreakpointsPane(model, storage, store);
-  // An example picked is the page's `?example=` (so that a reload, or another build, opens it again).
+  // An example picked is the page's `?example=` (so that a reload, or another build, opens it again);
+  // outside test mode, picking a proposal example (or an example unsupported by the active build) switches
+  // synchronously to that example's primary build before `SourcePane.loadExample` starts the session.
   source.onExample = (p) => {
     const id = p.id ?? null;
-    history.replaceState(null, "", pageURL(location.href, { example: id, args: null }, builds));
+    if (!test && id) setBuild(exampleBuild(p, build, builds));
+    history.replaceState(null, "", pageURL(location.href, { example: id, args: null, build: build.id }, builds));
+    update();
   };
 
   const ctl = controls(model);

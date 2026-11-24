@@ -266,7 +266,7 @@ Clause links go to the living draft at tc39.es, which may differ from the pinned
 """
 
 
-def debugger_frame(pages: set[str], gallery: dict | None) -> str:
+def debugger_frame(pages: set[str], gallery: dict | None, rev: str = "") -> str:
     """The debugger's page, debugger/index.html: tools/dbg/ui/index.html's body under the site's header, the
     debugger's files (ui/, the Worker build, builds.json, examples.json) beside it."""
     src = DBG_UI.read_text()
@@ -276,7 +276,9 @@ def debugger_frame(pages: set[str], gallery: dict | None) -> str:
     attrs = m.group(1)
     if 'class="dbg"' not in attrs:
         raise SystemExit(f"{DBG_UI}: the body is not class=\"dbg\"")
-    body = m.group(2).replace('src="app.mjs"', 'src="ui/app.mjs"')
+    ver_q = f"?v={html.escape(rev)}" if rev else ""
+    ver_attr = f' data-version="{html.escape(rev)}"' if rev else ""
+    body = m.group(2).replace('src="app.mjs"', f'src="ui/app.mjs{ver_q}"')
     noscript = ('<noscript><p class="dbg-noscript">The debugger is a script. Every example\'s source, and what it '
                 'shows, is on the <a href="../examples.html">examples page</a>.</p></noscript>') if gallery else ""
     return f"""<!doctype html>
@@ -288,12 +290,12 @@ def debugger_frame(pages: set[str], gallery: dict | None) -> str:
 <meta name="color-scheme" content="light dark">
 <!-- Cross-origin isolation from a service worker where the server gives none; a no-op where it does. -->
 <script src="coi-serviceworker.js"></script>
-<link rel="stylesheet" href="../style.css">
-<link rel="stylesheet" href="ui/style.css">
+<link rel="stylesheet" href="../style.css{ver_q}">
+<link rel="stylesheet" href="ui/style.css{ver_q}">
 {THEME}
-<script src="../site.js" defer></script>
+<script src="../site.js{ver_q}" defer></script>
 </head>
-<body{attrs} data-root="./" data-engine="worker">
+<body{attrs} data-root="./" data-engine="worker"{ver_attr}>
 {bar_html("debugger/", pages, "../")}
 {noscript}
 {body.strip()}
@@ -1101,7 +1103,7 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
         (out / p.file).write_text(frame(p, names, facts))
     if dbgopt and dbgopt.get("debugger"):
         (out / "debugger").mkdir(exist_ok=True)
-        (out / "debugger/index.html").write_text(debugger_frame(names, gallery))
+        (out / "debugger/index.html").write_text(debugger_frame(names, gallery, facts["rev"]))
     for a in ("style.css", "site.js"):
         shutil.copy(SITE / a, out / a)
     return site.findings

@@ -9,7 +9,7 @@
 import { readFileSync } from "node:fs";
 import { DbgClient } from "../client.mjs";
 import { loadConfig, MemoryStorage, saveConfig } from "./breakpoints.mjs";
-import { chooseBuild, FALLBACK, launchArgs, pageURL, parseArgs, readBuilds, storageKey } from "./builds.mjs";
+import { chooseBuild, exampleBuild, FALLBACK, launchArgs, pageURL, parseArgs, readBuilds, storageKey } from "./builds.mjs";
 import { endMismatches, findExample, menuGroups, pauseMismatches, programOf, summary } from "./gallery.mjs";
 import { Model } from "./model.mjs";
 import { missing, MODULES } from "./support.mjs";
@@ -151,6 +151,20 @@ check("lazy client compiles nothing upfront", compiles === 0 && lazy.module === 
 const loaded1 = await lazy.ensureLoaded();
 const loaded2 = await lazy.ensureLoaded();
 check("lazy client compiles once on demand and caches glue", compiles === 1 && loaded1.module === fakeMod && loaded2.module === fakeMod && loaded1.glue.endsWith("ecma-dbg-web-prop.mjs"), { compiles, glue: loaded1.glue });
+
+// Auto-selecting a proposal example's primary build when picked from the menu.
+const popBuild = { id: "popcount", label: "Proposal: popcount", description: "p", wasm: "ecma-dbg-web-popcount.wasm", args: [] };
+const allBuilds = [...extra, popBuild];
+const popEx = { id: "dbg/proposal_popcount", builds: { popcount: { pauses: [], end: "normal: undefined" }, spec: { pauses: [], end: "throw: TypeError" } } };
+const errataEx = { id: "run/module_top_level_await", builds: { spec: { pauses: [], end: "normal: undefined" }, literal: { pauses: [], end: "stop: ?" } } };
+const specOnlyEx = { id: "demo/get", builds: { spec: { pauses: [], end: "normal: 8" } } };
+check("picking popcount on spec switches to popcount", exampleBuild(popEx, allBuilds[0], allBuilds).id === "popcount", "");
+check("picking popcount on defer switches to popcount", exampleBuild(popEx, chooseBuild(allBuilds, "defer"), allBuilds).id === "popcount", "");
+check("picking errata example on literal keeps literal", exampleBuild(errataEx, lit, allBuilds).id === "literal", "");
+check("picking spec-only example on popcount switches back to spec", exampleBuild(specOnlyEx, popBuild, allBuilds).id === "spec", "");
+const versionedLazy = DbgClient.lazy("https://example.invalid/ecma-dbg-web-popcount.wasm?v=abc", { compile: async () => fakeMod });
+const loadedVer = await versionedLazy.ensureLoaded();
+check("lazy client preserves version query on glue URL", loadedVer.glue === "https://example.invalid/ecma-dbg-web-popcount.mjs?v=abc", loadedVer.glue);
 
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

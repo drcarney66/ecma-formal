@@ -121,7 +121,7 @@ export class DbgClient {
   static async load(wasm, { glue } = {}) {
     if (typeof wasm === "string" || wasm instanceof URL) {
       const wasmURL = await toURL(wasm);
-      const glueURL = glue ? await toURL(glue) : new URL(wasmURL.href.replace(/\.wasm$/, ".mjs"));
+      const glueURL = glue ? await toURL(glue) : new URL(wasmURL.href.replace(/\.wasm(?=$|\?)/, ".mjs"));
       return new DbgClient(await compileWasmURL(wasmURL), glueURL.href);
     }
     if (!glue) throw new Error("DbgClient.load: bytes need {glue}");
@@ -140,7 +140,7 @@ export class DbgClient {
         client.onLoadState?.("loading");
         promise = (async () => {
           const wasmURL = await toURL(wasm);
-          const glueURL = glue ? await toURL(glue) : new URL(wasmURL.href.replace(/\.wasm$/, ".mjs"));
+          const glueURL = glue ? await toURL(glue) : new URL(wasmURL.href.replace(/\.wasm(?=$|\?)/, ".mjs"));
           const mod = await compile(wasmURL);
           client.module = mod;
           client.glue = glueURL.href;
