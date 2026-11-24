@@ -14,11 +14,15 @@
     var mode = t === "dark" ? "dark" : "light";
     root.setAttribute("data-theme", mode);
     var label = mode === "dark" ? "Switch to light mode" : "Switch to dark mode";
-    ["theme", "corner-theme"].forEach(function (id) {
-      var b = document.getElementById(id);
-      if (b) b.title = label;
-    });
-  }
+      ["theme", "corner-theme"].forEach(function (id) {
+        var b = document.getElementById(id);
+        if (b) b.title = label;
+      });
+      ["step3-dbg-frame", "dbg-modal-frame"].forEach(function (id) {
+        var f = document.getElementById(id);
+        try { if (f && f.contentDocument) f.contentDocument.documentElement.setAttribute("data-theme", mode); } catch (e) { /* none */ }
+      });
+    }
   var theme = load("theme") === "dark" ? "dark" : "light";
   apply(theme);
 
@@ -139,9 +143,10 @@
       var modalFrame = document.getElementById("dbg-modal-frame");
       var modalClose = document.getElementById("dbg-modal-close");
       var step3Frame = document.getElementById("step3-dbg-frame");
-      var idx = 0;
-      var step = 0;
-      var presenting = new URLSearchParams(location.search).has("present");
+      var sp = new URLSearchParams(location.search);
+      var idx = Math.max(0, Math.min(slides.length - 1, (parseInt(sp.get("slide") || "1", 10) || 1) - 1));
+      var step = Math.max(0, parseInt(sp.get("step") || "0", 10) || 0);
+      var presenting = sp.has("present");
 
       var maxStepOf = function (i) {
         return parseInt(slides[i].getAttribute("data-max-step") || "0", 10) || 0;
@@ -249,6 +254,13 @@
       });
 
       syncDeck();
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(function () {
+          window.requestAnimationFrame(function () { deck.classList.add("ready"); });
+        });
+      } else {
+        deck.classList.add("ready");
+      }
     }
   });
 })();

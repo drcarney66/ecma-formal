@@ -27,6 +27,7 @@ import { StepPane } from "./step.mjs";
 import { BROWSERS, missing } from "./support.mjs";
 
 const params = new URLSearchParams(location.search);
+if (window.parent !== window) document.documentElement.classList.add("in-iframe");
 const test = params.has("test");
 const worker = (params.get("engine") ?? document.body.dataset.engine ?? "").startsWith("worker");
 const root = new URL(document.body.dataset.root ?? "../", location.href);

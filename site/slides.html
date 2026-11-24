@@ -47,48 +47,48 @@
         </defs>
 
         <!-- spec.html -->
-        <rect class="dg-box spec" x="30" y="76" width="210" height="190" rx="12" stroke-width="2.5"/>
-        <text x="135" y="136" text-anchor="middle" class="p-title-svg">spec.html</text>
-        <text x="135" y="166" text-anchor="middle" class="p-sub-svg">+ proposal spec.emu</text>
-        <line x1="62" y1="190" x2="208" y2="190" stroke="var(--quote)" stroke-opacity="0.4"/>
-        <text x="135" y="218" text-anchor="middle" class="p-mono-svg">spec/formal/*.emu</text>
-        <text x="135" y="242" text-anchor="middle" class="p-muted-svg">thin reading overlay</text>
+        <rect class="dg-box spec" x="20" y="76" width="204" height="190" rx="12" stroke-width="2.5"/>
+        <text x="122" y="136" text-anchor="middle" class="p-title-svg">spec.html</text>
+        <text x="122" y="166" text-anchor="middle" class="p-sub-svg">+ proposal spec.emu</text>
+        <line x1="50" y1="190" x2="194" y2="190" stroke="var(--quote)" stroke-opacity="0.4"/>
+        <text x="122" y="218" text-anchor="middle" class="p-mono-svg">spec/formal/*.emu</text>
+        <text x="122" y="242" text-anchor="middle" class="p-muted-svg">thin reading overlay</text>
 
         <!-- Forward arrow: generate -->
-        <path class="dg-a" d="M244,136 L382,136" stroke-width="3" marker-end="url(#arr)"/>
-        <text x="313" y="118" text-anchor="middle" class="p-label-svg">generate.py</text>
-        <text x="313" y="158" text-anchor="middle" class="p-muted-svg">AST + types + grammar</text>
+        <path class="dg-a" d="M228,136 L396,136" stroke-width="3" marker-end="url(#arr)"/>
+        <text x="312" y="118" text-anchor="middle" class="p-label-svg">generate.py</text>
+        <text x="312" y="158" text-anchor="middle" class="p-muted-svg">AST · types · grammar</text>
 
         <!-- Backwards arrow: bijection check! -->
-        <path d="M386,222 C336,294 290,294 242,226" fill="none" stroke="var(--quote)" stroke-width="3.2" stroke-dasharray="7 4" marker-end="url(#arr-bij)"/>
-        <rect x="246" y="276" width="138" height="44" rx="8" fill="var(--quote-bg)" stroke="var(--quote)" stroke-width="1.8"/>
-        <text x="315" y="296" text-anchor="middle" class="p-bij-svg">bijection check</text>
-        <text x="315" y="312" text-anchor="middle" class="p-muted-svg">ecma-print → byte-for-byte</text>
+        <path d="M400,222 C348,292 278,292 228,226" fill="none" stroke="var(--quote)" stroke-width="3.2" stroke-dasharray="7 4" marker-end="url(#arr-bij)"/>
+        <rect x="224" y="276" width="176" height="46" rx="8" fill="var(--quote-bg)" stroke="var(--quote)" stroke-width="1.8"/>
+        <text x="312" y="295" text-anchor="middle" class="p-bij-svg">bijection check</text>
+        <text x="312" y="313" text-anchor="middle" class="p-muted-svg">ecma-print = spec.html</text>
 
         <!-- lean/Ecma -->
-        <rect class="dg-box lean" x="390" y="56" width="246" height="230" rx="12" stroke-width="2.5"/>
-        <text x="513" y="104" text-anchor="middle" class="p-title-svg">lean/Ecma</text>
-        <text x="513" y="136" text-anchor="middle" class="p-sub-svg">Generated algorithms &amp; tables</text>
-        <text x="513" y="166" text-anchor="middle" class="p-mono-svg">Machine.step</text>
-        <text x="513" y="196" text-anchor="middle" class="p-mono-svg">Model.Laws · Host.WF</text>
-        <text x="513" y="226" text-anchor="middle" class="p-muted-svg">quoted sentences checked</text>
-        <text x="513" y="256" text-anchor="middle" class="p-muted-svg">0 tactics · Gen/ gitignored</text>
+        <rect class="dg-box lean" x="404" y="56" width="242" height="230" rx="12" stroke-width="2.5"/>
+        <text x="525" y="104" text-anchor="middle" class="p-title-svg">lean/Ecma</text>
+        <text x="525" y="136" text-anchor="middle" class="p-sub-svg">Generated algorithms &amp; tables</text>
+        <text x="525" y="166" text-anchor="middle" class="p-mono-svg">Machine.step</text>
+        <text x="525" y="196" text-anchor="middle" class="p-mono-svg">Model.Laws · Host.WF</text>
+        <text x="525" y="226" text-anchor="middle" class="p-muted-svg">quoted sentences checked</text>
+        <text x="525" y="256" text-anchor="middle" class="p-muted-svg">0 tactics · Gen/ gitignored</text>
 
         <!-- Arrows to Engine & Debugger -->
-        <path class="dg-a" d="M636,118 L718,96" stroke-width="2.8" marker-end="url(#arr)"/>
-        <path class="dg-a" d="M636,216 L718,244" stroke-width="2.8" marker-end="url(#arr)"/>
+        <path class="dg-a" d="M646,118 L724,96" stroke-width="2.8" marker-end="url(#arr)"/>
+        <path class="dg-a" d="M646,216 L724,244" stroke-width="2.8" marker-end="url(#arr)"/>
 
         <!-- lean/Engine -->
-        <rect class="dg-box proved" x="724" y="38" width="208" height="122" rx="12" stroke-width="2.5"/>
-        <text x="828" y="78" text-anchor="middle" class="p-title-svg">lean/Engine</text>
-        <text x="828" y="108" text-anchor="middle" class="p-mono-svg">Engine.implements</text>
-        <text x="828" y="134" text-anchor="middle" class="p-muted-svg">proved · runs test262</text>
+        <rect class="dg-box proved" x="730" y="38" width="210" height="122" rx="12" stroke-width="2.5"/>
+        <text x="835" y="78" text-anchor="middle" class="p-title-svg">lean/Engine</text>
+        <text x="835" y="108" text-anchor="middle" class="p-mono-svg">Engine.implements</text>
+        <text x="835" y="134" text-anchor="middle" class="p-muted-svg">proved · runs test262</text>
 
         <!-- lean/Debugger -->
-        <rect class="dg-box lean" x="724" y="190" width="208" height="122" rx="12" stroke-width="2.5"/>
-        <text x="828" y="230" text-anchor="middle" class="p-title-svg">Debugger</text>
-        <text x="828" y="260" text-anchor="middle" class="p-mono-svg">Wasm64 + Native</text>
-        <text x="828" y="286" text-anchor="middle" class="p-muted-svg">lazy-loaded per proposal</text>
+        <rect class="dg-box lean" x="730" y="190" width="210" height="122" rx="12" stroke-width="2.5"/>
+        <text x="835" y="230" text-anchor="middle" class="p-title-svg">Debugger</text>
+        <text x="835" y="260" text-anchor="middle" class="p-mono-svg">Wasm64 + Native</text>
+        <text x="835" y="286" text-anchor="middle" class="p-muted-svg">lazy-loaded per proposal</text>
       </svg>
     </div>
   </section>
@@ -160,12 +160,13 @@
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
-        <div class="code-window swap-layer swap-before">
-          <div class="code-bar">
-            <code>lean/Ecma/Gen/S22_1_part2.lean</code>
-            <span class="badge none">Before (ECMA-262)</span>
-          </div>
-          <pre class="spec-code lean-code"><span class="k">def</span> «String.prototype.trim» : Alg := {
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>lean/Ecma/Gen/S22_1_part2.lean</code>
+              <span class="badge none">Before (ECMA-262)</span>
+            </div>
+            <pre class="spec-code lean-code"><span class="k">def</span> «String.prototype.trim» : Alg := {
   id     := ⟨1454, 0⟩
   name   := <span class="s">"String.prototype.trim"</span>
   header := { kind := .builtin, params := [], ret := none, recv := none, desc := [] }
@@ -174,13 +175,15 @@
     (.mk [] (.let_ 2 (.thisValue false))),
     (.mk [] (.ret (some (.q (.call (.alg ⟨1455, 0⟩) [(.var 2), (.enum 88)])))))]
 }</pre>
-        </div>
-        <div class="code-window swap-layer swap-after">
-          <div class="code-bar">
-            <code>lean/Ecma/Gen/S22_1_part2.lean</code>
-            <span class="badge proved">After generate.py · 0 proof lines needed</span>
           </div>
-          <pre class="spec-code lean-code"><span class="k">def</span> «String.prototype.trim» : Alg := {
+        </div>
+        <div class="swap-layer swap-after">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>lean/Ecma/Gen/S22_1_part2.lean</code>
+              <span class="badge proved">After generate.py · 0 proof lines needed</span>
+            </div>
+            <pre class="spec-code lean-code"><span class="k">def</span> «String.prototype.trim» : Alg := {
   id     := ⟨1454, 0⟩
   name   := <span class="s">"String.prototype.trim"</span>
   header := { kind := .builtin, params := [<span class="hl-ins">{ x := 2, ty := none, optional := true, rest := false }</span>], … }
@@ -189,6 +192,7 @@
     (.mk [] (.let_ <span class="hl-ins">3</span> (.thisValue false))),
     (.mk [] (.ret (some (.q (.call (.alg ⟨1455, 0⟩) [(.var <span class="hl-ins">3</span>), (.enum 88)<span class="hl-ins">, (.var 2)</span>])))))]
 }</pre>
+          </div>
         </div>
       </div>
     </div>
@@ -202,13 +206,15 @@
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
-        <div class="code-window swap-layer swap-before step3-preview">
-          <div class="code-bar">
-            <code>proposal_trim_chars.js</code>
-            <span class="bp-pill">● Breakpoint: <code>sec-string.prototype.trim</code> · step 2</span>
-          </div>
-          <pre class="spec-code js-big">const path = "/__ecma-262__/".trim("/_");
+        <div class="swap-layer swap-before">
+          <div class="code-window step3-preview">
+            <div class="code-bar">
+              <code>proposal_trim_chars.js</code>
+              <span class="bp-pill">● Breakpoint: <code>sec-string.prototype.trim</code> · step 2</span>
+            </div>
+            <pre class="spec-code js-big">const path = "/__ecma-262__/".trim("/_");
 // → "ecma-262"</pre>
+          </div>
         </div>
         <div class="swap-layer swap-after step3-dbg-wrap">
           {{slides_step3_after}}

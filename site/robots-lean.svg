@@ -34,19 +34,19 @@
   </g>
 
   <!-- Floating proof speech/thought banners above each robot -->
-  <g filter="url(#softShadow)" font-family="Menlo, Consolas, monospace" font-size="16">
-    <rect x="88" y="34" width="290" height="66" rx="10" fill="#ffffff" stroke="#d9e0e6" stroke-width="2"/>
-    <text x="108" y="61" fill="#7b3fa0" font-weight="700">theorem</text>
-    <text x="184" y="61" fill="#1b2129" font-weight="700">Engine.implements</text>
-    <text x="108" y="84" fill="#2c7a4b">⊢ Implements (implementation …)</text>
+  <g filter="url(#softShadow)" font-family="Menlo, Consolas, monospace" font-size="14.5">
+    <rect x="68" y="34" width="334" height="66" rx="10" fill="#ffffff" stroke="#d9e0e6" stroke-width="2"/>
+    <text x="86" y="60" fill="#7b3fa0" font-weight="700">theorem</text>
+    <text x="156" y="60" fill="#1b2129" font-weight="700">Engine.implements</text>
+    <text x="86" y="83" fill="#2c7a4b">⊢ Implements (implementation …)</text>
 
-    <rect x="448" y="24" width="304" height="66" rx="10" fill="#ffffff" stroke="#d9e0e6" stroke-width="2"/>
-    <text x="468" y="51" fill="#1c5d99" font-weight="700">∀ c c′, Machine.step c = c′</text>
-    <text x="468" y="74" fill="#4c5864">simp [TrimString, Step.loop] ∎</text>
+    <rect x="433" y="24" width="334" height="66" rx="10" fill="#ffffff" stroke="#d9e0e6" stroke-width="2"/>
+    <text x="451" y="50" fill="#1c5d99" font-weight="700">∀ c c′, Machine.step c = c′</text>
+    <text x="451" y="73" fill="#4c5864">simp [TrimString, Step.loop] ∎</text>
 
-    <rect x="822" y="34" width="290" height="66" rx="10" fill="#ffffff" stroke="#d9e0e6" stroke-width="2"/>
-    <text x="842" y="61" fill="#9a7426" font-weight="700">&lt;emu-alg&gt; → Lean 4</text>
-    <text x="842" y="84" fill="#2c7a4b">0 sorry · 0 native_decide ✓</text>
+    <rect x="798" y="34" width="334" height="66" rx="10" fill="#ffffff" stroke="#d9e0e6" stroke-width="2"/>
+    <text x="816" y="60" fill="#9a7426" font-weight="700">&lt;emu-alg&gt; → Lean 4</text>
+    <text x="816" y="83" fill="#2c7a4b">0 sorry · 0 native_decide ✓</text>
   </g>
 
   <!-- Long oak workbench -->
@@ -87,12 +87,12 @@
     <path d="M208,166 C246,196 242,258 196,292" fill="none" stroke="#1b2129" stroke-width="14" stroke-linecap="round"/>
     <path d="M208,166 C246,196 242,258 196,292" fill="none" stroke="#dce6f0" stroke-width="8" stroke-linecap="round"/>
     <!-- Curling proof scroll rising from typewriter -->
-    <path d="M88,262 L88,194 C88,180 100,174 112,174 L176,174 C188,174 194,182 194,194 L194,262 Z" fill="url(#paperGrad)" stroke="#1b2129" stroke-width="2.5" filter="url(#softShadow)"/>
-    <g font-family="Menlo, monospace" font-size="10.5" fill="#1b2129">
-      <text x="98" y="194" fill="#7b3fa0" font-weight="700">lemma step_ok :</text>
-      <text x="98" y="210">  Reached P c →</text>
-      <text x="98" y="225">  Steps P c c′</text>
-      <text x="98" y="240" fill="#2c7a4b">  := by exact h</text>
+    <path d="M80,262 L80,192 C80,178 92,172 104,172 L180,172 C192,172 200,180 200,192 L200,262 Z" fill="url(#paperGrad)" stroke="#1b2129" stroke-width="2.5" filter="url(#softShadow)"/>
+    <g font-family="Menlo, monospace" font-size="9.2" fill="#1b2129">
+      <text x="90" y="193" fill="#7b3fa0" font-weight="700">lemma step_ok :</text>
+      <text x="90" y="208">  Reached P c →</text>
+      <text x="90" y="223">  Steps P c c′</text>
+      <text x="90" y="238" fill="#2c7a4b">  := by exact h</text>
     </g>
     <!-- Mechanical Typewriter -->
     <rect x="64" y="254" width="152" height="18" rx="6" fill="#4c5864" stroke="#1b2129" stroke-width="3"/>
@@ -141,13 +141,13 @@
     <path d="M42,286 Q32,298 44,310" fill="none" stroke="#9a7426" stroke-width="2.5" stroke-linecap="round"/>
     <path d="M248,286 Q258,298 246,310" fill="none" stroke="#9a7426" stroke-width="2.5" stroke-linecap="round"/>
     <!-- Long curling proof scroll -->
-    <path d="M88,278 L88,188 C88,174 100,168 112,168 L180,168 C192,168 202,174 202,188 L202,278 Z" fill="url(#paperGrad)" stroke="#1b2129" stroke-width="2.5" filter="url(#softShadow)"/>
-    <g font-family="Menlo, monospace" font-size="10.5" fill="#1b2129">
-      <text x="97" y="190" fill="#7b3fa0" font-weight="700">theorem run_sound</text>
-      <text x="97" y="206">  (h : runT s = .ok v)</text>
-      <text x="97" y="222">  : SpecRuns s v :=</text>
-      <text x="97" y="238" fill="#1c5d99">  implements.sim h</text>
-      <text x="97" y="254" fill="#2c7a4b">-- 14/14 proposals ✓</text>
+    <path d="M80,278 L80,186 C80,172 92,166 104,166 L186,166 C198,166 210,172 210,186 L210,278 Z" fill="url(#paperGrad)" stroke="#1b2129" stroke-width="2.5" filter="url(#softShadow)"/>
+    <g font-family="Menlo, monospace" font-size="9" fill="#1b2129">
+      <text x="89" y="189" fill="#7b3fa0" font-weight="700">theorem run_sound</text>
+      <text x="89" y="204">  (h : runT s = .ok v)</text>
+      <text x="89" y="219">  : SpecRuns s v :=</text>
+      <text x="89" y="234" fill="#1c5d99">  implements.sim h</text>
+      <text x="89" y="249" fill="#2c7a4b">-- 14/14 proposals ✓</text>
     </g>
     <!-- Center Typewriter -->
     <rect x="64" y="270" width="162" height="18" rx="6" fill="#4c5864" stroke="#1b2129" stroke-width="3"/>
@@ -188,12 +188,12 @@
     <path d="M208,166 C246,196 242,258 196,292" fill="none" stroke="#1b2129" stroke-width="14" stroke-linecap="round"/>
     <path d="M208,166 C246,196 242,258 196,292" fill="none" stroke="#dce6f0" stroke-width="8" stroke-linecap="round"/>
     <!-- Scroll -->
-    <path d="M88,262 L88,194 C88,180 100,174 112,174 L176,174 C188,174 194,182 194,194 L194,262 Z" fill="url(#paperGrad)" stroke="#1b2129" stroke-width="2.5" filter="url(#softShadow)"/>
-    <g font-family="Menlo, monospace" font-size="10.5" fill="#1b2129">
-      <text x="98" y="194" fill="#9a7426" font-weight="700">Host.WF :</text>
-      <text x="98" y="210">  72/72 laws</text>
-      <text x="98" y="225">  quoted &amp;</text>
-      <text x="98" y="240" fill="#2c7a4b">  checked ✓</text>
+    <path d="M80,262 L80,192 C80,178 92,172 104,172 L180,172 C192,172 200,180 200,192 L200,262 Z" fill="url(#paperGrad)" stroke="#1b2129" stroke-width="2.5" filter="url(#softShadow)"/>
+    <g font-family="Menlo, monospace" font-size="9.2" fill="#1b2129">
+      <text x="90" y="193" fill="#9a7426" font-weight="700">Host.WF :</text>
+      <text x="90" y="208">  72/72 laws</text>
+      <text x="90" y="223">  quoted &amp;</text>
+      <text x="90" y="238" fill="#2c7a4b">  checked ✓</text>
     </g>
     <!-- Typewriter -->
     <rect x="64" y="254" width="152" height="18" rx="6" fill="#4c5864" stroke="#1b2129" stroke-width="3"/>
