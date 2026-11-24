@@ -52,6 +52,11 @@ comments; a reason may follow on the line):
     keep-base CLAUSE BLOCK         the base block stays; the proposal's change to it is dropped
     patch CLAUSE BLOCK "OLD" ==> "NEW"   the base block stays, with this substitution (the proposal's change
                                    restated on the newer text; OLD, a JSON string, occurs exactly once)
+    parent CLAUSE PARENT [after|before SIBLING]   insert a new clause without base siblings under PARENT
+                                   (a base clause id, or `root`)
+    unwrap CLAUSE                  promote a proposal wrapper clause's child clauses into its parent
+    retarget CLAUSE BASE_CLAUSE    merge proposal clause CLAUSE into existing BASE_CLAUSE
+    attr CLAUSE KEY "VALUE"        set attribute KEY="VALUE" on CLAUSE's opening tag
     rename OLD NEW                 a name the proposal renames: every whole-word use in the result is renamed,
                                    in the clauses the proposal does not show too
 
@@ -287,7 +292,33 @@ class Merger:
                     "resolved": [], "renamed": [], "moved_or_reordered": [], "ignored_comments": 0,
                     "editor_notes_dropped": [], "attrs": [], "renamed_clauses": [], "unmarked_new": [], "matched_loosely": [], "table_rows": []}
         self.res = resolutions
+        self.retargets = {r[1]: r[2] for r in resolutions if r[0] == "retarget"}
+        self.unwraps = {r[1] for r in resolutions if r[0] == "unwrap"}
+        self.parents = {r[1]: r for r in resolutions if r[0] == "parent"}
+        self.attr_res = [r for r in resolutions if r[0] == "attr"]
         self.touched = []  # base spans the proposal speaks for (for the rename and the checks)
+
+    def expand_unwraps(self, nodes):
+        out = []
+        for n in nodes:
+            if n.id in self.unwraps:
+                self.log["resolved"].append(f"unwrap {n.id}")
+                out.extend(self.expand_unwraps(n.children))
+            else:
+                out.append(n)
+        return out
+
+    def target_base(self, p):
+        if not p.id:
+            return None
+        return self.bid.get(self.retargets.get(p.id, p.id))
+
+    @staticmethod
+    def set_tag_attr(tag, k, v):
+        pat = re.compile(r"\b" + re.escape(k) + r'="[^"]*"')
+        if pat.search(tag):
+            return pat.sub(f'{k}="{v}"', tag, count=1)
+        return tag[:-1] + f' {k}="{v}">'
 
     # ---- resolutions
     def resolution(self, kind, cid, idx):
@@ -307,7 +338,7 @@ class Merger:
 
     # ---- main
     def run(self):
-        for top in self.ptree.children:
+        for top in self.expand_unwraps(self.ptree.children):
             self.merge_clause(top)
         return self
 
@@ -320,10 +351,15 @@ class Merger:
                 return
             self.edit_remove_clause(b, f"removed by {p.id}")
             return
-        b = self.bid.get(p.id)
+        b = self.target_base(p)
         if b is None:
+            if p.id in self.parents:
+                self.insert_clause_with_parent(p, self.parents[p.id])
+                return
             self.refuse(p.id, "-", "top-level proposal clause not in base")
             return
+        if p.id in self.retargets:
+            self.log["resolved"].append(f"retarget {p.id} {b.id}")
         if b.parent and p.parent and p.parent.id and b.parent.id != p.parent.id:
             self.log["moved_or_reordered"].append(f"{p.id}: proposal parent {p.parent.id}, base parent {b.parent.id}")
         # a clause whose h1 is wholly deleted: remove it
@@ -338,11 +374,67 @@ class Merger:
         self.merge_own(p, b, pblocks)
         self.merge_children(p, b)
 
+    def insert_clause_with_parent(self, c, r):
+        bparent = self.btree if r[2] == "root" else self.bid.get(r[2])
+        if bparent is None:
+            self.refuse(c.id, "-", f"parent: base has no clause {r[2]}")
+            return
+        text = self.resolve_clause(c)
+        om = re.search(r'oldids="([^"]*)"', c.attrs)
+        for oid in (om.group(1).split(",") if om else []):
+            if oid in self.bid:
+                ob = self.bid[oid]
+                alg = lambda t: [norm(x) for x in re.findall(r"<emu-alg>(.*?)</emu-alg>", t, re.S)]
+                same = alg(self.base[ob.open_start:ob.close_end]) == alg(text)
+                self.log["renamed_clauses"].append(f"{oid} -> {c.id}: steps {'identical' if same else 'DIFFER'}")
+        mode = r[3] if len(r) >= 5 and r[3] in ("after", "before") else None
+        if mode == "after":
+            bp = self.bid.get(r[4])
+            if bp is None or bp.parent is not bparent:
+                self.refuse(c.id, "-", f"parent: {r[4]} is not a child of {r[2]}")
+                return
+            anchor, ind = bp.close_end, line_indent(self.base, bp.open_start)
+            where = f"after {bp.id}"
+            txt = "\n\n" + " " * ind + reindent(text, ind - line_indent(self.prop, c.open_start))
+            used = r[:5]
+        elif mode == "before":
+            bn = self.bid.get(r[4])
+            if bn is None or bn.parent is not bparent:
+                self.refuse(c.id, "-", f"parent: {r[4]} is not a child of {r[2]}")
+                return
+            ls = self.base.rfind("\n", 0, bn.open_start) + 1
+            anchor, ind = ls, line_indent(self.base, bn.open_start)
+            where = f"before {bn.id}"
+            txt = " " * ind + reindent(text, ind - line_indent(self.prop, c.open_start)) + "\n\n"
+            used = r[:5]
+        elif bparent is self.btree:
+            bp = bparent.children[-1]
+            anchor, ind = bp.close_end, line_indent(self.base, bp.open_start)
+            where = f"after {bp.id}"
+            txt = "\n\n" + " " * ind + reindent(text, ind - line_indent(self.prop, c.open_start))
+            used = r[:3]
+        else:
+            ls = self.base.rfind("\n", 0, bparent.close_start)
+            ind = line_indent(self.base, bparent.open_start) + 2
+            anchor = ls
+            where = f"last child of {bparent.id}"
+            txt = "\n\n" + " " * ind + reindent(text, ind - line_indent(self.prop, c.open_start))
+            used = r[:3]
+        self.edits.append((anchor, anchor, txt, f"new clause {c.id} {where}"))
+        self.log["inserted"].append(f"{c.id} ({where})")
+        self.log["resolved"].append(" ".join(used))
+        for d in c.walk():
+            if d is not c and d.id:
+                self.log["inserted"].append(f"  {d.id} (inside {c.id})")
+
     def merge_attrs(self, p, b):
-        """A proposal clause's attributes the base clause lacks (oldids): added to its tag. `number=` is the
-        proposal's own section numbering, not an attribute of the base."""
+        """A proposal clause's attributes the base clause lacks (oldids), plus any `attr` resolutions: added to its
+        tag. `number=` is the proposal's own section numbering, not an attribute of the base."""
         pa = dict(re.findall(r'(\w[\w-]*)="([^"]*)"', p.attrs))
         ba = dict(re.findall(r'(\w[\w-]*)="([^"]*)"', b.attrs))
+        orig_tag = self.base[b.open_start:b.open_end]
+        tag = orig_tag
+        why_parts = []
         for k, v in pa.items():
             if k in ("number", "id"):
                 continue
@@ -351,15 +443,22 @@ class Merger:
                 add = [x for x in v.split(",") if x not in have]
                 if not add:
                     continue
-                tag = self.base[b.open_start:b.open_end]
                 if "oldids=" in tag:
-                    nt = re.sub(r'oldids="([^"]*)"', lambda m, add=add: f'oldids="{m.group(1)},{",".join(add)}"', tag)
+                    tag = re.sub(r'oldids="([^"]*)"', lambda m, add=add: f'oldids="{m.group(1)},{",".join(add)}"', tag)
                 else:
-                    nt = tag.replace(f'id="{b.id}"', f'id="{b.id}" oldids="{",".join(add)}"')
-                self.edits.append((b.open_start, b.open_end, nt, f"{b.id}: oldids {add}"))
+                    tag = tag.replace(f'id="{b.id}"', f'id="{b.id}" oldids="{",".join(add)}"')
+                why_parts.append(f"oldids {add}")
                 self.log["attrs"].append(f"{b.id}: oldids + {add}")
             elif ba.get(k) != v:
                 self.log["attrs"].append(f"{b.id}: proposal {k}={v!r}, base {ba.get(k)!r} (base kept)")
+        for r in self.attr_res:
+            if r[1] in (p.id, b.id):
+                tag = self.set_tag_attr(tag, r[2], r[3])
+                why_parts.append(f"{r[2]}={r[3]!r}")
+                self.log["attrs"].append(f"{b.id}: {r[2]}={r[3]!r}")
+                self.log["resolved"].append(f'attr {r[1]} {r[2]} "{r[3]}"')
+        if tag != orig_tag:
+            self.edits.append((b.open_start, b.open_end, tag, f"{b.id}: {', '.join(why_parts)}"))
 
     def own_blocks(self, text, node):
         out = []
@@ -460,8 +559,11 @@ class Merger:
                     matched[i] = j2
                     continue
                 # resolutions
-                cand = self.best_candidate(on, kind, bblocks, bnorm, last)
                 rb = self.resolution("rebase", cid, i) or self.resolution("rebase-take", cid, i)
+                ru = self.resolution("use-new", cid, i)
+                rk = self.resolution("keep-base", cid, i)
+                rp = [r for r in self.res if r[0] == "patch" and r[1] == cid and r[2] == str(i)]
+                cand = self.best_candidate(on, kind, bblocks, bnorm, last, has_res=bool(rb or ru or rk or rp))
                 if cand is not None and rb:
                     bs, be, _ = bblocks[cand]
                     t, notes = self.rebase(old, new, self.base[bs:be], take=rb[0] == "rebase-take",
@@ -477,9 +579,6 @@ class Merger:
                     matched[i] = cand
                     did_something = True
                     continue
-                ru = self.resolution("use-new", cid, i)
-                rk = self.resolution("keep-base", cid, i)
-                rp = [r for r in self.res if r[0] == "patch" and r[1] == cid and r[2] == str(i)]
                 if cand is not None and (ru or rk or rp):
                     bs, be, _ = bblocks[cand]
                     if ru:
@@ -628,15 +727,15 @@ class Merger:
             res = ins_after[-1] + res
         return "\n".join(res), notes
 
-    def best_candidate(self, on, kind, bblocks, bnorm, last):
-        best, score = None, 0.0
+    def best_candidate(self, on, kind, bblocks, bnorm, last, has_res=False):
+        best, score = None, -1.0
         for k in range(last + 1, len(bblocks)):
             if bblocks[k][2] != kind:
                 continue
             sc = difflib.SequenceMatcher(None, on, bnorm[k], autojunk=False).ratio()
             if sc > score:
                 best, score = k, sc
-        return best if score > 0.5 else None
+        return best if (score > 0.5 or (has_res and best is not None)) else None
 
     def replace_block(self, cid, i, kind, bs, be, ps, new, how):
         delta = line_indent(self.base, bs) - line_indent(self.prop, ps)
@@ -674,15 +773,27 @@ class Merger:
             if pid and bid and pid.group(1) != bid.group(1):
                 continue
             brows = [(m.start() + bs, m.end() + bs, loose(m.group(0))) for m in TR.finditer(bt)]
+            thead_end = bt.find("</thead>")
+            thead_abs = (bs + thead_end + len("</thead>")) if thead_end >= 0 else -1
             prows = [m.group(0) for m in TR.finditer(raw)]
             edits, prev, ok = [], None, True
-            for pr in prows:
+            for r_idx, pr in enumerate(prows):
                 o, n = resolve(pr, "old"), resolve(pr, "new")
                 if emptyish(re.sub(r"<tr\b[^>]*>|</tr>|<t[dh]\b[^>]*>|</t[dh]>", "", o)):
                     if prev is None:
                         ok = False
                         break
-                    edits.append((prev[1], prev[1], "\n" + " " * line_indent(self.base, prev[0]) + n.strip(), "row added"))
+                    anchor, ind_pos = prev[1], prev[0]
+                    if thead_abs >= 0 and prev[1] <= thead_abs:
+                        has_more_old = any(
+                            not emptyish(re.sub(r"<tr\b[^>]*>|</tr>|<t[dh]\b[^>]*>|</t[dh]>", "", resolve(rem, "old")))
+                            for rem in prows[r_idx + 1:]
+                        )
+                        if not has_more_old and len(brows) > 1:
+                            anchor, ind_pos = brows[-1][1], brows[-1][0]
+                        else:
+                            anchor = thead_abs
+                    edits.append((anchor, anchor, "\n" + " " * line_indent(self.base, ind_pos) + n.strip(), "row added"))
                     self.log["table_rows"].append(f"{cid}#{i}: row added")
                     continue
                 lo = loose(o)
@@ -771,14 +882,17 @@ class Merger:
         return used
 
     def merge_children(self, p, b):
-        kids = p.children
+        kids = self.expand_unwraps(p.children)
         for n, c in enumerate(kids):
-            if c.id and (c.id in self.bid or c.id.startswith("del-")):
+            if c.id and (self.target_base(c) is not None or c.id.startswith("del-")):
                 self.merge_clause(c)
                 continue
+            if c.id in self.parents:
+                self.insert_clause_with_parent(c, self.parents[c.id])
+                continue
             # a new clause
-            prev = next((k for k in reversed(kids[:n]) if k.id in self.bid), None)
-            nxt = next((k for k in kids[n + 1:] if k.id in self.bid), None)
+            prev = next((k for k in reversed(kids[:n]) if self.target_base(k) is not None), None)
+            nxt = next((k for k in kids[n + 1:] if self.target_base(k) is not None), None)
             text = self.resolve_clause(c)
             om = re.search(r'oldids="([^"]*)"', c.attrs)
             for oid in (om.group(1).split(",") if om else []):
@@ -788,15 +902,15 @@ class Merger:
                     same = alg(self.base[ob.open_start:ob.close_end]) == alg(text)
                     self.log["renamed_clauses"].append(f"{oid} -> {c.id}: steps {'identical' if same else 'DIFFER'}")
             if prev is not None:
-                bp = self.bid[prev.id]
+                bp = self.target_base(prev)
                 anchor, ind = bp.close_end, line_indent(self.base, bp.open_start)
-                where = f"after {prev.id}"
+                where = f"after {bp.id}"
                 txt = "\n\n" + " " * ind + reindent(text, ind - line_indent(self.prop, c.open_start))
             elif nxt is not None:
-                bn = self.bid[nxt.id]
+                bn = self.target_base(nxt)
                 ls = self.base.rfind("\n", 0, bn.open_start) + 1
                 anchor, ind = ls, line_indent(self.base, bn.open_start)
-                where = f"before {nxt.id}"
+                where = f"before {bn.id}"
                 txt = " " * ind + reindent(text, ind - line_indent(self.prop, c.open_start)) + "\n\n"
             else:
                 # end of the parent: before its closing tag line
@@ -813,7 +927,16 @@ class Merger:
                     self.log["inserted"].append(f"  {d.id} (inside {c.id})")
 
     def resolve_clause(self, c):
-        return resolve(self.prop[c.open_start:c.close_end], "new")
+        s = resolve(self.prop[c.open_start:c.close_end], "new")
+        ids = {d.id for d in c.walk() if d.id}
+        for r in self.attr_res:
+            if r[1] in ids:
+                pat = re.compile(r'<(?:emu-clause|emu-annex)\b[^>]*\bid="' + re.escape(r[1]) + r'"[^>]*>')
+                s, n = pat.subn(lambda m, r=r: self.set_tag_attr(m.group(0), r[2], r[3]), s, count=1)
+                if n:
+                    self.log["attrs"].append(f"{r[1]}: {r[2]}={r[3]!r}")
+                    self.log["resolved"].append(f'attr {r[1]} {r[2]} "{r[3]}"')
+        return s
 
     def apply_renames(self, out):
         for r in self.res:
@@ -852,6 +975,10 @@ def read_resolutions(path):
             head, rest = line[6:].split(" ", 2)[:2], line[6:].split(" ", 2)[2]
             old, new = rest.split(" ==> ", 1)
             res.append(["patch", head[0], head[1], json.loads(old), json.loads(new)])
+        elif line.startswith("attr "):
+            parts = line[5:].split(None, 2)
+            val = json.loads(parts[2]) if parts[2].startswith('"') else parts[2].split()[0]
+            res.append(["attr", parts[0], parts[1], val])
         else:
             res.append(line.split())
     return res

@@ -243,6 +243,37 @@ class Clauses(unittest.TestCase):
         self.assertIn('<emu-clause id="sec-c" oldids="sec-gamma">', out)
         self.assertNotIn("number=", out)
 
+    def test_parent_unwrap_retarget_and_attr_resolutions(self):
+        prop = """<emu-clause id="sec-wrap">
+  <h1>Wrapper</h1>
+  <emu-clause id="sec-b-mod" type="abstract operation">
+    <h1>Beta ( _x_ )</h1>
+    <emu-alg>
+      1. Assert: _x_ is a String.
+      1. Return <del>_x_</del><ins>_x_ + 1</ins>.
+    </emu-alg>
+  </emu-clause>
+  <emu-clause id="sec-top-new">
+    <h1>NewFn ( _x_ )</h1>
+    <emu-alg>
+      1. Return _x_.
+    </emu-alg>
+  </emu-clause>
+</emu-clause>"""
+        res = (
+            "unwrap sec-wrap\n"
+            "retarget sec-b-mod sec-b\n"
+            "parent sec-top-new sec-p after sec-a\n"
+            'attr sec-top-new type "built-in function"\n'
+        )
+        out, rep = merge(prop, res)
+        self.assertEqual(rep["refusals"], [])
+        self.assertTrue(rep["checks"]["tree_ok"])
+        ids = [n.id for n in ap.parse_tree(out).walk() if n.id]
+        self.assertEqual(ids, ["sec-p", "sec-a", "sec-top-new", "sec-b", "sec-c"])
+        self.assertIn('<emu-clause id="sec-top-new" type="built-in function">', out)
+        self.assertIn("Return _x_ + 1.", clause(out, "sec-b"))
+
 
 class Rebase(unittest.TestCase):
     # the base gained the Assert after the proposal was written; the proposal changes the Return step
