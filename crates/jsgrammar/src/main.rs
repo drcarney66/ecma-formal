@@ -617,9 +617,11 @@ grammar symbols, and the supplemental grammars' (\"must cover\"); then json.emu'
         return Err(format!("erratum {}: the row {} of {} names a production of the grammar now, or is gone", o.erratum, o.grammar, o.clause));
     }
 
-    // The readings of rules, each erratum's by its kept id (erratum-ids.txt beside the first overlay file).
+    // The readings of rules, each erratum's by its kept id (--ids, else beside the first overlay file).
     let rs = readings::scan(&ovl)?;
-    let ids_path = readings_paths.first().map(|p| std::path::Path::new(p).with_file_name("erratum-ids.txt"));
+    let ids_path = ids_dir
+        .map(|d| std::path::Path::new(d).join("erratum-ids.txt"))
+        .or_else(|| readings_paths.first().map(|p| std::path::Path::new(p).with_file_name("erratum-ids.txt")));
     let kept = match &ids_path {
         Some(p) if p.exists() => readings::erratum_ids(&std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?),
         _ => Default::default(),

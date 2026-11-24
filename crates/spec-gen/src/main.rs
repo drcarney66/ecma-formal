@@ -75,6 +75,7 @@ use std::process::ExitCode;
 struct Args {
     spec: String,
     overlay: Option<String>,
+    ids: Option<String>,
     cmd: String,
     rest: Vec<String>,
 }
@@ -82,10 +83,13 @@ struct Args {
 fn args() -> Result<Args, String> {
     let mut spec = None;
     let mut overlay = None;
+    let mut ids = None;
     let mut pos = Vec::new();
     for a in std::env::args().skip(1) {
         if let Some(v) = a.strip_prefix("--overlay=") {
             overlay = Some(v.to_string());
+        } else if let Some(v) = a.strip_prefix("--ids=") {
+            ids = Some(v.to_string());
         } else if let Some(v) = a.strip_prefix("--spec=") {
             spec = Some(v.to_string());
         } else {
@@ -97,7 +101,7 @@ fn args() -> Result<Args, String> {
         return Err("missing command (report, roundtrip, steps, early, tables)".into());
     }
     let cmd = pos.remove(0);
-    Ok(Args { spec, overlay, cmd, rest: pos })
+    Ok(Args { spec, overlay, ids, cmd, rest: pos })
 }
 
 fn pct(a: usize, b: usize) -> String {
@@ -116,7 +120,7 @@ fn run() -> Result<bool, String> {
     SPEC.with(|s| *s.borrow_mut() = a.spec.clone());
     let mut sp = spec::scan(&html)?;
     let ov = match &a.overlay {
-        Some(d) => overlay::read(d)?,
+        Some(d) => overlay::read_with_ids(d, a.ids.as_deref().unwrap_or(d))?,
         None => overlay::Overlay::default(),
     };
     overlay::patch(&mut sp, &ov)?;

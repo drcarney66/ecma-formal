@@ -661,7 +661,12 @@ pub const FIELD_IDS: &str = "field-ids.txt";
 /// The enum index's file name in the overlay directory: a name per line, in id order.
 pub const ENUM_IDS: &str = "enum-ids.txt";
 
+#[allow(dead_code)]
 pub fn read(dir: &str) -> Result<Overlay, String> {
+    read_with_ids(dir, dir)
+}
+
+pub fn read_with_ids(dir: &str, ids_dir: &str) -> Result<Overlay, String> {
     let mut files: Vec<_> = std::fs::read_dir(dir)
         .map_err(|e| format!("{dir}: {e}"))?
         .filter_map(|e| e.ok().map(|e| e.path()))
@@ -979,20 +984,21 @@ pub fn read(dir: &str) -> Result<Overlay, String> {
     }
     check_grammar(&o.grammar)?;
     check_unreviewed(dir, &o)?;
-    o.phrase_ids = phrase_ids(dir)?;
-    let names = |f: &str| std::fs::read_to_string(format!("{dir}/{f}")).map(|s| s.lines().map(str::to_string).collect()).unwrap_or_default();
-    o.prim_ids = names(PRIM_IDS);
-    o.sort_ids = names(SORT_IDS);
-    o.field_ids = names(FIELD_IDS);
-    o.enum_ids = names(ENUM_IDS);
-    o.clause_ids = crate::ids::read(dir, crate::ids::CLAUSE_IDS)?;
-    o.sdo_ids = crate::ids::read(dir, crate::ids::SDO_IDS)?;
-    o.method_ids = crate::ids::read(dir, crate::ids::METHOD_IDS)?;
-    o.erratum_ids = crate::ids::read(dir, crate::ids::ERRATUM_IDS)?;
-    o.reason_ids = crate::ids::read(dir, crate::ids::REASON_IDS)?;
-    o.note_ids = crate::ids::read(dir, crate::ids::NOTE_IDS)?;
-    o.grammar_ids = jsgrammar::ids::read_dir(std::path::Path::new(dir))?;
-    o.table_ids = crate::ids::read(dir, crate::ids::TABLE_IDS)?;
+    o.phrase_ids = phrase_ids(ids_dir)?;
+    let ids_names = |f: &str| -> Vec<String> { std::fs::read_to_string(format!("{ids_dir}/{f}")).map(|s| s.lines().map(str::to_string).collect()).unwrap_or_default() };
+    let names = |f: &str| -> Vec<String> { std::fs::read_to_string(format!("{dir}/{f}")).map(|s| s.lines().map(str::to_string).collect()).unwrap_or_default() };
+    o.prim_ids = ids_names(PRIM_IDS);
+    o.sort_ids = ids_names(SORT_IDS);
+    o.field_ids = ids_names(FIELD_IDS);
+    o.enum_ids = ids_names(ENUM_IDS);
+    o.clause_ids = crate::ids::read(ids_dir, crate::ids::CLAUSE_IDS)?;
+    o.sdo_ids = crate::ids::read(ids_dir, crate::ids::SDO_IDS)?;
+    o.method_ids = crate::ids::read(ids_dir, crate::ids::METHOD_IDS)?;
+    o.erratum_ids = crate::ids::read(ids_dir, crate::ids::ERRATUM_IDS)?;
+    o.reason_ids = crate::ids::read(ids_dir, crate::ids::REASON_IDS)?;
+    o.note_ids = crate::ids::read(ids_dir, crate::ids::NOTE_IDS)?;
+    o.grammar_ids = jsgrammar::ids::read_dir(std::path::Path::new(ids_dir))?;
+    o.table_ids = crate::ids::read(ids_dir, crate::ids::TABLE_IDS)?;
     o.choice_sites = names("choice-sites.txt").into_iter().filter(|l: &String| !l.starts_with('#') && !l.is_empty()).map(|l| l.split('\t').next().unwrap_or("").to_string()).collect();
     Ok(o)
 }

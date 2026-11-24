@@ -85,16 +85,16 @@ def check_verbatim(file: str, spec: str, gen_dir: Path) -> list[str]:
     return problems
 
 
-def run_gen(gen: str, spec_path: str, out: Path, readings: list[str], json: str | None) -> None:
-    extra = [x for f in readings for x in ("--readings", f)] + (["--json", json] if json else []) + ["--ids", str(ROOT / IDS)]
+def run_gen(gen: str, spec_path: str, out: Path, readings: list[str], json: str | None, ids_dir: Path) -> None:
+    extra = [x for f in readings for x in ("--readings", f)] + (["--json", json] if json else []) + ["--ids", str(ids_dir)]
     r = subprocess.run([gen, "--spec", spec_path, "--out", str(out)] + extra, capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit(f"jsgrammar failed:\n{r.stderr}")
 
 
-def check_prods(gen: str, spec_path: str, index_path: str, json: str | None) -> list[str]:
+def check_prods(gen: str, spec_path: str, index_path: str, json: str | None, ids_dir: Path) -> list[str]:
     """The generator's production ids are the index's `prod` lines."""
-    r = subprocess.run([gen, "--spec", spec_path, "--prods", "--ids", str(ROOT / IDS)] + (["--json", json] if json else []), capture_output=True, text=True)
+    r = subprocess.run([gen, "--spec", spec_path, "--prods", "--ids", str(ids_dir)] + (["--json", json] if json else []), capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit(f"jsgrammar --prods failed:\n{r.stderr}")
     got = r.stdout.split("\n")[:-1]
@@ -105,23 +105,23 @@ def check_prods(gen: str, spec_path: str, index_path: str, json: str | None) -> 
     return [f"{index_path}: the generator's production ids differ from the index's at line {diff} of {len(want)}: {got[diff:diff + 1]} vs {want[diff:diff + 1]}"]
 
 
-def check_regen(gen: str, spec_path: str, index_path: str, readings: list[str], json: str | None) -> int:
+def check_regen(gen: str, spec_path: str, index_path: str, readings: list[str], json: str | None, ids_dir: Path) -> int:
     problems = []
     with tempfile.TemporaryDirectory() as tmp:
-        run_gen(gen, spec_path, Path(tmp), readings, json)
+        run_gen(gen, spec_path, Path(tmp), readings, json, ids_dir)
         new = {p.name: p.read_text() for p in Path(tmp).glob("*.lean") if p.name != "Keys.lean"}
         tables = {t: (Path(tmp) / t).read_text() for t in ID_TABLES}
     old = {p.name: p.read_text() for p in (ROOT / GEN).glob("*.lean")}
     for name in sorted(set(new) | set(old)):
         if new.get(name) != old.get(name):
-            problems.append(f"{GEN / name}: not what `scripts/jsgrammar.py --write` writes")
+            problems.append(f"{GEN / name}: not what `scripts/generate.py` writes")
     for t, text in tables.items():
-        if not (ROOT / IDS / t).exists() or (ROOT / IDS / t).read_text() != text:
-            problems.append(f"{IDS / t}: not what `scripts/jsgrammar.py --write` writes (the kept ids)")
+        if not (ids_dir / t).exists() or (ids_dir / t).read_text() != text:
+            problems.append(f"{ids_dir / t}: not what `scripts/generate.py` writes (the kept ids)")
     problems += check_verbatim("spec.html", Path(spec_path).read_text(), ROOT / GEN)
     if json:
         problems += check_verbatim("json.emu", Path(json).read_text(), ROOT / GEN)
-    problems += check_prods(gen, spec_path, index_path, json)
+    problems += check_prods(gen, spec_path, index_path, json, ids_dir)
     for p in problems:
         print(p)
     print(f"{len(new)} generated files, {len(tables)} id tables: " + ("OK" if not problems else f"{len(problems)} problem(s)"))
@@ -135,22 +135,38 @@ def main() -> int:
     mode.add_argument("--check-regen", action="store_true")
     ap.add_argument("--gen", help="the generator, target/release/jsgrammar")
     ap.add_argument("--spec", help="a spec.html, or its directory (default: the text, scripts/spec_text.py)")
+    ap.add_argument("--ids", type=Path, help="the *-ids.txt directory (default: spec_text.ids_dir())")
     ap.add_argument("--index", help="tests/parser/grammar_index.txt")
     ap.add_argument("--readings", action="append", default=[], help="an overlay file with readings of rules (spec/formal/*.emu); repeated, in order")
     ap.add_argument("--json", help="spec/formal/json.emu: the JSON text grammar")
     a = ap.parse_args()
     spec = spec_text.resolve(a.spec)
+    ids_dir = (a.ids or spec_text.ids_dir()).resolve()
     if not os.path.exists(spec):
         sys.exit(f"{spec}: no spec.html (is external/ecma262 checked out at its pin? git submodule update --init external/ecma262)")
     if a.write:
-        ws = str(ROOT)
-        run_gen(a.gen, spec, Path(ws) / GEN, a.readings, a.json)
-        (Path(ws) / GEN / "Keys.lean").unlink(missing_ok=True)  # the key blocks' resolutions: not kept here
-        for t in ID_TABLES:
-            (Path(ws) / GEN / t).replace(Path(ws) / IDS / t)
+        ws = Path(ROOT)
+        gen_dir = ws / GEN
+        gen_dir.mkdir(parents=True, exist_ok=True)
+        ids_dir.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=gen_dir.parent) as tmp:
+            run_gen(a.gen, spec, Path(tmp), a.readings, a.json, ids_dir)
+            (Path(tmp) / "Keys.lean").unlink(missing_ok=True)
+            want = {p.name for p in Path(tmp).glob("*.lean")}
+            for p in gen_dir.glob("*.lean"):
+                if p.name not in want:
+                    p.unlink()
+            for name in sorted(want):
+                src_p, dst_p = Path(tmp) / name, gen_dir / name
+                if not dst_p.exists() or dst_p.read_bytes() != src_p.read_bytes():
+                    src_p.replace(dst_p)
+            for t in ID_TABLES:
+                src_p, dst_p = Path(tmp) / t, ids_dir / t
+                if not dst_p.exists() or dst_p.read_bytes() != src_p.read_bytes():
+                    src_p.replace(dst_p)
         print(f"wrote {GEN}")
         return 0
-    return check_regen(a.gen, spec, a.index, a.readings, a.json)
+    return check_regen(a.gen, spec, a.index, a.readings, a.json, ids_dir)
 
 
 if __name__ == "__main__":

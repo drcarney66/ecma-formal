@@ -1233,7 +1233,8 @@ def cmd_ratchet(args) -> int:
 
 def phrase_names() -> list[str]:
     """The phrases by id (spec/formal/phrase-ids.txt, `<category> <name>` per id), for `phrase:N` sites."""
-    path = ROOT / "spec/formal/phrase-ids.txt"
+    import spec_text
+    path = spec_text.ids_dir() / "phrase-ids.txt"
     return path.read_text().splitlines() if path.exists() else []
 
 

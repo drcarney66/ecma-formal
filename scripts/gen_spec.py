@@ -42,6 +42,7 @@ def kept(name: str) -> bool:
 
 
 OVERLAY: list[str] = []
+IDS_DIR: Path = ROOT / "spec/formal"
 
 # The frozen phrase, primitive, sort, field and enum ids: the generator numbers by these files and appends new names.
 # The kept clause, SDO, concrete-method, erratum, residue reason and residue kind ids (crates/spec-gen ids.rs): a
@@ -49,11 +50,11 @@ OVERLAY: list[str] = []
 # The kept table ids likewise (`table-ids.txt`, by the table's Lean name). The kept production, nonterminal and
 # parameter ids (prod-, nt-, param-ids.txt) are crates/jsgrammar's, which scripts/jsgrammar.py --write writes; spec-gen
 # reads them.
-INDEXES = [Path(f"spec/formal/{t}-ids.txt") for t in ("phrase", "prim", "sort", "field", "enum", "clause", "sdo", "method", "erratum", "reason", "note", "table")]
+INDEXES = [f"{t}-ids.txt" for t in ("phrase", "prim", "sort", "field", "enum", "clause", "sdo", "method", "erratum", "reason", "note", "table")]
 
 
 def generate(gen: str, spec: str, out: Path) -> None:
-    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, "emit", f"--out={out}"], capture_output=True, text=True)
+    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "emit", f"--out={out}"], capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit(f"spec-gen emit failed:\n{r.stderr}")
 
@@ -66,10 +67,11 @@ def check_regen(gen: str, spec: str) -> list[str]:
         if new != old:
             return [f"the data's files differ from the generator's: {sorted(set(new) ^ set(old))[:5]}"]
         bad = [n for n in new if not filecmp.cmp(Path(tmp) / n, ROOT / DATA / n, shallow=False)]
-        problems = [f"{DATA}/{n} is not the generator's output (scripts/gen_spec.py --write)" for n in bad[:5]]
-        for f in INDEXES:
-            if not (ROOT / f).exists() or (Path(tmp) / f.name).read_text() != (ROOT / f).read_text():
-                problems.append(f"{f} is not the generator's numbering of the data's names (scripts/gen_spec.py --write writes it)")
+        problems = [f"{DATA}/{n} is not the generator's output (scripts/generate.py)" for n in bad[:5]]
+        for name in INDEXES:
+            f = IDS_DIR / name
+            if not f.exists() or (Path(tmp) / name).read_text() != f.read_text():
+                problems.append(f"{f} is not the generator's numbering of the data's names (scripts/generate.py writes it)")
         return problems
 
 
@@ -119,11 +121,11 @@ spec/formal/permanent-sentences.txt as generated (`spec-gen residue -check-perma
     if not ov:
         return []
     f = Path(ov[0]) / "residue.txt"
-    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, "residue", "-check", str(f)])
+    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "residue", "-check", str(f)])
     out = [] if r.returncode == 0 else [f"new residue (above): add it to {f.name} only with the coordinator's approval"]
     p = Path(ov[0]) / "permanent-sentences.txt"
-    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, "residue", "-check-permanent", str(p)])
-    return out + ([] if r.returncode == 0 else [f"{p.name} differs (above): regenerate it with `spec-gen residue -permanent`; an added line needs the coordinator's approval"])
+    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "residue", "-check-permanent", str(p)])
+    return out + ([] if r.returncode == 0 else [f"{p.name} differs (above): regenerate it with `scripts/generate.py`"])
 
 
 def check_asserts(gen: str, spec: str) -> list[str]:
@@ -133,11 +135,11 @@ spec/formal/assert-sites.txt as generated (`spec-gen asserts -check-all`)."""
     if not ov:
         return []
     f = Path(ov[0]) / "asserts-open.txt"
-    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, "asserts", "-check", str(f)])
+    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "asserts", "-check", str(f)])
     out = [] if r.returncode == 0 else [f"new open Assert (above): add it to {f.name} only with the coordinator's approval"]
     p = Path(ov[0]) / "assert-sites.txt"
-    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, "asserts", "-check-all", str(p)])
-    return out + ([] if r.returncode == 0 else [f"{p.name} differs (above): regenerate it with `spec-gen asserts -all`"])
+    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "asserts", "-check-all", str(p)])
+    return out + ([] if r.returncode == 0 else [f"{p.name} differs (above): regenerate it with `scripts/generate.py`"])
 
 
 def check_errata(gen: str, spec: str) -> list[str]:
@@ -147,8 +149,8 @@ a literal one stops, its spec-issue reports."""
     if not ov:
         return []
     f = Path(ov[0]) / "errata.txt"
-    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, "errata", "-check", str(f)])
-    return [] if r.returncode == 0 else [f"{f.name} differs (above): regenerate it with `spec-gen errata -lines`; an added line needs the user's approval"]
+    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "errata", "-check", str(f)])
+    return [] if r.returncode == 0 else [f"{f.name} differs (above): regenerate it with `scripts/generate.py`"]
 
 
 def check_types(gen: str, spec: str) -> list[str]:
@@ -159,31 +161,34 @@ algorithm against ESMeta's ignore list (`spec-gen types -esmeta`), printed when 
     if not ov:
         return []
     f = Path(ov[0]) / "type-findings.txt"
-    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, "types", "-check", str(f)])
+    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "types", "-check", str(f)])
     out = [] if r.returncode == 0 else [f"new type finding (above): add it to {f.name} only with the coordinator's approval"]
     dyn = Path(ov[0]) / "type-dyn-sites.txt"
-    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, "types", "-check-dyn", str(dyn)])
+    r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "types", "-check-dyn", str(dyn)])
     if r.returncode != 0:
-        out.append(f"new dyn site (above): add it to {dyn.name} only with the coordinator's approval")
+        out.append(f"new dyn site (above): regenerate {dyn.name} with `scripts/generate.py`")
     if os.path.exists(os.path.join(os.path.dirname(spec), "esmeta-ignore.json")):
         print("type findings by algorithm against ESMeta's ignore list:", flush=True)
-        r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, "types", "-esmeta"])
+        r = subprocess.run([gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "types", "-esmeta"])
         if r.returncode != 0:
             out.append("`spec-gen types -esmeta` failed (above)")
     return out
 
 
 def main():
+    global IDS_DIR
     ap = argparse.ArgumentParser()
     ap.add_argument("--gen", required=True, help="the generator, spec-gen")
     ap.add_argument("--spec", help="a spec.html or its directory (default: the text, scripts/spec_text.py)")
     ap.add_argument("--overlay", help="the overlay directory, spec/formal")
+    ap.add_argument("--ids", type=Path, help="the *-ids.txt directory (default: spec_text.ids_dir())")
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--roundtrip", action="store_true")
     mode.add_argument("--report", action="store_true")
     mode.add_argument("--write", action="store_true")
     a, rest = ap.parse_known_args()
     spec = spec_text.resolve(a.spec)
+    IDS_DIR = (a.ids or spec_text.ids_dir()).resolve()
     if not os.path.exists(spec):
         sys.exit(f"{spec}: no spec.html (is external/ecma262 checked out at its pin? git submodule update --init external/ecma262)")
     if a.overlay:
@@ -192,25 +197,32 @@ def main():
         ws = str(ROOT)
         OVERLAY[:] = [f"--overlay={Path(ws) / 'spec/formal'}"]
         data = Path(ws) / DATA
-        # into a scratch directory first: a failed emission leaves the data as it was
+        data.mkdir(parents=True, exist_ok=True)
+        IDS_DIR.mkdir(parents=True, exist_ok=True)
+        # into a scratch directory first: a failed emission leaves the data as it was; unchanged files keep mtime
         with tempfile.TemporaryDirectory(dir=data.parent) as tmp:
             generate(a.gen, spec, Path(tmp))
+            want = {p.name for p in Path(tmp).glob("*.lean") if kept(p.name)}
             for p in data.glob("*.lean"):
-                p.unlink()
-            for p in Path(tmp).glob("*.lean"):
-                if kept(p.name):
-                    p.replace(data / p.name)
-            for f in INDEXES:
-                (Path(tmp) / f.name).replace(Path(ws) / f)
+                if p.name not in want:
+                    p.unlink()
+            for name in sorted(want):
+                src_p, dst_p = Path(tmp) / name, data / name
+                if not dst_p.exists() or dst_p.read_bytes() != src_p.read_bytes():
+                    src_p.replace(dst_p)
+            for name in INDEXES:
+                src_p, dst_p = Path(tmp) / name, IDS_DIR / name
+                if not dst_p.exists() or dst_p.read_bytes() != src_p.read_bytes():
+                    src_p.replace(dst_p)
         print(f"wrote {DATA}")
         return 0
     if a.report:
         for cmd in ("report", "residue", "early", "memmodel", "types"):
-            r = subprocess.run([a.gen, f"--spec={spec}", *OVERLAY, cmd, *rest])
+            r = subprocess.run([a.gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", cmd, *rest])
             if r.returncode != 0:
                 return r.returncode
         return 0
-    r = subprocess.run([a.gen, f"--spec={spec}", *OVERLAY, "roundtrip"])
+    r = subprocess.run([a.gen, f"--spec={spec}", *OVERLAY, f"--ids={IDS_DIR}", "roundtrip"])
     problems = [] if r.returncode == 0 else ["the parser's round trip failed (above)"]
     problems += check_regen(a.gen, spec)
     problems += check_residue(a.gen, spec)

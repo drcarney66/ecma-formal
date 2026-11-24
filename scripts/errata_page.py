@@ -49,11 +49,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import law_quotes  # noqa: E402
+import spec_text  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 READINGS = ROOT / "spec/formal/readings.emu"
 ERRATA = ROOT / "spec/formal/errata.txt"
-IDS = ROOT / "spec/formal/erratum-ids.txt"
+IDS = spec_text.ids_dir() / "erratum-ids.txt"
 DECLS = ROOT / "lean/Ecma/Gen/Decls.lean"
 DATA = ROOT / "site/errata.json"
 ISSUES = ROOT / "docs/spec-issues/README.md"

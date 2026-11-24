@@ -928,7 +928,7 @@ class Check:
         (`rule=`) has that rule's template, and its pattern must be one of the template's spellings (a choice
         `⟨a | b⟩` made, the holes' kinds and the spaces left out)."""
         ov = self.ov
-        ids = [tuple(l.split(" ", 1)) for l in (OVERLAY / "phrase-ids.txt").read_text().splitlines()]
+        ids = [tuple(l.split(" ", 1)) for l in (spec_text.ids_dir() / "phrase-ids.txt").read_text().splitlines()]
         cats = {"step": ("Step",), "expression": ("P",), "condition": ("CA",), "predicate": ("PRED",), "type": ("T", "HT", "HT1")}
         unique(self, ov.by("emu-phrase"), lambda e: e.attrs["id"], "emu-phrase")
         els = unique(self, [e for e in ov.by("emu-phrase") if e.attrs.get("kind") in cats],
@@ -1168,7 +1168,7 @@ class Check:
         right-hand side and presences) is one a line of the key stands for, and each line of the key has an id.
         A row the overlay's emu-orphan-row names has none."""
         prods: dict[int, tuple[str, tuple]] = {}
-        for l in (OVERLAY / "prod-ids.txt").read_text().splitlines():
+        for l in (spec_text.ids_dir() / "prod-ids.txt").read_text().splitlines():
             f = l.split("\t")
             if l.startswith("#") or len(f) < 2 or "retired" in f[2:]:
                 continue

@@ -59,12 +59,46 @@ async function fetchBytes(url) {
   return new Uint8Array(await r.arrayBuffer());
 }
 
+// Compiled WebAssembly.Modules keyed by URL href, so lazy clients share and reuse compilations.
+const compiledModules = new Map();
+
+async function compileWasmURL(url) {
+  const key = url.href;
+  if (!compiledModules.has(key)) {
+    const p = (async () => {
+      if (url.protocol !== "file:" && typeof WebAssembly.compileStreaming === "function") {
+        try {
+          const resp = await fetch(url);
+          if (!resp.ok) throw new Error(`${url}: ${resp.status} ${resp.statusText}`);
+          const ct = resp.headers.get("content-type") ?? "";
+          if (ct.includes("application/wasm")) return await WebAssembly.compileStreaming(resp);
+          return await WebAssembly.compile(new Uint8Array(await resp.arrayBuffer()));
+        } catch (e) {
+          compiledModules.delete(key);
+          throw e;
+        }
+      }
+      try {
+        return await WebAssembly.compile(await fetchBytes(url));
+      } catch (e) {
+        compiledModules.delete(key);
+        throw e;
+      }
+    })();
+    compiledModules.set(key, p);
+  }
+  return compiledModules.get(key);
+}
+
 export class DbgClient {
-  constructor(module, glue, server = null, bin = null) {
+  constructor(module, glue, server = null, bin = null, loader = null) {
     this.module = module;
     this.glue = glue;
     this.server = server;
     this.bin = bin;
+    this.loader = loader;
+    this.loading = false;
+    this.onLoadState = null;
     this.transport = server ? "native-http" : bin ? "native-process" : "worker";
   }
 
@@ -85,15 +119,49 @@ export class DbgClient {
   // Compiles the engine once: `wasm` is NAME.wasm's URL (or path, in node) or its
   // bytes; `glue` is NAME.mjs's, by default next to the wasm.
   static async load(wasm, { glue } = {}) {
-    let bytes = wasm;
-    let wasmURL = null;
     if (typeof wasm === "string" || wasm instanceof URL) {
-      wasmURL = await toURL(wasm);
-      bytes = await fetchBytes(wasmURL);
+      const wasmURL = await toURL(wasm);
+      const glueURL = glue ? await toURL(glue) : new URL(wasmURL.href.replace(/\.wasm$/, ".mjs"));
+      return new DbgClient(await compileWasmURL(wasmURL), glueURL.href);
     }
-    if (!glue && !wasmURL) throw new Error("DbgClient.load: bytes need {glue}");
-    const glueURL = glue ? await toURL(glue) : new URL(wasmURL.href.replace(/\.wasm$/, ".mjs"));
-    return new DbgClient(await WebAssembly.compile(bytes), glueURL.href);
+    if (!glue) throw new Error("DbgClient.load: bytes need {glue}");
+    const glueURL = await toURL(glue);
+    return new DbgClient(await WebAssembly.compile(wasm), glueURL.href);
+  }
+
+  // Lazy Worker client: fetches and compiles `wasm` only on the first `session()` call
+  // (or `ensureLoaded()`), reusing `compiledModules` across restarts and build switches.
+  static lazy(wasm, { glue, compile = compileWasmURL } = {}) {
+    let promise = null;
+    const client = new DbgClient(null, null, null, null, async () => {
+      if (client.module) return { module: client.module, glue: client.glue };
+      if (!promise) {
+        client.loading = true;
+        client.onLoadState?.("loading");
+        promise = (async () => {
+          const wasmURL = await toURL(wasm);
+          const glueURL = glue ? await toURL(glue) : new URL(wasmURL.href.replace(/\.wasm$/, ".mjs"));
+          const mod = await compile(wasmURL);
+          client.module = mod;
+          client.glue = glueURL.href;
+          return { module: mod, glue: glueURL.href };
+        })().finally(() => {
+          client.loading = false;
+          client.onLoadState?.("ready");
+        });
+        promise.catch(() => {
+          promise = null;
+        });
+      }
+      return promise;
+    });
+    return client;
+  }
+
+  async ensureLoaded() {
+    if (this.module) return { module: this.module, glue: this.glue };
+    if (!this.loader) throw new Error("DbgClient: no module or loader");
+    return this.loader();
   }
 
   // A session on `program` ({name, source}, or null), in a new Worker or engine.
@@ -179,17 +247,29 @@ export class DbgSession extends Session {
     const sab = newRing();
     this.ring = new RingWriter(sab);
     this.encoder = new TextEncoder();
-    const url = new URL("./engine-worker.mjs", import.meta.url);
-    if (wt) {
-      this.worker = new wt.Worker(url, { resourceLimits: { stackSizeMb: stackMb } });
-      this.worker.on("message", (m) => this.fromWorker(m));
-      this.worker.on("error", (e) => this.fromWorker({ trap: `${e.name}: ${e.message}` }));
+    this.worker = null;
+    const startWorker = (module, glue) => {
+      if (this.ended) return;
+      const url = new URL("./engine-worker.mjs", import.meta.url);
+      if (wt) {
+        this.worker = new wt.Worker(url, { resourceLimits: { stackSizeMb: stackMb } });
+        this.worker.on("message", (m) => this.fromWorker(m));
+        this.worker.on("error", (e) => this.fromWorker({ trap: `${e.name}: ${e.message}` }));
+      } else {
+        this.worker = new Worker(url, { type: "module" });
+        this.worker.onmessage = (e) => this.fromWorker(e.data);
+        this.worker.onerror = (e) => this.fromWorker({ trap: `Error: ${e.message}` });
+      }
+      this.worker.postMessage({ type: "start", glue, module, sab, program, argv });
+    };
+    if (client.module) {
+      startWorker(client.module, client.glue);
     } else {
-      this.worker = new Worker(url, { type: "module" });
-      this.worker.onmessage = (e) => this.fromWorker(e.data);
-      this.worker.onerror = (e) => this.fromWorker({ trap: `Error: ${e.message}` });
+      client.ensureLoaded().then(
+        ({ module, glue }) => startWorker(module, glue),
+        (e) => this.fromWorker({ trap: e instanceof Error ? `${e.name}: ${e.message}` : String(e) }),
+      );
     }
-    this.worker.postMessage({ type: "start", glue: client.glue, module: client.module, sab, program, argv });
   }
 
   fromWorker(m) {
@@ -220,7 +300,7 @@ export class DbgSession extends Session {
   end() {
     if (this.ended) return;
     this.settle();
-    this.worker.terminate();
+    if (this.worker) this.worker.terminate();
   }
 }
 

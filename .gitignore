@@ -7,3 +7,13 @@ __pycache__/
 .DS_Store
 /todo/
 /.claude/
+/lean/Unicode/Gen/
+/lean/Ecma/Unicode/Gen/
+/lean/Ecma/Grammar/Gen/
+/lean/Ecma/Gen/
+/spec/formal/assert-sites.txt
+/spec/formal/permanent-sentences.txt
+/spec/formal/errata.txt
+/spec/formal/type-dyn-sites.txt
+/tests/parser/grammar_index.txt
+

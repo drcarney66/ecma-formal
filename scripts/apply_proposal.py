@@ -996,9 +996,33 @@ def copy_imports(base_dir, out_dir, out):
     return copied
 
 
+def unwrap_clause_markup(prop):
+    """Unwrap `<ins ...>...</ins>` / `<del ...>...</del>` tags that wrap whole `<emu-clause>` or `<emu-annex>` blocks."""
+    def sub_ins(m):
+        inner = m.group(1)
+        if re.match(r"^\s*<emu-(?:clause|annex)\b", inner) and re.search(r"</emu-(?:clause|annex)>\s*$", inner):
+            return inner
+        return m.group(0)
+
+    def sub_del(m):
+        inner = m.group(1)
+        cm = re.match(r'^\s*<emu-clause\b[^>]*\bid="([^"]+)"[^>]*>.*</emu-clause>\s*$', inner, re.S)
+        if cm:
+            return f'<emu-clause id="del-{cm.group(1)}"></emu-clause>'
+        return m.group(0)
+
+    prev = None
+    while prev != prop:
+        prev = prop
+        prop = re.sub(r"<ins\b[^>]*>(.*?)</ins>", sub_ins, prop, flags=re.S)
+        prop = re.sub(r"<del\b[^>]*>(.*?)</del>", sub_del, prop, flags=re.S)
+    return prop
+
+
 def merge(base, prop, resolutions):
     """The result of applying `prop` (a spec.emu's text) to `base` (a spec.html's text), and the report: its log,
     refusals, warnings and checks. `resolutions` is `read_resolutions`'s list."""
+    prop = unwrap_clause_markup(prop)
     m = Merger(base, prop, resolutions).run()
     out = m.apply_renames(m.output())
     rep = {"log": m.log, "refusals": m.refusals, "warnings": warnings(m, base, out)}

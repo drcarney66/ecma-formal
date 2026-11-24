@@ -649,7 +649,7 @@ def check_lean_names(body: str, where: str) -> None:
 
 def ID_TABLES() -> list[Path]:
     """The kept id tables the generators read and write."""
-    return sorted((ROOT / "spec/formal").glob("*-ids.txt"))
+    return sorted(spec_text.ids_dir().glob("*-ids.txt"))
 
 
 def literal_build_kept() -> str:
@@ -704,14 +704,15 @@ def worked_example(dbgopt: dict | None) -> dict[str, str]:
     if not m:
         raise SystemExit(f"{gen}: no def «IsCallable»")
     code = m.group(0)
-    clauses = {ln.split("\t")[1]: int(ln.split("\t")[0]) for ln in (ROOT / "spec/formal/clause-ids.txt").read_text().split("\n")
+    ids_d = spec_text.ids_dir()
+    clauses = {ln.split("\t")[1]: int(ln.split("\t")[0]) for ln in (ids_d / "clause-ids.txt").read_text().split("\n")
                if ln and not ln.startswith("#")}
     aid = re.search(r"id := ⟨(\d+), 0⟩", code).group(1)
     if int(aid) != clauses[cid]:
         raise SystemExit(f"IsCallable's id {aid} is not {cid}'s {clauses[cid]} in clause-ids.txt")
 
     def line(table: str, k: int) -> str:
-        rows = [ln for ln in (ROOT / f"spec/formal/{table}").read_text().split("\n") if ln and not ln.startswith("#")]
+        rows = [ln for ln in (ids_d / table).read_text().split("\n") if ln and not ln.startswith("#")]
         return rows[k]
 
     body = code[code.index("body :="):]
@@ -1106,7 +1107,7 @@ def check(out: Path, base_path: str = BASE_PATH) -> list[str]:
     for name, c in parsed.items():
         for href in c.links:
             if re.match(r"[a-z]+:", href):
-                if not href.startswith(("https://tc39.es/ecma262/", "https://github.com/tc39/")):
+                if not href.startswith(("https://tc39.es/", "https://github.com/")):
                     errs.append(f"{name}: an external link {href}")
                 continue
             target, frag = resolve(name, href, base_path)

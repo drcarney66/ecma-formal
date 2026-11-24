@@ -53,10 +53,12 @@ async function isolation() {
   throw new Error("the page is not cross-origin isolated (COOP and COEP, or coi-serviceworker.js)");
 }
 
-async function client(build) {
+async function client(build, onLoadState) {
   if (worker) {
     await isolation();
-    return DbgClient.load(new URL(build.wasm, root));
+    const c = DbgClient.lazy(new URL(build.wasm, root));
+    c.onLoadState = onLoadState ?? null;
+    return c;
   }
   return DbgClient.connect(root);
 }
@@ -192,9 +194,8 @@ export function statusLine(model) {
   }
 }
 
-// The selector: one entry per build, the page's selected; picking another reloads the page under it, with
-// the same example.
-function selector(builds, build) {
+// The selector: one entry per build, the page's selected; picking another swaps the build and lazy client in place.
+function selector(builds, build, onSelect) {
   const sel = $("build");
   for (const b of builds) {
     const o = el("option", "", b.label);
@@ -206,7 +207,9 @@ function selector(builds, build) {
   sel.disabled = builds.length < 2;
   $("build-note").textContent = build.description;
   sel.onchange = () => {
-    location.href = pageURL(location.href, { build: sel.value }, builds);
+    const next = chooseBuild(builds, sel.value);
+    if (onSelect) onSelect(next);
+    else location.href = pageURL(location.href, { build: sel.value }, builds);
   };
 }
 
@@ -244,22 +247,23 @@ function unsupported(why, example) {
 async function main() {
   const status = $("status");
   const builds = await json("builds.json").then((j) => (j ? readBuilds(j) : FALLBACK)).catch(() => FALLBACK);
-  const build = chooseBuild(builds, params.get("build"));
-  selector(builds, build);
+  let build = chooseBuild(builds, params.get("build"));
   const [b, gallery] = await Promise.all([bundle(), json("examples.json")]);
   const asked = params.get("example");
   if (worker) {
     const lacks = missing();
     if (lacks.length) {
+      selector(builds, build);
       unsupported(`This browser lacks ${lacks.join(", ")}.`, asked && findExample(gallery, asked));
       if (test) throw new Error(`the browser lacks ${lacks.join(", ")}`);
       return;
     }
   }
-  status.textContent = worker ? `loading the Worker build (${build.wasm})` : "connecting";
+  status.textContent = worker ? "preparing debugger" : "connecting";
   const storage = test ? new MemoryStorage() : localStorage;
-  const store = storageKey(build.id);
-  const c = await client(build);
+  let store = storageKey(build.id);
+  let update = () => {};
+  const c = await client(build, () => update());
   const saved = loadConfig(storage, store);
   const model = new Model(c, {
     program: saved.program ?? b.examples["tests/dbg"]?.find((p) => p.name === "stepping.js") ?? SAMPLE,
@@ -270,6 +274,19 @@ async function main() {
     buildArgs: build.args,
   });
   globalThis.dbg = { model, build };
+  selector(builds, build, async (next) => {
+    if (next.id === build.id) return;
+    if (model.session) model.stop();
+    build = next;
+    store = storageKey(build.id);
+    globalThis.dbg.build = build;
+    $("build-note").textContent = build.description;
+    history.replaceState(null, "", pageURL(location.href, { build: build.id }, builds));
+    model.listings.clear();
+    model.config.buildArgs = build.args;
+    model.client = await client(build, () => update());
+    update();
+  });
   // An example's setup: its breakpoints, line breakpoints and filters, stop on entry cleared.
   const setupOf = (e) => () => {
     model.setBreakpoints(e.breakpoints ?? []);
@@ -309,12 +326,13 @@ async function main() {
     model.config.stopOnEntry = entry.checked;
     model.emit("config");
   };
-  const update = () => {
+  update = () => {
     for (const [name, c] of Object.entries(ctl)) $(`btn-${name}`).disabled = !c.on();
     $("btn-start").textContent = model.session ? "↻ restart" : "▶ start";
     $("btn-continue").textContent = model.state === "running" ? "⏸ pause (F8)" : "▶ continue (F8)";
     document.body.dataset.state = model.state;
-    status.textContent = `${worker ? build.label : "native"} · ${statusLine(model)}`;
+    const loading = worker && model.client?.loading ? `loading ${build.wasm} · ` : "";
+    status.textContent = `${worker ? build.label : "native"} · ${loading}${statusLine(model)}`;
   };
   model.on("change", update);
   update();

@@ -135,11 +135,12 @@ def ids_consistent() -> list[str]:
     """Every kept number names in lean/Ecma/Gen/Decls.lean what its table says, and every name there has a number:
     regenerating from the checked-in inputs keeps every number (the generator reads these tables)."""
     decls = (ROOT / "lean/Ecma/Gen/Decls.lean").read_text()
+    ids_dir = spec_text.ids_dir()
     bad = []
     for kind, arr in KEPT.items():
-        path = ROOT / f"spec/formal/{kind}-ids.txt"
+        path = ids_dir / f"{kind}-ids.txt"
         if not path.exists():
-            bad.append(f"{path.relative_to(ROOT)}: missing (scripts/gen_spec.py --write writes it)")
+            bad.append(f"{path.relative_to(ROOT)}: missing (scripts/generate.py writes it)")
             continue
         m = re.search(rf"def {arr} : Array String :=\s*(.*?)\n\n", decls, re.S)
         names = [re.sub(r"\\(.)", lambda e: {"n": "\n", "t": "\t"}.get(e.group(1), e.group(1)), x) for x in re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(1))] if m else []
@@ -166,12 +167,13 @@ def grammar_ids_consistent() -> list[str]:
     its last), tests/parser/grammar_index.txt's `prod` lines, and `Gen.prodIds` (the index's ids in its order); and
     table-ids.txt numbers the tables of lean/Ecma/Gen/Tables_N.lean in their order."""
     bad = []
+    ids_dir = spec_text.ids_dir()
     sym = (ROOT / "lean/Ecma/Grammar/Gen/Symbols.lean").read_text()
     decls = (ROOT / "lean/Ecma/Gen/Decls.lean").read_text()
     for kind, ind, arr in (("nt", "NT", "nts"), ("param", "Param", "params")):
-        path = ROOT / f"spec/formal/{kind}-ids.txt"
+        path = ids_dir / f"{kind}-ids.txt"
         if not path.exists():
-            bad.append(f"{path.relative_to(ROOT)}: missing (scripts/jsgrammar.py --write writes it)")
+            bad.append(f"{path.relative_to(ROOT)}: missing (scripts/generate.py writes it)")
             continue
         rows = [l.split("\t") for l in path.read_text().splitlines() if l and not l.startswith("#")]
         m = re.search(rf"inductive {ind} where\n(.*?)\n  deriving", sym, re.S)
@@ -184,7 +186,7 @@ def grammar_ids_consistent() -> list[str]:
         names = lean_names(decls, arr)
         if names != [r[1] for r in rows][:len(names)]:
             bad.append(f"{path.relative_to(ROOT)}: Ecma.Gen.{arr} is not its names in its order")
-    path = ROOT / "spec/formal/prod-ids.txt"
+    path = ids_dir / "prod-ids.txt"
     if path.exists():
         table = dict(kept_table(path))
         names = lean_names(decls, "prods")
@@ -197,8 +199,8 @@ def grammar_ids_consistent() -> list[str]:
         if runs != [int(i) for i, _ in index]:
             bad.append("lean/Ecma/Grammar/Gen/Index.lean: Gen.prodIds is not tests/parser/grammar_index.txt's ids in its order")
     else:
-        bad.append(f"{path.relative_to(ROOT)}: missing (scripts/jsgrammar.py --write writes it)")
-    path = ROOT / "spec/formal/table-ids.txt"
+        bad.append(f"{path.relative_to(ROOT)}: missing (scripts/generate.py writes it)")
+    path = ids_dir / "table-ids.txt"
     if path.exists():
         mods = sorted((ROOT / "lean/Ecma/Gen").glob("Tables_*.lean"), key=lambda f: int(f.stem.split("_")[1]))
         order = [x for f in mods for x in re.findall(r"«([^»]*)»", re.search(r"def tables : List Table := \[(.*?)\]\n", f.read_text(), re.S).group(1))]
@@ -206,7 +208,7 @@ def grammar_ids_consistent() -> list[str]:
         if [i for i, _ in table] != list(range(len(table))) or [n for _, n in table] != order:
             bad.append(f"{path.relative_to(ROOT)}: Ecma.Gen.tables (Tables_N.lean, in order) is not its names in id order")
     else:
-        bad.append(f"{path.relative_to(ROOT)}: missing (scripts/gen_spec.py --write writes it)")
+        bad.append(f"{path.relative_to(ROOT)}: missing (scripts/generate.py writes it)")
     return bad[:20]
 
 
@@ -216,6 +218,7 @@ def ids_regenerated() -> tuple[list[str], str]:
     are, and `spec-gen roundtrip` passes. The problems, and what was checked."""
     gen = ROOT / "target/release/spec-gen"
     jsg = ROOT / "target/release/jsgrammar"
+    ids_dir = spec_text.ids_dir()
     jsrc = list((ROOT / "crates/jsgrammar/src").rglob("*.rs"))
     # spec-gen links the jsgrammar crate; each binary is current if it is newer than the sources it is built from
     srcs = {gen: list((ROOT / "crates/spec-gen/src").rglob("*.rs")) + jsrc, jsg: jsrc}
@@ -223,15 +226,15 @@ def ids_regenerated() -> tuple[list[str], str]:
         return [], "skipped: target/release/spec-gen or jsgrammar is missing or older than its sources (cargo build --release)"
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
-        r = subprocess.run([str(gen), f"--spec={spec_text.spec_html()}", f"--overlay={ROOT / 'spec/formal'}", "emit", f"--out={tmp}"],
+        ov = ROOT / "spec/formal"
+        r = subprocess.run([str(jsg), "--spec", str(spec_text.spec_html()), "--out", str(Path(tmp) / "jsg"), "--readings", str(ov / "readings.emu"),
+                            "--readings", str(ov / "syntax.emu"), "--json", str(ov / "json.emu"), "--ids", str(ids_dir)], capture_output=True, text=True)
+        if r.returncode != 0:
+            return [f"jsgrammar failed: {r.stderr.strip()[-300:]}"], "regenerated"
+        r = subprocess.run([str(gen), f"--spec={spec_text.spec_html()}", f"--overlay={ov}", f"--ids={ids_dir}", "emit", f"--out={tmp}"],
                            capture_output=True, text=True)
         if r.returncode != 0:
             return [f"spec-gen emit failed: {r.stderr.strip()[-300:]}"], "regenerated"
-        ov = ROOT / "spec/formal"
-        r = subprocess.run([str(jsg), "--spec", str(spec_text.spec_html()), "--out", str(Path(tmp) / "jsg"), "--readings", str(ov / "readings.emu"),
-                            "--readings", str(ov / "syntax.emu"), "--json", str(ov / "json.emu"), "--ids", str(ov)], capture_output=True, text=True)
-        if r.returncode != 0:
-            return [f"jsgrammar failed: {r.stderr.strip()[-300:]}"], "regenerated"
         for t in ("prod", "nt", "param"):
             (Path(tmp) / "jsg" / f"{t}-ids.txt").replace(Path(tmp) / f"{t}-ids.txt")
         bad = []
@@ -243,18 +246,18 @@ def ids_regenerated() -> tuple[list[str], str]:
             bad += [f"{d.relative_to(ROOT)}/{n}: not what regenerating writes" for n in sorted(new ^ old)]
             bad += [f"{d.relative_to(ROOT)}/{n}: not what regenerating writes" for n in sorted(new & old)
                     if (out / n).read_bytes() != (d / n).read_bytes()]
-        r = subprocess.run([str(gen), f"--spec={spec_text.spec_html()}", f"--overlay={ROOT / 'spec/formal'}", "roundtrip"],
+        r = subprocess.run([str(gen), f"--spec={spec_text.spec_html()}", f"--overlay={ov}", f"--ids={ids_dir}", "roundtrip"],
                            capture_output=True, text=True)
         if r.returncode != 0:
             bad.append("spec-gen roundtrip failed: " + " | ".join((r.stderr.strip() or r.stdout.strip()).splitlines()[-3:]))
         for kind in [*KEPT, "table", "prod", "nt", "param"]:
-            path = ROOT / f"spec/formal/{kind}-ids.txt"
+            path = ids_dir / f"{kind}-ids.txt"
             new = dict(kept_table(Path(tmp) / path.name))
             for i, n in kept_table(path) if path.exists() else []:
                 if new.get(i) != n:
                     bad.append(f"{path.relative_to(ROOT)}: regenerating gives {i} to {new.get(i)}, not {n}")
             if path.exists() and (Path(tmp) / path.name).read_text() != path.read_text():
-                bad.append(f"{path.relative_to(ROOT)} is not what regenerating writes (scripts/gen_spec.py --write)")
+                bad.append(f"{path.relative_to(ROOT)} is not what regenerating writes (scripts/generate.py)")
         return bad[:20], "regenerated, and spec-gen roundtrip"
 
 

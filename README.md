@@ -75,21 +75,28 @@ emscripten and the Lean runtime as wasm64 archives. Make each profile once, and 
 
 Then run commands in a profile (`D=~/.local/state/ecma-formal/devshell`):
 
-    nix develop $D -c lake build            # ecma-dbg, ecma-run, ecma-bundle, ecma-print (.lake/build/bin)
-    nix develop $D -c cargo test            # the crates
+    nix develop $D -c python3 scripts/generate.py   # all gitignored Gen/ modules, build/ids, and formal reports
+    nix develop $D -c lake build                    # ecma-dbg, ecma-run, ecma-bundle, ecma-print (.lake/build/bin)
+    nix develop $D -c cargo test                    # the crates
     nix develop $D-wasm -c python3 scripts/build_site.py    # dist/: the site, with the debugger's Worker build
 
 After cloning: `git submodule update --init --depth 1 external/ecma262 external/test262`.
 
-## Regenerating
+## Generating
+
+Every `Gen/` directory under `lean/` and the derived formal report files are gitignored and generated in one step:
+
+    nix develop $D -c python3 scripts/generate.py
+
+Under the hood this runs (skipping unchanged outputs so `lake build` stays incremental):
 
     nix develop $D -c cargo build --release
-    nix develop $D -c python3 scripts/gen_spec.py --write --gen target/release/spec-gen
-    nix develop $D -c python3 scripts/jsgrammar.py --write --gen target/release/jsgrammar \
-        --readings spec/formal/readings.emu --readings spec/formal/syntax.emu --json spec/formal/json.emu
-    nix develop $D -c python3 scripts/unicode_data.py
     nix develop $D -c python3 scripts/unicode_properties.py
+    nix develop $D -c python3 scripts/unicode_data.py
     nix develop $D -c python3 scripts/ecma_unicode_properties.py
+    nix develop $D -c python3 scripts/jsgrammar.py --write --gen target/release/jsgrammar --ids build/ids \
+        --readings spec/formal/readings.emu --readings spec/formal/syntax.emu --json spec/formal/json.emu
+    nix develop $D -c python3 scripts/gen_spec.py --write --gen target/release/spec-gen --ids build/ids
 
 Both generators, the quick check, the laws' quotations and the site read *the text* (`scripts/spec_text.py`):
 ECMA-262 as pinned, with the proposals `spec/proposals.txt` names applied in order by `scripts/apply_proposal.py`,

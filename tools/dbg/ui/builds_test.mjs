@@ -7,6 +7,7 @@
 //   node tools/dbg/ui/builds_test.mjs [--builds tools/dbg/builds.json]
 
 import { readFileSync } from "node:fs";
+import { DbgClient } from "../client.mjs";
 import { loadConfig, MemoryStorage, saveConfig } from "./breakpoints.mjs";
 import { chooseBuild, FALLBACK, launchArgs, pageURL, parseArgs, readBuilds, storageKey } from "./builds.mjs";
 import { endMismatches, findExample, menuGroups, pauseMismatches, programOf, summary } from "./gallery.mjs";
@@ -136,6 +137,20 @@ for (const [k, b] of Object.entries(MODULES)) check(`the ${k} probe is valid was
 const broken = new Uint8Array(MODULES.MEMORY64);
 broken[broken.length - 2] = 0x08;
 check("a malformed probe is not", !WebAssembly.validate(broken), "");
+
+// Lazy WASM loading: zero compilation until ensureLoaded()/session(), then cached.
+let compiles = 0;
+const fakeMod = await WebAssembly.compile(MODULES.MEMORY64);
+const lazy = DbgClient.lazy("https://example.invalid/ecma-dbg-web-prop.wasm", {
+  compile: async () => {
+    compiles++;
+    return fakeMod;
+  },
+});
+check("lazy client compiles nothing upfront", compiles === 0 && lazy.module === null && lazy.transport === "worker", compiles);
+const loaded1 = await lazy.ensureLoaded();
+const loaded2 = await lazy.ensureLoaded();
+check("lazy client compiles once on demand and caches glue", compiles === 1 && loaded1.module === fakeMod && loaded2.module === fakeMod && loaded1.glue.endsWith("ecma-dbg-web-prop.mjs"), { compiles, glue: loaded1.glue });
 
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

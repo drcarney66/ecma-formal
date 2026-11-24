@@ -32,8 +32,16 @@ ROOT = Path(__file__).resolve().parent.parent
 BASE = ROOT / "external/ecma262"
 LIST = ROOT / "spec/proposals.txt"
 OUT = ROOT / "build/text"
+IDS_OUT = ROOT / "build/ids"
 # beside spec.html, what a consumer reads besides it: the imported tables, ESMeta's ignore list (gen_spec.py)
 BESIDE = ("esmeta-ignore.json",)
+
+
+def ids_dir() -> Path:
+    """The directory holding the active *-ids.txt tables: build/ids when generated, else spec/formal."""
+    if (IDS_OUT / "clause-ids.txt").exists():
+        return IDS_OUT
+    return ROOT / "spec/formal"
 
 
 def proposals() -> list[tuple[str, Path, Path | None]]:

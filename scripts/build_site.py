@@ -62,8 +62,20 @@ EXES = {"ecma-run": "Engine.Cli.Main", "ecma-dbg": "Debugger.Main", "ecma-bundle
 PAGE = ["client.mjs", "engine-worker.mjs", "ring.mjs", "coi-serviceworker.js", "coi-serviceworker.LICENSE"]
 # Builds named by --build whose label is known.
 BUILDS = {
-    "defer": ("Proposal: import defer", "The machine with the proposal import defer (tc39/proposal-defer-import-eval) "
-              "applied to the specification, built from its branch; every erratum at its default reading."),
+    "defer": ("Proposal (Stage 3): import defer", "tc39/proposal-defer-import-eval (with PR #97) applied to ECMA-262."),
+    "import-text": ("Proposal (Stage 3): Import Text", "tc39/proposal-import-text (Stage 4 candidate) applied to ECMA-262."),
+    "thenable-curtailment": ("Proposal (Stage 3): Thenable Curtailment", "tc39/proposal-thenable-curtailment (with PRs #22 and #26) applied to ECMA-262."),
+    "deferred-reexports": ("Proposal (Stage 2.7): Deferred Re-exports", "tc39/proposal-deferred-reexports applied to ECMA-262."),
+    "json-parseimmutable": ("Proposal (Stage 2.7): JSON.parse Options", "tc39/proposal-json-parseimmutable (PR #27: nullPrototypeObjects) applied to ECMA-262."),
+    "esm-phase-imports": ("Proposal (Stage 2.7): ESM Phase Imports", "tc39/proposal-esm-phase-imports (PR #65) applied to ECMA-262."),
+    "immutable-arraybuffer": ("Proposal (Stage 2.7): Immutable ArrayBuffers", "tc39/proposal-immutable-arraybuffer applied to ECMA-262."),
+    "error-code-property": ("Proposal (Stage 2): Error.code", "tc39/proposal-error-code-property applied to ECMA-262."),
+    "fma": ("Proposal (Stage 2): Math.fusedMultiplyAdd", "tc39/proposal-fma applied to ECMA-262."),
+    "composites": ("Proposal (Stage 2): Composites", "tc39/proposal-composites applied to ECMA-262."),
+    "cancellation": ("Proposal (Stage 1): Cancellation (AbortController)", "tc39/proposal-cancellation (PR #35 spec draft) applied to ECMA-262."),
+    "iterator-transfer": ("Proposal (Stage 0): Iterator.prototype.transfer", "jasnell/proposal-iterator-transfer applied to ECMA-262."),
+    "trim-chars": ("Proposal (Stage 0): Trim Specific Characters", "eemeli/proposal-trim-chars applied to ECMA-262."),
+    "popcount": ("Proposal (Stage 0): Math.popcount32 / ctz32", "js-choi/proposal-popcount applied to ECMA-262."),
 }
 
 
