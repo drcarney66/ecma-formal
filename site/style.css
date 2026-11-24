@@ -545,59 +545,201 @@ table.issues td:nth-child(4) code { overflow-wrap: anywhere; }
 @media (max-width: 40rem) { table.issues td:nth-child(4) { min-width: 0; } }
 table.wt td code { overflow-wrap: normal; white-space: nowrap; }
 
-/* TC39 #117 presentation deck (slides.html) */
+.theme.theme-sm { padding: 0.25rem; border-radius: 999px; width: 1.75rem; height: 1.75rem; justify-content: center; }
+
+/* TC39 #117 16:9 presentation deck (slides.html) */
+body.slides-body .foot { display: none; }
+.page.slides-page { max-width: 82rem; padding-block: 0.55rem 0.8rem; }
+.page.slides-page main { max-width: none; }
+
+.corner-theme {
+  position: fixed; top: 0.55rem; right: 0.65rem; z-index: 35;
+  display: none; align-items: center; justify-content: center;
+  width: 1.7rem; height: 1.7rem; padding: 0; border-radius: 999px;
+  background: var(--surface); color: var(--ink-2); border: 1px solid var(--rule);
+  cursor: pointer; opacity: 0.4; transition: opacity 0.15s;
+}
+.corner-theme:hover { opacity: 1; color: var(--ink); }
+html.deck-present .corner-theme { display: inline-flex; }
+
 .deck-bar {
-  position: sticky; top: 3.1rem; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem;
-  background: color-mix(in srgb, var(--paper) 94%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  border: 1px solid var(--rule); border-radius: 8px; padding: 0.45rem 0.75rem; margin: 0 0 1.5rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem 1rem;
+  padding: 0 0 0.45rem; margin: 0;
 }
 html:not(.js) .deck-bar { display: none; }
-.deck-bar-left, .deck-bar-right { display: flex; align-items: center; gap: 0.45rem; }
-.deck-pos { font-size: var(--step--1); font-variant-numeric: tabular-nums; font-weight: 600; min-width: 5.5rem; text-align: center; }
-.deck-progress { flex: 1 1 8rem; height: 0.35rem; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
-.deck-progress > span { display: block; height: 100%; width: 12.5%; background: var(--accent); transition: width 0.2s ease; }
-.deck-hint { font-size: 0.78rem; }
-.deck-hint kbd { background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 0.05rem 0.3rem; font-size: 0.75rem; }
+.deck-bar-left, .deck-bar-right { display: flex; align-items: center; gap: 0.4rem; }
+.deck-btn { padding: 0.12rem 0.6rem; font-size: 0.8rem; }
+.deck-pos { font-size: 0.8rem; font-variant-numeric: tabular-nums; color: var(--ink-2); min-width: 3.6rem; text-align: center; }
+.deck-hint { font-size: 0.76rem; }
+.deck-hint kbd { background: var(--surface); border: 1px solid var(--rule); border-radius: 3px; padding: 0.03rem 0.28rem; font-size: 0.72rem; }
 @media (max-width: 48rem) { .deck-hint { display: none; } }
 
+/* Fixed 16:9 slide stage — never below the fold */
+.deck-stage {
+  position: relative; width: min(100%, calc((100vh - 6.2rem) * 16 / 9));
+  aspect-ratio: 16 / 9; margin: 0 auto;
+  border: 1px solid var(--rule); border-radius: 12px; background: var(--paper);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.06); overflow: hidden;
+  container-type: size;
+}
+html:not(.js) .deck-stage { width: 100%; aspect-ratio: auto; overflow: visible; border: 0; box-shadow: none; }
+
 .slide {
-  border: 1px solid var(--rule); border-radius: 10px; padding: 1.5rem 1.75rem 1.75rem; margin: 0 0 1.75rem;
-  background: var(--paper); box-shadow: 0 2px 10px rgb(0 0 0 / 0.03);
+  position: absolute; inset: 0; padding: 3.6cqh 4.2cqw;
+  display: flex; flex-direction: column; justify-content: space-between;
+  opacity: 0; pointer-events: none; transition: opacity 0.28s ease;
+  background: var(--paper); overflow: hidden;
 }
-.slide-head { border-bottom: 1px solid var(--rule); padding-bottom: 0.75rem; margin-bottom: 1rem; }
-.slide-num { display: block; font: 600 0.76rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 0.25rem; }
-.slide h2 { margin: 0; font-size: 1.55rem; }
-.slide p, .slide li { max-width: 78ch; }
-.slide-lead { font-size: 1.08rem; line-height: 1.6; }
-.slide-facts { margin: 1rem 0 1.25rem; }
-.card-box { border: 1px solid var(--rule); border-radius: 6px; padding: 0.95rem 1.1rem; background: var(--surface); }
-.card-box h3 { margin: 0 0 0.4rem; font-size: 1.02rem; }
-.card-box p { margin: 0; font-size: 0.95rem; }
-.card-box ul, .card-box ol { margin: 0.35rem 0 0; font-size: 0.93rem; }
+.slide.active { opacity: 1; pointer-events: auto; z-index: 2; }
+html:not(.js) .slide { position: static; opacity: 1; pointer-events: auto; aspect-ratio: 16 / 9; border: 1px solid var(--rule); border-radius: 10px; margin-bottom: 1.5rem; padding: 2rem; }
 
-/* Stacked horizontal LOC bar chart */
-.loc-chart { border: 1px solid var(--rule); border-radius: 6px; padding: 0.85rem 1rem; margin: 1rem 0 1.25rem; background: var(--surface); }
-.loc-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; font-size: 0.82rem; margin-bottom: 0.65rem; color: var(--ink-2); }
-.seg-alg { background: var(--quote); }
-.seg-mod { background: var(--accent); }
-.seg-prf { background: var(--proved); }
-.loc-row { display: grid; grid-template-columns: 14.5rem minmax(6rem, 1fr) 10.5rem; align-items: center; gap: 0.6rem; padding: 0.2rem 0; font-size: 0.82rem; }
-.loc-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.loc-label code { background: none; padding: 0; }
-.loc-track { display: flex; height: 0.72rem; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
-.loc-seg { display: block; height: 100%; }
-.loc-val { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-@media (max-width: 48rem) {
-  .loc-row { grid-template-columns: 1fr; gap: 0.15rem; padding: 0.35rem 0; border-top: 1px solid var(--rule); }
-  .loc-val { text-align: left; }
+.slide-center { justify-content: center; align-items: center; text-align: center; }
+.hero-wrap { max-width: 84%; }
+.hero-h1 { font-size: clamp(2.2rem, 6.4cqw, 4.6rem); letter-spacing: -0.03em; margin: 0 0 2cqh; line-height: 1.1; }
+.hero-h1 code { background: var(--surface); padding: 0.06em 0.24em; border-radius: 8px; font-size: 0.9em; }
+.hero-sub { font-size: clamp(1.2rem, 2.8cqw, 2.1rem); color: var(--ink-2); margin: 0 0 4.5cqh; font-family: var(--serif); max-width: none; }
+.hero-meta { font-size: clamp(0.82rem, 1.45cqw, 1.05rem); color: var(--ink-2); margin: 0; letter-spacing: 0.02em; max-width: none; }
+
+.slide-top { flex: 0 0 auto; margin-bottom: 2cqh; }
+.slide-kicker { display: block; font: 600 clamp(0.68rem, 1.15cqw, 0.85rem)/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 0.5cqh; }
+.slide h2 { margin: 0; font-size: clamp(1.35rem, 2.85cqw, 2.25rem); letter-spacing: -0.02em; }
+.slide-fill { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+
+/* Slide 2: Pipeline SVG */
+.pipe-svg { width: 100%; height: 100%; max-height: 100%; display: block; }
+.p-title-svg { fill: var(--ink); font-size: 22px; font-weight: 700; }
+.p-sub-svg { fill: var(--ink-2); font-size: 15px; }
+.p-mono-svg { fill: var(--ink); font-size: 15px; font-family: var(--mono); font-weight: 600; }
+.p-muted-svg { fill: var(--ink-2); font-size: 13.5px; }
+.p-label-svg { fill: var(--accent); font-size: 15px; font-family: var(--mono); font-weight: 700; }
+.p-bij-svg { fill: var(--quote); font-size: 14.5px; font-weight: 700; }
+
+/* Slide 3: Why now image */
+.why-wrap { align-items: center; justify-content: center; }
+.why-img { width: 100%; height: 100%; max-height: 76cqh; object-fit: contain; border-radius: 10px; }
+
+/* Slide 4: Two clean tool cards */
+.tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.6cqw; align-items: stretch; }
+.tool-card {
+  border: 1.5px solid var(--rule); border-radius: 12px; padding: 3.2cqh 2.6cqw;
+  background: var(--surface); display: flex; flex-direction: column; justify-content: space-between;
 }
-.prop117-table td { vertical-align: middle; }
+.tool-card-interactive { cursor: pointer; border-color: color-mix(in srgb, var(--accent) 45%, var(--rule)); background: color-mix(in srgb, var(--accent-soft) 42%, var(--surface)); transition: transform 0.15s, border-color 0.15s; }
+.tool-card-interactive:hover { border-color: var(--accent); transform: translateY(-2px); }
+.tool-kicker { font: 600 0.74rem/1.3 var(--mono); text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-2); }
+.tool-card h3 { font-size: clamp(1.25rem, 2.3cqw, 1.8rem); margin: 0.6cqh 0 0.8cqh; }
+.tool-sub { font-size: clamp(0.85rem, 1.35cqw, 1.02rem); color: var(--ink-2); margin: 0 0 2cqh; max-width: none; }
+.merge-mini { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 1.8cqh 1.6cqw; font-size: clamp(0.78rem, 1.25cqw, 0.95rem); }
+.merge-mini ul { margin: 1cqh 0 0; padding-left: 1.15rem; }
+.merge-mini li { margin: 0.45cqh 0; max-width: none; }
+.tool-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1.6cqh; }
+.chip {
+  font: 500 clamp(0.72rem, 1.1cqw, 0.84rem)/1.4 var(--mono); padding: 0.22rem 0.6rem;
+  border-radius: 999px; border: 1px solid var(--rule); background: var(--paper); color: var(--ink); cursor: pointer;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Full-viewport single-slide presentation mode */
-html.deck-present .bar, html.deck-present main > header.title, html.deck-present .foot { display: none; }
-html.deck-present .page.wide { max-width: 86rem; padding-block: 0.75rem 1.5rem; }
-html.deck-present .page.wide main { max-width: 86rem; }
-html.deck-present .deck-bar { top: 0.5rem; margin-bottom: 0.9rem; }
-html.deck-present .slide { display: none; min-height: calc(100vh - 5.2rem); font-size: 1.06rem; padding: 2rem 2.4rem; margin: 0; }
-html.deck-present .slide.active { display: block; }
-html.deck-present .slide h2 { font-size: 1.85rem; }
+/* Slides 5–7: Code windows & step animations */
+.step-panel { justify-content: center; }
+.code-window {
+  border: 1.5px solid var(--rule); border-radius: 10px; overflow: hidden;
+  background: var(--surface); width: 100%;
+}
+.code-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  padding: 1.2cqh 1.6cqw; background: var(--surface-2); border-bottom: 1px solid var(--rule);
+  font-size: clamp(0.75rem, 1.2cqw, 0.9rem);
+}
+.code-bar code { background: none; padding: 0; font-weight: 600; }
+pre.spec-code {
+  margin: 0; padding: 3cqh 2.4cqw; font: clamp(0.82rem, 1.5cqw, 1.22rem)/1.65 var(--mono);
+  white-space: pre-wrap; overflow-wrap: anywhere; background: var(--paper); border: 0;
+}
+pre.lean-code { font-size: clamp(0.74rem, 1.32cqw, 1.05rem); line-height: 1.58; }
+pre.js-big { font-size: clamp(1.1rem, 2.2cqw, 1.75rem); padding: 6cqh 3cqw; }
+
+/* Slide 5 diff animation */
+.diff-ins {
+  display: inline-block; max-width: 0; opacity: 0; overflow: hidden; vertical-align: bottom;
+  background: var(--proved-bg); color: var(--proved); border-radius: 4px; padding: 0;
+  transition: max-width 0.4s ease, opacity 0.35s ease, padding 0.35s ease; white-space: nowrap;
+}
+.slide[data-step="1"] .diff-ins { max-width: 28ch; opacity: 1; padding: 0 0.25em; font-weight: 700; }
+
+/* Slides 6 & 7 before -> after fade swap */
+.swap-box { position: relative; width: 100%; height: 100%; display: flex; align-items: center; }
+.swap-layer { width: 100%; transition: opacity 0.32s ease; }
+.swap-after { position: absolute; inset: 0; display: flex; align-items: center; opacity: 0; pointer-events: none; }
+.slide[data-step="1"] .swap-before { opacity: 0; pointer-events: none; }
+.slide[data-step="1"] .swap-after { opacity: 1; pointer-events: auto; }
+.hl-ins { background: var(--proved-bg); color: var(--proved); font-weight: 700; padding: 0.05em 0.25em; border-radius: 4px; }
+.bp-pill { color: var(--bad); font-weight: 600; }
+.step3-dbg-wrap { align-items: stretch; }
+.step3-live { width: 100%; height: 100%; border: 1.5px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--paper); }
+.step-dbg-iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+/* Slide 8: Compact 14-proposal table fitting cleanly inside 16:9 */
+.prop117-box { border-radius: 8px; overflow: hidden; }
+.prop117-table { font-size: clamp(0.66rem, 1.06cqw, 0.84rem); line-height: 1.22; }
+.prop117-table th, .prop117-table td { padding: 0.52cqh 0.8cqw; vertical-align: middle; white-space: nowrap; }
+.prop117-table td.p-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 26cqw; }
+.prop117-table td.p-title a { text-decoration: none; font-weight: 550; }
+.prop117-table td.p-title a:hover { text-decoration: underline; }
+.open.open-xs { padding: 0.04rem 0.48rem; font-size: 0.92em; }
+
+/* Slide 9: Right-arrow progressive bullet reveal */
+.deliver-wrap { justify-content: center; }
+.deliver-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 3.2cqh; }
+.deliver-list li {
+  border-left: 4px solid var(--accent); background: var(--surface); border-radius: 0 10px 10px 0;
+  padding: 2.2cqh 2.2cqw; max-width: none; margin: 0;
+}
+.deliver-list strong { font-size: clamp(1.05rem, 1.95cqw, 1.5rem); margin-right: 0.4em; }
+.deliver-list span { display: block; margin-top: 0.5cqh; font-size: clamp(0.84rem, 1.4cqw, 1.08rem); color: var(--ink-2); }
+html.js .reveal-item { opacity: 0; transform: translateY(10px); transition: opacity 0.28s ease, transform 0.28s ease; }
+html.js .slide[data-step="1"] .reveal-item[data-reveal="1"],
+html.js .slide[data-step="2"] .reveal-item[data-reveal="1"],
+html.js .slide[data-step="2"] .reveal-item[data-reveal="2"],
+html.js .slide[data-step="3"] .reveal-item[data-reveal="1"],
+html.js .slide[data-step="3"] .reveal-item[data-reveal="2"],
+html.js .slide[data-step="3"] .reveal-item[data-reveal="3"] { opacity: 1; transform: none; }
+
+.q-actions { margin-top: 3cqh; }
+
+/* Full-screen Present mode: zero controls, fixed 16:9 stage centered in viewport */
+html.deck-present, html.deck-present body {
+  height: 100vh; overflow: hidden; margin: 0; background: var(--surface-2);
+}
+html.deck-present .bar, html.deck-present .deck-bar, html.deck-present .foot, html.deck-present .skip { display: none !important; }
+html.deck-present .page.slides-page {
+  max-width: none; width: 100vw; height: 100vh; padding: 0; margin: 0;
+  display: grid; place-items: center;
+}
+html.deck-present .page.slides-page main { width: 100%; height: 100%; display: grid; place-items: center; }
+html.deck-present .deck-stage {
+  width: min(97vw, calc(96vh * 16 / 9)); aspect-ratio: 16 / 9;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.16);
+}
+
+/* Live debugger modal overlay */
+.dbg-modal[hidden] { display: none !important; }
+.dbg-modal {
+  position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / 0.55);
+  display: grid; place-items: center; padding: 2vh 2vw;
+}
+.dbg-modal-box {
+  position: relative; width: 96vw; height: 94vh; background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 10px; overflow: hidden;
+  box-shadow: 0 20px 60px rgb(0 0 0 / 0.35);
+}
+.dbg-modal-close {
+  position: absolute; top: 0.45rem; right: 0.6rem; z-index: 5;
+  background: var(--paper); padding: 0.18rem 0.65rem; font-size: 0.8rem; font-weight: 600;
+}
+.dbg-modal-frame { width: 100%; height: 100%; border: 0; display: block; }
+
+@media print {
+  .deck-stage { aspect-ratio: auto; width: 100%; overflow: visible; border: 0; box-shadow: none; }
+  .slide { position: static !important; opacity: 1 !important; pointer-events: auto !important; page-break-after: always; border: 1px solid #ccc; margin-bottom: 1rem; }
+  .reveal-item, .diff-ins, .swap-after { opacity: 1 !important; max-width: none !important; transform: none !important; }
+}

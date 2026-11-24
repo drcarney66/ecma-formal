@@ -337,6 +337,10 @@ async function main() {
   const ctl = controls(model);
   for (const [name, c] of Object.entries(ctl)) $(`btn-${name}`).onclick = () => c.on() && c.run();
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && window.parent !== window) {
+      window.parent.postMessage({ type: "deck-escape" }, location.origin);
+      return;
+    }
     const k = key(e);
     if (!k) return;
     e.preventDefault();

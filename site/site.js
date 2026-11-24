@@ -8,29 +8,31 @@
   function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function save(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* none */ } }
 
-  // The theme: follow the system, or light, or dark.
-  var order = [null, "light", "dark"];
-  var names = { "null": "Auto", light: "Light", dark: "Dark" };
+  // Default to light mode; toggle between light and dark.
+  var order = ["light", "dark"];
   function apply(t) {
-    if (t) root.setAttribute("data-theme", t); else root.removeAttribute("data-theme");
-    var b = document.getElementById("theme");
-    if (b) {
-      b.querySelector(".theme-label").textContent = names[String(t)];
-      b.title = "Colour theme: " + (t ? t : "follows the system") + " (select to change)";
-    }
+    var mode = t === "dark" ? "dark" : "light";
+    root.setAttribute("data-theme", mode);
+    var label = mode === "dark" ? "Switch to light mode" : "Switch to dark mode";
+    ["theme", "corner-theme"].forEach(function (id) {
+      var b = document.getElementById(id);
+      if (b) b.title = label;
+    });
   }
-  var theme = load("theme");
-  if (order.indexOf(theme) < 0) theme = null;
+  var theme = load("theme") === "dark" ? "dark" : "light";
   apply(theme);
 
   document.addEventListener("DOMContentLoaded", function () {
     apply(theme);
-    var b = document.getElementById("theme");
-    if (b) b.addEventListener("click", function () {
-      theme = order[(order.indexOf(theme) + 1) % order.length];
+    var toggleTheme = function () {
+      theme = theme === "dark" ? "light" : "dark";
       save("theme", theme);
       apply(theme);
-    });
+    };
+    var b = document.getElementById("theme");
+    if (b) b.addEventListener("click", toggleTheme);
+    var cb = document.getElementById("corner-theme");
+    if (cb) cb.addEventListener("click", toggleTheme);
 
     // The table of laws: rows whose text has every word typed.
     var input = document.getElementById("lawfilter");
@@ -125,72 +127,127 @@
       Object.keys(links).forEach(function (id) { var el = document.getElementById(id); if (el) obs.observe(el); });
     }
 
-    // Slide deck controls and single-slide presentation mode (slides.html).
+    // 16:9 slide deck with intra-slide step animations, control-free present mode, and live debugger overlay.
     var deck = document.getElementById("deck");
     if (deck) {
       var slides = Array.prototype.slice.call(deck.querySelectorAll(".slide"));
       var posEl = document.getElementById("deck-pos");
-      var fillEl = document.getElementById("deck-progress-fill");
       var prevBtn = document.getElementById("deck-prev");
       var nextBtn = document.getElementById("deck-next");
       var presBtn = document.getElementById("deck-present");
+      var modal = document.getElementById("dbg-modal");
+      var modalFrame = document.getElementById("dbg-modal-frame");
+      var modalClose = document.getElementById("dbg-modal-close");
+      var step3Frame = document.getElementById("step3-dbg-frame");
       var idx = 0;
-      var presenting = false;
+      var step = 0;
+      var presenting = new URLSearchParams(location.search).has("present");
+
+      var maxStepOf = function (i) {
+        return parseInt(slides[i].getAttribute("data-max-step") || "0", 10) || 0;
+      };
+
       var syncDeck = function () {
-        slides.forEach(function (s, i) { s.classList.toggle("active", i === idx); });
-        if (posEl) posEl.textContent = "Slide " + (idx + 1) + " / " + slides.length;
-        if (fillEl) fillEl.style.width = (((idx + 1) / slides.length) * 100).toFixed(1) + "%";
-        if (prevBtn) prevBtn.disabled = idx === 0;
-        if (nextBtn) nextBtn.disabled = idx === slides.length - 1;
-        if (presBtn) {
-          presBtn.setAttribute("aria-pressed", presenting ? "true" : "false");
-          presBtn.textContent = presenting ? "Exit present (Esc)" : "Present";
+        slides.forEach(function (s, i) {
+          s.classList.toggle("active", i === idx);
+          if (i === idx) s.setAttribute("data-step", String(step));
+        });
+        root.classList.toggle("deck-present", presenting);
+        if (posEl) posEl.textContent = (idx + 1) + " / " + slides.length;
+        if (prevBtn) prevBtn.disabled = idx === 0 && step === 0;
+        if (nextBtn) nextBtn.disabled = idx === slides.length - 1 && step >= maxStepOf(idx);
+        // Lazy-load the inline Step 3 live debugger iframe only when revealed.
+        if (step3Frame && slides[idx].id === "slide-step-3" && step >= 1 && !step3Frame.getAttribute("src")) {
+          var ssrc = step3Frame.getAttribute("data-dbg-src");
+          if (ssrc) step3Frame.setAttribute("src", ssrc);
         }
       };
-      var goTo = function (n) {
-        idx = Math.max(0, Math.min(slides.length - 1, n));
-        syncDeck();
-        if (presenting) window.scrollTo(0, 0);
-        else slides[idx].scrollIntoView({ behavior: "smooth", block: "start" });
+
+      var advance = function () {
+        var m = maxStepOf(idx);
+        if (step < m) { step++; syncDeck(); }
+        else if (idx < slides.length - 1) { idx++; step = 0; syncDeck(); }
       };
+
+      var retreat = function () {
+        if (step > 0) { step--; syncDeck(); }
+        else if (idx > 0) { idx--; step = maxStepOf(idx); syncDeck(); }
+      };
+
       var setPresent = function (on) {
         presenting = on;
-        root.classList.toggle("deck-present", on);
         syncDeck();
-        if (on) window.scrollTo(0, 0);
-        else slides[idx].scrollIntoView({ block: "start" });
       };
-      if (prevBtn) prevBtn.addEventListener("click", function () { goTo(idx - 1); });
-      if (nextBtn) nextBtn.addEventListener("click", function () { goTo(idx + 1); });
-      if (presBtn) presBtn.addEventListener("click", function () { setPresent(!presenting); });
-      if ("IntersectionObserver" in window) {
-        var sobs = new IntersectionObserver(function (entries) {
-          if (presenting) return;
-          entries.forEach(function (en) {
-            if (en.isIntersecting) {
-              var k = slides.indexOf(en.target);
-              if (k >= 0) { idx = k; syncDeck(); }
-            }
-          });
-        }, { rootMargin: "-20% 0px -55% 0px" });
-        slides.forEach(function (s) { sobs.observe(s); });
-      }
-      document.addEventListener("keydown", function (e) {
-        if (e.altKey || e.ctrlKey || e.metaKey) return;
-        var tag = e.target && e.target.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-        if (e.key === "f" || e.key === "F") { e.preventDefault(); setPresent(!presenting); }
-        else if (e.key === "Escape" && presenting) { e.preventDefault(); setPresent(false); }
-        else if (e.key === "ArrowRight" || e.key === "PageDown" || (e.key === " " && tag !== "BUTTON" && tag !== "A")) {
-          e.preventDefault(); goTo(idx + 1);
-        } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
-          e.preventDefault(); goTo(idx - 1);
-        } else if (e.key === "Home" && presenting) {
-          e.preventDefault(); goTo(0);
-        } else if (e.key === "End" && presenting) {
-          e.preventDefault(); goTo(slides.length - 1);
+
+      var openDbgModal = function (url) {
+        if (!modal || !modalFrame || !url) return;
+        modalFrame.setAttribute("src", url);
+        modal.hidden = false;
+      };
+
+      var closeDbgModal = function () {
+        if (!modal || modal.hidden) return false;
+        modal.hidden = true;
+        if (modalFrame) modalFrame.removeAttribute("src");
+        window.focus();
+        return true;
+      };
+
+      if (prevBtn) prevBtn.addEventListener("click", retreat);
+      if (nextBtn) nextBtn.addEventListener("click", advance);
+      if (presBtn) presBtn.addEventListener("click", function () { setPresent(true); });
+      if (modalClose) modalClose.addEventListener("click", closeDbgModal);
+      if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeDbgModal(); });
+
+      document.addEventListener("click", function (e) {
+        var trigger = e.target.closest ? e.target.closest("[data-dbg-open]") : null;
+        if (trigger && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          openDbgModal(trigger.getAttribute("data-dbg-open"));
         }
       });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.altKey || e.ctrlKey || e.metaKey) return;
+        if (modal && !modal.hidden) {
+          if (e.key === "Escape") { e.preventDefault(); closeDbgModal(); }
+          return;
+        }
+        var tag = e.target && e.target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (e.key === "Enter" && e.target && e.target.hasAttribute && e.target.hasAttribute("data-dbg-open")) {
+          e.preventDefault();
+          openDbgModal(e.target.getAttribute("data-dbg-open"));
+          return;
+        }
+        if (e.key === "Escape") {
+          if (presenting) { e.preventDefault(); setPresent(false); }
+        } else if (e.key === "f" || e.key === "F") {
+          e.preventDefault();
+          setPresent(!presenting);
+        } else if (e.key === "ArrowRight" || e.key === "PageDown" || (e.key === " " && tag !== "BUTTON" && tag !== "A")) {
+          e.preventDefault();
+          advance();
+        } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+          e.preventDefault();
+          retreat();
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          idx = 0; step = 0; syncDeck();
+        } else if (e.key === "End") {
+          e.preventDefault();
+          idx = slides.length - 1; step = maxStepOf(idx); syncDeck();
+        }
+      });
+
+      window.addEventListener("message", function (e) {
+        if (e.origin !== location.origin || !e.data) return;
+        if (e.data.type === "deck-escape") {
+          if (!closeDbgModal() && presenting) setPresent(false);
+        }
+      });
+
       syncDeck();
     }
   });

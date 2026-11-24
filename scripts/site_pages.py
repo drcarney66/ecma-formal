@@ -197,15 +197,15 @@ def bar_html(here: str, pages: set[str], prefix: str = "") -> str:
 <details class="navd" id="nav-details" open><summary>Pages</summary>
 <nav class="site" aria-label="Pages"><ul class="groups">{nav_html(here, pages, prefix)}</ul></nav>
 </details>
-<button class="theme" type="button" id="theme" aria-label="Colour theme" title="Colour theme: follows the system">
-<svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg>
-<span class="theme-label">Auto</span></button>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
 </div>
 </header>"""
 
 
 THEME = ('<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");'
-         'if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>')
+         'document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){'
+         'document.documentElement.setAttribute("data-theme","light")}</script>')
 
 
 @dataclass
@@ -229,6 +229,12 @@ def frame(p: Page, pages: set[str], facts: dict) -> str:
                f'</summary><ol>{items}</ol></details></nav>')
     title = SITE_NAME if p.file == "index.html" else f"{re.sub(r'<[^>]+>', '', html.unescape(p.title))} · {SITE_NAME}"
     pre = p.prefix if p.prefix is not None else "../" * p.file.count("/")
+    is_slides = p.file == "slides.html"
+    head_block = "" if is_slides else f"""<header class="title">
+<p class="eyebrow">{p.eyebrow}</p>
+<h1>{p.title}</h1>
+{f'<div class="lede">{p.lede}</div>' if p.lede else ''}
+</header>"""
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -240,17 +246,13 @@ def frame(p: Page, pages: set[str], facts: dict) -> str:
 {THEME}
 <script src="{pre}site.js" defer></script>
 </head>
-<body>
+<body{' class="slides-body"' if is_slides else ''}>
 <a class="skip" href="#main">Skip to the text</a>
 {bar_html(p.nav or p.file, pages, pre)}
-<div class="page{' wide' if p.wide else ''}{' has-toc' if p.toc else ''}">
+<div class="page{' wide' if p.wide else ''}{' slides-page' if is_slides else ''}{' has-toc' if p.toc else ''}">
 {toc}
 <main id="main">
-<header class="title">
-<p class="eyebrow">{p.eyebrow}</p>
-<h1>{p.title}</h1>
-{f'<div class="lede">{p.lede}</div>' if p.lede else ''}
-</header>
+{head_block}
 {p.body}
 </main>
 </div>
@@ -699,35 +701,54 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
     """HTML fragments for site/slides.html computed from site/proposals-117.json."""
     rec_path = SITE / "proposals-117.json"
     has_dbg = bool(dbgopt and dbgopt.get("debugger"))
-    demos_spec = [
-        ("Stage 2 · Math.fusedMultiplyAdd", "fma", "dbg/proposal_fma",
-         "Exact single-rounding product in ℝ: watch <code>FMAMultiply</code> preserve <code>-2^-104</code> where <code>a * b + (-1)</code> rounds prematurely to <code>0</code>."),
-        ("Stage 2.7 · Deferred Re-exports", "deferred-reexports", "dbg/proposal_deferred_reexports",
-         "Barrel module <code>export defer { x } from \"./heavy.mjs\"</code> links without evaluating <code>heavy.mjs</code> until <code>barrel.x</code> hits <code>EnsureDeferredExportEvaluated</code>."),
-        ("Stage 2 · Composites", "composites", "dbg/proposal_composites",
-         "Canonical integer-index + lexicographic key ordering and realm-wide <code>[[CompositeRegistry]]</code> interning so <code>Composite({...}) === Composite({...})</code>."),
-        ("Stage 1 · Cancellation (AbortController)", "cancellation", "dbg/proposal_cancellation",
-         "Scoped <code>using</code> disposal of an abort callback, then <code>ac.abort(\"timeout\")</code> rejecting a pending <code>Atomics.waitAsync</code> promise."),
-        ("Stage 2.7 · Immutable ArrayBuffers", "immutable-arraybuffer", "dbg/proposal_immutable_arraybuffer",
-         "<code>sliceToImmutable</code> and <code>transferToImmutable</code> detaching the source buffer and rejecting TypedArray writes with a <code>TypeError</code>."),
-        ("Stage 0 · Iterator.prototype.transfer", "iterator-transfer", "dbg/proposal_iterator_transfer",
-         "Transferring a suspended generator mid-<code>yield</code>: the original iterator closes cleanly while the new owner resumes and runs <code>finally</code> once."),
-    ]
-    demo_cards = []
-    for heading, bid, ex, desc in demos_spec:
-        act = (f'<p class="opens"><a class="open" href="debugger/?example={html.escape(ex)}&amp;build={html.escape(bid)}">'
-               f'Open in Debugger →</a></p>' if has_dbg else f'<p><code>{html.escape(ex)}</code> (<code>{html.escape(bid)}</code>)</p>')
-        demo_cards.append(f'<li><h3>{html.escape(heading)}</h3><p>{desc}</p>{act}</li>')
-    demos_html = '<ul class="cards two">\n' + "\n".join(demo_cards) + "\n</ul>"
+
+    if has_dbg:
+        tool_dbg_card = (
+            '<div class="tool-card tool-card-interactive" role="button" tabindex="0" '
+            'data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma">'
+            '<div class="tool-kicker">Interactive Wasm64</div>'
+            '<h3>Spec debugger</h3>'
+            '<p class="tool-sub">Step forward &amp; back through <code>spec.html</code> · inspect Slots &amp; Realm</p>'
+            '<div class="tool-Launch-row">'
+            '<span class="open">Click to overlay example →</span>'
+            '</div>'
+            '<div class="tool-chips">'
+            '<button type="button" class="chip" data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma">Math.fusedMultiplyAdd</button>'
+            '<button type="button" class="chip" data-dbg-open="debugger/?example=dbg/proposal_deferred_reexports&amp;build=deferred-reexports">export defer</button>'
+            '<button type="button" class="chip" data-dbg-open="debugger/?example=dbg/proposal_composites&amp;build=composites">Composite</button>'
+            '<button type="button" class="chip" data-dbg-open="debugger/?example=dbg/proposal_iterator_transfer&amp;build=iterator-transfer">Iterator.transfer</button>'
+            '</div>'
+            '</div>'
+        )
+        step3_after = (
+            '<div class="step3-live">'
+            '<iframe class="step-dbg-iframe" id="step3-dbg-frame" '
+            'data-dbg-src="debugger/?example=dbg/proposal_trim_chars&amp;build=trim-chars" '
+            'title="Live spec debugger paused on String.prototype.trim step 2"></iframe>'
+            '</div>'
+        )
+        questions_dbg = (
+            '<p class="q-actions"><button type="button" class="open" '
+            'data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma">Open live spec debugger →</button></p>'
+        )
+    else:
+        tool_dbg_card = (
+            '<div class="tool-card">'
+            '<div class="tool-kicker">Interactive Wasm64</div>'
+            '<h3>Spec debugger</h3>'
+            '<p class="tool-sub">Step forward &amp; back through <code>spec.html</code> · inspect Slots &amp; Realm</p>'
+            '</div>'
+        )
+        step3_after = '<pre class="lean">paused at String.prototype.trim step 2 · characters = "/_"</pre>'
+        questions_dbg = ""
 
     if not rec_path.is_file():
         return {
             "proposals_117_count": "14",
-            "proposals_117_zero_proofs": "11",
-            "proposals_117_totals": "",
-            "proposals_117_chart": "",
-            "proposals_117_table": '<p class="muted">Proposal metrics not yet generated (run <code>scripts/proposals_summary.py</code>).</p>',
-            "proposals_117_demos": demos_html,
+            "proposals_117_table": '<p class="muted">Run <code>scripts/proposals_summary.py</code>.</p>',
+            "slides_tool_dbg": tool_dbg_card,
+            "slides_step3_after": step3_after,
+            "slides_questions_dbg": questions_dbg,
         }
 
     data = json.loads(rec_path.read_text())
@@ -739,105 +760,43 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
             return '<span class="muted">0</span>'
         return f"+{fmt(a)}" + (f" / −{fmt(r)}" if r else "")
 
-    tot_alg_a = sum(p["diff"]["algorithms"]["added"] for p in props)
-    tot_alg_r = sum(p["diff"]["algorithms"]["removed"] for p in props)
-    tot_mod_a = sum(p["diff"]["model"]["added"] for p in props)
-    tot_mod_r = sum(p["diff"]["model"]["removed"] for p in props)
-    tot_prf_a = sum(p["diff"]["proofs"]["added"] for p in props)
-    tot_prf_r = sum(p["diff"]["proofs"]["removed"] for p in props)
-    tot_gen = sum(p["diff"]["generated"]["files"] for p in props)
-    zero_prf = sum(1 for p in props if p["diff"]["proofs"]["added"] == 0 and p["diff"]["proofs"]["removed"] == 0)
-
-    totals_html = (
-        '<ul class="facts slide-facts" aria-label="Totals across all TC39 #117 proposals">\n'
-        f'<li><b>{zero_prf} of {len(props)}</b><span>proposals needed <strong>0 lines of new Lean proofs</strong> — pure spec algorithms inherit <code>Engine.implements</code> automatically</span></li>\n'
-        f'<li><b>+{fmt(tot_alg_a)} / −{fmt(tot_alg_r)}</b><span>total LOC algorithms / English overlay &amp; merge resolutions across all {len(props)} branches</span></li>\n'
-        f'<li><b>+{fmt(tot_mod_a)} / −{fmt(tot_mod_r)}</b><span>total LOC model &amp; host hooks (<code>lean/Ecma</code> + <code>lean/Engine</code> outside <code>Proofs/</code>)</span></li>\n'
-        f'<li><b>+{fmt(tot_prf_a)} / −{fmt(tot_prf_r)}</b><span>total LOC Lean proofs across all {len(props)} branches (<strong>{tot_gen}</strong> generated files in git)</span></li>\n'
-        '</ul>'
-    )
-
-    max_churn = max(
-        [1] + [
-            (p["diff"]["algorithms"]["added"] + p["diff"]["algorithms"]["removed"]
-             + p["diff"]["model"]["added"] + p["diff"]["model"]["removed"]
-             + p["diff"]["proofs"]["added"] + p["diff"]["proofs"]["removed"])
-            for p in props
-        ]
-    )
-    bar_rows = []
     stage_cls = {"3": "proved", "2.7": "rd", "2": "owed", "1": "none", "0": "none"}
-    for p in props:
-        d = p["diff"]
-        alg_c = d["algorithms"]["added"] + d["algorithms"]["removed"]
-        mod_c = d["model"]["added"] + d["model"]["removed"]
-        prf_c = d["proofs"]["added"] + d["proofs"]["removed"]
-        tot_c = alg_c + mod_c + prf_c
-        w_alg = (alg_c / max_churn) * 100.0
-        w_mod = (mod_c / max_churn) * 100.0
-        w_prf = (prf_c / max_churn) * 100.0
-        bcls = stage_cls.get(p["stage"], "none")
-        bar_rows.append(
-            f'<div class="loc-row">'
-            f'<div class="loc-label"><span class="badge {bcls}">S{html.escape(p["stage"])}</span> '
-            f'<code>{html.escape(p["id"])}</code></div>'
-            f'<div class="loc-track">'
-            f'<span class="loc-seg seg-alg" style="width:{w_alg:.2f}%" title="Algorithms/English: {alg_c} LOC"></span>'
-            f'<span class="loc-seg seg-mod" style="width:{w_mod:.2f}%" title="Model/Host: {mod_c} LOC"></span>'
-            f'<span class="loc-seg seg-prf" style="width:{w_prf:.2f}%" title="Proofs: {prf_c} LOC"></span>'
-            f'</div>'
-            f'<div class="loc-val">{fmt(tot_c)} <span class="muted">({alg_c}a · {mod_c}m · {prf_c}p)</span></div>'
-            f'</div>'
-        )
-    chart_html = (
-        '<div class="loc-chart" role="img" aria-label="Stacked bar chart of hand-written diff LOC per proposal">\n'
-        '<div class="loc-legend">'
-        '<span><i class="key seg-alg"></i>LOC Algorithms / English (<code>spec/</code>)</span>'
-        '<span><i class="key seg-mod"></i>LOC Model / Host (<code>lean/</code>)</span>'
-        '<span><i class="key seg-prf"></i>LOC Proofs (<code>lean/Engine/Proofs/</code>)</span>'
-        '</div>\n'
-        + "\n".join(bar_rows)
-        + "\n</div>"
-    )
-
     trows = []
     for p in props:
         d = p["diff"]
         bcls = stage_cls.get(p["stage"], "none")
         ex, bid = p.get("example", ""), p.get("build", "")
-        dbg_cell = (f'<a class="open" href="debugger/?example={html.escape(ex)}&amp;build={html.escape(bid)}">Debug →</a>'
+        dbg_url = f"debugger/?example={html.escape(ex)}&amp;build={html.escape(bid)}"
+        dbg_cell = (f'<a class="open open-xs" href="{dbg_url}" data-dbg-open="{dbg_url}">Debug →</a>'
                     if (has_dbg and ex and bid) else f'<code>{html.escape(bid)}</code>')
         spec_ln = fmt(p["spec_lines"]) if p.get("spec_lines") else "—"
         trows.append(
             f'<tr>'
             f'<td><span class="badge {bcls}">{html.escape(p["stage"])}</span></td>'
-            f'<td><a href="{html.escape(p["repo"])}">{html.escape(p["title"])}</a><br>'
-            f'<span class="muted">{html.escape(p["presenter"])} · <code>{html.escape(p["branch"])}</code></span></td>'
+            f'<td class="p-title"><a href="{html.escape(p["repo"])}">{html.escape(p["title"])}</a></td>'
             f'<td class="num">{spec_ln}</td>'
             f'<td class="num">{pm(d["algorithms"])}</td>'
             f'<td class="num">{pm(d["model"])}</td>'
             f'<td class="num">{pm(d["proofs"])}</td>'
-            f'<td class="num"><span class="muted">{d["generated"]["files"]}</span></td>'
             f'<td>{dbg_cell}</td>'
             f'</tr>'
         )
     table_html = (
-        '<div class="tablebox"><table class="prop117-table">'
+        '<div class="tablebox prop117-box"><table class="prop117-table">'
         '<thead><tr>'
-        '<th>Stage</th><th>Proposal &amp; Champion</th><th class="num">Upstream <code>.emu</code></th>'
-        '<th class="num">LOC Alg / English</th><th class="num">LOC Model / Host</th>'
-        '<th class="num">LOC Proofs</th><th class="num">Gen Diff</th><th>Try Live</th>'
+        '<th>Stage</th><th>Proposal (TC39 #117)</th><th class="num"><code>.emu</code></th>'
+        '<th class="num">Alg / English</th><th class="num">Model / Host</th>'
+        '<th class="num">Proofs</th><th></th>'
         '</tr></thead><tbody>'
         + "".join(trows)
         + '</tbody></table></div>'
     )
     return {
         "proposals_117_count": str(len(props)),
-        "proposals_117_zero_proofs": str(zero_prf),
-        "proposals_117_totals": totals_html,
-        "proposals_117_chart": chart_html,
         "proposals_117_table": table_html,
-        "proposals_117_demos": demos_html,
+        "slides_tool_dbg": tool_dbg_card,
+        "slides_step3_after": step3_after,
+        "slides_questions_dbg": questions_dbg,
     }
 
 
@@ -1104,8 +1063,9 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     if dbgopt and dbgopt.get("debugger"):
         (out / "debugger").mkdir(exist_ok=True)
         (out / "debugger/index.html").write_text(debugger_frame(names, gallery, facts["rev"]))
-    for a in ("style.css", "site.js"):
-        shutil.copy(SITE / a, out / a)
+    for a in ("style.css", "site.js", "robots-lean.svg"):
+        if (SITE / a).is_file():
+            shutil.copy(SITE / a, out / a)
     return site.findings
 
 

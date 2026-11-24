@@ -2017,30 +2017,28 @@
    "id": "dbg/proposal_trim_chars",
    "group": "proposals-117",
    "title": "Stage 0: Trim Specific Characters",
-   "line": "String.prototype.trim accepts an optional characters string and trims matching Unicode code points via StringToCodePoints rather than UTF-16 code units, preserving astral characters that share a surrogate.",
+   "line": "String.prototype.trim accepts an optional characters string and forwards it to TrimString, which trims matching Unicode code points via StringToCodePoints rather than UTF-16 code units.",
    "breakpoints": [
     {
-     "alg": "sec-trimstring",
-     "path": "1"
+     "alg": "sec-string.prototype.trim",
+     "path": "2"
     }
    ],
    "builds": {
     "trim-chars": {
      "pauses": [
       {
-       "alg": "TrimString",
-       "path": "1",
+       "alg": "String.prototype.trim",
+       "path": "2",
        "frames": [
-        "TrimString",
         "String.prototype.trim",
         "BuiltinCallOrConstruct"
        ]
       },
       {
-       "alg": "TrimString",
-       "path": "1",
+       "alg": "String.prototype.trim",
+       "path": "2",
        "frames": [
-        "TrimString",
         "String.prototype.trim",
         "BuiltinCallOrConstruct"
        ]
@@ -2054,19 +2052,17 @@
     "spec": {
      "pauses": [
       {
-       "alg": "TrimString",
-       "path": "1",
+       "alg": "String.prototype.trim",
+       "path": "2",
        "frames": [
-        "TrimString",
         "String.prototype.trim",
         "BuiltinCallOrConstruct"
        ]
       },
       {
-       "alg": "TrimString",
-       "path": "1",
+       "alg": "String.prototype.trim",
+       "path": "2",
        "frames": [
-        "TrimString",
         "String.prototype.trim",
         "BuiltinCallOrConstruct"
        ]
