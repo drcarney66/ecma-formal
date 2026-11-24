@@ -19,6 +19,7 @@ import argparse
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -190,7 +191,58 @@ def classify(path: str) -> str:
     return "meta"
 
 
-def inspect_branch(entry: dict, base: str) -> dict:
+def strip_module_headers(files: list[Path]) -> str:
+    chunks = []
+    for f in files:
+        if not f.is_file():
+            continue
+        lines = [ln for ln in f.read_text().splitlines()
+                 if not ln.startswith(("import ", "namespace ", "end ", "-- Generated "))]
+        chunks.append("\n".join(lines))
+    return "\n".join(chunks) + "\n"
+
+
+def numstat_pair(path_a: Path, path_b: Path) -> dict[str, int]:
+    r = subprocess.run(["git", "diff", "--no-index", "--numstat", str(path_a), str(path_b)],
+                       cwd=ROOT, capture_output=True, text=True)
+    added = removed = 0
+    for ln in r.stdout.splitlines():
+        if ln.strip():
+            a, rem, _ = ln.split("\t")
+            added += int(a) if a != "-" else 0
+            removed += int(rem) if rem != "-" else 0
+    return {"added": added, "removed": removed}
+
+
+def inspect_worktree_generated(entry_id: str, prev: dict | None) -> tuple[dict[str, int], dict[str, int]]:
+    wt = ROOT / "build/worktrees" / entry_id
+    spec_diff = (prev or {}).get("spec_diff", {"added": 0, "removed": 0})
+    gen_lean = (prev or {}).get("generated_lean", {"added": 0, "removed": 0})
+    if not wt.is_dir():
+        return spec_diff, gen_lean
+
+    mspecs = sorted((wt / "build").rglob("spec.html"))
+    base_spec = ROOT / "external/ecma262/spec.html"
+    if mspecs and base_spec.is_file():
+        spec_diff = numstat_pair(base_spec, mspecs[0])
+
+    base_gen = [*sorted((ROOT / "lean/Ecma/Gen").glob("S*.lean")),
+                ROOT / "lean/Ecma/Gen/Ids.lean", ROOT / "lean/Ecma/Gen/Tables.lean",
+                ROOT / "lean/Ecma/Grammar/Gen/Syntactic.lean", ROOT / "lean/Ecma/Grammar/Gen/Lexical.lean"]
+    prop_gen = [*sorted((wt / "lean/Ecma/Gen").glob("S*.lean")),
+                wt / "lean/Ecma/Gen/Ids.lean", wt / "lean/Ecma/Gen/Tables.lean",
+                wt / "lean/Ecma/Grammar/Gen/Syntactic.lean", wt / "lean/Ecma/Grammar/Gen/Lexical.lean"]
+    if any(f.is_file() for f in base_gen) and any(f.is_file() for f in prop_gen):
+        with tempfile.TemporaryDirectory() as td:
+            ba = Path(td, "base.lean")
+            pr = Path(td, "prop.lean")
+            ba.write_text(strip_module_headers(base_gen))
+            pr.write_text(strip_module_headers(prop_gen))
+            gen_lean = numstat_pair(ba, pr)
+    return spec_diff, gen_lean
+
+
+def inspect_branch(entry: dict, base: str, prev: dict | None = None) -> dict:
     br = entry["branch"]
     if not branch_exists(br):
         return {**entry, "status": "missing"}
@@ -244,6 +296,8 @@ def inspect_branch(entry: dict, base: str) -> dict:
     except subprocess.CalledProcessError:
         pass
 
+    spec_diff, gen_lean = inspect_worktree_generated(entry["id"], prev)
+
     return {
         **entry,
         "status": "ready",
@@ -251,6 +305,8 @@ def inspect_branch(entry: dict, base: str) -> dict:
         "merge_base": mb[:7],
         "proposal_commit": pcommit,
         "spec_lines": spec_lines,
+        "spec_diff": spec_diff,
+        "generated_lean": gen_lean,
         "diff": buckets,
     }
 
@@ -261,7 +317,13 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     a = ap.parse_args()
 
-    rows = [inspect_branch(e, a.base) for e in AGENDA_117]
+    out_path = a.out.resolve()
+    prev_by_id: dict[str, dict] = {}
+    if out_path.is_file():
+        for r in json.loads(out_path.read_text()).get("proposals", []):
+            prev_by_id[r["id"]] = r
+
+    rows = [inspect_branch(e, a.base, prev_by_id.get(e["id"])) for e in AGENDA_117]
     ready = [r for r in rows if r["status"] == "ready"]
     data = {
         "meeting": "117th Meeting of Ecma TC39 (November 30 – December 3, 2026)",
@@ -269,16 +331,17 @@ def main() -> int:
         "base": a.base,
         "proposals": rows,
     }
-    out_path = a.out.resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
     print(f"{out_path.relative_to(ROOT)}: {len(ready)}/{len(rows)} proposal branches ready")
     for r in ready:
         d = r["diff"]
-        print(f"  {r['id']:22} [S{r['stage']:3}] alg=+{d['algorithms']['added']}/-{d['algorithms']['removed']}  "
+        sd = r["spec_diff"]
+        gl = r["generated_lean"]
+        print(f"  {r['id']:22} [S{r['stage']:3}] spec.html=+{sd['added']}/-{sd['removed']}  "
+              f"gen_lean=+{gl['added']}/-{gl['removed']}  "
               f"model=+{d['model']['added']}/-{d['model']['removed']}  "
-              f"proofs=+{d['proofs']['added']}/-{d['proofs']['removed']}  "
-              f"tests=+{d['tests']['added']}  gen={d['generated']['files']}")
+              f"proofs=+{d['proofs']['added']}/-{d['proofs']['removed']}")
     return 0
 
 

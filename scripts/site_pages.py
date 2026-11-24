@@ -230,6 +230,8 @@ def frame(p: Page, pages: set[str], facts: dict) -> str:
     title = SITE_NAME if p.file == "index.html" else f"{re.sub(r'<[^>]+>', '', html.unescape(p.title))} · {SITE_NAME}"
     pre = p.prefix if p.prefix is not None else "../" * p.file.count("/")
     is_slides = p.file == "slides.html"
+    ver_q = f"?v={html.escape(facts['rev'])}" if facts.get("rev") else ""
+    coi_tag = f'<script src="{pre}coi-serviceworker.js{ver_q}"></script>\n' if p.file != "404.html" else ""
     head_block = "" if is_slides else f"""<header class="title">
 <p class="eyebrow">{p.eyebrow}</p>
 <h1>{p.title}</h1>
@@ -242,9 +244,9 @@ def frame(p: Page, pages: set[str], facts: dict) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)}</title>
 <meta name="color-scheme" content="light dark">
-<link rel="stylesheet" href="{pre}style.css">
+{coi_tag}<link rel="stylesheet" href="{pre}style.css{ver_q}">
 {THEME}
-<script src="{pre}site.js" defer></script>
+<script src="{pre}site.js{ver_q}" defer></script>
 </head>
 <body{' class="slides-body"' if is_slides else ''}>
 <a class="skip" href="#main">Skip to the text</a>
@@ -290,8 +292,8 @@ def debugger_frame(pages: set[str], gallery: dict | None, rev: str = "") -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Debugger · {html.escape(SITE_NAME)}</title>
 <meta name="color-scheme" content="light dark">
-<!-- Cross-origin isolation from a service worker where the server gives none; a no-op where it does. -->
-<script src="coi-serviceworker.js"></script>
+<!-- Cross-origin isolation from the site-root service worker where the server gives none; a no-op where it does. -->
+<script src="../coi-serviceworker.js{ver_q}"></script>
 <link rel="stylesheet" href="../style.css{ver_q}">
 <link rel="stylesheet" href="ui/style.css{ver_q}">
 {THEME}
@@ -764,18 +766,19 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
     trows = []
     for p in props:
         d = p["diff"]
+        sd = p.get("spec_diff", {"added": 0, "removed": 0})
+        gl = p.get("generated_lean", {"added": 0, "removed": 0})
         bcls = stage_cls.get(p["stage"], "none")
         ex, bid = p.get("example", ""), p.get("build", "")
         dbg_url = f"debugger/?example={html.escape(ex)}&amp;build={html.escape(bid)}"
         dbg_cell = (f'<a class="open open-xs" href="{dbg_url}" data-dbg-open="{dbg_url}">Debug →</a>'
                     if (has_dbg and ex and bid) else f'<code>{html.escape(bid)}</code>')
-        spec_ln = fmt(p["spec_lines"]) if p.get("spec_lines") else "—"
         trows.append(
             f'<tr>'
             f'<td><span class="badge {bcls}">{html.escape(p["stage"])}</span></td>'
             f'<td class="p-title"><a href="{html.escape(p["repo"])}">{html.escape(p["title"])}</a></td>'
-            f'<td class="num">{spec_ln}</td>'
-            f'<td class="num">{pm(d["algorithms"])}</td>'
+            f'<td class="num">{pm(sd)}</td>'
+            f'<td class="num">{pm(gl)}</td>'
             f'<td class="num">{pm(d["model"])}</td>'
             f'<td class="num">{pm(d["proofs"])}</td>'
             f'<td>{dbg_cell}</td>'
@@ -784,8 +787,8 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
     table_html = (
         '<div class="tablebox prop117-box"><table class="prop117-table">'
         '<thead><tr>'
-        '<th>Stage</th><th>Proposal (TC39 #117)</th><th class="num"><code>.emu</code></th>'
-        '<th class="num">Alg / English</th><th class="num">Model / Host</th>'
+        '<th>Stage</th><th>Proposal (TC39 #117)</th><th class="num"><code>spec.html</code></th>'
+        '<th class="num">Generated Lean</th><th class="num">Model / Host</th>'
         '<th class="num">Proofs</th><th></th>'
         '</tr></thead><tbody>'
         + "".join(trows)
@@ -1066,6 +1069,9 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     for a in ("style.css", "site.js", "robots-lean.svg"):
         if (SITE / a).is_file():
             shutil.copy(SITE / a, out / a)
+    for c in ("coi-serviceworker.js", "coi-serviceworker.LICENSE"):
+        if (ROOT / "tools/dbg" / c).is_file():
+            shutil.copy(ROOT / "tools/dbg" / c, out / c)
     return site.findings
 
 

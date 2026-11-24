@@ -17,6 +17,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "f19b6c5",
    "spec_lines": 2461,
+   "spec_diff": {
+    "added": 723,
+    "removed": 109
+   },
+   "generated_lean": {
+    "added": 283,
+    "removed": 122
+   },
    "diff": {
     "algorithms": {
      "added": 231,
@@ -64,6 +72,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "1b9e238",
    "spec_lines": 112,
+   "spec_diff": {
+    "added": 39,
+    "removed": 4
+   },
+   "generated_lean": {
+    "added": 26,
+    "removed": 15
+   },
    "diff": {
     "algorithms": {
      "added": 6,
@@ -111,6 +127,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "33a725b",
    "spec_lines": 267,
+   "spec_diff": {
+    "added": 157,
+    "removed": 23
+   },
+   "generated_lean": {
+    "added": 80,
+    "removed": 25
+   },
    "diff": {
     "algorithms": {
      "added": 36,
@@ -158,6 +182,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "a4fd2f3",
    "spec_lines": 3901,
+   "spec_diff": {
+    "added": 2154,
+    "removed": 186
+   },
+   "generated_lean": {
+    "added": 1330,
+    "removed": 289
+   },
    "diff": {
     "algorithms": {
      "added": 359,
@@ -205,6 +237,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "",
    "spec_lines": 193,
+   "spec_diff": {
+    "added": 96,
+    "removed": 7
+   },
+   "generated_lean": {
+    "added": 71,
+    "removed": 32
+   },
    "diff": {
     "algorithms": {
      "added": 195,
@@ -252,6 +292,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "f0ab861",
    "spec_lines": 1589,
+   "spec_diff": {
+    "added": 1083,
+    "removed": 89
+   },
+   "generated_lean": {
+    "added": 430,
+    "removed": 258
+   },
    "diff": {
     "algorithms": {
      "added": 972,
@@ -299,6 +347,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "ca3f880",
    "spec_lines": 1158,
+   "spec_diff": {
+    "added": 366,
+    "removed": 206
+   },
+   "generated_lean": {
+    "added": 223,
+    "removed": 151
+   },
    "diff": {
     "algorithms": {
      "added": 135,
@@ -346,6 +402,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "cbaccf6",
    "spec_lines": 133,
+   "spec_diff": {
+    "added": 32,
+    "removed": 4
+   },
+   "generated_lean": {
+    "added": 24,
+    "removed": 13
+   },
    "diff": {
     "algorithms": {
      "added": 14,
@@ -393,6 +457,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "45bb4d9",
    "spec_lines": 74,
+   "spec_diff": {
+    "added": 63,
+    "removed": 0
+   },
+   "generated_lean": {
+    "added": 23,
+    "removed": 1
+   },
    "diff": {
     "algorithms": {
      "added": 38,
@@ -440,6 +512,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "03b7388",
    "spec_lines": 325,
+   "spec_diff": {
+    "added": 268,
+    "removed": 2
+   },
+   "generated_lean": {
+    "added": 114,
+    "removed": 3
+   },
    "diff": {
     "algorithms": {
      "added": 199,
@@ -487,6 +567,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "1230cc9",
    "spec_lines": 986,
+   "spec_diff": {
+    "added": 790,
+    "removed": 14
+   },
+   "generated_lean": {
+    "added": 281,
+    "removed": 33
+   },
    "diff": {
     "algorithms": {
      "added": 118,
@@ -534,6 +622,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "",
    "spec_lines": 90,
+   "spec_diff": {
+    "added": 83,
+    "removed": 0
+   },
+   "generated_lean": {
+    "added": 40,
+    "removed": 18
+   },
    "diff": {
     "algorithms": {
      "added": 93,
@@ -581,6 +677,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "e1c8811",
    "spec_lines": 85,
+   "spec_diff": {
+    "added": 21,
+    "removed": 15
+   },
+   "generated_lean": {
+    "added": 12,
+    "removed": 12
+   },
    "diff": {
     "algorithms": {
      "added": 71,
@@ -628,6 +732,14 @@
    "merge_base": "1565c55",
    "proposal_commit": "b1d30a6",
    "spec_lines": 31,
+   "spec_diff": {
+    "added": 23,
+    "removed": 0
+   },
+   "generated_lean": {
+    "added": 23,
+    "removed": 1
+   },
    "diff": {
     "algorithms": {
      "added": 39,

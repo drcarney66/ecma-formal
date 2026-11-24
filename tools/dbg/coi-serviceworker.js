@@ -60,17 +60,18 @@ if (typeof window === 'undefined') {
 
 } else {
     (() => {
-        // You can customize the behavior of this script through a global `coi` variable.
+        // Always use COEP: require-corp (supported across Chrome, Firefox, and Safari; credentialless is ignored by Safari).
         const coi = {
             shouldRegister: () => true,
             shouldDeregister: () => false,
-            coepCredentialless: () => !(window.chrome || window.netscape),
+            coepCredentialless: () => false,
             doReload: () => window.location.reload(),
             quiet: false,
             ...window.coi
         };
 
         const n = navigator;
+        const scriptSrc = window.document.currentScript && window.document.currentScript.src;
 
         if (n.serviceWorker && n.serviceWorker.controller) {
             n.serviceWorker.controller.postMessage({
@@ -83,8 +84,24 @@ if (typeof window === 'undefined') {
             }
         }
 
-        // If we're already coi: do nothing. Perhaps it's due to this script doing its job, or COOP/COEP are
-        // already set from the origin server. Also if the browser has no notion of crossOriginIsolated, just give up here.
+        if (window.crossOriginIsolated) {
+            try {
+                sessionStorage.removeItem("coiReloadedBySelf");
+                sessionStorage.removeItem("coiTopReloaded");
+                if (scriptSrc && n.serviceWorker && n.serviceWorker.getRegistrations) {
+                    const rootScope = new URL("./", scriptSrc).href;
+                    n.serviceWorker.getRegistrations().then((regs) => {
+                        for (const reg of regs) {
+                            if (reg.scope !== rootScope && reg.scope.startsWith(rootScope)) {
+                                reg.unregister();
+                            }
+                        }
+                    });
+                }
+            } catch (e) { /* ignore */ }
+            return;
+        }
+
         if (window.crossOriginIsolated !== false || !coi.shouldRegister()) return;
 
         if (!window.isSecureContext) {
@@ -92,27 +109,65 @@ if (typeof window === 'undefined') {
             return;
         }
 
-        // In some environments (e.g. Chrome incognito mode) this won't be available
-        if (n.serviceWorker) {
-            n.serviceWorker.register(window.document.currentScript.src).then(
-                (registration) => {
-                    !coi.quiet && console.log("COOP/COEP Service Worker registered", registration.scope);
+        if (!n.serviceWorker || !scriptSrc) return;
 
-                    registration.addEventListener("updatefound", () => {
-                        !coi.quiet && console.log("Reloading page to make use of updated COOP/COEP Service Worker.");
-                        coi.doReload();
-                    });
-
-                    // If the registration is active, but it's not controlling the page
-                    if (registration.active && !n.serviceWorker.controller) {
-                        !coi.quiet && console.log("Reloading page to make use of COOP/COEP Service Worker.");
-                        coi.doReload();
+        let reloading = false;
+        const reloadOnce = () => {
+            if (reloading) return;
+            reloading = true;
+            try {
+                if (window.self !== window.top && window.top && window.top.crossOriginIsolated === false) {
+                    if (!sessionStorage.getItem("coiTopReloaded")) {
+                        sessionStorage.setItem("coiTopReloaded", "1");
+                        window.top.location.reload();
+                        return;
                     }
-                },
-                (err) => {
-                    !coi.quiet && console.error("COOP/COEP Service Worker failed to register:", err);
                 }
-            );
+            } catch (e) { /* ignore */ }
+            coi.doReload();
+        };
+
+        // If a controller already claims this page yet crossOriginIsolated is still false (e.g. claimed mid-load
+        // or switching from an older narrow-scope worker), reload once so the fetch handler supplies COOP/COEP.
+        if (n.serviceWorker.controller) {
+            try {
+                if (!sessionStorage.getItem("coiReloadedBySelf")) {
+                    sessionStorage.setItem("coiReloadedBySelf", "1");
+                    reloadOnce();
+                    return;
+                }
+            } catch (e) { /* ignore */ }
         }
+
+        n.serviceWorker.addEventListener("controllerchange", () => {
+            !coi.quiet && console.log("Reloading page after COOP/COEP Service Worker claimed control.");
+            reloadOnce();
+        });
+
+        n.serviceWorker.register(scriptSrc).then(
+            (registration) => {
+                !coi.quiet && console.log("COOP/COEP Service Worker registered", registration.scope);
+
+                const watchWorker = (w) => {
+                    if (!w) return;
+                    w.addEventListener("statechange", () => {
+                        if (w.state === "activated" && !window.crossOriginIsolated) reloadOnce();
+                    });
+                };
+                watchWorker(registration.installing || registration.waiting);
+
+                registration.addEventListener("updatefound", () => {
+                    watchWorker(registration.installing);
+                });
+
+                if (registration.active && !n.serviceWorker.controller) {
+                    !coi.quiet && console.log("Reloading page to make use of COOP/COEP Service Worker.");
+                    reloadOnce();
+                }
+            },
+            (err) => {
+                !coi.quiet && console.error("COOP/COEP Service Worker failed to register:", err);
+            }
+        );
     })();
 }
