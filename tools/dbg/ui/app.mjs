@@ -63,11 +63,15 @@ async function isolation() {
 
 function makeClient(build, onLoadState) {
   if (worker) {
-    const c = DbgClient.lazy(assetURL(build.wasm));
+    const c = DbgClient.lazy(assetURL(build.wasm), { expectedBytes: build.wasmBytes ?? 0 });
     c.onLoadState = onLoadState ?? null;
     return c;
   }
   return DbgClient.connect(root);
+}
+
+function mb(bytes) {
+  return (bytes / (1024 * 1024)).toFixed(1);
 }
 
 async function client(build, onLoadState) {
@@ -355,12 +359,40 @@ async function main() {
     model.config.stopOnEntry = entry.checked;
     model.emit("config");
   };
+  const progBox = $("wasm-progress");
+  const progLabel = $("wasm-progress-label");
+  const progPct = $("wasm-progress-pct");
+  const progFill = $("wasm-progress-fill");
   update = () => {
     for (const [name, c] of Object.entries(ctl)) $(`btn-${name}`).disabled = !c.on();
     $("btn-start").textContent = model.session ? "↻ restart" : "▶ start";
     $("btn-continue").textContent = model.state === "running" ? "⏸ pause (F8)" : "▶ continue (F8)";
     document.body.dataset.state = model.state;
-    const loading = worker && model.client?.loading ? `loading ${build.wasm} · ` : "";
+    const isLoading = worker && !!model.client?.loading;
+    const p = model.client?.progress;
+    if (progBox) {
+      progBox.hidden = !isLoading;
+      if (isLoading) {
+        if (p?.phase === "compiling") {
+          progLabel.textContent = `Compiling ${build.wasm}…`;
+          progPct.textContent = p.loaded > 0 ? `${mb(p.loaded)} MB` : "";
+          progBox.classList.add("indeterminate");
+          progFill.style.width = "";
+        } else if (p && p.total > 0) {
+          const pct = Math.min(100, Math.round((p.loaded / p.total) * 100));
+          progLabel.textContent = `Downloading ${build.wasm} · ${mb(p.loaded)} / ${mb(p.total)} MB`;
+          progPct.textContent = `${pct}%`;
+          progBox.classList.remove("indeterminate");
+          progFill.style.width = `${pct}%`;
+        } else {
+          progLabel.textContent = `Downloading ${build.wasm}` + (p?.loaded > 0 ? ` · ${mb(p.loaded)} MB` : "…");
+          progPct.textContent = "";
+          progBox.classList.add("indeterminate");
+          progFill.style.width = "";
+        }
+      }
+    }
+    const loading = isLoading ? `loading ${build.wasm} · ` : "";
     status.textContent = `${worker ? build.label : "native"} · ${loading}${statusLine(model)}`;
   };
   model.on("change", update);

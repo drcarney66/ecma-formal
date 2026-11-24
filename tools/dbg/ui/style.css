@@ -38,6 +38,18 @@ body.dbg * { box-sizing: border-box; }
 #status { font: var(--dbg-mono); margin-top: .3em; color: var(--dbg-ink); overflow-wrap: anywhere; }
 body.dbg[data-state="paused"] #status { color: var(--owed, #8a5a00); }
 body.dbg[data-state="terminated"] #status { color: var(--dbg-good); }
+#wasm-progress { margin-top: .35em; max-width: 34rem; }
+.wasm-progress-row { display: flex; justify-content: space-between; gap: .8em; font: var(--dbg-mono); color: var(--dbg-dim); margin-bottom: .2em; }
+#wasm-progress-pct { font-variant-numeric: tabular-nums; color: var(--dbg-ink); font-weight: 600; }
+.wasm-progress-track { height: 6px; border-radius: 999px; background: var(--dbg-line); overflow: hidden; }
+#wasm-progress-fill { height: 100%; width: 0%; border-radius: 999px; background: var(--dbg-link); transition: width 0.08s linear; }
+#wasm-progress.indeterminate #wasm-progress-fill {
+  width: 38%; animation: wasm-slide 1.1s ease-in-out infinite;
+}
+@keyframes wasm-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(270%); }
+}
 #narrow { display: none; margin: .3em 0 0; color: var(--dbg-dim); }
 #unsupported { flex: 1; overflow: auto; background: var(--dbg-pane); padding: 1.5rem max(16px, 4vw); font-size: 1rem; line-height: 1.55; }
 #unsupported h2 { font-size: 1.4rem; margin: 0 0 .6rem; }

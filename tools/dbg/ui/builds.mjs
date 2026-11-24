@@ -22,7 +22,11 @@ export function readBuilds(json) {
     if (typeof b.wasm !== "string" || !/^[A-Za-z0-9._-]+\.wasm$/.test(b.wasm)) continue;
     const args = Array.isArray(b.args) && b.args.every((a) => typeof a === "string") ? b.args : null;
     if (!args) continue;
-    out.push({ id: b.id, label: String(b.label ?? b.id), description: String(b.description ?? ""), wasm: b.wasm, args });
+    const entry = { id: b.id, label: String(b.label ?? b.id), description: String(b.description ?? ""), wasm: b.wasm, args };
+    if (typeof b.wasmBytes === "number" && Number.isFinite(b.wasmBytes) && b.wasmBytes > 0) {
+      entry.wasmBytes = Math.floor(b.wasmBytes);
+    }
+    out.push(entry);
   }
   if (!out.length) throw new Error("builds.json: no build");
   return out;

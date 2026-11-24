@@ -153,8 +153,9 @@ const loaded2 = await lazy.ensureLoaded();
 check("lazy client compiles once on demand and caches glue", compiles === 1 && loaded1.module === fakeMod && loaded2.module === fakeMod && loaded1.glue.endsWith("ecma-dbg-web-prop.mjs"), { compiles, glue: loaded1.glue });
 
 // Auto-selecting a proposal example's primary build when picked from the menu.
-const popBuild = { id: "popcount", label: "Proposal: popcount", description: "p", wasm: "ecma-dbg-web-popcount.wasm", args: [] };
+const popBuild = readBuilds({ builds: [{ id: "popcount", label: "Proposal: popcount", description: "p", wasm: "ecma-dbg-web-popcount.wasm", wasmBytes: 13185591, args: [] }] })[0];
 const allBuilds = [...extra, popBuild];
+check("builds.json: preserves optional wasmBytes", popBuild.wasmBytes === 13185591 && !("wasmBytes" in extra[0]), popBuild);
 const popEx = { id: "dbg/proposal_popcount", builds: { popcount: { pauses: [], end: "normal: undefined" }, spec: { pauses: [], end: "throw: TypeError" } } };
 const errataEx = { id: "run/module_top_level_await", builds: { spec: { pauses: [], end: "normal: undefined" }, literal: { pauses: [], end: "stop: ?" } } };
 const specOnlyEx = { id: "demo/get", builds: { spec: { pauses: [], end: "normal: 8" } } };
@@ -162,9 +163,19 @@ check("picking popcount on spec switches to popcount", exampleBuild(popEx, allBu
 check("picking popcount on defer switches to popcount", exampleBuild(popEx, chooseBuild(allBuilds, "defer"), allBuilds).id === "popcount", "");
 check("picking errata example on literal keeps literal", exampleBuild(errataEx, lit, allBuilds).id === "literal", "");
 check("picking spec-only example on popcount switches back to spec", exampleBuild(specOnlyEx, popBuild, allBuilds).id === "spec", "");
-const versionedLazy = DbgClient.lazy("https://example.invalid/ecma-dbg-web-popcount.wasm?v=abc", { compile: async () => fakeMod });
+const states = [];
+const versionedLazy = DbgClient.lazy("https://example.invalid/ecma-dbg-web-popcount.wasm?v=abc", {
+  expectedBytes: 1000,
+  compile: async (_u, opts) => {
+    opts?.onProgress?.({ loaded: 500, total: 1000, phase: "downloading" });
+    opts?.onProgress?.({ loaded: 1000, total: 1000, phase: "compiling" });
+    return fakeMod;
+  },
+});
+versionedLazy.onLoadState = (st, info) => states.push({ st, phase: info?.phase ?? null, loaded: info?.loaded ?? null });
 const loadedVer = await versionedLazy.ensureLoaded();
 check("lazy client preserves version query on glue URL", loadedVer.glue === "https://example.invalid/ecma-dbg-web-popcount.mjs?v=abc", loadedVer.glue);
+check("lazy client emits loading, progress, and ready states", states.length === 4 && states[0].st === "loading" && states[1].loaded === 500 && states[2].phase === "compiling" && states[3].st === "ready", states);
 
 console.log(`${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

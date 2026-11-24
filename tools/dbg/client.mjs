@@ -61,33 +61,95 @@ async function fetchBytes(url) {
 
 // Compiled WebAssembly.Modules keyed by URL href, so lazy clients share and reuse compilations.
 const compiledModules = new Map();
+const compileProgressListeners = new Map();
+const compileLatestProgress = new Map();
 
-async function compileWasmURL(url) {
+function emitCompileProgress(key, info) {
+  compileLatestProgress.set(key, info);
+  for (const fn of compileProgressListeners.get(key) ?? []) fn(info);
+}
+
+async function compileWasmURL(url, { expectedBytes = 0, onProgress = null } = {}) {
   const key = url.href;
-  if (!compiledModules.has(key)) {
-    const p = (async () => {
-      if (url.protocol !== "file:" && typeof WebAssembly.compileStreaming === "function") {
+  if (onProgress) {
+    if (!compileProgressListeners.has(key)) compileProgressListeners.set(key, new Set());
+    compileProgressListeners.get(key).add(onProgress);
+    const prev = compileLatestProgress.get(key);
+    if (prev) onProgress(prev);
+  }
+  try {
+    if (!compiledModules.has(key)) {
+      const p = (async () => {
+        if (url.protocol !== "file:") {
+          try {
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`${url}: ${resp.status} ${resp.statusText}`);
+            const enc = resp.headers.get("content-encoding");
+            const cl = Number(resp.headers.get("content-length") || 0);
+            let total = expectedBytes > 0 ? expectedBytes : (!enc && cl > 0 ? cl : 0);
+            emitCompileProgress(key, { loaded: 0, total, phase: "downloading" });
+
+            let tracked = resp;
+            if (resp.body && typeof ReadableStream === "function") {
+              const reader = resp.body.getReader();
+              let loaded = 0;
+              let lastEmit = 0;
+              const stream = new ReadableStream({
+                async pull(controller) {
+                  const { done, value } = await reader.read();
+                  if (done) {
+                    emitCompileProgress(key, { loaded, total: loaded || total, phase: "compiling" });
+                    controller.close();
+                    return;
+                  }
+                  loaded += value.byteLength;
+                  if (total > 0 && loaded > total) total = 0;
+                  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+                  if (now - lastEmit >= 48) {
+                    lastEmit = now;
+                    emitCompileProgress(key, { loaded, total, phase: "downloading" });
+                  }
+                  controller.enqueue(value);
+                },
+                cancel(reason) {
+                  return reader.cancel(reason);
+                },
+              });
+              tracked = new Response(stream, { status: resp.status, statusText: resp.statusText, headers: resp.headers });
+            }
+
+            const ct = resp.headers.get("content-type") ?? "";
+            if (typeof WebAssembly.compileStreaming === "function" && ct.includes("application/wasm")) {
+              return await WebAssembly.compileStreaming(tracked);
+            }
+            const bytes = new Uint8Array(await tracked.arrayBuffer());
+            emitCompileProgress(key, { loaded: bytes.byteLength, total: bytes.byteLength, phase: "compiling" });
+            return await WebAssembly.compile(bytes);
+          } catch (e) {
+            compiledModules.delete(key);
+            compileLatestProgress.delete(key);
+            throw e;
+          }
+        }
         try {
-          const resp = await fetch(url);
-          if (!resp.ok) throw new Error(`${url}: ${resp.status} ${resp.statusText}`);
-          const ct = resp.headers.get("content-type") ?? "";
-          if (ct.includes("application/wasm")) return await WebAssembly.compileStreaming(resp);
-          return await WebAssembly.compile(new Uint8Array(await resp.arrayBuffer()));
+          return await WebAssembly.compile(await fetchBytes(url));
         } catch (e) {
           compiledModules.delete(key);
           throw e;
         }
+      })();
+      compiledModules.set(key, p);
+    }
+    return await compiledModules.get(key);
+  } finally {
+    if (onProgress) {
+      const set = compileProgressListeners.get(key);
+      if (set) {
+        set.delete(onProgress);
+        if (!set.size) compileProgressListeners.delete(key);
       }
-      try {
-        return await WebAssembly.compile(await fetchBytes(url));
-      } catch (e) {
-        compiledModules.delete(key);
-        throw e;
-      }
-    })();
-    compiledModules.set(key, p);
+    }
   }
-  return compiledModules.get(key);
 }
 
 export class DbgClient {
@@ -98,6 +160,7 @@ export class DbgClient {
     this.bin = bin;
     this.loader = loader;
     this.loading = false;
+    this.progress = null;
     this.onLoadState = null;
     this.transport = server ? "native-http" : bin ? "native-process" : "worker";
   }
@@ -131,23 +194,31 @@ export class DbgClient {
 
   // Lazy Worker client: fetches and compiles `wasm` only on the first `session()` call
   // (or `ensureLoaded()`), reusing `compiledModules` across restarts and build switches.
-  static lazy(wasm, { glue, compile = compileWasmURL } = {}) {
+  static lazy(wasm, { glue, expectedBytes = 0, compile = compileWasmURL } = {}) {
     let promise = null;
     const client = new DbgClient(null, null, null, null, async () => {
       if (client.module) return { module: client.module, glue: client.glue };
       if (!promise) {
         client.loading = true;
-        client.onLoadState?.("loading");
+        client.progress = { loaded: 0, total: expectedBytes > 0 ? expectedBytes : 0, phase: "downloading" };
+        client.onLoadState?.("loading", client.progress);
         promise = (async () => {
           const wasmURL = await toURL(wasm);
           const glueURL = glue ? await toURL(glue) : new URL(wasmURL.href.replace(/\.wasm(?=$|\?)/, ".mjs"));
-          const mod = await compile(wasmURL);
+          const mod = await compile(wasmURL, {
+            expectedBytes,
+            onProgress: (info) => {
+              client.progress = info;
+              client.onLoadState?.("progress", info);
+            },
+          });
           client.module = mod;
           client.glue = glueURL.href;
           return { module: mod, glue: glueURL.href };
         })().finally(() => {
           client.loading = false;
-          client.onLoadState?.("ready");
+          client.progress = null;
+          client.onLoadState?.("ready", null);
         });
         promise.catch(() => {
           promise = null;

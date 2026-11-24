@@ -186,7 +186,6 @@ def main() -> int:
         if any(x["id"] == b["id"] for x in table["builds"]):
             sys.exit(f"--build {b['id']}: a build of that name exists")
     builds = {"builds": table["builds"] + [{k: v for k, v in b.items() if k != "source"} for b in extra]}
-    (BUILD / "builds.json").write_text(json.dumps(builds, indent=1, ensure_ascii=False) + "\n")
     wasm_dir = BUILD / "site-wasm"
     shutil.rmtree(wasm_dir, ignore_errors=True)
     wasm_dir.mkdir()
@@ -196,6 +195,11 @@ def main() -> int:
         src = Path(b["source"])
         shutil.copy(src, wasm_dir / b["wasm"])
         shutil.copy(src.with_suffix(".mjs"), wasm_dir / Path(b["wasm"]).with_suffix(".mjs"))
+    for entry in builds["builds"]:
+        wf = wasm_dir / entry["wasm"]
+        if wf.is_file():
+            entry["wasmBytes"] = wf.stat().st_size
+    (BUILD / "builds.json").write_text(json.dumps(builds, indent=1, ensure_ascii=False) + "\n")
 
     # 4: the examples' check, natively and on each WebAssembly build in node.
     native_for = []
