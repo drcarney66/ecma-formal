@@ -198,8 +198,13 @@ def main() -> int:
         shutil.copy(src.with_suffix(".mjs"), wasm_dir / Path(b["wasm"]).with_suffix(".mjs"))
 
     # 4: the examples' check, natively and on each WebAssembly build in node.
+    native_for = []
+    for b in extra:
+        cand = Path(b["source"]).parent.parent / "bin/ecma-dbg"
+        if cand.is_file():
+            native_for += ["--native-for", f"{b['id']}={cand}"]
     checks = []
-    for name, engine in (("native", ["--native", BIN / "ecma-dbg"]), ("wasm", ["--wasm-node", wasm_dir])):
+    for name, engine in (("native", ["--native", BIN / "ecma-dbg", *native_for]), ("wasm", ["--wasm-node", wasm_dir])):
         out = BUILD / f"examples-check-{name}.json"
         run(a.node, "tools/dbg/ui/gallery_test.mjs", "--gallery", BUILD / "examples.json", "--builds",
             BUILD / "builds.json", *engine, "--json", out)
