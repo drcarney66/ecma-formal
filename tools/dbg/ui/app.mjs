@@ -76,7 +76,9 @@ async function client(build, onLoadState) {
 }
 
 // The test bundle (dbg-tests.json, scripts/dbg_browser_bundle.py), if served, and its programs as examples.
+// The built site (`data-engine` set on `<body>`) ships `examples.json` instead and has no test bundle outside `?test`.
 async function bundle() {
+  if (document.body.dataset.engine && !test) return { bundle: null, examples: {} };
   try {
     const r = await fetch(new URL("dbg-tests.json", root));
     if (!r.ok) return { bundle: null, examples: {} };

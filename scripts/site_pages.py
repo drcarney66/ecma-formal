@@ -203,6 +203,7 @@ def bar_html(here: str, pages: set[str], prefix: str = "") -> str:
 </header>"""
 
 
+ICON = '<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">'
 THEME = ('<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");'
          'document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){'
          'document.documentElement.setAttribute("data-theme","light")}</script>')
@@ -244,6 +245,7 @@ def frame(p: Page, pages: set[str], facts: dict) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)}</title>
 <meta name="color-scheme" content="light dark">
+{ICON}
 {coi_tag}<link rel="stylesheet" href="{pre}style.css{ver_q}">
 {THEME}
 <script src="{pre}site.js{ver_q}" defer></script>
@@ -292,6 +294,7 @@ def debugger_frame(pages: set[str], gallery: dict | None, rev: str = "") -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Debugger · {html.escape(SITE_NAME)}</title>
 <meta name="color-scheme" content="light dark">
+{ICON}
 <!-- Cross-origin isolation from the site-root service worker where the server gives none; a no-op where it does. -->
 <script src="../coi-serviceworker.js{ver_q}"></script>
 <link rel="stylesheet" href="../style.css{ver_q}">
@@ -706,19 +709,22 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
 
     if has_dbg:
         tool_dbg_card = (
-            '<div class="tool-card tool-card-interactive" role="button" tabindex="0" '
-            'data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma">'
+            '<div class="tool-card tool-card-accent">'
+            '<div class="tool-head">'
             '<div class="tool-kicker">Interactive Wasm64</div>'
             '<h3>Spec debugger</h3>'
             '<p class="tool-sub">Step forward &amp; back through <code>spec.html</code> · inspect Slots &amp; Realm</p>'
-            '<div class="tool-Launch-row">'
-            '<span class="open">Click to overlay example →</span>'
             '</div>'
-            '<div class="tool-chips">'
-            '<button type="button" class="chip" data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma">Math.fusedMultiplyAdd</button>'
-            '<button type="button" class="chip" data-dbg-open="debugger/?example=dbg/proposal_deferred_reexports&amp;build=deferred-reexports">export defer</button>'
-            '<button type="button" class="chip" data-dbg-open="debugger/?example=dbg/proposal_composites&amp;build=composites">Composite</button>'
-            '<button type="button" class="chip" data-dbg-open="debugger/?example=dbg/proposal_iterator_transfer&amp;build=iterator-transfer">Iterator.transfer</button>'
+            '<div class="tool-inset">'
+            '<div class="inset-label"><span class="badge rd">Examples</span></div>'
+            '<div class="example-grid">'
+            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma"><span>Math.fusedMultiplyAdd</span><span class="arr">→</span></button>'
+            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_deferred_reexports&amp;build=deferred-reexports"><span>export defer</span><span class="arr">→</span></button>'
+            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_thenable_curtailment&amp;build=thenable-curtailment"><span>Thenable Curtailment</span><span class="arr">→</span></button>'
+            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_composites&amp;build=composites"><span>Composite</span><span class="arr">→</span></button>'
+            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_iterator_transfer&amp;build=iterator-transfer"><span>Iterator.transfer</span><span class="arr">→</span></button>'
+            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_immutable_arraybuffer&amp;build=immutable-arraybuffer"><span>Immutable ArrayBuffer</span><span class="arr">→</span></button>'
+            '</div>'
             '</div>'
             '</div>'
         )
@@ -736,9 +742,11 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
     else:
         tool_dbg_card = (
             '<div class="tool-card">'
+            '<div class="tool-head">'
             '<div class="tool-kicker">Interactive Wasm64</div>'
             '<h3>Spec debugger</h3>'
             '<p class="tool-sub">Step forward &amp; back through <code>spec.html</code> · inspect Slots &amp; Realm</p>'
+            '</div>'
             '</div>'
         )
         step3_after = '<pre class="lean">paused at String.prototype.trim step 2 · characters = "/_"</pre>'
