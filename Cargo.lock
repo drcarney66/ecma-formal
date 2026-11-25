@@ -7,5 +7,12 @@ name = "spectec"
 version = "0.1.0"
 
 [[package]]
+name = "spectec-html"
+version = "0.1.0"
+dependencies = [
+ "spectec",
+]
+
+[[package]]
 name = "test262-runner"
 version = "0.1.0"

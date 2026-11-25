@@ -58,6 +58,7 @@ Outside `lean/`:
 | `external/ecma262`, `external/test262` | the pinned specification and its tests (submodules) |
 | `spec/spectec`, `spec/ids` | the formal ECMA SpecTec specification (`*.spectec`) and its kept id tables (`*-ids.txt`) |
 | `crates/spectec` | the SpecTec parser, roundtripper, prose renderer, and Lean generator (`lean/Ecma/Gen`, `lean/Ecma/Grammar/Gen`) |
+| `crates/spectec-html`, `spec/html` | bidirectional SpecTec ↔ `spec.html` algorithm & grammar printer/checker and name-keyed prose/layout metadata |
 | `crates/test262-runner` | test262 on `ecma-run` (`scripts/test262.py` drives it) |
 | `scripts` | the generators' drivers, the wasm and site builds, tests |
 | `tools/dbg` | the debugger's page, Worker host and UI |
@@ -117,6 +118,12 @@ back into SpecTec DSL and compares every file in `spec/spectec/**/*.spectec` byt
 confirming that `spec/spectec/` parses and prints back cleanly without loss — is `./target/release/spectec
 --spec-dir=spec/spectec roundtrip`, and rendering back to prose is `spectec prose --clause=<secId>`. The quick check
 runs both halves.
+
+To map `spec/spectec/`'s algorithms, SDO equations, Early Errors, grammar keys, and definition grammars back to `spec.html`
+byte for byte via the name-keyed sidecar tables under `spec/html/` (`spectec-html`):
+
+    nix develop $D -c python3 scripts/html_bijection.py [--spec PATH]
+    nix develop $D -c ./target/release/spectec-html render-spec --out=OUT.html
 
 ## Tests
 

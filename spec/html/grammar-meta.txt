@@ -1,0 +1,136 @@
+# Grammar definition block layout & errata rule overrides
+
+block @sec-additive-operators syntactic indent=6
+block @sec-array-initializer syntactic indent=8
+block @sec-arrow-function-definitions syntactic indent=6
+block @sec-arrow-function-definitions#1 syntactic indent=6
+block @sec-assignment-operators syntactic indent=6 fmt_ignore=1
+block @sec-async-arrow-function-definitions syntactic indent=6
+block @sec-async-arrow-function-definitions#1 syntactic indent=6
+block @sec-async-function-definitions syntactic indent=6
+block @sec-async-generator-function-definitions syntactic indent=6
+block @sec-binary-bitwise-operators syntactic indent=6
+block @sec-binary-logical-operators syntactic indent=6
+block @sec-bitwise-shift-operators syntactic indent=6
+block @sec-block syntactic indent=6
+block @sec-boolean-literals lexical indent=8
+block @sec-break-statement syntactic indent=6
+block @sec-class-definitions syntactic indent=6
+block @sec-comma-operator syntactic indent=6
+block @sec-comments lexical indent=6
+block @sec-conditional-operator syntactic indent=6
+block @sec-continue-statement syntactic indent=6
+block @sec-debugger-statement syntactic indent=6
+block @sec-destructuring-assignment syntactic indent=8
+block @sec-destructuring-binding-patterns syntactic indent=8
+block @sec-do-while-statement syntactic indent=8
+block @sec-ecmascript-language-lexical-grammar lexical indent=4
+block @sec-ecmascript-language-statements-and-declarations syntactic indent=4
+block @sec-empty-statement syntactic indent=6
+block @sec-equality-operators syntactic indent=6
+block @sec-exp-operator syntactic indent=6
+block @sec-exports syntactic indent=8
+block @sec-expression-statement syntactic indent=6
+block @sec-for-in-and-for-of-statements syntactic indent=8
+block @sec-for-statement syntactic indent=8
+block @sec-function-definitions syntactic indent=6
+block @sec-function.prototype.tostring syntactic indent=10
+block @sec-functiondeclarations-in-ifstatement-statement-clauses annexB indent=8
+block @sec-generator-function-definitions syntactic indent=6
+block @sec-hashbang lexical indent=6
+block @sec-html-like-comments annexB indent=8
+block @sec-identifiers syntactic indent=6
+block @sec-if-statement syntactic indent=6
+block @sec-imports syntactic indent=8
+block @sec-initializers-in-forin-statement-heads annexB indent=8
+block @sec-iteration-statements syntactic indent=6
+block @sec-keywords-and-reserved-words lexical indent=8 fmt_ignore=0
+block @sec-labelled-statements syntactic indent=6
+block @sec-left-hand-side-expressions syntactic indent=6
+block @sec-left-hand-side-expressions#1 syntactic indent=6
+block @sec-let-and-const-declarations syntactic indent=8
+block @sec-let-and-const-declarations#1 syntactic indent=8
+block @sec-line-terminators lexical indent=6
+block @sec-literals-numeric-literals lexical indent=8 fmt_ignore=25
+block @sec-literals-regular-expression-literals lexical indent=8
+block @sec-literals-string-literals lexical indent=8
+block @sec-method-definitions syntactic indent=6
+block @sec-modules syntactic indent=6
+block @sec-multiplicative-operators syntactic indent=6
+block @sec-names-and-keywords lexical indent=6 fmt_ignore=6
+block @sec-null-literals lexical indent=8
+block @sec-object-initializer syntactic indent=8
+block @sec-parameter-lists syntactic indent=6
+block @sec-patterns regExp indent=8
+block @sec-patterns#1 regExp indent=8
+block @sec-patterns#2 regExp indent=8
+block @sec-patterns#3 regExp indent=8
+block @sec-patterns#4 regExp indent=8
+block @sec-primary-expression syntactic indent=6
+block @sec-primary-expression#1 syntactic indent=6
+block @sec-primary-expression-literals syntactic indent=8
+block @sec-punctuators lexical indent=6 fmt_ignore=2
+block @sec-regular-expressions-patterns annexB indent=8
+block @sec-relational-operators syntactic indent=6
+block @sec-return-statement syntactic indent=6
+block @sec-scripts syntactic indent=6
+block @sec-source-text lexical indent=6
+block @sec-stringintegerliteral-grammar numericString indent=10
+block @sec-switch-statement syntactic indent=6
+block @sec-template-literal-lexical-components lexical indent=8
+block @sec-template-literals syntactic indent=8
+block @sec-throw-statement syntactic indent=6
+block @sec-time-zone-offset-strings numericString indent=10
+block @sec-tokens lexical indent=6
+block @sec-tonumber-applied-to-the-string-type numericString indent=10
+block @sec-try-statement syntactic indent=6
+block @sec-unary-operators syntactic indent=6
+block @sec-update-expressions syntactic indent=6
+block @sec-variable-statement syntactic indent=8
+block @sec-while-statement syntactic indent=8
+block @sec-white-space lexical indent=6
+block @sec-with-statement syntactic indent=6
+
+spectec_only_block @formal-json json
+spectec_only_block @formal-json#1 json
+spectec_only_block @formal-json#2 json
+spectec_only_block @formal-json#3 json
+spectec_only_block @formal-json#4 json
+spectec_only_block @formal-json#5 json
+
+@@rule_override @sec-patterns regExp |RegExpUnicodeEscapeSequence|
+@@spectec
+| rule regExp |RegExpUnicodeEscapeSequence| [UnicodeMode] :: {
+|   | [+UnicodeMode] "u" |HexLeadSurrogate| "\\u" |HexTrailSurrogate|
+|   | [+UnicodeMode] "u" |HexLeadSurrogate| [lookahead not_in { "\\uDC", "\\uDc", "\\udC", "\\udc", "\\uDD", "\\uDd", "\\udD", "\\udd", "\\uDE", "\\uDe", "\\udE", "\\ude", "\\uDF", "\\uDf", "\\udF", "\\udf" }]
+|   | [+UnicodeMode] "u" |HexTrailSurrogate|
+|   | [+UnicodeMode] "u" |HexNonSurrogate|
+|   | [~UnicodeMode] "u" |Hex4Digits|
+|   | [+UnicodeMode] "u{" |CodePoint| "}"
+| }
+@@html
+| RegExpUnicodeEscapeSequence[UnicodeMode] ::
+|   [+UnicodeMode] `u` HexLeadSurrogate `\u` HexTrailSurrogate
+|   [+UnicodeMode] `u` HexLeadSurrogate
+|   [+UnicodeMode] `u` HexTrailSurrogate
+|   [+UnicodeMode] `u` HexNonSurrogate
+|   [~UnicodeMode] `u` Hex4Digits
+|   [+UnicodeMode] `u{` CodePoint `}`
+@@end
+
+@@rule_override @sec-patterns#1 regExp |IdentityEscape|
+@@spectec
+| rule regExp |IdentityEscape| [UnicodeMode] :: {
+|   | [+UnicodeMode] |SyntaxCharacter|
+|   | [+UnicodeMode] "/"
+|   | [~UnicodeMode] |SourceCharacter| butnot |UnicodeIDContinue|
+|   | [~UnicodeMode] "‌"
+|   | [~UnicodeMode] "‍"
+| }
+@@html
+| IdentityEscape[UnicodeMode] ::
+|   [+UnicodeMode] SyntaxCharacter
+|   [+UnicodeMode] `/`
+|   [~UnicodeMode] SourceCharacter but not UnicodeIDContinue
+@@end
+

@@ -1,0 +1,3076 @@
+# Keyed item metadata linking spec/spectec items and spec.html slots
+
+alg @await base=10 close=8
+alg @sec-%arrayiteratorprototype%.next base=12 close=10
+alg @sec-%asyncfromsynciteratorprototype%.next base=12 close=10
+alg @sec-%asyncfromsynciteratorprototype%.return base=12 close=10
+alg @sec-%asyncfromsynciteratorprototype%.throw base=12 close=10
+alg @sec-%asynciteratorprototype%-%symbol.asyncdispose% base=10 close=8
+alg @sec-%asynciteratorprototype%-%symbol.asynciterator% base=10 close=8
+alg @sec-%foriniteratorprototype%.next base=14 close=12
+alg @sec-%iteratorhelperprototype%.next base=12 close=10
+alg @sec-%iteratorhelperprototype%.return base=12 close=10
+alg @sec-%mapiteratorprototype%.next base=12 close=10
+alg @sec-%regexpstringiteratorprototype%.next base=12 close=10
+alg @sec-%setiteratorprototype%.next base=12 close=10
+alg @sec-%stringiteratorprototype%.next base=12 close=10
+alg @sec-%throwtypeerror% base=10 close=8
+alg @sec-%typedarray% base=10 close=8
+alg @sec-%typedarray%.from base=10 close=8
+alg @sec-%typedarray%.of base=10 close=8
+alg @sec-%typedarray%.prototype.at base=10 close=8
+alg @sec-%typedarray%.prototype.copywithin base=10 close=8
+alg @sec-%typedarray%.prototype.entries base=10 close=8
+alg @sec-%typedarray%.prototype.every base=10 close=8
+alg @sec-%typedarray%.prototype.fill base=10 close=8
+alg @sec-%typedarray%.prototype.filter base=10 close=8
+alg @sec-%typedarray%.prototype.find base=10 close=8
+alg @sec-%typedarray%.prototype.findindex base=10 close=8
+alg @sec-%typedarray%.prototype.findlast base=10 close=8
+alg @sec-%typedarray%.prototype.findlastindex base=10 close=8
+alg @sec-%typedarray%.prototype.foreach base=10 close=8
+alg @sec-%typedarray%.prototype.includes base=10 close=8
+alg @sec-%typedarray%.prototype.indexof base=10 close=8
+alg @sec-%typedarray%.prototype.join base=10 close=8
+alg @sec-%typedarray%.prototype.keys base=10 close=8
+alg @sec-%typedarray%.prototype.lastindexof base=10 close=8
+alg @sec-%typedarray%.prototype.map base=10 close=8
+alg @sec-%typedarray%.prototype.reduce base=10 close=8
+alg @sec-%typedarray%.prototype.reduceright base=10 close=8
+alg @sec-%typedarray%.prototype.reverse base=10 close=8
+alg @sec-%typedarray%.prototype.set base=10 close=8
+alg @sec-%typedarray%.prototype.slice base=10 close=8
+alg @sec-%typedarray%.prototype.some base=10 close=8
+alg @sec-%typedarray%.prototype.sort base=10 close=8
+alg @sec-%typedarray%.prototype.subarray base=10 close=8
+alg @sec-%typedarray%.prototype.tolocalestring base=10 close=8
+alg @sec-%typedarray%.prototype.toreversed base=10 close=8
+alg @sec-%typedarray%.prototype.tosorted base=10 close=8
+alg @sec-%typedarray%.prototype.values base=10 close=8
+alg @sec-%typedarray%.prototype.with base=10 close=8
+alg @sec-%wrapforvaliditeratorprototype%.next base=16 close=14
+alg @sec-%wrapforvaliditeratorprototype%.return base=16 close=14
+alg @sec-AllImportAttributesSupported base=10 close=8
+alg @sec-ContinueDynamicImport base=10 close=8
+alg @sec-ContinueModuleLoading base=16 close=14
+alg @sec-EvaluateModuleSync base=12 close=10
+alg @sec-FinishLoadingImportedModule base=10 close=8
+alg @sec-GetImportedModule base=10 close=8
+alg @sec-IncrementModuleAsyncEvaluationCount base=8 close=6
+alg @sec-InnerModuleLinking base=16 close=14
+alg @sec-InnerModuleLoading base=16 close=14
+alg @sec-LoadRequestedModules base=14 close=12
+alg @sec-ModuleRequestsEqual base=12 close=10
+alg @sec-ParseJSON base=10 close=8
+alg @sec-SetterThatIgnoresPrototypeProperties base=8 close=6
+alg @sec-add-entries-from-iterable base=10 close=8
+alg @sec-add-value-to-keyed-group base=8 close=6
+alg @sec-adddisposableresource base=8 close=6
+alg @sec-addrestrictedfunctionproperties base=8 close=6
+alg @sec-addtokeptobjects base=6 close=4
+alg @sec-addwaiter base=10 close=8
+alg @sec-advancestringindex base=10 close=8
+alg @sec-agentcansuspend base=8 close=6
+alg @sec-agentsignifier base=8 close=6
+alg @sec-aggregate-error base=12 close=10
+alg @sec-allcharacters base=12 close=10
+alg @sec-allocatearraybuffer base=10 close=8
+alg @sec-allocatesharedarraybuffer base=10 close=8
+alg @sec-allocatetypedarray base=12 close=10
+alg @sec-allocatetypedarraybuffer base=12 close=10
+alg @sec-applystringornumericbinaryoperator base=8 close=6
+alg @sec-arguments-exotic-objects-defineownproperty-p-desc base=10 close=8
+alg @sec-arguments-exotic-objects-delete-p base=10 close=8
+alg @sec-arguments-exotic-objects-get-p-receiver base=10 close=8
+alg @sec-arguments-exotic-objects-getownproperty-p base=10 close=8
+alg @sec-arguments-exotic-objects-set-p-v-receiver base=10 close=8
+alg @sec-array base=10 close=8
+alg @sec-array-exotic-objects-defineownproperty-p-desc base=10 close=8
+alg @sec-array.from base=10 close=8
+alg @sec-array.fromasync base=10 close=8
+alg @sec-array.isarray base=10 close=8
+alg @sec-array.of base=10 close=8
+alg @sec-array.prototype-%symbol.unscopables% base=10 close=8
+alg @sec-array.prototype.at base=10 close=8
+alg @sec-array.prototype.concat base=10 close=8
+alg @sec-array.prototype.copywithin base=10 close=8
+alg @sec-array.prototype.entries base=10 close=8
+alg @sec-array.prototype.every base=10 close=8
+alg @sec-array.prototype.fill base=10 close=8
+alg @sec-array.prototype.filter base=10 close=8
+alg @sec-array.prototype.find base=10 close=8
+alg @sec-array.prototype.findindex base=10 close=8
+alg @sec-array.prototype.findlast base=10 close=8
+alg @sec-array.prototype.findlastindex base=10 close=8
+alg @sec-array.prototype.flat base=10 close=8
+alg @sec-array.prototype.flatmap base=10 close=8
+alg @sec-array.prototype.foreach base=10 close=8
+alg @sec-array.prototype.includes base=10 close=8
+alg @sec-array.prototype.indexof base=10 close=8
+alg @sec-array.prototype.join base=10 close=8
+alg @sec-array.prototype.keys base=10 close=8
+alg @sec-array.prototype.lastindexof base=10 close=8
+alg @sec-array.prototype.map base=10 close=8
+alg @sec-array.prototype.pop base=10 close=8
+alg @sec-array.prototype.push base=10 close=8
+alg @sec-array.prototype.reduce base=10 close=8
+alg @sec-array.prototype.reduceright base=10 close=8
+alg @sec-array.prototype.reverse base=10 close=8
+alg @sec-array.prototype.shift base=10 close=8
+alg @sec-array.prototype.slice base=10 close=8
+alg @sec-array.prototype.some base=10 close=8
+alg @sec-array.prototype.sort base=10 close=8
+alg @sec-array.prototype.splice base=10 close=8
+alg @sec-array.prototype.tolocalestring base=10 close=8
+alg @sec-array.prototype.toreversed base=10 close=8
+alg @sec-array.prototype.tosorted base=10 close=8
+alg @sec-array.prototype.tospliced base=10 close=8
+alg @sec-array.prototype.tostring base=10 close=8
+alg @sec-array.prototype.unshift base=10 close=8
+alg @sec-array.prototype.values base=10 close=8
+alg @sec-array.prototype.with base=10 close=8
+alg @sec-arraybuffer-length base=10 close=8
+alg @sec-arraybuffer.isview base=10 close=8
+alg @sec-arraybuffer.prototype.resize base=10 close=8
+alg @sec-arraybuffer.prototype.slice base=10 close=8
+alg @sec-arraybuffer.prototype.transfer base=10 close=8
+alg @sec-arraybuffer.prototype.transfertofixedlength base=10 close=8
+alg @sec-arraybufferbytelength base=10 close=8
+alg @sec-arraybuffercopyanddetach base=10 close=8
+alg @sec-arraycreate base=10 close=8
+alg @sec-arraysetlength base=10 close=8
+alg @sec-arrayspeciescreate base=10 close=8
+alg @sec-async-function-constructor-arguments base=10 close=8
+alg @sec-async-functions-abstract-operations-async-function-start base=10 close=8
+alg @sec-async-module-execution-fulfilled base=16 close=14
+alg @sec-async-module-execution-rejected base=16 close=14
+alg @sec-asyncblockstart base=10 close=8
+alg @sec-asyncdisposablestack base=10 close=8
+alg @sec-asyncdisposablestack.prototype.adopt base=10 close=8
+alg @sec-asyncdisposablestack.prototype.defer base=10 close=8
+alg @sec-asyncdisposablestack.prototype.disposeAsync base=10 close=8
+alg @sec-asyncdisposablestack.prototype.move base=10 close=8
+alg @sec-asyncdisposablestack.prototype.use base=10 close=8
+alg @sec-asyncfromsynciteratorcontinuation base=10 close=8
+alg @sec-asyncgenerator-prototype-next base=10 close=8
+alg @sec-asyncgenerator-prototype-return base=10 close=8
+alg @sec-asyncgenerator-prototype-throw base=10 close=8
+alg @sec-asyncgeneratorawaitreturn base=10 close=8
+alg @sec-asyncgeneratorcompletestep base=10 close=8
+alg @sec-asyncgeneratordrainqueue base=10 close=8
+alg @sec-asyncgeneratorenqueue base=10 close=8
+alg @sec-asyncgeneratorfunction base=10 close=8
+alg @sec-asyncgeneratorresume base=10 close=8
+alg @sec-asyncgeneratorstart base=10 close=8
+alg @sec-asyncgeneratorunwrapyieldresumption base=10 close=8
+alg @sec-asyncgeneratorvalidate base=10 close=8
+alg @sec-asyncgeneratoryield base=10 close=8
+alg @sec-asynciteratorclose base=8 close=6
+alg @sec-atomiccompareexchangeinsharedblock base=10 close=8
+alg @sec-atomicreadmodifywrite base=10 close=8
+alg @sec-atomics.add base=8 close=6
+alg @sec-atomics.and base=8 close=6
+alg @sec-atomics.compareexchange base=8 close=6
+alg @sec-atomics.exchange base=8 close=6
+alg @sec-atomics.islockfree base=8 close=6
+alg @sec-atomics.load base=8 close=6
+alg @sec-atomics.notify base=8 close=6
+alg @sec-atomics.or base=8 close=6
+alg @sec-atomics.pause base=8 close=6
+alg @sec-atomics.store base=8 close=6
+alg @sec-atomics.sub base=8 close=6
+alg @sec-atomics.wait base=8 close=6
+alg @sec-atomics.waitasync base=8 close=6
+alg @sec-atomics.xor base=8 close=6
+alg @sec-availablenamedtimezoneidentifiers base=10 close=8
+alg @sec-backreference-matcher base=12 close=10
+alg @sec-bigint-constructor-number-value base=10 close=8
+alg @sec-bigint.asintn base=10 close=8
+alg @sec-bigint.asuintn base=10 close=8
+alg @sec-bigint.prototype.tostring base=10 close=8
+alg @sec-bigint.prototype.valueof base=10 close=8
+alg @sec-bigintbitwiseop base=12 close=10
+alg @sec-bindthisvalue base=12 close=10
+alg @sec-blockdeclarationinstantiation base=8 close=6
+alg @sec-boolean-constructor-boolean-value base=10 close=8
+alg @sec-boolean.prototype.tostring base=10 close=8
+alg @sec-boolean.prototype.valueof base=10 close=8
+alg @sec-bound-function-exotic-objects-call-thisargument-argumentslist base=10 close=8
+alg @sec-bound-function-exotic-objects-construct-argumentslist-newtarget base=10 close=8
+alg @sec-boundfunctioncreate base=10 close=8
+alg @sec-built-in-function-objects-call-thisargument-argumentslist base=8 close=6
+alg @sec-built-in-function-objects-construct-argumentslist-newtarget base=8 close=6
+alg @sec-builtincallorconstruct base=8 close=6
+alg @sec-bytelistbitwiseop base=10 close=8
+alg @sec-bytelistequal base=10 close=8
+alg @sec-call base=8 close=6
+alg @sec-canbeheldweakly base=6 close=4
+alg @sec-candeclareglobalfunction base=12 close=10
+alg @sec-candeclareglobalvar base=12 close=10
+alg @sec-canonicalizekeyedcollectionkey base=8 close=6
+alg @sec-canonicalnumericindexstring base=8 close=6
+alg @sec-charactercomplement base=12 close=10
+alg @sec-class-definitions-static-semantics-early-errors base=12 close=10
+alg @sec-cleanup-finalization-registry base=6 close=4
+alg @sec-clear-kept-objects base=6 close=4
+alg @sec-clonearraybuffer base=10 close=8
+alg @sec-codepointat base=8 close=6
+alg @sec-codepointstostring base=8 close=6
+alg @sec-coherent-reads base=8 close=6
+alg @sec-comparearrayelements base=12 close=10
+alg @sec-comparetypedarrayelements base=10 close=8
+alg @sec-completepropertydescriptor base=10 close=8
+alg @sec-completion-ao base=10 close=8
+alg @sec-composewriteeventbytes base=8 close=6
+alg @sec-construct base=8 close=6
+alg @sec-copydatablockbytes base=10 close=8
+alg @sec-copydataproperties base=8 close=6
+alg @sec-countleftcapturingparensbefore base=10 close=8
+alg @sec-countleftcapturingparenswithin base=10 close=8
+alg @sec-create-default-export-synthetic-module base=12 close=10
+alg @sec-createarrayfromlist base=8 close=6
+alg @sec-createarrayiterator base=10 close=8
+alg @sec-createasyncfromsynciterator base=10 close=8
+alg @sec-createbuiltinfunction base=8 close=6
+alg @sec-createbytedatablock base=10 close=8
+alg @sec-createdataproperty base=8 close=6
+alg @sec-createdatapropertyorthrow base=8 close=6
+alg @sec-createdynamicfunction base=12 close=10
+alg @sec-createforiniterator base=12 close=10
+alg @sec-createglobalfunctionbinding base=12 close=10
+alg @sec-createglobalvarbinding base=12 close=10
+alg @sec-createhtml base=12 close=10
+alg @sec-createimportbinding base=12 close=10
+alg @sec-createintrinsics base=8 close=6
+alg @sec-createiteratorfromclosure base=10 close=8
+alg @sec-createiterresultobject base=8 close=6
+alg @sec-createjsonparserecord base=10 close=8
+alg @sec-createlistfromarraylike base=8 close=6
+alg @sec-createlistiteratorRecord base=8 close=6
+alg @sec-createmapiterator base=10 close=8
+alg @sec-createmappedargumentsobject base=10 close=8
+alg @sec-createnonenumerabledatapropertyorthrow base=8 close=6
+alg @sec-createperiterationenvironment base=10 close=8
+alg @sec-createregexpstringiterator base=10 close=8
+alg @sec-createresolvingfunctions base=10 close=8
+alg @sec-createsetiterator base=10 close=8
+alg @sec-createsharedbytedatablock base=10 close=8
+alg @sec-createunmappedargumentsobject base=10 close=8
+alg @sec-data-races base=6 close=4
+alg @sec-dataview-buffer-byteoffset-bytelength base=10 close=8
+alg @sec-dataview.prototype.getbigint64 base=10 close=8
+alg @sec-dataview.prototype.getbiguint64 base=10 close=8
+alg @sec-dataview.prototype.getfloat16 base=10 close=8
+alg @sec-dataview.prototype.getfloat32 base=10 close=8
+alg @sec-dataview.prototype.getfloat64 base=10 close=8
+alg @sec-dataview.prototype.getint16 base=10 close=8
+alg @sec-dataview.prototype.getint32 base=10 close=8
+alg @sec-dataview.prototype.getint8 base=10 close=8
+alg @sec-dataview.prototype.getuint16 base=10 close=8
+alg @sec-dataview.prototype.getuint32 base=10 close=8
+alg @sec-dataview.prototype.getuint8 base=10 close=8
+alg @sec-dataview.prototype.setbigint64 base=10 close=8
+alg @sec-dataview.prototype.setbiguint64 base=10 close=8
+alg @sec-dataview.prototype.setfloat16 base=10 close=8
+alg @sec-dataview.prototype.setfloat32 base=10 close=8
+alg @sec-dataview.prototype.setfloat64 base=10 close=8
+alg @sec-dataview.prototype.setint16 base=10 close=8
+alg @sec-dataview.prototype.setint32 base=10 close=8
+alg @sec-dataview.prototype.setint8 base=10 close=8
+alg @sec-dataview.prototype.setuint16 base=10 close=8
+alg @sec-dataview.prototype.setuint32 base=10 close=8
+alg @sec-dataview.prototype.setuint8 base=10 close=8
+alg @sec-date base=10 close=8
+alg @sec-date.prototype-%symbol.toprimitive% base=10 close=8
+alg @sec-date.prototype.getdate base=10 close=8
+alg @sec-date.prototype.getday base=10 close=8
+alg @sec-date.prototype.getfullyear base=10 close=8
+alg @sec-date.prototype.gethours base=10 close=8
+alg @sec-date.prototype.getmilliseconds base=10 close=8
+alg @sec-date.prototype.getminutes base=10 close=8
+alg @sec-date.prototype.getmonth base=10 close=8
+alg @sec-date.prototype.getseconds base=10 close=8
+alg @sec-date.prototype.gettime base=10 close=8
+alg @sec-date.prototype.gettimezoneoffset base=10 close=8
+alg @sec-date.prototype.getutcdate base=10 close=8
+alg @sec-date.prototype.getutcday base=10 close=8
+alg @sec-date.prototype.getutcfullyear base=10 close=8
+alg @sec-date.prototype.getutchours base=10 close=8
+alg @sec-date.prototype.getutcmilliseconds base=10 close=8
+alg @sec-date.prototype.getutcminutes base=10 close=8
+alg @sec-date.prototype.getutcmonth base=10 close=8
+alg @sec-date.prototype.getutcseconds base=10 close=8
+alg @sec-date.prototype.getyear base=10 close=8
+alg @sec-date.prototype.setdate base=10 close=8
+alg @sec-date.prototype.setfullyear base=10 close=8
+alg @sec-date.prototype.sethours base=10 close=8
+alg @sec-date.prototype.setmilliseconds base=10 close=8
+alg @sec-date.prototype.setminutes base=10 close=8
+alg @sec-date.prototype.setmonth base=10 close=8
+alg @sec-date.prototype.setseconds base=10 close=8
+alg @sec-date.prototype.settime base=10 close=8
+alg @sec-date.prototype.setutcdate base=10 close=8
+alg @sec-date.prototype.setutcfullyear base=10 close=8
+alg @sec-date.prototype.setutchours base=10 close=8
+alg @sec-date.prototype.setutcmilliseconds base=10 close=8
+alg @sec-date.prototype.setutcminutes base=10 close=8
+alg @sec-date.prototype.setutcmonth base=10 close=8
+alg @sec-date.prototype.setutcseconds base=10 close=8
+alg @sec-date.prototype.setyear base=10 close=8
+alg @sec-date.prototype.todatestring base=10 close=8
+alg @sec-date.prototype.toisostring base=10 close=8
+alg @sec-date.prototype.tojson base=10 close=8
+alg @sec-date.prototype.tostring base=10 close=8
+alg @sec-date.prototype.totimestring base=10 close=8
+alg @sec-date.prototype.toutcstring base=10 close=8
+alg @sec-date.prototype.valueof base=10 close=8
+alg @sec-date.utc base=10 close=8
+alg @sec-datefromtime base=10 close=8
+alg @sec-datestring base=12 close=10
+alg @sec-day base=10 close=8
+alg @sec-dayfromyear base=10 close=8
+alg @sec-daywithinyear base=10 close=8
+alg @sec-declarative-environment-records-createimmutablebinding-n-s base=12 close=10
+alg @sec-declarative-environment-records-createmutablebinding-n-d base=12 close=10
+alg @sec-declarative-environment-records-deletebinding-n base=12 close=10
+alg @sec-declarative-environment-records-getbindingvalue-n-s base=12 close=10
+alg @sec-declarative-environment-records-hasbinding-n base=12 close=10
+alg @sec-declarative-environment-records-hassuperbinding base=12 close=10
+alg @sec-declarative-environment-records-hasthisbinding base=12 close=10
+alg @sec-declarative-environment-records-initializebinding-n-v base=12 close=10
+alg @sec-declarative-environment-records-setmutablebinding-n-v-s base=12 close=10
+alg @sec-declarative-environment-records-withbaseobject base=12 close=10
+alg @sec-decode base=10 close=8
+alg @sec-decodefinalbase64chunk base=10 close=8
+alg @sec-decodefulllengthbase64chunk base=10 close=8
+alg @sec-decodeuri-encodeduri base=10 close=8
+alg @sec-decodeuricomponent-encodeduricomponent base=10 close=8
+alg @sec-definefield base=8 close=6
+alg @sec-definemethodproperty base=8 close=6
+alg @sec-definepropertyorthrow base=8 close=6
+alg @sec-deletepropertyorthrow base=8 close=6
+alg @sec-detacharraybuffer base=10 close=8
+alg @sec-disposablestack base=10 close=8
+alg @sec-disposablestack.prototype.adopt base=10 close=8
+alg @sec-disposablestack.prototype.defer base=10 close=8
+alg @sec-disposablestack.prototype.dispose base=10 close=8
+alg @sec-disposablestack.prototype.move base=10 close=8
+alg @sec-disposablestack.prototype.use base=10 close=8
+alg @sec-disposeresources base=8 close=6
+alg @sec-dowait base=10 close=8
+alg @sec-ecmascript-function-objects-call-thisargument-argumentslist base=8 close=6
+alg @sec-ecmascript-function-objects-construct-argumentslist-newtarget base=8 close=6
+alg @sec-emptymatcher base=12 close=10
+alg @sec-encode base=10 close=8
+alg @sec-encodeforregexpescape base=12 close=10
+alg @sec-encodeuri-uri base=10 close=8
+alg @sec-encodeuricomponent-uricomponent base=10 close=8
+alg @sec-enqueueatomicswaitasynctimeoutjob base=10 close=8
+alg @sec-enqueueresolveinagentjob base=10 close=8
+alg @sec-entercriticalsection base=10 close=8
+alg @sec-enumerableownproperties base=8 close=6
+alg @sec-enumerate-object-properties base=10 close=8
+alg @sec-error-message base=10 close=8
+alg @sec-error.iserror base=10 close=8
+alg @sec-error.prototype.tostring base=10 close=8
+alg @sec-escape-string base=10 close=8
+alg @sec-escaperegexppattern base=12 close=10
+alg @sec-eval-x base=8 close=6
+alg @sec-evaldeclarationinstantiation base=10 close=8
+alg @sec-evaluate-import-call base=10 close=8
+alg @sec-evaluate-property-access-with-expression-key base=8 close=6
+alg @sec-evaluate-property-access-with-identifier-key base=8 close=6
+alg @sec-evaluatecall base=10 close=8
+alg @sec-evaluatenew base=12 close=10
+alg @sec-evaluatestringornumericbinaryexpression base=8 close=6
+alg @sec-event-set base=8 close=6
+alg @sec-execute-async-module base=16 close=14
+alg @sec-finalization-registry-cleanup-callback base=10 close=8
+alg @sec-finalization-registry.prototype.register base=10 close=8
+alg @sec-finalization-registry.prototype.unregister base=10 close=8
+alg @sec-findviapredicate base=12 close=10
+alg @sec-flattenintoarray base=12 close=10
+alg @sec-forbodyevaluation base=10 close=8
+alg @sec-frombase64 base=10 close=8
+alg @sec-fromhex base=10 close=8
+alg @sec-frompropertydescriptor base=10 close=8
+alg @sec-fulfillpromise base=10 close=8
+alg @sec-function-environment-records-getthisbinding base=12 close=10
+alg @sec-function-environment-records-hassuperbinding base=12 close=10
+alg @sec-function-environment-records-hasthisbinding base=12 close=10
+alg @sec-function-p1-p2-pn-body base=10 close=8
+alg @sec-function.prototype-%symbol.hasinstance% base=10 close=8
+alg @sec-function.prototype.apply base=10 close=8
+alg @sec-function.prototype.bind base=10 close=8
+alg @sec-function.prototype.call base=10 close=8
+alg @sec-function.prototype.tostring base=10 close=8
+alg @sec-functiondeclarationinstantiation base=8 close=6
+alg @sec-gather-available-ancestors base=16 close=14
+alg @sec-generator.prototype.next base=10 close=8
+alg @sec-generator.prototype.return base=10 close=8
+alg @sec-generator.prototype.throw base=10 close=8
+alg @sec-generatorfunction base=10 close=8
+alg @sec-generatorresume base=10 close=8
+alg @sec-generatorresumeabrupt base=10 close=8
+alg @sec-generatorstart base=10 close=8
+alg @sec-generatorvalidate base=10 close=8
+alg @sec-generatoryield base=10 close=8
+alg @sec-get-%typedarray%-%symbol.species% base=10 close=8
+alg @sec-get-%typedarray%.prototype-%symbol.tostringtag% base=10 close=8
+alg @sec-get-%typedarray%.prototype.buffer base=10 close=8
+alg @sec-get-%typedarray%.prototype.bytelength base=10 close=8
+alg @sec-get-%typedarray%.prototype.byteoffset base=10 close=8
+alg @sec-get-%typedarray%.prototype.length base=10 close=8
+alg @sec-get-array-%symbol.species% base=10 close=8
+alg @sec-get-arraybuffer-%symbol.species% base=10 close=8
+alg @sec-get-arraybuffer.prototype.bytelength base=10 close=8
+alg @sec-get-arraybuffer.prototype.detached base=10 close=8
+alg @sec-get-arraybuffer.prototype.maxbytelength base=10 close=8
+alg @sec-get-arraybuffer.prototype.resizable base=10 close=8
+alg @sec-get-asyncdisposablestack.prototype.disposed base=10 close=8
+alg @sec-get-dataview.prototype.buffer base=10 close=8
+alg @sec-get-dataview.prototype.bytelength base=10 close=8
+alg @sec-get-dataview.prototype.byteoffset base=10 close=8
+alg @sec-get-disposablestack.prototype.disposed base=10 close=8
+alg @sec-get-iterator.prototype-%symbol.tostringtag% base=14 close=12
+alg @sec-get-iterator.prototype.constructor base=14 close=12
+alg @sec-get-map-%symbol.species% base=10 close=8
+alg @sec-get-map.prototype.size base=10 close=8
+alg @sec-get-o-p base=8 close=6
+alg @sec-get-object.prototype.__proto__ base=12 close=10
+alg @sec-get-promise-%symbol.species% base=10 close=8
+alg @sec-get-regexp-%symbol.species% base=10 close=8
+alg @sec-get-regexp.prototype.dotAll base=10 close=8
+alg @sec-get-regexp.prototype.flags base=10 close=8
+alg @sec-get-regexp.prototype.global base=10 close=8
+alg @sec-get-regexp.prototype.hasIndices base=10 close=8
+alg @sec-get-regexp.prototype.ignorecase base=10 close=8
+alg @sec-get-regexp.prototype.multiline base=10 close=8
+alg @sec-get-regexp.prototype.source base=10 close=8
+alg @sec-get-regexp.prototype.sticky base=10 close=8
+alg @sec-get-regexp.prototype.unicode base=10 close=8
+alg @sec-get-regexp.prototype.unicodesets base=10 close=8
+alg @sec-get-set-%symbol.species% base=10 close=8
+alg @sec-get-set.prototype.size base=10 close=8
+alg @sec-get-sharedarraybuffer.prototype.bytelength base=10 close=8
+alg @sec-get-sharedarraybuffer.prototype.growable base=10 close=8
+alg @sec-get-sharedarraybuffer.prototype.maxbytelength base=10 close=8
+alg @sec-getactivescriptormodule base=8 close=6
+alg @sec-getarraybuffermaxbytelengthoption base=10 close=8
+alg @sec-getdisposemethod base=8 close=6
+alg @sec-getexportednames base=14 close=12
+alg @sec-getfunctionrealm base=8 close=6
+alg @sec-getgeneratorkind base=10 close=8
+alg @sec-getglobalobject base=8 close=6
+alg @sec-getidentifierreference base=10 close=8
+alg @sec-getiterator base=8 close=6
+alg @sec-getiteratordirect base=8 close=6
+alg @sec-getiteratorflattenable base=8 close=6
+alg @sec-getiteratorfrommethod base=8 close=6
+alg @sec-getmatchindexpair base=10 close=8
+alg @sec-getmatchstring base=10 close=8
+alg @sec-getmethod base=8 close=6
+alg @sec-getmodifysetvalueinbuffer base=10 close=8
+alg @sec-getmodulenamespace base=10 close=8
+alg @sec-getnamedtimezoneepochnanoseconds base=10 close=8
+alg @sec-getnamedtimezoneoffsetnanoseconds base=10 close=8
+alg @sec-getnewtarget base=8 close=6
+alg @sec-getoptionsobject base=8 close=6
+alg @sec-getownpropertykeys base=12 close=10
+alg @sec-getpromiseresolve base=12 close=10
+alg @sec-getprototypefromconstructor base=8 close=6
+alg @sec-getrawbytesfromsharedblock base=10 close=8
+alg @sec-getsetrecord base=10 close=8
+alg @sec-getstringindex base=10 close=8
+alg @sec-getsubstitution base=12 close=10
+alg @sec-getsuperbase base=12 close=10
+alg @sec-getsuperconstructor base=10 close=8
+alg @sec-gettemplateobject base=10 close=8
+alg @sec-getthisenvironment base=8 close=6
+alg @sec-getthisvalue base=10 close=8
+alg @sec-getuint8arraybytes base=10 close=8
+alg @sec-getutcepochnanoseconds base=10 close=8
+alg @sec-getv base=8 close=6
+alg @sec-getvalue base=10 close=8
+alg @sec-getvaluefrombuffer base=10 close=8
+alg @sec-getviewbytelength base=10 close=8
+alg @sec-getviewvalue base=10 close=8
+alg @sec-getwaiterlist base=10 close=8
+alg @sec-global-environment-records-createimmutablebinding-n-s base=12 close=10
+alg @sec-global-environment-records-createmutablebinding-n-d base=12 close=10
+alg @sec-global-environment-records-deletebinding-n base=12 close=10
+alg @sec-global-environment-records-getbindingvalue-n-s base=12 close=10
+alg @sec-global-environment-records-getthisbinding base=12 close=10
+alg @sec-global-environment-records-hasbinding-n base=12 close=10
+alg @sec-global-environment-records-hassuperbinding base=12 close=10
+alg @sec-global-environment-records-hasthisbinding base=12 close=10
+alg @sec-global-environment-records-initializebinding-n-v base=12 close=10
+alg @sec-global-environment-records-setmutablebinding-n-v-s base=12 close=10
+alg @sec-global-environment-records-withbaseobject base=12 close=10
+alg @sec-globaldeclarationinstantiation base=8 close=6
+alg @sec-groupby base=8 close=6
+alg @sec-groupspecifiersthatmatch base=10 close=8
+alg @sec-haslexicaldeclaration base=12 close=10
+alg @sec-hasownproperty base=8 close=6
+alg @sec-hasproperty base=8 close=6
+alg @sec-hasrestrictedglobalproperty base=12 close=10
+alg @sec-host-cleanup-finalization-registry base=10 close=8
+alg @sec-hostcalljobcallback base=8 close=6
+alg @sec-hostensurecancompilestrings base=10 close=8
+alg @sec-hosteventset base=8 close=6
+alg @sec-hostmakejobcallback base=8 close=6
+alg @sec-hourfromtime base=10 close=8
+alg @sec-ifabruptcloseasynciterator base=8 close=6
+alg @sec-ifabruptcloseasynciterator#1 base=8 close=6
+alg @sec-ifabruptcloseiterator base=8 close=6
+alg @sec-ifabruptcloseiterator#1 base=8 close=6
+alg @sec-ifabruptcloseiterators base=8 close=6
+alg @sec-ifabruptcloseiterators#1 base=8 close=6
+alg @sec-ifabruptrejectpromise base=12 close=10
+alg @sec-ifabruptrejectpromise#1 base=12 close=10
+alg @sec-immutable-prototype-exotic-objects-setprototypeof-v base=10 close=8
+alg @sec-importedlocalnames base=10 close=8
+alg @sec-initializeboundname base=10 close=8
+alg @sec-initializehostdefinedrealm base=8 close=6
+alg @sec-initializeinstanceelements base=8 close=6
+alg @sec-initializereferencedbinding base=10 close=8
+alg @sec-initializetypedarrayfromarraybuffer base=12 close=10
+alg @sec-initializetypedarrayfromelements base=12 close=10
+alg @sec-initializetypedarrayfromtypedarray base=12 close=10
+alg @sec-innermoduleevaluation base=16 close=14
+alg @sec-installerrorcause base=10 close=8
+alg @sec-instanceofoperator base=8 close=6
+alg @sec-internalizejsonproperty base=10 close=8
+alg @sec-invoke base=8 close=6
+alg @sec-isaccessordescriptor base=10 close=8
+alg @sec-isanonymousfunctiondefinition base=8 close=6
+alg @sec-isarray base=8 close=6
+alg @sec-isarraybufferviewoutofbounds base=10 close=8
+alg @sec-isbigintelementtype base=10 close=8
+alg @sec-iscallable base=8 close=6
+alg @sec-iscompatiblepropertydescriptor base=10 close=8
+alg @sec-isconcatspreadable base=12 close=10
+alg @sec-isconstructor base=8 close=6
+alg @sec-isdatadescriptor base=10 close=8
+alg @sec-isdetachedbuffer base=10 close=8
+alg @sec-isextensible-o base=8 close=6
+alg @sec-isfinite-number base=8 close=6
+alg @sec-isfixedlengtharraybuffer base=10 close=8
+alg @sec-isgenericdescriptor base=10 close=8
+alg @sec-isgrowablesharedarraybuffer base=10 close=8
+alg @sec-isintailposition base=8 close=6
+alg @sec-islabelledfunction base=8 close=6
+alg @sec-isleapyear base=10 close=8
+alg @sec-islessthan base=8 close=6
+alg @sec-islooselyequal base=8 close=6
+alg @sec-isnan-number base=8 close=6
+alg @sec-isnotearconfiguration base=10 close=8
+alg @sec-isprivatereference base=10 close=8
+alg @sec-ispromise base=10 close=8
+alg @sec-ispropertyreference base=10 close=8
+alg @sec-isregexp base=8 close=6
+alg @sec-issharedarraybuffer base=10 close=8
+alg @sec-isstrict base=10 close=8
+alg @sec-isstrictlyequal base=8 close=6
+alg @sec-isstringwellformedunicode base=8 close=6
+alg @sec-issuperreference base=10 close=8
+alg @sec-istimezoneoffsetstring base=12 close=10
+alg @sec-istypedarrayfixedlength base=10 close=8
+alg @sec-istypedarrayoutofbounds base=10 close=8
+alg @sec-isunclampedintegerelementtype base=10 close=8
+alg @sec-isunresolvablereference base=10 close=8
+alg @sec-isunsignedelementtype base=10 close=8
+alg @sec-isvalidintegerindex base=10 close=8
+alg @sec-isvalidregularexpressionliteral base=10 close=8
+alg @sec-isviewoutofbounds base=10 close=8
+alg @sec-iterator base=12 close=10
+alg @sec-iterator.concat base=12 close=10
+alg @sec-iterator.from base=12 close=10
+alg @sec-iterator.prototype-%symbol.dispose% base=12 close=10
+alg @sec-iterator.prototype-%symbol.iterator% base=12 close=10
+alg @sec-iterator.prototype.chunks base=12 close=10
+alg @sec-iterator.prototype.drop base=12 close=10
+alg @sec-iterator.prototype.every base=12 close=10
+alg @sec-iterator.prototype.filter base=12 close=10
+alg @sec-iterator.prototype.find base=12 close=10
+alg @sec-iterator.prototype.flatmap base=12 close=10
+alg @sec-iterator.prototype.foreach base=12 close=10
+alg @sec-iterator.prototype.includes base=12 close=10
+alg @sec-iterator.prototype.join base=12 close=10
+alg @sec-iterator.prototype.map base=12 close=10
+alg @sec-iterator.prototype.reduce base=12 close=10
+alg @sec-iterator.prototype.some base=12 close=10
+alg @sec-iterator.prototype.take base=12 close=10
+alg @sec-iterator.prototype.toarray base=12 close=10
+alg @sec-iterator.prototype.windows base=12 close=10
+alg @sec-iterator.zip base=12 close=10
+alg @sec-iterator.zipkeyed base=12 close=10
+alg @sec-iteratorclose base=8 close=6
+alg @sec-iteratorcloseall base=8 close=6
+alg @sec-iteratorcomplete base=8 close=6
+alg @sec-iteratornext base=8 close=6
+alg @sec-iteratorstep base=8 close=6
+alg @sec-iteratorstepvalue base=8 close=6
+alg @sec-iteratortolist base=8 close=6
+alg @sec-iteratorvalue base=8 close=6
+alg @sec-iteratorzip base=12 close=10
+alg @sec-joinindexedproperties base=12 close=10
+alg @sec-json.israwjson base=8 close=6
+alg @sec-json.parse base=8 close=6
+alg @sec-json.rawjson base=8 close=6
+alg @sec-json.stringify base=8 close=6
+alg @sec-keyforsymbol base=10 close=8
+alg @sec-leavecriticalsection base=10 close=8
+alg @sec-lengthofarraylike base=8 close=6
+alg @sec-localtime base=10 close=8
+alg @sec-loopcontinues base=10 close=8
+alg @sec-makearggetter base=12 close=10
+alg @sec-makeargsetter base=12 close=10
+alg @sec-makebasicobject base=8 close=6
+alg @sec-makeclassconstructor base=8 close=6
+alg @sec-makeconstructor base=8 close=6
+alg @sec-makedataviewwithbufferwitnessrecord base=10 close=8
+alg @sec-makedate base=10 close=8
+alg @sec-makeday base=10 close=8
+alg @sec-makefullyear base=10 close=8
+alg @sec-makematchindicesindexpairarray base=10 close=8
+alg @sec-makemethod base=8 close=6
+alg @sec-makeprivatereference base=10 close=8
+alg @sec-makesuperpropertyreference base=10 close=8
+alg @sec-maketime base=10 close=8
+alg @sec-maketypedarraywithbufferwitnessrecord base=10 close=8
+alg @sec-map-iterable base=10 close=8
+alg @sec-map.groupby base=10 close=8
+alg @sec-map.prototype.clear base=10 close=8
+alg @sec-map.prototype.delete base=10 close=8
+alg @sec-map.prototype.entries base=10 close=8
+alg @sec-map.prototype.foreach base=10 close=8
+alg @sec-map.prototype.get base=10 close=8
+alg @sec-map.prototype.getorinsert base=10 close=8
+alg @sec-map.prototype.getorinsertcomputed base=10 close=8
+alg @sec-map.prototype.has base=10 close=8
+alg @sec-map.prototype.keys base=10 close=8
+alg @sec-map.prototype.set base=10 close=8
+alg @sec-map.prototype.values base=10 close=8
+alg @sec-matchsequence base=12 close=10
+alg @sec-matchtwoalternatives base=12 close=10
+alg @sec-math.abs base=10 close=8
+alg @sec-math.acos base=10 close=8
+alg @sec-math.acosh base=10 close=8
+alg @sec-math.asin base=10 close=8
+alg @sec-math.asinh base=10 close=8
+alg @sec-math.atan base=10 close=8
+alg @sec-math.atan2 base=10 close=8
+alg @sec-math.atanh base=10 close=8
+alg @sec-math.cbrt base=10 close=8
+alg @sec-math.ceil base=10 close=8
+alg @sec-math.clz32 base=10 close=8
+alg @sec-math.cos base=10 close=8
+alg @sec-math.cosh base=10 close=8
+alg @sec-math.exp base=10 close=8
+alg @sec-math.expm1 base=10 close=8
+alg @sec-math.f16round base=10 close=8
+alg @sec-math.floor base=10 close=8
+alg @sec-math.fround base=10 close=8
+alg @sec-math.hypot base=10 close=8
+alg @sec-math.imul base=10 close=8
+alg @sec-math.log base=10 close=8
+alg @sec-math.log10 base=10 close=8
+alg @sec-math.log1p base=10 close=8
+alg @sec-math.log2 base=10 close=8
+alg @sec-math.max base=10 close=8
+alg @sec-math.min base=10 close=8
+alg @sec-math.pow base=10 close=8
+alg @sec-math.round base=10 close=8
+alg @sec-math.sign base=10 close=8
+alg @sec-math.sin base=10 close=8
+alg @sec-math.sinh base=10 close=8
+alg @sec-math.sqrt base=10 close=8
+alg @sec-math.sumprecise base=10 close=8
+alg @sec-math.tan base=10 close=8
+alg @sec-math.tanh base=10 close=8
+alg @sec-math.trunc base=10 close=8
+alg @sec-maybesimplecasefolding base=12 close=10
+alg @sec-mightbothparticipate base=10 close=8
+alg @sec-millisecondfromtime base=10 close=8
+alg @sec-minutefromtime base=10 close=8
+alg @sec-module-environment-records-getbindingvalue-n-s base=12 close=10
+alg @sec-module-environment-records-getthisbinding base=12 close=10
+alg @sec-module-environment-records-hasthisbinding base=12 close=10
+alg @sec-module-namespace-exotic-objects-defineownproperty-p-desc base=10 close=8
+alg @sec-module-namespace-exotic-objects-delete-p base=10 close=8
+alg @sec-module-namespace-exotic-objects-get-p-receiver base=10 close=8
+alg @sec-module-namespace-exotic-objects-getownproperty-p base=10 close=8
+alg @sec-module-namespace-exotic-objects-getprototypeof base=10 close=8
+alg @sec-module-namespace-exotic-objects-hasproperty-p base=10 close=8
+alg @sec-module-namespace-exotic-objects-isextensible base=10 close=8
+alg @sec-module-namespace-exotic-objects-ownpropertykeys base=10 close=8
+alg @sec-module-namespace-exotic-objects-preventextensions base=10 close=8
+alg @sec-module-namespace-exotic-objects-set-p-v-receiver base=10 close=8
+alg @sec-module-namespace-exotic-objects-setprototypeof-v base=10 close=8
+alg @sec-moduledeclarationlinking base=14 close=12
+alg @sec-moduleevaluation base=14 close=12
+alg @sec-modulenamespacecreate base=10 close=8
+alg @sec-monthfromtime base=10 close=8
+alg @sec-newdeclarativeenvironment base=10 close=8
+alg @sec-newfunctionenvironment base=10 close=8
+alg @sec-newglobalenvironment base=10 close=8
+alg @sec-newmoduleenvironment base=10 close=8
+alg @sec-newobjectenvironment base=10 close=8
+alg @sec-newprivateenvironment base=10 close=8
+alg @sec-newpromisecapability base=10 close=8
+alg @sec-newpromisereactionjob base=10 close=8
+alg @sec-newpromiseresolvethenablejob base=10 close=8
+alg @sec-normalcompletion base=10 close=8
+alg @sec-notifywaiter base=10 close=8
+alg @sec-number-constructor-number-value base=10 close=8
+alg @sec-number.isfinite base=10 close=8
+alg @sec-number.isinteger base=10 close=8
+alg @sec-number.isnan base=10 close=8
+alg @sec-number.issafeinteger base=10 close=8
+alg @sec-number.prototype.toexponential base=10 close=8
+alg @sec-number.prototype.toexponential#1 base=12 close=10
+alg @sec-number.prototype.tofixed base=10 close=8
+alg @sec-number.prototype.toprecision base=10 close=8
+alg @sec-number.prototype.tostring base=10 close=8
+alg @sec-number.prototype.valueof base=10 close=8
+alg @sec-numberbitwiseop base=12 close=10
+alg @sec-numbertobigint base=12 close=10
+alg @sec-numeric-types-bigint-add base=12 close=10
+alg @sec-numeric-types-bigint-bitwiseAND base=12 close=10
+alg @sec-numeric-types-bigint-bitwiseNOT base=12 close=10
+alg @sec-numeric-types-bigint-bitwiseOR base=12 close=10
+alg @sec-numeric-types-bigint-bitwiseXOR base=12 close=10
+alg @sec-numeric-types-bigint-divide base=12 close=10
+alg @sec-numeric-types-bigint-equal base=12 close=10
+alg @sec-numeric-types-bigint-exponentiate base=12 close=10
+alg @sec-numeric-types-bigint-leftShift base=12 close=10
+alg @sec-numeric-types-bigint-lessThan base=12 close=10
+alg @sec-numeric-types-bigint-multiply base=12 close=10
+alg @sec-numeric-types-bigint-remainder base=12 close=10
+alg @sec-numeric-types-bigint-signedRightShift base=12 close=10
+alg @sec-numeric-types-bigint-subtract base=12 close=10
+alg @sec-numeric-types-bigint-tostring base=12 close=10
+alg @sec-numeric-types-bigint-unaryMinus base=12 close=10
+alg @sec-numeric-types-bigint-unsignedRightShift base=12 close=10
+alg @sec-numeric-types-number-add base=12 close=10
+alg @sec-numeric-types-number-bitwiseAND base=12 close=10
+alg @sec-numeric-types-number-bitwiseNOT base=12 close=10
+alg @sec-numeric-types-number-bitwiseOR base=12 close=10
+alg @sec-numeric-types-number-bitwiseXOR base=12 close=10
+alg @sec-numeric-types-number-divide base=12 close=10
+alg @sec-numeric-types-number-equal base=12 close=10
+alg @sec-numeric-types-number-exponentiate base=12 close=10
+alg @sec-numeric-types-number-leftShift base=12 close=10
+alg @sec-numeric-types-number-lessThan base=12 close=10
+alg @sec-numeric-types-number-multiply base=12 close=10
+alg @sec-numeric-types-number-remainder base=12 close=10
+alg @sec-numeric-types-number-sameValue base=12 close=10
+alg @sec-numeric-types-number-sameValueZero base=12 close=10
+alg @sec-numeric-types-number-signedRightShift base=12 close=10
+alg @sec-numeric-types-number-subtract base=12 close=10
+alg @sec-numeric-types-number-tostring base=12 close=10
+alg @sec-numeric-types-number-tostring#1 base=14 close=12
+alg @sec-numeric-types-number-unaryMinus base=12 close=10
+alg @sec-numeric-types-number-unsignedRightShift base=12 close=10
+alg @sec-numerictorawbytes base=10 close=8
+alg @sec-object-environment-records-createmutablebinding-n-d base=12 close=10
+alg @sec-object-environment-records-deletebinding-n base=12 close=10
+alg @sec-object-environment-records-getbindingvalue-n-s base=12 close=10
+alg @sec-object-environment-records-hasbinding-n base=12 close=10
+alg @sec-object-environment-records-hassuperbinding base=12 close=10
+alg @sec-object-environment-records-hasthisbinding base=12 close=10
+alg @sec-object-environment-records-initializebinding-n-v base=12 close=10
+alg @sec-object-environment-records-setmutablebinding-n-v-s base=12 close=10
+alg @sec-object-environment-records-withbaseobject base=12 close=10
+alg @sec-object-value base=10 close=8
+alg @sec-object.assign base=10 close=8
+alg @sec-object.create base=10 close=8
+alg @sec-object.defineproperties base=10 close=8
+alg @sec-object.defineproperty base=10 close=8
+alg @sec-object.entries base=10 close=8
+alg @sec-object.freeze base=10 close=8
+alg @sec-object.fromentries base=10 close=8
+alg @sec-object.getownpropertydescriptor base=10 close=8
+alg @sec-object.getownpropertydescriptors base=10 close=8
+alg @sec-object.getownpropertynames base=10 close=8
+alg @sec-object.getownpropertysymbols base=10 close=8
+alg @sec-object.getprototypeof base=10 close=8
+alg @sec-object.groupby base=10 close=8
+alg @sec-object.hasown base=10 close=8
+alg @sec-object.is base=10 close=8
+alg @sec-object.isextensible base=10 close=8
+alg @sec-object.isfrozen base=10 close=8
+alg @sec-object.issealed base=10 close=8
+alg @sec-object.keys base=10 close=8
+alg @sec-object.preventextensions base=10 close=8
+alg @sec-object.prototype.__defineGetter__ base=12 close=10
+alg @sec-object.prototype.__defineSetter__ base=12 close=10
+alg @sec-object.prototype.__lookupGetter__ base=12 close=10
+alg @sec-object.prototype.__lookupSetter__ base=12 close=10
+alg @sec-object.prototype.hasownproperty base=10 close=8
+alg @sec-object.prototype.isprototypeof base=10 close=8
+alg @sec-object.prototype.propertyisenumerable base=10 close=8
+alg @sec-object.prototype.tolocalestring base=10 close=8
+alg @sec-object.prototype.tostring base=10 close=8
+alg @sec-object.prototype.valueof base=10 close=8
+alg @sec-object.seal base=10 close=8
+alg @sec-object.setprototypeof base=10 close=8
+alg @sec-object.values base=10 close=8
+alg @sec-objectdefineproperties base=12 close=10
+alg @sec-ordinary-object-internal-methods-and-internal-slots-defineownproperty-p-desc base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-delete-p base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-get-p-receiver base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-getownproperty-p base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-isextensible base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-ownpropertykeys base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-preventextensions base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-set-p-v-receiver base=8 close=6
+alg @sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v base=8 close=6
+alg @sec-ordinarycallbindthis base=10 close=8
+alg @sec-ordinarycallevaluatebody base=10 close=8
+alg @sec-ordinarycreatefromconstructor base=8 close=6
+alg @sec-ordinarydefineownproperty base=10 close=8
+alg @sec-ordinarydelete base=10 close=8
+alg @sec-ordinaryfunctioncreate base=8 close=6
+alg @sec-ordinaryget base=10 close=8
+alg @sec-ordinarygetownproperty base=10 close=8
+alg @sec-ordinarygetprototypeof base=10 close=8
+alg @sec-ordinaryhasinstance base=8 close=6
+alg @sec-ordinaryhasproperty base=10 close=8
+alg @sec-ordinaryisextensible base=10 close=8
+alg @sec-ordinaryobjectcreate base=8 close=6
+alg @sec-ordinaryownpropertykeys base=10 close=8
+alg @sec-ordinarypreventextensions base=10 close=8
+alg @sec-ordinaryset base=10 close=8
+alg @sec-ordinarysetprototypeof base=10 close=8
+alg @sec-ordinarysetwithowndescriptor base=10 close=8
+alg @sec-ordinarytoprimitive base=10 close=8
+alg @sec-parse-json-module base=12 close=10
+alg @sec-parse-script base=8 close=6
+alg @sec-parsefloat-string base=8 close=6
+alg @sec-parsehexoctet base=10 close=8
+alg @sec-parseint-string-radix base=8 close=6
+alg @sec-parsemodule base=12 close=10
+alg @sec-parsepattern base=10 close=8
+alg @sec-parsepattern-annexb base=10 close=8
+alg @sec-parsetext base=8 close=6
+alg @sec-parsetimezoneoffsetstring base=12 close=10
+alg @sec-performeval base=10 close=8
+alg @sec-performpromiseall base=12 close=10
+alg @sec-performpromiseallsettled base=12 close=10
+alg @sec-performpromiseany base=12 close=10
+alg @sec-performpromiserace base=12 close=10
+alg @sec-performpromisethen base=12 close=10
+alg @sec-prepareforordinarycall base=10 close=8
+alg @sec-preparefortailcall base=8 close=6
+alg @sec-privateelementfind base=8 close=6
+alg @sec-privatefieldadd base=8 close=6
+alg @sec-privateget base=8 close=6
+alg @sec-privatemethodoraccessoradd base=8 close=6
+alg @sec-privateset base=8 close=6
+alg @sec-promise-executor base=10 close=8
+alg @sec-promise-resolve base=12 close=10
+alg @sec-promise.all base=10 close=8
+alg @sec-promise.allsettled base=10 close=8
+alg @sec-promise.any base=10 close=8
+alg @sec-promise.prototype.catch base=10 close=8
+alg @sec-promise.prototype.finally base=10 close=8
+alg @sec-promise.prototype.then base=10 close=8
+alg @sec-promise.race base=10 close=8
+alg @sec-promise.reject base=10 close=8
+alg @sec-promise.resolve base=10 close=8
+alg @sec-promise.try base=10 close=8
+alg @sec-promise.withResolvers base=10 close=8
+alg @sec-proxy-object-internal-methods-and-internal-slots-call-thisargument-argumentslist base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-construct-argumentslist-newtarget base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-defineownproperty-p-desc base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-delete-p base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-getownproperty-p base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-getprototypeof base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-hasproperty-p base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-isextensible base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-ownpropertykeys base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-preventextensions base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-set-p-v-receiver base=8 close=6
+alg @sec-proxy-object-internal-methods-and-internal-slots-setprototypeof-v base=8 close=6
+alg @sec-proxy-target-handler base=10 close=8
+alg @sec-proxy.revocable base=10 close=8
+alg @sec-proxycreate base=8 close=6
+alg @sec-putvalue base=10 close=8
+alg @sec-quotejsonstring base=10 close=8
+alg @sec-races base=6 close=4
+alg @sec-rawbytestonumeric base=10 close=8
+alg @sec-reflect.apply base=8 close=6
+alg @sec-reflect.construct base=8 close=6
+alg @sec-reflect.defineproperty base=8 close=6
+alg @sec-reflect.deleteproperty base=8 close=6
+alg @sec-reflect.get base=8 close=6
+alg @sec-reflect.getownpropertydescriptor base=8 close=6
+alg @sec-reflect.getprototypeof base=8 close=6
+alg @sec-reflect.has base=8 close=6
+alg @sec-reflect.isextensible base=8 close=6
+alg @sec-reflect.ownkeys base=8 close=6
+alg @sec-reflect.preventextensions base=8 close=6
+alg @sec-reflect.set base=8 close=6
+alg @sec-reflect.setprototypeof base=8 close=6
+alg @sec-regexp-pattern-flags base=10 close=8
+alg @sec-regexp-prototype-%symbol.matchall% base=10 close=8
+alg @sec-regexp.escape base=10 close=8
+alg @sec-regexp.prototype-%symbol.match% base=10 close=8
+alg @sec-regexp.prototype-%symbol.replace% base=10 close=8
+alg @sec-regexp.prototype-%symbol.search% base=10 close=8
+alg @sec-regexp.prototype-%symbol.split% base=10 close=8
+alg @sec-regexp.prototype.compile base=10 close=8
+alg @sec-regexp.prototype.exec base=10 close=8
+alg @sec-regexp.prototype.test base=10 close=8
+alg @sec-regexp.prototype.tostring base=10 close=8
+alg @sec-regexpalloc base=10 close=8
+alg @sec-regexpbuiltinexec base=10 close=8
+alg @sec-regexpcreate base=10 close=8
+alg @sec-regexpexec base=10 close=8
+alg @sec-regexphasflag base=12 close=10
+alg @sec-regexpinitialize base=10 close=8
+alg @sec-rejectpromise base=10 close=8
+alg @sec-removewaiter base=10 close=8
+alg @sec-removewaiters base=10 close=8
+alg @sec-requireinternalslot base=8 close=6
+alg @sec-requireobjectcoercible base=8 close=6
+alg @sec-resolve-private-identifier base=10 close=8
+alg @sec-resolvebinding base=8 close=6
+alg @sec-resolveexport base=14 close=12
+alg @sec-resolvethisbinding base=8 close=6
+alg @sec-returncompletion base=10 close=8
+alg @sec-revalidateatomicaccess base=10 close=8
+alg @sec-roundmvresult base=12 close=10
+alg @sec-runcallercontext base=8 close=6
+alg @sec-runsuspendedcontext base=8 close=6
+alg @sec-runtime-semantics-canonicalize-ch base=12 close=10
+alg @sec-runtime-semantics-caseclauseisselected base=8 close=6
+alg @sec-runtime-semantics-characterrange-abstract-operation base=12 close=10
+alg @sec-runtime-semantics-characterrangeorunion-abstract-operation base=12 close=10
+alg @sec-runtime-semantics-charactersetmatcher-abstract-operation base=12 close=10
+alg @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset base=10 close=8
+alg @sec-runtime-semantics-forinofheadevaluation base=10 close=8
+alg @sec-runtime-semantics-haseitherunicodeflag-abstract-operation base=12 close=10
+alg @sec-runtime-semantics-iswordchar-abstract-operation base=12 close=10
+alg @sec-runtime-semantics-repeatmatcher-abstract-operation base=12 close=10
+alg @sec-runtime-semantics-scriptevaluation base=8 close=6
+alg @sec-runtime-semantics-unicodematchproperty-p base=12 close=10
+alg @sec-runtime-semantics-unicodematchpropertyvalue-p-v base=12 close=10
+alg @sec-sametype base=8 close=6
+alg @sec-samevalue base=8 close=6
+alg @sec-samevaluenonnumber base=8 close=6
+alg @sec-samevaluezero base=8 close=6
+alg @sec-secondfromtime base=10 close=8
+alg @sec-serializejsonarray base=10 close=8
+alg @sec-serializejsonobject base=10 close=8
+alg @sec-serializejsonproperty base=10 close=8
+alg @sec-set-immutable-prototype base=10 close=8
+alg @sec-set-iterable base=10 close=8
+alg @sec-set-iterator.prototype-%symbol.tostringtag% base=14 close=12
+alg @sec-set-iterator.prototype.constructor base=14 close=12
+alg @sec-set-o-p-v-throw base=8 close=6
+alg @sec-set-object.prototype.__proto__ base=12 close=10
+alg @sec-set.prototype.add base=10 close=8
+alg @sec-set.prototype.clear base=10 close=8
+alg @sec-set.prototype.delete base=10 close=8
+alg @sec-set.prototype.difference base=10 close=8
+alg @sec-set.prototype.entries base=10 close=8
+alg @sec-set.prototype.foreach base=10 close=8
+alg @sec-set.prototype.has base=10 close=8
+alg @sec-set.prototype.intersection base=10 close=8
+alg @sec-set.prototype.isdisjointfrom base=10 close=8
+alg @sec-set.prototype.issubsetof base=10 close=8
+alg @sec-set.prototype.issupersetof base=10 close=8
+alg @sec-set.prototype.symmetricdifference base=10 close=8
+alg @sec-set.prototype.union base=10 close=8
+alg @sec-set.prototype.values base=10 close=8
+alg @sec-setdatahas base=10 close=8
+alg @sec-setdataindex base=10 close=8
+alg @sec-setdatasize base=10 close=8
+alg @sec-setdefaultglobalbindings base=8 close=6
+alg @sec-setfunctionlength base=8 close=6
+alg @sec-setfunctionname base=8 close=6
+alg @sec-setintegritylevel base=8 close=6
+alg @sec-setsyntheticmoduleexport base=12 close=10
+alg @sec-settypedarrayfromarraylike base=12 close=10
+alg @sec-settypedarrayfromtypedarray base=12 close=10
+alg @sec-setuint8arraybytes base=10 close=8
+alg @sec-setvalueinbuffer base=10 close=8
+alg @sec-setviewvalue base=10 close=8
+alg @sec-shallowestcontainedjsonvalue base=10 close=8
+alg @sec-sharedarraybuffer-%symbol.species% base=10 close=8
+alg @sec-sharedarraybuffer-length base=10 close=8
+alg @sec-sharedarraybuffer.prototype.grow base=10 close=8
+alg @sec-sharedarraybuffer.prototype.slice base=10 close=8
+alg @sec-sharedatablockeventset base=8 close=6
+alg @sec-skipasciiwhitespace base=10 close=8
+alg @sec-smr-Evaluate base=14 close=12
+alg @sec-smr-Link base=14 close=12
+alg @sec-smr-LoadRequestedModules base=14 close=12
+alg @sec-smr-getexportednames base=14 close=12
+alg @sec-smr-resolveexport base=14 close=12
+alg @sec-snaptointeger base=8 close=6
+alg @sec-sortindexedproperties base=12 close=10
+alg @sec-source-text-module-record-execute-module base=14 close=12
+alg @sec-source-text-module-record-initialize-environment base=14 close=12
+alg @sec-speciesconstructor base=8 close=6
+alg @sec-static-semantics-allprivateidentifiersvalid base=8 close=6
+alg @sec-static-semantics-contains base=8 close=6
+alg @sec-static-semantics-containsarguments base=8 close=6
+alg @sec-string-constructor-string-value base=10 close=8
+alg @sec-string-exotic-objects-defineownproperty-p-desc base=10 close=8
+alg @sec-string-exotic-objects-getownproperty-p base=10 close=8
+alg @sec-string-exotic-objects-ownpropertykeys base=10 close=8
+alg @sec-string.fromcharcode base=10 close=8
+alg @sec-string.fromcodepoint base=10 close=8
+alg @sec-string.prototype-%symbol.iterator% base=10 close=8
+alg @sec-string.prototype.anchor base=10 close=8
+alg @sec-string.prototype.at base=10 close=8
+alg @sec-string.prototype.big base=10 close=8
+alg @sec-string.prototype.blink base=10 close=8
+alg @sec-string.prototype.bold base=10 close=8
+alg @sec-string.prototype.charat base=10 close=8
+alg @sec-string.prototype.charcodeat base=10 close=8
+alg @sec-string.prototype.codepointat base=10 close=8
+alg @sec-string.prototype.concat base=10 close=8
+alg @sec-string.prototype.endswith base=10 close=8
+alg @sec-string.prototype.fixed base=10 close=8
+alg @sec-string.prototype.fontcolor base=10 close=8
+alg @sec-string.prototype.fontsize base=10 close=8
+alg @sec-string.prototype.includes base=10 close=8
+alg @sec-string.prototype.indexof base=10 close=8
+alg @sec-string.prototype.iswellformed base=10 close=8
+alg @sec-string.prototype.italics base=10 close=8
+alg @sec-string.prototype.lastindexof base=10 close=8
+alg @sec-string.prototype.link base=10 close=8
+alg @sec-string.prototype.localecompare base=10 close=8
+alg @sec-string.prototype.match base=10 close=8
+alg @sec-string.prototype.matchall base=10 close=8
+alg @sec-string.prototype.normalize base=10 close=8
+alg @sec-string.prototype.padend base=10 close=8
+alg @sec-string.prototype.padstart base=10 close=8
+alg @sec-string.prototype.repeat base=10 close=8
+alg @sec-string.prototype.replace base=10 close=8
+alg @sec-string.prototype.replaceall base=10 close=8
+alg @sec-string.prototype.search base=10 close=8
+alg @sec-string.prototype.slice base=10 close=8
+alg @sec-string.prototype.small base=10 close=8
+alg @sec-string.prototype.split base=10 close=8
+alg @sec-string.prototype.startswith base=10 close=8
+alg @sec-string.prototype.strike base=10 close=8
+alg @sec-string.prototype.sub base=10 close=8
+alg @sec-string.prototype.substr base=10 close=8
+alg @sec-string.prototype.substring base=10 close=8
+alg @sec-string.prototype.sup base=10 close=8
+alg @sec-string.prototype.tolowercase base=10 close=8
+alg @sec-string.prototype.tostring base=10 close=8
+alg @sec-string.prototype.towellformed base=10 close=8
+alg @sec-string.prototype.trim base=10 close=8
+alg @sec-string.prototype.trimend base=10 close=8
+alg @sec-string.prototype.trimstart base=10 close=8
+alg @sec-string.prototype.valueof base=10 close=8
+alg @sec-string.raw base=10 close=8
+alg @sec-stringcreate base=10 close=8
+alg @sec-stringgetownproperty base=10 close=8
+alg @sec-stringindexof base=10 close=8
+alg @sec-stringlastindexof base=10 close=8
+alg @sec-stringpad base=12 close=10
+alg @sec-stringpaddingbuiltinsimpl base=12 close=10
+alg @sec-stringtobigint base=8 close=6
+alg @sec-stringtocodepoints base=8 close=6
+alg @sec-stringtonumber base=12 close=10
+alg @sec-suppressederror base=12 close=10
+alg @sec-suspendthisagent base=10 close=8
+alg @sec-symbol-description base=10 close=8
+alg @sec-symbol.for base=10 close=8
+alg @sec-symbol.keyfor base=10 close=8
+alg @sec-symbol.prototype-%symbol.toprimitive% base=10 close=8
+alg @sec-symbol.prototype.description base=10 close=8
+alg @sec-symbol.prototype.tostring base=10 close=8
+alg @sec-symbol.prototype.valueof base=10 close=8
+alg @sec-symboldescriptivestring base=12 close=10
+alg @sec-systemtimezoneidentifier base=10 close=8
+alg @sec-tear-free-aligned-reads base=8 close=6
+alg @sec-templatestring base=10 close=8
+alg @sec-testintegritylevel base=8 close=6
+alg @sec-thisbigintvalue base=12 close=10
+alg @sec-thisbooleanvalue base=12 close=10
+alg @sec-thisnumbervalue base=12 close=10
+alg @sec-thisstringvalue base=12 close=10
+alg @sec-thissymbolvalue base=12 close=10
+alg @sec-throwcompletion base=10 close=8
+alg @sec-timeclip base=10 close=8
+alg @sec-timefromyear base=10 close=8
+alg @sec-timestring base=12 close=10
+alg @sec-timewithinday base=10 close=8
+alg @sec-timezoneestring base=12 close=10
+alg @sec-toabsoluteindex base=8 close=6
+alg @sec-tobigint base=8 close=6
+alg @sec-tobigint#1 base=16 close=14
+alg @sec-tobigint64 base=8 close=6
+alg @sec-tobiguint64 base=8 close=6
+alg @sec-toboolean base=8 close=6
+alg @sec-toclampedindex base=8 close=6
+alg @sec-todatestring base=12 close=10
+alg @sec-tofixedsizeinteger base=8 close=6
+alg @sec-toindex base=8 close=6
+alg @sec-toint16 base=8 close=6
+alg @sec-toint32 base=8 close=6
+alg @sec-toint8 base=8 close=6
+alg @sec-tointegerorinfinity base=8 close=6
+alg @sec-tolength base=8 close=6
+alg @sec-tonumber base=8 close=6
+alg @sec-tonumeric base=8 close=6
+alg @sec-toobject base=8 close=6
+alg @sec-toprimitive base=8 close=6
+alg @sec-topropertydescriptor base=10 close=8
+alg @sec-topropertykey base=8 close=6
+alg @sec-tostring base=8 close=6
+alg @sec-touint16 base=8 close=6
+alg @sec-touint32 base=8 close=6
+alg @sec-touint8 base=8 close=6
+alg @sec-touint8clamp base=8 close=6
+alg @sec-tozeropaddeddecimalstring base=12 close=10
+alg @sec-triggerpromisereactions base=10 close=8
+alg @sec-trimstring base=12 close=10
+alg @sec-typedarray-create-same-type base=10 close=8
+alg @sec-typedarray-defineownproperty base=10 close=8
+alg @sec-typedarray-delete base=10 close=8
+alg @sec-typedarray-get base=10 close=8
+alg @sec-typedarray-getownproperty base=10 close=8
+alg @sec-typedarray-hasproperty base=10 close=8
+alg @sec-typedarray-ownpropertykeys base=10 close=8
+alg @sec-typedarray-preventextensions base=10 close=8
+alg @sec-typedarray-set base=10 close=8
+alg @sec-typedarraybytelength base=10 close=8
+alg @sec-typedarraycreate base=10 close=8
+alg @sec-typedarraycreatefromconstructor base=10 close=8
+alg @sec-typedarrayelementsize base=10 close=8
+alg @sec-typedarrayelementtype base=10 close=8
+alg @sec-typedarraygetelement base=10 close=8
+alg @sec-typedarraylength base=10 close=8
+alg @sec-typedarraysetelement base=10 close=8
+alg @sec-uint8array.frombase64 base=10 close=8
+alg @sec-uint8array.fromhex base=10 close=8
+alg @sec-uint8array.prototype.setfrombase64 base=10 close=8
+alg @sec-uint8array.prototype.setfromhex base=10 close=8
+alg @sec-uint8array.prototype.tobase64 base=10 close=8
+alg @sec-uint8array.prototype.tohex base=10 close=8
+alg @sec-unescape-string base=10 close=8
+alg @sec-unicodeescape base=10 close=8
+alg @sec-updateempty base=10 close=8
+alg @sec-updatemodifiers base=12 close=10
+alg @sec-utc-t base=10 close=8
+alg @sec-utf16decodesurrogatepair base=8 close=6
+alg @sec-utf16encodecodepoint base=8 close=6
+alg @sec-valid-chosen-reads base=8 close=6
+alg @sec-validateandapplypropertydescriptor base=10 close=8
+alg @sec-validateatomicaccess base=10 close=8
+alg @sec-validateatomicaccessonintegertypedarray base=10 close=8
+alg @sec-validateintegertypedarray base=10 close=8
+alg @sec-validatenonrevokedproxy base=8 close=6
+alg @sec-validatetypedarray base=10 close=8
+alg @sec-validatetypedarraybounds base=10 close=8
+alg @sec-validateuint8array base=10 close=8
+alg @sec-valueofreadevent base=8 close=6
+alg @sec-weak-ref-target base=10 close=8
+alg @sec-weak-ref.prototype.deref base=10 close=8
+alg @sec-weakmap-iterable base=10 close=8
+alg @sec-weakmap.prototype.delete base=10 close=8
+alg @sec-weakmap.prototype.get base=10 close=8
+alg @sec-weakmap.prototype.getorinsert base=10 close=8
+alg @sec-weakmap.prototype.getorinsertcomputed base=10 close=8
+alg @sec-weakmap.prototype.has base=10 close=8
+alg @sec-weakmap.prototype.set base=10 close=8
+alg @sec-weakref-execution base=8 close=6
+alg @sec-weakrefderef base=10 close=8
+alg @sec-weakset-iterable base=10 close=8
+alg @sec-weakset.prototype.add base=10 close=8
+alg @sec-weakset.prototype.delete base=10 close=8
+alg @sec-weakset.prototype.has base=10 close=8
+alg @sec-weekday base=10 close=8
+alg @sec-wordcharacters base=12 close=10
+alg @sec-yearfromtime base=10 close=8
+alg @sec-yield base=10 close=8
+alg @typedarray-species-create base=10 close=8
+early @sec-arrow-function-definitions-static-semantics-early-errors indent=8 layout=block
+early @sec-arrow-function-definitions-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-arrow-function-definitions-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-arrow-function-definitions-static-semantics-early-errors#3 indent=8 layout=block
+early @sec-arrow-function-definitions-static-semantics-early-errors#4 indent=8 layout=block
+early @sec-assignment-operators-static-semantics-early-errors indent=8 layout=block
+early @sec-assignment-operators-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-assignment-operators-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-assignment-operators-static-semantics-early-errors#3 indent=8 layout=block
+early @sec-async-arrow-function-definitions-static-semantics-early-errors indent=8 layout=inline
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#1 indent=8 layout=inline
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#2 indent=8 layout=inline
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#3 indent=8 layout=inline
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#4 indent=8 layout=inline
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#5 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#1 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#2 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#3 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#4 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#5 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#6 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#7 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#8 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#9 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#10 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#11 indent=8 layout=inline
+early @sec-async-function-definitions-static-semantics-early-errors#12 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#1 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#2 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#3 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#4 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#5 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#6 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#7 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#8 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#9 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#10 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#11 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#12 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#13 indent=8 layout=inline
+early @sec-async-generator-function-definitions-static-semantics-early-errors#14 indent=8 layout=inline
+early @sec-block-static-semantics-early-errors indent=8 layout=raw
+early @sec-block-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-break-statement-static-semantics-early-errors indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#1 indent=8 layout=raw
+early @sec-class-definitions-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#3 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#4 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#5 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#6 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#7 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#8 indent=8 layout=inline
+early @sec-class-definitions-static-semantics-early-errors#9 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#10 indent=8 layout=inline
+early @sec-class-definitions-static-semantics-early-errors#11 indent=8 layout=inline
+early @sec-class-definitions-static-semantics-early-errors#12 indent=8 layout=inline
+early @sec-class-definitions-static-semantics-early-errors#13 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#14 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#15 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#16 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#17 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#18 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#19 indent=8 layout=block
+early @sec-class-definitions-static-semantics-early-errors#20 indent=8 layout=block
+early @sec-continue-statement-static-semantics-early-errors indent=8 layout=block
+early @sec-delete-operator-static-semantics-early-errors indent=10 layout=block
+early @sec-delete-operator-static-semantics-early-errors#1 indent=10 layout=raw
+early @sec-destructuring-assignment-static-semantics-early-errors indent=10 layout=block
+early @sec-destructuring-assignment-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-destructuring-assignment-static-semantics-early-errors#2 indent=10 layout=block
+early @sec-destructuring-assignment-static-semantics-early-errors#3 indent=10 layout=block
+early @sec-do-while-statement-static-semantics-early-errors indent=10 layout=block
+early @sec-exports-static-semantics-early-errors indent=10 layout=block
+early @sec-exports-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors indent=10 layout=block
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#2 indent=10 layout=block
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#3 indent=10 layout=block
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#4 indent=10 layout=block
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#5 indent=10 layout=block
+early @sec-for-statement-static-semantics-early-errors indent=10 layout=block
+early @sec-for-statement-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-function-definitions-static-semantics-early-errors indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#3 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#4 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#5 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#6 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#7 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#8 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#9 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#10 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#11 indent=8 layout=block
+early @sec-function-definitions-static-semantics-early-errors#12 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#3 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#4 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#5 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#6 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#7 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#8 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#9 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#10 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#11 indent=8 layout=block
+early @sec-generator-function-definitions-static-semantics-early-errors#12 indent=8 layout=block
+early @sec-grouping-operator-static-semantics-early-errors indent=10 layout=block
+early @sec-identifier-names-static-semantics-early-errors indent=10 layout=block
+early @sec-identifier-names-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-identifiers-static-semantics-early-errors indent=8 layout=block
+early @sec-identifiers-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-identifiers-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-identifiers-static-semantics-early-errors#3 indent=8 layout=block
+early @sec-identifiers-static-semantics-early-errors#4 indent=8 layout=block
+early @sec-identifiers-static-semantics-early-errors#5 indent=8 layout=block
+early @sec-identifiers-static-semantics-early-errors#6 indent=8 layout=block
+early @sec-identifiers-static-semantics-early-errors#7 indent=8 layout=block
+early @sec-identifiers-static-semantics-early-errors#8 indent=8 layout=block
+early @sec-identifiers-static-semantics-early-errors#9 indent=8 layout=block
+early @sec-if-statement-static-semantics-early-errors indent=8 layout=block
+early @sec-if-statement-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-if-statement-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-imports-static-semantics-early-errors indent=10 layout=block
+early @sec-imports-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-labelled-statements-static-semantics-early-errors indent=8 layout=block
+early @sec-left-hand-side-expressions-static-semantics-early-errors indent=10 layout=block
+early @sec-left-hand-side-expressions-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-let-and-const-declarations-static-semantics-early-errors indent=10 layout=block
+early @sec-let-and-const-declarations-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-let-and-const-declarations-static-semantics-early-errors#2 indent=10 layout=block
+early @sec-let-and-const-declarations-static-semantics-early-errors#3 indent=10 layout=block
+early @sec-let-and-const-declarations-static-semantics-early-errors#4 indent=10 layout=inline
+early @sec-let-and-const-declarations-static-semantics-early-errors#5 indent=10 layout=block
+early @sec-let-and-const-declarations-static-semantics-early-errors#6 indent=10 layout=block
+early @sec-let-and-const-declarations-static-semantics-early-errors#7 indent=10 layout=block
+early @sec-method-definitions-static-semantics-early-errors indent=8 layout=block
+early @sec-method-definitions-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-method-definitions-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-method-definitions-static-semantics-early-errors#3 indent=8 layout=block
+early @sec-method-definitions-static-semantics-early-errors#4 indent=8 layout=block
+early @sec-module-semantics-static-semantics-early-errors indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#2 indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#3 indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#4 indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#5 indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#6 indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#7 indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#8 indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#9 indent=10 layout=block
+early @sec-module-semantics-static-semantics-early-errors#10 indent=10 layout=inline
+early @sec-numeric-literals-early-errors indent=10 layout=inline
+early @sec-object-initializer-static-semantics-early-errors indent=10 layout=block
+early @sec-object-initializer-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-object-initializer-static-semantics-early-errors#2 indent=10 layout=block
+early @sec-object-initializer-static-semantics-early-errors#3 indent=10 layout=block
+early @sec-parameter-lists-static-semantics-early-errors indent=8 layout=block
+early @sec-parameter-lists-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-patterns-static-semantics-early-errors indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#2 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#3 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#4 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#5 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#6 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#7 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#8 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#9 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#10 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#11 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#12 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#13 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#14 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#15 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#16 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#17 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#18 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#19 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#20 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#21 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#22 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#23 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#24 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors#25 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors-annexb indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors-annexb#1 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors-annexb#2 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors-annexb#3 indent=10 layout=block
+early @sec-patterns-static-semantics-early-errors-annexb#4 indent=10 layout=block
+early @sec-primary-expression-regular-expression-literals-static-semantics-early-errors indent=10 layout=block
+early @sec-scripts-static-semantics-early-errors indent=8 layout=block
+early @sec-scripts-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-scripts-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-scripts-static-semantics-early-errors#3 indent=8 layout=block
+early @sec-scripts-static-semantics-early-errors#4 indent=8 layout=block
+early @sec-scripts-static-semantics-early-errors#5 indent=8 layout=block
+early @sec-scripts-static-semantics-early-errors#6 indent=8 layout=block
+early @sec-scripts-static-semantics-early-errors#7 indent=8 layout=block
+early @sec-scripts-static-semantics-early-errors#8 indent=8 layout=block
+early @sec-static-semantics-template-early-errors indent=10 layout=block
+early @sec-static-semantics-template-early-errors#1 indent=10 layout=block
+early @sec-static-semantics-template-early-errors#2 indent=10 layout=block
+early @sec-string-literals-early-errors indent=10 layout=inline
+early @sec-switch-statement-static-semantics-early-errors indent=8 layout=raw
+early @sec-switch-statement-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-switch-statement-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-switch-statement-static-semantics-early-errors#3 indent=8 layout=block
+early @sec-try-statement-static-semantics-early-errors indent=8 layout=block
+early @sec-try-statement-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-try-statement-static-semantics-early-errors#2 indent=8 layout=block
+early @sec-update-expressions-static-semantics-early-errors indent=8 layout=block
+early @sec-update-expressions-static-semantics-early-errors#1 indent=8 layout=block
+early @sec-while-statement-static-semantics-early-errors indent=10 layout=block
+early @sec-with-statement-static-semantics-early-errors indent=8 layout=block
+early @sec-with-statement-static-semantics-early-errors#1 indent=8 layout=block
+eq @sec-runtime-semantics-mv-for-stringintegerliteral indent=10
+eq @sec-runtime-semantics-mv-for-stringintegerliteral#1 indent=10
+eq @sec-static-semantics-mv indent=10
+eq @sec-static-semantics-mv#1 indent=10
+eq @sec-static-semantics-mv#2 indent=10
+eq @sec-static-semantics-mv#3 indent=10
+eq @sec-static-semantics-mv#4 indent=10
+eq @sec-static-semantics-mv#5 indent=10
+eq @sec-static-semantics-mv#6 indent=10
+eq @sec-static-semantics-mv#7 indent=10
+eq @sec-static-semantics-mv#8 indent=10
+eq @sec-static-semantics-mv#9 indent=10
+eq @sec-static-semantics-mv#10 indent=10
+eq @sec-static-semantics-mv#11 indent=10
+eq @sec-static-semantics-mv#12 indent=10
+eq @sec-static-semantics-mv#13 indent=10
+eq @sec-static-semantics-mv#14 indent=10
+eq @sec-static-semantics-mv#15 indent=10
+eq @sec-static-semantics-mv#16 indent=10
+eq @sec-static-semantics-mv#17 indent=10
+eq @sec-static-semantics-mv#18 indent=10
+eq @sec-static-semantics-mv#19 indent=10
+eq @sec-static-semantics-mv#20 indent=10
+eq @sec-static-semantics-mv#21 indent=10
+eq @sec-static-semantics-mv#22 indent=10
+eq @sec-static-semantics-mv#23 indent=10
+eq @sec-static-semantics-mv#24 indent=10
+eq @sec-static-semantics-mv#25 indent=10
+eq @sec-static-semantics-mv#26 indent=10
+eq @sec-static-semantics-mv#27 indent=10
+eq @sec-static-semantics-mv#28 indent=10
+eq @sec-static-semantics-mv#29 indent=10
+eq @sec-static-semantics-mv#30 indent=10
+eq @sec-static-semantics-mv#31 indent=10
+eq @sec-static-semantics-mv#32 indent=10
+eq @sec-static-semantics-mv#33 indent=10
+eq @sec-static-semantics-mv#34 indent=10
+eq @sec-static-semantics-mv#35 indent=10
+eq @sec-static-semantics-mv#36 indent=10
+eq @sec-static-semantics-mv#37 indent=10
+eq @sec-static-semantics-sv indent=10
+eq @sec-static-semantics-sv#1 indent=10
+eq @sec-static-semantics-sv#2 indent=10
+eq @sec-static-semantics-sv#3 indent=10
+eq @sec-static-semantics-sv#4 indent=10
+eq @sec-static-semantics-sv#5 indent=10
+eq @sec-static-semantics-sv#6 indent=10
+eq @sec-static-semantics-sv#7 indent=10
+eq @sec-static-semantics-sv#8 indent=10
+eq @sec-static-semantics-sv#9 indent=10
+eq @sec-static-semantics-sv#10 indent=10
+eq @sec-static-semantics-sv#11 indent=10
+eq @sec-static-semantics-sv#12 indent=10
+eq @sec-static-semantics-sv#13 indent=10
+eq @sec-static-semantics-sv#14 indent=10
+eq @sec-static-semantics-sv#15 indent=10
+eq @sec-static-semantics-sv#16 indent=10
+eq @sec-static-semantics-sv#17 indent=10
+eq @sec-static-semantics-sv#18 indent=10
+eq @sec-static-semantics-sv#19 indent=10
+eq @sec-static-semantics-sv#20 indent=10
+eq @sec-static-semantics-sv#21 indent=10
+eq @sec-static-semantics-trv indent=10
+eq @sec-static-semantics-trv#1 indent=10
+eq @sec-static-semantics-trv#2 indent=10
+eq @sec-static-semantics-trv#3 indent=10
+eq @sec-static-semantics-trv#4 indent=10
+eq @sec-static-semantics-trv#5 indent=10
+eq @sec-static-semantics-trv#6 indent=10
+eq @sec-static-semantics-trv#7 indent=10
+eq @sec-static-semantics-trv#8 indent=10
+eq @sec-static-semantics-trv#9 indent=10
+eq @sec-static-semantics-trv#10 indent=10
+eq @sec-static-semantics-trv#11 indent=10
+eq @sec-static-semantics-trv#12 indent=10
+eq @sec-static-semantics-trv#13 indent=10
+eq @sec-static-semantics-trv#14 indent=10
+eq @sec-static-semantics-trv#15 indent=10
+eq @sec-static-semantics-trv#16 indent=10
+eq @sec-static-semantics-trv#17 indent=10
+eq @sec-static-semantics-trv#18 indent=10
+eq @sec-static-semantics-trv#19 indent=10
+eq @sec-static-semantics-trv#20 indent=10
+eq @sec-static-semantics-trv#21 indent=10
+eq @sec-static-semantics-trv#22 indent=10
+eq @sec-static-semantics-trv#23 indent=10
+eq @sec-static-semantics-trv#24 indent=10
+eq @sec-static-semantics-trv#25 indent=10
+eq @sec-static-semantics-trv#26 indent=10
+eq @sec-static-semantics-trv#27 indent=10
+eq @sec-static-semantics-trv#28 indent=10
+eq @sec-static-semantics-trv#29 indent=10
+eq @sec-static-semantics-trv#30 indent=10
+eq @sec-static-semantics-trv#31 indent=10
+eq @sec-static-semantics-trv#32 indent=10
+eq @sec-static-semantics-trv#33 indent=10
+eq @sec-static-semantics-trv#34 indent=10
+eq @sec-static-semantics-tv indent=10
+eq @sec-static-semantics-tv#1 indent=10
+eq @sec-static-semantics-tv#2 indent=10
+eq @sec-static-semantics-tv#3 indent=10
+eq @sec-static-semantics-tv#4 indent=10
+eq @sec-static-semantics-tv#5 indent=10
+eq @sec-static-semantics-tv#6 indent=10
+eq @sec-static-semantics-tv#7 indent=10
+eq @sec-static-semantics-tv#8 indent=10
+eq @sec-static-semantics-tv#9 indent=10
+eq @sec-static-semantics-tv#10 indent=10
+eq @sec-string-literals-static-semantics-mv indent=10
+eq @sec-string-literals-static-semantics-mv#1 indent=10
+eq @sec-string-literals-static-semantics-mv#2 indent=10
+eq @sec-string-literals-static-semantics-mv#3 indent=10
+eq @sec-string-literals-static-semantics-mv#4 indent=10
+eq @sec-string-literals-static-semantics-mv#5 indent=10
+eq @sec-string-literals-static-semantics-mv#6 indent=10
+eq @sec-string-literals-static-semantics-mv#7 indent=10
+eq @sec-string-literals-static-semantics-mv#8 indent=10
+eq @sec-string-literals-static-semantics-mv#9 indent=10
+eq @sec-string-literals-static-semantics-mv#10 indent=10
+eq @sec-string-literals-static-semantics-mv#11 indent=10
+eq @sec-string-literals-static-semantics-mv#12 indent=10
+row @sec-addition-operator-plus-runtime-semantics-evaluation base=10 close=8
+row @sec-array-initializer-runtime-semantics-evaluation base=10 close=8
+row @sec-array-initializer-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-array-initializer-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-arrow-function-definitions-runtime-semantics-evaluation base=8 close=6
+row @sec-arrow-function-definitions-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-assignment-operators-runtime-semantics-evaluation base=8 close=6
+row @sec-assignment-operators-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-assignment-operators-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-assignment-operators-runtime-semantics-evaluation#3 base=8 close=6
+row @sec-assignment-operators-runtime-semantics-evaluation#4 base=8 close=6
+row @sec-async-arrow-function-definitions-runtime-semantics-evaluation base=8 close=6
+row @sec-async-function-definitions-runtime-semantics-evaluation base=8 close=6
+row @sec-async-function-definitions-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-async-function-definitions-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-asyncgenerator-definitions-evaluation base=8 close=6
+row @sec-binary-bitwise-operators-runtime-semantics-evaluation base=8 close=6
+row @sec-binary-bitwise-operators-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-binary-bitwise-operators-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-binary-logical-operators-runtime-semantics-evaluation base=8 close=6
+row @sec-binary-logical-operators-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-binary-logical-operators-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-bindingevaluation base=10 close=8
+row @sec-bindingevaluation#1 base=10 close=8
+row @sec-bindingevaluation#2 base=10 close=8
+row @sec-bindingevaluation#3 base=10 close=8
+row @sec-bitwise-not-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-block-runtime-semantics-evaluation base=8 close=6
+row @sec-block-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-block-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-break-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-break-statement-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-class-definitions-runtime-semantics-evaluation base=8 close=6
+row @sec-class-definitions-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-class-definitions-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-class-definitions-runtime-semantics-evaluation#3 base=8 close=6
+row @sec-class-definitions-runtime-semantics-evaluation#4 base=8 close=6
+row @sec-comma-operator-runtime-semantics-evaluation base=8 close=6
+row @sec-compileassertion base=10 close=8
+row @sec-compileassertion#1 base=10 close=8
+row @sec-compileassertion#2 base=10 close=8
+row @sec-compileassertion#3 base=10 close=8
+row @sec-compileassertion#4 base=10 close=8
+row @sec-compileassertion#5 base=10 close=8
+row @sec-compileassertion#6 base=10 close=8
+row @sec-compileassertion#7 base=10 close=8
+row @sec-compileatom base=10 close=8
+row @sec-compileatom#1 base=10 close=8
+row @sec-compileatom#2 base=10 close=8
+row @sec-compileatom#3 base=10 close=8
+row @sec-compileatom#4 base=10 close=8
+row @sec-compileatom#5 base=10 close=8
+row @sec-compileatom#6 base=10 close=8
+row @sec-compileatom#7 base=10 close=8
+row @sec-compileatom#8 base=10 close=8
+row @sec-compileatom#9 base=10 close=8
+row @sec-compileatom-annexb base=10 close=8
+row @sec-compileatom-annexb#1 base=10 close=8
+row @sec-compilecharacterclass base=10 close=8
+row @sec-compilecharacterclass#1 base=10 close=8
+row @sec-compileclasssetstring base=10 close=8
+row @sec-compileclasssetstring#1 base=10 close=8
+row @sec-compileclasssetstring#2 base=10 close=8
+row @sec-compilepattern base=10 close=8
+row @sec-compilequantifier base=10 close=8
+row @sec-compilequantifier#1 base=10 close=8
+row @sec-compilequantifierprefix base=10 close=8
+row @sec-compilequantifierprefix#1 base=10 close=8
+row @sec-compilequantifierprefix#2 base=10 close=8
+row @sec-compilequantifierprefix#3 base=10 close=8
+row @sec-compilequantifierprefix#4 base=10 close=8
+row @sec-compilequantifierprefix#5 base=10 close=8
+row @sec-compilesubpattern base=10 close=8
+row @sec-compilesubpattern#1 base=10 close=8
+row @sec-compilesubpattern#2 base=10 close=8
+row @sec-compilesubpattern#3 base=10 close=8
+row @sec-compilesubpattern#4 base=10 close=8
+row @sec-compilesubpattern#5 base=10 close=8
+row @sec-compiletocharset base=10 close=8
+row @sec-compiletocharset#1 base=10 close=8
+row @sec-compiletocharset#2 base=10 close=8
+row @sec-compiletocharset#3 base=10 close=8
+row @sec-compiletocharset#4 base=10 close=8
+row @sec-compiletocharset#5 base=10 close=8
+row @sec-compiletocharset#6 base=10 close=8
+row @sec-compiletocharset#7 base=10 close=8
+row @sec-compiletocharset#8 base=10 close=8
+row @sec-compiletocharset#9 base=10 close=8
+row @sec-compiletocharset#10 base=10 close=8
+row @sec-compiletocharset#11 base=10 close=8
+row @sec-compiletocharset#12 base=10 close=8
+row @sec-compiletocharset#13 base=10 close=8
+row @sec-compiletocharset#14 base=10 close=8
+row @sec-compiletocharset#15 base=10 close=8
+row @sec-compiletocharset#16 base=10 close=8
+row @sec-compiletocharset#17 base=10 close=8
+row @sec-compiletocharset#18 base=10 close=8
+row @sec-compiletocharset#19 base=10 close=8
+row @sec-compiletocharset#20 base=10 close=8
+row @sec-compiletocharset#21 base=10 close=8
+row @sec-compiletocharset#22 base=10 close=8
+row @sec-compiletocharset#23 base=10 close=8
+row @sec-compiletocharset#24 base=10 close=8
+row @sec-compiletocharset#25 base=10 close=8
+row @sec-compiletocharset#26 base=10 close=8
+row @sec-compiletocharset#27 base=10 close=8
+row @sec-compiletocharset#28 base=10 close=8
+row @sec-compiletocharset#29 base=10 close=8
+row @sec-compiletocharset#30 base=10 close=8
+row @sec-compiletocharset#31 base=10 close=8
+row @sec-compiletocharset#32 base=10 close=8
+row @sec-compiletocharset#33 base=10 close=8
+row @sec-compiletocharset#34 base=10 close=8
+row @sec-compiletocharset#35 base=10 close=8
+row @sec-compiletocharset-annexb base=10 close=8
+row @sec-compiletocharset-annexb#1 base=10 close=8
+row @sec-compiletocharset-annexb#2 base=10 close=8
+row @sec-compiletocharset-annexb#3 base=10 close=8
+row @sec-conditional-operator-runtime-semantics-evaluation base=8 close=6
+row @sec-continue-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-continue-statement-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-debugger-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-delete-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-destructuring-binding-patterns-runtime-semantics-propertybindinginitialization base=10 close=8
+row @sec-destructuring-binding-patterns-runtime-semantics-propertybindinginitialization#1 base=10 close=8
+row @sec-destructuring-binding-patterns-runtime-semantics-propertybindinginitialization#2 base=10 close=8
+row @sec-destructuring-binding-patterns-runtime-semantics-restbindinginitialization base=10 close=8
+row @sec-empty-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-equality-operators-runtime-semantics-evaluation base=8 close=6
+row @sec-equality-operators-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-equality-operators-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-equality-operators-runtime-semantics-evaluation#3 base=8 close=6
+row @sec-exp-operator-runtime-semantics-evaluation base=8 close=6
+row @sec-exports-runtime-semantics-evaluation base=10 close=8
+row @sec-exports-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-exports-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-exports-runtime-semantics-evaluation#3 base=10 close=8
+row @sec-exports-runtime-semantics-evaluation#4 base=10 close=8
+row @sec-exports-runtime-semantics-evaluation#5 base=10 close=8
+row @sec-expression-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-for-in-and-for-of-statements-runtime-semantics-evaluation base=10 close=8
+row @sec-function-calls-runtime-semantics-evaluation base=10 close=8
+row @sec-function-calls-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-function-definitions-runtime-semantics-evaluation base=8 close=6
+row @sec-function-definitions-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-function-definitions-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-function-definitions-runtime-semantics-evaluation#3 base=8 close=6
+row @sec-function-definitions-runtime-semantics-evaluation#4 base=8 close=6
+row @sec-generator-function-definitions-runtime-semantics-evaluation base=8 close=6
+row @sec-generator-function-definitions-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-generator-function-definitions-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-generator-function-definitions-runtime-semantics-evaluation#3 base=8 close=6
+row @sec-grouping-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-grouping-operator-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-identifiercodepoint base=10 close=8
+row @sec-identifiercodepoint#1 base=10 close=8
+row @sec-identifiercodepoint#2 base=10 close=8
+row @sec-identifiercodepoint#3 base=10 close=8
+row @sec-identifiercodepoints base=10 close=8
+row @sec-identifiercodepoints#1 base=10 close=8
+row @sec-identifiers-runtime-semantics-evaluation base=8 close=6
+row @sec-identifiers-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-identifiers-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-if-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-if-statement-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-import-call-runtime-semantics-evaluation base=10 close=8
+row @sec-import-call-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-initializers-in-forin-statement-heads base=8 close=6
+row @sec-initializers-in-forin-statement-heads#1 base=8 close=6
+row @sec-initializers-in-forin-statement-heads#2 base=8 close=6
+row @sec-initializers-in-forin-statement-heads#3 base=8 close=6
+row @sec-initializers-in-forin-statement-heads#4 base=8 close=6
+row @sec-initializers-in-forin-statement-heads#5 base=8 close=6
+row @sec-initializers-in-forin-statement-heads#6 base=8 close=6
+row @sec-labelled-statements-runtime-semantics-evaluation base=8 close=6
+row @sec-left-shift-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-let-and-const-declarations-runtime-semantics-evaluation base=10 close=8
+row @sec-let-and-const-declarations-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-let-and-const-declarations-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-literals-runtime-semantics-evaluation base=10 close=8
+row @sec-literals-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-literals-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-literals-runtime-semantics-evaluation#3 base=10 close=8
+row @sec-logical-not-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-meta-properties-runtime-semantics-evaluation base=10 close=8
+row @sec-meta-properties-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-module-semantics-runtime-semantics-evaluation base=10 close=8
+row @sec-module-semantics-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-module-semantics-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-module-semantics-runtime-semantics-evaluation#3 base=10 close=8
+row @sec-multiplicative-operators-runtime-semantics-evaluation base=8 close=6
+row @sec-new-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-new-operator-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-numericvalue base=10 close=8
+row @sec-numericvalue#1 base=10 close=8
+row @sec-numericvalue#2 base=10 close=8
+row @sec-numericvalue#3 base=10 close=8
+row @sec-numericvalue#4 base=10 close=8
+row @sec-numericvalue#5 base=10 close=8
+row @sec-numericvalue#6 base=10 close=8
+row @sec-object-initializer-runtime-semantics-evaluation base=10 close=8
+row @sec-object-initializer-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-object-initializer-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-object-initializer-runtime-semantics-evaluation#3 base=10 close=8
+row @sec-object-initializer-runtime-semantics-evaluation#4 base=10 close=8
+row @sec-object-initializer-runtime-semantics-evaluation#5 base=10 close=8
+row @sec-optional-chaining-chain-evaluation base=10 close=8
+row @sec-optional-chaining-chain-evaluation#1 base=10 close=8
+row @sec-optional-chaining-chain-evaluation#2 base=10 close=8
+row @sec-optional-chaining-chain-evaluation#3 base=10 close=8
+row @sec-optional-chaining-chain-evaluation#4 base=10 close=8
+row @sec-optional-chaining-chain-evaluation#5 base=10 close=8
+row @sec-optional-chaining-chain-evaluation#6 base=10 close=8
+row @sec-optional-chaining-chain-evaluation#7 base=10 close=8
+row @sec-optional-chaining-evaluation base=10 close=8
+row @sec-optional-chaining-evaluation#1 base=10 close=8
+row @sec-optional-chaining-evaluation#2 base=10 close=8
+row @sec-patterns-static-semantics-capturing-group-number base=10 close=8
+row @sec-patterns-static-semantics-capturing-group-number#1 base=10 close=8
+row @sec-patterns-static-semantics-character-value base=10 close=8
+row @sec-patterns-static-semantics-character-value#1 base=10 close=8
+row @sec-patterns-static-semantics-character-value#2 base=10 close=8
+row @sec-patterns-static-semantics-character-value#3 base=10 close=8
+row @sec-patterns-static-semantics-character-value#4 base=10 close=8
+row @sec-patterns-static-semantics-character-value#5 base=10 close=8
+row @sec-patterns-static-semantics-character-value#6 base=10 close=8
+row @sec-patterns-static-semantics-character-value#7 base=10 close=8
+row @sec-patterns-static-semantics-character-value#8 base=10 close=8
+row @sec-patterns-static-semantics-character-value#9 base=10 close=8
+row @sec-patterns-static-semantics-character-value#10 base=10 close=8
+row @sec-patterns-static-semantics-character-value#11 base=10 close=8
+row @sec-patterns-static-semantics-character-value#12 base=10 close=8
+row @sec-patterns-static-semantics-character-value#13 base=10 close=8
+row @sec-patterns-static-semantics-character-value#14 base=10 close=8
+row @sec-patterns-static-semantics-character-value#15 base=10 close=8
+row @sec-patterns-static-semantics-character-value-annexb base=10 close=8
+row @sec-patterns-static-semantics-character-value-annexb#1 base=10 close=8
+row @sec-patterns-static-semantics-character-value-annexb#2 base=10 close=8
+row @sec-patterns-static-semantics-is-character-class base=10 close=8
+row @sec-patterns-static-semantics-is-character-class#1 base=10 close=8
+row @sec-patterns-static-semantics-is-character-class-annexb base=10 close=8
+row @sec-postfix-decrement-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-postfix-increment-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-prefix-decrement-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-prefix-increment-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-property-accessors-runtime-semantics-evaluation base=10 close=8
+row @sec-property-accessors-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-property-accessors-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-property-accessors-runtime-semantics-evaluation#3 base=10 close=8
+row @sec-property-accessors-runtime-semantics-evaluation#4 base=10 close=8
+row @sec-property-accessors-runtime-semantics-evaluation#5 base=10 close=8
+row @sec-regexpidentifiercodepoint base=10 close=8
+row @sec-regexpidentifiercodepoint#1 base=10 close=8
+row @sec-regexpidentifiercodepoint#2 base=10 close=8
+row @sec-regexpidentifiercodepoint#3 base=10 close=8
+row @sec-regexpidentifiercodepoints base=10 close=8
+row @sec-regexpidentifiercodepoints#1 base=10 close=8
+row @sec-regular-expression-literals-runtime-semantics-evaluation base=10 close=8
+row @sec-relational-operators-runtime-semantics-evaluation base=8 close=6
+row @sec-relational-operators-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-relational-operators-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-relational-operators-runtime-semantics-evaluation#3 base=8 close=6
+row @sec-relational-operators-runtime-semantics-evaluation#4 base=8 close=6
+row @sec-relational-operators-runtime-semantics-evaluation#5 base=8 close=6
+row @sec-relational-operators-runtime-semantics-evaluation#6 base=8 close=6
+row @sec-return-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-return-statement-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-runtime-semantics-argumentlistevaluation base=10 close=8
+row @sec-runtime-semantics-argumentlistevaluation#1 base=10 close=8
+row @sec-runtime-semantics-argumentlistevaluation#2 base=10 close=8
+row @sec-runtime-semantics-argumentlistevaluation#3 base=10 close=8
+row @sec-runtime-semantics-argumentlistevaluation#4 base=10 close=8
+row @sec-runtime-semantics-argumentlistevaluation#5 base=10 close=8
+row @sec-runtime-semantics-argumentlistevaluation#6 base=10 close=8
+row @sec-runtime-semantics-argumentlistevaluation#7 base=10 close=8
+row @sec-runtime-semantics-arrayaccumulation base=10 close=8
+row @sec-runtime-semantics-arrayaccumulation#1 base=10 close=8
+row @sec-runtime-semantics-arrayaccumulation#2 base=10 close=8
+row @sec-runtime-semantics-arrayaccumulation#3 base=10 close=8
+row @sec-runtime-semantics-arrayaccumulation#4 base=10 close=8
+row @sec-runtime-semantics-arrayaccumulation#5 base=10 close=8
+row @sec-runtime-semantics-arrayaccumulation#6 base=10 close=8
+row @sec-runtime-semantics-bindingclassdeclarationevaluation base=8 close=6
+row @sec-runtime-semantics-bindingclassdeclarationevaluation#1 base=8 close=6
+row @sec-runtime-semantics-bindinginitialization base=8 close=6
+row @sec-runtime-semantics-bindinginitialization#1 base=8 close=6
+row @sec-runtime-semantics-bindinginitialization#2 base=8 close=6
+row @sec-runtime-semantics-bindinginitialization#3 base=8 close=6
+row @sec-runtime-semantics-bindinginitialization#4 base=8 close=6
+row @sec-runtime-semantics-bindinginitialization#5 base=8 close=6
+row @sec-runtime-semantics-bindinginitialization#6 base=8 close=6
+row @sec-runtime-semantics-bindinginitialization#7 base=8 close=6
+row @sec-runtime-semantics-bindinginitialization#8 base=8 close=6
+row @sec-runtime-semantics-caseblockevaluation base=8 close=6
+row @sec-runtime-semantics-caseblockevaluation#1 base=8 close=6
+row @sec-runtime-semantics-caseblockevaluation#2 base=8 close=6
+row @sec-runtime-semantics-catchclauseevaluation base=8 close=6
+row @sec-runtime-semantics-catchclauseevaluation#1 base=8 close=6
+row @sec-runtime-semantics-classdefinitionevaluation base=8 close=6
+row @sec-runtime-semantics-classfielddefinitionevaluation base=8 close=6
+row @sec-runtime-semantics-classstaticblockdefinitionevaluation base=8 close=6
+row @sec-runtime-semantics-definemethod base=8 close=6
+row @sec-runtime-semantics-destructuringassignmentevaluation base=10 close=8
+row @sec-runtime-semantics-destructuringassignmentevaluation#1 base=10 close=8
+row @sec-runtime-semantics-destructuringassignmentevaluation#2 base=10 close=8
+row @sec-runtime-semantics-destructuringassignmentevaluation#3 base=10 close=8
+row @sec-runtime-semantics-destructuringassignmentevaluation#4 base=10 close=8
+row @sec-runtime-semantics-destructuringassignmentevaluation#5 base=10 close=8
+row @sec-runtime-semantics-destructuringassignmentevaluation#6 base=10 close=8
+row @sec-runtime-semantics-destructuringassignmentevaluation#7 base=10 close=8
+row @sec-runtime-semantics-destructuringassignmentevaluation#8 base=10 close=8
+row @sec-runtime-semantics-dowhileloopevaluation base=10 close=8
+row @sec-runtime-semantics-evaluateasyncconcisebody base=8 close=6
+row @sec-runtime-semantics-evaluateasyncfunctionbody base=8 close=6
+row @sec-runtime-semantics-evaluateasyncgeneratorbody base=8 close=6
+row @sec-runtime-semantics-evaluatebody base=10 close=8
+row @sec-runtime-semantics-evaluatebody#1 base=10 close=8
+row @sec-runtime-semantics-evaluatebody#2 base=10 close=8
+row @sec-runtime-semantics-evaluatebody#3 base=10 close=8
+row @sec-runtime-semantics-evaluatebody#4 base=10 close=8
+row @sec-runtime-semantics-evaluatebody#5 base=10 close=8
+row @sec-runtime-semantics-evaluatebody#6 base=10 close=8
+row @sec-runtime-semantics-evaluatebody#7 base=10 close=8
+row @sec-runtime-semantics-evaluateclassstaticblockbody base=8 close=6
+row @sec-runtime-semantics-evaluateconcisebody base=8 close=6
+row @sec-runtime-semantics-evaluatefunctionbody base=8 close=6
+row @sec-runtime-semantics-evaluategeneratorbody base=8 close=6
+row @sec-runtime-semantics-fordeclarationbindinginitialization base=10 close=8
+row @sec-runtime-semantics-fordeclarationbindinginitialization#1 base=10 close=8
+row @sec-runtime-semantics-fordeclarationbindinginstantiation base=10 close=8
+row @sec-runtime-semantics-fordeclarationbindinginstantiation#1 base=10 close=8
+row @sec-runtime-semantics-forinofloopevaluation base=10 close=8
+row @sec-runtime-semantics-forinofloopevaluation#1 base=10 close=8
+row @sec-runtime-semantics-forinofloopevaluation#2 base=10 close=8
+row @sec-runtime-semantics-forinofloopevaluation#3 base=10 close=8
+row @sec-runtime-semantics-forinofloopevaluation#4 base=10 close=8
+row @sec-runtime-semantics-forinofloopevaluation#5 base=10 close=8
+row @sec-runtime-semantics-forinofloopevaluation#6 base=10 close=8
+row @sec-runtime-semantics-forinofloopevaluation#7 base=10 close=8
+row @sec-runtime-semantics-forinofloopevaluation#8 base=10 close=8
+row @sec-runtime-semantics-forloopevaluation base=10 close=8
+row @sec-runtime-semantics-forloopevaluation#1 base=10 close=8
+row @sec-runtime-semantics-forloopevaluation#2 base=10 close=8
+row @sec-runtime-semantics-instantiatearrowfunctionexpression base=8 close=6
+row @sec-runtime-semantics-instantiateasyncarrowfunctionexpression base=8 close=6
+row @sec-runtime-semantics-instantiateasyncarrowfunctionexpression#1 base=8 close=6
+row @sec-runtime-semantics-instantiateasyncfunctiondeclaration base=8 close=6
+row @sec-runtime-semantics-instantiateasyncfunctiondeclaration#1 base=8 close=6
+row @sec-runtime-semantics-instantiateasyncfunctionexpression base=8 close=6
+row @sec-runtime-semantics-instantiateasyncfunctionexpression#1 base=8 close=6
+row @sec-runtime-semantics-instantiateasyncgeneratordeclaration base=8 close=6
+row @sec-runtime-semantics-instantiateasyncgeneratordeclaration#1 base=8 close=6
+row @sec-runtime-semantics-instantiateasyncgeneratorfunctionexpression base=8 close=6
+row @sec-runtime-semantics-instantiateasyncgeneratorfunctionexpression#1 base=8 close=6
+row @sec-runtime-semantics-instantiatefunctiondeclaration base=8 close=6
+row @sec-runtime-semantics-instantiatefunctiondeclaration#1 base=8 close=6
+row @sec-runtime-semantics-instantiatefunctiondeclaration#2 base=8 close=6
+row @sec-runtime-semantics-instantiatefunctiondeclaration#3 base=8 close=6
+row @sec-runtime-semantics-instantiategeneratordeclaration base=8 close=6
+row @sec-runtime-semantics-instantiategeneratordeclaration#1 base=8 close=6
+row @sec-runtime-semantics-instantiategeneratorfunctionexpression base=8 close=6
+row @sec-runtime-semantics-instantiategeneratorfunctionexpression#1 base=8 close=6
+row @sec-runtime-semantics-instantiateordinaryfunctiondeclaration base=8 close=6
+row @sec-runtime-semantics-instantiateordinaryfunctiondeclaration#1 base=8 close=6
+row @sec-runtime-semantics-instantiateordinaryfunctionexpression base=8 close=6
+row @sec-runtime-semantics-instantiateordinaryfunctionexpression#1 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#1 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#2 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#3 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#4 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#5 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#6 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#7 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#8 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#9 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#10 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#11 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#12 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#13 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#14 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#15 base=8 close=6
+row @sec-runtime-semantics-iteratorbindinginitialization#16 base=8 close=6
+row @sec-runtime-semantics-iteratordestructuringassignmentevaluation base=10 close=8
+row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#1 base=10 close=8
+row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#2 base=10 close=8
+row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#3 base=10 close=8
+row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#4 base=10 close=8
+row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#5 base=10 close=8
+row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#6 base=10 close=8
+row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#7 base=10 close=8
+row @sec-runtime-semantics-keyedbindinginitialization base=10 close=8
+row @sec-runtime-semantics-keyedbindinginitialization#1 base=10 close=8
+row @sec-runtime-semantics-keyeddestructuringassignmentevaluation base=10 close=8
+row @sec-runtime-semantics-labelledevaluation base=8 close=6
+row @sec-runtime-semantics-labelledevaluation#1 base=8 close=6
+row @sec-runtime-semantics-labelledevaluation#2 base=8 close=6
+row @sec-runtime-semantics-labelledevaluation#3 base=8 close=6
+row @sec-runtime-semantics-labelledevaluation#4 base=8 close=6
+row @sec-runtime-semantics-loopevaluation base=10 close=8
+row @sec-runtime-semantics-loopevaluation#1 base=10 close=8
+row @sec-runtime-semantics-loopevaluation#2 base=10 close=8
+row @sec-runtime-semantics-loopevaluation#3 base=10 close=8
+row @sec-runtime-semantics-methoddefinitionevaluation base=8 close=6
+row @sec-runtime-semantics-methoddefinitionevaluation#1 base=8 close=6
+row @sec-runtime-semantics-methoddefinitionevaluation#2 base=8 close=6
+row @sec-runtime-semantics-methoddefinitionevaluation#3 base=8 close=6
+row @sec-runtime-semantics-methoddefinitionevaluation#4 base=8 close=6
+row @sec-runtime-semantics-methoddefinitionevaluation#5 base=8 close=6
+row @sec-runtime-semantics-namedevaluation base=8 close=6
+row @sec-runtime-semantics-namedevaluation#1 base=8 close=6
+row @sec-runtime-semantics-namedevaluation#2 base=8 close=6
+row @sec-runtime-semantics-namedevaluation#3 base=8 close=6
+row @sec-runtime-semantics-namedevaluation#4 base=8 close=6
+row @sec-runtime-semantics-namedevaluation#5 base=8 close=6
+row @sec-runtime-semantics-namedevaluation#6 base=8 close=6
+row @sec-runtime-semantics-namedevaluation#7 base=8 close=6
+row @sec-runtime-semantics-namedevaluation#8 base=8 close=6
+row @sec-runtime-semantics-propertydefinitionevaluation base=10 close=8
+row @sec-runtime-semantics-propertydefinitionevaluation#1 base=10 close=8
+row @sec-runtime-semantics-propertydefinitionevaluation#2 base=10 close=8
+row @sec-runtime-semantics-propertydefinitionevaluation#3 base=10 close=8
+row @sec-runtime-semantics-propertydefinitionevaluation#4 base=10 close=8
+row @sec-runtime-semantics-propertydestructuringassignmentevaluation base=10 close=8
+row @sec-runtime-semantics-propertydestructuringassignmentevaluation#1 base=10 close=8
+row @sec-runtime-semantics-propertydestructuringassignmentevaluation#2 base=10 close=8
+row @sec-runtime-semantics-restdestructuringassignmentevaluation base=10 close=8
+row @sec-runtime-semantics-stringnumericvalue base=12 close=10
+row @sec-runtime-semantics-stringnumericvalue#1 base=12 close=10
+row @sec-runtime-semantics-stringnumericvalue#2 base=12 close=10
+row @sec-runtime-semantics-stringnumericvalue#3 base=12 close=10
+row @sec-runtime-semantics-stringnumericvalue#4 base=12 close=10
+row @sec-runtime-semantics-stringnumericvalue#5 base=12 close=10
+row @sec-runtime-semantics-stringnumericvalue#6 base=12 close=10
+row @sec-runtime-semantics-stringnumericvalue#7 base=12 close=10
+row @sec-runtime-semantics-substitutionevaluation base=10 close=8
+row @sec-runtime-semantics-substitutionevaluation#1 base=10 close=8
+row @sec-runtime-semantics-substitutionevaluation#2 base=10 close=8
+row @sec-runtime-semantics-substitutionevaluation#3 base=10 close=8
+row @sec-runtime-semantics-whileloopevaluation base=10 close=8
+row @sec-script-semantics-runtime-semantics-evaluation base=8 close=6
+row @sec-scriptisstrict base=8 close=6
+row @sec-signed-right-shift-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-statement-semantics-runtime-semantics-evaluation base=8 close=6
+row @sec-statement-semantics-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-statement-semantics-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-static-semantics-allprivateidentifiersvalid#1 base=8 close=6
+row @sec-static-semantics-allprivateidentifiersvalid#2 base=8 close=6
+row @sec-static-semantics-allprivateidentifiersvalid#3 base=8 close=6
+row @sec-static-semantics-allprivateidentifiersvalid#4 base=8 close=6
+row @sec-static-semantics-allprivateidentifiersvalid#5 base=8 close=6
+row @sec-static-semantics-allprivateidentifiersvalid#6 base=8 close=6
+row @sec-static-semantics-assignmenttargettype base=8 close=6
+row @sec-static-semantics-assignmenttargettype#1 base=8 close=6
+row @sec-static-semantics-assignmenttargettype#2 base=8 close=6
+row @sec-static-semantics-assignmenttargettype#3 base=8 close=6
+row @sec-static-semantics-assignmenttargettype#4 base=8 close=6
+row @sec-static-semantics-asyncconcisebodycontainsusestrict base=8 close=6
+row @sec-static-semantics-asyncconcisebodycontainsusestrict#1 base=8 close=6
+row @sec-static-semantics-bodytext base=10 close=8
+row @sec-static-semantics-boundnames base=8 close=6
+row @sec-static-semantics-boundnames#1 base=8 close=6
+row @sec-static-semantics-boundnames#2 base=8 close=6
+row @sec-static-semantics-boundnames#3 base=8 close=6
+row @sec-static-semantics-boundnames#4 base=8 close=6
+row @sec-static-semantics-boundnames#5 base=8 close=6
+row @sec-static-semantics-boundnames#6 base=8 close=6
+row @sec-static-semantics-boundnames#7 base=8 close=6
+row @sec-static-semantics-boundnames#8 base=8 close=6
+row @sec-static-semantics-boundnames#9 base=8 close=6
+row @sec-static-semantics-boundnames#10 base=8 close=6
+row @sec-static-semantics-boundnames#11 base=8 close=6
+row @sec-static-semantics-boundnames#12 base=8 close=6
+row @sec-static-semantics-boundnames#13 base=8 close=6
+row @sec-static-semantics-boundnames#14 base=8 close=6
+row @sec-static-semantics-boundnames#15 base=8 close=6
+row @sec-static-semantics-boundnames#16 base=8 close=6
+row @sec-static-semantics-boundnames#17 base=8 close=6
+row @sec-static-semantics-boundnames#18 base=8 close=6
+row @sec-static-semantics-boundnames#19 base=8 close=6
+row @sec-static-semantics-boundnames#20 base=8 close=6
+row @sec-static-semantics-boundnames#21 base=8 close=6
+row @sec-static-semantics-boundnames#22 base=8 close=6
+row @sec-static-semantics-boundnames#23 base=8 close=6
+row @sec-static-semantics-boundnames#24 base=8 close=6
+row @sec-static-semantics-boundnames#25 base=8 close=6
+row @sec-static-semantics-boundnames#26 base=8 close=6
+row @sec-static-semantics-boundnames#27 base=8 close=6
+row @sec-static-semantics-boundnames#28 base=8 close=6
+row @sec-static-semantics-boundnames#29 base=8 close=6
+row @sec-static-semantics-boundnames#30 base=8 close=6
+row @sec-static-semantics-boundnames#31 base=8 close=6
+row @sec-static-semantics-boundnames#32 base=8 close=6
+row @sec-static-semantics-boundnames#33 base=8 close=6
+row @sec-static-semantics-boundnames#34 base=8 close=6
+row @sec-static-semantics-boundnames#35 base=8 close=6
+row @sec-static-semantics-boundnames#36 base=8 close=6
+row @sec-static-semantics-boundnames#37 base=8 close=6
+row @sec-static-semantics-boundnames#38 base=8 close=6
+row @sec-static-semantics-boundnames#39 base=8 close=6
+row @sec-static-semantics-boundnames#40 base=8 close=6
+row @sec-static-semantics-boundnames#41 base=8 close=6
+row @sec-static-semantics-boundnames#42 base=8 close=6
+row @sec-static-semantics-boundnames#43 base=8 close=6
+row @sec-static-semantics-boundnames#44 base=8 close=6
+row @sec-static-semantics-boundnames#45 base=8 close=6
+row @sec-static-semantics-boundnames#46 base=8 close=6
+row @sec-static-semantics-boundnames#47 base=8 close=6
+row @sec-static-semantics-boundnames#48 base=8 close=6
+row @sec-static-semantics-boundnames#49 base=8 close=6
+row @sec-static-semantics-boundnames#50 base=8 close=6
+row @sec-static-semantics-boundnames#51 base=8 close=6
+row @sec-static-semantics-capturinggroupname base=10 close=8
+row @sec-static-semantics-classelementevaluation base=8 close=6
+row @sec-static-semantics-classelementevaluation#1 base=8 close=6
+row @sec-static-semantics-classelementevaluation#2 base=8 close=6
+row @sec-static-semantics-classelementevaluation#3 base=8 close=6
+row @sec-static-semantics-classelementkind base=8 close=6
+row @sec-static-semantics-classelementkind#1 base=8 close=6
+row @sec-static-semantics-classelementkind#2 base=8 close=6
+row @sec-static-semantics-classelementkind#3 base=8 close=6
+row @sec-static-semantics-computedpropertycontains base=8 close=6
+row @sec-static-semantics-computedpropertycontains#1 base=8 close=6
+row @sec-static-semantics-computedpropertycontains#2 base=8 close=6
+row @sec-static-semantics-computedpropertycontains#3 base=8 close=6
+row @sec-static-semantics-computedpropertycontains#4 base=8 close=6
+row @sec-static-semantics-computedpropertycontains#5 base=8 close=6
+row @sec-static-semantics-computedpropertycontains#6 base=8 close=6
+row @sec-static-semantics-computedpropertycontains#7 base=8 close=6
+row @sec-static-semantics-computedpropertycontains#8 base=8 close=6
+row @sec-static-semantics-computedpropertycontains#9 base=8 close=6
+row @sec-static-semantics-concisebodycontainsusestrict base=8 close=6
+row @sec-static-semantics-concisebodycontainsusestrict#1 base=8 close=6
+row @sec-static-semantics-constructormethod base=8 close=6
+row @sec-static-semantics-constructormethod#1 base=8 close=6
+row @sec-static-semantics-contains#1 base=8 close=6
+row @sec-static-semantics-contains#2 base=8 close=6
+row @sec-static-semantics-contains#3 base=8 close=6
+row @sec-static-semantics-contains#4 base=8 close=6
+row @sec-static-semantics-contains#5 base=8 close=6
+row @sec-static-semantics-contains#6 base=8 close=6
+row @sec-static-semantics-contains#7 base=8 close=6
+row @sec-static-semantics-contains#8 base=8 close=6
+row @sec-static-semantics-contains#9 base=8 close=6
+row @sec-static-semantics-contains#10 base=8 close=6
+row @sec-static-semantics-contains#11 base=8 close=6
+row @sec-static-semantics-contains#12 base=8 close=6
+row @sec-static-semantics-contains#13 base=8 close=6
+row @sec-static-semantics-contains#14 base=8 close=6
+row @sec-static-semantics-containsarguments#1 base=8 close=6
+row @sec-static-semantics-containsarguments#2 base=8 close=6
+row @sec-static-semantics-containsarguments#3 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#1 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#2 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#3 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#4 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#5 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#6 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#7 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#8 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#9 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#10 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#11 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#12 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#13 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#14 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#15 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#16 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#17 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#18 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#19 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#20 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#21 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#22 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#23 base=8 close=6
+row @sec-static-semantics-containsduplicatelabels#24 base=8 close=6
+row @sec-static-semantics-containsexpression base=8 close=6
+row @sec-static-semantics-containsexpression#1 base=8 close=6
+row @sec-static-semantics-containsexpression#2 base=8 close=6
+row @sec-static-semantics-containsexpression#3 base=8 close=6
+row @sec-static-semantics-containsexpression#4 base=8 close=6
+row @sec-static-semantics-containsexpression#5 base=8 close=6
+row @sec-static-semantics-containsexpression#6 base=8 close=6
+row @sec-static-semantics-containsexpression#7 base=8 close=6
+row @sec-static-semantics-containsexpression#8 base=8 close=6
+row @sec-static-semantics-containsexpression#9 base=8 close=6
+row @sec-static-semantics-containsexpression#10 base=8 close=6
+row @sec-static-semantics-containsexpression#11 base=8 close=6
+row @sec-static-semantics-containsexpression#12 base=8 close=6
+row @sec-static-semantics-containsexpression#13 base=8 close=6
+row @sec-static-semantics-containsexpression#14 base=8 close=6
+row @sec-static-semantics-containsexpression#15 base=8 close=6
+row @sec-static-semantics-containsexpression#16 base=8 close=6
+row @sec-static-semantics-containsexpression#17 base=8 close=6
+row @sec-static-semantics-containsexpression#18 base=8 close=6
+row @sec-static-semantics-containsexpression#19 base=8 close=6
+row @sec-static-semantics-containsexpression#20 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#1 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#2 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#3 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#4 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#5 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#6 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#7 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#8 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#9 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#10 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#11 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#12 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#13 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#14 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#15 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#16 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#17 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#18 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#19 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#20 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#21 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#22 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#23 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#24 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#25 base=8 close=6
+row @sec-static-semantics-containsundefinedbreaktarget#26 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#1 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#2 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#3 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#4 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#5 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#6 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#7 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#8 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#9 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#10 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#11 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#12 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#13 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#14 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#15 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#16 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#17 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#18 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#19 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#20 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#21 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#22 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#23 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#24 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#25 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#26 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#27 base=8 close=6
+row @sec-static-semantics-containsundefinedcontinuetarget#28 base=8 close=6
+row @sec-static-semantics-containsusing base=8 close=6
+row @sec-static-semantics-containsusing#1 base=8 close=6
+row @sec-static-semantics-containsusing#2 base=8 close=6
+row @sec-static-semantics-declarationpart base=8 close=6
+row @sec-static-semantics-declarationpart#1 base=8 close=6
+row @sec-static-semantics-declarationpart#2 base=8 close=6
+row @sec-static-semantics-declarationpart#3 base=8 close=6
+row @sec-static-semantics-declarationpart#4 base=8 close=6
+row @sec-static-semantics-declarationpart#5 base=8 close=6
+row @sec-static-semantics-expectedargumentcount base=8 close=6
+row @sec-static-semantics-expectedargumentcount#1 base=8 close=6
+row @sec-static-semantics-expectedargumentcount#2 base=8 close=6
+row @sec-static-semantics-expectedargumentcount#3 base=8 close=6
+row @sec-static-semantics-expectedargumentcount#4 base=8 close=6
+row @sec-static-semantics-expectedargumentcount#5 base=8 close=6
+row @sec-static-semantics-expectedargumentcount#6 base=8 close=6
+row @sec-static-semantics-expectedargumentcount#7 base=8 close=6
+row @sec-static-semantics-exportedbindings base=10 close=8
+row @sec-static-semantics-exportedbindings#1 base=10 close=8
+row @sec-static-semantics-exportedbindings#2 base=10 close=8
+row @sec-static-semantics-exportedbindings#3 base=10 close=8
+row @sec-static-semantics-exportedbindings#4 base=10 close=8
+row @sec-static-semantics-exportedbindings#5 base=10 close=8
+row @sec-static-semantics-exportedbindings#6 base=10 close=8
+row @sec-static-semantics-exportedbindings#7 base=10 close=8
+row @sec-static-semantics-exportedbindings#8 base=10 close=8
+row @sec-static-semantics-exportedbindings#9 base=10 close=8
+row @sec-static-semantics-exportedbindings#10 base=10 close=8
+row @sec-static-semantics-exportednames base=10 close=8
+row @sec-static-semantics-exportednames#1 base=10 close=8
+row @sec-static-semantics-exportednames#2 base=10 close=8
+row @sec-static-semantics-exportednames#3 base=10 close=8
+row @sec-static-semantics-exportednames#4 base=10 close=8
+row @sec-static-semantics-exportednames#5 base=10 close=8
+row @sec-static-semantics-exportednames#6 base=10 close=8
+row @sec-static-semantics-exportednames#7 base=10 close=8
+row @sec-static-semantics-exportednames#8 base=10 close=8
+row @sec-static-semantics-exportednames#9 base=10 close=8
+row @sec-static-semantics-exportednames#10 base=10 close=8
+row @sec-static-semantics-exportednames#11 base=10 close=8
+row @sec-static-semantics-exportednames#12 base=10 close=8
+row @sec-static-semantics-exportednames#13 base=10 close=8
+row @sec-static-semantics-exportentries base=10 close=8
+row @sec-static-semantics-exportentries#1 base=10 close=8
+row @sec-static-semantics-exportentries#2 base=10 close=8
+row @sec-static-semantics-exportentries#3 base=10 close=8
+row @sec-static-semantics-exportentries#4 base=10 close=8
+row @sec-static-semantics-exportentries#5 base=10 close=8
+row @sec-static-semantics-exportentries#6 base=10 close=8
+row @sec-static-semantics-exportentries#7 base=10 close=8
+row @sec-static-semantics-exportentries#8 base=10 close=8
+row @sec-static-semantics-exportentries#9 base=10 close=8
+row @sec-static-semantics-exportentriesformodule base=10 close=8
+row @sec-static-semantics-exportentriesformodule#1 base=10 close=8
+row @sec-static-semantics-exportentriesformodule#2 base=10 close=8
+row @sec-static-semantics-exportentriesformodule#3 base=10 close=8
+row @sec-static-semantics-exportentriesformodule#4 base=10 close=8
+row @sec-static-semantics-exportentriesformodule#5 base=10 close=8
+row @sec-static-semantics-flagtext base=10 close=8
+row @sec-static-semantics-functionbodycontainsusestrict base=8 close=6
+row @sec-static-semantics-hascallintailposition base=8 close=6
+row @sec-static-semantics-hascallintailposition#1 base=8 close=6
+row @sec-static-semantics-hascallintailposition#2 base=8 close=6
+row @sec-static-semantics-hascallintailposition#3 base=8 close=6
+row @sec-static-semantics-hascallintailposition#4 base=8 close=6
+row @sec-static-semantics-hascallintailposition#5 base=8 close=6
+row @sec-static-semantics-hascallintailposition#6 base=8 close=6
+row @sec-static-semantics-hascallintailposition#7 base=8 close=6
+row @sec-static-semantics-hascallintailposition#8 base=8 close=6
+row @sec-static-semantics-hascallintailposition#9 base=8 close=6
+row @sec-static-semantics-hascallintailposition#10 base=8 close=6
+row @sec-static-semantics-hascallintailposition#11 base=8 close=6
+row @sec-static-semantics-hascallintailposition#12 base=8 close=6
+row @sec-static-semantics-hascallintailposition#13 base=8 close=6
+row @sec-static-semantics-hascallintailposition#14 base=8 close=6
+row @sec-static-semantics-hascallintailposition#15 base=8 close=6
+row @sec-static-semantics-hascallintailposition#16 base=8 close=6
+row @sec-static-semantics-hascallintailposition#17 base=8 close=6
+row @sec-static-semantics-hascallintailposition#18 base=8 close=6
+row @sec-static-semantics-hascallintailposition#19 base=8 close=6
+row @sec-static-semantics-hascallintailposition#20 base=8 close=6
+row @sec-static-semantics-hascallintailposition#21 base=8 close=6
+row @sec-static-semantics-hascallintailposition#22 base=8 close=6
+row @sec-static-semantics-hascallintailposition#23 base=8 close=6
+row @sec-static-semantics-hascallintailposition#24 base=8 close=6
+row @sec-static-semantics-hascallintailposition#25 base=8 close=6
+row @sec-static-semantics-hasdirectsuper base=8 close=6
+row @sec-static-semantics-hasdirectsuper#1 base=8 close=6
+row @sec-static-semantics-hasdirectsuper#2 base=8 close=6
+row @sec-static-semantics-hasdirectsuper#3 base=8 close=6
+row @sec-static-semantics-hasdirectsuper#4 base=8 close=6
+row @sec-static-semantics-hasdirectsuper#5 base=8 close=6
+row @sec-static-semantics-hasinitializer base=8 close=6
+row @sec-static-semantics-hasinitializer#1 base=8 close=6
+row @sec-static-semantics-hasinitializer#2 base=8 close=6
+row @sec-static-semantics-hasinitializer#3 base=8 close=6
+row @sec-static-semantics-hasinitializer#4 base=8 close=6
+row @sec-static-semantics-hasname base=8 close=6
+row @sec-static-semantics-hasname#1 base=8 close=6
+row @sec-static-semantics-hasname#2 base=8 close=6
+row @sec-static-semantics-importentries base=10 close=8
+row @sec-static-semantics-importentries#1 base=10 close=8
+row @sec-static-semantics-importentries#2 base=10 close=8
+row @sec-static-semantics-importentries#3 base=10 close=8
+row @sec-static-semantics-importentries#4 base=10 close=8
+row @sec-static-semantics-importentriesformodule base=10 close=8
+row @sec-static-semantics-importentriesformodule#1 base=10 close=8
+row @sec-static-semantics-importentriesformodule#2 base=10 close=8
+row @sec-static-semantics-importentriesformodule#3 base=10 close=8
+row @sec-static-semantics-importentriesformodule#4 base=10 close=8
+row @sec-static-semantics-importentriesformodule#5 base=10 close=8
+row @sec-static-semantics-importentriesformodule#6 base=10 close=8
+row @sec-static-semantics-importentriesformodule#7 base=10 close=8
+row @sec-static-semantics-isawaitusingdeclaration base=8 close=6
+row @sec-static-semantics-isawaitusingdeclaration#1 base=8 close=6
+row @sec-static-semantics-isawaitusingdeclaration#2 base=8 close=6
+row @sec-static-semantics-isawaitusingdeclaration#3 base=8 close=6
+row @sec-static-semantics-isawaitusingdeclaration#4 base=8 close=6
+row @sec-static-semantics-isawaitusingdeclaration#5 base=8 close=6
+row @sec-static-semantics-isawaitusingdeclaration#6 base=8 close=6
+row @sec-static-semantics-isawaitusingdeclaration#7 base=8 close=6
+row @sec-static-semantics-iscomputedpropertykey base=10 close=8
+row @sec-static-semantics-iscomputedpropertykey#1 base=10 close=8
+row @sec-static-semantics-isconstantdeclaration base=8 close=6
+row @sec-static-semantics-isconstantdeclaration#1 base=8 close=6
+row @sec-static-semantics-isconstantdeclaration#2 base=8 close=6
+row @sec-static-semantics-isconstantdeclaration#3 base=8 close=6
+row @sec-static-semantics-isconstantdeclaration#4 base=8 close=6
+row @sec-static-semantics-isconstantdeclaration#5 base=8 close=6
+row @sec-static-semantics-isconstantdeclaration#6 base=8 close=6
+row @sec-static-semantics-isdestructuring base=10 close=8
+row @sec-static-semantics-isdestructuring#1 base=10 close=8
+row @sec-static-semantics-isdestructuring#2 base=10 close=8
+row @sec-static-semantics-isdestructuring#3 base=10 close=8
+row @sec-static-semantics-isdestructuring#4 base=10 close=8
+row @sec-static-semantics-isfunctiondefinition base=8 close=6
+row @sec-static-semantics-isfunctiondefinition#1 base=8 close=6
+row @sec-static-semantics-isfunctiondefinition#2 base=8 close=6
+row @sec-static-semantics-isidentifierref base=8 close=6
+row @sec-static-semantics-isidentifierref#1 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#1 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#2 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#3 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#4 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#5 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#6 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#7 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#8 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#9 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#10 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#11 base=8 close=6
+row @sec-static-semantics-issimpleparameterlist#12 base=8 close=6
+row @sec-static-semantics-isstatic base=8 close=6
+row @sec-static-semantics-isstatic#1 base=8 close=6
+row @sec-static-semantics-isstatic#2 base=8 close=6
+row @sec-static-semantics-isstatic#3 base=8 close=6
+row @sec-static-semantics-isstatic#4 base=8 close=6
+row @sec-static-semantics-isstatic#5 base=8 close=6
+row @sec-static-semantics-isusingdeclaration base=8 close=6
+row @sec-static-semantics-isusingdeclaration#1 base=8 close=6
+row @sec-static-semantics-isusingdeclaration#2 base=8 close=6
+row @sec-static-semantics-isusingdeclaration#3 base=8 close=6
+row @sec-static-semantics-isusingdeclaration#4 base=8 close=6
+row @sec-static-semantics-isusingdeclaration#5 base=8 close=6
+row @sec-static-semantics-isusingdeclaration#6 base=8 close=6
+row @sec-static-semantics-isusingdeclaration#7 base=8 close=6
+row @sec-static-semantics-jsonarrayliteralcontentnodes base=10 close=8
+row @sec-static-semantics-jsonarrayliteralcontentnodes#1 base=10 close=8
+row @sec-static-semantics-jsonarrayliteralcontentnodes#2 base=10 close=8
+row @sec-static-semantics-jsonarrayliteralcontentnodes#3 base=10 close=8
+row @sec-static-semantics-lexicallydeclarednames base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#1 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#2 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#3 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#4 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#5 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#6 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#7 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#8 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#9 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#10 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#11 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#12 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#13 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#14 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#15 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#16 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#17 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#18 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#19 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#20 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#21 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#22 base=8 close=6
+row @sec-static-semantics-lexicallydeclarednames#23 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#1 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#2 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#3 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#4 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#5 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#6 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#7 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#8 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#9 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#10 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#11 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#12 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#13 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#14 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#15 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#16 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#17 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#18 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#19 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#20 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#21 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#22 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#23 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#24 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#25 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#26 base=8 close=6
+row @sec-static-semantics-maycontainstrings base=10 close=8
+row @sec-static-semantics-maycontainstrings#1 base=10 close=8
+row @sec-static-semantics-maycontainstrings#2 base=10 close=8
+row @sec-static-semantics-maycontainstrings#3 base=10 close=8
+row @sec-static-semantics-maycontainstrings#4 base=10 close=8
+row @sec-static-semantics-maycontainstrings#5 base=10 close=8
+row @sec-static-semantics-maycontainstrings#6 base=10 close=8
+row @sec-static-semantics-maycontainstrings#7 base=10 close=8
+row @sec-static-semantics-maycontainstrings#8 base=10 close=8
+row @sec-static-semantics-maycontainstrings#9 base=10 close=8
+row @sec-static-semantics-maycontainstrings#10 base=10 close=8
+row @sec-static-semantics-maycontainstrings#11 base=10 close=8
+row @sec-static-semantics-modulerequests base=10 close=8
+row @sec-static-semantics-modulerequests#1 base=10 close=8
+row @sec-static-semantics-modulerequests#2 base=10 close=8
+row @sec-static-semantics-modulerequests#3 base=10 close=8
+row @sec-static-semantics-modulerequests#4 base=10 close=8
+row @sec-static-semantics-modulerequests#5 base=10 close=8
+row @sec-static-semantics-modulerequests#6 base=10 close=8
+row @sec-static-semantics-modulerequests#7 base=10 close=8
+row @sec-static-semantics-modulerequests#8 base=10 close=8
+row @sec-static-semantics-modulerequests#9 base=10 close=8
+row @sec-static-semantics-modulerequests#10 base=10 close=8
+row @sec-static-semantics-nonconstructorelements base=8 close=6
+row @sec-static-semantics-nonconstructorelements#1 base=8 close=6
+row @sec-static-semantics-privateboundidentifiers base=8 close=6
+row @sec-static-semantics-privateboundidentifiers#1 base=8 close=6
+row @sec-static-semantics-privateboundidentifiers#2 base=8 close=6
+row @sec-static-semantics-privateboundidentifiers#3 base=8 close=6
+row @sec-static-semantics-privateboundidentifiers#4 base=8 close=6
+row @sec-static-semantics-propertydefinitionnodes base=10 close=8
+row @sec-static-semantics-propertydefinitionnodes#1 base=10 close=8
+row @sec-static-semantics-propertydefinitionnodes#2 base=10 close=8
+row @sec-static-semantics-propertynamelist base=10 close=8
+row @sec-static-semantics-propertynamelist#1 base=10 close=8
+row @sec-static-semantics-propname base=8 close=6
+row @sec-static-semantics-propname#1 base=8 close=6
+row @sec-static-semantics-propname#2 base=8 close=6
+row @sec-static-semantics-propname#3 base=8 close=6
+row @sec-static-semantics-propname#4 base=8 close=6
+row @sec-static-semantics-propname#5 base=8 close=6
+row @sec-static-semantics-propname#6 base=8 close=6
+row @sec-static-semantics-propname#7 base=8 close=6
+row @sec-static-semantics-propname#8 base=8 close=6
+row @sec-static-semantics-propname#9 base=8 close=6
+row @sec-static-semantics-propname#10 base=8 close=6
+row @sec-static-semantics-propname#11 base=8 close=6
+row @sec-static-semantics-propname#12 base=8 close=6
+row @sec-static-semantics-propname#13 base=8 close=6
+row @sec-static-semantics-propname#14 base=8 close=6
+row @sec-static-semantics-prototypepropertynamelist base=8 close=6
+row @sec-static-semantics-prototypepropertynamelist#1 base=8 close=6
+row @sec-static-semantics-referencedbindings base=10 close=8
+row @sec-static-semantics-referencedbindings#1 base=10 close=8
+row @sec-static-semantics-referencedbindings#2 base=10 close=8
+row @sec-static-semantics-referencedbindings#3 base=10 close=8
+row @sec-static-semantics-referencedbindings#4 base=10 close=8
+row @sec-static-semantics-specialmethod base=8 close=6
+row @sec-static-semantics-specialmethod#1 base=8 close=6
+row @sec-static-semantics-stringvalue base=8 close=6
+row @sec-static-semantics-stringvalue#1 base=8 close=6
+row @sec-static-semantics-stringvalue#2 base=8 close=6
+row @sec-static-semantics-stringvalue#3 base=8 close=6
+row @sec-static-semantics-stringvalue#4 base=8 close=6
+row @sec-static-semantics-stringvalue#5 base=8 close=6
+row @sec-static-semantics-templatestrings base=10 close=8
+row @sec-static-semantics-templatestrings#1 base=10 close=8
+row @sec-static-semantics-templatestrings#2 base=10 close=8
+row @sec-static-semantics-templatestrings#3 base=10 close=8
+row @sec-static-semantics-templatestrings#4 base=10 close=8
+row @sec-static-semantics-templatestrings#5 base=10 close=8
+row @sec-static-semantics-toplevellexicallydeclarednames base=8 close=6
+row @sec-static-semantics-toplevellexicallydeclarednames#1 base=8 close=6
+row @sec-static-semantics-toplevellexicallydeclarednames#2 base=8 close=6
+row @sec-static-semantics-toplevellexicallyscopeddeclarations base=8 close=6
+row @sec-static-semantics-toplevellexicallyscopeddeclarations#1 base=8 close=6
+row @sec-static-semantics-toplevellexicallyscopeddeclarations#2 base=8 close=6
+row @sec-static-semantics-toplevelvardeclarednames base=8 close=6
+row @sec-static-semantics-toplevelvardeclarednames#1 base=8 close=6
+row @sec-static-semantics-toplevelvardeclarednames#2 base=8 close=6
+row @sec-static-semantics-toplevelvardeclarednames#3 base=8 close=6
+row @sec-static-semantics-toplevelvardeclarednames#4 base=8 close=6
+row @sec-static-semantics-toplevelvardeclarednames#5 base=8 close=6
+row @sec-static-semantics-toplevelvarscopeddeclarations base=8 close=6
+row @sec-static-semantics-toplevelvarscopeddeclarations#1 base=8 close=6
+row @sec-static-semantics-toplevelvarscopeddeclarations#2 base=8 close=6
+row @sec-static-semantics-toplevelvarscopeddeclarations#3 base=8 close=6
+row @sec-static-semantics-toplevelvarscopeddeclarations#4 base=8 close=6
+row @sec-static-semantics-toplevelvarscopeddeclarations#5 base=8 close=6
+row @sec-static-semantics-vardeclarednames base=8 close=6
+row @sec-static-semantics-vardeclarednames#1 base=8 close=6
+row @sec-static-semantics-vardeclarednames#2 base=8 close=6
+row @sec-static-semantics-vardeclarednames#3 base=8 close=6
+row @sec-static-semantics-vardeclarednames#4 base=8 close=6
+row @sec-static-semantics-vardeclarednames#5 base=8 close=6
+row @sec-static-semantics-vardeclarednames#6 base=8 close=6
+row @sec-static-semantics-vardeclarednames#7 base=8 close=6
+row @sec-static-semantics-vardeclarednames#8 base=8 close=6
+row @sec-static-semantics-vardeclarednames#9 base=8 close=6
+row @sec-static-semantics-vardeclarednames#10 base=8 close=6
+row @sec-static-semantics-vardeclarednames#11 base=8 close=6
+row @sec-static-semantics-vardeclarednames#12 base=8 close=6
+row @sec-static-semantics-vardeclarednames#13 base=8 close=6
+row @sec-static-semantics-vardeclarednames#14 base=8 close=6
+row @sec-static-semantics-vardeclarednames#15 base=8 close=6
+row @sec-static-semantics-vardeclarednames#16 base=8 close=6
+row @sec-static-semantics-vardeclarednames#17 base=8 close=6
+row @sec-static-semantics-vardeclarednames#18 base=8 close=6
+row @sec-static-semantics-vardeclarednames#19 base=8 close=6
+row @sec-static-semantics-vardeclarednames#20 base=8 close=6
+row @sec-static-semantics-vardeclarednames#21 base=8 close=6
+row @sec-static-semantics-vardeclarednames#22 base=8 close=6
+row @sec-static-semantics-vardeclarednames#23 base=8 close=6
+row @sec-static-semantics-vardeclarednames#24 base=8 close=6
+row @sec-static-semantics-vardeclarednames#25 base=8 close=6
+row @sec-static-semantics-vardeclarednames#26 base=8 close=6
+row @sec-static-semantics-vardeclarednames#27 base=8 close=6
+row @sec-static-semantics-vardeclarednames#28 base=8 close=6
+row @sec-static-semantics-vardeclarednames#29 base=8 close=6
+row @sec-static-semantics-vardeclarednames#30 base=8 close=6
+row @sec-static-semantics-vardeclarednames#31 base=8 close=6
+row @sec-static-semantics-vardeclarednames#32 base=8 close=6
+row @sec-static-semantics-vardeclarednames#33 base=8 close=6
+row @sec-static-semantics-vardeclarednames#34 base=8 close=6
+row @sec-static-semantics-vardeclarednames#35 base=8 close=6
+row @sec-static-semantics-vardeclarednames#36 base=8 close=6
+row @sec-static-semantics-vardeclarednames#37 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#1 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#2 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#3 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#4 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#5 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#6 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#7 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#8 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#9 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#10 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#11 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#12 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#13 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#14 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#15 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#16 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#17 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#18 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#19 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#20 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#21 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#22 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#23 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#24 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#25 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#26 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#27 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#28 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#29 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#30 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#31 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#32 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#33 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#34 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#35 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#36 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#37 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#38 base=8 close=6
+row @sec-static-semantics-varscopeddeclarations#39 base=8 close=6
+row @sec-subtraction-operator-minus-runtime-semantics-evaluation base=10 close=8
+row @sec-super-keyword-runtime-semantics-evaluation base=10 close=8
+row @sec-super-keyword-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-super-keyword-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-switch-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-switch-statement-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-switch-statement-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-switch-statement-runtime-semantics-evaluation#3 base=8 close=6
+row @sec-switch-statement-runtime-semantics-evaluation#4 base=8 close=6
+row @sec-tagged-templates-runtime-semantics-evaluation base=10 close=8
+row @sec-tagged-templates-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-template-literals-runtime-semantics-evaluation base=10 close=8
+row @sec-template-literals-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-template-literals-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-template-literals-runtime-semantics-evaluation#3 base=10 close=8
+row @sec-template-literals-runtime-semantics-evaluation#4 base=10 close=8
+row @sec-template-literals-runtime-semantics-evaluation#5 base=10 close=8
+row @sec-this-keyword-runtime-semantics-evaluation base=10 close=8
+row @sec-throw-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-try-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-try-statement-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-try-statement-runtime-semantics-evaluation#2 base=8 close=6
+row @sec-typeof-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-unary-minus-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-unary-plus-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-unsigned-right-shift-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-variable-statement-runtime-semantics-evaluation base=10 close=8
+row @sec-variable-statement-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-variable-statement-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-variable-statement-runtime-semantics-evaluation#3 base=10 close=8
+row @sec-variable-statement-runtime-semantics-evaluation#4 base=10 close=8
+row @sec-void-operator-runtime-semantics-evaluation base=10 close=8
+row @sec-with-statement-runtime-semantics-evaluation base=8 close=6
+row @sec-withclausetoattributes base=10 close=8
+row @sec-withclausetoattributes#1 base=10 close=8
+row @sec-withclausetoattributes#2 base=10 close=8
+row @sec-withclausetoattributes#3 base=10 close=8
+spectec_only_def @formal-agent-interleave
+spectec_only_def @formal-base64encode
+spectec_only_def @formal-bigint.prototype.tolocalestring
+spectec_only_def @formal-capturegroupname
+spectec_only_def @formal-choosesharedbytes
+spectec_only_def @formal-date.now
+spectec_only_def @formal-date.parse
+spectec_only_def @formal-date.prototype.tolocaledatestring
+spectec_only_def @formal-date.prototype.tolocalestring
+spectec_only_def @formal-date.prototype.tolocaletimestring
+spectec_only_def @formal-datetimestring
+spectec_only_def @formal-deleteoperandiserror
+spectec_only_def @formal-directlycontaininglist
+spectec_only_def @formal-duplicatesonlyfunctiondeclarations
+spectec_only_def @formal-earlyerrorsof
+spectec_only_def @formal-enclosingnodes
+spectec_only_def @formal-function-prototype
+spectec_only_def @formal-ieeebits
+spectec_only_def @formal-intrinsicpropertydescriptor
+spectec_only_def @formal-isdatetimerepresentable
+spectec_only_def @formal-isprivateaccessorpair
+spectec_only_def @formal-littleendianbytes
+spectec_only_def @formal-number.prototype.tolocalestring
+spectec_only_def @formal-outermostinstances
+spectec_only_def @formal-parenthesizedoperandiserror
+spectec_only_def @formal-parsenodeswithinprocessed
+spectec_only_def @formal-parsetextin
+spectec_only_def @formal-privateduplicatesareaccessorpairs
+spectec_only_def @formal-propertyprovided
+spectec_only_def @formal-protopropertycount
+spectec_only_def @formal-radixdigitvalue
+spectec_only_def @formal-regexppattern
+spectec_only_def @formal-rounddecimalmv
+spectec_only_def @formal-singleagentreadbytes
+spectec_only_def @formal-string.prototype.tolocalelowercase
+spectec_only_def @formal-string.prototype.tolocaleuppercase
+spectec_only_def @formal-string.prototype.touppercase
+spectec_only_def @ph-all-code-points
+spectec_only_def @ph-all-code-units
+spectec_only_def @ph-all-ready-to-evaluate
+spectec_only_def @ph-annexb-evaluated
+spectec_only_def @ph-annexb-foreach
+spectec_only_def @ph-annexb-replacing
+spectec_only_def @ph-any-duplicate-entries
+spectec_only_def @ph-append-elements
+spectec_only_def @ph-append-fields
+spectec_only_def @ph-ascii-word-characters
+spectec_only_def @ph-assert-critical
+spectec_only_def @ph-base-16-value
+spectec_only_def @ph-binding-for
+spectec_only_def @ph-bit-string-32
+spectec_only_def @ph-block-bytes
+spectec_only_def @ph-both-are
+spectec_only_def @ph-both-empty
+spectec_only_def @ph-bound-value
+spectec_only_def @ph-bytes-decode-binary16
+spectec_only_def @ph-bytes-decode-binary32
+spectec_only_def @ph-bytes-decode-binary64
+spectec_only_def @ph-bytes-decode-signed
+spectec_only_def @ph-bytes-decode-unsigned
+spectec_only_def @ph-bytes-from
+spectec_only_def @ph-character-interval
+spectec_only_def @ph-character-of-node
+spectec_only_def @ph-character-of-pattern
+spectec_only_def @ph-charset-containing
+spectec_only_def @ph-charset-element-longer-than-one
+spectec_only_def @ph-charset-minus
+spectec_only_def @ph-charset-of-every-character
+spectec_only_def @ph-charset-one-string
+spectec_only_def @ph-charset-singles
+spectec_only_def @ph-code-and-name
+spectec_only_def @ph-code-point-also-in
+spectec_only_def @ph-code-point-sequence
+spectec_only_def @ph-code-points-of
+spectec_only_def @ph-code-unit-of
+spectec_only_def @ph-code-unit-replaced
+spectec_only_def @ph-code-units-of
+spectec_only_def @ph-code-units-of-string
+spectec_only_def @ph-concatenation
+spectec_only_def @ph-contained-within
+spectec_only_def @ph-contains
+spectec_only_def @ph-contains-any-nt
+spectec_only_def @ph-contains-any-nts
+spectec_only_def @ph-contains-cond
+spectec_only_def @ph-contains-node
+spectec_only_def @ph-contains-one-such
+spectec_only_def @ph-contains-such
+spectec_only_def @ph-contains-such-binds
+spectec_only_def @ph-copies-appended
+spectec_only_def @ph-count-nodes-before
+spectec_only_def @ph-count-nodes-within
+spectec_only_def @ph-cu-table
+spectec_only_def @ph-decimal-digit-charset
+spectec_only_def @ph-decimal-digits
+spectec_only_def @ph-decimal-representation
+spectec_only_def @ph-decimal-string
+spectec_only_def @ph-derives-error
+spectec_only_def @ph-dollar-one-digit
+spectec_only_def @ph-dollar-two-digits
+spectec_only_def @ph-duplicate-entries
+spectec_only_def @ph-duplicate-entries-for
+spectec_only_def @ph-elem-whose
+spectec_only_def @ph-elem-whose-tn
+spectec_only_def @ph-element-also-occurs
+spectec_only_def @ph-element-not-in-either
+spectec_only_def @ph-elements-by-async-order
+spectec_only_def @ph-elements-in-order
+spectec_only_def @ph-elements-lexicographic
+spectec_only_def @ph-elements-of
+spectec_only_def @ph-empty-character-sequence
+spectec_only_def @ph-empty-charset
+spectec_only_def @ph-enclosing-nt
+spectec_only_def @ph-env-empty
+spectec_only_def @ph-every-element-single-character
+spectec_only_def @ph-every-single-character
+spectec_only_def @ph-exactly-one-private-name
+spectec_only_def @ph-finite-numbers
+spectec_only_def @ph-first-code-units
+spectec_only_def @ph-first-elements-of
+spectec_only_def @ph-first-node-within
+spectec_only_def @ph-ge
+spectec_only_def @ph-general-category-code-points
+spectec_only_def @ph-general-category-value-alias
+spectec_only_def @ph-generator-context
+spectec_only_def @ph-gt
+spectec_only_def @ph-has-all-slots
+spectec_only_def @ph-has-any-elements
+spectec_only_def @ph-has-attribute-values
+spectec_only_def @ph-has-binding
+spectec_only_def @ph-has-n-elements
+spectec_only_def @ph-has-no-elements
+spectec_only_def @ph-has-slot-or
+spectec_only_def @ph-if-and-if
+spectec_only_def @ph-iff
+spectec_only_def @ph-in-json-evaluated-script
+spectec_only_def @ph-input-index-of
+spectec_only_def @ph-integer-of-bit-string-32
+spectec_only_def @ph-integers-ascending
+spectec_only_def @ph-integers-descending
+spectec_only_def @ph-intrinsic-assoc
+spectec_only_def @ph-intrinsic-function
+spectec_only_def @ph-is-now
+spectec_only_def @ph-is-single-code-point
+spectec_only_def @ph-items-in
+spectec_only_def @ph-iter-backwards
+spectec_only_def @ph-ith-element
+spectec_only_def @ph-k-digits
+spectec_only_def @ph-last-code-unit
+spectec_only_def @ph-last-in
+spectec_only_def @ph-leading-one-bits
+spectec_only_def @ph-leading-zero-bits-32
+spectec_only_def @ph-list-consisting-of
+spectec_only_def @ph-list-of-length
+spectec_only_def @ph-list-of-write-events
+spectec_only_def @ph-list-whose-elements
+spectec_only_def @ph-listed-binary-property-of-strings
+spectec_only_def @ph-listed-binary-property-or-of-strings
+spectec_only_def @ph-listed-canonical-property-name
+spectec_only_def @ph-listed-in-column
+spectec_only_def @ph-listed-property-name
+spectec_only_def @ph-listed-property-name-or-alias
+spectec_only_def @ph-listed-property-name-or-alias-either
+spectec_only_def @ph-lower-hex
+spectec_only_def @ph-matched-by
+spectec_only_def @ph-matched-by-either
+spectec_only_def @ph-more-than-one-occurrence
+spectec_only_def @ph-most-significant-digit
+spectec_only_def @ph-most-significant-k-digits
+spectec_only_def @ph-name-of-entry
+spectec_only_def @ph-named-exports-resolvable
+spectec_only_def @ph-neither-nor-nor
+spectec_only_def @ph-new-builtin-function
+spectec_only_def @ph-new-data-block
+spectec_only_def @ph-new-error
+spectec_only_def @ph-new-private-name-whose-description
+spectec_only_def @ph-new-record
+spectec_only_def @ph-new-symbol-whose-description
+spectec_only_def @ph-no-duplicate-entries
+spectec_only_def @ph-no-elements-in-common
+spectec_only_def @ph-no-registry-entry
+spectec_only_def @ph-no-waiter-with
+spectec_only_def @ph-node-within
+spectec_only_def @ph-nonzero-finite-numbers
+spectec_only_def @ph-not-contains-node
+spectec_only_def @ph-not-contains-such
+spectec_only_def @ph-not-contains-two-nodes
+spectec_only_def @ph-not-disjoint-memory-ranges
+spectec_only_def @ph-not-env-for
+spectec_only_def @ph-not-exactly-one-character
+spectec_only_def @ph-not-explicitly-defined-export
+spectec_only_def @ph-not-has-all-slots
+spectec_only_def @ph-not-has-binding
+spectec_only_def @ph-not-in-base64-alphabet
+spectec_only_def @ph-not-infinity-or-integral
+spectec_only_def @ph-not-json-first-unit
+spectec_only_def @ph-not-json-last-unit
+spectec_only_def @ph-not-listed-property-name-or-alias
+spectec_only_def @ph-not-lone-property
+spectec_only_def @ph-not-matched-by
+spectec_only_def @ph-not-nested
+spectec_only_def @ph-not-nested-alt
+spectec_only_def @ph-not-property-value-alias-given-by
+spectec_only_def @ph-not-same-tn
+spectec_only_def @ph-not-some-cp-matched
+spectec_only_def @ph-not-the-case
+spectec_only_def @ph-not-valid-utf8
+spectec_only_def @ph-not-yet-initialized
+spectec_only_def @ph-nt-containing
+spectec_only_def @ph-nt-of-a
+spectec_only_def @ph-nt-var
+spectec_only_def @ph-num-pi
+spectec_only_def @ph-number-ceil
+spectec_only_def @ph-number-corresponding
+spectec_only_def @ph-number-floor
+spectec_only_def @ph-number-round
+spectec_only_def @ph-number-trunc
+spectec_only_def @ph-numeric-value-defined
+spectec_only_def @ph-occurrences-of
+spectec_only_def @ph-occurs-exactly-once
+spectec_only_def @ph-one-character
+spectec_only_def @ph-only-one-argument-passed
+spectec_only_def @ph-only-single-code-points
+spectec_only_def @ph-other-code-units
+spectec_only_def @ph-overlapping-memory-ranges
+spectec_only_def @ph-parsed-for-parsejson
+spectec_only_def @ph-point-more-than-once
+spectec_only_def @ph-points-other-than
+spectec_only_def @ph-production-in
+spectec_only_def @ph-property-code-points
+spectec_only_def @ph-property-true-elements
+spectec_only_def @ph-property-value-alias
+spectec_only_def @ph-raised-to-the-power
+spectec_only_def @ph-remaining-k-digits
+spectec_only_def @ph-remove-first-n
+spectec_only_def @ph-repeat-to-length
+spectec_only_def @ph-replace-in
+spectec_only_def @ph-representation-radix
+spectec_only_def @ph-result-of
+spectec_only_def @ph-same-as
+spectec_only_def @ph-same-code-point-twice
+spectec_only_def @ph-same-code-units
+spectec_only_def @ph-same-tn
+spectec_only_def @ph-second-node-within
+spectec_only_def @ph-second-to-top-context
+spectec_only_def @ph-see-xref
+spectec_only_def @ph-set-difference
+spectec_only_def @ph-set-each-index
+spectec_only_def @ph-set-methods
+spectec_only_def @ph-single-charset-element
+spectec_only_def @ph-single-code-point-element
+spectec_only_def @ph-single-digit
+spectec_only_def @ph-sole-code-unit
+spectec_only_def @ph-sort-by-length
+spectec_only_def @ph-source-matched
+spectec_only_def @ph-source-strict
+spectec_only_def @ph-starts-dollar-quote
+spectec_only_def @ph-string-solely
+spectec_only_def @ph-stringvalue-any-nt-except
+spectec_only_def @ph-stringvalue-terminal-except
+spectec_only_def @ph-sufficient-bytes
+spectec_only_def @ph-surrogate-value
+spectec_only_def @ph-sv-defined
+spectec_only_def @ph-syntax-errors
+spectec_only_def @ph-that-non-strict
+spectec_only_def @ph-the-list
+spectec_only_def @ph-the-string
+spectec_only_def @ph-this-nt
+spectec_only_def @ph-this-production
+spectec_only_def @ph-time-at-least
+spectec_only_def @ph-tn-listed-in-column
+spectec_only_def @ph-to-binary16
+spectec_only_def @ph-to-binary32
+spectec_only_def @ph-to-binary64
+spectec_only_def @ph-token
+spectec_only_def @ph-token-nt
+spectec_only_def @ph-trim-both
+spectec_only_def @ph-trim-leading
+spectec_only_def @ph-trim-trailing
+spectec_only_def @ph-tv-defined
+spectec_only_def @ph-twenty-significant-digits
+spectec_only_def @ph-two-distinct
+spectec_only_def @ph-two-entries
+spectec_only_def @ph-type-abstract-closure
+spectec_only_def @ph-type-anything
+spectec_only_def @ph-type-at-least
+spectec_only_def @ph-type-but-not
+spectec_only_def @ph-type-but-not-one
+spectec_only_def @ph-type-closure-no-params
+spectec_only_def @ph-type-closure-two-params
+spectec_only_def @ph-type-conforms-iterator-result
+spectec_only_def @ph-type-default
+spectec_only_def @ph-type-except
+spectec_only_def @ph-type-function-returns
+spectec_only_def @ph-type-header-closure-no-params
+spectec_only_def @ph-type-intrinsic-keys
+spectec_only_def @ph-type-no-non-configurable-properties
+spectec_only_def @ph-type-no-own-properties
+spectec_only_def @ph-type-nt-parse-node
+spectec_only_def @ph-type-pairs-of
+spectec_only_def @ph-type-promise
+spectec_only_def @ph-type-promise-for
+spectec_only_def @ph-type-returns
+spectec_only_def @ph-type-sequence-of
+spectec_only_def @ph-type-syntax-errors
+spectec_only_def @ph-typedarray-constructor-name
+spectec_only_def @ph-unit-more-than-once
+spectec_only_def @ph-units-not-in
+spectec_only_def @ph-units-other-than
+spectec_only_def @ph-upper-hex
+spectec_only_def @ph-use-strict
+spectec_only_def @ph-utf16-of
+spectec_only_def @ph-utf8-decode
+spectec_only_def @ph-utf8-encode
+spectec_only_def @ph-value-less-than
+spectec_only_def @ph-zero-after-twentieth
+spectec_only_def @ph-zero-after-twentieth-incremented
+spectec_only_def @sort-Array
+spectec_only_def @sort-Array-Iterator-Instance
+spectec_only_def @sort-Array-exotic-object
+spectec_only_def @sort-ArrayBuffer
+spectec_only_def @sort-AsyncGenerator
+spectec_only_def @sort-CharSetElement
+spectec_only_def @sort-DataView
+spectec_only_def @sort-ECMAScript-function-object
+spectec_only_def @sort-ECMAScript-source-text
+spectec_only_def @sort-FinalizationRegistry
+spectec_only_def @sort-For-In-Iterator-instance
+spectec_only_def @sort-Generator
+spectec_only_def @sort-NaN
+spectec_only_def @sort-Null
+spectec_only_def @sort-Proxy-exotic-object
+spectec_only_def @sort-RegExp-String-Iterator-Object-Instance
+spectec_only_def @sort-SharedArrayBuffer
+spectec_only_def @sort-String-exotic-object
+spectec_only_def @sort-Super-Reference-Record
+spectec_only_def @sort-TypedArray
+spectec_only_def @sort-TypedArray-element-type
+spectec_only_def @sort-Uint8Array
+spectec_only_def @sort-Undefined
+spectec_only_def @sort-Unicode-code-point
+spectec_only_def @sort-WeakMap
+spectec_only_def @sort-WeakRef
+spectec_only_def @sort-WeakSet
+spectec_only_def @sort-WriteSharedMemory-event
+spectec_only_def @sort-arguments-exotic-object
+spectec_only_def @sort-array-index
+spectec_only_def @sort-binding
+spectec_only_def @sort-bound-function-exotic-object
+spectec_only_def @sort-break-completion
+spectec_only_def @sort-built-in
+spectec_only_def @sort-byte
+spectec_only_def @sort-byte-value
+spectec_only_def @sort-character
+spectec_only_def @sort-code-point
+spectec_only_def @sort-code-unit
+spectec_only_def @sort-constructor
+spectec_only_def @sort-continue-completion
+spectec_only_def @sort-epoch-nanoseconds-count
+spectec_only_def @sort-error
+spectec_only_def @sort-extensible
+spectec_only_def @sort-finite
+spectec_only_def @sort-fully
+spectec_only_def @sort-function-object
+spectec_only_def @sort-immutable
+spectec_only_def @sort-implementation-defined-Completion-Record
+spectec_only_def @sort-indirect
+spectec_only_def @sort-initialized-RegExp-instance
+spectec_only_def @sort-integer-index
+spectec_only_def @sort-integral-Number
+spectec_only_def @sort-leading
+spectec_only_def @sort-module-namespace-exotic-object
+spectec_only_def @sort-mutable
+spectec_only_def @sort-non-negative
+spectec_only_def @sort-non-zero
+spectec_only_def @sort-object
+spectec_only_def @sort-odd
+spectec_only_def @sort-ordinary
+spectec_only_def @sort-populated
+spectec_only_def @sort-positive
+spectec_only_def @sort-possibly-empty
+spectec_only_def @sort-property-name
+spectec_only_def @sort-prototype-exotic-object
+spectec_only_def @sort-sequence-of-Unicode-code-points
+spectec_only_def @sort-single
+spectec_only_def @sort-strict
+spectec_only_def @sort-surrogate
+spectec_only_def @sort-time-value
+spectec_only_def @sort-trailing
+spectec_only_def @sort-uninitialized
+spectec_only_def @spec-cond-0
+spectec_only_def @spec-cond-1
+spectec_only_def @spec-cond-2
+spectec_only_def @spec-copy-0
+spectec_only_def @spec-copy-1
+spectec_only_def @spec-copy-2
+spectec_only_def @spec-copy-3
+spectec_only_def @spec-copy-4
+spectec_only_def @spec-copy-5
+spectec_only_def @spec-copy-6
+spectec_only_def @spec-copy-7
+spectec_only_def @spec-copy-8
+spectec_only_def @spec-type-0
+spectec_only_def @spec-type-1
+spectec_only_def @spec-type-2
+spectec_only_def @spec-type-3
+spectec_only_def @spec-type-4
+spectec_only_def @spec-type-5
+spectec_only_def @spec-type-6
+spectec_only_def @spec-type-7
+spectec_only_def @spec-type-8
+spectec_only_def @spec-type-9
+spectec_only_row @row-compileassertion-quantifiableassertion-lookahead
+spectec_only_row @row-compileassertion-quantifiableassertion-negative-lookahead
+spectec_only_row @row-compileatom-extendedatom-characterclass
+spectec_only_row @row-compileatom-extendedatom-dot
+spectec_only_row @row-compileatom-extendedatom-group
+spectec_only_row @row-compileatom-extendedatom-modifiers
+spectec_only_row @row-compileatom-extendedatom-modifiers-remove
+spectec_only_row @row-compilesubpattern-extendedatom
+spectec_only_row @row-compilesubpattern-extendedatom-quantifier
+spectec_only_row @row-compilesubpattern-quantifiableassertion-quantifier
+spectec_only_row @row-contains-if-function
+spectec_only_row @row-containsduplicatelabels-if-function
+spectec_only_row @row-containsundefinedbreaktarget-if-function
+spectec_only_row @row-containsundefinedcontinuetarget-if-function
+spectec_only_row @row-evaluation-if-function
+spectec_only_row @row-hascallintailposition-if-function
+spectec_only_row @row-ischaracterclass-classcontrolletter
+spectec_only_row @row-propname-coverinitializedname
+spectec_only_row @row-vardeclarednames-if-function
+spectec_only_row @row-varscopeddeclarations-if-function
+tmpl @sec-nativeerror param=NativeError base=12 close=10
+tmpl @sec-typedarray param=TypedArray base=10 close=8
+tmpl_inst @sec-nativeerror/EvalError
+tmpl_inst @sec-nativeerror/RangeError
+tmpl_inst @sec-nativeerror/ReferenceError
+tmpl_inst @sec-nativeerror/SyntaxError
+tmpl_inst @sec-nativeerror/TypeError
+tmpl_inst @sec-nativeerror/URIError
+tmpl_inst @sec-typedarray/BigInt64Array
+tmpl_inst @sec-typedarray/BigUint64Array
+tmpl_inst @sec-typedarray/Float16Array
+tmpl_inst @sec-typedarray/Float32Array
+tmpl_inst @sec-typedarray/Float64Array
+tmpl_inst @sec-typedarray/Int16Array
+tmpl_inst @sec-typedarray/Int32Array
+tmpl_inst @sec-typedarray/Int8Array
+tmpl_inst @sec-typedarray/Uint16Array
+tmpl_inst @sec-typedarray/Uint32Array
+tmpl_inst @sec-typedarray/Uint8Array
+tmpl_inst @sec-typedarray/Uint8ClampedArray
+twin @sec-patterns-static-semantics-early-errors#1003 of=@sec-patterns-static-semantics-early-errors#3
+twin @sec-patterns-static-semantics-early-errors#1004 of=@sec-patterns-static-semantics-early-errors#4
+twin @sec-patterns-static-semantics-early-errors#1005 of=@sec-patterns-static-semantics-early-errors#5
+twin @sec-patterns-static-semantics-early-errors#1006 of=@sec-patterns-static-semantics-early-errors#6
+twin @sec-patterns-static-semantics-early-errors#1007 of=@sec-patterns-static-semantics-early-errors#7

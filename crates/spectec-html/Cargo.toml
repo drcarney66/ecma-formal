@@ -1,0 +1,8 @@
+[package]
+name = "spectec-html"
+version = "0.1.0"
+edition = "2021"
+description = "Bidirectional ECMA-262 SpecTec <-> spec.html algorithm and grammar bijection"
+
+[dependencies]
+spectec = { path = "../spectec" }

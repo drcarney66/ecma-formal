@@ -258,6 +258,24 @@ def ids_regenerated() -> tuple[list[str], str]:
         return bad[:20], "regenerated, and spectec roundtrip"
 
 
+def html_bijection() -> tuple[list[str], str]:
+    """If target/release/spectec-html is built and current, verify spec/spectec + spec/html <-> spec.html."""
+    bin_path = ROOT / "target/release/spectec-html"
+    srcs = (
+        list((ROOT / "crates/spectec-html/src").rglob("*.rs"))
+        + list((ROOT / "crates/spectec/src").rglob("*.rs"))
+        + [ROOT / "crates/spectec-html/Cargo.toml"]
+    )
+    if not bin_path.exists() or any(f.stat().st_mtime > bin_path.stat().st_mtime for f in srcs):
+        return [], "skipped: target/release/spectec-html is missing or older than its sources (cargo build --release)"
+    r = subprocess.run([sys.executable, str(ROOT / "scripts/html_bijection.py"), "--bin", str(bin_path)], capture_output=True, text=True)
+    if r.returncode != 0:
+        detail = " | ".join((r.stderr.strip() or r.stdout.strip()).splitlines()[-3:])
+        return [f"html bijection failed: {detail}"], "spec/html"
+    tail = (r.stdout.strip().splitlines() or ["ok"])[-1]
+    return [], tail
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--run", default=str(ROOT / ".lake/build/bin/ecma-run"))
@@ -305,6 +323,10 @@ def main() -> int:
             print(line)
     tail = (b.stdout.strip() or b.stderr.strip() or "no output").splitlines()[-1]
     print(f"{'' if tail.startswith(('ok', 'FAIL')) else 'FAIL '}{tail} ({time.monotonic() - t0:.1f} s)")
+    hb_bad, hb_msg = html_bijection()
+    for line in hb_bad:
+        print("FAIL html bijection:", line)
+    print(f"{'FAIL' if hb_bad else 'ok  '} html bijection ({hb_msg})")
     q = subprocess.run([sys.executable, str(ROOT / "scripts/law_quotes.py")], capture_output=True, text=True)
     print(q.stdout.rstrip())
     rt = subprocess.run([sys.executable, str(ROOT / "scripts/js_run_test.py"), "--run", a.run, "--jobs", "3",
@@ -314,7 +336,7 @@ def main() -> int:
             print(line)
     tail = rt.stdout.rstrip().splitlines()[-1:] or ["no output"]
     print(f"{'FAIL' if rt.returncode else 'ok  '} tests/run{'' if a.all_run_tests else ' (the driver cases)'}: {tail[0]}")
-    return 1 if bad or plain or no_nd or pc.returncode or ids or b.returncode or q.returncode or rt.returncode else 0
+    return 1 if bad or plain or no_nd or pc.returncode or ids or b.returncode or hb_bad or q.returncode or rt.returncode else 0
 
 
 if __name__ == "__main__":
