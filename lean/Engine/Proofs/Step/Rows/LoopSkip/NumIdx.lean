@@ -227,13 +227,13 @@ private theorem ts_strOfUnits_run {vs : List (Val F)} {t : F.Str} (h : cat? vs =
   unfold cat? at h; unfold Prims.Strings.strOfUnits; generalize hg : List.foldl _ _ vs = o
   have ho : o = some t := hg.symm.trans ((e _ _ fun a v => by cases a <;> cases v <;> rfl).trans h); subst ho; rfl
 
-private theorem ts_cat_prim {q : PrimId} (hq : q = 14 ∨ q = 48) {vs : List (Val F)} {t : F.Str}
+private theorem ts_cat_prim {q : PrimId} (hq : q = Known.pConcat ∨ q = Known.pStrOfUnits) {vs : List (Val F)} {t : F.Str}
     (hu : vs.map Val.used = vs) (h : cat? vs = some t) (s : State F) : Ecma.prim q vs s = .ok (.str t) s := by
   rcases hq with rfl | rfl <;> (rw [prim_used _ _ rfl, hu]; ts_prim_unfold; exact ts_strOfUnits_run h s)
 
 private theorem ts_interval {lo hi n : Model.MathVal} {b : Bool} (h : inInt? lo hi n = some b) (s : State F) :
-    Ecma.prim 85 [.math lo, .math hi, .math n] s = .ok (.bool b) s := by
-  show primOn (M := F) 85 [.math lo, .math hi, .math n] s = _; ts_prim_unfold
+    Ecma.prim Known.pInInterval [.math lo, .math hi, .math n] s = .ok (.bool b) s := by
+  show primOn (M := F) Known.pInInterval [.math lo, .math hi, .math n] s = _; ts_prim_unfold
   show Prims.Numbers.inInterval (M := F) [.math lo, .math hi, .math n] s = _
   simp only [inInt?, le?, lt?, eq?, bind, Option.bind_eq_some_iff] at h
   obtain ⟨_, ⟨_, h1, _, h2, h3⟩, _, ⟨_, h4, _, h5, h6⟩, h7⟩ := h
@@ -241,7 +241,7 @@ private theorem ts_interval {lo hi n : Model.MathVal} {b : Bool} (h : inInt? lo 
   cases h1; cases h2; cases h4; cases h5; rfl
 
 set_option maxRecDepth 8000 in
-private theorem ts_sortDef_5 : Engine.P.sortDef 5 = none := by rw [sortDef_eq]; rfl
+private theorem ts_sortDef_5 : Engine.P.sortDef Known.sBigInt = none := by rw [sortDef_eq]; rfl
 
 private theorem ts_digits (i : Nat) {x : F.Num} {r m : Model.MathVal} (hx : F.numView x = .finite m)
     (hc : step5Ok r m = true) (s : State F) :
@@ -260,30 +260,30 @@ theorem ts_step5 (x : F.Num) (r m : Model.MathVal) (hx : F.numView x = .finite m
         .steps false true true, [7], K, none⟩ :: fs, .code tsRest⟩ := by
   ts_osteps
   ts_ev TsEv.prim (.cons ts_ev_var (.cons ts_ev_var .nil)) rfl rfl (fun s => by
-    show primOn (M := F) 292 _ s = _; ts_prim_unfold; exact ts_digits 0 hx hc s)
+    show primOn (M := F) Known.pNumberDigitsExponent _ s = _; ts_prim_unfold; exact ts_digits 0 hx hc s)
   ts_osteps
   ts_ev TsEv.prim (.cons ts_ev_var (.cons ts_ev_var .nil)) rfl rfl (fun s => by
-    show primOn (M := F) 293 _ s = _; ts_prim_unfold; exact ts_digits 1 hx hc s)
+    show primOn (M := F) Known.pNumberDigitsCount _ s = _; ts_prim_unfold; exact ts_digits 1 hx hc s)
   ts_osteps
   ts_ev TsEv.prim (.cons ts_ev_var (.cons ts_ev_var .nil)) rfl rfl (fun s => by
-    show primOn (M := F) 294 _ s = _; ts_prim_unfold; exact ts_digits 2 hx hc s)
+    show primOn (M := F) Known.pNumberDigitsSignificand _ s = _; ts_prim_unfold; exact ts_digits 2 hx hc s)
   mstep; mstep; exact .refl _
 
 /-! ## Overlay phrase helpers (6 algorithms) -/
 
-theorem ts_units [PinsHold] (t : F.Str) : TsCall (Ctx.spec Engine.P' H chk) ⟨2641, 0⟩ [.str t] (.str t) := by
+theorem ts_units [PinsHold] (t : F.Str) : TsCall (Ctx.spec Engine.P' H chk) ⟨Known.cPhCodeUnitsOf, 0⟩ [.str t] (.str t) := by
   intro s fr; ts_enter_alg tsUnitsAlg_pin tsUnitsCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.str t], .steps false true true, [], [], none⟩ :: _, .code tsUnitsCode⟩ _
   gsteps; exact .refl _
 
 theorem ts_strOf [PinsHold] (c : Model.MathVal) (t : F.Str) (h : cat? [.math c] = some t) :
-    TsCall (Ctx.spec Engine.P' H chk) ⟨2671, 0⟩ [.math c] (.str t) := by
+    TsCall (Ctx.spec Engine.P' H chk) ⟨Known.cPhStringSolely, 0⟩ [.math c] (.str t) := by
   intro s fr; ts_enter_alg tsStrOfAlg_pin tsStrOfCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.math c], .steps false true true, [], [], none⟩ :: _, .code tsStrOfCode⟩ _
   ts_osteps; ts_ev TsEv.prim (.cons ts_ev_var .nil) rfl rfl (ts_cat_prim (.inr rfl) rfl h); gsteps; exact .refl _
 
 theorem ts_kDigits [PinsHold] (k : Model.MathVal) (t u : F.Str) (h : kDigits? k t = some u) :
-    TsCall (Ctx.spec Engine.P' H chk) ⟨2637, 0⟩ [.math k, .str t] (.str u) := by
+    TsCall (Ctx.spec Engine.P' H chk) ⟨Known.cPhKDigits, 0⟩ [.math k, .str t] (.str u) := by
   simp only [kDigits?, bind, Option.bind_eq_some_iff, guard] at h
   obtain ⟨_, h1, h2⟩ := h; cases Option.some.inj h2; split at h1
   · rename_i hk; intro s fr; ts_enter_alg tsKDigitsAlg_pin tsKDigitsCode_pin
@@ -291,7 +291,7 @@ theorem ts_kDigits [PinsHold] (k : Model.MathVal) (t u : F.Str) (h : kDigits? k 
     mstep
     refine Steps.trans (ts_assert H chk (TsEv.cast (congrArg Val.bool hk) <|
       TsEv.is1 (TsEv.prim (.cons ts_ev_bnd .nil) rfl rfl fun _ => by
-        show primOn (M := F) 50 [.str t] _ = _; ts_prim_unfold; rfl)
+        show primOn (M := F) Known.pStrLen [.str t] _ = _; ts_prim_unfold; rfl)
       ts_ev_var (fun _ => by
         simp [leaf, isVals, sameIs, Val.incomparable, bind, Run.bind, Run.Res.bind, Run.pure, pure, Val.used, Val.same]))
       _ _ _ _ _ _ _ _ _ _) ?_
@@ -300,7 +300,7 @@ theorem ts_kDigits [PinsHold] (k : Model.MathVal) (t u : F.Str) (h : kDigits? k 
 
 private theorem ts_sort9Ok {sl : Array (Val F)} {z : Int} (hn : sl.getD 0 .unbound = .math (.int z)) :
     TsEv (Ctx.spec Engine.P' H chk) sl ((Op.var 0).bind (.and [.leaf (.isTy false false)
-      [(Op.leaf .used [.bound]).bind (.or [.call (.sort 9) [.bound]])]])) (.bool true) := by
+      [(Op.leaf .used [.bound]).bind (.or [.call (.sort Known.sInteger) [.bound]])]])) (.bool true) := by
   intro s a nd kd p K ci fs
   mstep; refine Steps.trans (TsEv.var hn (by simp) _ _ _ _ _ _ _ _) ?_; ts_psteps
   refine Steps.next (step_sort_int H chk s _ z) ?_; gsteps; exact .refl _
@@ -308,14 +308,14 @@ private theorem ts_sort9Ok {sl : Array (Val F)} {z : Int} (hn : sl.getD 0 .unbou
 private theorem ts_radixOk {sl : Array (Val F)} {r : Model.MathVal} (hr : sl.getD 1 .unbound = .math r)
     (h : inInt? (F.ofNat 2) (F.ofNat 36) r = some true) :
     TsEv (Ctx.spec Engine.P' H chk) sl ((Op.var 1).bind (.and [.leaf (.isTy false false)
-      [.call (.prim 85) [.const (.math .none (.num (.dec 2))), .const (.math .none (.num (.dec 36))), .bound]]]))
+      [.call (.prim Known.pInInterval) [.const (.math .none (.num (.dec 2))), .const (.math .none (.num (.dec 36))), .bound]]]))
       (.bool true) := by
   intro s a nd kd p K ci fs
   mstep; refine Steps.trans (TsEv.var hr (by simp) _ _ _ _ _ _ _ _) ?_; ts_psteps
   mprim (ts_interval h _); gsteps; exact .refl _
 
 theorem ts_repr_int [PinsHold] (n r : Nat) (hr2 : 2 ≤ r) (hr36 : r ≤ 36) :
-    TsCall (Ctx.spec Engine.P' H chk) ⟨2633, 0⟩ [.math (.int n), .math (.int r)]
+    TsCall (Ctx.spec Engine.P' H chk) ⟨Known.cPhRepresentationRadix, 0⟩ [.math (.int n), .math (.int r)]
       (.str (F.intToRadix (.int n) (.int r))) := by
   have hb1 : ge? (.int (n : Int)) (F.ofNat 0) = some true := by
     show some (decide ((0 : Int) < n) || (n : Int) == 0) = some true; rcases n with _ | n <;> simp
@@ -333,7 +333,7 @@ theorem ts_repr_int [PinsHold] (n r : Nat) (hr2 : 2 ≤ r) (hr36 : r ≤ 36) :
     _ _ _ _ _ _ _ _ _ _) ?_
   ts_osteps
   ts_ev (TsEv.prim (w := .str (F.intToRadix (.int n) (.int r))) (.cons ts_ev_var (.cons ts_ev_var .nil)) rfl rfl fun st => by
-    show primOn (M := F) 305 [.math (.int n), .math (.int r)] st = _; ts_prim_unfold
+    show primOn (M := F) Known.pIntToRadix [.math (.int n), .math (.int r)] st = _; ts_prim_unfold
     show (if F.isInt (.int n) && !F.lt (.int n) (.int 0) && F.isInt (.int r) && !F.lt (.int r) (.int 2) &&
       !F.lt (.int 36) (.int r) then Run.pure (Val.str (F.intToRadix (.int n) (.int r))) else Run.stop .sortError) st = _
     split
@@ -344,13 +344,13 @@ theorem ts_repr_int [PinsHold] (n r : Nat) (hr2 : 2 ≤ r) (hr36 : r ≤ 36) :
   gsteps; exact .refl _
 
 theorem ts_occ_nat [PinsHold] (n : Nat) (c : Model.MathVal) (cs : F.Str) (hcs : cat? [.math c] = some cs) :
-    TsCall (Ctx.spec Engine.P' H chk) ⟨2700, 0⟩ [.math (.int n), .math c] (.str (F.strRepeat (.int n) cs)) := by
+    TsCall (Ctx.spec Engine.P' H chk) ⟨Known.cPhOccurrencesOf, 0⟩ [.math (.int n), .math c] (.str (F.strRepeat (.int n) cs)) := by
   intro s fr; ts_enter_alg tsOccAlg_pin tsOccCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.math (.int n), .math c], .steps false true true, [], [], none⟩ :: _, .code tsOccCode⟩ _
   ts_osteps
   ts_ev (TsEv.prim (w := .str (F.strRepeat (.int n) cs))
     (.cons (TsEv.alg (.cons ts_ev_bnd .nil) (ts_strOf H chk c cs hcs)) (.cons ts_ev_var .nil)) rfl rfl fun st => by
-      show primOn (M := F) 289 [.str cs, .math (.int n)] st = _; ts_prim_unfold
+      show primOn (M := F) Known.pStringRepeat [.str cs, .math (.int n)] st = _; ts_prim_unfold
       show Prims.Strings.stringRepeat (M := F) [.str cs, .math (.int n)] st = _
       unfold Prims.Strings.stringRepeat; dsimp only; split
       · next hf => exfalso; rcases hf with hf | hf <;> (simp only [Model.MathVal.isInt, Model.MathVal.lt] at hf; omega)
@@ -395,7 +395,7 @@ theorem numIdx_zero (r : Model.MathVal) (st : State F) (fs : List (Frame F)) (a 
 private theorem ts_expOk {sl : Array (Val F)} {n : Model.MathVal} (hn : sl.getD 2 .unbound = .math n)
     (h : inInt? (.int (-5)) (F.ofNat 21) n = some true) :
     TsEv (Ctx.spec Engine.P' H chk) sl ((Op.var 2).bind (.and [.leaf (.isTy false false)
-      [.call (.prim 85) [.const (.math .minus (.num (.dec 5))), .const (.math .none (.num (.dec 21))), .bound]]]))
+      [.call (.prim Known.pInInterval) [.const (.math .minus (.num (.dec 5))), .const (.math .none (.num (.dec 21))), .bound]]]))
       (.bool true) := by
   intro s a nd kd p K ci fs
   mstep; refine Steps.trans (TsEv.var hn (by simp) _ _ _ _ _ _ _ _) ?_; ts_psteps
@@ -445,7 +445,7 @@ theorem numIdx_step [PinsHold] (x : F.Num) (m : Model.MathVal) (hv : F.numView x
     (ts_units H chk _))
     (.cons (TsEv.alg (.cons (TsEv.bin ts_ev_var ts_ev_var hsub)
       (.cons (TsEv.prim (.cons (TsEv.const rfl) .nil) rfl rfl fun _ => by
-        show primOn (M := F) 47 [.math (F.ofNat 48)] _ = _; ts_prim_unfold
+        show primOn (M := F) Known.pCodeUnit [.math (F.ofNat 48)] _ = _; ts_prim_unfold
         show Prims.Strings.codeUnit (M := F) [.math (F.ofNat 48)] _ = _; rfl) .nil))
       (ts_occ_nat H chk _ _ #[(48 : Nat).toUInt16] (by
         unfold cat?; rw [show F.strLit "" = #[] from utf16_empty]; rfl))) .nil)) rfl rfl (ts_cat_prim (.inl rfl) rfl hcat)

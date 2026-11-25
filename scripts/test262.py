@@ -1232,10 +1232,8 @@ def cmd_ratchet(args) -> int:
 
 
 def phrase_names() -> list[str]:
-    """The phrases by id (spec/formal/phrase-ids.txt, `<category> <name>` per id), for `phrase:N` sites."""
-    import spec_text
-    path = spec_text.ids_dir() / "phrase-ids.txt"
-    return path.read_text().splitlines() if path.exists() else []
+    """Deprecated phrase id map (no longer kept)."""
+    return []
 
 
 def site_note(stop: str, phrases: list[str]) -> str:

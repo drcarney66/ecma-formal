@@ -37,7 +37,7 @@ open Ecma Engine.Model
 /-! ## WriteSharedMemory event -/
 
 /-- The Record sort WriteSharedMemory. -/
-def sWrite : SortId := 35
+def sWrite : SortId := Known.sWriteSharedMemory
 
 /-- `v is a WriteSharedMemory event`: a Record of the sort WriteSharedMemory (no sort lies below it). -/
 def isWrite (v : Val F) : Run F (Val F) := fun s => match v with
@@ -70,8 +70,8 @@ def LoopSlots.desc (m : LoopSlots) : Bool := m.bound.isNone
 /-- The slots of lowered `Repeat, while k < len` (or `k ≥ 0`) over `Let pk be ! ToString(𝔽(k))`, `Let kp be ? HasProperty(o,
 pk)`, `If kp is true, then …` and `Set k to k + 1` (or `k - 1`), its variables pairwise distinct; `none` for other loops. -/
 def hasPropLoop : List Nat → Ecma.Machine.Op → Ecma.Machine.Code → Option LoopSlots
-  | p, t, [.site p1, .let_ pk (.leaf .bang [.call (.alg ⟨208, 0⟩) [.call (.prim 0) [.var k1]]]),
-      .site p2, .let_ kp (.leaf .q [.call (.alg ⟨242, 0⟩) [.var o, .var pk1]]),
+  | p, t, [.site p1, .let_ pk (.leaf .bang [.call (.alg ⟨cToStr, iToStr⟩) [.call (.prim prF) [.var k1]]]),
+      .site p2, .let_ kp (.leaf .q [.call (.alg ⟨cHasProp, iHasProp⟩) [.var o, .var pk1]]),
       .site p3, .br (.bind (.var kp1) (.and [.leaf (.isVal false false) [.bound, .const (.val .true)]])) _ [],
       .site p4, .let_ k2 (.leaf (.bin op) [.var k3, .const (.math .none (.num (.dec 1)))])] =>
     let bound : Option (Option Slot) := match t, op with
@@ -80,7 +80,9 @@ def hasPropLoop : List Nat → Ecma.Machine.Op → Ecma.Machine.Code → Option 
       | _, _ => none
     bound.bind fun b =>
       let xs := [k1, o, pk, kp] ++ b.toList
-      if p1 == 1 :: p && p2 == 2 :: p && p3 == 3 :: p && p4 == 4 :: p &&
+      if cToStr == Known.cToString && iToStr == 0 && prF == Known.pF &&
+          cHasProp == Known.cHasProperty && iHasProp == 0 &&
+          p1 == 1 :: p && p2 == 2 :: p && p3 == 3 :: p && p4 == 4 :: p &&
           k1 == k2 && k1 == k3 && pk == pk1 && kp == kp1 && xs.eraseDups.length == xs.length then
         some { k := k1, bound := b, o, pk, kp }
       else none
@@ -95,10 +97,13 @@ def probeLimit : Nat := 64
 /-- The most property keys on the chain a skip scans. -/
 def keyLimit : Nat := 4096
 
-/-- Field 53 ([[Prototype]]) and the internal methods a HasProperty miss calls: 57 ([[HasProperty]]), 58
-([[GetOwnProperty]]), 62 ([[GetPrototypeOf]]); their ordinary definitions ⟨452⟩, ⟨446⟩, ⟨438⟩. -/
-def fProto : FieldId := 53
-def ordinaryMethods : List (FieldId × AlgId) := [(57, ⟨452, 0⟩), (58, ⟨446, 0⟩), (62, ⟨438, 0⟩)]
+/-- `[[Prototype]]` and the internal methods a HasProperty miss calls: `[[HasProperty]]`,
+`[[GetOwnProperty]]`, `[[GetPrototypeOf]]` and their ordinary definitions. -/
+def fProto : FieldId := Known.fPrototype
+def ordinaryMethods : List (FieldId × AlgId) :=
+  [(Known.fHasProperty, ⟨Known.cOrdMethodHasProperty, 0⟩),
+   (Known.fGetOwnProperty, ⟨Known.cOrdMethodGetOwnProperty, 0⟩),
+   (Known.fGetPrototypeOf, ⟨Known.cOrdMethodGetPrototypeOf, 0⟩)]
 
 /-- The own properties of each object on the chain from `a`, if it has at most `n` objects, each ordinary in
 `ordinaryMethods`, its [[Prototype]] an object or null. -/

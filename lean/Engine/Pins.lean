@@ -29,7 +29,7 @@ def containsRetCode : Code := [.site [1], .ret (.const (.val .false))]
 def containsAny1Code (k : NtId) : Code :=
   [Ins.site [1],
    Ins.br
-    ((Op.call (CallK.alg { clause := 2725, idx := 0 }) [Op.child 5 k, Op.bnd 0]).bind
+    ((Op.call (CallK.alg { clause := Known.cPhContains, idx := 0 }) [Op.child 5 k, Op.bnd 0]).bind
       (Op.and [Op.leaf (Leaf.isVal false false) [Op.bound, Op.const (Const.val ValLit.true)]]))
     [Ins.ret (Op.const (Const.val ValLit.true))] [],
    Ins.site [2], Ins.ret (Op.const (Const.val ValLit.false))]
@@ -37,22 +37,24 @@ def containsAny1Code (k : NtId) : Code :=
 /-- `Return the result of ComputedPropertyContains of child with argument symbol.` -/
 def containsCpc1Code (k : NtId) : Code :=
   [Ins.site [1],
-   Ins.ret (Op.call (CallK.alg { clause := 2562, idx := 0 }) [Op.on (OnK.sdo 24) (Op.child 5 k) [Op.var 0]])]
+   Ins.ret (Op.call (CallK.alg { clause := Known.cPhResultOf, idx := 0 })
+    [Op.on (OnK.sdo Known.sdoComputedPropertyContains) (Op.child 5 k) [Op.var 0]])]
 
 /-- `Return the result of child Contains symbol.` (ComputedPropertyContains of a computed name). -/
 def containsCpcPhCode (k : NtId) : Code :=
   [Ins.site [1],
    Ins.ret
-    (Op.call (CallK.alg { clause := 2562, idx := 0 })
-      [Op.call (CallK.alg { clause := 2725, idx := 0 }) [Op.child 5 k, Op.bnd 0]])]
+    (Op.call (CallK.alg { clause := Known.cPhResultOf, idx := 0 })
+      [Op.call (CallK.alg { clause := Known.cPhContains, idx := 0 }) [Op.child 5 k, Op.bnd 0]])]
 
 /-- ComputedPropertyContains of two children in turn. -/
 def containsCpc2Code (k1 k2 : NtId) : Code :=
-  [Ins.site [1], Ins.let_ 1 (Op.on (OnK.sdo 24) (Op.child 5 k1) [Op.var 0]), Ins.site [2],
+  [Ins.site [1], Ins.let_ 1 (Op.on (OnK.sdo Known.sdoComputedPropertyContains) (Op.child 5 k1) [Op.var 0]), Ins.site [2],
    Ins.br ((Op.var 1).bind (Op.and [Op.leaf (Leaf.isVal false false) [Op.bound, Op.const (Const.val ValLit.true)]]))
     [Ins.ret (Op.const (Const.val ValLit.true))] [],
    Ins.site [3],
-   Ins.ret (Op.call (CallK.alg { clause := 2562, idx := 0 }) [Op.on (OnK.sdo 24) (Op.child 5 k2) [Op.var 0]])]
+   Ins.ret (Op.call (CallK.alg { clause := Known.cPhResultOf, idx := 0 })
+    [Op.on (OnK.sdo Known.sdoComputedPropertyContains) (Op.child 5 k2) [Op.var 0]])]
 
 /-- `If symbol is |K|, return true. Return ComputedPropertyContains of |K| with argument symbol.` -/
 def containsIsSymCode (k : NtId) : Code :=
@@ -60,7 +62,7 @@ def containsIsSymCode (k : NtId) : Code :=
    .br ((Op.var 0).bind (.and [.leaf (.isVal false false) [.bound, .const (.nt k [])]]))
      [.ret (.const (.val .true))] [],
    .site [2],
-   .ret (.call (.alg ⟨2562, 0⟩) [.on (.sdo 24) (.child 5 k) [.var 0]])]
+   .ret (.call (.alg ⟨Known.cPhResultOf, 0⟩) [.on (.sdo Known.sdoComputedPropertyContains) (.child 5 k) [.var 0]])]
 
 /-- `If symbol is the |ReservedWord| super, return true. Return false.` -/
 def containsSuperCode : Code :=
@@ -70,8 +72,8 @@ def containsSuperCode : Code :=
       (Op.and
         [Op.leaf (Leaf.isVal false false)
             [Op.bound,
-              Op.call (CallK.alg { clause := 2728, idx := 0 })
-                [Op.const (Const.nt 37 []), Op.const (Const.term "super")]]]))
+              Op.call (CallK.alg { clause := Known.cPhTokenNt, idx := 0 })
+                [Op.const (Const.nt Known.ntReservedWord []), Op.const (Const.term "super")]]]))
     [Ins.ret (Op.const (Const.val ValLit.true))] [],
    Ins.site [2], Ins.ret (Op.const (Const.val ValLit.false))]
 
@@ -82,15 +84,15 @@ def containsArrow2Code : Code :=
     ((Op.var 0).bind
       (Op.and
         [Op.leaf (Leaf.isVal true false)
-            [Op.bound, Op.const (Const.nt 140 []), Op.const (Const.nt 138 []), Op.const (Const.nt 144 []),
-              Op.const (Const.term "super"), Op.const (Const.term "this")]]))
+            [Op.bound, Op.const (Const.nt Known.ntNewTarget []), Op.const (Const.nt Known.ntSuperProperty []),
+              Op.const (Const.nt Known.ntSuperCall []), Op.const (Const.term "super"), Op.const (Const.term "this")]]))
     [Ins.ret (Op.const (Const.val ValLit.false))] [],
    Ins.site [2],
    Ins.br
-    ((Op.call (CallK.alg { clause := 2725, idx := 0 }) [Op.child 5 251, Op.bnd 0]).bind
+    ((Op.call (CallK.alg { clause := Known.cPhContains, idx := 0 }) [Op.child 5 Known.ntArrowParameters, Op.bnd 0]).bind
       (Op.and [Op.leaf (Leaf.isVal false false) [Op.bound, Op.const (Const.val ValLit.true)]]))
     [Ins.ret (Op.const (Const.val ValLit.true))] [],
-   Ins.site [3], Ins.ret (Op.call (CallK.alg { clause := 2725, idx := 0 }) [Op.child 5 252, Op.bnd 0])]
+   Ins.site [3], Ins.ret (Op.call (CallK.alg { clause := Known.cPhContains, idx := 0 }) [Op.child 5 Known.ntConciseBody, Op.bnd 0])]
 
 /-- An arrow function's body. -/
 def containsArrow1Code : Code :=
@@ -99,10 +101,10 @@ def containsArrow1Code : Code :=
     ((Op.var 0).bind
       (Op.and
         [Op.leaf (Leaf.isVal true false)
-            [Op.bound, Op.const (Const.nt 140 []), Op.const (Const.nt 138 []), Op.const (Const.nt 144 []),
-              Op.const (Const.term "super"), Op.const (Const.term "this")]]))
+            [Op.bound, Op.const (Const.nt Known.ntNewTarget []), Op.const (Const.nt Known.ntSuperProperty []),
+              Op.const (Const.nt Known.ntSuperCall []), Op.const (Const.term "super"), Op.const (Const.term "this")]]))
     [Ins.ret (Op.const (Const.val ValLit.false))] [],
-   Ins.site [2], Ins.ret (Op.call (CallK.alg { clause := 2725, idx := 0 }) [Op.child 5 284, Op.bnd 0])]
+   Ins.site [2], Ins.ret (Op.call (CallK.alg { clause := Known.cPhContains, idx := 0 }) [Op.child 5 Known.ntAsyncConciseBody, Op.bnd 0])]
 
 /-- An async arrow function's head, a cover: only the symbol's test is the walk's. -/
 def containsArrowDeclCode : Code :=
@@ -111,69 +113,69 @@ def containsArrowDeclCode : Code :=
     ((Op.var 0).bind
       (Op.and
         [Op.leaf (Leaf.isVal true false)
-            [Op.bound, Op.const (Const.nt 140 []), Op.const (Const.nt 138 []), Op.const (Const.nt 144 []),
-              Op.const (Const.term "super"), Op.const (Const.term "this")]]))
+            [Op.bound, Op.const (Const.nt Known.ntNewTarget []), Op.const (Const.nt Known.ntSuperProperty []),
+              Op.const (Const.nt Known.ntSuperCall []), Op.const (Const.term "super"), Op.const (Const.term "this")]]))
     [Ins.ret (Op.const (Const.val ValLit.false))] [],
-   Ins.site [2], Ins.let_ 1 (Op.call (CallK.prim 80) [Op.const (Const.nt 287 []), Op.child 5 286]), Ins.site [3],
+   Ins.site [2], Ins.let_ 1 (Op.call (CallK.prim Known.pCoveredBy) [Op.const (Const.nt Known.ntAsyncArrowHead []), Op.child 5 Known.ntCoverCallExpressionAndAsyncArrowHead]), Ins.site [3],
    Ins.br
-    ((Op.call (CallK.alg { clause := 2725, idx := 0 }) [Op.bnd 1, Op.bnd 0]).bind
+    ((Op.call (CallK.alg { clause := Known.cPhContains, idx := 0 }) [Op.bnd 1, Op.bnd 0]).bind
       (Op.and [Op.leaf (Leaf.isVal false false) [Op.bound, Op.const (Const.val ValLit.true)]]))
     [Ins.ret (Op.const (Const.val ValLit.true))] [],
-   Ins.site [4], Ins.ret (Op.call (CallK.alg { clause := 2725, idx := 0 }) [Op.child 5 284, Op.bnd 0])]
+   Ins.site [4], Ins.ret (Op.call (CallK.alg { clause := Known.cPhContains, idx := 0 }) [Op.child 5 Known.ntAsyncConciseBody, Op.bnd 0])]
 
 def containsClassTailCode : Code :=
   [Ins.site [1],
-   Ins.br ((Op.var 0).bind (Op.and [Op.leaf (Leaf.isVal false false) [Op.bound, Op.const (Const.nt 270 [])]]))
+   Ins.br ((Op.var 0).bind (Op.and [Op.leaf (Leaf.isVal false false) [Op.bound, Op.const (Const.nt Known.ntClassBody [])]]))
     [Ins.ret (Op.const (Const.val ValLit.true))] [],
    Ins.site [2],
-   Ins.br ((Op.var 0).bind (Op.and [Op.leaf (Leaf.isVal false false) [Op.bound, Op.const (Const.nt 269 [])]]))
+   Ins.br ((Op.var 0).bind (Op.and [Op.leaf (Leaf.isVal false false) [Op.bound, Op.const (Const.nt Known.ntClassHeritage [])]]))
     [Ins.site [1, 2],
-      Ins.br ((Op.child 5 269).bind (Op.and [Op.leaf (Leaf.isTy false false) [Op.call (CallK.prim 69) [Op.bound]]]))
+      Ins.br ((Op.child 5 Known.ntClassHeritage).bind (Op.and [Op.leaf (Leaf.isTy false false) [Op.call (CallK.prim Known.pPresent) [Op.bound]]]))
         [Ins.ret (Op.const (Const.val ValLit.true))] [],
       Ins.site [2, 2], Ins.ret (Op.const (Const.val ValLit.false))]
     [],
    Ins.site [3],
-   Ins.br ((Op.child 5 269).bind (Op.and [Op.leaf (Leaf.isTy false false) [Op.call (CallK.prim 69) [Op.bound]]]))
+   Ins.br ((Op.child 5 Known.ntClassHeritage).bind (Op.and [Op.leaf (Leaf.isTy false false) [Op.call (CallK.prim Known.pPresent) [Op.bound]]]))
     [Ins.site [1, 3],
       Ins.br
-        ((Op.call (CallK.alg { clause := 2725, idx := 0 }) [Op.child 5 269, Op.bnd 0]).bind
+        ((Op.call (CallK.alg { clause := Known.cPhContains, idx := 0 }) [Op.child 5 Known.ntClassHeritage, Op.bnd 0]).bind
           (Op.and [Op.leaf (Leaf.isVal false false) [Op.bound, Op.const (Const.val ValLit.true)]]))
         [Ins.ret (Op.const (Const.val ValLit.true))] []]
     [],
    Ins.site [4],
-   Ins.ret (Op.call (CallK.alg { clause := 2562, idx := 0 }) [Op.on (OnK.sdo 24) (Op.child 5 270) [Op.var 0]])]
+   Ins.ret (Op.call (CallK.alg { clause := Known.cPhResultOf, idx := 0 }) [Op.on (OnK.sdo Known.sdoComputedPropertyContains) (Op.child 5 Known.ntClassBody) [Op.var 0]])]
 
 /-- Each row of Contains and ComputedPropertyContains the walk does not decline at: its variables' count, its
 code. -/
 def containsShapes : List (AlgId × Nat × Code) :=
-  [(⟨322, 1⟩, 1, containsRetCode),
-   (⟨322, 2⟩, 1, containsClassTailCode),
-   (⟨322, 3⟩, 1, containsRetCode),
-   (⟨322, 4⟩, 1, containsArrow2Code),
-   (⟨322, 6⟩, 1, containsArrow1Code),
-   (⟨322, 7⟩, 2, containsArrowDeclCode),
-   (⟨322, 8⟩, 1, containsIsSymCode 255),
-   (⟨322, 9⟩, 1, containsRetCode),
-   (⟨322, 10⟩, 1, containsAny1Code 137),
-   (⟨322, 11⟩, 1, containsSuperCode),
-   (⟨322, 12⟩, 1, containsAny1Code 143),
-   (⟨322, 13⟩, 1, containsRetCode),
-   (⟨322, 14⟩, 1, containsAny1Code 149),
-   (⟨323, 0⟩, 1, containsRetCode),
-   (⟨323, 1⟩, 1, containsCpcPhCode 130),
-   (⟨323, 2⟩, 1, containsCpc1Code 274),
-   (⟨323, 3⟩, 1, containsCpc1Code 274),
-   (⟨323, 4⟩, 1, containsCpc1Code 274),
-   (⟨323, 5⟩, 2, containsCpc2Code 271 272),
-   (⟨323, 6⟩, 1, containsRetCode),
-   (⟨323, 7⟩, 1, containsRetCode),
-   (⟨323, 8⟩, 1, containsCpc1Code 274),
-   (⟨323, 9⟩, 1, containsCpc1Code 274)]
+  [(⟨Known.cStaticContains, 1⟩, 1, containsRetCode),
+   (⟨Known.cStaticContains, 2⟩, 1, containsClassTailCode),
+   (⟨Known.cStaticContains, 3⟩, 1, containsRetCode),
+   (⟨Known.cStaticContains, 4⟩, 1, containsArrow2Code),
+   (⟨Known.cStaticContains, 6⟩, 1, containsArrow1Code),
+   (⟨Known.cStaticContains, 7⟩, 2, containsArrowDeclCode),
+   (⟨Known.cStaticContains, 8⟩, 1, containsIsSymCode Known.ntMethodDefinition),
+   (⟨Known.cStaticContains, 9⟩, 1, containsRetCode),
+   (⟨Known.cStaticContains, 10⟩, 1, containsAny1Code Known.ntMemberExpression),
+   (⟨Known.cStaticContains, 11⟩, 1, containsSuperCode),
+   (⟨Known.cStaticContains, 12⟩, 1, containsAny1Code Known.ntCallExpression),
+   (⟨Known.cStaticContains, 13⟩, 1, containsRetCode),
+   (⟨Known.cStaticContains, 14⟩, 1, containsAny1Code Known.ntOptionalChain),
+   (⟨Known.cStaticComputedPropertyContains, 0⟩, 1, containsRetCode),
+   (⟨Known.cStaticComputedPropertyContains, 1⟩, 1, containsCpcPhCode Known.ntComputedPropertyName),
+   (⟨Known.cStaticComputedPropertyContains, 2⟩, 1, containsCpc1Code Known.ntClassElementName),
+   (⟨Known.cStaticComputedPropertyContains, 3⟩, 1, containsCpc1Code Known.ntClassElementName),
+   (⟨Known.cStaticComputedPropertyContains, 4⟩, 1, containsCpc1Code Known.ntClassElementName),
+   (⟨Known.cStaticComputedPropertyContains, 5⟩, 2, containsCpc2Code Known.ntClassElementList Known.ntClassElement),
+   (⟨Known.cStaticComputedPropertyContains, 6⟩, 1, containsRetCode),
+   (⟨Known.cStaticComputedPropertyContains, 7⟩, 1, containsRetCode),
+   (⟨Known.cStaticComputedPropertyContains, 8⟩, 1, containsCpc1Code Known.ntClassElementName),
+   (⟨Known.cStaticComputedPropertyContains, 9⟩, 1, containsCpc1Code Known.ntClassElementName)]
 
 /-- The check of the program's row table: at each key of Contains or ComputedPropertyContains whose row has an
 id of `containsShapes`, the row has that many variables and the key's code is that code. -/
 def containsRowsCheck : Bool :=
-  Spec.src.rowMap.keys.all fun (s, k) => !(s == 23 || s == 24) ||
+  Spec.src.rowMap.keys.all fun (s, k) => !(s == Known.sdoContains || s == Known.sdoComputedPropertyContains) ||
     (match Engine.P.row s k with
     | none => true
     | some r => match containsShapes.lookup r.id with
@@ -183,68 +185,68 @@ def containsRowsCheck : Bool :=
 /-! ## Pinned specification units and Boolean tests -/
 
 -- Exact algorithm rows (6)
-pin_alg_def isWriteCode ⟨2775, 0⟩
-pin_prog_alg_def isWriteAlg ⟨2775, 0⟩
-pin_alg_def stcpCode ⟨573, 0⟩
-pin_prog_alg_def stcpAlg ⟨573, 0⟩
-pin_alg_def gsiCode ⟨1548, 0⟩
-pin_prog_alg_def gsiAlg ⟨1548, 0⟩
+pin_alg_def isWriteCode ⟨Known.cSortWriteSharedMemoryEvent, 0⟩
+pin_prog_alg_def isWriteAlg ⟨Known.cSortWriteSharedMemoryEvent, 0⟩
+pin_alg_def stcpCode ⟨Known.cStringToCodePoints, 0⟩
+pin_prog_alg_def stcpAlg ⟨Known.cStringToCodePoints, 0⟩
+pin_alg_def gsiCode ⟨Known.cGetStringIndex, 0⟩
+pin_prog_alg_def gsiAlg ⟨Known.cGetStringIndex, 0⟩
 
 -- CodePointAt and surrogate/code-unit sorts (12)
-pin_alg_def cpaCode ⟨572, 0⟩
-pin_prog_alg_def cpaAlg ⟨572, 0⟩
-pin_alg_def pairCode ⟨571, 0⟩
-pin_prog_alg_def pairAlg ⟨571, 0⟩
-pin_alg_def unitCode ⟨2824, 0⟩
-pin_prog_alg_def unitAlg ⟨2824, 0⟩
-pin_alg_def leadCode ⟨2825, 0⟩
-pin_prog_alg_def leadAlg ⟨2825, 0⟩
-pin_alg_def trailCode ⟨2826, 0⟩
-pin_prog_alg_def trailAlg ⟨2826, 0⟩
-pin_alg_def cuCode ⟨2823, 0⟩
-pin_prog_alg_def cuAlg ⟨2823, 0⟩
+pin_alg_def cpaCode ⟨Known.cCodePointAt, 0⟩
+pin_prog_alg_def cpaAlg ⟨Known.cCodePointAt, 0⟩
+pin_alg_def pairCode ⟨Known.cUTF16SurrogatePair, 0⟩
+pin_prog_alg_def pairAlg ⟨Known.cUTF16SurrogatePair, 0⟩
+pin_alg_def unitCode ⟨Known.cSortSurrogate, 0⟩
+pin_prog_alg_def unitAlg ⟨Known.cSortSurrogate, 0⟩
+pin_alg_def leadCode ⟨Known.cSortLeading, 0⟩
+pin_prog_alg_def leadAlg ⟨Known.cSortLeading, 0⟩
+pin_alg_def trailCode ⟨Known.cSortTrailing, 0⟩
+pin_prog_alg_def trailAlg ⟨Known.cSortTrailing, 0⟩
+pin_alg_def cuCode ⟨Known.cSortCodeUnit, 0⟩
+pin_prog_alg_def cuAlg ⟨Known.cSortCodeUnit, 0⟩
 
 -- Contains helpers (8 + containsRowsCheck)
-pin_alg_def containsDfltCode ⟨322, 0⟩
-pin_prog_alg_def containsDfltAlg ⟨322, 0⟩
-pin_alg_def containsPhCode ⟨2725, 0⟩
-pin_prog_alg_def containsPhAlg ⟨2725, 0⟩
-pin_alg_def containsResCode ⟨2562, 0⟩
-pin_prog_alg_def containsResAlg ⟨2562, 0⟩
-pin_alg_def containsTermCode ⟨2728, 0⟩
-pin_prog_alg_def containsTermAlg ⟨2728, 0⟩
+pin_alg_def containsDfltCode ⟨Known.cStaticContains, 0⟩
+pin_prog_alg_def containsDfltAlg ⟨Known.cStaticContains, 0⟩
+pin_alg_def containsPhCode ⟨Known.cPhContains, 0⟩
+pin_prog_alg_def containsPhAlg ⟨Known.cPhContains, 0⟩
+pin_alg_def containsResCode ⟨Known.cPhResultOf, 0⟩
+pin_prog_alg_def containsResAlg ⟨Known.cPhResultOf, 0⟩
+pin_alg_def containsTermCode ⟨Known.cPhTokenNt, 0⟩
+pin_prog_alg_def containsTermAlg ⟨Known.cPhTokenNt, 0⟩
 
 -- Number::toString helpers (12)
-pin_alg_def toStringCode ⟨117, 0⟩
-pin_prog_alg_def toStringAlg ⟨117, 0⟩
-pin_alg_def tsReprCode ⟨2633, 0⟩
-pin_prog_alg_def tsReprAlg ⟨2633, 0⟩
-pin_alg_def tsKDigitsCode ⟨2637, 0⟩
-pin_prog_alg_def tsKDigitsAlg ⟨2637, 0⟩
-pin_alg_def tsUnitsCode ⟨2641, 0⟩
-pin_prog_alg_def tsUnitsAlg ⟨2641, 0⟩
-pin_alg_def tsStrOfCode ⟨2671, 0⟩
-pin_prog_alg_def tsStrOfAlg ⟨2671, 0⟩
-pin_alg_def tsOccCode ⟨2700, 0⟩
-pin_prog_alg_def tsOccAlg ⟨2700, 0⟩
+pin_alg_def toStringCode ⟨Known.cNumberToString, 0⟩
+pin_prog_alg_def toStringAlg ⟨Known.cNumberToString, 0⟩
+pin_alg_def tsReprCode ⟨Known.cPhRepresentationRadix, 0⟩
+pin_prog_alg_def tsReprAlg ⟨Known.cPhRepresentationRadix, 0⟩
+pin_alg_def tsKDigitsCode ⟨Known.cPhKDigits, 0⟩
+pin_prog_alg_def tsKDigitsAlg ⟨Known.cPhKDigits, 0⟩
+pin_alg_def tsUnitsCode ⟨Known.cPhCodeUnitsOf, 0⟩
+pin_prog_alg_def tsUnitsAlg ⟨Known.cPhCodeUnitsOf, 0⟩
+pin_alg_def tsStrOfCode ⟨Known.cPhStringSolely, 0⟩
+pin_prog_alg_def tsStrOfAlg ⟨Known.cPhStringSolely, 0⟩
+pin_alg_def tsOccCode ⟨Known.cPhOccurrencesOf, 0⟩
+pin_prog_alg_def tsOccAlg ⟨Known.cPhOccurrencesOf, 0⟩
 
 -- LoopSkip algorithms (16)
-pin_alg_def lsToStringCode ⟨208, 0⟩
-pin_prog_alg_def lsToStringAlg ⟨208, 0⟩
-pin_alg_def lsHasPropertyCode ⟨242, 0⟩
-pin_prog_alg_def lsHasPropertyAlg ⟨242, 0⟩
-pin_alg_def lsOrdHasCode ⟨452, 0⟩
-pin_prog_alg_def lsOrdHasAlg ⟨452, 0⟩
-pin_alg_def lsOrdGopCode ⟨446, 0⟩
-pin_prog_alg_def lsOrdGopAlg ⟨446, 0⟩
-pin_alg_def lsOrdGpoCode ⟨438, 0⟩
-pin_prog_alg_def lsOrdGpoAlg ⟨438, 0⟩
-pin_alg_def lsOhpCode ⟨453, 0⟩
-pin_prog_alg_def lsOhpAlg ⟨453, 0⟩
-pin_alg_def lsOgopCode ⟨447, 0⟩
-pin_prog_alg_def lsOgopAlg ⟨447, 0⟩
-pin_alg_def lsOgpoCode ⟨439, 0⟩
-pin_prog_alg_def lsOgpoAlg ⟨439, 0⟩
+pin_alg_def lsToStringCode ⟨Known.cToString, 0⟩
+pin_prog_alg_def lsToStringAlg ⟨Known.cToString, 0⟩
+pin_alg_def lsHasPropertyCode ⟨Known.cHasProperty, 0⟩
+pin_prog_alg_def lsHasPropertyAlg ⟨Known.cHasProperty, 0⟩
+pin_alg_def lsOrdHasCode ⟨Known.cOrdMethodHasProperty, 0⟩
+pin_prog_alg_def lsOrdHasAlg ⟨Known.cOrdMethodHasProperty, 0⟩
+pin_alg_def lsOrdGopCode ⟨Known.cOrdMethodGetOwnProperty, 0⟩
+pin_prog_alg_def lsOrdGopAlg ⟨Known.cOrdMethodGetOwnProperty, 0⟩
+pin_alg_def lsOrdGpoCode ⟨Known.cOrdMethodGetPrototypeOf, 0⟩
+pin_prog_alg_def lsOrdGpoAlg ⟨Known.cOrdMethodGetPrototypeOf, 0⟩
+pin_alg_def lsOhpCode ⟨Known.cOrdinaryHasProperty, 0⟩
+pin_prog_alg_def lsOhpAlg ⟨Known.cOrdinaryHasProperty, 0⟩
+pin_alg_def lsOgopCode ⟨Known.cOrdinaryGetOwnProperty, 0⟩
+pin_prog_alg_def lsOgopAlg ⟨Known.cOrdinaryGetOwnProperty, 0⟩
+pin_alg_def lsOgpoCode ⟨Known.cOrdinaryGetPrototypeOf, 0⟩
+pin_prog_alg_def lsOgpoAlg ⟨Known.cOrdinaryGetPrototypeOf, 0⟩
 
 /-- Named list of all 55 pin checks (`ecma-run --check-pins`). -/
 def pinChecks : List (String × (Unit → Bool)) :=
@@ -339,60 +341,60 @@ def pinsOkThunk : Thunk Bool := Thunk.mk fun _ => pinsOk
 /-- Hypothesis carrying all 55 pinned program equations when `pinsOk = true`. -/
 class PinsHold : Prop where
   containsRows_true : containsRowsCheck = true
-  isWriteCode_pin : Engine.P'.alg ⟨2775, 0⟩ = some isWriteCode
-  isWriteAlg_pin : Engine.P.alg ⟨2775, 0⟩ = some isWriteAlg
-  stcpCode_pin : Engine.P'.alg ⟨573, 0⟩ = some stcpCode
-  stcpAlg_pin : Engine.P.alg ⟨573, 0⟩ = some stcpAlg
-  gsiCode_pin : Engine.P'.alg ⟨1548, 0⟩ = some gsiCode
-  gsiAlg_pin : Engine.P.alg ⟨1548, 0⟩ = some gsiAlg
-  cpaCode_pin : Engine.P'.alg ⟨572, 0⟩ = some cpaCode
-  cpaAlg_pin : Engine.P.alg ⟨572, 0⟩ = some cpaAlg
-  pairCode_pin : Engine.P'.alg ⟨571, 0⟩ = some pairCode
-  pairAlg_pin : Engine.P.alg ⟨571, 0⟩ = some pairAlg
-  unitCode_pin : Engine.P'.alg ⟨2824, 0⟩ = some unitCode
-  unitAlg_pin : Engine.P.alg ⟨2824, 0⟩ = some unitAlg
-  leadCode_pin : Engine.P'.alg ⟨2825, 0⟩ = some leadCode
-  leadAlg_pin : Engine.P.alg ⟨2825, 0⟩ = some leadAlg
-  trailCode_pin : Engine.P'.alg ⟨2826, 0⟩ = some trailCode
-  trailAlg_pin : Engine.P.alg ⟨2826, 0⟩ = some trailAlg
-  cuCode_pin : Engine.P'.alg ⟨2823, 0⟩ = some cuCode
-  cuAlg_pin : Engine.P.alg ⟨2823, 0⟩ = some cuAlg
-  containsDfltCode_pin : Engine.P'.alg ⟨322, 0⟩ = some containsDfltCode
-  containsDfltAlg_pin : Engine.P.alg ⟨322, 0⟩ = some containsDfltAlg
-  containsPhCode_pin : Engine.P'.alg ⟨2725, 0⟩ = some containsPhCode
-  containsPhAlg_pin : Engine.P.alg ⟨2725, 0⟩ = some containsPhAlg
-  containsResCode_pin : Engine.P'.alg ⟨2562, 0⟩ = some containsResCode
-  containsResAlg_pin : Engine.P.alg ⟨2562, 0⟩ = some containsResAlg
-  containsTermCode_pin : Engine.P'.alg ⟨2728, 0⟩ = some containsTermCode
-  containsTermAlg_pin : Engine.P.alg ⟨2728, 0⟩ = some containsTermAlg
-  toStringCode_pin : Engine.P'.alg ⟨117, 0⟩ = some toStringCode
-  toStringAlg_pin : Engine.P.alg ⟨117, 0⟩ = some toStringAlg
-  tsReprCode_pin : Engine.P'.alg ⟨2633, 0⟩ = some tsReprCode
-  tsReprAlg_pin : Engine.P.alg ⟨2633, 0⟩ = some tsReprAlg
-  tsKDigitsCode_pin : Engine.P'.alg ⟨2637, 0⟩ = some tsKDigitsCode
-  tsKDigitsAlg_pin : Engine.P.alg ⟨2637, 0⟩ = some tsKDigitsAlg
-  tsUnitsCode_pin : Engine.P'.alg ⟨2641, 0⟩ = some tsUnitsCode
-  tsUnitsAlg_pin : Engine.P.alg ⟨2641, 0⟩ = some tsUnitsAlg
-  tsStrOfCode_pin : Engine.P'.alg ⟨2671, 0⟩ = some tsStrOfCode
-  tsStrOfAlg_pin : Engine.P.alg ⟨2671, 0⟩ = some tsStrOfAlg
-  tsOccCode_pin : Engine.P'.alg ⟨2700, 0⟩ = some tsOccCode
-  tsOccAlg_pin : Engine.P.alg ⟨2700, 0⟩ = some tsOccAlg
-  lsToStringCode_pin : Engine.P'.alg ⟨208, 0⟩ = some lsToStringCode
-  lsToStringAlg_pin : Engine.P.alg ⟨208, 0⟩ = some lsToStringAlg
-  lsHasPropertyCode_pin : Engine.P'.alg ⟨242, 0⟩ = some lsHasPropertyCode
-  lsHasPropertyAlg_pin : Engine.P.alg ⟨242, 0⟩ = some lsHasPropertyAlg
-  lsOrdHasCode_pin : Engine.P'.alg ⟨452, 0⟩ = some lsOrdHasCode
-  lsOrdHasAlg_pin : Engine.P.alg ⟨452, 0⟩ = some lsOrdHasAlg
-  lsOrdGopCode_pin : Engine.P'.alg ⟨446, 0⟩ = some lsOrdGopCode
-  lsOrdGopAlg_pin : Engine.P.alg ⟨446, 0⟩ = some lsOrdGopAlg
-  lsOrdGpoCode_pin : Engine.P'.alg ⟨438, 0⟩ = some lsOrdGpoCode
-  lsOrdGpoAlg_pin : Engine.P.alg ⟨438, 0⟩ = some lsOrdGpoAlg
-  lsOhpCode_pin : Engine.P'.alg ⟨453, 0⟩ = some lsOhpCode
-  lsOhpAlg_pin : Engine.P.alg ⟨453, 0⟩ = some lsOhpAlg
-  lsOgopCode_pin : Engine.P'.alg ⟨447, 0⟩ = some lsOgopCode
-  lsOgopAlg_pin : Engine.P.alg ⟨447, 0⟩ = some lsOgopAlg
-  lsOgpoCode_pin : Engine.P'.alg ⟨439, 0⟩ = some lsOgpoCode
-  lsOgpoAlg_pin : Engine.P.alg ⟨439, 0⟩ = some lsOgpoAlg
+  isWriteCode_pin : Engine.P'.alg ⟨Known.cSortWriteSharedMemoryEvent, 0⟩ = some isWriteCode
+  isWriteAlg_pin : Engine.P.alg ⟨Known.cSortWriteSharedMemoryEvent, 0⟩ = some isWriteAlg
+  stcpCode_pin : Engine.P'.alg ⟨Known.cStringToCodePoints, 0⟩ = some stcpCode
+  stcpAlg_pin : Engine.P.alg ⟨Known.cStringToCodePoints, 0⟩ = some stcpAlg
+  gsiCode_pin : Engine.P'.alg ⟨Known.cGetStringIndex, 0⟩ = some gsiCode
+  gsiAlg_pin : Engine.P.alg ⟨Known.cGetStringIndex, 0⟩ = some gsiAlg
+  cpaCode_pin : Engine.P'.alg ⟨Known.cCodePointAt, 0⟩ = some cpaCode
+  cpaAlg_pin : Engine.P.alg ⟨Known.cCodePointAt, 0⟩ = some cpaAlg
+  pairCode_pin : Engine.P'.alg ⟨Known.cUTF16SurrogatePair, 0⟩ = some pairCode
+  pairAlg_pin : Engine.P.alg ⟨Known.cUTF16SurrogatePair, 0⟩ = some pairAlg
+  unitCode_pin : Engine.P'.alg ⟨Known.cSortSurrogate, 0⟩ = some unitCode
+  unitAlg_pin : Engine.P.alg ⟨Known.cSortSurrogate, 0⟩ = some unitAlg
+  leadCode_pin : Engine.P'.alg ⟨Known.cSortLeading, 0⟩ = some leadCode
+  leadAlg_pin : Engine.P.alg ⟨Known.cSortLeading, 0⟩ = some leadAlg
+  trailCode_pin : Engine.P'.alg ⟨Known.cSortTrailing, 0⟩ = some trailCode
+  trailAlg_pin : Engine.P.alg ⟨Known.cSortTrailing, 0⟩ = some trailAlg
+  cuCode_pin : Engine.P'.alg ⟨Known.cSortCodeUnit, 0⟩ = some cuCode
+  cuAlg_pin : Engine.P.alg ⟨Known.cSortCodeUnit, 0⟩ = some cuAlg
+  containsDfltCode_pin : Engine.P'.alg ⟨Known.cStaticContains, 0⟩ = some containsDfltCode
+  containsDfltAlg_pin : Engine.P.alg ⟨Known.cStaticContains, 0⟩ = some containsDfltAlg
+  containsPhCode_pin : Engine.P'.alg ⟨Known.cPhContains, 0⟩ = some containsPhCode
+  containsPhAlg_pin : Engine.P.alg ⟨Known.cPhContains, 0⟩ = some containsPhAlg
+  containsResCode_pin : Engine.P'.alg ⟨Known.cPhResultOf, 0⟩ = some containsResCode
+  containsResAlg_pin : Engine.P.alg ⟨Known.cPhResultOf, 0⟩ = some containsResAlg
+  containsTermCode_pin : Engine.P'.alg ⟨Known.cPhTokenNt, 0⟩ = some containsTermCode
+  containsTermAlg_pin : Engine.P.alg ⟨Known.cPhTokenNt, 0⟩ = some containsTermAlg
+  toStringCode_pin : Engine.P'.alg ⟨Known.cNumberToString, 0⟩ = some toStringCode
+  toStringAlg_pin : Engine.P.alg ⟨Known.cNumberToString, 0⟩ = some toStringAlg
+  tsReprCode_pin : Engine.P'.alg ⟨Known.cPhRepresentationRadix, 0⟩ = some tsReprCode
+  tsReprAlg_pin : Engine.P.alg ⟨Known.cPhRepresentationRadix, 0⟩ = some tsReprAlg
+  tsKDigitsCode_pin : Engine.P'.alg ⟨Known.cPhKDigits, 0⟩ = some tsKDigitsCode
+  tsKDigitsAlg_pin : Engine.P.alg ⟨Known.cPhKDigits, 0⟩ = some tsKDigitsAlg
+  tsUnitsCode_pin : Engine.P'.alg ⟨Known.cPhCodeUnitsOf, 0⟩ = some tsUnitsCode
+  tsUnitsAlg_pin : Engine.P.alg ⟨Known.cPhCodeUnitsOf, 0⟩ = some tsUnitsAlg
+  tsStrOfCode_pin : Engine.P'.alg ⟨Known.cPhStringSolely, 0⟩ = some tsStrOfCode
+  tsStrOfAlg_pin : Engine.P.alg ⟨Known.cPhStringSolely, 0⟩ = some tsStrOfAlg
+  tsOccCode_pin : Engine.P'.alg ⟨Known.cPhOccurrencesOf, 0⟩ = some tsOccCode
+  tsOccAlg_pin : Engine.P.alg ⟨Known.cPhOccurrencesOf, 0⟩ = some tsOccAlg
+  lsToStringCode_pin : Engine.P'.alg ⟨Known.cToString, 0⟩ = some lsToStringCode
+  lsToStringAlg_pin : Engine.P.alg ⟨Known.cToString, 0⟩ = some lsToStringAlg
+  lsHasPropertyCode_pin : Engine.P'.alg ⟨Known.cHasProperty, 0⟩ = some lsHasPropertyCode
+  lsHasPropertyAlg_pin : Engine.P.alg ⟨Known.cHasProperty, 0⟩ = some lsHasPropertyAlg
+  lsOrdHasCode_pin : Engine.P'.alg ⟨Known.cOrdMethodHasProperty, 0⟩ = some lsOrdHasCode
+  lsOrdHasAlg_pin : Engine.P.alg ⟨Known.cOrdMethodHasProperty, 0⟩ = some lsOrdHasAlg
+  lsOrdGopCode_pin : Engine.P'.alg ⟨Known.cOrdMethodGetOwnProperty, 0⟩ = some lsOrdGopCode
+  lsOrdGopAlg_pin : Engine.P.alg ⟨Known.cOrdMethodGetOwnProperty, 0⟩ = some lsOrdGopAlg
+  lsOrdGpoCode_pin : Engine.P'.alg ⟨Known.cOrdMethodGetPrototypeOf, 0⟩ = some lsOrdGpoCode
+  lsOrdGpoAlg_pin : Engine.P.alg ⟨Known.cOrdMethodGetPrototypeOf, 0⟩ = some lsOrdGpoAlg
+  lsOhpCode_pin : Engine.P'.alg ⟨Known.cOrdinaryHasProperty, 0⟩ = some lsOhpCode
+  lsOhpAlg_pin : Engine.P.alg ⟨Known.cOrdinaryHasProperty, 0⟩ = some lsOhpAlg
+  lsOgopCode_pin : Engine.P'.alg ⟨Known.cOrdinaryGetOwnProperty, 0⟩ = some lsOgopCode
+  lsOgopAlg_pin : Engine.P.alg ⟨Known.cOrdinaryGetOwnProperty, 0⟩ = some lsOgopAlg
+  lsOgpoCode_pin : Engine.P'.alg ⟨Known.cOrdinaryGetPrototypeOf, 0⟩ = some lsOgpoCode
+  lsOgpoAlg_pin : Engine.P.alg ⟨Known.cOrdinaryGetPrototypeOf, 0⟩ = some lsOgpoAlg
 
 export PinsHold (
   containsRows_true

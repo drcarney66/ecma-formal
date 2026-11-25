@@ -15,29 +15,29 @@ variable (H : Host F) (chk : Bool)
 /-! ## Sorts of a Number -/
 
 set_option maxRecDepth 8000 in
-theorem ls_sortDef_1 : Engine.P.sortDef 1 = none := by
+theorem ls_sortDef_1 : Engine.P.sortDef Known.sNumber = none := by
   rw [sortDef_eq]; rfl
 
 set_option maxRecDepth 8000 in
-theorem ls_sortDef_2 : Engine.P.sortDef 2 = none := by
+theorem ls_sortDef_2 : Engine.P.sortDef Known.sString = none := by
   rw [sortDef_eq]; rfl
 
 set_option maxRecDepth 8000 in
-theorem ls_sortDef_4 : Engine.P.sortDef 4 = none := by
+theorem ls_sortDef_4 : Engine.P.sortDef Known.sSymbol = none := by
   rw [sortDef_eq]; rfl
 
 theorem ls_sort1 (s : State F) (fr : List (Frame F)) (x : F.Num) :
-    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 1 (.num x))⟩ = .inl ⟨s, fr, .val (.bool true)⟩ := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort Known.sNumber (.num x))⟩ = .inl ⟨s, fr, .val (.bool true)⟩ := by
   simp only [step, invoke, spec_P, ls_sortDef_1, sortTest]
   rfl
 
 theorem ls_sort2 (s : State F) (fr : List (Frame F)) (x : F.Num) :
-    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 2 (.num x))⟩ = .inl ⟨s, fr, .val (.bool false)⟩ := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort Known.sString (.num x))⟩ = .inl ⟨s, fr, .val (.bool false)⟩ := by
   simp only [step, invoke, spec_P, ls_sortDef_2, sortTest]
   rfl
 
 theorem ls_sort4 (s : State F) (fr : List (Frame F)) (x : F.Num) :
-    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 4 (.num x))⟩ = .inl ⟨s, fr, .val (.bool false)⟩ := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort Known.sSymbol (.num x))⟩ = .inl ⟨s, fr, .val (.bool false)⟩ := by
   simp only [step, invoke, spec_P, ls_sortDef_4, sortTest]
   rfl
 
@@ -67,7 +67,7 @@ set_option maxRecDepth 8000 in
 theorem ls_toString [PinsHold] (hkeys : LsIntKeys) (i : Int) (hi0 : 0 ≤ i) (hi53 : i < 2 ^ 53)
     (t : F.Str) (h : numberToStr (F.ofNat 10) (lsNum i) = some t) (s : State F)
     (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨208, 0⟩ [.num (lsNum i)])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cToString, 0⟩ [.num (lsNum i)])⟩
       ⟨s, fr, .val (.comp Known.eNormal (.str t) (.enum Known.eEmpty))⟩ := by
   ts_enter_alg lsToStringAlg_pin lsToStringCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.num (lsNum i), .unbound], .steps true true true, [], [], none⟩ :: _,
@@ -109,16 +109,16 @@ theorem ls_toString [PinsHold] (hkeys : LsIntKeys) (i : Int) (hi0 : 0 ≤ i) (hi
 
 /-! ## The primitives -/
 
-theorem ls_primF (i : Int) (s : State F) : Ecma.prim (M := F) 0 [.math (.int i)] s = .ok (.num (lsNum i)) s := by
-  show primOn (M := F) 0 [.math (.int i)] s = _
+theorem ls_primF (i : Int) (s : State F) : Ecma.prim (M := F) Known.pF [.math (.int i)] s = .ok (.num (lsNum i)) s := by
+  show primOn (M := F) Known.pF [.math (.int i)] s = _
   ts_prim_unfold
   rfl
 
 /-- OwnPropertyHas of an object's cell. -/
 theorem ls_ownHas (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val F)) (ps : F.Props (Val F))
     (ha : s.heap[a]? = some (.object sl ps)) :
-    Ecma.prim (M := F) 102 [.obj a, .str t] s = .ok (.bool (F.propsGet ps (.inl t)).isSome) s := by
-  show primOn (M := F) 102 [.obj a, .str t] s = _
+    Ecma.prim (M := F) Known.pOwnHas [.obj a, .str t] s = .ok (.bool (F.propsGet ps (.inl t)).isSome) s := by
+  show primOn (M := F) Known.pOwnHas [.obj a, .str t] s = _
   ts_prim_unfold
   simp [ownHas, objCell, readCell, ha, keyOf, bind, Run.bind, Run.Res.bind, Run.pure, pure]
 
@@ -142,7 +142,7 @@ theorem ls_step_imethod (X : Ctx F) (s : State F) (a : AlgId) (nd : Option F.Nod
 /-- OrdinaryGetOwnProperty(O, P) of an object without the key: undefined, the state as it was. -/
 theorem ls_ogop [PinsHold] (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val F)) (ps : F.Props (Val F))
     (ha : s.heap[a]? = some (.object sl ps)) (hk : F.propsGet ps (.inl t) = none) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨447, 0⟩ [.obj a, .str t])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cOrdinaryGetOwnProperty, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val .undefined⟩ := by
   ts_enter_alg lsOgopAlg_pin lsOgopCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.obj a, .str t, .unbound, .unbound], .steps false true true, [], [], none⟩ :: _,
@@ -156,7 +156,7 @@ theorem ls_ogop [PinsHold] (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val 
 /-- O.[[GetOwnProperty]](P) of an ordinary object without the key. -/
 theorem ls_ordGop [PinsHold] (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val F)) (ps : F.Props (Val F))
     (ha : s.heap[a]? = some (.object sl ps)) (hk : F.propsGet ps (.inl t) = none) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨446, 0⟩ [.obj a, .str t])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cOrdMethodGetOwnProperty, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val (.comp Known.eNormal .undefined (.enum Known.eEmpty))⟩ := by
   ts_enter_alg lsOrdGopAlg_pin lsOrdGopCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.obj a, .str t], .steps true true true, [], [], none⟩ :: _, .code lsOrdGopCode⟩ _
@@ -170,18 +170,18 @@ def lsProto (v : Val F) : Prop := v = .null ∨ ∃ p : Nat, v = .obj p
 
 /-- OrdinaryGetPrototypeOf(O). -/
 theorem ls_ogpo [PinsHold] (s : State F) (a : Nat) (sl : F.Rec (Val F)) (ps : F.Props (Val F)) (v : Val F)
-    (ha : s.heap[a]? = some (.object sl ps)) (hp : F.recGet sl 53 = some v) (hv : lsProto v) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨439, 0⟩ [.obj a])⟩ ⟨s, fr, .val v⟩ := by
+    (ha : s.heap[a]? = some (.object sl ps)) (hp : F.recGet sl Known.fPrototype = some v) (hv : lsProto v) (fr : List (Frame F)) :
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cOrdinaryGetPrototypeOf, 0⟩ [.obj a])⟩ ⟨s, fr, .val v⟩ := by
   ts_enter_alg lsOgpoAlg_pin lsOgpoCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.obj a], .steps false true true, [], [], none⟩ :: _, .code lsOgpoCode⟩ _
   gsteps
-  refine Steps.next (step_field _ _ _ _ _ _ _ _ _ _ _ _ _ (ls_readSlot s a sl ps 53 v ha hp)) ?_
+  refine Steps.next (step_field _ _ _ _ _ _ _ _ _ _ _ _ _ (ls_readSlot s a sl ps Known.fPrototype v ha hp)) ?_
   rcases hv with rfl | ⟨p, rfl⟩ <;> (gsteps; exact .refl _)
 
 /-- O.[[GetPrototypeOf]]() of an ordinary object. -/
 theorem ls_ordGpo [PinsHold] (s : State F) (a : Nat) (sl : F.Rec (Val F)) (ps : F.Props (Val F)) (v : Val F)
-    (ha : s.heap[a]? = some (.object sl ps)) (hp : F.recGet sl 53 = some v) (hv : lsProto v) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨438, 0⟩ [.obj a])⟩
+    (ha : s.heap[a]? = some (.object sl ps)) (hp : F.recGet sl Known.fPrototype = some v) (hv : lsProto v) (fr : List (Frame F)) :
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cOrdMethodGetPrototypeOf, 0⟩ [.obj a])⟩
       ⟨s, fr, .val (.comp Known.eNormal v (.enum Known.eEmpty))⟩ := by
   ts_enter_alg lsOrdGpoAlg_pin lsOrdGpoCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.obj a], .steps true true true, [], [], none⟩ :: _, .code lsOrdGpoCode⟩ _
@@ -211,10 +211,10 @@ theorem ls_algIs {o : Option (Val F)} {g : AlgId}
 theorem ls_ordChain_succ {s : State F} {n : Nat} {a : Nat} {ch : List (F.Props (Val F))}
     (h : ordChain s (n + 1) a = some ch) :
     ∃ (sl : F.Rec (Val F)) (ps : F.Props (Val F)), s.heap[a]? = some (.object sl ps) ∧
-      F.recGet sl 57 = some (.alg ⟨452, 0⟩) ∧ F.recGet sl 58 = some (.alg ⟨446, 0⟩) ∧
-      F.recGet sl 62 = some (.alg ⟨438, 0⟩) ∧
-      ((F.recGet sl 53 = some .null ∧ ch = [ps]) ∨
-        ∃ (p : Nat) (ch' : List (F.Props (Val F))), F.recGet sl 53 = some (.obj p) ∧ ordChain s n p = some ch' ∧
+      F.recGet sl Known.fHasProperty = some (.alg ⟨Known.cOrdMethodHasProperty, 0⟩) ∧ F.recGet sl Known.fGetOwnProperty = some (.alg ⟨Known.cOrdMethodGetOwnProperty, 0⟩) ∧
+      F.recGet sl Known.fGetPrototypeOf = some (.alg ⟨Known.cOrdMethodGetPrototypeOf, 0⟩) ∧
+      ((F.recGet sl Known.fPrototype = some .null ∧ ch = [ps]) ∨
+        ∃ (p : Nat) (ch' : List (F.Props (Val F))), F.recGet sl Known.fPrototype = some (.obj p) ∧ ordChain s n p = some ch' ∧
           ch = ps :: ch') := by
   unfold ordChain at h
   split at h
@@ -241,7 +241,7 @@ set_option maxRecDepth 8000 in
 was. -/
 theorem ls_ordHas [PinsHold] (s : State F) (t : F.Str) : ∀ (n : Nat) (a : Nat) (ch : List (F.Props (Val F))),
     ordChain s n a = some ch → lsNone ch t → ∀ fr : List (Frame F),
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨452, 0⟩ [.obj a, .str t])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cOrdMethodHasProperty, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val (.comp Known.eNormal (.bool false) (.enum Known.eEmpty))⟩ := by
   intro n
   induction n with
@@ -258,11 +258,11 @@ theorem ls_ordHas [PinsHold] (s : State F) (t : F.Str) : ∀ (n : Nat) (a : Nat)
     show Steps _ ⟨s, ⟨_, none, #[.obj a, .str t, .unbound, .unbound], .steps true true true, [], [], none⟩ :: _,
       .code lsOhpCode⟩ _
     gsteps
-    refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ 58 _ _ _ (ls_readSlot s a sl ps 58 _ ha h58)) ?_
+    refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ Known.fGetOwnProperty _ _ _ (ls_readSlot s a sl ps Known.fGetOwnProperty _ ha h58)) ?_
     gsteps
     refine Steps.trans (ls_ordGop H chk s a t sl ps ha hk _) ?_
     gsteps
-    refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ 62 _ _ _ (ls_readSlot s a sl ps 62 _ ha h62)) ?_
+    refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ Known.fGetPrototypeOf _ _ _ (ls_readSlot s a sl ps Known.fGetPrototypeOf _ ha h62)) ?_
     rcases hp with ⟨h53, rfl⟩ | ⟨p, ch', h53, hch, rfl⟩
     · refine Steps.trans (ls_ordGpo H chk s a sl ps .null ha h53 (.inl rfl) _) ?_
       gsteps
@@ -273,7 +273,7 @@ theorem ls_ordHas [PinsHold] (s : State F) (t : F.Str) : ∀ (n : Nat) (a : Nat)
       | zero => cases hch
       | succ n =>
         obtain ⟨sl', ps', ha', h57', -⟩ := ls_ordChain_succ hch
-        refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ 57 _ _ _ (ls_readSlot s p sl' ps' 57 _ ha' h57')) ?_
+        refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ Known.fHasProperty _ _ _ (ls_readSlot s p sl' ps' Known.fHasProperty _ ha' h57')) ?_
         gsteps
         refine Steps.trans (ih p ch' hch (fun q hq => hn q (by simp [hq])) _) ?_
         gsteps
@@ -283,7 +283,7 @@ set_option maxRecDepth 8000 in
 /-- HasProperty(O, P) of an ordinary object whose chain has no property with the key: false, the state as it was. -/
 theorem ls_hasProperty [PinsHold] (s : State F) (t : F.Str) (n : Nat) (a : Nat) (ch : List (F.Props (Val F)))
     (h : ordChain s n a = some ch) (hn : lsNone ch t) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨242, 0⟩ [.obj a, .str t])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cHasProperty, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val (.comp Known.eNormal (.bool false) (.enum Known.eEmpty))⟩ := by
   cases n with
   | zero => cases h
@@ -293,7 +293,7 @@ theorem ls_hasProperty [PinsHold] (s : State F) (t : F.Str) (n : Nat) (a : Nat) 
     show Steps _ ⟨s, ⟨_, none, #[.obj a, .str t], .steps true true true, [], [], none⟩ :: _,
       .code lsHasPropertyCode⟩ _
     gsteps
-    refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ 57 _ _ _ (ls_readSlot s a sl ps 57 _ ha h57)) ?_
+    refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ Known.fHasProperty _ _ _ (ls_readSlot s a sl ps Known.fHasProperty _ ha h57)) ?_
     gsteps
     refine Steps.trans (ls_ordHas H chk s t (n + 1) a ch h hn _) ?_
     gsteps
@@ -305,8 +305,8 @@ theorem ls_hasProperty [PinsHold] (s : State F) (t : F.Str) (n : Nat) (a : Nat) 
 /-- The loop's body as `lin` lowers it at step path `p`: the key, the test, the `If` (its steps `tb`), the index's
 update `e`. -/
 def lsBody (p : List Nat) (k o pk kp : Slot) (tb : Code) (e : Op) : Code :=
-  [.site (1 :: p), .let_ pk (.leaf .bang [.call (.alg ⟨208, 0⟩) [.call (.prim 0) [.var k]]]),
-    .site (2 :: p), .let_ kp (.leaf .q [.call (.alg ⟨242, 0⟩) [.var o, .var pk]]),
+  [.site (1 :: p), .let_ pk (.leaf .bang [.call (.alg ⟨Known.cToString, 0⟩) [.call (.prim Known.pF) [.var k]]]),
+    .site (2 :: p), .let_ kp (.leaf .q [.call (.alg ⟨Known.cHasProperty, 0⟩) [.var o, .var pk]]),
     .site (3 :: p), .br (.bind (.var kp) (.and [.leaf (.isVal false false) [.bound, .const (.val .true)]])) tb [],
     .site (4 :: p), .let_ k e]
 

@@ -385,11 +385,11 @@ def Val.hasSort (v : Val M) (s : SortId) : Run M Bool :=
       match ← readCell a with
       | .record k _ | .env k _ _ =>
         if k == s || s == Known.sRecord then Run.pure true
-        else if s < Known.sorts.size then Run.pure false else Run.stop .residue
+        else if s == Known.sList || s == Known.sRecord || s == Known.sPropDesc then Run.pure false else Run.stop .residue
       | .list .. | .block .. => Run.pure (s == Known.sList)
       | .charSet .. => Run.pure (s == Known.sCharSet)
       | _ => Run.pure false
-    | _ => if s < Known.sorts.size then Run.pure false else Run.stop .residue
+    | _ => if s == Known.sList || s == Known.sRecord || s == Known.sPropDesc then Run.pure false else Run.stop .residue
 
 /-- Unary minus, by the operand's type (§5.2.6). -/
 def unOp : UnOp → Val M → Run M (Val M)

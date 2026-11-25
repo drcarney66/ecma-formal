@@ -22,7 +22,7 @@
 <text class="dg-t" x="20" y="173">DECISIONS.md</text>
 <text class="dg-s" x="20" y="191">{{errata}} resolved</text>
 <text class="dg-s" x="20" y="207">errata &amp; choices</text>
-<text class="dg-s" x="20" y="223">spec/ids/ tables</text>
+<text class="dg-s" x="20" y="223">sorted name maps</text>
 <path class="dg-a dg-dash" d="M144,192 L236,192" marker-end="url(#ah)"/>
 <rect class="dg-box lean" x="240" y="22" width="242" height="102" rx="5"/>
 <text class="dg-t" x="252" y="45">Structured SpecTec</text>
@@ -86,8 +86,8 @@
 <li><strong>SpecTec ↔ Lean (<code>spectec emit</code> &amp; <code>ecma-print</code>, <code>scripts/bijection.py</code>):</strong> <code>crates/spectec</code> compiles <code>spec/spectec/</code> into gitignored Lean modules, and the Lean printer <code>ecma-print</code> prints all {{spectec_struct_files}} structured <code>.spectec</code> files back from those compiled definitions byte for byte.</li>
 </ol>
 
-<h3 id="ids">Stable numeric IDs for downstream proofs</h3>
-<p>In SpecTec, everything is written by name (<code>@sec-iscallable</code>, <code>[[Call]]</code>, <code>~start+end~</code>, <code>|IdentifierName|</code>). When <code>crates/spectec</code> emits Lean code for the machine and proofs, it assigns stable integer IDs from {{id_tables}} kept tables in <code>spec/ids/</code> ({{id_tables_list}}). Existing entries keep their number and removed ones are marked <code>retired</code>, so editing a clause or applying a proposal never renumbers unrelated algorithms or breaks downstream proofs.</p>
+<h3 id="ids">Deterministic numeric IDs from sorted names</h3>
+<p>In SpecTec, everything is written by name (<code>@sec-iscallable</code>, <code>[[Call]]</code>, <code>~start+end~</code>, <code>|IdentifierName|</code>). When <code>crates/spectec</code> emits Lean code for the machine and proofs, it collects all declared and referenced names across each namespace in <code>spec/spectec/</code>, sorts them lexicographically (<code>0..N-1</code>), and generates symbolic constants in <code>Ecma.Known</code>. Because the Lean code references symbols rather than raw numbers, editing a clause or applying a proposal never requires maintaining ID tables or breaks downstream proofs.</p>
 
 <h2 id="prose">Prose concepts in SpecTec: <code>syntax</code>, <code>relation</code> and <code>laws</code></h2>
 
@@ -116,7 +116,7 @@
 {{ex:spec}}
 <p><strong>In SpecTec.</strong> Clause §7.2.3 lives in <code>spec/spectec/clauses/S07.spectec</code> as a five-line <code>def</code>:</p>
 {{ex:spectec}}
-<p>Every part of the clause is explicit and readable by name: <code>@sec-iscallable</code> identifies the clause (mapped to kept ID {{ex:id}} in <code>spec/ids/clause-ids.txt</code> only when emitting Lean), <code>kind ao</code> marks an abstract operation taking <code>arg</code> of sort <code>#"ECMAScript language value"</code> and returning <code>Boolean</code>, step 1 tests <code>arg is not ty {Object}</code>, and step 2 checks <code>arg sat $HasMethod([[Call]])</code> before step 3 returns <code>false</code>. Running <code>spectec-html</code> renders those three steps back into <code>spec.html</code>'s exact ecmarkup.</p>
+<p>Every part of the clause is explicit and readable by name: <code>@sec-iscallable</code> identifies the clause (mapped to sorted <code>ClauseId</code> {{ex:id}} when emitting Lean), <code>kind ao</code> marks an abstract operation taking <code>arg</code> of sort <code>#"ECMAScript language value"</code> and returning <code>Boolean</code>, step 1 tests <code>arg is not ty {Object}</code>, and step 2 checks <code>arg sat $HasMethod([[Call]])</code> before step 3 returns <code>false</code>. Running <code>spectec-html</code> renders those three steps back into <code>spec.html</code>'s exact ecmarkup.</p>
 <p><strong>A step of the machine.</strong> Downstream, <code>Lower</code> compiles the body with its step numbers preserved. When <code>EvaluateCall</code> reaches <code>IsCallable(func)</code>, the small-step machine pushes a frame for <code>@sec-iscallable</code> with <code>arg</code> bound to the callee; <code>Ecma.Machine.step</code> checks whether the callee is an Object in the store, inspects its <code>[[Call]]</code> internal method at step 2, and returns <code>true</code> or advances to step 3.</p>
 <p><strong>In the debugger.</strong> The example {{ex:debugger}} calls both a function and an ordinary object: the debugger pauses at <code>IsCallable</code> step 2 for the function and step 3 for the object, displaying <code>IsCallable</code> above <code>EvaluateCall</code> in the spec stack alongside the value of <var>arg</var>.</p>
 

@@ -35,10 +35,10 @@ def cpAt (s : Array UInt16) (p : Nat) : Int × Nat × Bool :=
     if second < 0xDC00 ∨ 0xDFFF < second then (first, 1, true)
     else ((first - 0xD800) * 0x400 + (second - 0xDC00) + 0x10000, 2, false)
 
-/-- The Record CodePointAt returns, of the sort Record (8). -/
+/-- The Record CodePointAt returns, of the sort Record. -/
 def cpRec (t : Int × Nat × Bool) : Cell F :=
-  .record 8 (F.recSet (F.recSet (F.recSet F.recEmpty 150 (.math (.int t.1))) 51 (.math (.int t.2.1))) 50
-    (.bool t.2.2))
+  .record Known.sRecord (F.recSet (F.recSet (F.recSet F.recEmpty Known.fCodePoint (.math (.int t.1)))
+    Known.fCodeUnitCount (.math (.int t.2.1))) Known.fIsUnpairedSurrogate (.bool t.2.2))
 
 /-- StringToCodePoints's loop from code unit p, at most k rounds: the code points and the Records pushed. -/
 def scanCps (s : Array UInt16) : Nat → Nat → Array (Val F) → Array (Cell F) → Array (Val F) × Array (Cell F)

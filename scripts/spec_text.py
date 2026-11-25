@@ -32,14 +32,8 @@ ROOT = Path(__file__).resolve().parent.parent
 BASE = ROOT / "external/ecma262"
 LIST = ROOT / "spec/proposals.txt"
 OUT = ROOT / "build/text"
-IDS_DIR = ROOT / "spec/ids"
 # beside spec.html, what a consumer reads besides it: the imported tables
 BESIDE = ("esmeta-ignore.json",)
-
-
-def ids_dir() -> Path:
-    """The directory holding the kept *-ids.txt tables (`spec/ids`)."""
-    return IDS_DIR
 
 
 def proposals() -> list[tuple[str, Path, Path | None]]:

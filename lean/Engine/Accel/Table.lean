@@ -26,9 +26,9 @@ structure Facts where
   tab : Engine.Accel.Contains.Tab
 
 /-- The algorithms' ids of `exactRows`. -/
-def writeId : AlgId := ⟨2775, 0⟩
-def stcpId : AlgId := ⟨573, 0⟩
-def gsiId : AlgId := ⟨1548, 0⟩
+def writeId : AlgId := ⟨Known.cSortWriteSharedMemoryEvent, 0⟩
+def stcpId : AlgId := ⟨Known.cStringToCodePoints, 0⟩
+def gsiId : AlgId := ⟨Known.cGetStringIndex, 0⟩
 
 /-- An algorithm's row. -/
 def algRow (a : AlgId) (e : Entry) (m : Mode) : Row F := ⟨.alg a, e, m⟩

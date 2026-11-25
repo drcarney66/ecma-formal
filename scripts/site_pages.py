@@ -678,11 +678,6 @@ def check_lean_names(body: str, where: str) -> None:
         raise SystemExit(f"{where}: <code>{c}</code> names nothing declared under lean/")
 
 
-def ID_TABLES() -> list[Path]:
-    """The kept id tables the generators read and write."""
-    return sorted(spec_text.ids_dir().glob("*-ids.txt"))
-
-
 def t262_sentence(tp: dict | None) -> str:
     if not tp:
         return ""
@@ -809,7 +804,7 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
 
 def worked_example(dbgopt: dict | None) -> dict[str, str]:
     """How it works' worked example, IsCallable: its text from spec.html, its SpecTec definition from
-    spec/spectec/clauses/S07.spectec, and its kept ClauseId from spec/ids/clause-ids.txt."""
+    spec/spectec/clauses/S07.spectec, and its sorted ClauseId index."""
     cid = "sec-iscallable"
     sp = errata_page.Text()
     alg = re.search(r"<emu-alg>(.*?)</emu-alg>", sp.own(cid), re.DOTALL).group(1)
@@ -819,12 +814,11 @@ def worked_example(dbgopt: dict | None) -> dict[str, str]:
     if not m:
         raise SystemExit(f"{st_file}: no def @sec-iscallable")
     code = m.group(0).rstrip()
-    ids_d = spec_text.ids_dir()
-    clauses = {ln.split("\t")[1]: int(ln.split("\t")[0]) for ln in (ids_d / "clause-ids.txt").read_text().split("\n")
-               if ln and not ln.startswith("#")}
-    if cid not in clauses:
-        raise SystemExit(f"{cid} not in clause-ids.txt")
-    aid = str(clauses[cid])
+    clause_names = sorted({m.group(1) or m.group(2) for ln in (ROOT / "spec/spectec/00-decls.spectec").read_text().splitlines()
+                           if (m := re.match(r'^clause @(?:"([^"]+)"|(\S+))', ln))})
+    if cid not in clause_names:
+        raise SystemExit(f"{cid} not in spec/spectec/00-decls.spectec")
+    aid = str(clause_names.index(cid))
     tour = bool(dbgopt and dbgopt.get("gallery") and any(e["id"] == "run/iscallable" for e in dbgopt["gallery"]["examples"]))
     num = sp.nums[cid]
     return {
@@ -995,8 +989,6 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
         "axioms": ", ".join(f"<code>{x}</code>" for x in axioms()), "axiom_count": fmt(len(axioms())),
         "dbg_section": "", "dbg_revision": (" and the step debugger as <code>" + DBG + "</code>"
                                             + ("." if pp else "; the application of a proposal is not on this site yet.")),
-        "id_tables": fmt(len(ID_TABLES())),
-        "id_tables_list": ", ".join(f"<code>{f.name}</code>" for f in ID_TABLES()),
         "slides_errata_link": '<a href="errata.html">Errata</a>' if ep else "Errata",
         "slides_errata_count_link": f'<a href="errata.html">{fmt(total_errata)} documented errata</a>' if ep else f'{fmt(total_errata)} documented errata',
         "slides_examples_link": '<a href="examples.html">All debugger examples</a>' if gallery else "All debugger examples",

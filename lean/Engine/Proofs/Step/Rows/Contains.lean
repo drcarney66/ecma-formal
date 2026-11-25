@@ -34,31 +34,31 @@ open Ecma Ecma.Machine
 open Engine.Accel
 
 set_option maxRecDepth 8000 in
-theorem contains_rc23 : Engine.P.sdoRc 23 = false := by
+theorem contains_rc23 : Engine.P.sdoRc Known.sdoContains = false := by
   unfold Engine.P
   dsimp only [Prog.memo, Src.expanded, Src.prog, Src.index]
   rfl
 
 set_option maxRecDepth 8000 in
-theorem contains_rc24 : Engine.P.sdoRc 24 = false := by
+theorem contains_rc24 : Engine.P.sdoRc Known.sdoComputedPropertyContains = false := by
   unfold Engine.P
   dsimp only [Prog.memo, Src.expanded, Src.prog, Src.index]
   rfl
 
 set_option maxRecDepth 8000 in
-theorem contains_arity23 : Engine.P.sdoArity 23 = 1 := by
+theorem contains_arity23 : Engine.P.sdoArity Known.sdoContains = 1 := by
   unfold Engine.P
   dsimp only [Prog.memo, Src.expanded, Src.prog, Src.index]
   rfl
 
 set_option maxRecDepth 8000 in
-theorem contains_arity24 : Engine.P.sdoArity 24 = 1 := by
+theorem contains_arity24 : Engine.P.sdoArity Known.sdoComputedPropertyContains = 1 := by
   unfold Engine.P
   dsimp only [Prog.memo, Src.expanded, Src.prog, Src.index]
   rfl
 
 set_option maxRecDepth 8000 in
-theorem contains_sort56 : Engine.P.sortDef 56 = some { super := [57], test := .prim 106 [.subject] false, record := false } := by
+theorem contains_sort56 : Engine.P.sortDef Known.sNonterminal = some { super := [Known.sGrammarSymbol], test := .prim Known.pIsNonterminal [.subject] false, record := false } := by
   rw [sortDef_eq]; rfl
 
 /-- `gstep`, but not at an SDO's call either. -/
@@ -100,7 +100,7 @@ theorem contains_ret_steps (X : Ctx F) (s : State F) (fs : List (Frame F)) (a : 
 /-- ph-result-of's steps: its argument. -/
 theorem contains_res_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (b : Bool) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨2562, 0⟩ [.bool b])⟩ ⟨s, fr, .val (.bool b)⟩ := by
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cPhResultOf, 0⟩ [.bool b])⟩ ⟨s, fr, .val (.bool b)⟩ := by
   refine Steps.next (step_alg H chk s fr _ _ containsResAlg containsResCode containsResAlg_pin containsResCode_pin) ?_
   csteps
   exact .refl _
@@ -109,8 +109,8 @@ theorem contains_res_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (f
 theorem contains_ph_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym) (ch : F.Node) (b : Bool)
     (hrec : ∀ (st : State F) (fr : List (Frame F)),
-      Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.sdo 23 ch [v])⟩ ⟨st, fr, .val (.bool b)⟩) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨2725, 0⟩ [.node ch, v])⟩ ⟨s, fr, .val (.bool b)⟩ := by
+      Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.sdo Known.sdoContains ch [v])⟩ ⟨st, fr, .val (.bool b)⟩) :
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cPhContains, 0⟩ [.node ch, v])⟩ ⟨s, fr, .val (.bool b)⟩ := by
   refine Steps.next (step_alg H chk s fr _ _ containsPhAlg containsPhCode containsPhAlg_pin containsPhCode_pin) ?_
   rcases contains_symOf hv with ⟨k, rfl, rfl⟩ | ⟨t, rfl, rfl⟩
   all_goals
@@ -220,9 +220,9 @@ theorem contains_opPh [PinsHold] (H : Host F) (chk : Bool) (s : State F) (a : Al
     (rest : List (Val F)) (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (fs : List (Frame F))
     (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (k : NtId) (b : Bool)
-    (hb : Contains.atChild rec nd 23 k = some b) :
+    (hb : Contains.atChild rec nd Known.sdoContains k = some b) :
     Steps (Ctx.spec Engine.P' H chk)
-      ⟨s, ⟨a, some nd, (v :: rest).toArray, kd, p, .args (.call (.alg ⟨2725, 0⟩)) [] [.bnd 0] :: K, ci⟩ :: fs,
+      ⟨s, ⟨a, some nd, (v :: rest).toArray, kd, p, .args (.call (.alg ⟨Known.cPhContains, 0⟩)) [] [.bnd 0] :: K, ci⟩ :: fs,
         .op (.child 5 k)⟩
       ⟨s, ⟨a, some nd, (v :: rest).toArray, kd, p, K, ci⟩ :: fs, .val (.bool b)⟩ := by
   obtain ⟨ch, hch, hr⟩ := contains_atChild hb
@@ -230,7 +230,7 @@ theorem contains_opPh [PinsHold] (H : Host F) (chk : Bool) (s : State F) (a : Al
   rcases contains_symOf hv with ⟨k', rfl, rfl⟩ | ⟨t, rfl, rfl⟩
   all_goals
     csteps
-    exact contains_ph_steps H chk _ _ _ _ hv ch b (hrec 23 ch b hr)
+    exact contains_ph_steps H chk _ _ _ _ hv ch b (hrec Known.sdoContains ch b hr)
 
 /-- SDO `s'` of a child with the symbol, from the child's read. -/
 theorem contains_opOn (H : Host F) (chk : Bool) (s : State F) (a : AlgId) (nd : F.Node)
@@ -254,7 +254,7 @@ theorem contains_opOn (H : Host F) (chk : Bool) (s : State F) (a : AlgId) (nd : 
 theorem contains_any1_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (a : AlgId) (nd : F.Node) (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (k : NtId) (b : Bool)
-    (hb : Contains.runBeh sym rec nd (.any [(23, k)]) = some b) :
+    (hb : Contains.runBeh sym rec nd (.any [(Known.sdoContains, k)]) = some b) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, some nd, #[v], .steps false true false, [], [], none⟩ :: fs, .code (containsAny1Code k)⟩
       ⟨s, fs, .val (.bool b)⟩ := by
@@ -269,13 +269,13 @@ theorem contains_any1_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (
 theorem contains_cpc1_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (a : AlgId) (nd : F.Node) (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (k : NtId) (b : Bool)
-    (hb : Contains.runBeh sym rec nd (.any [(24, k)]) = some b) :
+    (hb : Contains.runBeh sym rec nd (.any [(Known.sdoComputedPropertyContains, k)]) = some b) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, some nd, #[v], .steps false true false, [], [], none⟩ :: fs, .code (containsCpc1Code k)⟩
       ⟨s, fs, .val (.bool b)⟩ := by
   have hb' := contains_any1 hb
   csteps
-  refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 24 k _ hb') ?_
+  refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.sdoComputedPropertyContains k _ hb') ?_
   csteps
   refine Steps.trans (contains_res_steps H chk _ _ b) ?_
   csteps
@@ -284,7 +284,7 @@ theorem contains_cpc1_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (
 theorem contains_cpcPh_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (a : AlgId) (nd : F.Node) (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (k : NtId) (b : Bool)
-    (hb : Contains.runBeh sym rec nd (.any [(23, k)]) = some b) :
+    (hb : Contains.runBeh sym rec nd (.any [(Known.sdoContains, k)]) = some b) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, some nd, #[v], .steps false true false, [], [], none⟩ :: fs, .code (containsCpcPhCode k)⟩
       ⟨s, fs, .val (.bool b)⟩ := by
@@ -299,19 +299,19 @@ theorem contains_cpcPh_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) 
 theorem contains_cpc2_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (a : AlgId) (nd : F.Node) (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (k1 k2 : NtId)
-    (b : Bool) (hb : Contains.runBeh sym rec nd (.any [(24, k1), (24, k2)]) = some b) :
+    (b : Bool) (hb : Contains.runBeh sym rec nd (.any [(Known.sdoComputedPropertyContains, k1), (Known.sdoComputedPropertyContains, k2)]) = some b) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, some nd, #[v, .unbound], .steps false true false, [], [], none⟩ :: fs, .code (containsCpc2Code k1 k2)⟩
       ⟨s, fs, .val (.bool b)⟩ := by
   rcases contains_any2 hb with ⟨h1, rfl⟩ | ⟨h1, h2⟩
   · csteps
-    refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 24 k1 _ h1) ?_
+    refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.sdoComputedPropertyContains k1 _ h1) ?_
     csteps
     exact .refl _
   · csteps
-    refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 24 k1 _ h1) ?_
+    refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.sdoComputedPropertyContains k1 _ h1) ?_
     csteps
-    refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 24 k2 _ h2) ?_
+    refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.sdoComputedPropertyContains k2 _ h2) ?_
     csteps
     refine Steps.trans (contains_res_steps H chk _ _ b) ?_
     csteps
@@ -321,7 +321,7 @@ theorem contains_cpc2_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (
 /-- ph-token-nt's steps: the terminal. -/
 theorem contains_term_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (k : NtId) (t : String) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨2728, 0⟩ [.nt k [], .term t])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cPhTokenNt, 0⟩ [.nt k [], .term t])⟩
       ⟨s, fr, .val (.term t)⟩ := by
   refine Steps.next (step_alg H chk s fr _ _ containsTermAlg containsTermCode containsTermAlg_pin
     containsTermCode_pin) ?_
@@ -352,7 +352,7 @@ theorem contains_opArrow (X : Ctx F) (s : State F) (a : AlgId) (nd : Option F.No
     Steps X
       ⟨s, ⟨a, nd, (v :: rest).toArray, kd, p,
         .args (.bind (.and [.leaf (.isVal true false)
-          [.bound, .const (.nt 140 []), .const (.nt 138 []), .const (.nt 144 []), .const (.term "super"),
+          [.bound, .const (.nt Known.ntNewTarget []), .const (.nt Known.ntSuperProperty []), .const (.nt Known.ntSuperCall []), .const (.term "super"),
             .const (.term "this")]])) [] [] :: K, ci⟩ :: fs,
         .op (.var 0)⟩
       ⟨s, ⟨a, nd, (v :: rest).toArray, kd, p, K, ci⟩ :: fs,
@@ -360,7 +360,7 @@ theorem contains_opArrow (X : Ctx F) (s : State F) (a : AlgId) (nd : Option F.No
   rcases contains_symOf hv with ⟨k', rfl, rfl⟩ | ⟨t, rfl, rfl⟩
   all_goals
     csteps
-    refine Steps.valBool _ (contains_test _ true hv [.nt 140 [], .nt 138 [], .nt 144 [], .term "super", .term "this"]
+    refine Steps.valBool _ (contains_test _ true hv [.nt Known.ntNewTarget [], .nt Known.ntSuperProperty [], .nt Known.ntSuperCall [], .term "super", .term "this"]
       Contains.arrowSyms rfl) ?_
     generalize (true != Contains.arrowSyms.contains _) = c
     cases c <;> csteps_to
@@ -373,7 +373,7 @@ theorem contains_opSuper [PinsHold] (H : Host F) (chk : Bool) (s : State F) (a :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, nd, (v :: rest).toArray, kd, p,
         .args (.bind (.and [.leaf (.isVal false false)
-          [.bound, .call (.alg ⟨2728, 0⟩) [.const (.nt 37 []), .const (.term "super")]]])) [] [] :: K, ci⟩ :: fs,
+          [.bound, .call (.alg ⟨Known.cPhTokenNt, 0⟩) [.const (.nt Known.ntReservedWord []), .const (.term "super")]]])) [] [] :: K, ci⟩ :: fs,
         .op (.var 0)⟩
       ⟨s, ⟨a, nd, (v :: rest).toArray, kd, p, K, ci⟩ :: fs,
         .val (.bool (false != [Contains.Sym.term "super"].contains sym))⟩ := by
@@ -389,7 +389,7 @@ theorem contains_opSuper [PinsHold] (H : Host F) (chk : Bool) (s : State F) (a :
 theorem contains_isSym_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (a : AlgId) (nd : F.Node) (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (k : NtId) (b : Bool)
-    (hb : Contains.runBeh sym rec nd (.isSym (.nt k) (.any [(24, k)])) = some b) :
+    (hb : Contains.runBeh sym rec nd (.isSym (.nt k) (.any [(Known.sdoComputedPropertyContains, k)])) = some b) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, some nd, #[v], .steps false true false, [], [], none⟩ :: fs, .code (containsIsSymCode k)⟩
       ⟨s, fs, .val (.bool b)⟩ := by
@@ -406,7 +406,7 @@ theorem contains_isSym_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) 
     simp [Contains.runBeh, Ne.symm hc] at hb
     have hb' := contains_any1 hb
     csteps
-    refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 24 k _ hb') ?_
+    refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.sdoComputedPropertyContains k _ hb') ?_
     csteps
     refine Steps.trans (contains_res_steps H chk _ _ b) ?_
     csteps
@@ -437,7 +437,7 @@ theorem contains_super_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) 
 theorem contains_arrow2_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (a : AlgId) (nd : F.Node) (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (b : Bool)
-    (hb : Contains.runBeh sym rec nd (.arrow Contains.arrowSyms (.any [(23, 251), (23, 252)])) = some b) :
+    (hb : Contains.runBeh sym rec nd (.arrow Contains.arrowSyms (.any [(Known.sdoContains, Known.ntArrowParameters), (Known.sdoContains, Known.ntConciseBody)])) = some b) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, some nd, #[v], .steps false true false, [], [], none⟩ :: fs, .code containsArrow2Code⟩
       ⟨s, fs, .val (.bool b)⟩ := by
@@ -467,7 +467,7 @@ theorem contains_arrow2_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F)
 theorem contains_arrow1_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (a : AlgId) (nd : F.Node) (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (b : Bool)
-    (hb : Contains.runBeh sym rec nd (.arrow Contains.arrowSyms (.any [(23, 284)])) = some b) :
+    (hb : Contains.runBeh sym rec nd (.arrow Contains.arrowSyms (.any [(Known.sdoContains, Known.ntAsyncConciseBody)])) = some b) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, some nd, #[v], .steps false true false, [], [], none⟩ :: fs, .code containsArrow1Code⟩
       ⟨s, fs, .val (.bool b)⟩ := by
@@ -552,7 +552,7 @@ theorem contains_inst_steps (X : Ctx F) (s : State F) (a : AlgId) (nd : Option F
     (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym) (x x2 : Val F)
     (hx : (∃ n i t, x = .leaf n i t) ∨ (∃ ch, x = .node ch)) :
     Steps X
-      ⟨s, ⟨a, nd, #[v, x, x2], kd, p, K, ci⟩ :: fs, .op (.leaf .toBool [.call (.prim 83) [.var 1, .bnd 0]])⟩
+      ⟨s, ⟨a, nd, #[v, x, x2], kd, p, K, ci⟩ :: fs, .op (.leaf .toBool [.call (.prim Known.pInstanceOf) [.var 1, .bnd 0]])⟩
       ⟨s, ⟨a, nd, #[v, x, x2], kd, p, K, ci⟩ :: fs, .val (.bool (containsInst x sym))⟩ := by
   rcases contains_symOf hv with ⟨k', rfl, rfl⟩ | ⟨t, rfl, rfl⟩ <;>
     rcases hx with ⟨n, i, t', rfl⟩ | ⟨ch, rfl⟩
@@ -567,7 +567,7 @@ theorem contains_prod_steps (X : Ctx F) (s : State F) (a : AlgId) (nd : F.Node) 
     (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (fs : List (Frame F)) (ps : List ProdId) :
     Steps X
       ⟨s, ⟨a, some nd, sl, kd, p, K, ci⟩ :: fs,
-        .op (.leaf .toBool [.call (.prim 83) [.node, .const (.prod ps)]])⟩
+        .op (.leaf .toBool [.call (.prim Known.pInstanceOf) [.node, .const (.prod ps)]])⟩
       ⟨s, ⟨a, some nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool (ps.contains (F.nodeProd nd)))⟩ := by
   csteps
   exact .refl _
@@ -575,7 +575,7 @@ theorem contains_prod_steps (X : Ctx F) (s : State F) (a : AlgId) (nd : F.Node) 
 /-- The test of the sort of the nonterminals, of a grammar symbol. -/
 theorem contains_sort56_step (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (y : Val F) (b : Bool) (hy : (∃ k as, y = .nt k as ∧ b = true) ∨ (∃ t, y = .term t ∧ b = false)) :
-    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 56 y)⟩ = .inl ⟨s, fr, .val (.bool b)⟩ := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort Known.sNonterminal y)⟩ = .inl ⟨s, fr, .val (.bool b)⟩ := by
   simp only [step, invoke, spec_P, contains_sort56]
   rcases hy with ⟨k, as, rfl, rfl⟩ | ⟨t, rfl, rfl⟩
   · simp only [sortTest, contains_sort56]
@@ -591,7 +591,7 @@ theorem contains_isNt_steps (H : Host F) (chk : Bool) (s : State F) (a : AlgId)
     (hx : (∃ n i t, x = .leaf n i t ∧ b = false) ∨ (∃ ch, x = .node ch ∧ b = true)) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, nd, #[v, x, x2], kd, p, K, ci⟩ :: fs,
-        .op (.leaf .toBool [.call (.prim 83) [.var 1, .const (.data (.sort 56))]])⟩
+        .op (.leaf .toBool [.call (.prim Known.pInstanceOf) [.var 1, .const (.data (.sort Known.sNonterminal))]])⟩
       ⟨s, ⟨a, nd, #[v, x, x2], kd, p, K, ci⟩ :: fs, .val (.bool b)⟩ := by
   rcases hx with ⟨n, i, t', rfl, rfl⟩ | ⟨ch, rfl, rfl⟩
   · csteps
@@ -606,7 +606,7 @@ theorem contains_isNt_steps (H : Host F) (chk : Bool) (s : State F) (a : AlgId)
 
 /-- The walk's `await`: the symbol is |AwaitExpression| and the node the cover's production. -/
 def containsAwait (sym : Contains.Sym) (nd : F.Node) : Bool :=
-  sym == .nt 282 && [672].contains (F.nodeProd nd)
+  sym == .nt Known.ntAwaitExpression && [Known.prodAwaitCover].contains (F.nodeProd nd)
 
 /-- The first two steps where the child is an instance of the symbol, or the cover's condition holds: *true*. -/
 theorem contains_read_true (H : Host F) (chk : Bool) (s : State F) (a : AlgId)
@@ -623,7 +623,7 @@ theorem contains_read_true (H : Host F) (chk : Bool) (s : State F) (a : AlgId)
   · unfold containsAwait at h
     rw [hi, Bool.false_or, Bool.and_eq_true] at h
     dsteps
-    refine Steps.trans (contains_opIs _ _ _ _ _ _ _ _ _ _ v sym hv 282) ?_
+    refine Steps.trans (contains_opIs _ _ _ _ _ _ _ _ _ _ v sym hv Known.ntAwaitExpression) ?_
     refine Steps.valBool true (by simpa using h.1) ?_
     dsteps
     refine Steps.trans (contains_prod_steps _ _ _ _ _ _ _ _ _ _ _) ?_
@@ -651,8 +651,8 @@ theorem contains_read_false (H : Host F) (chk : Bool) (s : State F) (a : AlgId)
   refine Steps.trans (contains_inst_steps _ _ _ _ _ _ _ _ _ v sym hv x x2 hx) ?_
   rw [hi]
   dsteps
-  refine Steps.trans (contains_opIs _ _ _ _ _ _ _ _ _ _ v sym hv 282) ?_
-  cases hs : (sym == Contains.Sym.nt 282)
+  refine Steps.trans (contains_opIs _ _ _ _ _ _ _ _ _ _ v sym hv Known.ntAwaitExpression) ?_
+  cases hs : (sym == Contains.Sym.nt Known.ntAwaitExpression)
   · refine Steps.valBool false (by simpa using hs) ?_
     dsteps_to
   · refine Steps.valBool true (by simpa using hs) ?_
@@ -678,7 +678,7 @@ theorem contains_rest_true [PinsHold] (H : Host F) (chk : Bool) (s : State F) (a
     (nd : Option F.Node) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (fs : List (Frame F))
     (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym) (x2 : Val F) (ch : F.Node)
     (hrec : ∀ (st : State F) (fr : List (Frame F)),
-      Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.sdo 23 ch [v])⟩ ⟨st, fr, .val (.bool true)⟩) :
+      Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.sdo Known.sdoContains ch [v])⟩ ⟨st, fr, .val (.bool true)⟩) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, nd, #[v, .node ch, x2], .steps false true true, p, K, ci⟩ :: fs, .code containsDfltRest⟩
       ⟨s, fs, .val (.bool true)⟩ := by
@@ -698,7 +698,7 @@ theorem contains_rest_false [PinsHold] (H : Host F) (chk : Bool) (s : State F) (
     (nd : Option F.Node) (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (fs : List (Frame F))
     (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym) (x2 : Val F) (ch : F.Node)
     (hrec : ∀ (st : State F) (fr : List (Frame F)),
-      Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.sdo 23 ch [v])⟩ ⟨st, fr, .val (.bool false)⟩) :
+      Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.sdo Known.sdoContains ch [v])⟩ ⟨st, fr, .val (.bool false)⟩) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, nd, #[v, .node ch, x2], kd, p, K, ci⟩ :: fs, .code containsDfltRest⟩
       ⟨s, ⟨a, nd, #[v, .node ch, .bool false], kd, [2, 3, 1], K, ci⟩ :: fs, .done⟩ := by
@@ -768,7 +768,7 @@ theorem contains_dflt_loop [PinsHold] (H : Host F) (chk : Bool) (s : State F) (f
     ∀ (f i j : Nat) (q : List Nat) (r : Nat) (x1 x2 : Val F) (b : Bool),
       Contains.dfltAt.go sym rec (Engine.P.terms (F.nodeProd nd)) await f i ((F.nodeKids nd).toList.drop j) = some b →
       Steps (Ctx.spec Engine.P' H chk)
-        ⟨s, ⟨⟨322, 0⟩, some nd, #[v, x1, x2], .steps false true true, q, [.seq containsDfltTail], none⟩ :: fs,
+        ⟨s, ⟨⟨Known.cStaticContains, 0⟩, some nd, #[v, x1, x2], .steps false true true, q, [.seq containsDfltTail], none⟩ :: fs,
           .loop .round ⟨some 1, .kids none, [1], containsDfltBody, .kids nd i (.int j), r⟩⟩
         ⟨s, fs, .val (.bool b)⟩ := by
   intro f
@@ -830,13 +830,13 @@ theorem contains_dflt_loop [PinsHold] (H : Host F) (chk : Bool) (s : State F) (f
             rw [hr] at h
             cases b1
             · dsimp only at h
-              refine Steps.trans (contains_rest_false H chk _ _ _ _ _ _ _ _ v sym hv _ c (hrec 23 c false hr)) ?_
+              refine Steps.trans (contains_rest_false H chk _ _ _ _ _ _ _ _ v sym hv _ c (hrec Known.sdoContains c false hr)) ?_
               csteps
               rw [← hks] at h
               exact ih (i + 1) (j + 1) _ _ _ _ b h
             · dsimp only at h
               cases h
-              exact contains_rest_true H chk _ _ _ _ _ _ _ v sym hv _ c (hrec 23 c true hr)
+              exact contains_rest_true H chk _ _ _ _ _ _ _ v sym hv _ c (hrec Known.sdoContains c true hr)
         · rw [hc] at h
           simp only [↓reduceIte] at h
           cases h
@@ -854,7 +854,7 @@ theorem contains_dflt_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (
     (nd : F.Node) (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (b : Bool)
     (T : Contains.Tab) (hTt : T.terms = Engine.P.terms)
-    (hb : Contains.dfltAt T sym rec nd (some ([672], 282)) = some b) :
+    (hb : Contains.dfltAt T sym rec nd (some ([Known.prodAwaitCover], Known.ntAwaitExpression)) = some b) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, algFrame containsDfltAlg (some nd) (containsDfltAlg.args [v]) containsDfltAlg.header.rc true true :: fs,
         .code containsDfltCode⟩
@@ -878,15 +878,15 @@ theorem contains_classTail_steps [PinsHold] (H : Host F) (chk : Bool) (s : State
     (fs : List (Frame F)) (a : AlgId) (nd : F.Node) (v : Val F) (sym : Contains.Sym)
     (hv : Contains.symOf v = some sym) (rec : SdoId → F.Node → Option Bool)
     (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (b : Bool)
-    (hb : Contains.runBeh sym rec nd (.classTail 269 270 24) = some b) :
+    (hb : Contains.runBeh sym rec nd (.classTail Known.ntClassHeritage Known.ntClassBody Known.sdoComputedPropertyContains) = some b) :
     Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, some nd, #[v], .steps false true false, [], [], none⟩ :: fs, .code containsClassTailCode⟩
       ⟨s, fs, .val (.bool b)⟩ := by
   rw [Contains.runBeh] at hb
-  generalize hp : F.nodeChild nd 269 0 = o at hb
+  generalize hp : F.nodeChild nd Known.ntClassHeritage 0 = o at hb
   csteps_var
-  refine Steps.trans (contains_opIs _ _ _ _ _ _ _ _ _ _ v sym hv 270) ?_
-  by_cases h1 : sym = .nt 270
+  refine Steps.trans (contains_opIs _ _ _ _ _ _ _ _ _ _ v sym hv Known.ntClassBody) ?_
+  by_cases h1 : sym = .nt Known.ntClassBody
   · subst h1
     simp at hb
     subst hb
@@ -895,12 +895,13 @@ theorem contains_classTail_steps [PinsHold] (H : Host F) (chk : Bool) (s : State
     exact .refl _
   · refine Steps.valBool false (by simp [h1]) ?_
     csteps_var
-    refine Steps.trans (contains_opIs _ _ _ _ _ _ _ _ _ _ v sym hv 269) ?_
-    by_cases h2 : sym = .nt 269
+    refine Steps.trans (contains_opIs _ _ _ _ _ _ _ _ _ _ v sym hv Known.ntClassHeritage) ?_
+    by_cases h2 : sym = .nt Known.ntClassHeritage
     · subst h2
       refine Steps.valBool true (by simp) ?_
-      simp only [show (Contains.Sym.nt 269 == Contains.Sym.nt 270) = false from by simp, Bool.false_eq_true,
-        ↓reduceIte, show (Contains.Sym.nt 269 == Contains.Sym.nt 269) = true from by simp] at hb
+      simp only [show (Contains.Sym.nt Known.ntClassHeritage == Contains.Sym.nt Known.ntClassBody) = false from by
+            simp [Known.ntClassHeritage, Known.ntClassBody],
+        ↓reduceIte, show (Contains.Sym.nt Known.ntClassHeritage == Contains.Sym.nt Known.ntClassHeritage) = true from by simp] at hb
       csteps
       rcases o with _ | _ | ch
       · cases hb
@@ -916,14 +917,14 @@ theorem contains_classTail_steps [PinsHold] (H : Host F) (chk : Bool) (s : State
         csteps
         exact .refl _
     · refine Steps.valBool false (by simp [h2]) ?_
-      simp only [show (sym == Contains.Sym.nt 270) = false from by simp [h1], Bool.false_eq_true,
-        ↓reduceIte, show (sym == Contains.Sym.nt 269) = false from by simp [h2]] at hb
+      simp only [show (sym == Contains.Sym.nt Known.ntClassBody) = false from by simp [h1], Bool.false_eq_true,
+        ↓reduceIte, show (sym == Contains.Sym.nt Known.ntClassHeritage) = false from by simp [h2]] at hb
       csteps
       rcases o with _ | _ | ch
       · simp only [Bool.false_eq_true, ↓reduceIte] at hb
         refine Steps.next (contains_child_none _ _ _ _ _ _ _ _ _ _ _ (by rw [hp]; simp)) ?_
         csteps
-        refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 24 270 _ hb) ?_
+        refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.sdoComputedPropertyContains Known.ntClassBody _ hb) ?_
         csteps
         refine Steps.trans (contains_res_steps H chk _ _ b) ?_
         csteps
@@ -931,7 +932,7 @@ theorem contains_classTail_steps [PinsHold] (H : Host F) (chk : Bool) (s : State
       · simp only [Bool.false_eq_true, ↓reduceIte] at hb
         refine Steps.next (contains_child_none _ _ _ _ _ _ _ _ _ _ _ (by rw [hp]; simp)) ?_
         csteps
-        refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 24 270 _ hb) ?_
+        refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.sdoComputedPropertyContains Known.ntClassBody _ hb) ?_
         csteps
         refine Steps.trans (contains_res_steps H chk _ _ b) ?_
         csteps
@@ -939,21 +940,21 @@ theorem contains_classTail_steps [PinsHold] (H : Host F) (chk : Bool) (s : State
       · simp only [↓reduceIte] at hb
         refine Steps.next (contains_child_some _ _ _ _ _ _ _ _ _ _ _ _ hp) ?_
         csteps
-        cases hh : Contains.atChild rec nd Contains.sdoC 269 with
+        cases hh : Contains.atChild rec nd Contains.sdoC Known.ntClassHeritage with
         | none => rw [hh] at hb; cases hb
         | some b1 =>
           rw [hh] at hb
           cases b1
           · dsimp only at hb
-            refine Steps.trans (contains_opPh H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 269 _ hh) ?_
+            refine Steps.trans (contains_opPh H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.ntClassHeritage _ hh) ?_
             csteps
-            refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 24 270 _ hb) ?_
+            refine Steps.trans (contains_opOn H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.sdoComputedPropertyContains Known.ntClassBody _ hb) ?_
             csteps
             refine Steps.trans (contains_res_steps H chk _ _ b) ?_
             csteps
             exact .refl _
           · cases hb
-            refine Steps.trans (contains_opPh H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec 269 _ hh) ?_
+            refine Steps.trans (contains_opPh H chk _ _ _ _ _ _ _ _ _ v sym hv rec hrec Known.ntClassHeritage _ hh) ?_
             csteps
             exact .refl _
 
@@ -983,7 +984,7 @@ theorem contains_lookup_mem {β : Type} {a : AlgId} {l : List (AlgId × β)} {x 
 /-- What the walk needs of the program's rows: a row of Contains or ComputedPropertyContains with one of the
 ids of `containsShapes` has that many variables, and its production's code is that code. -/
 def ContainsRows : Prop :=
-  ∀ (s : SdoId) (k : ProdId) (r : Ecma.SdoRow) (n : Nat) (code : Code), (s = 23 ∨ s = 24) → Engine.P.row s k = some r →
+  ∀ (s : SdoId) (k : ProdId) (r : Ecma.SdoRow) (n : Nat) (code : Code), (s = Known.sdoContains ∨ s = Known.sdoComputedPropertyContains) → Engine.P.row s k = some r →
     containsShapes.lookup r.id = some (n, code) → r.vars.size = n ∧ Engine.P'.row s k = some code
 
 /-- An SDO's obligation: at a call of it, the entry's value is the machine's (`Sound.sdo`). -/
@@ -1010,17 +1011,17 @@ theorem contains_scope_ret (X : Ctx F) (s : State F) (fr : List (Frame F)) (o i 
     exact .refl _
 
 theorem contains_enter (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
-    (sd : SdoId) (nd : F.Node) (v : Val F) (hsd : sd = 23 ∨ sd = 24) :
+    (sd : SdoId) (nd : F.Node) (v : Val F) (hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains) :
     step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sdo sd nd [v])⟩ =
       sdoEnter (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sdo sd nd [v])⟩ sd nd [v] := by
-  rcases hsd with rfl | rfl <;> simp [step, invoke, Known.sdoEarlyErrors]
+  rcases hsd with rfl | rfl <;> simp [step, invoke, Known.sdoEarlyErrors, Known.sdoContains, Known.sdoComputedPropertyContains]
 
-theorem contains_arity {sd : SdoId} (hsd : sd = 23 ∨ sd = 24) : Engine.P.sdoArity sd = 1 := by
+theorem contains_arity {sd : SdoId} (hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains) : Engine.P.sdoArity sd = 1 := by
   rcases hsd with rfl | rfl
   · exact contains_arity23
   · exact contains_arity24
 
-theorem contains_rc {sd : SdoId} (hsd : sd = 23 ∨ sd = 24) : Engine.P.sdoRc sd = false := by
+theorem contains_rc {sd : SdoId} (hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains) : Engine.P.sdoRc sd = false := by
   rcases hsd with rfl | rfl
   · exact contains_rc23
   · exact contains_rc24
@@ -1035,7 +1036,7 @@ theorem contains_slots2 {v : Val F} {sym : Contains.Sym} (hv : Contains.symOf v 
 
 /-- The call at a production with a row: the row's steps in its frame, under the scope. -/
 theorem contains_at_row (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
-    (sd : SdoId) (nd : F.Node) (v : Val F) (hsd : sd = 23 ∨ sd = 24) (r : Ecma.SdoRow) (sl : Array (Val F)) (code : Code)
+    (sd : SdoId) (nd : F.Node) (v : Val F) (hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains) (r : Ecma.SdoRow) (sl : Array (Val F)) (code : Code)
     (b : Bool) (hrow : Engine.P.row sd (F.nodeProd nd) = some r)
     (hsl : initSlots r.vars.size (padArgs (Engine.P.sdoArity sd) ([v].map Val.used)) = sl)
     (hcode : Engine.P'.row sd (F.nodeProd nd) = some code)
@@ -1058,8 +1059,8 @@ theorem contains_at_row (H : Host F) (chk : Bool) (s : State F) (fr : List (Fram
 
 /-- The call at a production without a row, of an SDO whose default definition is Contains'. -/
 theorem contains_at_dflt [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
-    (sd : SdoId) (nd : F.Node) (v : Val F) (hsd : sd = 23 ∨ sd = 24) (b : Bool)
-    (hrow : Engine.P.row sd (F.nodeProd nd) = none) (hd : Engine.P.sdoDefault sd = some ⟨322, 0⟩)
+    (sd : SdoId) (nd : F.Node) (v : Val F) (hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains) (b : Bool)
+    (hrow : Engine.P.row sd (F.nodeProd nd) = none) (hd : Engine.P.sdoDefault sd = some ⟨Known.cStaticContains, 0⟩)
     (hsteps : ∀ (s' : State F) (fs' : List (Frame F)), Steps (Ctx.spec Engine.P' H chk)
       ⟨s', algFrame containsDfltAlg (some nd) (containsDfltAlg.args [v]) containsDfltAlg.header.rc true true :: fs',
         .code containsDfltCode⟩
@@ -1079,7 +1080,7 @@ theorem contains_at_dflt [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fr 
 
 /-- The call at a chain production, of an SDO without a default definition: the call at its child. -/
 theorem contains_at_chain (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
-    (sd : SdoId) (nd : F.Node) (v : Val F) (hsd : sd = 23 ∨ sd = 24) (b : Bool) (k : NtId) (ch : F.Node)
+    (sd : SdoId) (nd : F.Node) (v : Val F) (hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains) (b : Bool) (k : NtId) (ch : F.Node)
     (hrow : Engine.P.row sd (F.nodeProd nd) = none) (hd : (Engine.P.sdoDefault sd).bind Engine.P.alg = none)
     (hk : Engine.P.chain (F.nodeProd nd) = some k) (hch : F.nodeChild nd k 0 = some (some ch))
     (hsteps : ∀ (s' : State F) (fs' : List (Frame F)), Steps (Ctx.spec Engine.P' H chk)
@@ -1099,7 +1100,7 @@ theorem contains_at_chain (H : Host F) (chk : Bool) (s : State F) (fr : List (Fr
 /-- The call at a production with a row the walk answers at: the row's steps. -/
 theorem contains_row_dispatch [PinsHold] (H : Host F) (chk : Bool) (hrows : ContainsRows)
     (s : State F) (fr : List (Frame F)) (sd : SdoId) (nd : F.Node) (v : Val F) (sym : Contains.Sym)
-    (hv : Contains.symOf v = some sym) (hsd : sd = 23 ∨ sd = 24) (r : Ecma.SdoRow)
+    (hv : Contains.symOf v = some sym) (hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains) (r : Ecma.SdoRow)
     (hrow : Engine.P.row sd (F.nodeProd nd) = some r) (rec : SdoId → F.Node → Option Bool)
     (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (beh : Contains.Beh)
     (hbeh : Contains.behs.lookup r.id = some beh) (b : Bool) (hb : Contains.runBeh sym rec nd beh = some b) :
@@ -1134,7 +1135,7 @@ theorem contains_row_dispatch [PinsHold] (H : Host F) (chk : Bool) (hrows : Cont
     refine contains_at_row H chk s fr sd nd v hsd r #[v, .unbound] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots2 hv) hcode fun s' fs' => ?_
     exact contains_arrowDecl_steps _ s' fs' _ nd v sym hv rec b hb
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsIsSymCode 255) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsIsSymCode Known.ntMethodDefinition) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_isSym_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
@@ -1143,7 +1144,7 @@ theorem contains_row_dispatch [PinsHold] (H : Host F) (chk : Bool) (hrows : Cont
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     obtain rfl : false = b := by simpa [Contains.runBeh] using hb
     exact contains_ret_steps _ s' fs' _ nd _
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsAny1Code 137) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsAny1Code Known.ntMemberExpression) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_any1_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
@@ -1151,7 +1152,7 @@ theorem contains_row_dispatch [PinsHold] (H : Host F) (chk : Bool) (hrows : Cont
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_super_steps H chk s' fs' _ nd v sym hv rec b hb
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsAny1Code 143) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsAny1Code Known.ntCallExpression) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_any1_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
@@ -1160,7 +1161,7 @@ theorem contains_row_dispatch [PinsHold] (H : Host F) (chk : Bool) (hrows : Cont
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     obtain rfl : false = b := by simpa [Contains.runBeh] using hb
     exact contains_ret_steps _ s' fs' _ nd _
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsAny1Code 149) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsAny1Code Known.ntOptionalChain) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_any1_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
@@ -1169,23 +1170,23 @@ theorem contains_row_dispatch [PinsHold] (H : Host F) (chk : Bool) (hrows : Cont
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     obtain rfl : false = b := by simpa [Contains.runBeh] using hb
     exact contains_ret_steps _ s' fs' _ nd _
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpcPhCode 130) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpcPhCode Known.ntComputedPropertyName) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_cpcPh_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code 274) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code Known.ntClassElementName) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_cpc1_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code 274) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code Known.ntClassElementName) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_cpc1_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code 274) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code Known.ntClassElementName) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_cpc1_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 2 (containsCpc2Code 271 272) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 2 (containsCpc2Code Known.ntClassElementList Known.ntClassElement) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v, .unbound] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots2 hv) hcode fun s' fs' => ?_
     exact contains_cpc2_steps H chk s' fs' _ nd v sym hv rec hrec _ _ b hb
@@ -1199,11 +1200,11 @@ theorem contains_row_dispatch [PinsHold] (H : Host F) (chk : Bool) (hrows : Cont
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     obtain rfl : false = b := by simpa [Contains.runBeh] using hb
     exact contains_ret_steps _ s' fs' _ nd _
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code 274) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code Known.ntClassElementName) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_cpc1_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
-  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code 274) hsd hrow (by rw [hid]; rfl)
+  · obtain ⟨hn, hcode⟩ := hrows sd (F.nodeProd nd) r 1 (containsCpc1Code Known.ntClassElementName) hsd hrow (by rw [hid]; rfl)
     refine contains_at_row H chk s fr sd nd v hsd r #[v] _ b hrow
       (by rw [hn, contains_arity hsd]; exact contains_slots1 hv) hcode fun s' fs' => ?_
     exact contains_cpc1_steps H chk s' fs' _ nd v sym hv rec hrec _ b hb
@@ -1227,8 +1228,8 @@ theorem contains_walk [PinsHold] (H : Host F) (chk : Bool) (hrows : ContainsRows
     intro sd nd b h st fr
     rw [Contains.walk] at h
     unfold Contains.step at h
-    have hsd : sd = 23 ∨ sd = 24 := by
-      by_cases hsd : sd = 23 ∨ sd = 24
+    have hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains := by
+      by_cases hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains
       · exact hsd
       · exfalso
         have : (!(sd == Contains.sdoC || sd == Contains.sdoCPC)) = true := by
@@ -1346,16 +1347,16 @@ theorem containsRows_of_check (h : containsRowsCheck = true) : ContainsRows := b
   intro s k r n code hs hrow hlook
   have hk := contains_row_key s k r hrow
   have := List.all_eq_true.mp h (s, k) hk
-  have hs' : (s == 23 || s == 24) = true := by rcases hs with rfl | rfl <;> rfl
+  have hs' : (s == Known.sdoContains || s == Known.sdoComputedPropertyContains) = true := by rcases hs with rfl | rfl <;> rfl
   simp only [hs', Bool.not_true, Bool.false_or, hrow, hlook, Bool.and_eq_true, beq_iff_eq] at this
   exact ⟨this.1, Code.optEqB_sound _ _ this.2⟩
 
 /-- Contains' and ComputedPropertyContains' rows of the table: the engine's shortcut is the specification's
 steps, where the check of the program's row table holds. -/
 theorem contains_sdoRow [PinsHold] (H : Host F) (chk : Bool) (hcheck : containsRowsCheck = true) :
-    SdoRowOk (Ctx.spec Engine.P' H chk) 23 (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab 23) ∧
-    SdoRowOk (Ctx.spec Engine.P' H chk) 24 (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab 24) :=
-  ⟨contains_sdoRow_of H chk (containsRows_of_check hcheck) 23,
-    contains_sdoRow_of H chk (containsRows_of_check hcheck) 24⟩
+    SdoRowOk (Ctx.spec Engine.P' H chk) Known.sdoContains (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab Known.sdoContains) ∧
+    SdoRowOk (Ctx.spec Engine.P' H chk) Known.sdoComputedPropertyContains (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab Known.sdoComputedPropertyContains) :=
+  ⟨contains_sdoRow_of H chk (containsRows_of_check hcheck) Known.sdoContains,
+    contains_sdoRow_of H chk (containsRows_of_check hcheck) Known.sdoComputedPropertyContains⟩
 
 end Engine.Machine

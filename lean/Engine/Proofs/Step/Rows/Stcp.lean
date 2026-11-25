@@ -30,11 +30,11 @@ def stcpLoop (r : Nat) : Loop F :=
     p := [4],
     body :=
       [Ins.site [1, 4],
-        Ins.let_ 4 (Op.call (CallK.alg { clause := 572, idx := 0 }) [Op.var 0, Op.var 3]),
+        Ins.let_ 4 (Op.call (CallK.alg { clause := Known.cCodePointAt, idx := 0 }) [Op.var 0, Op.var 3]),
         Ins.site [2, 4],
-        Ins.eval (Op.call (CallK.prim 8) [Op.leaf (Leaf.field 150) [Op.var 4], Op.bnd 1]),
+        Ins.eval (Op.call (CallK.prim Known.pAppend) [Op.leaf (Leaf.field Known.fCodePoint) [Op.var 4], Op.bnd 1]),
         Ins.site [3, 4],
-        Ins.let_ 3 (Op.leaf (Leaf.bin BinOp.add) [Op.var 3, Op.leaf (Leaf.field 51) [Op.var 4]])],
+        Ins.let_ 3 (Op.leaf (Leaf.bin BinOp.add) [Op.var 3, Op.leaf (Leaf.field Known.fCodeUnitCount) [Op.var 4]])],
     st := IterSt.plain, r := r }
 
 /-- The state with the List of the code points `cs` and the Records `rs` allocated. -/
@@ -129,7 +129,7 @@ theorem stcp_row [PinsHold] (c : Cfg F) (vs : List (Val F))
       show Steps _ _ _
       refine Steps.next hstep ?_
       have hcode : (Ctx.spec Engine.P' H chk).algCode stcpAlg.id = stcpCode := by
-        show (Engine.P'.alg ⟨573, 0⟩).getD _ = _
+        show (Engine.P'.alg ⟨Known.cStringToCodePoints, 0⟩).getD _ = _
         rw [stcpCode_pin]; rfl
       rw [hcode]
       exact stcp_steps H chk st fs _ nd s
@@ -139,7 +139,7 @@ theorem stcp_row [PinsHold] (c : Cfg F) (vs : List (Val F))
 open Engine.Accel in
 /-- StringToCodePoints's row. -/
 theorem stcp_algRow [PinsHold] (H : Host F) (chk : Bool) :
-    AlgRow (Ctx.spec Engine.P' H chk) ⟨573, 0⟩ Engine.Accel.stcpEntry :=
+    AlgRow (Ctx.spec Engine.P' H chk) ⟨Known.cStringToCodePoints, 0⟩ Engine.Accel.stcpEntry :=
   ⟨stcpAlg, stcpAlg_pin, fun c vs r nd he hstep => stcp_row H chk c vs r nd he hstep⟩
 
 end Engine.Machine

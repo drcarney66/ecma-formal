@@ -22,19 +22,19 @@ open Ecma Ecma.Machine
 /-! ## The sorts' definitions in the engine's program -/
 
 set_option maxRecDepth 8000 in
-theorem sortDef_98 : Engine.P.sortDef 98 = some { super := [], test := .alg ⟨2823, 0⟩, record := false } := by
+theorem sortDef_98 : Engine.P.sortDef Known.sCodeUnit = some { super := [], test := .alg ⟨Known.cSortCodeUnit, 0⟩, record := false } := by
   rw [sortDef_eq]; rfl
 
 set_option maxRecDepth 8000 in
-theorem sortDef_95 : Engine.P.sortDef 95 = some { super := [], test := .alg ⟨2825, 0⟩, record := false } := by
+theorem sortDef_95 : Engine.P.sortDef Known.sLeading = some { super := [], test := .alg ⟨Known.cSortLeading, 0⟩, record := false } := by
   rw [sortDef_eq]; rfl
 
 set_option maxRecDepth 8000 in
-theorem sortDef_96 : Engine.P.sortDef 96 = some { super := [98], test := .alg ⟨2824, 0⟩, record := false } := by
+theorem sortDef_96 : Engine.P.sortDef Known.sSurrogate = some { super := [Known.sCodeUnit], test := .alg ⟨Known.cSortSurrogate, 0⟩, record := false } := by
   rw [sortDef_eq]; rfl
 
 set_option maxRecDepth 8000 in
-theorem sortDef_97 : Engine.P.sortDef 97 = some { super := [], test := .alg ⟨2826, 0⟩, record := false } := by
+theorem sortDef_97 : Engine.P.sortDef Known.sTrailing = some { super := [], test := .alg ⟨Known.cSortTrailing, 0⟩, record := false } := by
   rw [sortDef_eq]; rfl
 
 variable (H : Host F) (chk : Bool)
@@ -44,7 +44,7 @@ variable (H : Host F) (chk : Bool)
 /-- The steps of the sort test of the code units, at one: true. -/
 theorem cu_steps [PinsHold] (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (sl : Array (Val F))
     (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (u : Int) (h0 : 0 ≤ u) (h1 : u ≤ 0xFFFF) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 98 (.math (.int u)))⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort Known.sCodeUnit (.math (.int u)))⟩
       ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool true)⟩ := by
   refine Steps.next (step_sort_alg H chk _ _ _ _ _ _ sortDef_98 rfl rfl) ?_
   dsimp only [Cfg.push]
@@ -74,11 +74,11 @@ def rangeCode (lo hi : Nat) (wl wh : String) : Code :=
         [(Op.var 0).bind
             (Op.and
               [Op.leaf (Leaf.isTy false false)
-                  [(Op.leaf Leaf.used [Op.bound]).bind (Op.or [Op.call (CallK.sort 98) [Op.bound]])]]),
-          (Op.call (CallK.prim 52) [Op.bnd 0]).bind
+                  [(Op.leaf Leaf.used [Op.bound]).bind (Op.or [Op.call (CallK.sort Known.sCodeUnit) [Op.bound]])]]),
+          (Op.call (CallK.prim Known.pNumericValue) [Op.bnd 0]).bind
             (Op.and
               [Op.leaf (Leaf.isTy false false)
-                  [Op.call (CallK.prim 85)
+                  [Op.call (CallK.prim Known.pInInterval)
                       [Op.const (Const.math Sign.none (Mag.num (Numeral.hex lo wl))),
                         Op.const (Const.math Sign.none (Mag.num (Numeral.hex hi wh))), Op.bound]]])])
       [Ins.ret (Op.const (Const.val ValLit.true))] [],
@@ -119,27 +119,27 @@ theorem range_steps [PinsHold] (k : SortId) (aid : AlgId) (g : Alg) (code : Code
 theorem lead_steps [PinsHold] (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (sl : Array (Val F))
     (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (u : Int) (h0 : 0 ≤ u) (h1 : u ≤ 0xFFFF)
     (b : Bool) (hb : b = true ↔ (0xD800 ≤ u ∧ u ≤ 0xDBFF)) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 95 (.math (.int u)))⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort Known.sLeading (.math (.int u)))⟩
       ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool b)⟩ :=
-  range_steps H chk 95 ⟨2825, 0⟩ leadAlg leadCode 0xD800 0xDBFF "D800" "DBFF" _ sortDef_95 rfl rfl leadAlg_pin rfl
+  range_steps H chk Known.sLeading ⟨Known.cSortLeading, 0⟩ leadAlg leadCode 0xD800 0xDBFF "D800" "DBFF" _ sortDef_95 rfl rfl leadAlg_pin rfl
     leadCode_pin rfl (fun _ => rfl) s fs a nd sl kd p K ci u h0 h1 b hb
 
 /-- The test of the sort of the surrogates, at a code unit. -/
 theorem surr_steps [PinsHold] (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (sl : Array (Val F))
     (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (u : Int) (h0 : 0 ≤ u) (h1 : u ≤ 0xFFFF)
     (b : Bool) (hb : b = true ↔ (0xD800 ≤ u ∧ u ≤ 0xDFFF)) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 96 (.math (.int u)))⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort Known.sSurrogate (.math (.int u)))⟩
       ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool b)⟩ :=
-  range_steps H chk 96 ⟨2824, 0⟩ unitAlg unitCode 0xD800 0xDFFF "D800" "DFFF" _ sortDef_96 rfl rfl unitAlg_pin rfl
+  range_steps H chk Known.sSurrogate ⟨Known.cSortSurrogate, 0⟩ unitAlg unitCode 0xD800 0xDFFF "D800" "DFFF" _ sortDef_96 rfl rfl unitAlg_pin rfl
     unitCode_pin rfl (fun _ => rfl) s fs a nd sl kd p K ci u h0 h1 b hb
 
 /-- The test of the sort of the trailing surrogates, at a code unit. -/
 theorem trail_steps [PinsHold] (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (sl : Array (Val F))
     (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (u : Int) (h0 : 0 ≤ u) (h1 : u ≤ 0xFFFF)
     (b : Bool) (hb : b = true ↔ (0xDC00 ≤ u ∧ u ≤ 0xDFFF)) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 97 (.math (.int u)))⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort Known.sTrailing (.math (.int u)))⟩
       ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool b)⟩ :=
-  range_steps H chk 97 ⟨2826, 0⟩ trailAlg trailCode 0xDC00 0xDFFF "DC00" "DFFF" _ sortDef_97 rfl rfl trailAlg_pin rfl
+  range_steps H chk Known.sTrailing ⟨Known.cSortTrailing, 0⟩ trailAlg trailCode 0xDC00 0xDFFF "DC00" "DFFF" _ sortDef_97 rfl rfl trailAlg_pin rfl
     trailCode_pin rfl (fun _ => rfl) s fs a nd sl kd p K ci u h0 h1 b hb
 
 /-! ## The String primitives and UTF16SurrogatePairToCodePoint -/
@@ -163,14 +163,14 @@ theorem prim_unitAt (t : Array UInt16) (p : Nat) (hp : p < t.size) (s : State F)
 /-- UTF16SurrogatePairToCodePoint's steps at a leading and a trailing surrogate. -/
 theorem pair_steps [PinsHold] (s : State F) (fr : List (Frame F)) (l t : Int)
     (hl0 : 0xD800 ≤ l) (hl1 : l ≤ 0xDBFF) (ht0 : 0xDC00 ≤ t) (ht1 : t ≤ 0xDFFF) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨571, 0⟩ [.math (.int l), .math (.int t)])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cUTF16SurrogatePair, 0⟩ [.math (.int l), .math (.int t)])⟩
       ⟨s, fr, .val (.math (Model.MathVal.int ((l - 0xD800) * 0x400 + (t - 0xDC00) + 0x10000)))⟩ := by
   refine Steps.next (step_alg H chk _ _ _ _ _ _ pairAlg_pin pairCode_pin) ?_
   show Steps _ ⟨s, ⟨_, none, #[.math (.int l), .math (.int t), .unbound], .steps false true true, [], [], none⟩ :: _,
     .code pairCode⟩ _
   cases chk
   · gsteps
-    show Steps _ ⟨_, _, .invoke (.prim 56 [.choice 0, (.math (Model.MathVal.int ((l - 0xD800) * 0x400 + (t - 0xDC00) + 0x10000)) : Val F)])⟩ _
+    show Steps _ ⟨_, _, .invoke (.prim Known.pUnitOrPointOf [.choice 0, (.math (Model.MathVal.int ((l - 0xD800) * 0x400 + (t - 0xDC00) + 0x10000)) : Val F)])⟩ _
     refine Steps.next (step_prim_ok _ _ _ _ _ _ _ rfl rfl (prim_pointOf _ (by omega) (by omega) _)) ?_
     gsteps
     exact .refl _
@@ -183,7 +183,7 @@ theorem pair_steps [PinsHold] (s : State F) (fr : List (Frame F)) (l t : Int)
     gsteps
     refine Steps.trans (surr_steps H true _ _ _ _ _ _ _ _ _ t (by omega) (by omega) true (by simp; omega)) ?_
     gsteps
-    show Steps _ ⟨_, _, .invoke (.prim 56 [.choice 0, (.math (Model.MathVal.int ((l - 0xD800) * 0x400 + (t - 0xDC00) + 0x10000)) : Val F)])⟩ _
+    show Steps _ ⟨_, _, .invoke (.prim Known.pUnitOrPointOf [.choice 0, (.math (Model.MathVal.int ((l - 0xD800) * 0x400 + (t - 0xDC00) + 0x10000)) : Val F)])⟩ _
     refine Steps.next (step_prim_ok _ _ _ _ _ _ _ rfl rfl (prim_pointOf _ (by omega) (by omega) _)) ?_
     gsteps
     exact .refl _
@@ -205,7 +205,7 @@ theorem cpa_rest [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt
     Steps (Ctx.spec Engine.P' H chk)
       ⟨st, ⟨cpaAlg.id, none, #[.str s, .math (.int p), .math (.int s.size), .unbound, .unbound, .unbound],
         .steps false true true, [3], [.args (.let_ 3) [] [], .seq (cpaCode.drop 6)], none⟩ :: fr,
-        .invoke (.prim 51 [.math (.int p), .str s])⟩
+        .invoke (.prim Known.pUnitAt [.math (.int p), .str s])⟩
       ⟨{ st with heap := st.heap.push (cpRec (cpAt s p)) }, fr, .val (.ref st.heap.size)⟩ := by
   mprim (prim_unitAt s p hp _)
   obtain ⟨u, hu⟩ : ∃ u : Int, u = ((s[p]?.getD 0).toNat : Nat) := ⟨_, rfl⟩
@@ -258,7 +258,7 @@ theorem cpa_rest [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt
   simp only [h2, ↓reduceIte]
   refine Steps.valBool false (by mdecide) ?_
   gsteps
-  show Steps _ ⟨_, _, .invoke (.prim 51 [(.math (Model.MathVal.int ((p + 1 : Nat) : Int)) : Val F), .str s])⟩ _
+  show Steps _ ⟨_, _, .invoke (.prim Known.pUnitAt [(.math (Model.MathVal.int ((p + 1 : Nat) : Int)) : Val F), .str s])⟩ _
   mprim (prim_unitAt s (p + 1) (by omega) _)
   obtain ⟨v, hv⟩ : ∃ v : Int, v = ((s[p + 1]?.getD 0).toNat : Nat) := ⟨_, rfl⟩
   have hv0 : 0 ≤ v := by omega
@@ -283,7 +283,7 @@ theorem cpa_rest [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt
 
 open Engine.Accel in
 theorem cpa_steps [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt16) (p : Nat) (hp : p < s.size) :
-    Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.alg ⟨572, 0⟩ [.str s, .math (.int p)])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.alg ⟨Known.cCodePointAt, 0⟩ [.str s, .math (.int p)])⟩
       ⟨{ st with heap := st.heap.push (cpRec (cpAt s p)) }, fr, .val (.ref st.heap.size)⟩ := by
   refine Steps.next (step_alg H chk _ _ _ _ _ _ cpaAlg_pin cpaCode_pin) ?_
   show Steps _ ⟨st, ⟨_, none, #[.str s, .math (.int p), .unbound, .unbound, .unbound, .unbound],
@@ -303,12 +303,12 @@ theorem cpa_steps [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UIn
 open Engine.Accel in
 /-- [[CodePoint]] of CodePointAt's Record. -/
 theorem cpRec_cp (st : State F) (a : Nat) (t : Int × Nat × Bool) (h : st.heap[a]? = some (cpRec t)) :
-    readField (.ref a) 150 st = .ok (.math (Model.MathVal.int t.1)) st := by
-  have e : (F.recGet (F.recSet (F.recSet (F.recSet F.recEmpty 150 (.math (Model.MathVal.int t.1))) 51
-      (.math (Model.MathVal.int t.2.1))) 50 (.bool t.2.2)) 150 : Option (Val F)) =
+    readField (.ref a) Known.fCodePoint st = .ok (.math (Model.MathVal.int t.1)) st := by
+  have e : (F.recGet (F.recSet (F.recSet (F.recSet F.recEmpty Known.fCodePoint (.math (Model.MathVal.int t.1))) Known.fCodeUnitCount
+      (.math (Model.MathVal.int t.2.1))) Known.fIsUnpairedSurrogate (.bool t.2.2)) Known.fCodePoint : Option (Val F)) =
       some (.math (Model.MathVal.int t.1)) := by
     show Model.WMap.get (Model.WMap.put (Model.WMap.put (Model.WMap.put _ _ _) _ _) _ _) _ = _
-    simp [Engine.Impl.wget_put]
+    simp [Engine.Impl.wget_put, Known.fCodePoint, Known.fCodeUnitCount, Known.fIsUnpairedSurrogate]
   have hc : readCell a st = .ok (cpRec t) st := by simp only [readCell, h]
   show Run.Res.bind (readCell a st) _ = _
   rw [hc]
@@ -319,12 +319,12 @@ theorem cpRec_cp (st : State F) (a : Nat) (t : Int × Nat × Bool) (h : st.heap[
 open Engine.Accel in
 /-- [[CodeUnitCount]] of CodePointAt's Record. -/
 theorem cpRec_count (st : State F) (a : Nat) (t : Int × Nat × Bool) (h : st.heap[a]? = some (cpRec t)) :
-    readField (.ref a) 51 st = .ok (.math (Model.MathVal.int t.2.1)) st := by
-  have e : (F.recGet (F.recSet (F.recSet (F.recSet F.recEmpty 150 (.math (Model.MathVal.int t.1))) 51
-      (.math (Model.MathVal.int t.2.1))) 50 (.bool t.2.2)) 51 : Option (Val F)) =
+    readField (.ref a) Known.fCodeUnitCount st = .ok (.math (Model.MathVal.int t.2.1)) st := by
+  have e : (F.recGet (F.recSet (F.recSet (F.recSet F.recEmpty Known.fCodePoint (.math (Model.MathVal.int t.1))) Known.fCodeUnitCount
+      (.math (Model.MathVal.int t.2.1))) Known.fIsUnpairedSurrogate (.bool t.2.2)) Known.fCodeUnitCount : Option (Val F)) =
       some (.math (Model.MathVal.int t.2.1)) := by
     show Model.WMap.get (Model.WMap.put (Model.WMap.put (Model.WMap.put _ _ _) _ _) _ _) _ = _
-    simp [Engine.Impl.wget_put]
+    simp [Engine.Impl.wget_put, Known.fCodePoint, Known.fCodeUnitCount, Known.fIsUnpairedSurrogate]
   have hc : readCell a st = .ok (cpRec t) st := by simp only [readCell, h]
   show Run.Res.bind (readCell a st) _ = _
   rw [hc]

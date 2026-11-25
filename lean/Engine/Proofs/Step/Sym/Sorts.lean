@@ -63,13 +63,13 @@ theorem step_sort_alg (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame 
 
 set_option maxRecDepth 8000 in
 /-- The sort of the integers has no definition. -/
-theorem sortDef_9 : Engine.P.sortDef 9 = none := by
+theorem sortDef_9 : Engine.P.sortDef Known.sInteger = none := by
   rw [sortDef_eq]; rfl
 
 /-- The machine's transition at the test of the sort of the integers, of one. -/
 theorem step_sort_int (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (u : Int) :
-    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 9 (.math (.int u)))⟩ = .inl ⟨s, fr, .val (.bool true)⟩ := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort Known.sInteger (.math (.int u)))⟩ = .inl ⟨s, fr, .val (.bool true)⟩ := by
   simp only [step, invoke, spec_P, sortDef_9, sortTest]
   rfl
 

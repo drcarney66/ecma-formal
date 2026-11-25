@@ -541,7 +541,7 @@ def page(rec: dict, gallery: dict | None, builds: list[dict]) -> dict:
         'grammar rules, tables and early errors into <code>spec/spectec/</code> and checks the round-trip back to '
         'the merged <code>spec.html</code>.</li>'
         '<li><strong>Regenerate.</strong> <code>python3 scripts/generate.py</code> runs <code>spectec emit</code> '
-        'over <code>spec/spectec/</code> and <code>spec/ids/</code> to write <code>lean/Ecma/Gen</code> and '
+        'over <code>spec/spectec/</code> to write <code>lean/Ecma/Gen</code> and '
         '<code>lean/Ecma/Grammar/Gen</code> (<code>python3 scripts/spec_text.py --report</code> says what the merge did).</li>'
         '<li><strong>Build and check.</strong> <code>lake build</code>, the axiom check of the claims, '
         '<code>python3 scripts/quick_check.py</code>, and test262 with the proposal\'s feature no longer in '

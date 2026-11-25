@@ -2,7 +2,7 @@
 
 use crate::ast::*;
 use crate::ids::Ids;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write;
 use std::path::Path;
 
@@ -28,14 +28,6 @@ pub fn lean_str(s: &str) -> String {
 
 fn guillemets(s: &str) -> String {
     format!("«{s}»")
-}
-
-fn sym_ctor(name: &str, retired: bool) -> String {
-    if retired {
-        format!("retired_{name}")
-    } else {
-        name.to_string()
-    }
 }
 
 fn spell_prod_char(c: char) -> String {
@@ -297,6 +289,29 @@ fn mask_text(m: &[bool]) -> String {
     }
 }
 
+pub fn collect_rule_prods(r: &Rule, out: &mut BTreeSet<String>) {
+    let gtitle = r.grammar.lean_title();
+    let col = colons_str(r.colons);
+    match &r.body {
+        RuleBody::Alts(alts) => {
+            for a in alts {
+                let txt = alt_text(a);
+                let cname = format!("{} {col} {txt}", r.lhs);
+                let k = opt_count(a);
+                for mask in masks(k) {
+                    out.insert(format!("{gtitle} {} {cname}", mask_text(&mask)));
+                }
+            }
+        }
+        RuleBody::OneOf(rows) => {
+            for t in rows.iter().flatten() {
+                let cname = format!("{} {col} {}", r.lhs, terminal_text(t));
+                out.insert(format!("{gtitle} - {cname}"));
+            }
+        }
+    }
+}
+
 pub fn emit(spec: &Spec, ids: &Ids, out_dir: &Path, grammar_index_path: Option<&Path>) -> Result<(), String> {
     let mut files: BTreeMap<String, String> = BTreeMap::new();
     let ns = "Ecma.Grammar";
@@ -304,19 +319,19 @@ pub fn emit(spec: &Spec, ids: &Ids, out_dir: &Path, grammar_index_path: Option<&
     // 1. Symbols.lean
     {
         let mut body = String::new();
-        writeln!(body, "/-- Grammar parameters (§5.1.6), matching `spec/ids/param-ids.txt`. -/").unwrap();
+        writeln!(body, "/-- Grammar parameters (§5.1.6), sorted alphabetically from `spec/spectec/`. -/").unwrap();
         writeln!(body, "inductive Param where").unwrap();
-        for (i, p) in ids.param.names.iter().enumerate() {
-            writeln!(body, "  | {}", sym_ctor(p, ids.param.retired[i])).unwrap();
+        for p in &ids.param.names {
+            writeln!(body, "  | {p}").unwrap();
         }
         writeln!(body, "  deriving BEq, DecidableEq, Repr, Inhabited\n").unwrap();
         let pnames: Vec<_> = ids.param.names.iter().map(|s| lean_str(s)).collect();
         writeln!(body, "def Param.names : List String :=\n  [{}]\n", pnames.join(",\n   ")).unwrap();
 
-        writeln!(body, "/-- Grammar nonterminals, matching `spec/ids/nt-ids.txt`. -/").unwrap();
+        writeln!(body, "/-- Grammar nonterminals, sorted alphabetically from `spec/spectec/`. -/").unwrap();
         writeln!(body, "inductive NT where").unwrap();
-        for (i, n) in ids.nt.names.iter().enumerate() {
-            writeln!(body, "  | {}", sym_ctor(n, ids.nt.retired[i])).unwrap();
+        for n in &ids.nt.names {
+            writeln!(body, "  | {n}").unwrap();
         }
         writeln!(body, "  deriving BEq, DecidableEq, Repr, Inhabited\n").unwrap();
         let nnames: Vec<_> = ids.nt.names.iter().map(|s| lean_str(s)).collect();

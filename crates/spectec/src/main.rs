@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 fn usage() -> &'static str {
-    "usage: spectec [--spec-dir=DIR] [--ids-dir=DIR] (roundtrip | prose [--clause=ID] | emit [--lean-dir=DIR] [--grammar-index=FILE])"
+    "usage: spectec [--spec-dir=DIR] (roundtrip | prose [--clause=ID] | emit [--lean-dir=DIR] [--grammar-index=FILE])"
 }
 
 fn cmd_roundtrip(spec_dir: &Path) -> Result<(), String> {
@@ -54,9 +54,9 @@ fn cmd_prose(spec_dir: &Path, clause: Option<&str>) -> Result<(), String> {
     Ok(())
 }
 
-fn cmd_emit(spec_dir: &Path, ids_dir: &Path, lean_dir: &Path, grammar_index: Option<&Path>) -> Result<(), String> {
+fn cmd_emit(spec_dir: &Path, lean_dir: &Path, grammar_index: Option<&Path>) -> Result<(), String> {
     let spec = load_spec_dir(spec_dir)?;
-    let ids = Ids::load(ids_dir)?;
+    let ids = Ids::from_spec(&spec);
     emit_grammar::emit(&spec, &ids, &lean_dir.join("Ecma/Grammar/Gen"), grammar_index)?;
     emit_lean::emit(&spec, &ids, &lean_dir.join("Ecma/Gen"))?;
     println!("ok  spectec emit: generated Lean modules into {}", lean_dir.display());
@@ -66,7 +66,6 @@ fn cmd_emit(spec_dir: &Path, ids_dir: &Path, lean_dir: &Path, grammar_index: Opt
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();
     let mut spec_dir = PathBuf::from("spec/spectec");
-    let mut ids_dir = PathBuf::from("spec/ids");
     let mut lean_dir = PathBuf::from("lean");
     let mut grammar_index: Option<PathBuf> = None;
     let mut clause: Option<String> = None;
@@ -80,11 +79,6 @@ fn main() -> ExitCode {
         } else if a == "--spec-dir" && i + 1 < args.len() {
             i += 1;
             spec_dir = args[i].clone().into();
-        } else if let Some(v) = a.strip_prefix("--ids-dir=") {
-            ids_dir = v.into();
-        } else if a == "--ids-dir" && i + 1 < args.len() {
-            i += 1;
-            ids_dir = args[i].clone().into();
         } else if let Some(v) = a.strip_prefix("--lean-dir=") {
             lean_dir = v.into();
         } else if a == "--lean-dir" && i + 1 < args.len() {
@@ -112,7 +106,7 @@ fn main() -> ExitCode {
     let res = match cmd.as_deref() {
         Some("roundtrip") => cmd_roundtrip(&spec_dir),
         Some("prose") => cmd_prose(&spec_dir, clause.as_deref()),
-        Some("emit") => cmd_emit(&spec_dir, &ids_dir, &lean_dir, grammar_index.as_deref()),
+        Some("emit") => cmd_emit(&spec_dir, &lean_dir, grammar_index.as_deref()),
         _ => {
             eprintln!("{}", usage());
             return ExitCode::from(2);

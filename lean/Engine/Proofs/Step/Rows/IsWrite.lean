@@ -10,7 +10,7 @@ public import Engine.Proofs.Step.Table
 
 `isWrite_algRow`: the engine's shortcut at "whether a value is a WriteSharedMemory event"
 (`Engine.Accel.isWriteEntry`) is the machine's steps of the algorithm's code. The code's sort test is the
-machine's transition at `.invoke (.sort 35 v)`: the sort's definition in the engine's program is the generated
+machine's transition at `.invoke (.sort Known.sWriteSharedMemory v)`: the sort's definition in the engine's program is the generated
 declarations' (`sortDef_eq`), a Record sort with no test (`sortDef_write`) and no sort below it
 (`subSort_write`, by `subSort_leaf`), so the test is the engine's `isWrite` (`sortTest_write`, `step_sort_write`).
 -/
@@ -23,21 +23,21 @@ open Ecma Ecma.Machine
 
 set_option maxRecDepth 8000 in
 /-- WriteSharedMemory: a Record sort with no test. -/
-theorem sortDef_write : Engine.P.sortDef 35 = some { super := [165], test := .none, record := true } := by
+theorem sortDef_write : Engine.P.sortDef Known.sWriteSharedMemory = some { super := [Known.sSharedDataBlockEvent], test := .none, record := true } := by
   rw [sortDef_eq]
   rfl
 
-theorem noSuper_write : Gen.sortDefs.toList.all (fun o => !((o.map SortDef.super).getD []).contains 35) = true := by
+theorem noSuper_write : Gen.sortDefs.toList.all (fun o => !((o.map SortDef.super).getD []).contains Known.sWriteSharedMemory) = true := by
   decide +kernel
 
 /-- No sort lies below WriteSharedMemory. -/
-theorem subSort_write (f : Nat) (k : SortId) : subSort Engine.P f k 35 = (k == 35) :=
-  subSort_leaf 35 noSuper_write f k
+theorem subSort_write (f : Nat) (k : SortId) : subSort Engine.P f k Known.sWriteSharedMemory = (k == Known.sWriteSharedMemory) :=
+  subSort_leaf Known.sWriteSharedMemory noSuper_write f k
 
 open Engine.Accel in
 /-- The sort test at WriteSharedMemory is the engine's `isWrite`. -/
 theorem sortTest_write (H : Host F) (call : AlgId → List (Val F) → Run F (Val F)) (v : Val F) :
-    (do return .bool (← sortTest Engine.P H call 35 v) : Run F (Val F)) = isWrite v := by
+    (do return .bool (← sortTest Engine.P H call Known.sWriteSharedMemory v) : Run F (Val F)) = isWrite v := by
   funext s
   simp only [sortTest, sortDef_write]
   cases v with
@@ -53,7 +53,7 @@ open Engine.Accel in
 /-- The machine's transition at the sort test of WriteSharedMemory. -/
 theorem step_sort_write (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (v : Val F) :
-    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 35 v)⟩ = leafV ⟨s, fr, .invoke (.sort 35 v)⟩ (isWrite v) := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort Known.sWriteSharedMemory v)⟩ = leafV ⟨s, fr, .invoke (.sort Known.sWriteSharedMemory v)⟩ (isWrite v) := by
   simp only [step, invoke, spec_P, sortDef_write]
   rw [sortTest_write]
 
@@ -81,7 +81,7 @@ def isWriteKonts (w : Val F) : List (Kont F) :=
 theorem isWrite_pre (X : Ctx F) (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (w : Val F)
     (hw : w ≠ .unbound) :
     Steps X ⟨s, ⟨a, nd, #[w], .steps false true true, [], [], none⟩ :: fs, .code isWriteCode⟩
-      ⟨s, ⟨a, nd, #[w], .steps false true true, [1], isWriteKonts w, none⟩ :: fs, .invoke (.sort 35 w.used)⟩ := by
+      ⟨s, ⟨a, nd, #[w], .steps false true true, [1], isWriteKonts w, none⟩ :: fs, .invoke (.sort Known.sWriteSharedMemory w.used)⟩ := by
   iterate 3 mstep
   refine Steps.next (step_var _ _ _ _ _ w rfl hw) ?_
   iterate 12 mstep
@@ -141,7 +141,7 @@ theorem isWrite_row (H : Host F) (chk : Bool) [PinsHold] (c : Cfg F) (vs : List 
     cases he
     obtain ⟨st, fs, ctl⟩ := c
     have hcode : (Ctx.spec Engine.P' H chk).algCode isWriteAlg.id = isWriteCode := by
-      show (Engine.P'.alg ⟨2775, 0⟩).getD _ = _
+      show (Engine.P'.alg ⟨Known.cSortWriteSharedMemoryEvent, 0⟩).getD _ = _
       rw [isWriteCode_pin]; rfl
     rcases isWrite_cases v st with ⟨b, h⟩ | h
     · simp only [bindR, always, h, Run.Res.bind]
@@ -161,7 +161,7 @@ theorem isWrite_row (H : Host F) (chk : Bool) [PinsHold] (c : Cfg F) (vs : List 
 open Engine.Accel in
 /-- sort-WriteSharedMemory-event's row. -/
 theorem isWrite_algRow (H : Host F) (chk : Bool) [PinsHold] :
-    AlgRow (Ctx.spec Engine.P' H chk) ⟨2775, 0⟩ isWriteEntry :=
+    AlgRow (Ctx.spec Engine.P' H chk) ⟨Known.cSortWriteSharedMemoryEvent, 0⟩ isWriteEntry :=
   ⟨isWriteAlg, isWriteAlg_pin, fun c vs r nd he hstep => isWrite_row H chk c vs r nd he hstep⟩
 
 end Engine.Machine

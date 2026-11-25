@@ -112,20 +112,22 @@ theorem fieldIds : memNames.field? "EventsRecords" = some Known.fEventsRecords �
   exact h
 
 theorem sortIdsL : ["WriteSharedMemory", "ReadModifyWriteSharedMemory", "ReadSharedMemory"].map (Gen.sorts.toList.idxOf? ·) =
-    [some 35, some 150, some 37] := by
+    [some Known.sWriteSharedMemory, some Known.sReadModifyWriteSharedMemory, some Known.sReadSharedMemory] := by
   decide +kernel
 
-theorem sortIds : memNames.sort? "WriteSharedMemory" = some 35 ∧
-    memNames.sort? "ReadModifyWriteSharedMemory" = some 150 ∧ memNames.sort? "ReadSharedMemory" ≠ some 35 ∧
-    memNames.sort? "ReadSharedMemory" ≠ some 150 ∧ memNames.sort? "WriteSharedMemory" ≠ some 150 := by
+theorem sortIds : memNames.sort? "WriteSharedMemory" = some Known.sWriteSharedMemory ∧
+    memNames.sort? "ReadModifyWriteSharedMemory" = some Known.sReadModifyWriteSharedMemory ∧
+    memNames.sort? "ReadSharedMemory" ≠ some Known.sWriteSharedMemory ∧
+    memNames.sort? "ReadSharedMemory" ≠ some Known.sReadModifyWriteSharedMemory ∧
+    memNames.sort? "WriteSharedMemory" ≠ some Known.sReadModifyWriteSharedMemory := by
   have h := sortIdsL
   simp only [List.map_cons, List.map_nil, List.cons.injEq, and_true] at h
   simp only [memNames, idxOf?_toList]
   obtain ⟨h₁, h₂, h₃⟩ := h
-  simp [h₁, h₂, h₃]
+  simp [h₁, h₂, h₃, Known.sWriteSharedMemory, Known.sReadModifyWriteSharedMemory, Known.sReadSharedMemory]
 
-theorem noSuper : Gen.sortDefs.toList.all (fun o => !((o.map SortDef.super).getD []).contains 35) = true ∧
-    Gen.sortDefs.toList.all (fun o => !((o.map SortDef.super).getD []).contains 150) = true := by
+theorem noSuper : Gen.sortDefs.toList.all (fun o => !((o.map SortDef.super).getD []).contains Known.sWriteSharedMemory) = true ∧
+    Gen.sortDefs.toList.all (fun o => !((o.map SortDef.super).getD []).contains Known.sReadModifyWriteSharedMemory) = true := by
   decide +kernel
 
 theorem noSuper_at {t : SortId}
@@ -227,20 +229,20 @@ theorem isWrite_iff {d : CloSite → List (Val M) → List (Val M) → Run M (Va
       simp only [Bool.or_eq_true]
       constructor
       · intro h
-        by_cases h35 : k = 35
-        · subst h35; simp [dataSubSort_refl]
-        · by_cases h150 : k = 150
-          · subst h150; simp [dataSubSort_refl]
+        by_cases hW' : k = Known.sWriteSharedMemory
+        · subst hW'; simp [dataSubSort_refl]
+        · by_cases hRMW' : k = Known.sReadModifyWriteSharedMemory
+          · subst hRMW'; simp [dataSubSort_refl]
           · exfalso
-            simp only [beq_iff_eq, Option.some.injEq, show ¬ (35 = k) from fun e => h35 e.symm,
-              show ¬ (150 = k) from fun e => h150 e.symm, if_false] at h
+            simp only [beq_iff_eq, Option.some.injEq, show ¬ (Known.sWriteSharedMemory = k) from fun e => hW' e.symm,
+              show ¬ (Known.sReadModifyWriteSharedMemory = k) from fun e => hRMW' e.symm, if_false] at h
             revert h
             repeat' split
             all_goals simp
       · intro h
         rcases h with h | h
         · obtain rfl := dataSubSort_eq (noSuper_at noSuper.1) 64 k h; simp [hR35]
-        · obtain rfl := dataSubSort_eq (noSuper_at noSuper.2) 64 k h; simp [hR150]
+        · obtain rfl := dataSubSort_eq (noSuper_at noSuper.2) 64 k h; simp [hR150, Known.sWriteSharedMemory, Known.sReadModifyWriteSharedMemory]
     all_goals simp
 
 theorem isRef_of_isWriteEvent {s : State M} {w : Val M} (h : isWriteEvent s w = true) : ∃ a, w = .ref a := by

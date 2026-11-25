@@ -7,12 +7,10 @@ Each tests/quick/NAME.js runs with JS_TRACE_STEPS=1. Its result line, printed li
 of the steps it entered (each trace line's section and step number, not its text) and the cells its store
 ends with (the store only grows, so this is what it allocated) must be tests/quick/NAME.expected; `--update` rewrites those. A run over SECONDS of wall clock or MEGABYTES of resident
 memory is killed and fails. Then lean/Ecma (outside Gen/) is checked to hold no theorem, tactic, or partial or
-unsafe definition: the specification is definitions and stated laws only. Then the kept id tables
-(spec/ids/{clause,sdo,method,field,enum,prim,sort}-ids.txt) are checked against lean/Ecma/Gen/Decls.lean: each
-number names there what its table says, and each name there has a number; the grammar's (nt-, param-,
-prod-ids.txt) against lean/Ecma/Grammar/Gen (`NT`'s and `Param`'s constructors, `Gen.prodIds`), Decls.lean and
-tests/parser/grammar_index.txt, and table-ids.txt against `Ecma.Gen.tableNames` in lean/Ecma/Gen/Tables.lean;
-and, with a current target/release/spectec, regenerating from `spec/spectec/` and `spec/ids/` writes the same
+unsafe definition: the specification is definitions and stated laws only. Then every generated id namespace
+in lean/Ecma/Gen/Decls.lean, lean/Ecma/Grammar/Gen (NT, Param, Gen.prodIds), lean/Ecma/Gen/Tables.lean, and
+tests/parser/grammar_index.txt is checked to be sorted alphabetically and unique;
+and, with a current target/release/spectec, regenerating from `spec/spectec/` writes the same
 lean/Ecma/Gen, lean/Ecma/Grammar/Gen, and tests/parser/grammar_index.txt byte for byte, and `spectec roundtrip`
 passes (every `.spectec` file parses and prints back byte for byte): the text's half of the bijection.
 Then the data's half: every `.spectec` file in `spec/spectec/` is printed back byte for byte from `lean/Ecma/Gen`
@@ -32,8 +30,6 @@ import sys
 import threading
 import time
 from pathlib import Path
-
-import spec_text
 
 ROOT = Path(__file__).resolve().parent.parent
 SECONDS = 5.0
@@ -116,26 +112,7 @@ def no_native_decide() -> list[str]:
     return bad
 
 
-# The kept id tables (`spec/ids`) and the generated arrays in `Ecma.Gen.Decls`.
-NUMBERED_KEPT = {"clause": "clauses", "sdo": "sdos", "method": "methods"}
-PLAIN_KEPT = {"field": "fields", "enum": "enums", "prim": "prims", "sort": "sorts"}
-KEPT = {**NUMBERED_KEPT, **PLAIN_KEPT}
-
-
-def kept_table(path: Path, numbered: bool = True) -> list[tuple[int, str]]:
-    """A kept table's entries: number and name."""
-    out = []
-    idx = 0
-    for line in path.read_text().splitlines():
-        if not line or line.startswith("#"):
-            continue
-        if numbered:
-            f = line.split("\t")
-            out.append((int(f[0]), f[1]))
-        else:
-            out.append((idx, line))
-            idx += 1
-    return out
+DECL_ARRS = ("clauses", "sdos", "methods", "fields", "enums", "prims", "sorts", "nts", "params", "prods")
 
 
 def lean_names(text: str, arr: str) -> list[str]:
@@ -144,75 +121,47 @@ def lean_names(text: str, arr: str) -> list[str]:
     return [re.sub(r"\\(.)", lambda e: {"n": "\n", "t": "\t"}.get(e.group(1), e.group(1)), x) for x in re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(1))] if m else []
 
 
+def check_sorted_unique(label: str, names: list[str]) -> list[str]:
+    if not names:
+        return [f"{label}: empty"]
+    for i in range(len(names) - 1):
+        if not (names[i] < names[i + 1]):
+            return [f"{label}[{i}..{i+1}] not strictly sorted: {names[i]!r}, {names[i+1]!r}"]
+    return []
+
+
 def ids_consistent() -> list[str]:
-    """Every kept number names in lean/Ecma/Gen/Decls.lean what its table says, and every name there has a number:
-    regenerating from `spec/ids` keeps every number."""
+    """Every generated id table in `Ecma.Gen.Decls`, `Ecma.Gen.Tables`, `Ecma.Grammar.NT`, `Param`,
+    `tests/parser/grammar_index.txt`, and `Gen.prodIds` is sorted alphabetically, unique, and mutually consistent."""
     decls = (ROOT / "lean/Ecma/Gen/Decls.lean").read_text()
-    ids_dir = spec_text.ids_dir()
-    bad = []
-    for kind, arr in KEPT.items():
-        path = ids_dir / f"{kind}-ids.txt"
-        if not path.exists():
-            bad.append(f"{path.relative_to(ROOT)}: missing")
-            continue
-        names = lean_names(decls, arr)
-        table = kept_table(path, numbered=(kind in NUMBERED_KEPT))
-        for i, n in table:
-            if i >= len(names) or names[i] != n:
-                bad.append(f"{path.relative_to(ROOT)}: {i} is {n}, but Ecma.Gen.{arr} has {names[i] if i < len(names) else 'nothing'} there")
-        numbered = {i for i, _ in table}
-        for i, n in enumerate(names):
-            if i not in numbered and n:
-                bad.append(f"Ecma.Gen.{arr}[{i}] = {n} has no number in {path.relative_to(ROOT)}")
-    return bad[:20]
-
-
-def grammar_ids_consistent() -> list[str]:
-    """The grammar's kept ids (`spec/ids/{nt,param,prod,table}-ids.txt`) match `Ecma.Grammar.NT`, `Param`,
-    `Ecma.Gen`, `tests/parser/grammar_index.txt`, `Gen.prodIds`, and `Ecma.Gen.tableNames`."""
-    bad = []
-    ids_dir = spec_text.ids_dir()
     sym = (ROOT / "lean/Ecma/Grammar/Gen/Symbols.lean").read_text()
-    decls = (ROOT / "lean/Ecma/Gen/Decls.lean").read_text()
     tbls = (ROOT / "lean/Ecma/Gen/Tables.lean").read_text()
-    for kind, ind, arr in (("nt", "NT", "nts"), ("param", "Param", "params")):
-        path = ids_dir / f"{kind}-ids.txt"
-        if not path.exists():
-            bad.append(f"{path.relative_to(ROOT)}: missing")
-            continue
-        rows = [l.split("\t") for l in path.read_text().splitlines() if l and not l.startswith("#")]
+    bad = []
+    arrs: dict[str, list[str]] = {}
+    for arr in DECL_ARRS:
+        names = lean_names(decls, arr)
+        arrs[arr] = names
+        bad += check_sorted_unique(f"Ecma.Gen.{arr}", names)
+    for ind, arr in (("NT", "nts"), ("Param", "params")):
         m = re.search(rf"inductive {ind} where\n(.*?)\n  deriving", sym, re.S)
         ctors = [l.strip()[2:] for l in m.group(1).splitlines()] if m else []
-        want = [("retired_" + r[1]) if r[2:] == ["retired"] else r[1] for r in rows]
-        if [int(r[0]) for r in rows] != list(range(len(rows))) or ctors != want:
-            bad.append(f"{path.relative_to(ROOT)}: Ecma.Grammar.{ind}'s constructors are not its names in its order")
-        if lean_names(sym, f"{ind}.names") != [r[1] for r in rows]:
-            bad.append(f"{path.relative_to(ROOT)}: Ecma.Grammar.{ind}.names is not its names in its order")
-        names = lean_names(decls, arr)
-        if names != [r[1] for r in rows][:len(names)]:
-            bad.append(f"{path.relative_to(ROOT)}: Ecma.Gen.{arr} is not its names in its order")
-    path = ids_dir / "prod-ids.txt"
-    if path.exists():
-        table = dict(kept_table(path))
-        names = lean_names(decls, "prods")
-        bad += [f"{path.relative_to(ROOT)}: {i} is {table.get(i)}, but Ecma.Gen.prods has {n} there" for i, n in enumerate(names) if table.get(i, "") != n][:5]
-        index = [l.split(" ", 2)[1:] for l in (ROOT / "tests/parser/grammar_index.txt").read_text().splitlines() if l.startswith("prod ")]
-        bad += [f"tests/parser/grammar_index.txt: prod {i} {k}, but {path.relative_to(ROOT)} has {table.get(int(i))}" for i, k in index if table.get(int(i)) != k][:5]
-        idx = (ROOT / "lean/Ecma/Grammar/Gen/Index.lean").read_text()
-        m = re.search(r"def Gen\.prodIds : List \(Nat × Nat\) :=\s*\[(.*?)\]\n", idx, re.S)
-        runs = [int(a) + k for a, n in re.findall(r"\((\d+), (\d+)\)", m.group(1)) for k in range(int(n))] if m else []
-        if runs != [int(i) for i, _ in index]:
-            bad.append("lean/Ecma/Grammar/Gen/Index.lean: Gen.prodIds is not tests/parser/grammar_index.txt's ids in its order")
-    else:
-        bad.append(f"{path.relative_to(ROOT)}: missing")
-    path = ids_dir / "table-ids.txt"
-    if path.exists():
-        order = lean_names(tbls, "tableNames")
-        table = kept_table(path)
-        if [i for i, _ in table] != list(range(len(table))) or [n for _, n in table] != order:
-            bad.append(f"{path.relative_to(ROOT)}: Ecma.Gen.tableNames is not its names in id order")
-    else:
-        bad.append(f"{path.relative_to(ROOT)}: missing")
+        if ctors != arrs[arr]:
+            bad.append(f"Ecma.Grammar.{ind}'s constructors do not match Ecma.Gen.{arr}")
+        if lean_names(sym, f"{ind}.names") != arrs[arr]:
+            bad.append(f"Ecma.Grammar.{ind}.names does not match Ecma.Gen.{arr}")
+    prods = arrs["prods"]
+    index = [l.split(" ", 2)[1:] for l in (ROOT / "tests/parser/grammar_index.txt").read_text().splitlines() if l.startswith("prod ")]
+    for i_s, k in index:
+        i = int(i_s)
+        if i < 0 or i >= len(prods) or prods[i] != k:
+            bad.append(f"tests/parser/grammar_index.txt: prod {i} {k}, but Ecma.Gen.prods has {prods[i] if 0 <= i < len(prods) else 'OOB'}")
+            break
+    idx = (ROOT / "lean/Ecma/Grammar/Gen/Index.lean").read_text()
+    m = re.search(r"def Gen\.prodIds : List \(Nat × Nat\) :=\s*\[(.*?)\]\n", idx, re.S)
+    runs = [int(a) + k for a, n in re.findall(r"\((\d+), (\d+)\)", m.group(1)) for k in range(int(n))] if m else []
+    if runs != [int(i) for i, _ in index]:
+        bad.append("lean/Ecma/Grammar/Gen/Index.lean: Gen.prodIds is not tests/parser/grammar_index.txt's ids in its order")
+    bad += check_sorted_unique("Ecma.Gen.tableNames", lean_names(tbls, "tableNames"))
     return bad[:20]
 
 
@@ -221,7 +170,6 @@ def ids_regenerated() -> tuple[list[str], str]:
     and `tests/parser/grammar_index.txt` byte-for-byte as they are, and `spectec roundtrip` passes."""
     spectec = ROOT / "target/release/spectec"
     spec_dir = ROOT / "spec/spectec"
-    ids_dir = spec_text.ids_dir()
     srcs = list((ROOT / "crates/spectec/src").rglob("*.rs")) + [ROOT / "crates/spectec/Cargo.toml"]
     if not spectec.exists() or any(f.stat().st_mtime > spectec.stat().st_mtime for f in srcs):
         return [], "skipped: target/release/spectec is missing or older than its sources (cargo build --release)"
@@ -231,7 +179,7 @@ def ids_regenerated() -> tuple[list[str], str]:
         lean_out = tdir / "lean"
         gi_out = tdir / "grammar_index.txt"
         r = subprocess.run(
-            [str(spectec), f"--spec-dir={spec_dir}", f"--ids-dir={ids_dir}", "emit", f"--lean-dir={lean_out}", f"--grammar-index={gi_out}"],
+            [str(spectec), f"--spec-dir={spec_dir}", "emit", f"--lean-dir={lean_out}", f"--grammar-index={gi_out}"],
             capture_output=True,
             text=True,
         )
@@ -307,14 +255,14 @@ def main() -> int:
         print(line)
     if pc.returncode != 0 and not any(l.startswith("FAIL") for l in (pc.stdout + pc.stderr).splitlines()):
         print(f"FAIL pins check exited {pc.returncode}")
-    ids = ids_consistent() + grammar_ids_consistent()
+    ids = ids_consistent()
     for line in ids:
         print("FAIL ids:", line)
-    print(f"{'FAIL' if ids else 'ok  '} the kept ids (spec/ids/*-ids.txt) number what lean/Ecma/Gen and lean/Ecma/Grammar/Gen have at them")
+    print(f"{'FAIL' if ids else 'ok  '} lean/Ecma/Gen and lean/Ecma/Grammar/Gen have sorted unique ids matching grammar_index.txt")
     regen, how = ids_regenerated()
     for line in regen:
         print("FAIL ids:", line)
-    print(f"{'FAIL' if regen else 'ok  '} regenerating keeps every kept id and writes the generated modules as they are ({how})")
+    print(f"{'FAIL' if regen else 'ok  '} regenerating writes the generated modules as they are ({how})")
     ids += regen
     t0 = time.monotonic()
     b = subprocess.run([sys.executable, str(ROOT / "scripts/bijection.py"), "--print", a.print], capture_output=True, text=True)

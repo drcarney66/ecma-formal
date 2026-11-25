@@ -118,7 +118,7 @@ theorem ls_match (p : List Nat) (t : Op) (body : Code) (m : LoopSlots) (h : hasP
       ∀ len, m.bound = some len → len ≠ m.k ∧ len ≠ m.pk ∧ len ≠ m.kp := by
   unfold hasPropLoop at h
   split at h
-  · rename_i p1 pk k1 p2 kp o pk1 p3 kp1 tb p4 k2 op k3
+  · rename_i p1 pk cToStr iToStr prF k1 p2 kp cHasProp iHasProp o pk1 p3 kp1 tb p4 k2 op k3
     dsimp only at h
     split at h
     · rename_i k0 len
@@ -129,7 +129,7 @@ theorem ls_match (p : List Nat) (t : Op) (body : Code) (m : LoopSlots) (h : hasP
         · rename_i hall
           cases h
           simp only [Bool.and_eq_true, beq_iff_eq] at hall hk0
-          obtain ⟨⟨⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hd⟩ := hall
+          obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hd⟩ := hall
           subst hk0
           have hnd := ls_eraseDups_nodup _ _ (Nat.le_refl _) hd
           dsimp only
@@ -147,7 +147,7 @@ theorem ls_match (p : List Nat) (t : Op) (body : Code) (m : LoopSlots) (h : hasP
         · rename_i hall
           cases h
           simp only [Bool.and_eq_true, beq_iff_eq] at hall hk0
-          obtain ⟨⟨⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hd⟩ := hall
+          obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, rfl⟩, hd⟩ := hall
           subst hk0
           have hnd := ls_eraseDups_nodup _ _ (Nat.le_refl _) hd
           dsimp only

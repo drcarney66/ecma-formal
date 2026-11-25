@@ -52,28 +52,45 @@ inductive Beh where
   deriving BEq, DecidableEq, Repr
 
 /-- The SDO Contains. -/
-def sdoC : SdoId := 23
+def sdoC : SdoId := Known.sdoContains
 
 /-- The SDO ComputedPropertyContains. -/
-def sdoCPC : SdoId := 24
+def sdoCPC : SdoId := Known.sdoComputedPropertyContains
 
 /-- The symbols of the arrow functions' rows' `If symbol is not one of …`. -/
-def arrowSyms : List Sym := [.nt 140, .nt 138, .nt 144, .term "super", .term "this"]
+def arrowSyms : List Sym :=
+  [.nt Known.ntNewTarget, .nt Known.ntSuperProperty, .nt Known.ntSuperCall, .term "super", .term "this"]
 
 /-- What each row of Contains and ComputedPropertyContains does, by id. -/
 def behs : List (AlgId × Beh) :=
-  [(⟨322, 1⟩, .ret false), (⟨322, 2⟩, .classTail 269 270 24), (⟨322, 3⟩, .ret false),
-   (⟨322, 4⟩, .arrow arrowSyms (.any [(23, 251), (23, 252)])), (⟨322, 5⟩, .decline),
-   (⟨322, 6⟩, .arrow arrowSyms (.any [(23, 284)])), (⟨322, 7⟩, .arrow arrowSyms .decline),
-   (⟨322, 8⟩, .isSym (.nt 255) (.any [(24, 255)])), (⟨322, 9⟩, .ret false), (⟨322, 10⟩, .any [(23, 137)]),
-   (⟨322, 11⟩, .isSym (.term "super") (.ret false)), (⟨322, 12⟩, .any [(23, 143)]), (⟨322, 13⟩, .ret false),
-   (⟨322, 14⟩, .any [(23, 149)]),
-   (⟨323, 0⟩, .ret false), (⟨323, 1⟩, .any [(23, 130)]), (⟨323, 2⟩, .any [(24, 274)]),
-   (⟨323, 3⟩, .any [(24, 274)]), (⟨323, 4⟩, .any [(24, 274)]), (⟨323, 5⟩, .any [(24, 271), (24, 272)]),
-   (⟨323, 6⟩, .ret false), (⟨323, 7⟩, .ret false), (⟨323, 8⟩, .any [(24, 274)]), (⟨323, 9⟩, .any [(24, 274)])]
+  [(⟨Known.cStaticContains, 1⟩, .ret false),
+   (⟨Known.cStaticContains, 2⟩, .classTail Known.ntClassHeritage Known.ntClassBody sdoCPC),
+   (⟨Known.cStaticContains, 3⟩, .ret false),
+   (⟨Known.cStaticContains, 4⟩, .arrow arrowSyms (.any [(sdoC, Known.ntArrowParameters), (sdoC, Known.ntConciseBody)])),
+   (⟨Known.cStaticContains, 5⟩, .decline),
+   (⟨Known.cStaticContains, 6⟩, .arrow arrowSyms (.any [(sdoC, Known.ntAsyncConciseBody)])),
+   (⟨Known.cStaticContains, 7⟩, .arrow arrowSyms .decline),
+   (⟨Known.cStaticContains, 8⟩, .isSym (.nt Known.ntMethodDefinition) (.any [(sdoCPC, Known.ntMethodDefinition)])),
+   (⟨Known.cStaticContains, 9⟩, .ret false),
+   (⟨Known.cStaticContains, 10⟩, .any [(sdoC, Known.ntMemberExpression)]),
+   (⟨Known.cStaticContains, 11⟩, .isSym (.term "super") (.ret false)),
+   (⟨Known.cStaticContains, 12⟩, .any [(sdoC, Known.ntCallExpression)]),
+   (⟨Known.cStaticContains, 13⟩, .ret false),
+   (⟨Known.cStaticContains, 14⟩, .any [(sdoC, Known.ntOptionalChain)]),
+   (⟨Known.cStaticComputedPropertyContains, 0⟩, .ret false),
+   (⟨Known.cStaticComputedPropertyContains, 1⟩, .any [(sdoC, Known.ntComputedPropertyName)]),
+   (⟨Known.cStaticComputedPropertyContains, 2⟩, .any [(sdoCPC, Known.ntClassElementName)]),
+   (⟨Known.cStaticComputedPropertyContains, 3⟩, .any [(sdoCPC, Known.ntClassElementName)]),
+   (⟨Known.cStaticComputedPropertyContains, 4⟩, .any [(sdoCPC, Known.ntClassElementName)]),
+   (⟨Known.cStaticComputedPropertyContains, 5⟩, .any [(sdoCPC, Known.ntClassElementList), (sdoCPC, Known.ntClassElement)]),
+   (⟨Known.cStaticComputedPropertyContains, 6⟩, .ret false),
+   (⟨Known.cStaticComputedPropertyContains, 7⟩, .ret false),
+   (⟨Known.cStaticComputedPropertyContains, 8⟩, .any [(sdoCPC, Known.ntClassElementName)]),
+   (⟨Known.cStaticComputedPropertyContains, 9⟩, .any [(sdoCPC, Known.ntClassElementName)])]
 
-/-- Contains' default definition: its id, the ContainsAwaitCover production `[672]` and nonterminal `|AwaitExpression|`. -/
-def dfltShape : Option (AlgId × List ProdId × NtId) := some (⟨322, 0⟩, [672], 282)
+/-- Contains' default definition: its id, the ContainsAwaitCover production and nonterminal `|AwaitExpression|`. -/
+def dfltShape : Option (AlgId × List ProdId × NtId) :=
+  some (⟨Known.cStaticContains, 0⟩, [Known.prodAwaitCover], Known.ntAwaitExpression)
 
 /-- What the walk reads of a program: an SDO's row at a production (its id), an SDO's default
 algorithm when it has a meaning, a production's terminals by position and its chain nonterminal. -/

@@ -1059,7 +1059,10 @@ pub fn emit(spec: &Spec, ids: &Ids, out_dir: &Path) -> Result<(), String> {
         files.insert("Realm".into(), wrap_mod(&["Ecma.Notation.Realm"], "Ecma.Gen.Realm", &body));
     }
 
-    // 6. Prose*.lean (prose specification models, relations, and laws)
+    // 6. Known.lean (symbolic ID constants derived from `Ids`)
+    files.insert("Known".into(), crate::known::emit_known(ids)?);
+
+    // 7. Prose*.lean (prose specification models, relations, and laws)
     for (name, txt) in crate::spec_model::emit_lean::emit(spec)? {
         if files.contains_key(&name) {
             return Err(format!("prose module name `{name}` collides with generated module"));

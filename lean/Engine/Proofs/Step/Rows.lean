@@ -35,8 +35,8 @@ theorem exactRows_ok [PinsHold] (H : Host F) (chk : Bool) :
 
 /-- Contains' and ComputedPropertyContains' rows. -/
 theorem contains_sdoRows [PinsHold] (H : Host F) (chk : Bool) :
-    SdoRowOk (Ctx.spec Engine.P' H chk) 23 (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab 23) ∧
-    SdoRowOk (Ctx.spec Engine.P' H chk) 24 (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab 24) :=
+    SdoRowOk (Ctx.spec Engine.P' H chk) Known.sdoContains (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab Known.sdoContains) ∧
+    SdoRowOk (Ctx.spec Engine.P' H chk) Known.sdoComputedPropertyContains (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab Known.sdoComputedPropertyContains) :=
   contains_sdoRow H chk containsRows_true
 
 end Engine.Machine

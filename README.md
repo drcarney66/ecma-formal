@@ -56,7 +56,7 @@ Outside `lean/`:
 | Where | What |
 |---|---|
 | `external/ecma262`, `external/test262` | the pinned specification and its tests (submodules) |
-| `spec/spectec`, `spec/ids` | the formal ECMA SpecTec specification (`grammars/`, `clauses/*.spectec`, and English-prose `prose/*.spectec`) and its kept id tables (`*-ids.txt`) |
+| `spec/spectec` | the formal ECMA SpecTec specification (`grammars/`, `clauses/*.spectec`, and English-prose `prose/*.spectec`) |
 | `crates/spectec` | the SpecTec parser, roundtripper, prose renderer, and Lean generator (`lean/Ecma/Gen`, including `Prose*.lean`, and `lean/Ecma/Grammar/Gen`) |
 | `crates/spectec-html`, `spec/html` | bidirectional SpecTec ↔ `spec.html` algorithm & grammar printer/checker and name-keyed prose/layout metadata |
 | `crates/test262-runner` | test262 on `ecma-run` (`scripts/test262.py` drives it) |
@@ -76,7 +76,7 @@ emscripten and the Lean runtime as wasm64 archives. Make each profile once, and 
 
 Then run commands in a profile (`D=~/.local/state/ecma-formal/devshell`):
 
-    nix develop $D -c python3 scripts/generate.py   # all gitignored Gen/ modules, build/ids, and formal reports
+    nix develop $D -c python3 scripts/generate.py   # all gitignored Gen/ modules and parser index
     nix develop $D -c lake build                    # ecma-dbg, ecma-run, ecma-bundle, ecma-print (.lake/build/bin)
     nix develop $D -c cargo test                    # the crates
     nix develop $D-wasm -c python3 scripts/build_site.py    # dist/: the site, with the debugger's Worker build
@@ -95,7 +95,7 @@ Under the hood this runs (skipping unchanged outputs so `lake build` stays incre
     nix develop $D -c python3 scripts/unicode_properties.py
     nix develop $D -c python3 scripts/unicode_data.py
     nix develop $D -c python3 scripts/ecma_unicode_properties.py
-    nix develop $D -c ./target/release/spectec --spec-dir=spec/spectec --ids-dir=spec/ids \
+    nix develop $D -c ./target/release/spectec --spec-dir=spec/spectec \
         emit --lean-dir=lean --grammar-index=tests/parser/grammar_index.txt
 
 The Unicode extractor, the quick check, the laws' quotations and the site read *the text* (`scripts/spec_text.py`):
@@ -104,10 +104,10 @@ each with its answers file under `spec/proposals/`. With no proposal named it is
 it is made into `build/text/` (git-ignored) whenever its inputs change, and `spec_text.py --report` says what each
 merge did. `--spec` still reads another.
 
-The ids the data numbers by name are kept in `spec/ids/*-ids.txt`: the phrase, primitive, sort, field and enum
-ids, the clause (`ClauseId`, an `AlgId`'s first component), SDO, concrete-method and table ids, and the production
-(`ProdId`), nonterminal (`NtId`, `NT`'s constructor index) and parameter ids (`ParamId`). Keeping these tables ensures
-stable numbering across edits to `spec/spectec/`.
+When `spectec emit` compiles `spec/spectec/` to Lean, every id namespace — clauses (`ClauseId`, an `AlgId`'s first
+component), SDOs, concrete methods, fields, enums, primitives, sorts, tables, productions (`ProdId`), nonterminals
+(`NtId`, `NT`'s constructor index), and parameters (`ParamId`) — is sorted alphabetically (`0..N-1`) and exposed as
+symbolic constants in `lean/Ecma/Gen/Known.lean`, keeping diffs localized without separate id tables.
 
 ## The bijection
 
@@ -131,7 +131,7 @@ byte for byte via the name-keyed sidecar tables under `spec/html/` (`spectec-htm
 
 runs `tests/quick/*.js` on `ecma-run`, each within 5 s and 1 GiB, and compares its result and the steps it
 entered with `tests/quick/*.expected` (`--update` rewrites them), then checks that `lean/Ecma` is plain, that the
-kept ids number what the data has, that regenerating writes the data as it is and `spectec roundtrip` passes (with
+generated id tables are alphabetically sorted and unique, that regenerating writes the data as it is and `spectec roundtrip` passes (with
 `target/release/spectec` built and current), the bijection (`scripts/bijection.py`: it fails if `ecma-print` is not built),
 the laws' quotations, and last runs the cases of `tests/run` that use the driver's options (a `// module:` or
 `// args:` header) against their own expectations. Run it after every change; with `--all-run-tests` it runs all of

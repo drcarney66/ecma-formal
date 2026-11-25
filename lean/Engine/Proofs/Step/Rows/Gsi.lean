@@ -21,8 +21,8 @@ open Ecma Ecma.Machine
 /-- GetStringIndex's loop's body. -/
 abbrev gsiBody : Code :=
   [Ins.site [1, 5], Ins.br (Op.leaf (Leaf.rel RelOp.eq) [Op.var 4, Op.var 1]) [Ins.ret (Op.var 3)] [],
-    Ins.site [2, 5], Ins.let_ 5 (Op.call (CallK.alg { clause := 572, idx := 0 }) [Op.var 0, Op.var 3]),
-    Ins.site [3, 5], Ins.let_ 3 (Op.leaf (Leaf.bin BinOp.add) [Op.var 3, Op.leaf (Leaf.field 51) [Op.var 5]]),
+    Ins.site [2, 5], Ins.let_ 5 (Op.call (CallK.alg { clause := Known.cCodePointAt, idx := 0 }) [Op.var 0, Op.var 3]),
+    Ins.site [3, 5], Ins.let_ 3 (Op.leaf (Leaf.bin BinOp.add) [Op.var 3, Op.leaf (Leaf.field Known.fCodeUnitCount) [Op.var 5]]),
     Ins.site [4, 5],
     Ins.let_ 4 (Op.leaf (Leaf.bin BinOp.add) [Op.var 4, Op.const (Const.math Sign.none (Mag.num (Numeral.dec 1)))])]
 
@@ -37,7 +37,7 @@ theorem gsi_loop [PinsHold] (H : Host F) (chk : Bool) (st : State F) (fs : List 
     ∀ (k p c : Nat) (rs : Array (Cell F)) (v5 : Val F) (q : List Nat) (r : Nat), p ≤ s.size → s.size - p ≤ k →
     Steps (Ctx.spec Engine.P' H chk)
       ⟨{ st with heap := st.heap ++ rs },
-        ⟨⟨1548, 0⟩, nd, #[.str s, .math (.int i), .math (.int s.size), .math (.int p), .math (.int c), v5],
+        ⟨⟨Known.cGetStringIndex, 0⟩, nd, #[.str s, .math (.int i), .math (.int s.size), .math (.int p), .math (.int c), v5],
           .steps false true true, q, [.seq [.site [6], .ret (.var 2)]], none⟩ :: fs,
         .loop .round ⟨none, gsiIter, [5], gsiBody, .plain, r⟩⟩
       ⟨{ st with heap := st.heap ++ (scanIdx s i k p c rs).2 }, fs, .val (.math (.int (scanIdx s i k p c rs).1))⟩ := by
@@ -86,7 +86,7 @@ open Engine.Accel in
 theorem gsi_steps [PinsHold] (H : Host F) (chk : Bool) (st : State F) (fs : List (Frame F))
     (nd : Option F.Node) (s : Array UInt16) (i : Int) (hs : s.size ≠ 0) :
     Steps (Ctx.spec Engine.P' H chk)
-      ⟨st, ⟨⟨1548, 0⟩, nd, #[.str s, .math (.int i), .unbound, .unbound, .unbound, .unbound], .steps false true true,
+      ⟨st, ⟨⟨Known.cGetStringIndex, 0⟩, nd, #[.str s, .math (.int i), .unbound, .unbound, .unbound, .unbound], .steps false true true,
         [], [], none⟩ :: fs, .code gsiCode⟩
       ⟨{ st with heap := st.heap ++ (scanIdx s i s.size 0 0 #[]).2 }, fs,
         .val (.math (.int (scanIdx s i s.size 0 0 #[]).1))⟩ := by
@@ -102,7 +102,7 @@ theorem gsi_steps [PinsHold] (H : Host F) (chk : Bool) (st : State F) (fs : List
 theorem gsi_steps_empty (H : Host F) (chk : Bool) (st : State F) (fs : List (Frame F))
     (nd : Option F.Node) (i : Int) :
     Steps (Ctx.spec Engine.P' H chk)
-      ⟨st, ⟨⟨1548, 0⟩, nd, #[.str #[], .math (.int i), .unbound, .unbound, .unbound, .unbound], .steps false true true,
+      ⟨st, ⟨⟨Known.cGetStringIndex, 0⟩, nd, #[.str #[], .math (.int i), .unbound, .unbound, .unbound, .unbound], .steps false true true,
         [], [], none⟩ :: fs, .code gsiCode⟩
       ⟨st, fs, .val (.math (.int 0))⟩ := by
   gsteps
@@ -127,7 +127,7 @@ theorem gsi_row [PinsHold] (H : Host F) (chk : Bool) (c : Cfg F) (vs : List (Val
     · cases he
       obtain ⟨st, fs, ctl⟩ := c
       have hcode : (Ctx.spec Engine.P' H chk).algCode gsiAlg.id = gsiCode := by
-        show (Engine.P'.alg ⟨1548, 0⟩).getD _ = _
+        show (Engine.P'.alg ⟨Known.cGetStringIndex, 0⟩).getD _ = _
         rw [gsiCode_pin]; rfl
       by_cases hs : s.size = 0
       · have hr : gsiRun s i st = .ok (.math (.int 0)) st := by unfold gsiRun; exact if_pos hs
@@ -152,7 +152,7 @@ theorem gsi_row [PinsHold] (H : Host F) (chk : Bool) (c : Cfg F) (vs : List (Val
 open Engine.Accel in
 /-- GetStringIndex's row. -/
 theorem gsi_algRow [PinsHold] (H : Host F) (chk : Bool) :
-    AlgRow (Ctx.spec Engine.P' H chk) ⟨1548, 0⟩ gsiEntry :=
+    AlgRow (Ctx.spec Engine.P' H chk) ⟨Known.cGetStringIndex, 0⟩ gsiEntry :=
   ⟨gsiAlg, gsiAlg_pin, fun c vs r nd he hstep => gsi_row H chk c vs r nd he hstep⟩
 
 
