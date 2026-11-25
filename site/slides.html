@@ -254,8 +254,9 @@
         <li class="reveal-item" data-reveal="2">
           <strong>Soundness</strong>
           <ul>
-            <li>Engine fast paths match stepping <code>spec.html</code> line by line (<code>Engine.implements</code>)</li>
-            <li>Editorial refactorings proved behavior-preserving</li>
+            <li><code>!</code> never throws, <code>Assert:</code>s never fail &amp; slots/SDOs never miss a case</li>
+            <li>Editorial refactorings proved observably identical</li>
+            <li>Elided spec allocations &amp; §29 reorderings proved unobservable</li>
           </ul>
         </li>
         <li class="reveal-item" data-reveal="3">
@@ -269,7 +270,7 @@
           <strong>Generated JS reference VM</strong>
           <ul>
             <li>Executable engine compiled straight from <code>spec.html</code> (native &amp; Wasm)</li>
-            <li>Verified fast paths incrementally replacing slow spec steps</li>
+            <li>Verified shortcuts incrementally replacing slow spec steps (<code>Engine.implements</code>)</li>
           </ul>
         </li>
       </ul>
