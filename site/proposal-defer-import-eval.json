@@ -4,7 +4,7 @@
  "title": "tc39/proposal-defer-import-eval",
  "proposal": {
   "repository": "https://github.com/tc39/proposal-defer-import-eval",
-  "commit": "6fefd29d9698595d4e345fee226c78ecb03e2a25",
+  "commit": "f19b6c5ef256dede480fac22f33ea8089ccd4239",
   "path": "external/proposal-defer-import-eval"
  },
  "ecma262": "b1eaed82fc5e8a511c5b2007f194b16c8f7e5ea6",
@@ -37,7 +37,7 @@
     {
      "path": "spec/proposals.txt",
      "added": 2,
-     "removed": 0,
+     "removed": 6,
      "group": "pin",
      "new": false
     }
@@ -48,15 +48,22 @@
    "title": "The merge's answers",
    "files": [
     {
-     "path": "spec/proposals/defer-import-eval/README.md",
-     "added": 25,
+     "path": "spec/proposals/defer-import-eval/gaps-resolutions.txt",
+     "added": 7,
+     "removed": 0,
+     "group": "answers",
+     "new": true
+    },
+    {
+     "path": "spec/proposals/defer-import-eval/gaps.emu",
+     "added": 70,
      "removed": 0,
      "group": "answers",
      "new": true
     },
     {
      "path": "spec/proposals/defer-import-eval/resolutions.txt",
-     "added": 27,
+     "added": 46,
      "removed": 0,
      "group": "answers",
      "new": true
@@ -68,37 +75,86 @@
    "title": "SpecTec definitions & HTML metadata",
    "files": [
     {
-     "path": "spec/formal/defer-import.emu",
-     "added": 102,
-     "removed": 0,
-     "group": "readings",
-     "new": true
-    },
-    {
-     "path": "spec/formal/fields.emu",
-     "added": 1,
+     "path": "spec/html/item-meta.txt",
+     "added": 16,
      "removed": 1,
      "group": "readings",
      "new": false
     },
     {
-     "path": "spec/formal/lists.emu",
-     "added": 4,
-     "removed": 4,
+     "path": "spec/html/step-patches.txt",
+     "added": 244,
+     "removed": 70,
      "group": "readings",
      "new": false
     },
     {
-     "path": "spec/formal/permanent.emu",
+     "path": "spec/spectec/00-decls.spectec",
+     "added": 20,
+     "removed": 1,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/spectec/03-grammar-syntactic.spectec",
+     "added": 8,
+     "removed": 2,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/spectec/07-grammar-index.spectec",
+     "added": 3,
+     "removed": 1,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/spectec/09-tables.spectec",
+     "added": 288,
+     "removed": 5,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/spectec/10-realm.spectec",
      "added": 0,
      "removed": 1,
      "group": "readings",
      "new": false
     },
     {
-     "path": "spec/formal/realm.emu",
-     "added": 2,
-     "removed": 3,
+     "path": "spec/spectec/clauses/Helpers.spectec",
+     "added": 9,
+     "removed": 0,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/spectec/clauses/S10.spectec",
+     "added": 42,
+     "removed": 20,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/spectec/clauses/S13.spectec",
+     "added": 69,
+     "removed": 22,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/spectec/clauses/S16.spectec",
+     "added": 163,
+     "removed": 42,
+     "group": "readings",
+     "new": false
+    },
+    {
+     "path": "spec/spectec/clauses/S27.spectec",
+     "added": 41,
+     "removed": 18,
      "group": "readings",
      "new": false
     }
@@ -107,29 +163,7 @@
   {
    "id": "lists",
    "title": "List files, by hand",
-   "files": [
-    {
-     "path": "spec/formal/decisions.md",
-     "added": 31,
-     "removed": 0,
-     "group": "lists",
-     "new": false
-    },
-    {
-     "path": "spec/formal/phrase-unreviewed.txt",
-     "added": 9,
-     "removed": 1,
-     "group": "lists",
-     "new": false
-    },
-    {
-     "path": "spec/formal/readings-restating.txt",
-     "added": 11,
-     "removed": 3,
-     "group": "lists",
-     "new": false
-    }
-   ]
+   "files": []
   },
   {
    "id": "tests",
@@ -197,119 +231,602 @@
    "files": [
     {
      "path": "lean/Ecma/Gen/Decls.lean",
-     "added": 20,
-     "removed": 18,
+     "added": 32,
+     "removed": 32,
      "group": "regenerated",
      "new": false
     },
     {
-     "path": "lean/Ecma/Gen/Phrases.lean",
+     "path": "lean/Ecma/Gen/Early1.lean",
+     "added": 521,
+     "removed": 521,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Helpers_part1.lean",
+     "added": 17,
+     "removed": 17,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Helpers_part2.lean",
+     "added": 16,
+     "removed": 16,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Helpers_part3.lean",
+     "added": 23,
+     "removed": 23,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Helpers_part4.lean",
+     "added": 80,
+     "removed": 80,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Helpers_part5.lean",
+     "added": 59,
+     "removed": 59,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Helpers_part6.lean",
+     "added": 74,
+     "removed": 74,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Helpers_part7.lean",
+     "added": 46,
+     "removed": 36,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Index.lean",
+     "added": 2,
+     "removed": 2,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Known.lean",
+     "added": 98,
+     "removed": 98,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Realm.lean",
+     "added": 1942,
+     "removed": 1942,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S05.lean",
+     "added": 1,
+     "removed": 1,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S06_part1.lean",
+     "added": 86,
+     "removed": 86,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S06_part2.lean",
+     "added": 30,
+     "removed": 30,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S07_part1.lean",
+     "added": 103,
+     "removed": 103,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S07_part2.lean",
+     "added": 97,
+     "removed": 97,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S07_part3.lean",
+     "added": 65,
+     "removed": 65,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S08_part1.lean",
+     "added": 517,
+     "removed": 517,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S08_part2.lean",
+     "added": 426,
+     "removed": 426,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S08_part3.lean",
+     "added": 161,
+     "removed": 161,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S09_part1.lean",
+     "added": 120,
+     "removed": 120,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S09_part2.lean",
+     "added": 40,
+     "removed": 40,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S10_part1.lean",
+     "added": 95,
+     "removed": 95,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S10_part2.lean",
+     "added": 36,
+     "removed": 36,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S10_part3.lean",
+     "added": 78,
+     "removed": 78,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S10_part4.lean",
+     "added": 66,
+     "removed": 50,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S11.lean",
+     "added": 12,
+     "removed": 12,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S12.lean",
+     "added": 337,
+     "removed": 337,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S13_part1.lean",
+     "added": 120,
+     "removed": 130,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S13_part2.lean",
+     "added": 233,
+     "removed": 223,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S13_part3.lean",
+     "added": 265,
+     "removed": 225,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S13_part4.lean",
+     "added": 53,
+     "removed": 53,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S14_part1.lean",
+     "added": 85,
+     "removed": 85,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S14_part2.lean",
+     "added": 224,
+     "removed": 224,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S15_part1.lean",
+     "added": 314,
+     "removed": 314,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S15_part2.lean",
+     "added": 131,
+     "removed": 131,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S15_part3.lean",
+     "added": 66,
+     "removed": 66,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S16_part1.lean",
+     "added": 40,
+     "removed": 57,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S16_part2.lean",
+     "added": 62,
+     "removed": 99,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S16_part3.lean",
+     "added": 404,
+     "removed": 296,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S19_part1.lean",
+     "added": 28,
+     "removed": 28,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S19_part2.lean",
+     "added": 6,
+     "removed": 6,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S20_part1.lean",
+     "added": 89,
+     "removed": 89,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S20_part2.lean",
+     "added": 57,
+     "removed": 57,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S21_part1.lean",
+     "added": 69,
+     "removed": 69,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S21_part2.lean",
+     "added": 79,
+     "removed": 79,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S21_part3.lean",
+     "added": 66,
+     "removed": 66,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S21_part4.lean",
+     "added": 30,
+     "removed": 30,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S22_part1.lean",
+     "added": 54,
+     "removed": 54,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S22_part2.lean",
+     "added": 63,
+     "removed": 63,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S22_part3.lean",
+     "added": 54,
+     "removed": 54,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S22_part4.lean",
+     "added": 34,
+     "removed": 34,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S22_part5.lean",
+     "added": 153,
+     "removed": 153,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S22_part6.lean",
+     "added": 68,
+     "removed": 68,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S23_part1.lean",
+     "added": 38,
+     "removed": 38,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S23_part2.lean",
+     "added": 42,
+     "removed": 42,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S23_part3.lean",
+     "added": 43,
+     "removed": 43,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S23_part4.lean",
+     "added": 48,
+     "removed": 48,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S23_part5.lean",
+     "added": 58,
+     "removed": 58,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S23_part6.lean",
+     "added": 33,
+     "removed": 33,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S23_part7.lean",
+     "added": 16,
+     "removed": 16,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S24_part1.lean",
+     "added": 67,
+     "removed": 67,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S24_part2.lean",
+     "added": 43,
+     "removed": 43,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S25_part1.lean",
+     "added": 72,
+     "removed": 72,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S25_part2.lean",
+     "added": 101,
+     "removed": 101,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S25_part3.lean",
+     "added": 61,
+     "removed": 61,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S25_part4.lean",
+     "added": 34,
+     "removed": 34,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S26.lean",
+     "added": 12,
+     "removed": 12,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S27_part1.lean",
+     "added": 35,
+     "removed": 35,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S27_part2.lean",
+     "added": 33,
+     "removed": 33,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S27_part3.lean",
+     "added": 61,
+     "removed": 61,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S27_part4.lean",
+     "added": 72,
+     "removed": 40,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S27_part5.lean",
+     "added": 81,
+     "removed": 97,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S27_part6.lean",
+     "added": 38,
+     "removed": 38,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S28.lean",
+     "added": 31,
+     "removed": 31,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/S29.lean",
+     "added": 19,
+     "removed": 19,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/SB.lean",
+     "added": 77,
+     "removed": 77,
+     "group": "regenerated",
+     "new": false
+    },
+    {
+     "path": "lean/Ecma/Gen/Tables.lean",
      "added": 3,
      "removed": 2,
      "group": "regenerated",
      "new": false
     },
     {
-     "path": "lean/Ecma/Gen/Phrases_DeferImport.lean",
-     "added": 31,
-     "removed": 0,
-     "group": "regenerated",
-     "new": true
-    },
-    {
-     "path": "lean/Ecma/Gen/Realm.lean",
-     "added": 1,
-     "removed": 2,
-     "group": "regenerated",
-     "new": false
-    },
-    {
-     "path": "lean/Ecma/Gen/S10_4_part2.lean",
-     "added": 32,
-     "removed": 10,
-     "group": "regenerated",
-     "new": false
-    },
-    {
-     "path": "lean/Ecma/Gen/S13_3.lean",
-     "added": 66,
-     "removed": 18,
-     "group": "regenerated",
-     "new": false
-    },
-    {
-     "path": "lean/Ecma/Gen/S16_2_part1.lean",
-     "added": 82,
-     "removed": 58,
-     "group": "regenerated",
-     "new": false
-    },
-    {
-     "path": "lean/Ecma/Gen/S16_2_part2.lean",
-     "added": 45,
-     "removed": 528,
-     "group": "regenerated",
-     "new": false
-    },
-    {
-     "path": "lean/Ecma/Gen/S16_2_part3.lean",
-     "added": 529,
-     "removed": 1,
-     "group": "regenerated",
-     "new": false
-    },
-    {
-     "path": "lean/Ecma/Gen/S27_5_part1.lean",
-     "added": 27,
-     "removed": 38,
-     "group": "regenerated",
-     "new": false
-    },
-    {
-     "path": "lean/Ecma/Gen/S27_5_part2.lean",
-     "added": 34,
-     "removed": 1,
-     "group": "regenerated",
-     "new": false
-    },
-    {
      "path": "lean/Ecma/Gen/Tables_1.lean",
-     "added": 110,
-     "removed": 8,
+     "added": 232,
+     "removed": 228,
      "group": "regenerated",
      "new": false
     },
     {
      "path": "lean/Ecma/Gen/Tables_2.lean",
-     "added": 217,
-     "removed": 91,
+     "added": 580,
+     "removed": 402,
      "group": "regenerated",
      "new": false
     },
     {
+     "path": "lean/Ecma/Gen/Tables_3.lean",
+     "added": 85,
+     "removed": 0,
+     "group": "regenerated",
+     "new": true
+    },
+    {
      "path": "lean/Ecma/Grammar/Gen/Index.lean",
-     "added": 302,
-     "removed": 296,
+     "added": 5,
+     "removed": 3,
      "group": "regenerated",
      "new": false
     },
     {
      "path": "lean/Ecma/Grammar/Gen/Symbols.lean",
-     "added": 5,
-     "removed": 2,
+     "added": 2,
+     "removed": 0,
      "group": "regenerated",
      "new": false
     },
     {
      "path": "lean/Ecma/Grammar/Gen/Syntactic1.lean",
-     "added": 17,
-     "removed": 31,
+     "added": 9,
+     "removed": 2,
      "group": "regenerated",
      "new": false
     },
     {
      "path": "lean/Ecma/Grammar/Gen/Syntactic2.lean",
-     "added": 29,
+     "added": 1,
      "removed": 0,
      "group": "regenerated",
      "new": false
@@ -326,63 +843,13 @@
   {
    "id": "lists-regen",
    "title": "Regenerated: list files",
-   "files": [
-    {
-     "path": "spec/formal/assert-sites.txt",
-     "added": 35,
-     "removed": 24,
-     "group": "lists-regen",
-     "new": false
-    },
-    {
-     "path": "spec/formal/asserts-open.txt",
-     "added": 1,
-     "removed": 1,
-     "group": "lists-regen",
-     "new": false
-    },
-    {
-     "path": "spec/formal/errata.txt",
-     "added": 2,
-     "removed": 0,
-     "group": "lists-regen",
-     "new": false
-    },
-    {
-     "path": "spec/formal/permanent-sentences.txt",
-     "added": 7,
-     "removed": 8,
-     "group": "lists-regen",
-     "new": false
-    },
-    {
-     "path": "spec/formal/residue.txt",
-     "added": 1,
-     "removed": 1,
-     "group": "lists-regen",
-     "new": false
-    },
-    {
-     "path": "spec/formal/type-dyn-sites.txt",
-     "added": 100,
-     "removed": 85,
-     "group": "lists-regen",
-     "new": false
-    },
-    {
-     "path": "tests/parser/grammar_index.txt",
-     "added": 8,
-     "removed": 4,
-     "group": "lists-regen",
-     "new": false
-    }
-   ]
+   "files": []
   },
   {
    "id": "unpublished",
    "title": "Not on the site: files under docs/, counted only",
    "files": [],
-   "count": 7
+   "count": 0
   }
  ],
  "answers": [
@@ -490,7 +957,7 @@
  "answers_file": "spec/proposals/defer-import-eval/resolutions.txt",
  "readings": [
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-module-namespace-exotic-objects-defineownproperty-p-desc",
    "num": "10.4.6.6",
    "title": "[[DefineOwnProperty]] ( propertyKey: a property key, propertyDesc: a Property Descriptor, ): either a normal completion containing a Boolean or a throw completion",
@@ -519,7 +986,7 @@
    "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
   },
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-module-namespace-exotic-objects-hasproperty-p",
    "num": "10.4.6.7",
    "title": "[[HasProperty]] ( propertyKey: a property key, ): a normal completion containing a Boolean",
@@ -548,7 +1015,7 @@
    "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
   },
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-module-namespace-exotic-objects-get-p-receiver",
    "num": "10.4.6.8",
    "title": "[[Get]] ( propertyKey: a property key, receiver: an ECMAScript language value, ): either a normal completion containing an ECMAScript language value or a throw completion",
@@ -577,7 +1044,7 @@
    "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
   },
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-module-namespace-exotic-objects-delete-p",
    "num": "10.4.6.10",
    "title": "[[Delete]] ( propertyKey: a property key, ): a normal completion containing a Boolean",
@@ -606,7 +1073,7 @@
    "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
   },
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-ReadyForSyncExecution",
    "num": "16.2.1.5.1.2",
    "title": "ReadyForSyncExecution ( module: a Module Record, optional seen: a List of Module Records, ): a Boolean",
@@ -635,7 +1102,7 @@
    "why": "a Boolean call used bare as a condition. ECMA-262 never writes one, so the notation has no such form"
   },
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-getmodulenamespace",
    "num": "16.2.1.13",
    "title": "GetModuleNamespace ( module: an instance of a concrete subclass of Module Record, phase: defer or evaluation, ): a Module Namespace Object",
@@ -664,7 +1131,7 @@
    "why": "an inline conditional written as two sentences. The text writes \"…; else let …\" everywhere else"
   },
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-ContinueDynamicImport",
    "num": "13.3.10.5",
    "title": "ContinueDynamicImport ( promiseCapability: a PromiseCapability Record, moduleCompletion: either a normal completion containing a Module Record or a throw completion, phase: defer or evaluation, ): unused",
@@ -693,7 +1160,7 @@
    "why": "a For each with an inline body, which the text writes nowhere else"
   },
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-moduleevaluation",
    "num": "16.2.1.6.1.3",
    "title": "Evaluate ( ): a Promise",
@@ -722,7 +1189,7 @@
    "why": "\"recursive dependencies\" is defined nowhere. There is no model operation for it, so this is the one new loop"
   },
   {
-   "file": "spec/formal/lists.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-GetImportedModule",
    "num": "16.2.1.9",
    "title": "GetImportedModule ( referrer: a Cyclic Module Record, request: a ModuleRequest Record, ): a Module Record",
@@ -751,7 +1218,7 @@
    "why": "the rename changed the step's hash, so the reading lost its anchor"
   },
   {
-   "file": "spec/formal/lists.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-evaluate-import-call",
    "num": "13.3.10.4",
    "title": "EvaluateImportCall ( args: a Parse Node, phase: defer or evaluation, ): either a normal completion containing a Promise or an abrupt completion",
@@ -781,7 +1248,7 @@
    "why": "the step was renumbered"
   },
   {
-   "file": "spec/formal/lists.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-innermoduleevaluation",
    "num": "16.2.1.6.1.3.1",
    "title": "InnerModuleEvaluation ( module: a Module Record, stack: a List of Cyclic Module Records, index: a non-negative integer, ): either a normal completion containing a non-negative integer or a throw completion",
@@ -810,7 +1277,7 @@
    "why": "the step was renumbered"
   },
   {
-   "file": "spec/formal/realm.emu",
+   "file": "spec/spectec/10-realm.spectec",
    "clause": "sec-modulenamespacecreate",
    "num": "10.4.6.12",
    "title": "ModuleNamespaceCreate ( module: a Module Record, exports: a List of Strings, phase: defer or evaluation, ): a module namespace exotic object",
@@ -841,7 +1308,7 @@
  ],
  "errata": [
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-static-semantics-boundnames",
    "num": "8.2.1",
    "title": "Static Semantics: BoundNames ( ): a List of Strings",
@@ -867,7 +1334,7 @@
    "switch": "none"
   },
   {
-   "file": "spec/formal/defer-import.emu",
+   "file": "spec/spectec/clauses/S16.spectec",
    "clause": "sec-create-default-export-synthetic-module",
    "num": "16.2.1.8.1",
    "title": "CreateDefaultExportSyntheticModule ( defaultExport: an ECMAScript language value, ): a Synthetic Module Record",
@@ -900,24 +1367,7 @@
    "switch": "spec"
   }
  ],
- "other_overlay": [
-  {
-   "file": "spec/formal/fields.emu",
-   "removed": [
-    "[[BindingName]]: a String or ~namespace~"
-   ],
-   "added": [
-    "[[BindingName]]: a String, ~namespace~, or ~deferred-namespace~"
-   ]
-  },
-  {
-   "file": "spec/formal/permanent.emu",
-   "removed": [
-    "<emu-permanent clause=\"sec-moduleevaluation\" step=\"1\" class=\"assert-provenance\">About the surrounding agent's other calls to Evaluate, which the state at the step does not record.</emu-permanent>"
-   ],
-   "added": []
-  }
- ],
+ "other_overlay": [],
  "merge": {
   "no_answers": {
    "refusals": [

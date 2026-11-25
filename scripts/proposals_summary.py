@@ -5,8 +5,8 @@
 
 For each proposal on the November 2026 TC39 agenda (117th meeting), inspects `git diff --numstat BASE..BRANCH`
 (with generated code gitignored, every line in the diff is hand-written) and records:
-- `algorithms_loc`: lines added/removed in `spec/formal/*.emu` and `spec/proposals/**` (English/overlay readings,
-  resolutions, and any draft spec text)
+- `algorithms_loc`: lines added/removed in `spec/spectec/**`, `spec/html/**`, and `spec/proposals/**` (SpecTec
+  definitions, HTML bijection metadata, merge resolutions, and any draft spec text)
 - `model_loc`: lines added/removed in `lean/Ecma/**` and `lean/Engine/**` outside `Proofs/`, `Pins.lean`, `Claims.lean`
 - `proofs_loc`: lines added/removed in `lean/Engine/Proofs/**`, `lean/Engine/Pins.lean`, `lean/Engine/Claims.lean`
 - `tests_loc`: lines added/removed in `tests/**`
@@ -186,8 +186,7 @@ def classify(path: str) -> str:
         return "model"
     if path.startswith("spec/spectec/prose/"):
         return "model"
-    if (path.startswith("spec/spectec/") or path.startswith("spec/html/")
-            or (path.startswith("spec/formal/") and path.endswith(".emu")) or path.startswith("spec/proposals/")):
+    if path.startswith("spec/spectec/") or path.startswith("spec/html/") or path.startswith("spec/proposals/"):
         return "algorithms"
     if path.startswith("tests/") and not path.endswith(".expected"):
         return "tests"
@@ -229,12 +228,18 @@ def inspect_worktree_generated(entry_id: str, prev: dict | None) -> tuple[dict[s
     if mspecs and base_spec.is_file():
         spec_diff = numstat_pair(base_spec, mspecs[0])
 
-    base_gen = [*sorted((ROOT / "lean/Ecma/Gen").glob("S*.lean")),
-                ROOT / "lean/Ecma/Gen/Ids.lean", ROOT / "lean/Ecma/Gen/Tables.lean",
-                ROOT / "lean/Ecma/Grammar/Gen/Syntactic.lean", ROOT / "lean/Ecma/Grammar/Gen/Lexical.lean"]
-    prop_gen = [*sorted((wt / "lean/Ecma/Gen").glob("S*.lean")),
-                wt / "lean/Ecma/Gen/Ids.lean", wt / "lean/Ecma/Gen/Tables.lean",
-                wt / "lean/Ecma/Grammar/Gen/Syntactic.lean", wt / "lean/Ecma/Grammar/Gen/Lexical.lean"]
+    def gen_files_of(root_dir: Path) -> list[Path]:
+        return [
+            *sorted((root_dir / "lean/Ecma/Gen").glob("S*.lean")),
+            *sorted((root_dir / "lean/Ecma/Gen").glob("Helpers*.lean")),
+            *sorted((root_dir / "lean/Ecma/Gen").glob("Tables_*.lean")),
+            *sorted((root_dir / "lean/Ecma/Gen").glob("Early*.lean")),
+            *sorted((root_dir / "lean/Ecma/Grammar/Gen").glob("Syntactic*.lean")),
+            root_dir / "lean/Ecma/Grammar/Gen/Lexical.lean",
+        ]
+
+    base_gen = gen_files_of(ROOT)
+    prop_gen = gen_files_of(wt)
     if any(f.is_file() for f in base_gen) and any(f.is_file() for f in prop_gen):
         with tempfile.TemporaryDirectory() as td:
             ba = Path(td, "base.lean")

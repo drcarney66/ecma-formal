@@ -13,8 +13,8 @@
    "repo": "https://github.com/tc39/proposal-defer-import-eval",
    "example": "run/import_defer_basic",
    "status": "ready",
-   "commit": "fbb700b",
-   "merge_base": "1565c55",
+   "commit": "5a7fa9a",
+   "merge_base": "46f6d3e",
    "proposal_commit": "f19b6c5",
    "spec_lines": 2461,
    "spec_diff": {
@@ -22,14 +22,14 @@
     "removed": 109
    },
    "generated_lean": {
-    "added": 283,
-    "removed": 122
+    "added": 7956,
+    "removed": 7544
    },
    "diff": {
     "algorithms": {
-     "added": 231,
-     "removed": 9,
-     "files": 8
+     "added": 1026,
+     "removed": 183,
+     "files": 15
     },
     "model": {
      "added": 0,
@@ -47,9 +47,9 @@
      "files": 7
     },
     "meta": {
-     "added": 104,
-     "removed": 25,
-     "files": 7
+     "added": 6,
+     "removed": 6,
+     "files": 3
     },
     "generated": {
      "added": 0,
@@ -68,8 +68,8 @@
    "repo": "https://github.com/tc39/proposal-import-text",
    "example": "dbg/proposal_import_text",
    "status": "ready",
-   "commit": "27a6953",
-   "merge_base": "1565c55",
+   "commit": "898d568",
+   "merge_base": "46f6d3e",
    "proposal_commit": "1b9e238",
    "spec_lines": 112,
    "spec_diff": {
@@ -77,14 +77,14 @@
     "removed": 4
    },
    "generated_lean": {
-    "added": 26,
-    "removed": 15
+    "added": 3870,
+    "removed": 3862
    },
    "diff": {
     "algorithms": {
-     "added": 6,
-     "removed": 4,
-     "files": 2
+     "added": 10,
+     "removed": 0,
+     "files": 4
     },
     "model": {
      "added": 4,
@@ -123,8 +123,8 @@
    "repo": "https://github.com/tc39/proposal-thenable-curtailment",
    "example": "dbg/proposal_thenable_curtailment",
    "status": "ready",
-   "commit": "c0068bf",
-   "merge_base": "1565c55",
+   "commit": "5cfd2c5",
+   "merge_base": "46f6d3e",
    "proposal_commit": "33a725b",
    "spec_lines": 267,
    "spec_diff": {
@@ -132,14 +132,14 @@
     "removed": 23
    },
    "generated_lean": {
-    "added": 80,
-    "removed": 25
+    "added": 3896,
+    "removed": 3856
    },
    "diff": {
     "algorithms": {
-     "added": 36,
-     "removed": 0,
-     "files": 2
+     "added": 147,
+     "removed": 30,
+     "files": 5
     },
     "model": {
      "added": 2,
@@ -157,9 +157,9 @@
      "files": 1
     },
     "meta": {
-     "added": 5,
-     "removed": 6,
-     "files": 3
+     "added": 7,
+     "removed": 8,
+     "files": 5
     },
     "generated": {
      "added": 0,
@@ -178,8 +178,8 @@
    "repo": "https://github.com/tc39/proposal-deferred-reexports",
    "example": "dbg/proposal_deferred_reexports",
    "status": "ready",
-   "commit": "9deb3f5",
-   "merge_base": "1565c55",
+   "commit": "94e4ec2",
+   "merge_base": "46f6d3e",
    "proposal_commit": "a4fd2f3",
    "spec_lines": 3901,
    "spec_diff": {
@@ -187,14 +187,14 @@
     "removed": 186
    },
    "generated_lean": {
-    "added": 1330,
-    "removed": 289
+    "added": 10920,
+    "removed": 9588
    },
    "diff": {
     "algorithms": {
-     "added": 359,
-     "removed": 27,
-     "files": 13
+     "added": 3326,
+     "removed": 461,
+     "files": 20
     },
     "model": {
      "added": 0,
@@ -212,9 +212,9 @@
      "files": 4
     },
     "meta": {
-     "added": 110,
-     "removed": 31,
-     "files": 8
+     "added": 12,
+     "removed": 6,
+     "files": 4
     },
     "generated": {
      "added": 0,
@@ -233,8 +233,8 @@
    "repo": "https://github.com/tc39/proposal-json-parseimmutable",
    "example": "dbg/proposal_json_parseimmutable",
    "status": "ready",
-   "commit": "5041aaa",
-   "merge_base": "1565c55",
+   "commit": "06b4a80",
+   "merge_base": "46f6d3e",
    "proposal_commit": "",
    "spec_lines": 193,
    "spec_diff": {
@@ -242,14 +242,14 @@
     "removed": 7
    },
    "generated_lean": {
-    "added": 71,
-    "removed": 32
+    "added": 5892,
+    "removed": 5840
    },
    "diff": {
     "algorithms": {
-     "added": 195,
-     "removed": 1,
-     "files": 3
+     "added": 298,
+     "removed": 11,
+     "files": 8
     },
     "model": {
      "added": 0,
@@ -267,9 +267,9 @@
      "files": 1
     },
     "meta": {
-     "added": 6,
-     "removed": 7,
-     "files": 4
+     "added": 5,
+     "removed": 6,
+     "files": 3
     },
     "generated": {
      "added": 0,
@@ -288,8 +288,8 @@
    "repo": "https://github.com/tc39/proposal-esm-phase-imports",
    "example": "dbg/proposal_esm_phase_imports",
    "status": "ready",
-   "commit": "626640a",
-   "merge_base": "1565c55",
+   "commit": "5dc05a4",
+   "merge_base": "46f6d3e",
    "proposal_commit": "f0ab861",
    "spec_lines": 1589,
    "spec_diff": {
@@ -297,14 +297,14 @@
     "removed": 89
    },
    "generated_lean": {
-    "added": 430,
-    "removed": 258
+    "added": 6619,
+    "removed": 6464
    },
    "diff": {
     "algorithms": {
-     "added": 972,
-     "removed": 9,
-     "files": 6
+     "added": 1658,
+     "removed": 332,
+     "files": 14
     },
     "model": {
      "added": 11,
@@ -322,9 +322,9 @@
      "files": 1
     },
     "meta": {
-     "added": 78,
-     "removed": 45,
-     "files": 17
+     "added": 29,
+     "removed": 29,
+     "files": 14
     },
     "generated": {
      "added": 0,
@@ -343,8 +343,8 @@
    "repo": "https://github.com/tc39/proposal-immutable-arraybuffer",
    "example": "dbg/proposal_immutable_arraybuffer",
    "status": "ready",
-   "commit": "82c2bde",
-   "merge_base": "1565c55",
+   "commit": "45864c8",
+   "merge_base": "46f6d3e",
    "proposal_commit": "ca3f880",
    "spec_lines": 1158,
    "spec_diff": {
@@ -352,14 +352,14 @@
     "removed": 206
    },
    "generated_lean": {
-    "added": 223,
-    "removed": 151
+    "added": 5268,
+    "removed": 5213
    },
    "diff": {
     "algorithms": {
-     "added": 135,
-     "removed": 5,
-     "files": 4
+     "added": 1052,
+     "removed": 718,
+     "files": 9
     },
     "model": {
      "added": 0,
@@ -372,14 +372,14 @@
      "files": 0
     },
     "tests": {
-     "added": 43,
-     "removed": 1,
-     "files": 2
+     "added": 42,
+     "removed": 0,
+     "files": 1
     },
     "meta": {
-     "added": 69,
-     "removed": 46,
-     "files": 17
+     "added": 29,
+     "removed": 29,
+     "files": 14
     },
     "generated": {
      "added": 0,
@@ -398,8 +398,8 @@
    "repo": "https://github.com/tc39/proposal-error-code-property",
    "example": "dbg/proposal_error_code_property",
    "status": "ready",
-   "commit": "6549def",
-   "merge_base": "1565c55",
+   "commit": "44c3dfb",
+   "merge_base": "46f6d3e",
    "proposal_commit": "cbaccf6",
    "spec_lines": 133,
    "spec_diff": {
@@ -407,14 +407,14 @@
     "removed": 4
    },
    "generated_lean": {
-    "added": 24,
-    "removed": 13
+    "added": 3629,
+    "removed": 3621
    },
    "diff": {
     "algorithms": {
-     "added": 14,
-     "removed": 1,
-     "files": 2
+     "added": 43,
+     "removed": 12,
+     "files": 5
     },
     "model": {
      "added": 0,
@@ -453,8 +453,8 @@
    "repo": "https://github.com/tc39/proposal-fma",
    "example": "dbg/proposal_fma",
    "status": "ready",
-   "commit": "6a128c8",
-   "merge_base": "1565c55",
+   "commit": "4e374a7",
+   "merge_base": "46f6d3e",
    "proposal_commit": "45bb4d9",
    "spec_lines": 74,
    "spec_diff": {
@@ -462,14 +462,14 @@
     "removed": 0
    },
    "generated_lean": {
-    "added": 23,
-    "removed": 1
+    "added": 3859,
+    "removed": 3843
    },
    "diff": {
     "algorithms": {
-     "added": 38,
-     "removed": 0,
-     "files": 2
+     "added": 1179,
+     "removed": 1048,
+     "files": 7
     },
     "model": {
      "added": 0,
@@ -508,8 +508,8 @@
    "repo": "https://github.com/tc39/proposal-composites",
    "example": "dbg/proposal_composites",
    "status": "ready",
-   "commit": "4a6461f",
-   "merge_base": "1565c55",
+   "commit": "22c3abc",
+   "merge_base": "46f6d3e",
    "proposal_commit": "03b7388",
    "spec_lines": 325,
    "spec_diff": {
@@ -517,14 +517,14 @@
     "removed": 2
    },
    "generated_lean": {
-    "added": 114,
-    "removed": 3
+    "added": 6721,
+    "removed": 6628
    },
    "diff": {
     "algorithms": {
-     "added": 199,
-     "removed": 0,
-     "files": 3
+     "added": 942,
+     "removed": 500,
+     "files": 10
     },
     "model": {
      "added": 0,
@@ -563,8 +563,8 @@
    "repo": "https://github.com/tc39/proposal-cancellation",
    "example": "dbg/proposal_cancellation",
    "status": "ready",
-   "commit": "831df1a",
-   "merge_base": "1565c55",
+   "commit": "28ed8df",
+   "merge_base": "46f6d3e",
    "proposal_commit": "1230cc9",
    "spec_lines": 986,
    "spec_diff": {
@@ -572,14 +572,14 @@
     "removed": 14
    },
    "generated_lean": {
-    "added": 281,
-    "removed": 33
+    "added": 6670,
+    "removed": 6402
    },
    "diff": {
     "algorithms": {
-     "added": 118,
-     "removed": 1,
-     "files": 4
+     "added": 905,
+     "removed": 188,
+     "files": 9
     },
     "model": {
      "added": 4,
@@ -597,9 +597,9 @@
      "files": 1
     },
     "meta": {
-     "added": 63,
-     "removed": 40,
-     "files": 15
+     "added": 29,
+     "removed": 29,
+     "files": 14
     },
     "generated": {
      "added": 0,
@@ -618,8 +618,8 @@
    "repo": "https://github.com/jasnell/proposal-iterator-transfer",
    "example": "dbg/proposal_iterator_transfer",
    "status": "ready",
-   "commit": "cf4e6d0",
-   "merge_base": "1565c55",
+   "commit": "ffa8a34",
+   "merge_base": "46f6d3e",
    "proposal_commit": "",
    "spec_lines": 90,
    "spec_diff": {
@@ -627,14 +627,14 @@
     "removed": 0
    },
    "generated_lean": {
-    "added": 40,
-    "removed": 18
+    "added": 4385,
+    "removed": 4369
    },
    "diff": {
     "algorithms": {
-     "added": 93,
-     "removed": 0,
-     "files": 2
+     "added": 599,
+     "removed": 269,
+     "files": 7
     },
     "model": {
      "added": 0,
@@ -673,8 +673,8 @@
    "repo": "https://github.com/eemeli/proposal-trim-chars",
    "example": "dbg/proposal_trim_chars",
    "status": "ready",
-   "commit": "f0b67db",
-   "merge_base": "1565c55",
+   "commit": "5150e2f",
+   "merge_base": "46f6d3e",
    "proposal_commit": "e1c8811",
    "spec_lines": 85,
    "spec_diff": {
@@ -682,14 +682,14 @@
     "removed": 15
    },
    "generated_lean": {
-    "added": 12,
-    "removed": 12
+    "added": 4745,
+    "removed": 4729
    },
    "diff": {
     "algorithms": {
-     "added": 71,
-     "removed": 45,
-     "files": 3
+     "added": 117,
+     "removed": 51,
+     "files": 6
     },
     "model": {
      "added": 0,
@@ -728,8 +728,8 @@
    "repo": "https://github.com/js-choi/proposal-popcount",
    "example": "dbg/proposal_popcount",
    "status": "ready",
-   "commit": "45a487b",
-   "merge_base": "1565c55",
+   "commit": "ed54ff5",
+   "merge_base": "46f6d3e",
    "proposal_commit": "b1d30a6",
    "spec_lines": 31,
    "spec_diff": {
@@ -737,14 +737,14 @@
     "removed": 0
    },
    "generated_lean": {
-    "added": 23,
-    "removed": 1
+    "added": 4784,
+    "removed": 4752
    },
    "diff": {
     "algorithms": {
-     "added": 39,
-     "removed": 0,
-     "files": 2
+     "added": 1133,
+     "removed": 1048,
+     "files": 7
     },
     "model": {
      "added": 0,
