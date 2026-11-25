@@ -104,35 +104,8 @@
     </div>
   </section>
 
-  <!-- 4. Tools usable right now -->
-  <section class="slide" id="slide-tools" data-slide="4" data-max-step="0">
-    <div class="slide-top">
-      <span class="slide-kicker">Immediate value</span>
-      <h2 id="tools">Tools for champions, reviewers &amp; editors — usable right now</h2>
-    </div>
-    <div class="slide-fill tools-grid">
-      <div class="tool-card">
-        <div class="tool-head">
-          <div class="tool-kicker">Static &amp; Structural</div>
-          <h3>Mechanical merge</h3>
-          <p class="tool-sub">Merges a proposal into <code>spec.html</code> · checks grammar SDOs, slots &amp; types</p>
-        </div>
-        <div class="tool-inset">
-          <div class="inset-label"><span class="badge proved">Caught across #117</span></div>
-          <ul>
-            <li>Missing <code>BoundNames</code> row on <code>import defer</code></li>
-            <li><code>*undefined*</code> vs. <code>~empty~</code> / <code>~unused~</code> in <code>Immutable ArrayBuffers</code></li>
-            <li>Missing <code>[[DeferredNamespace]]</code> in <code>ParseModule</code> &amp; JSON modules</li>
-            <li>Stale clause IDs, untyped built-ins &amp; dangling intrinsics</li>
-          </ul>
-        </div>
-      </div>
-      {{slides_tool_dbg}}
-    </div>
-  </section>
-
-  <!-- 5. Adding a proposal (1): write the algorithms -->
-  <section class="slide" id="slide-step-1" data-slide="5" data-max-step="1" data-step="0">
+  <!-- 4. Adding a proposal (1): write the algorithms -->
+  <section class="slide" id="slide-step-1" data-slide="4" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 1</span>
       <h2 id="step-1">Write the algorithms</h2>
@@ -154,8 +127,8 @@
     </div>
   </section>
 
-  <!-- 6. Adding a proposal (2): generate the spec -->
-  <section class="slide" id="slide-step-2" data-slide="6" data-max-step="1" data-step="0">
+  <!-- 5. Adding a proposal (2): generate the spec -->
+  <section class="slide" id="slide-step-2" data-slide="5" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 2</span>
       <h2 id="step-2">Generate the spec</h2>
@@ -200,8 +173,8 @@
     </div>
   </section>
 
-  <!-- 7. Adding a proposal (3): debug! -->
-  <section class="slide" id="slide-step-3" data-slide="7" data-max-step="1" data-step="0">
+  <!-- 6. Adding a proposal (3): debug! -->
+  <section class="slide" id="slide-step-3" data-slide="6" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 3</span>
       <h2 id="step-3">Debug!</h2>
@@ -225,14 +198,41 @@
     </div>
   </section>
 
-  <!-- 8. Adding a proposal (4): table of diffs from current proposals (no stats) -->
-  <section class="slide" id="slide-step-4" data-slide="8" data-max-step="0">
+  <!-- 7. Adding a proposal (4): table of diffs from current proposals (no stats) -->
+  <section class="slide" id="slide-step-4" data-slide="7" data-max-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 4</span>
       <h2 id="step-4">All {{proposals_117_count}} ECMA-262 proposals on the TC39 #117 agenda</h2>
     </div>
     <div class="slide-fill">
       {{proposals_117_table}}
+    </div>
+  </section>
+
+  <!-- 8. Tools usable right now -->
+  <section class="slide" id="slide-tools" data-slide="8" data-max-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">Immediate value</span>
+      <h2 id="tools">Tools for champions, reviewers &amp; editors — usable right now</h2>
+    </div>
+    <div class="slide-fill tools-grid">
+      <div class="tool-card">
+        <div class="tool-head">
+          <div class="tool-kicker">Static &amp; Structural</div>
+          <h3>Mechanical merge</h3>
+          <p class="tool-sub">Merges a proposal into <code>spec.html</code> · checks grammar SDOs, slots &amp; types</p>
+        </div>
+        <div class="tool-inset">
+          <div class="inset-label"><span class="badge proved">Caught across #117</span></div>
+          <ul>
+            <li>Missing <code>BoundNames</code> row on <code>import defer</code></li>
+            <li><code>*undefined*</code> vs. <code>~empty~</code> / <code>~unused~</code> in <code>Immutable ArrayBuffers</code></li>
+            <li>Missing <code>[[DeferredNamespace]]</code> in <code>ParseModule</code> &amp; JSON modules</li>
+            <li>Stale clause IDs, untyped built-ins &amp; dangling intrinsics</li>
+          </ul>
+        </div>
+      </div>
+      {{slides_tool_dbg}}
     </div>
   </section>
 

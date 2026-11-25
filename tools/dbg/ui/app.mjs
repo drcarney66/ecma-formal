@@ -156,15 +156,25 @@ function controls(model) {
   };
 }
 
-// F8 continue or pause; F10 next, F11 in, Shift+F11 out by statement, with Alt by spec
-// step; F9 one transition.
-function key(e) {
+// Single-key shortcuts (when focus is outside inputs) alongside F8–F11:
+// c / F8 continue or pause; s / Alt+F10 spec next; i / Alt+F11 spec in; o / Alt+Shift+F11 spec out;
+// n / F10 JS statement next; r restart; F11 / Shift+F11 JS in/out; F9 one transition.
+function key(e, inField = false) {
   if (e.key === "F8") return "continue";
   if (e.key === "F9") return "instruction";
   const spec = e.altKey ? "" : "js";
   if (e.key === "F10") return `${spec}next`;
   if (e.key === "F11") return `${spec}${e.shiftKey ? "out" : "in"}`;
-  return null;
+  if (inField || e.metaKey || e.ctrlKey || e.altKey) return null;
+  switch (e.key) {
+    case "c": return "continue";
+    case "s": return "next";
+    case "i": return "in";
+    case "o": return "out";
+    case "n": return "jsnext";
+    case "r": return "start";
+    default: return null;
+  }
 }
 
 // The right column's tabs: Inspector, Heap and State; a pane in `panes` is told when it
@@ -312,11 +322,15 @@ async function main() {
     update();
     if (!test && hadSession && model.config.program) model.start();
   });
-  // An example's setup: its breakpoints, line breakpoints and filters, stop on entry cleared.
+  // An example's setup: its breakpoints, line breakpoints, filters, and expanded inspector paths, stop on entry cleared.
+  let inspect = null;
   const setupOf = (e) => () => {
     model.setBreakpoints(e.breakpoints ?? []);
     model.setLineBreakpoints((e.lines ?? []).map((line) => ({ line })));
     model.setFilters(e.filters ?? []);
+    if (inspect) {
+      inspect.tree.expanded = new Set(["Slots", ...(Array.isArray(e.expand) ? e.expand : [])]);
+    }
     if ($("stop-on-entry").checked) $("stop-on-entry").click();
   };
   const tour = gallery ? menuGroups(gallery) : {};
@@ -327,7 +341,7 @@ async function main() {
   new JsStackPane(model);
   new StackPane(model);
   new StepPane(model);
-  new InspectPane(model);
+  inspect = new InspectPane(model);
   tabs(model, { heap: new HeapPane(model), state: new StatePane(model) });
   new ConsolePane(model);
   new BreakpointsPane(model, storage, store);
@@ -348,7 +362,17 @@ async function main() {
       window.parent.postMessage({ type: "deck-escape" }, location.origin);
       return;
     }
-    const k = key(e);
+    const tag = e.target?.tagName;
+    const inField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || !!e.target?.isContentEditable;
+    if (!inField && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const tabMap = { "1": "inspect", "2": "heap", "3": "state" };
+      if (tabMap[e.key] && globalThis.dbg?.tab) {
+        e.preventDefault();
+        globalThis.dbg.tab(tabMap[e.key]);
+        return;
+      }
+    }
+    const k = key(e, inField);
     if (!k) return;
     e.preventDefault();
     if (ctl[k].on()) ctl[k].run();
@@ -365,8 +389,8 @@ async function main() {
   const progFill = $("wasm-progress-fill");
   update = () => {
     for (const [name, c] of Object.entries(ctl)) $(`btn-${name}`).disabled = !c.on();
-    $("btn-start").textContent = model.session ? "↻ restart" : "▶ start";
-    $("btn-continue").textContent = model.state === "running" ? "⏸ pause (F8)" : "▶ continue (F8)";
+    $("btn-start").textContent = model.session ? "↻ restart (r)" : "▶ start (r)";
+    $("btn-continue").textContent = model.state === "running" ? "⏸ pause (c)" : "▶ continue (c)";
     document.body.dataset.state = model.state;
     const isLoading = worker && !!model.client?.loading;
     const p = model.client?.progress;

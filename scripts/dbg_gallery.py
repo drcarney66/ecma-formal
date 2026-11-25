@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 GALLERY = ROOT / "tools/dbg/gallery.json"
 DIRS = {"demo": ROOT / "tools/dbg/demo", "dbg": ROOT / "tests/dbg", "run": ROOT / "tests/run"}
-FIELDS = {"id", "group", "title", "line", "builds", "breakpoints", "lines", "filters", "args", "demo", "note"}
+FIELDS = {"id", "group", "title", "line", "builds", "breakpoints", "lines", "filters", "args", "demo", "note", "expand"}
 
 
 def header_args(src: str) -> list[str]:

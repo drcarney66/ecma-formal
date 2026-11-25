@@ -1983,10 +1983,30 @@
    "group": "proposals-117",
    "title": "Stage 0: Iterator.prototype.transfer",
    "line": "Iterator.prototype.transfer moves a suspended generator's state and execution context onto a fresh Generator instance while marking the source generator ~completed~.",
+   "expand": [
+    "Slots/O",
+    "Slots/genContext"
+   ],
    "breakpoints": [
     {
      "alg": "sec-iterator.prototype.transfer",
      "path": "1"
+    },
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "3.f"
+    },
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "3.j.i"
+    },
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "3.k"
+    },
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "3.l"
     }
    ],
    "builds": {
@@ -2000,6 +2020,22 @@
         "BuiltinCallOrConstruct",
         "[[Call]]"
        ]
+      },
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "3.f"
+      },
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "3.j.i"
+      },
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "3.k"
+      },
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "3.l"
       }
      ],
      "end": "normal: undefined",

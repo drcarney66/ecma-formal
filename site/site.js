@@ -221,6 +221,9 @@
 
       var openDbgModal = function (url) {
         if (!modal || !modalFrame || !url) return;
+        modalFrame.onload = function () {
+          try { if (modalFrame.contentWindow) modalFrame.contentWindow.focus(); } catch (e) { /* none */ }
+        };
         modalFrame.setAttribute("src", url);
         modal.hidden = false;
       };
