@@ -60,16 +60,15 @@ RETIRED = [r"\bESL\b", r"\besl\b", r"\bB0'?\b", r"\bB1'?\b", r"\bb1p\b", r"[Tt]h
 # source (the build fails once the source is fixed, so that the entry is removed).
 REWORD: list[tuple[str, str, str]] = []
 
-# The pages, in groups: what to read first, the specification layer set for reading, the programs to try, the
-# results. Home is the site's name.
+# The pages, in three dropdown menus next to the site's name. Home is the site's name.
 NAV = [
     ("Read", [("slides.html", "TC39 #117 slides"), ("how-it-works.html", "How it works"),
               ("what-is-proved.html", "What is proved"), ("errata.html", "Errata"),
-              ("spec-issues/", "Spec issues"), ("proposal.html", "Applying a proposal")]),
-    ("The specification", [("model.html", "The model"), ("host.html", "The host"), ("implements.html", "Implements"),
+              ("spec-issues/", "Spec issues"), ("proposal.html", "Applying a proposal"),
+              ("test262.html", "test262")]),
+    ("The Specification", [("model.html", "The model"), ("host.html", "The host"), ("implements.html", "Implements"),
                            ("parser-laws.html", "Parser laws")]),
     ("Try it", [("examples.html", "Examples"), ("debugger/", "Debugger")]),
-    ("Results", [("test262.html", "test262")]),
 ]
 DBG_UI = ROOT / "tools/dbg/ui/index.html"
 
@@ -174,7 +173,7 @@ def need_theorem(full: str) -> None:
 
 
 def nav_html(here: str, pages: set[str], prefix: str = "") -> str:
-    groups = []
+    menus = []
     for title, items in NAV:
         lis = []
         for href, label in items:
@@ -184,19 +183,16 @@ def nav_html(here: str, pages: set[str], prefix: str = "") -> str:
             lis.append(f'<li><a href="{prefix}{href}"{cur}>{html.escape(label)}</a></li>')
         if lis:
             cur = " here" if any(href == here for href, _ in items) else ""
-            groups.append(f'<li class="grp{cur}"><span class="grp-label">{html.escape(title)}</span><ul>{"".join(lis)}</ul></li>')
-    return "".join(groups)
+            menus.append(f'<details class="nav-menu{cur}"><summary>{html.escape(title)}</summary><ul>{"".join(lis)}</ul></details>')
+    return "".join(menus)
 
 
 def bar_html(here: str, pages: set[str], prefix: str = "") -> str:
-    """The site's header: the name, the pages in their groups (folded behind "Pages" on a narrow screen, by
-    site.js; open without it), the theme switch."""
+    """The site's header: the name, the three dropdown menus beside it, and the theme switch on the far right."""
     return f"""<header class="bar">
 <div class="bar-in">
 <a class="brand" href="{prefix}index.html">{html.escape(SITE_NAME)}</a>
-<details class="navd" id="nav-details" open><summary>Pages</summary>
-<nav class="site" aria-label="Pages"><ul class="groups">{nav_html(here, pages, prefix)}</ul></nav>
-</details>
+<nav class="site" aria-label="Pages">{nav_html(here, pages, prefix)}</nav>
 <button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
 <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
 </div>

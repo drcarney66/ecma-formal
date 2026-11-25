@@ -97,17 +97,28 @@
     });
     window.addEventListener("afterprint", function () { closed.forEach(function (d) { d.open = false; }); });
 
-    // On a narrow screen the table of contents starts folded: it sits above the text.
-    // On a narrow screen the pages fold behind "Pages", which opens over the text and closes on Escape or a
-    // click elsewhere. (The breakpoint is style.css's.)
-    var navd = document.getElementById("nav-details");
-    var narrow = window.matchMedia ? window.matchMedia("(max-width: 61.99rem)") : null;
-    if (navd && narrow) {
-      var fit = function () { navd.open = !narrow.matches; };
-      fit();
-      if (narrow.addEventListener) narrow.addEventListener("change", fit);
-      document.addEventListener("click", function (e) { if (narrow.matches && navd.open && !navd.contains(e.target)) navd.open = false; });
-      document.addEventListener("keydown", function (e) { if (e.key === "Escape" && narrow.matches && navd.open) navd.open = false; });
+    // Header dropdown menus: opening one closes the others; clicking outside or pressing Escape closes all.
+    var navMenus = Array.prototype.slice.call(document.querySelectorAll("details.nav-menu"));
+    if (navMenus.length) {
+      navMenus.forEach(function (m) {
+        m.addEventListener("toggle", function () {
+          if (m.open) {
+            navMenus.forEach(function (other) { if (other !== m) other.open = false; });
+          }
+        });
+      });
+      document.addEventListener("click", function (e) {
+        navMenus.forEach(function (m) {
+          if (m.open && !m.contains(e.target)) m.open = false;
+        });
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && navMenus.some(function (m) { return m.open; })) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          navMenus.forEach(function (m) { m.open = false; });
+        }
+      });
     }
 
     var tocd = document.getElementById("toc-details");
