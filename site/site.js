@@ -268,14 +268,31 @@
         }
       });
 
+      var isInlineDbgKey = function (e) {
+        if (e.key === "F8" || e.key === "F9" || e.key === "F10" || e.key === "F11") return true;
+        if (e.altKey) return false;
+        return e.key === "c" || e.key === "s" || e.key === "i" || e.key === "o" || e.key === "n" || e.key === "r" ||
+          e.key === "1" || e.key === "2" || e.key === "3";
+      };
+
       document.addEventListener("keydown", function (e) {
-        if (e.altKey || e.ctrlKey || e.metaKey) return;
+        if (e.ctrlKey || e.metaKey) return;
         if (modal && !modal.hidden) {
-          if (e.key === "Escape") { e.preventDefault(); closeDbgModal(); }
+          if (!e.altKey && e.key === "Escape") { e.preventDefault(); closeDbgModal(); }
           return;
         }
         var tag = e.target && e.target.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (step3Frame && slides[idx].id === "slide-step-3" && step >= 1 && isInlineDbgKey(e)) {
+          e.preventDefault();
+          try {
+            if (step3Frame.contentWindow) {
+              step3Frame.contentWindow.postMessage({ type: "dbg-key", key: e.key, altKey: !!e.altKey, shiftKey: !!e.shiftKey }, location.origin);
+            }
+          } catch (err) { /* none */ }
+          return;
+        }
+        if (e.altKey) return;
         if (e.key === "Enter" && e.target && e.target.hasAttribute && e.target.hasAttribute("data-dbg-open")) {
           e.preventDefault();
           openDbgModal(e.target.getAttribute("data-dbg-open"));
@@ -312,6 +329,9 @@
           focusDeck();
           if (e.data.key === "ArrowRight" || e.data.key === "PageDown") advance();
           else if (e.data.key === "ArrowLeft" || e.data.key === "PageUp") retreat();
+          else if (e.data.key === "f" || e.data.key === "F") setPresent(!presenting);
+          else if (e.data.key === "Home") { idx = 0; step = 0; syncDeck(); }
+          else if (e.data.key === "End") { idx = slides.length - 1; step = maxStepOf(idx); syncDeck(); }
         }
       });
 

@@ -357,6 +357,20 @@ async function main() {
 
   const ctl = controls(model);
   for (const [name, c] of Object.entries(ctl)) $(`btn-${name}`).onclick = () => c.on() && c.run();
+  const runKey = (e, inField = false) => {
+    if (!inField && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const tabMap = { "1": "inspect", "2": "heap", "3": "state" };
+      if (tabMap[e.key] && globalThis.dbg?.tab) {
+        globalThis.dbg.tab(tabMap[e.key]);
+        return true;
+      }
+    }
+    const k = key(e, inField);
+    if (!k) return false;
+    if (ctl[k].on()) ctl[k].run();
+    return true;
+  };
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && window.parent !== window) {
       e.preventDefault();
@@ -365,23 +379,20 @@ async function main() {
     }
     const tag = e.target?.tagName;
     const inField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || !!e.target?.isContentEditable;
-    if (!inField && !e.metaKey && !e.ctrlKey && !e.altKey) {
-      if (window.parent !== window && (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "PageDown" || e.key === "PageUp")) {
+    if (!inField && !e.metaKey && !e.ctrlKey && !e.altKey && window.parent !== window) {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "PageDown" || e.key === "PageUp" ||
+          e.key === "f" || e.key === "F" || e.key === "Home" || e.key === "End") {
         e.preventDefault();
         window.parent.postMessage({ type: "deck-arrow", key: e.key }, location.origin);
         return;
       }
-      const tabMap = { "1": "inspect", "2": "heap", "3": "state" };
-      if (tabMap[e.key] && globalThis.dbg?.tab) {
-        e.preventDefault();
-        globalThis.dbg.tab(tabMap[e.key]);
-        return;
-      }
     }
-    const k = key(e, inField);
-    if (!k) return;
-    e.preventDefault();
-    if (ctl[k].on()) ctl[k].run();
+    if (runKey(e, inField)) e.preventDefault();
+  });
+
+  window.addEventListener("message", (e) => {
+    if (e.origin !== location.origin || e.data?.type !== "dbg-key") return;
+    runKey({ key: e.data.key, altKey: !!e.data.altKey, shiftKey: !!e.data.shiftKey, metaKey: false, ctrlKey: false }, false);
   });
   const entry = $("stop-on-entry");
   entry.checked = model.config.stopOnEntry;
