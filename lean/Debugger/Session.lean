@@ -529,7 +529,8 @@ def noteRoot : Option Nat → BaseIO Unit
 def stoppedBody (reason : String) (p : Paused) (s : Session) (filter : Option String := none) (hits : List Nat := []) : Json :=
   let top := (p.frames ()).head?
   let spec := Json.mk [("alg", (top.map (·.name)).getD ""), ("secId", (top.map (·.secId)).getD ""),
-    ("idx", .nat ((top.map (·.alg.idx)).getD 0)), ("path", (top.map (·.path)).getD ""), ("text", (top.map (·.text)).getD ""), ("depth", .nat p.depth),
+    ("idx", .nat ((top.map (·.alg.idx)).getD 0)), ("path", (top.map (·.path)).getD ""), ("text", (top.map (·.text)).getD ""),
+    ("spectec", (top.map (·.spectec)).getD ""), ("depth", .nat p.depth),
     ("steps", .nat s.steps), ("transitions", .nat s.transitions)]
   let spec := match top.bind (·.reading) with
     | some r => spec.set "reading" r

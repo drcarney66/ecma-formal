@@ -293,6 +293,10 @@ async function main() {
   let update = () => {};
   const c = await client(build, () => update());
   const saved = loadConfig(storage, store);
+  let savedNotation = "ecma";
+  try {
+    if (storage.getItem("ecma-dbg:notation") === "spectec") savedNotation = "spectec";
+  } catch {}
   const model = new Model(c, {
     program: saved.program ?? b.examples["tests/dbg"]?.find((p) => p.name === "stepping.js") ?? SAMPLE,
     breakpoints: Array.isArray(saved.breakpoints) ? saved.breakpoints : [],
@@ -300,6 +304,7 @@ async function main() {
     filters: Array.isArray(saved.filters) ? saved.filters : [],
     stopOnEntry: saved.stopOnEntry === true,
     buildArgs: build.args,
+    notation: savedNotation,
   });
   globalThis.dbg = { model, build };
   const setBuild = (next) => {
@@ -345,6 +350,17 @@ async function main() {
   tabs(model, { heap: new HeapPane(model), state: new StatePane(model) });
   new ConsolePane(model);
   new BreakpointsPane(model, storage, store);
+  const notationButtons = [...document.querySelectorAll("#spec-notation button[data-notation]")];
+  const syncNotation = () => {
+    for (const nb of notationButtons) nb.classList.toggle("on", nb.dataset.notation === model.notation);
+    try {
+      storage.setItem("ecma-dbg:notation", model.notation);
+    } catch {}
+  };
+  for (const nb of notationButtons) nb.onclick = () => model.setNotation(nb.dataset.notation);
+  model.on("change", (what) => what === "notation" && syncNotation());
+  syncNotation();
+  globalThis.dbg.notation = (mode) => model.setNotation(mode);
   // An example picked is the page's `?example=` (so that a reload, or another build, opens it again);
   // outside test mode, picking a proposal example (or an example unsupported by the active build) switches
   // synchronously to that example's primary build before `SourcePane.loadExample` starts the session.
@@ -362,6 +378,10 @@ async function main() {
       const tabMap = { "1": "inspect", "2": "heap", "3": "state" };
       if (tabMap[e.key] && globalThis.dbg?.tab) {
         globalThis.dbg.tab(tabMap[e.key]);
+        return true;
+      }
+      if (e.key === "v") {
+        model.setNotation(model.notation === "spectec" ? "ecma" : "spectec");
         return true;
       }
     }

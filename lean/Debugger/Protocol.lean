@@ -45,8 +45,8 @@ Requests (`Debugger.Session` serves them):
 - `threads` (one, "agent"), `disconnect`;
 - `source` {sourceReference} or {source}, at any phase: the source's {content, mimeType};
 - `specAlgorithm` {secId, idx}, {secId} or {alg} (as a breakpoint's, naming one algorithm), at any phase: its
-  listing {name, secId, idx, kind (alg | row), production? (an SDO row's, as written), params, steps},
-  each step {path, text, depth, reading?, steps?} as a frame shows it, in order, its sub-steps
+  listing {name, secId, idx, kind (alg | row), production? (an SDO row's, as written), params, spectecHead, steps},
+  each step {path, text, spectec, depth, reading?, steps?} as a frame shows it, in order, its sub-steps
   nested: an `If`'s arms after it, a closure's steps under the step evaluating its literal, an
   erratum's readings under its step, numbered within the reading (`reading`, its overlay id);
 - at a pause: `stackTrace` (frames with `source`, `line`, `column`, `endLine`, `endColumn`, `lo` and

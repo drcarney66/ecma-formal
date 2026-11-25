@@ -57,7 +57,9 @@ def main() -> int:
     ap.add_argument("files", nargs="*", type=Path)
     args = ap.parse_args()
     if not args.files:
-        args.files = [ROOT / f"tests/run/{p}.js" for p in SUITE] + sorted((ROOT / "tests/dbg").iterdir())
+        args.files = [ROOT / f"tests/run/{p}.js" for p in SUITE] + [
+            p for p in sorted((ROOT / "tests/dbg").iterdir()) if not p.name.startswith("proposal_")
+        ]
     dbgs = sorted(f for f in args.files if f.suffix == ".dbg")
     beside = {d.with_suffix(".js") for d in dbgs}
     progs = [f for f in args.files if f.suffix == ".js" and f not in beside]

@@ -184,7 +184,10 @@ def classify(path: str) -> str:
         if path.startswith("lean/Engine/Proofs/") or path in ("lean/Engine/Pins.lean", "lean/Engine/Claims.lean"):
             return "proofs"
         return "model"
-    if (path.startswith("spec/formal/") and path.endswith(".emu")) or path.startswith("spec/proposals/"):
+    if path.startswith("spec/spectec/prose/"):
+        return "model"
+    if (path.startswith("spec/spectec/") or path.startswith("spec/html/")
+            or (path.startswith("spec/formal/") and path.endswith(".emu")) or path.startswith("spec/proposals/")):
         return "algorithms"
     if path.startswith("tests/") and not path.endswith(".expected"):
         return "tests"

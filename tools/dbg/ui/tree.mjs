@@ -20,10 +20,10 @@ export class Tree {
     const row = el("div", "row");
     row.append(el("span", "toggle", v.variablesReference ? "▸" : " "), el("span", "name", v.name));
     if (!scope) {
-      row.append(el("span", "value", typeof v.value === "string" ? v.value : JSON.stringify(v.value)));
-      if (v.type) row.append(el("span", "type", v.type));
+      row.append(": ", el("span", "value", typeof v.value === "string" ? v.value : JSON.stringify(v.value)));
+      if (v.type) row.append(" ", el("span", "type", v.type));
       const addr = cellOf(v);
-      if (addr !== null) row.append(this.cellLink(addr));
+      if (addr !== null) row.append(" ", this.cellLink(addr));
     }
     if (v.presentationHint?.attributes?.includes("changed")) li.classList.add("changed");
     li.append(row);

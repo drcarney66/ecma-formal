@@ -46,6 +46,7 @@ structure FrameView where
   /-- the overlay id of the erratum's reading the step is in (`path` numbered within it) -/
   reading : Option String := none
   text : String
+  spectec : String := ""
   kind : String
   run : Nat
   flags : List String := []
@@ -202,7 +203,7 @@ def Sources.ofNode? (s : Sources) (n : F.Node) : Option Program := s.of? (nodeSt
 def FrameView.json (n : Names) (srcs : Sources) (f : FrameView) (id : Nat) : Json :=
   let pos := f.node.bind fun nd => (srcs.ofNode? nd).bind fun p => (p.spanIn? nd).map fun sp => (p, sp)
   let spec := Json.mk [("secId", f.secId), ("idx", .nat f.alg.idx), ("path", f.path), ("text", f.text),
-    ("kind", f.kind), ("run", .nat f.run)]
+    ("spectec", f.spectec), ("kind", f.kind), ("run", .nat f.run)]
   let spec := match f.reading with
     | some r => spec.set "reading" r
     | none => spec
@@ -223,14 +224,15 @@ def FrameView.json (n : Names) (srcs : Sources) (f : FrameView) (id : Nat) : Jso
 /-! Listings. -/
 
 partial def ListingStep.json (s : ListingStep) : Json :=
-  let j := Json.mk [("path", s.path), ("text", s.text), ("depth", .nat s.depth)]
+  let j := Json.mk [("path", s.path), ("text", s.text), ("spectec", s.spectec), ("depth", .nat s.depth)]
   let j := match s.reading with
     | some r => j.set "reading" r
     | none => j
   if s.steps.isEmpty then j else j.set "steps" (.arr (s.steps.map ListingStep.json).toArray)
 
 def Listing.json (l : Listing) : Json :=
-  let j := Json.mk [("name", l.name), ("secId", l.secId), ("idx", .nat l.idx), ("kind", l.kind)]
+  let j := Json.mk [("name", l.name), ("secId", l.secId), ("idx", .nat l.idx), ("kind", l.kind),
+    ("spectecHead", l.spectecHead)]
   let j := match l.production with
     | some p => j.set "production" p
     | none => j

@@ -80,6 +80,11 @@ body.dbg .bar-in { max-width: none; }
 .pane h2 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--dbg-dim); margin: .2em 0 .4em; }
 .pane h2 span { text-transform: none; color: var(--dbg-ink); }
 .pane h2 button { float: right; font-size: 11px; }
+#step-pane h2 { display: flex; align-items: center; justify-content: space-between; gap: .5em; }
+.seg-toggle { display: inline-flex; border: 1px solid var(--dbg-line); border-radius: 4px; overflow: hidden; letter-spacing: 0; font-weight: 500; text-transform: none; }
+.seg-toggle button { float: none; border: 0; border-radius: 0; background: var(--dbg-pane); color: var(--dbg-dim); padding: .1em .5em; font-size: 11px; line-height: 1.25; }
+.seg-toggle button + button { border-left: 1px solid var(--dbg-line); }
+.seg-toggle button.on { background: var(--dbg-select); color: var(--dbg-ink); font-weight: 600; }
 .tools { margin-bottom: .3em; display: flex; gap: .3em; align-items: center; flex-wrap: wrap; }
 .code { font: var(--dbg-mono); }
 #source { flex: 1; overflow: auto; }
@@ -108,10 +113,12 @@ ol#stack, ol#jsstack, ul#breakpoints, ul.tree, ul.kids { list-style: none; margi
 #stack .path, #stack .pos, #jsstack .pos, #jsstack .builtin { margin-left: .5em; font: var(--dbg-mono); color: var(--dbg-dim); }
 #jsstack .builtin { font-style: italic; }
 #stack .text { font-size: 12px; color: var(--dbg-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#stack .text.spectec { font: var(--dbg-mono); }
 #step .alg .name { font-weight: 600; font-size: 14px; }
 #step .secid { font: var(--dbg-mono); margin: .2em 0; }
 #step .kind, #step .reading { color: var(--dbg-dim); }
 #step .steptext { margin: .4em 0; font-size: 14px; }
+#step .steptext.spectec { font: var(--dbg-mono); font-size: 12.5px; }
 #step .node { font: var(--dbg-mono); color: var(--dbg-dim); }
 #diff, #heap-diff { font: var(--dbg-mono); color: var(--dbg-dim); margin-bottom: .3em; }
 a.diff-link { color: var(--dbg-link); cursor: pointer; text-decoration: underline; }
@@ -121,8 +128,7 @@ a.diff-link { color: var(--dbg-link); cursor: pointer; text-decoration: underlin
 .tree .toggle { display: inline-block; width: 1em; color: var(--dbg-dim); }
 .tree .scope > .row .name { font-weight: 600; font-family: system-ui, sans-serif; }
 .tree .var .name { color: var(--dbg-var); }
-.tree .var .name::after { content: ": "; color: var(--dbg-ink); }
-.tree .type { color: var(--dbg-dim); margin-left: .6em; }
+.tree .type { color: var(--dbg-dim); margin-left: .25em; }
 .tree .changed > .row .value { color: var(--dbg-changed); font-weight: 600; }
 .tree .more, #more-frames { color: var(--dbg-link); cursor: pointer; }
 #breakpoints .bp { font: var(--dbg-mono); padding: .1em 0; }
@@ -139,13 +145,13 @@ a.diff-link { color: var(--dbg-link); cursor: pointer; text-decoration: underlin
 #source-tabs { border-bottom: 1px solid var(--dbg-line); padding: .2em 0 0; }
 #source-tabs button { border: 1px solid transparent; border-bottom: 0; background: none; padding: .15em .6em; font: var(--dbg-mono); color: var(--dbg-dim); cursor: pointer; }
 #source-tabs button.on { border-color: var(--dbg-line); background: var(--dbg-pane); color: var(--dbg-ink); margin-bottom: -1px; }
-.tree a.cell { margin-left: .6em; color: var(--dbg-link); cursor: pointer; font-size: 11px; }
+.tree a.cell { margin-left: .25em; color: var(--dbg-link); cursor: pointer; font-size: 11px; }
 #heap-range { font: var(--dbg-mono); color: var(--dbg-dim); }
 #heap-addr.bad { outline: 1px solid var(--dbg-changed); }
 #heap .cell > .row { display: flex; gap: .6em; align-items: baseline; cursor: pointer; }
 #heap .addr { color: var(--dbg-link); min-width: 4em; }
 #heap .kind { color: var(--dbg-dim); min-width: 3.5em; }
-#heap .type { color: var(--dbg-var); margin: 0; }
+#heap .cell > .row > .type { color: var(--dbg-var); margin: 0; }
 #heap .summary { overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
 #heap .cell.new > .row .addr { font-weight: 600; }
 #heap .cell.new > .row .addr::before { content: "+"; color: var(--dbg-good); }
@@ -172,9 +178,10 @@ a.diff-link { color: var(--dbg-link); cursor: pointer; text-decoration: underlin
 #state details.host { margin-top: .6em; }
 #state details.host summary { color: var(--dbg-dim); cursor: pointer; }
 #state details.host td { font: var(--dbg-mono); padding: 0 .6em 0 0; }
-#step .signature { font: var(--dbg-mono); margin: .6em 0 .2em; border-top: 1px solid var(--dbg-faint); padding-top: .4em; }
+#step .signature { font: var(--dbg-mono); margin: .6em 0 .2em; border-top: 1px solid var(--dbg-faint); padding-top: .4em; overflow-wrap: anywhere; }
 #step .signature .production, #step .listing-note { color: var(--dbg-dim); }
 #step ol.listing { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+#step ol.listing.spectec { font: var(--dbg-mono); }
 #step .lstep { display: flex; padding: .05em 0; }
 #step .lstep .gutter { flex: none; width: 1.4em; color: var(--dbg-changed); cursor: pointer; text-align: center; user-select: none; }
 #step .lstep.reading .gutter { cursor: default; }

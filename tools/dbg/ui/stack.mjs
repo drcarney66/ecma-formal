@@ -11,12 +11,14 @@ export class StackPane {
     this.list = $("stack");
     this.more = $("more-frames");
     this.more.onclick = () => this.model.moreFrames();
-    model.on("change", (what) => ["pause", "frames", "jsFrames", "select", "state"].includes(what) && this.render(what));
+    model.on("change", (what) =>
+      ["pause", "frames", "jsFrames", "select", "state", "notation"].includes(what) && this.render(what));
     this.render();
   }
 
   render(what) {
     const snap = this.model.state === "paused" ? this.model.snap : null;
+    const spectec = this.model.notation === "spectec";
     this.list.textContent = "";
     const frames = snap?.frames ?? [];
     const js = snap ? this.model.jsFrameOf(snap.selected) : null;
@@ -32,8 +34,9 @@ export class StackPane {
       if (js && js.spec.frames.lo <= f.id && f.id < js.spec.frames.hi) li.classList.add("jsrange");
       li.append(el("span", "name", f.name), el("span", "path", f.spec.path));
       if (f.line > 0) li.append(el("span", "pos", `${f.source?.name ?? "source"}:${f.line}`));
-      li.append(el("div", "text", f.spec.text));
-      li.title = `${f.spec.secId} ${f.spec.path}: ${f.spec.text}`;
+      const fText = spectec && f.spec.spectec ? f.spec.spectec : f.spec.text;
+      li.append(el("div", spectec ? "text spectec" : "text", fText));
+      li.title = `${f.spec.secId} ${f.spec.path}: ${fText}`;
       li.onclick = () => this.model.selectFrame(f.id);
       this.list.append(li);
     }

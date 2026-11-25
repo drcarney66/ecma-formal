@@ -2,6 +2,8 @@ module
 
 public import Debugger.Session
 public import Engine.Machine
+public import Ecma.Notation.Print.SpecTec
+public import Ecma.Gen.Tables
 
 @[expose] public section
 
@@ -140,14 +142,34 @@ def frameCode (P : Prog) (f : Frame F) : Array String × Array CloLit × List St
     | some r => (r.vars, r.closures, r.body)
     | none => (#[], #[], [])
 
-/-- The text of the step at a frame's path. -/
-def frameText (P : Prog) (f : Frame F) : String :=
+def spectecEnv : Print.SpecTec.Env := { d := Ecma.Gen.decls, tblNames := Ecma.Gen.tableNames }
+
+/-- One step's own line in SpecTec notation; where the step evaluates closure literals whose bodies
+`stmtKids` lists under it, notes the closure header. -/
+def spectecStmt (vars : Array String) (cs : Array CloLit) (s : Stmt) : String :=
+  let base := ownLine (Print.SpecTec.printStmt spectecEnv vars 0 s)
+  let chs := (closS s).filterMap fun k => cs[k]?.map fun cl =>
+    ownLine (Print.SpecTec.printClosure spectecEnv vars 0 cl)
+  if chs.isEmpty then base else base ++ "  -- " ++ "; ".intercalate chs
+
+def closArm : Arm → List Nat
+  | .mk cd (.inline s) => ((cd.map closC).getD []) ++ closS s
+  | .mk cd (.block _) => (cd.map closC).getD []
+
+def spectecArm (vars : Array String) (cs : Array CloLit) (a : Arm) : String :=
+  let base := ownLine (Print.SpecTec.printArm spectecEnv vars 0 a)
+  let chs := (closArm a).filterMap fun k => cs[k]?.map fun cl =>
+    ownLine (Print.SpecTec.printClosure spectecEnv vars 0 cl)
+  if chs.isEmpty then base else base ++ "  -- " ++ "; ".intercalate chs
+
+/-- The text and SpecTec line of the step at a frame's path. -/
+def frameText (P : Prog) (f : Frame F) : String × String :=
   let (vars, cs, body) := frameCode P f
   let pc : Print.Ctx := { d := Ecma.Gen.decls, vars, cl := cs, clos := cs.map fun _ => "", depth := 0 }
   match findStep cs body f.path.reverse with
-  | some (.inl n) => plainText (ownLine (Print.node pc n))
-  | some (.inr a) => plainText (ownLine (Print.arm pc a))
-  | none => ""
+  | some (.inl n) => (plainText (ownLine (Print.node pc n)), spectecStmt vars cs n)
+  | some (.inr a) => (plainText (ownLine (Print.arm pc a)), spectecArm vars cs a)
+  | none => ("", "")
 
 def algTable : Std.HashMap (Nat × Nat) Alg := allAlgs.foldl (fun m g => m.insert (g.id.clause, g.id.idx) g) {}
 
@@ -211,24 +233,25 @@ partial def srcPath (ecs scs : Array CloLit) (t : Option Slot) :
           | none, m :: ss' => go (i + width s) (j + width m) r ss'
     go 1 j es ss
 
-/-- The source step (path innermost first, and text as its listing prints it) of path `p` (innermost first) in the
-expanded code `e`, the source code being `src` (each: variables, closures, steps). -/
+/-- The source step (path innermost first, and text and SpecTec line as its listing prints them) of path `p`
+(innermost first) in the expanded code `e`, the source code being `src` (each: variables, closures, steps). -/
 def srcStepIn (e src : Array String × Array CloLit × List Stmt) (p : List Nat) :
-    List Nat × String :=
+    List Nat × String × String :=
   let (vars, cs, body) := src
   let t := if vars.size < e.1.size then some vars.size else none
   let sp := srcPath e.2.1 cs t e.2.2 body 1 [] p.reverse
   let pc : Print.Ctx := { d := Ecma.Gen.decls, vars, cl := cs, clos := cs.map fun _ => "", depth := 0 }
-  (sp, match findStep cs body sp.reverse with
-    | some (.inl n) => plainText (ownLine (Print.node pc n))
-    | some (.inr a) => plainText (ownLine (Print.arm pc a))
-    | none => "")
+  let (txt, stc) := match findStep cs body sp.reverse with
+    | some (.inl n) => (plainText (ownLine (Print.node pc n)), spectecStmt vars cs n)
+    | some (.inr a) => (plainText (ownLine (Print.arm pc a)), spectecArm vars cs a)
+    | none => ("", "")
+  (sp, txt, stc)
 
 /-- A frame's step as its source listing has it (`srcStepIn`); a frame with no source code, its own (`frameText`). -/
-def srcStep (P : Prog) (f : Frame F) : List Nat × String :=
+def srcStep (P : Prog) (f : Frame F) : List Nat × String × String :=
   match srcCode f with
   | some src => srcStepIn (frameCode P f) src f.path
-  | none => (f.path, frameText P f)
+  | none => let (txt, stc) := frameText P f; (f.path, txt, stc)
 
 def kindText : Kind → String
   | .steps .. => "steps"
@@ -431,10 +454,10 @@ def view (P : Prog) (run : Nat) (f : Frame F) (ctl : Option (Ctl F)) : FrameView
   let control := match ctl with
     | some c => ctlText pc c
     | none => "waiting for its callee"
-  let (sp, text) := srcStep P f
+  let (sp, text, spectec) := srcStep P f
   let (_, path) := stepLabel Ecma.Gen.clauses f.alg sp
   { alg := f.alg, secId := secId f.alg, name := algName f.alg, path,
-    text, kind := kindText f.kind, run, flags := kindFlags f.kind,
+    text, spectec, kind := kindText f.kind, run, flags := kindFlags f.kind,
     slots := f.slots.toList.zipIdx.map fun (v, i) => (slotName vars i, v), node := f.node,
     detail := some { control, konts := f.konts.map (kontText pc) } }
 
@@ -460,9 +483,11 @@ partial def listNodes (pc : Print.Ctx) (d : Nat) (ns : List Stmt) (i : Nat)
       let q := (i + 1 + j) :: up
       let ck ← closKids pc (d + 1) q ((cd.map closC).getD [])
       let bk ← bodyKids pc (d + 1) q b
-      pure { path := pathText q, text := plainText (ownLine (Print.arm pc a)), depth := d, steps := ck ++ bk }
+      pure { path := pathText q, text := plainText (ownLine (Print.arm pc a)),
+             spectec := spectecArm pc.vars pc.cl a, depth := d, steps := ck ++ bk }
     let rest ← listNodes pc d r (i + width s) up
-    pure ({ path := pathText p, text := plainText (ownLine (Print.node pc s)), depth := d, steps := kids } ::
+    pure ({ path := pathText p, text := plainText (ownLine (Print.node pc s)),
+            spectec := spectecStmt pc.vars pc.cl s, depth := d, steps := kids } ::
       arms ++ rest)
 
 /-- The sub-steps of statement `s` at path `p`: the bodies of the closures it evaluates and its nested
@@ -506,6 +531,17 @@ def listSteps (vars : Array String) (cs : Array CloLit) (body : List Stmt) : Lis
   let pc : Print.Ctx := { d := Ecma.Gen.decls, vars, cl := cs, clos := cs.map fun _ => "", depth := 0 }
   ((listNodes pc 0 body 1 []).run []).1
 
+def spectecRowHead (r : SdoRow) : String :=
+  let fstr := match r.form with | .alg => "alg" | .equation => "equation"
+  let ann := if r.annex then " annex" else ""
+  let ks := ", ".intercalate (r.keys.map SpecTec.escStr)
+  let vs := ", ".intercalate (r.vars.toList.map SpecTec.tokIdent)
+  s!"sdo_row {SpecTec.tokAlgRef Ecma.Gen.decls r.id} {SpecTec.tokIdent (SpecTec.nameAt Ecma.Gen.decls.sdos r.sdo)} form {fstr}{ann} keys [{ks}] vars [{vs}]"
+
+def spectecAlgHead (g : Alg) : String :=
+  let vs := ", ".intercalate (g.vars.toList.map SpecTec.tokIdent)
+  s!"def {SpecTec.tokAlgRef Ecma.Gen.decls g.id} {SpecTec.escStr g.name} ({Print.SpecTec.printHeader spectecEnv g.vars g.header}) vars [{vs}]"
+
 /-- An SDO row's or algorithm's listing, the row first where both have the id (`algName`). -/
 def algorithm (a : AlgId) : Option Listing :=
   match rowTable.get? (a.clause, a.idx), algTable.get? (a.clause, a.idx) with
@@ -514,11 +550,13 @@ def algorithm (a : AlgId) : Option Listing :=
       name := algName a, secId := secId a, idx := a.idx, kind := "row"
       production := String.intercalate " | " r.keys
       params := paramNames r.vars (Ecma.Gen.decls.sdoHeaders.getD r.sdo none)
+      spectecHead := spectecRowHead r
       steps := listSteps r.vars r.closures r.body }
   | none, some g =>
     some {
       name := g.name, secId := secId a, idx := a.idx, kind := "alg"
       params := paramNames g.vars (some g.header)
+      spectecHead := spectecAlgHead g
       steps := listSteps g.vars g.closures g.body }
   | none, none => none
 

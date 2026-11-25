@@ -25,15 +25,16 @@ open Ecma Engine.Model
 
 abbrev F := Engine.Impl
 
-/-- A listed step: its path and text as a frame's (within `reading`), depth and sub-steps. -/
+/-- A listed step: its path and text as a frame's (within `reading`), SpecTec text, depth and sub-steps. -/
 structure ListingStep where
   path : String
   text : String
+  spectec : String := ""
   depth : Nat
   reading : Option String := none
   steps : List ListingStep := []
 
-/-- An algorithm or SDO row as listed: name, sec-id, index, kind, productions, parameters, steps. -/
+/-- An algorithm or SDO row as listed: name, sec-id, index, kind, productions, parameters, SpecTec header, steps. -/
 structure Listing where
   name : String
   secId : String
@@ -41,6 +42,7 @@ structure Listing where
   kind : String
   production : Option String := none
   params : List String := []
+  spectecHead : String := ""
   steps : List ListingStep
 
 /-- What the adapter names: algorithms' sec-ids and names, the algorithms a breakpoint's `alg`

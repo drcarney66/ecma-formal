@@ -285,7 +285,7 @@
         if (e.key === "F8" || e.key === "F9" || e.key === "F10" || e.key === "F11") return true;
         if (e.altKey) return false;
         return e.key === "c" || e.key === "s" || e.key === "i" || e.key === "o" || e.key === "n" || e.key === "r" ||
-          e.key === "1" || e.key === "2" || e.key === "3";
+          e.key === "v" || e.key === "1" || e.key === "2" || e.key === "3";
       };
 
       document.addEventListener("keydown", function (e) {

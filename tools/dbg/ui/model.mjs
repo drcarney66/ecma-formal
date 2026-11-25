@@ -82,6 +82,14 @@ export class Model {
     // module (a bundle's)}
     this.sources = new Map();
     this.sourceShown = 0;
+    this.notation = config.notation === "spectec" ? "spectec" : "ecma";
+  }
+
+  setNotation(notation) {
+    const next = notation === "spectec" ? "spectec" : "ecma";
+    if (this.notation === next) return;
+    this.notation = next;
+    this.emit("notation");
   }
 
   on(name, fn) {

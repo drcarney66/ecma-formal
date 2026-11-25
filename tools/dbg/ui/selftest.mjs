@@ -83,6 +83,8 @@ async function heapPanes(check, model) {
   o.querySelector(".row").click();
   await waitFor("the object's parts", () => rowOf(`#${addr}/a`));
   check("heap: o.a is 1", valueOf(rowOf(`#${addr}/a`)) === "1", rowOf(`#${addr}/a`).textContent);
+  const extRow = rowOf(`#${addr}/[[Extensible]]`)?.querySelector(":scope > .row")?.textContent ?? "";
+  check("heap: expanded slot spacing", /\[\[Extensible\]\]: true Boolean$/.test(extRow), extRow);
 
   kind.value = "list";
   kind.dispatchEvent(new Event("change"));
@@ -355,6 +357,13 @@ export async function run(model, bundle) {
     check("listing: the steps", paths === "1,1.a,1.a.i,1.b,1.b.i,1.b.ii,1.b.iii,2,2.a,3,4,5,6,7", paths);
     check("listing: step 3 current", document.querySelector("#step li.lstep.current").dataset.path === "3", text("#step li.lstep.current"));
     check("listing: step 3's breakpoint", document.querySelector('#step li.lstep[data-path="3"]').classList.contains("bp"), text("#step ol.listing"));
+    document.querySelector('#spec-notation button[data-notation="spectec"]').click();
+    check("spectec toggle: step text", text("#step .steptext") === "3. let argList = ? sdo ArgumentListEvaluation(argumentListNode)", text("#step .steptext"));
+    check("spectec toggle: signature", text("#step .signature").startsWith('def @sec-evaluatecall "EvaluateCall" (kind ao params [func :'), text("#step .signature"));
+    check("spectec toggle: stack text", text("#stack .frame .text") === "let argList = ? sdo ArgumentListEvaluation(argumentListNode)", text("#stack .frame .text"));
+    check("spectec toggle: listing step 3", text('#step li.lstep[data-path="3"] .stext').trim() === "let argList = ? sdo ArgumentListEvaluation(argumentListNode)", text('#step li.lstep[data-path="3"] .stext'));
+    document.querySelector('#spec-notation button[data-notation="ecma"]').click();
+    check("ecma toggle: restored", text("#step .steptext").startsWith("3. Let argList be ? ArgumentListEvaluation"), text("#step .steptext"));
     document.querySelector('#step li.lstep[data-path="5"] .gutter').click();
     await waitFor("step 5's breakpoint", () => document.querySelector('#step li.lstep.bp[data-path="5"]') && document.querySelectorAll("#breakpoints .bp.verified").length === 2);
     check("listing: a gutter's breakpoint listed", text("#breakpoints").includes("sec-evaluatecall#0 5"), text("#breakpoints"));
@@ -369,9 +378,12 @@ export async function run(model, bundle) {
     check("stepOut depth", $("status").textContent.includes("depth 5"), $("status").textContent);
 
     const func = document.querySelector('#inspect [data-path="Slots/func"]');
+    check("slot row spacing", /\bfunc: #\d+ Object #\d+$/.test(func.querySelector(":scope > .row").textContent), func.querySelector(":scope > .row").textContent);
     func.querySelector(".row").click();
     await waitFor("func's parts", () => func.querySelector(".kids li.var"));
     check("slot expanded", func.querySelectorAll(".kids li.var").length > 0, func.textContent);
+    const firstPart = func.querySelector(".kids li.var > .row").textContent;
+    check("expanded slot part spacing", /: .+ \S+/.test(firstPart) && !/falseBoolean|trueBoolean/.test(firstPart), firstPart);
 
     const other = document.querySelectorAll("#stack .frame")[1];
     other.click();

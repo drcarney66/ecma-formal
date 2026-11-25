@@ -14,12 +14,14 @@ export class StepPane {
     this.model = model;
     this.root = $("step");
     this.shown = null;
-    model.on("change", (what) => ["pause", "frames", "select", "state", "listing", "breakpoints"].includes(what) && this.render());
+    model.on("change", (what) =>
+      ["pause", "frames", "select", "state", "listing", "breakpoints", "notation"].includes(what) && this.render());
     this.render();
   }
 
   render() {
     const f = this.model.state === "paused" ? this.model.frame() : null;
+    const spectec = this.model.notation === "spectec";
     this.root.textContent = "";
     if (!f) {
       this.shown = null;
@@ -38,19 +40,20 @@ export class StepPane {
     if (s.reading) id.append(el("span", "reading", ` erratum ${s.reading}`));
     const kind = [s.kind, ...(s.flags ?? [])].join(" ");
     id.append(el("span", "kind", ` ${kind}${s.run ? `, run ${s.run}` : ""}`));
-    this.root.append(head, id, el("div", "steptext", `${s.path}. ${s.text}`));
+    const stepText = spectec && s.spectec ? s.spectec : s.text;
+    this.root.append(head, id, el("div", spectec ? "steptext spectec" : "steptext", `${s.path}. ${stepText}`));
     if (s.node) this.root.append(el("div", "node", `${s.node.production} [${s.node.lo}, ${s.node.hi})`));
     const l = this.model.listing(s.secId, s.idx ?? 0);
     if (l === undefined) this.root.append(el("div", "listing-note", "loading the algorithm…"));
     else if (l === null) this.root.append(el("div", "listing-note", "no listing"));
-    else this.listing(l, s);
+    else this.listing(l, s, spectec);
   }
 
   // The listing `l`, with the step of the frame's spec `s` current.
-  listing(l, s) {
-    const head = el("div", "signature", `${l.name}(${l.params.join(", ")})`);
-    if (l.production) head.append(el("span", "production", ` ${l.production}`));
-    const ol = el("ol", "listing");
+  listing(l, s, spectec = false) {
+    const head = el("div", "signature", spectec && l.spectecHead ? l.spectecHead : `${l.name}(${l.params.join(", ")})`);
+    if (!spectec && l.production) head.append(el("span", "production", ` ${l.production}`));
+    const ol = el("ol", spectec ? "listing spectec" : "listing");
     let current = null;
     const add = (steps) => {
       for (const st of steps) {
@@ -70,7 +73,8 @@ export class StepPane {
           gutter.title = on ? "remove the breakpoint" : "break at this step";
           gutter.onclick = () => this.model.toggleBreakpoint(l.secId, l.idx, st.path);
         }
-        li.append(gutter, el("span", "spath", `${st.path}.`), el("span", "stext", ` ${st.text}`));
+        const stText = spectec && st.spectec ? st.spectec : st.text;
+        li.append(gutter, el("span", "spath", `${st.path}.`), el("span", "stext", ` ${stText}`));
         if ((st.reading ?? null) === (s.reading ?? null) && st.path === s.path) {
           li.classList.add("current");
           current = li;

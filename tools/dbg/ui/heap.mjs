@@ -202,7 +202,7 @@ export class HeapPane {
     if (diff && c.addr >= lo && c.addr < hi) li.classList.add("new");
     if (diff?.changed?.includes(c.addr)) li.classList.add("changed");
     const row = el("div", "row");
-    row.append(el("span", "toggle", "▸"), el("span", "addr", `#${c.addr}`), el("span", "kind", c.kind), el("span", "type", c.type), el("span", "summary", c.summary));
+    row.append(el("span", "toggle", "▸"), " ", el("span", "addr", `#${c.addr}`), " ", el("span", "kind", c.kind), " ", el("span", "type", c.type), " ", el("span", "summary", c.summary));
     li.append(row);
     this.tree.expandable(li, row, `#${c.addr}`, { variablesReference: c.variablesReference, indexedVariables: listLength(c.type) });
     if (diff && c.addr < lo) {
