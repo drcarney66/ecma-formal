@@ -1,6 +1,1 @@
-# The text: what the generators, the checks and the site read (scripts/spec_text.py). It is ECMA-262 as pinned
-# (external/ecma262) with the proposals below applied to it, in this order, by scripts/apply_proposal.py.
-#
-# One line per proposal:  NAME  SPEC.EMU-OR-ITS-DIRECTORY  ANSWERS-FILE
-# (the answers file: the resolutions of the places where the merge asked a question; apply_proposal.py says what
-# each kind means). With no line, the text is external/ecma262/spec.html itself.
+trim-chars  external/proposal-trim-chars/spec.emu  spec/proposals/trim-chars/resolutions.txt

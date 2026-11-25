@@ -1,0 +1,6 @@
+# proposal-trim-chars was written before ECMA-262 renamed TrimString's _string_ -> _arg_ and _str_ -> _string_.
+use-new sec-trimstring 0
+ignore sec-trimstring 1
+use-new sec-trimstring 2
+use-new sec-string.prototype.trimend 3
+use-new sec-string.prototype.trimstart 3

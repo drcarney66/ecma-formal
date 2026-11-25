@@ -2893,9 +2893,9 @@ spectec_only_def @ph-to-binary32
 spectec_only_def @ph-to-binary64
 spectec_only_def @ph-token
 spectec_only_def @ph-token-nt
-spectec_only_def @ph-trim-both
-spectec_only_def @ph-trim-leading
-spectec_only_def @ph-trim-trailing
+spectec_only_def @ph-trim-both-set
+spectec_only_def @ph-trim-leading-set
+spectec_only_def @ph-trim-trailing-set
 spectec_only_def @ph-tv-defined
 spectec_only_def @ph-twenty-significant-digits
 spectec_only_def @ph-two-distinct
@@ -2923,6 +2923,7 @@ spectec_only_def @ph-type-returns
 spectec_only_def @ph-type-sequence-of
 spectec_only_def @ph-type-syntax-errors
 spectec_only_def @ph-typedarray-constructor-name
+spectec_only_def @ph-unique-code-points-set
 spectec_only_def @ph-unit-more-than-once
 spectec_only_def @ph-units-not-in
 spectec_only_def @ph-units-other-than
@@ -2932,6 +2933,7 @@ spectec_only_def @ph-utf16-of
 spectec_only_def @ph-utf8-decode
 spectec_only_def @ph-utf8-encode
 spectec_only_def @ph-value-less-than
+spectec_only_def @ph-whitespace-lineterminator-set
 spectec_only_def @ph-zero-after-twentieth
 spectec_only_def @ph-zero-after-twentieth-incremented
 spectec_only_def @sort-Array

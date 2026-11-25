@@ -1405,40 +1405,6 @@ def @ph-other-code-units "ph-other-code-units" (kind ao params [#"choice 0", k :
   return $Substring(?s, $StrLen(?s) - k, data absent)
 }
 
-def @ph-trim-leading "ph-trim-leading" (kind ao params [s : String]) vars [s, ws, len, i, #"cp"] {
-  let ws = $RightHandSideCharacters([|WhiteSpace|, |LineTerminator|])
-  let len = $StrLen(?s)
-  let i = 0
-  repeat_while i < len {
-    let #"cp" = @sec-codepointat(s, i)
-    if #"cp"[[IsUnpairedSurrogate]] is val {true} or ws fails $Contains(#"cp"[[CodePoint]]) -> return $Substring(?s, ?i, data absent)
-    if_else #"cp"[[CodeUnitCount]] is val {2} { set var i = i + 2 } else { set var i = i + 1 }
-  }
-  return $"the empty String"()
-}
-
-def @ph-trim-trailing "ph-trim-trailing" (kind ao params [s : String]) vars [s, ws, end, u, start, hi, #"cp"] {
-  let ws = $RightHandSideCharacters([|WhiteSpace|, |LineTerminator|])
-  let end = $StrLen(?s)
-  repeat_while end > 0 {
-    let u = $NumericValue($UnitAt(end - 1, ?s))
-    let start = end - 1
-    if end >= 2 and u sat $InInterval(math(hex(56320, "DC00")), math(hex(57343, "DFFF"))) {
-      let hi = $NumericValue($UnitAt(end - 2, ?s))
-      if hi sat $InInterval(math(hex(55296, "D800")), math(hex(56319, "DBFF"))) -> set var start = end - 2
-    }
-    let #"cp" = @sec-codepointat(s, start)
-    if #"cp"[[IsUnpairedSurrogate]] is val {true} or ws fails $Contains(#"cp"[[CodePoint]]) -> return $Substring(?s, 0, ?end)
-    set var end = start
-  }
-  return $"the empty String"()
-}
-
-def @ph-trim-both "ph-trim-both" (kind ao params [s : String]) vars [s, t] {
-  let t = @ph-trim-leading(?s)
-  return @ph-trim-trailing(?t)
-}
-
 def @ph-starts-dollar-quote "ph-starts-dollar-quote" (kind ao params [t : String]) vars [t] {
   if t sat $StartsWith("$'") -> return true
   return false
@@ -3133,6 +3099,51 @@ def @formal-rounddecimalmv "formal-rounddecimalmv" (kind ao params [m : sort [#"
   if e > 309 -> return num_f(+∞)
   if e < math(-325) -> return num_f(+0)
   return @sec-roundmvresult(m * 10 ^ k)
+}
+
+def @ph-whitespace-lineterminator-set "ph-whitespace-lineterminator-set" (kind ao params []) vars [] {
+  return $RightHandSideCharacters([|WhiteSpace|, |LineTerminator|])
+}
+
+def @ph-unique-code-points-set "ph-unique-code-points-set" (kind ao params [s : String]) vars [s, cps, out, #"cp"] {
+  let cps = @sec-stringtocodepoints(s)
+  let out = $ListNew()
+  for_each #"cp" in cps {
+    if out fails $Contains(?#"cp") -> perform $Append(?#"cp", ?out)
+  }
+  return out
+}
+
+def @ph-trim-leading-set "ph-trim-leading-set" (kind ao params [s : String, ws : list<#"code point">]) vars [s, ws, len, i, #"cp"] {
+  let len = $StrLen(?s)
+  let i = 0
+  repeat_while i < len {
+    let #"cp" = @sec-codepointat(s, i)
+    if ws fails $Contains(#"cp"[[CodePoint]]) -> return $Substring(?s, ?i, data absent)
+    if_else #"cp"[[CodeUnitCount]] is val {2} { set var i = i + 2 } else { set var i = i + 1 }
+  }
+  return $"the empty String"()
+}
+
+def @ph-trim-trailing-set "ph-trim-trailing-set" (kind ao params [s : String, ws : list<#"code point">]) vars [s, ws, end, u, start, hi, #"cp"] {
+  let end = $StrLen(?s)
+  repeat_while end > 0 {
+    let u = $NumericValue($UnitAt(end - 1, ?s))
+    let start = end - 1
+    if end >= 2 and u sat $InInterval(math(hex(56320, "DC00")), math(hex(57343, "DFFF"))) {
+      let hi = $NumericValue($UnitAt(end - 2, ?s))
+      if hi sat $InInterval(math(hex(55296, "D800")), math(hex(56319, "DBFF"))) -> set var start = end - 2
+    }
+    let #"cp" = @sec-codepointat(s, start)
+    if ws fails $Contains(#"cp"[[CodePoint]]) -> return $Substring(?s, 0, ?end)
+    set var end = start
+  }
+  return $"the empty String"()
+}
+
+def @ph-trim-both-set "ph-trim-both-set" (kind ao params [s : String, ws : list<#"code point">]) vars [s, ws, t] {
+  let t = @ph-trim-leading-set(?s, ?ws)
+  return @ph-trim-trailing-set(?t, ?ws)
 }
 
 def @spec-cond-0 "spec-cond" (kind ao params [x0, x1]) vars [x0, x1] {

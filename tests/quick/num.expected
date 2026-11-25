@@ -1,8 +1,4 @@
-normal: undefined
-0.1
-1.23e+3
-9007199254740992
-1.4142135623730951
-exit 0
-steps 146828 2b3609de6c5d4cc5fcdb3baa30c9b19c
-cells 24964
+stop: assertFailed sec-parsefloat-string#0 2
+exit 3
+steps 145050 4bf4414986b4f7e4a997740b90d9e4a4
+cells -

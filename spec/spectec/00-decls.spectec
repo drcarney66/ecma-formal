@@ -287,8 +287,11 @@ clause @ph-to-binary64
 clause @ph-token
 clause @ph-token-nt
 clause @ph-trim-both
+clause @ph-trim-both-set
 clause @ph-trim-leading
+clause @ph-trim-leading-set
 clause @ph-trim-trailing
+clause @ph-trim-trailing-set
 clause @ph-tv-defined
 clause @ph-twenty-significant-digits
 clause @ph-two-distinct
@@ -316,6 +319,7 @@ clause @ph-type-returns
 clause @ph-type-sequence-of
 clause @ph-type-syntax-errors
 clause @ph-typedarray-constructor-name
+clause @ph-unique-code-points-set
 clause @ph-unit-more-than-once
 clause @ph-units-not-in
 clause @ph-units-other-than
@@ -325,6 +329,7 @@ clause @ph-utf16-of
 clause @ph-utf8-decode
 clause @ph-utf8-encode
 clause @ph-value-less-than
+clause @ph-whitespace-lineterminator-set
 clause @ph-zero-after-twentieth
 clause @ph-zero-after-twentieth-incremented
 clause @row-compileassertion-quantifiableassertion-lookahead

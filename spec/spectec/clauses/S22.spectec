@@ -580,35 +580,42 @@ def @sec-string.prototype.towellformed "String.prototype.toWellFormed" (kind bui
   return result
 }
 
-def @sec-string.prototype.trim "String.prototype.trim" (kind builtin params []) vars [#"this value", NewTarget, thisValue] {
+def @sec-string.prototype.trim "String.prototype.trim" (kind builtin params [characters opt]) vars [#"this value", NewTarget, characters, thisValue] {
   let thisValue = this_value
-  return ? @sec-trimstring(thisValue, ~start+end~)
+  return ? @sec-trimstring(thisValue, ~start+end~, characters)
 }
 
-def @sec-trimstring "TrimString" (kind ao params [arg : #"ECMAScript language value", #"where" : val(~start~) | val(~end~) | val(~start+end~)] -> completion<String> | #"throw completion") vars [arg, #"where", string, trimmedString] {
-  perform ? @sec-requireobjectcoercible(arg)
-  let string = ? @sec-tostring(arg)
+def @sec-trimstring "TrimString" (kind ao params [string : #"ECMAScript language value", #"where" : val(~start~) | val(~end~) | val(~start+end~), characters : String opt] -> completion<String> | #"throw completion") vars [string, #"where", characters, str, trimSet, trimmedString] {
+  perform ? @sec-requireobjectcoercible(string)
+  let str = ? @sec-tostring(string)
+  if characters is val {undefined} {
+    let trimSet = @ph-whitespace-lineterminator-set()
+  }
+  else {
+    if characters is not ty {String} -> throw @ph-new-error([[TypeError]])
+    let trimSet = @ph-unique-code-points-set(?characters)
+  }
   if #"where" is val {~start~} {
-    let trimmedString = @ph-trim-leading(?string)
+    let trimmedString = @ph-trim-leading-set(?str, ?trimSet)
   }
   else_if #"where" is val {~end~} {
-    let trimmedString = @ph-trim-trailing(?string)
+    let trimmedString = @ph-trim-trailing-set(?str, ?trimSet)
   }
   else {
     assert #"where" is val {~start+end~}
-    let trimmedString = @ph-trim-both(?string)
+    let trimmedString = @ph-trim-both-set(?str, ?trimSet)
   }
   return trimmedString
 }
 
-def @sec-string.prototype.trimend "String.prototype.trimEnd" (kind builtin params []) vars [#"this value", NewTarget, string] {
-  let string = this_value
-  return ? @sec-trimstring(string, ~end~)
+def @sec-string.prototype.trimend "String.prototype.trimEnd" (kind builtin params [characters opt]) vars [#"this value", NewTarget, characters, str] {
+  let str = this_value
+  return ? @sec-trimstring(str, ~end~, characters)
 }
 
-def @sec-string.prototype.trimstart "String.prototype.trimStart" (kind builtin params []) vars [#"this value", NewTarget, string] {
-  let string = this_value
-  return ? @sec-trimstring(string, ~start~)
+def @sec-string.prototype.trimstart "String.prototype.trimStart" (kind builtin params [characters opt]) vars [#"this value", NewTarget, characters, str] {
+  let str = this_value
+  return ? @sec-trimstring(str, ~start~, characters)
 }
 
 def @sec-string.prototype.valueof "String.prototype.valueOf" (kind builtin params []) vars [#"this value", NewTarget] {
