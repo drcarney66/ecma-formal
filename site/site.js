@@ -219,9 +219,22 @@
         syncDeck();
       };
 
+      var focusDeck = function () {
+        try {
+          if (document.activeElement && document.activeElement !== deck && document.activeElement.blur) {
+            document.activeElement.blur();
+          }
+          window.focus();
+          deck.focus({ preventScroll: true });
+        } catch (e) {
+          try { deck.focus(); } catch (e2) { /* none */ }
+        }
+      };
+
       var openDbgModal = function (url) {
         if (!modal || !modalFrame || !url) return;
         modalFrame.onload = function () {
+          if (modal.hidden) return;
           try { if (modalFrame.contentWindow) modalFrame.contentWindow.focus(); } catch (e) { /* none */ }
         };
         modalFrame.setAttribute("src", url);
@@ -231,8 +244,12 @@
       var closeDbgModal = function () {
         if (!modal || modal.hidden) return false;
         modal.hidden = true;
-        if (modalFrame) modalFrame.removeAttribute("src");
-        window.focus();
+        if (modalFrame) {
+          modalFrame.onload = null;
+          modalFrame.setAttribute("src", "about:blank");
+        }
+        focusDeck();
+        setTimeout(focusDeck, 0);
         return true;
       };
 
@@ -287,7 +304,14 @@
       window.addEventListener("message", function (e) {
         if (e.origin !== location.origin || !e.data) return;
         if (e.data.type === "deck-escape") {
-          if (!closeDbgModal() && presenting) setPresent(false);
+          if (!closeDbgModal()) {
+            focusDeck();
+            if (presenting) setPresent(false);
+          }
+        } else if (e.data.type === "deck-arrow" && (!modal || modal.hidden)) {
+          focusDeck();
+          if (e.data.key === "ArrowRight" || e.data.key === "PageDown") advance();
+          else if (e.data.key === "ArrowLeft" || e.data.key === "PageUp") retreat();
         }
       });
 

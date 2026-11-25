@@ -580,7 +580,7 @@ html:not(.js) .deck-bar { display: none; }
   aspect-ratio: 16 / 9; margin: 0 auto;
   border: 1px solid var(--rule); border-radius: 12px; background: var(--paper);
   box-shadow: 0 8px 28px rgb(0 0 0 / 0.06); overflow: hidden;
-  container-type: size;
+  container-type: size; outline: none;
 }
 html:not(.js) .deck-stage { width: 100%; aspect-ratio: auto; overflow: visible; border: 0; box-shadow: none; }
 

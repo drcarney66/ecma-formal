@@ -359,12 +359,18 @@ async function main() {
   for (const [name, c] of Object.entries(ctl)) $(`btn-${name}`).onclick = () => c.on() && c.run();
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && window.parent !== window) {
+      e.preventDefault();
       window.parent.postMessage({ type: "deck-escape" }, location.origin);
       return;
     }
     const tag = e.target?.tagName;
     const inField = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || !!e.target?.isContentEditable;
     if (!inField && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (window.parent !== window && (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "PageDown" || e.key === "PageUp")) {
+        e.preventDefault();
+        window.parent.postMessage({ type: "deck-arrow", key: e.key }, location.origin);
+        return;
+      }
       const tabMap = { "1": "inspect", "2": "heap", "3": "state" };
       if (tabMap[e.key] && globalThis.dbg?.tab) {
         e.preventDefault();
