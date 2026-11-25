@@ -252,21 +252,21 @@
           </ul>
         </li>
         <li class="reveal-item" data-reveal="2">
-          <strong>Soundness</strong> <em class="muted">(eventually)</em>
+          <strong>Soundness</strong>
           <ul>
             <li>Engine fast paths match stepping <code>spec.html</code> line by line (<code>Engine.implements</code>)</li>
             <li>Editorial refactorings proved behavior-preserving</li>
           </ul>
         </li>
         <li class="reveal-item" data-reveal="3">
-          <strong>Proofs about JS libraries</strong> <em class="muted">(eventually)</em>
+          <strong>Proofs about JS libraries</strong>
           <ul>
             <li>Hardened realms (<code>SES</code>) &amp; frozen intrinsics</li>
             <li>Captured primordials &amp; immutable values (<code>Composite</code>)</li>
           </ul>
         </li>
         <li class="reveal-item" data-reveal="4">
-          <strong>Generated JS VM</strong> <em class="muted">(eventually)</em>
+          <strong>Generated JS reference VM</strong>
           <ul>
             <li>Executable engine compiled straight from <code>spec.html</code> (native &amp; Wasm)</li>
             <li>Verified fast paths incrementally replacing slow spec steps</li>
@@ -276,27 +276,27 @@
     </div>
   </section>
 
-  <!-- 10. Next steps -->
-  <section class="slide" id="slide-next" data-slide="10" data-max-step="0">
+  <!-- 10. Next steps (right-arrow reveals one bullet at a time) -->
+  <section class="slide" id="slide-next" data-slide="10" data-max-step="3" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Looking ahead</span>
       <h2 id="next-steps">Next steps</h2>
     </div>
     <div class="slide-fill slide-bullets-wrap">
       <ul class="slide-bullets next-bullets">
-        <li>
+        <li class="reveal-item" data-reveal="1">
           <strong>Clean everything up!</strong>
           <ul>
             <li>Simplify the generator, overlay &amp; proof structure</li>
           </ul>
         </li>
-        <li>
+        <li class="reveal-item" data-reveal="2">
           <strong>Make it even easier to use</strong>
           <ul>
             <li>Turnkey proposal checks, CI integration &amp; smoother debugger UX</li>
           </ul>
         </li>
-        <li>
+        <li class="reveal-item" data-reveal="3">
           <strong>Explore a formal spec language for <code>.emu</code></strong>
           <ul>
             <li>Prover-agnostic surface language for algorithms, types, laws &amp; invariants</li>
