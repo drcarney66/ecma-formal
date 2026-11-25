@@ -144,15 +144,36 @@
       var modalClose = document.getElementById("dbg-modal-close");
       var step3Frame = document.getElementById("step3-dbg-frame");
       var sp = new URLSearchParams(location.search);
-      var idx = Math.max(0, Math.min(slides.length - 1, (parseInt(sp.get("slide") || "1", 10) || 1) - 1));
-      var step = Math.max(0, parseInt(sp.get("step") || "0", 10) || 0);
-      var presenting = sp.has("present");
-
       var maxStepOf = function (i) {
         return parseInt(slides[i].getAttribute("data-max-step") || "0", 10) || 0;
       };
 
-      var syncDeck = function () {
+      var parseDeckLocation = function () {
+        var h = decodeURIComponent(location.hash.replace(/^#/, "")).trim();
+        if (h) {
+          var m = /^(p)?(\d+)(?:\.(\d+))?$/i.exec(h);
+          if (m) {
+            var si = Math.max(0, Math.min(slides.length - 1, parseInt(m[2], 10) - 1));
+            var st = m[3] ? Math.min(maxStepOf(si), parseInt(m[3], 10)) : 0;
+            return { idx: si, step: st, presenting: !!m[1] || sp.has("present") };
+          }
+          for (var k = 0; k < slides.length; k++) {
+            if (slides[k].id === h || (window.CSS && CSS.escape && slides[k].querySelector("#" + CSS.escape(h)))) {
+              return { idx: k, step: 0, presenting: sp.has("present") };
+            }
+          }
+        }
+        var qi = Math.max(0, Math.min(slides.length - 1, (parseInt(sp.get("slide") || "1", 10) || 1) - 1));
+        var qs = Math.min(maxStepOf(qi), Math.max(0, parseInt(sp.get("step") || "0", 10) || 0));
+        return { idx: qi, step: qs, presenting: sp.has("present") };
+      };
+
+      var initLoc = parseDeckLocation();
+      var idx = initLoc.idx;
+      var step = initLoc.step;
+      var presenting = initLoc.presenting;
+
+      var syncDeck = function (writeHash) {
         slides.forEach(function (s, i) {
           s.classList.toggle("active", i === idx);
           if (i === idx) s.setAttribute("data-step", String(step));
@@ -166,7 +187,21 @@
           var ssrc = step3Frame.getAttribute("data-dbg-src");
           if (ssrc) step3Frame.setAttribute("src", ssrc);
         }
+        if (writeHash !== false && window.history && history.replaceState) {
+          var want = "#" + (presenting ? "p" : "") + (idx + 1) + (step > 0 ? "." + step : "");
+          if (location.hash !== want) {
+            history.replaceState(null, "", location.pathname + want);
+          }
+        }
       };
+
+      window.addEventListener("hashchange", function () {
+        var loc = parseDeckLocation();
+        idx = loc.idx;
+        step = loc.step;
+        presenting = loc.presenting;
+        syncDeck(false);
+      });
 
       var advance = function () {
         var m = maxStepOf(idx);
