@@ -9,7 +9,7 @@
 <div class="deck-bar" id="deck-bar" role="region" aria-label="Slide controls">
   <div class="deck-bar-left">
     <button type="button" class="theme deck-btn" id="deck-prev" title="Previous (←)">←</button>
-    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 11</span>
+    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 12</span>
     <button type="button" class="theme deck-btn" id="deck-next" title="Next (→)">→</button>
   </div>
   <div class="deck-bar-right">
@@ -93,8 +93,51 @@
     </div>
   </section>
 
-  <!-- 3. Why now -->
-  <section class="slide" id="slide-why-now" data-slide="3" data-max-step="0">
+  <!-- 3. The meat of the spec -->
+  <section class="slide" id="slide-meat" data-slide="3" data-max-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">Inside the formalization</span>
+      <h2 id="meat-of-the-spec">The meat of the spec</h2>
+    </div>
+    <div class="slide-fill meat-layout">
+      <div class="meat-cols">
+        <div class="meat-card">
+          <div class="meat-head">
+            <span class="badge proved">100% auto-generated</span>
+            <h3>Algorithms, grammar &amp; tables</h3>
+          </div>
+          <p class="meat-lead">What champions &amp; editors work on day to day in <code>spec.html</code></p>
+          <ul>
+            <li>All {{gen_modules}} clauses of <code>&lt;emu-alg&gt;</code> steps, SDOs &amp; early errors</li>
+            <li>Lexical, syntactic &amp; RegExp grammars ({{grammar_gen_modules}} modules)</li>
+            <li>Zero hand-edited Lean — checked byte-for-byte via bijection</li>
+          </ul>
+        </div>
+        <div class="meat-card">
+          <div class="meat-head">
+            <span class="badge rd">Formal core</span>
+            <h3>Model, host &amp; step laws</h3>
+          </div>
+          <p class="meat-lead">What JS primitives &amp; embedders mean — quoting <code>spec.html</code></p>
+          <ul>
+            <li><strong>Model (<code>Model.Laws</code>, {{model_laws}} laws):</strong> IEEE-754 Numbers, UTF-16 Strings, Records, Lists, Parse Nodes &amp; Store</li>
+            <li><strong>Host (<code>Host.WF</code>, {{host_laws}} laws):</strong> Job queues, modules, timers &amp; §29 memory model</li>
+            <li><strong>Step machine (<code>Machine.step</code>):</strong> Completions (<code>?</code> / <code>!</code>), scopes &amp; call frames</li>
+          </ul>
+        </div>
+      </div>
+      <div class="meat-downstream">
+        <span class="meat-arrow" aria-hidden="true">↓</span>
+        <div>
+          <strong>Everything else is downstream — and ideally auto-generated from these:</strong>
+          <span>Reference JS VM &nbsp;·&nbsp; Wasm64 spec debugger &nbsp;·&nbsp; Mechanical merge &amp; static checks &nbsp;·&nbsp; <code>test262</code> runner</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Why now -->
+  <section class="slide" id="slide-why-now" data-slide="4" data-max-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Why now?</span>
       <h2 id="why-now">LLMs!</h2>
@@ -105,7 +148,7 @@
   </section>
 
   <!-- 4. Adding a proposal (1): write the algorithms -->
-  <section class="slide" id="slide-step-1" data-slide="4" data-max-step="1" data-step="0">
+  <section class="slide" id="slide-step-1" data-slide="5" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 1</span>
       <h2 id="step-1">Write the algorithms</h2>
@@ -128,7 +171,7 @@
   </section>
 
   <!-- 5. Adding a proposal (2): generate the spec -->
-  <section class="slide" id="slide-step-2" data-slide="5" data-max-step="1" data-step="0">
+  <section class="slide" id="slide-step-2" data-slide="6" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 2</span>
       <h2 id="step-2">Generate the spec</h2>
@@ -174,7 +217,7 @@
   </section>
 
   <!-- 6. Adding a proposal (3): debug! -->
-  <section class="slide" id="slide-step-3" data-slide="6" data-max-step="1" data-step="0">
+  <section class="slide" id="slide-step-3" data-slide="7" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 3</span>
       <h2 id="step-3">Debug!</h2>
@@ -199,7 +242,7 @@
   </section>
 
   <!-- 7. Adding a proposal (4): table of diffs from current proposals (no stats) -->
-  <section class="slide" id="slide-step-4" data-slide="7" data-max-step="0">
+  <section class="slide" id="slide-step-4" data-slide="8" data-max-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 4</span>
       <h2 id="step-4">All {{proposals_117_count}} ECMA-262 proposals on the TC39 #117 agenda</h2>
@@ -210,7 +253,7 @@
   </section>
 
   <!-- 8. Tools usable right now -->
-  <section class="slide" id="slide-tools" data-slide="8" data-max-step="0">
+  <section class="slide" id="slide-tools" data-slide="9" data-max-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Immediate value</span>
       <h2 id="tools">Tools for champions, reviewers &amp; editors — usable right now</h2>
@@ -237,7 +280,7 @@
   </section>
 
   <!-- 9. What this can deliver (right-arrow reveals one bullet at a time) -->
-  <section class="slide" id="slide-deliver" data-slide="9" data-max-step="4" data-step="0">
+  <section class="slide" id="slide-deliver" data-slide="10" data-max-step="4" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Where this goes</span>
       <h2 id="deliver">What this can deliver</h2>
@@ -278,7 +321,7 @@
   </section>
 
   <!-- 10. Next steps (right-arrow reveals one bullet at a time) -->
-  <section class="slide" id="slide-next" data-slide="10" data-max-step="3" data-step="0">
+  <section class="slide" id="slide-next" data-slide="11" data-max-step="3" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Looking ahead</span>
       <h2 id="next-steps">Next steps</h2>
@@ -309,7 +352,7 @@
   </section>
 
   <!-- 11. Questions -->
-  <section class="slide slide-center" id="slide-questions" data-slide="11" data-max-step="0">
+  <section class="slide slide-center" id="slide-questions" data-slide="12" data-max-step="0">
     <div class="hero-wrap">
       <h2 class="hero-h1" id="questions">Questions?</h2>
     </div>
