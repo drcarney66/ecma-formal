@@ -735,10 +735,6 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
             'title="Live spec debugger paused on String.prototype.trim step 2"></iframe>'
             '</div>'
         )
-        questions_dbg = (
-            '<p class="q-actions"><button type="button" class="open" '
-            'data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma">Open live spec debugger →</button></p>'
-        )
     else:
         tool_dbg_card = (
             '<div class="tool-card">'
@@ -750,7 +746,6 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
             '</div>'
         )
         step3_after = '<pre class="lean">paused at String.prototype.trim step 2 · characters = "/_"</pre>'
-        questions_dbg = ""
 
     if not rec_path.is_file():
         return {
@@ -758,7 +753,6 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
             "proposals_117_table": '<p class="muted">Run <code>scripts/proposals_summary.py</code>.</p>',
             "slides_tool_dbg": tool_dbg_card,
             "slides_step3_after": step3_after,
-            "slides_questions_dbg": questions_dbg,
         }
 
     data = json.loads(rec_path.read_text())
@@ -807,7 +801,6 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
         "proposals_117_table": table_html,
         "slides_tool_dbg": tool_dbg_card,
         "slides_step3_after": step3_after,
-        "slides_questions_dbg": questions_dbg,
     }
 
 

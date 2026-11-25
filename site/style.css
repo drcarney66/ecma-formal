@@ -706,15 +706,31 @@ pre.js-big { font-size: clamp(1.1rem, 2.2cqw, 1.75rem); padding: 6cqh 3cqw; }
 .prop117-table td.p-title a:hover { text-decoration: underline; }
 .open.open-xs { padding: 0.04rem 0.48rem; font-size: 0.92em; }
 
-/* Slide 9: Right-arrow progressive bullet reveal */
-.deliver-wrap { justify-content: center; }
-.deliver-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 3.2cqh; }
-.deliver-list li {
-  border-left: 4px solid var(--accent); background: var(--surface); border-radius: 0 10px 10px 0;
-  padding: 2.2cqh 2.2cqw; max-width: none; margin: 0;
+/* Slides 9 & 10: Clean bullets & sub-bullets */
+.slide-bullets-wrap { justify-content: flex-start; padding-top: 3.2cqh; }
+main ul.slide-bullets {
+  list-style: disc; margin: 0; padding-left: 2.3cqw;
+  display: flex; flex-direction: column; gap: 2.7cqh;
 }
-.deliver-list strong { font-size: clamp(1.05rem, 1.95cqw, 1.5rem); margin-right: 0.4em; }
-.deliver-list span { display: block; margin-top: 0.5cqh; font-size: clamp(0.84rem, 1.4cqw, 1.08rem); color: var(--ink-2); }
+main ul.slide-bullets.next-bullets { gap: 3.8cqh; padding-top: 1cqh; }
+main ul.slide-bullets > li {
+  margin: 0; max-width: none;
+  font-size: clamp(1.08rem, 2.02cqw, 1.56rem); line-height: 1.28;
+  color: var(--ink);
+}
+main ul.slide-bullets > li::marker { color: var(--accent); }
+main ul.slide-bullets > li > strong { font-weight: 650; margin-right: 0.3em; }
+main ul.slide-bullets > li > em { font-size: 0.8em; font-weight: 400; }
+main ul.slide-bullets > li > ul {
+  list-style: circle; margin: 0.65cqh 0 0; padding-left: 2.2cqw;
+  display: flex; flex-direction: column; gap: 0.45cqh;
+}
+main ul.slide-bullets > li > ul > li {
+  margin: 0; max-width: none;
+  font-size: clamp(0.86rem, 1.44cqw, 1.12rem); line-height: 1.38;
+  color: var(--ink-2);
+}
+main ul.slide-bullets > li > ul > li::marker { color: var(--ink-2); }
 html.js .reveal-item { opacity: 0; transform: translateY(10px); }
 html.js .deck-stage.ready .reveal-item { transition: opacity 0.28s ease, transform 0.28s ease; }
 html.js .slide[data-step="1"] .reveal-item[data-reveal="1"],
@@ -722,9 +738,11 @@ html.js .slide[data-step="2"] .reveal-item[data-reveal="1"],
 html.js .slide[data-step="2"] .reveal-item[data-reveal="2"],
 html.js .slide[data-step="3"] .reveal-item[data-reveal="1"],
 html.js .slide[data-step="3"] .reveal-item[data-reveal="2"],
-html.js .slide[data-step="3"] .reveal-item[data-reveal="3"] { opacity: 1; transform: none; }
-
-.q-actions { margin-top: 3cqh; }
+html.js .slide[data-step="3"] .reveal-item[data-reveal="3"],
+html.js .slide[data-step="4"] .reveal-item[data-reveal="1"],
+html.js .slide[data-step="4"] .reveal-item[data-reveal="2"],
+html.js .slide[data-step="4"] .reveal-item[data-reveal="3"],
+html.js .slide[data-step="4"] .reveal-item[data-reveal="4"] { opacity: 1; transform: none; }
 
 /* Full-screen Present mode: zero controls, fixed 16:9 stage centered in viewport */
 html.deck-present, html.deck-present body {

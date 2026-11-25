@@ -9,7 +9,7 @@
 <div class="deck-bar" id="deck-bar" role="region" aria-label="Slide controls">
   <div class="deck-bar-left">
     <button type="button" class="theme deck-btn" id="deck-prev" title="Previous (←)">←</button>
-    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 10</span>
+    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 11</span>
     <button type="button" class="theme deck-btn" id="deck-next" title="Next (→)">→</button>
   </div>
   <div class="deck-bar-right">
@@ -237,34 +237,80 @@
   </section>
 
   <!-- 9. What this can deliver (right-arrow reveals one bullet at a time) -->
-  <section class="slide" id="slide-deliver" data-slide="9" data-max-step="3" data-step="0">
+  <section class="slide" id="slide-deliver" data-slide="9" data-max-step="4" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Where this goes</span>
       <h2 id="deliver">What this can deliver</h2>
     </div>
-    <div class="slide-fill deliver-wrap">
-      <ul class="deliver-list">
+    <div class="slide-fill slide-bullets-wrap">
+      <ul class="slide-bullets">
         <li class="reveal-item" data-reveal="1">
           <strong>Invariants</strong>
-          <span>Module graph <code>[[Status]]</code> monotonicity · §6.1.7.3 essential object invariants · immutable <code>ArrayBuffer</code> bytes never mutate</span>
+          <ul>
+            <li>§6.1.7.3 essential object invariants &amp; module <code>[[Status]]</code> monotonicity</li>
+            <li>Proposal guarantees (e.g. immutable <code>ArrayBuffer</code> bytes never mutate)</li>
+          </ul>
         </li>
         <li class="reveal-item" data-reveal="2">
           <strong>Soundness</strong> <em class="muted">(eventually)</em>
-          <span>Every engine fast path or shortcut produces the exact same observable result as stepping <code>spec.html</code> line by line (<code>Engine.implements</code>)</span>
+          <ul>
+            <li>Engine fast paths match stepping <code>spec.html</code> line by line (<code>Engine.implements</code>)</li>
+            <li>Editorial refactorings proved behavior-preserving</li>
+          </ul>
         </li>
         <li class="reveal-item" data-reveal="3">
           <strong>Proofs about JS libraries</strong> <em class="muted">(eventually)</em>
-          <span>Tractable where intrinsics are frozen (<code>SES</code> / hardened realms), primordials are captured at module init, or values are immutable (<code>Composite</code>)</span>
+          <ul>
+            <li>Hardened realms (<code>SES</code>) &amp; frozen intrinsics</li>
+            <li>Captured primordials &amp; immutable values (<code>Composite</code>)</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="4">
+          <strong>Generated JS VM</strong> <em class="muted">(eventually)</em>
+          <ul>
+            <li>Executable engine compiled straight from <code>spec.html</code> (native &amp; Wasm)</li>
+            <li>Verified fast paths incrementally replacing slow spec steps</li>
+          </ul>
         </li>
       </ul>
     </div>
   </section>
 
-  <!-- 10. Questions -->
-  <section class="slide slide-center" id="slide-questions" data-slide="10" data-max-step="0">
+  <!-- 10. Next steps -->
+  <section class="slide" id="slide-next" data-slide="10" data-max-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">Looking ahead</span>
+      <h2 id="next-steps">Next steps</h2>
+    </div>
+    <div class="slide-fill slide-bullets-wrap">
+      <ul class="slide-bullets next-bullets">
+        <li>
+          <strong>Clean everything up!</strong>
+          <ul>
+            <li>Simplify the generator, overlay &amp; proof structure</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Make it even easier to use</strong>
+          <ul>
+            <li>Turnkey proposal checks, CI integration &amp; smoother debugger UX</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Explore a formal spec language for <code>.emu</code></strong>
+          <ul>
+            <li>Prover-agnostic surface language for algorithms, types, laws &amp; invariants</li>
+            <li>Drops prose-parsing hacks while compiling downstream to Lean for proofs &amp; VMs</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 11. Questions -->
+  <section class="slide slide-center" id="slide-questions" data-slide="11" data-max-step="0">
     <div class="hero-wrap">
       <h2 class="hero-h1" id="questions">Questions?</h2>
-      {{slides_questions_dbg}}
     </div>
   </section>
 
