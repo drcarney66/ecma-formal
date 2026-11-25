@@ -7040,6 +7040,5 @@ clause_props @sec-global-object [
 ]
 
 clause_props @sec-module-namespace-objects [
-      prop sym "Symbol.toStringTag" = data ("Module") attrs { w: false, e: false, c: false } @sec-%symbol.tostringtag%
 ]
 

@@ -210,6 +210,7 @@ nt IdentifierStartChar
 nt IdentityEscape
 nt IfStatement
 nt ImportCall
+nt ImportCallArguments
 nt ImportClause
 nt ImportDeclaration
 nt ImportMeta
@@ -466,7 +467,7 @@ block syntactic @sec-primary-expression-literals main [|Literal|]
 block syntactic @sec-array-initializer main [|ArrayLiteral|, |ElementList|, |Elision|, |SpreadElement|]
 block syntactic @sec-object-initializer main [|ObjectLiteral|, |PropertyDefinitionList|, |PropertyDefinition|, |PropertyName|, |LiteralPropertyName|, |ComputedPropertyName|, |CoverInitializedName|, |Initializer|]
 block syntactic @sec-template-literals main [|TemplateLiteral|, |SubstitutionTemplate|, |TemplateSpans|, |TemplateMiddleList|]
-block syntactic @sec-left-hand-side-expressions main [|MemberExpression|, |SuperProperty|, |MetaProperty|, |NewTarget|, |ImportMeta|, |NewExpression|, |CallExpression|, |SuperCall|, |ImportCall|, |Arguments|, |ArgumentList|, |OptionalExpression|, |OptionalChain|, |LeftHandSideExpression|]
+block syntactic @sec-left-hand-side-expressions main [|MemberExpression|, |SuperProperty|, |MetaProperty|, |NewTarget|, |ImportMeta|, |NewExpression|, |CallExpression|, |SuperCall|, |ImportCall|, |ImportCallArguments|, |Arguments|, |ArgumentList|, |OptionalExpression|, |OptionalChain|, |LeftHandSideExpression|]
 block syntactic @sec-left-hand-side-expressions supplemental |CoverCallExpressionAndAsyncArrowHead| [|CallMemberExpression|]
 block syntactic @sec-update-expressions main [|UpdateExpression|]
 block syntactic @sec-unary-operators main [|UnaryExpression|, |CoverAwaitExpressionAndAwaitUsingDeclarationHead|]
@@ -609,6 +610,7 @@ semi p"Syntactic - ClassElement : FieldDefinition[?Yield, ?Await] `;`" pos 1 ins
 semi p"Syntactic - ClassElement : `static` FieldDefinition[?Yield, ?Await] `;`" pos 2 insertable
 semi p"Syntactic - ClassElement : `;`" pos 0 insertable
 semi p"Syntactic 0 ImportDeclaration : `import` ImportClause FromClause WithClause? `;`" pos 4 insertable
+semi p"Syntactic 0 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`" pos 5 insertable
 semi p"Syntactic 0 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`" pos 3 insertable
 semi p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`" pos 4 insertable
 semi p"Syntactic - ExportDeclaration : `export` NamedExports `;`" pos 2 insertable

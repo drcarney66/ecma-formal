@@ -327,6 +327,7 @@ clause @ph-utf8-encode
 clause @ph-value-less-than
 clause @ph-zero-after-twentieth
 clause @ph-zero-after-twentieth-incremented
+clause @row-boundnames-import-defer
 clause @row-compileassertion-quantifiableassertion-lookahead
 clause @row-compileassertion-quantifiableassertion-negative-lookahead
 clause @row-compileatom-extendedatom-characterclass
@@ -423,15 +424,20 @@ clause @sec-ContinueDynamicImport op "ContinueDynamicImport"
 clause @sec-ContinueModuleLoading op "ContinueModuleLoading"
 clause @sec-EvaluateModuleSync op "EvaluateModuleSync"
 clause @sec-FinishLoadingImportedModule op "FinishLoadingImportedModule"
+clause @sec-GatherAsynchronousTransitiveDependencies op "GatherAsynchronousTransitiveDependencies"
 clause @sec-GetImportedModule op "GetImportedModule"
+clause @sec-GetModuleExportsList op "GetModuleExportsList"
 clause @sec-HostLoadImportedModule op "HostLoadImportedModule"
 clause @sec-IncrementModuleAsyncEvaluationCount op "IncrementModuleAsyncEvaluationCount"
 clause @sec-InnerModuleLinking op "InnerModuleLinking"
 clause @sec-InnerModuleLoading op "InnerModuleLoading"
 clause @sec-IsHTMLDDA-internal-slot
+clause @sec-IsModuleSCCEvaluated op "IsModuleSCCEvaluated"
+clause @sec-IsSymbolLikeNamespaceKey op "IsSymbolLikeNamespaceKey"
 clause @sec-LoadRequestedModules op "LoadRequestedModules"
-clause @sec-ModuleRequestsEqual op "ModuleRequestsEqual"
+clause @sec-ModuleRequestsKeyEqual op "ModuleRequestsKeyEqual"
 clause @sec-ParseJSON op "ParseJSON"
+clause @sec-ReadyForSyncExecution op "ReadyForSyncExecution"
 clause @sec-SetterThatIgnoresPrototypeProperties op "SetterThatIgnoresPrototypeProperties"
 clause @sec-abstract-closure
 clause @sec-abstract-module-records
@@ -833,6 +839,7 @@ clause @sec-countleftcapturingparens-annexb
 clause @sec-countleftcapturingparensbefore op "CountLeftCapturingParensBefore"
 clause @sec-countleftcapturingparenswithin op "CountLeftCapturingParensWithin"
 clause @sec-create-default-export-synthetic-module op "CreateDefaultExportSyntheticModule"
+clause @sec-create-promise-all-resolve-element op "CreatePromiseAllResolveElement"
 clause @sec-createarrayfromlist op "CreateArrayFromList"
 clause @sec-createarrayiterator op "CreateArrayIterator"
 clause @sec-createasyncfromsynciterator op "CreateAsyncFromSyncIterator"
@@ -1075,6 +1082,7 @@ clause @sec-evaluation op "Evaluation"
 clause @sec-evaluation-order
 clause @sec-event-set op "EventSet"
 clause @sec-example-cyclic-module-record-graphs
+clause @sec-example-cyclic-module-record-graphs-deferred-imports
 clause @sec-examples-of-automatic-semicolon-insertion
 clause @sec-executable-code-and-execution-contexts
 clause @sec-execute-async-module op "ExecuteAsyncModule"
@@ -1333,6 +1341,8 @@ clause @sec-ifabruptrejectpromise op "IfAbruptRejectPromise"
 clause @sec-immutable-prototype-exotic-objects
 clause @sec-immutable-prototype-exotic-objects-setprototypeof-v op "[[SetPrototypeOf]]"
 clause @sec-implicit-normal-completion
+clause @sec-import-call-runtime-semantics-EvaluateImportCallOptions op "EvaluateImportCallOptions"
+clause @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier op "EvaluateImportCallSpecifier"
 clause @sec-import-call-runtime-semantics-evaluation op "Evaluation"
 clause @sec-import-calls
 clause @sec-importedlocalnames op "ImportedLocalNames"
@@ -2266,6 +2276,7 @@ clause @sec-runtime-semantics-substitutionevaluation op "SubstitutionEvaluation"
 clause @sec-runtime-semantics-unicodematchproperty-p op "UnicodeMatchProperty"
 clause @sec-runtime-semantics-unicodematchpropertyvalue-p-v op "UnicodeMatchPropertyValue"
 clause @sec-runtime-semantics-whileloopevaluation op "WhileLoopEvaluation"
+clause @sec-safe-perform-promise-all op "SafePerformPromiseAll"
 clause @sec-sametype op "SameType"
 clause @sec-samevalue op "SameValue"
 clause @sec-samevaluenonnumber op "SameValueNonNumber"
@@ -3196,6 +3207,8 @@ field [[Date.prototype]]
 field [[Date.prototype.toUTCString]]
 field [[DateValue]]
 field [[DeclarativeRecord]]
+field [[Deferred]]
+field [[DeferredNamespace]]
 field [[DefineOwnProperty]]
 field [[Deletable]]
 field [[Delete]]
@@ -3371,6 +3384,7 @@ field [[ParseNode]]
 field [[Payload]]
 field [[PendingAsyncDependencies]]
 field [[PendingModulesCount]]
+field [[Phase]]
 field [[Prefix]]
 field [[PreventExtensions]]
 field [[PrimaryIdentifier]]
@@ -3550,6 +3564,8 @@ enum ~continue~
 enum ~cooked~
 enum ~data~
 enum ~date~
+enum ~defer~
+enum ~deferred-namespace~
 enum ~derived~
 enum ~descending~
 enum ~detached~
@@ -3563,6 +3579,7 @@ enum ~enumerate~
 enum ~evaluated~
 enum ~evaluating~
 enum ~evaluating-async~
+enum ~evaluation~
 enum ~executing~
 enum ~failure~
 enum ~field~
@@ -4229,6 +4246,8 @@ sdo EvaluateClassStaticBlockBody { header (kind sdo params [slot 0 : #"ECMAScrip
 sdo EvaluateConciseBody { header (kind sdo params [slot 0 : #"ECMAScript function object", slot 1 : list<#"ECMAScript language value">] -> #"return completion" | #"throw completion") }
 sdo EvaluateFunctionBody { header (kind sdo params [slot 0 : #"ECMAScript function object", slot 1 : list<#"ECMAScript language value">] -> #"return completion" | #"throw completion") }
 sdo EvaluateGeneratorBody { header (kind sdo params [slot 0 : #"ECMAScript function object", slot 1 : list<#"ECMAScript language value">] -> #"throw completion" | #"return completion") }
+sdo EvaluateImportCallOptions { header (kind sdo params []) }
+sdo EvaluateImportCallSpecifier { header (kind sdo params []) }
 sdo Evaluation { header (kind sdo params [] -> #"Completion Record") }
 sdo ExpectedArgumentCount { header (kind sdo params [] -> sort [#"non-negative"] integer) }
 sdo ExportEntries { header (kind sdo params [] -> list<#"ExportEntry Record">) }

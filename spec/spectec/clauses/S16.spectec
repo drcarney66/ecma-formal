@@ -135,24 +135,24 @@ def @sec-importedlocalnames "ImportedLocalNames" (kind ao params [importEntries 
   return localNames
 }
 
-def @sec-ModuleRequestsEqual "ModuleRequestsEqual" (kind ao params [x : #"ModuleRequest Record" | #"LoadedModuleRequest Record", y : #"ModuleRequest Record" | #"LoadedModuleRequest Record"] -> Boolean) vars [x, y, xAttrs, yAttrs, xAttrsCount, yAttrsCount, xAttr, yAttr] {
-  if x[[Specifier]] is not val {y[[Specifier]]} -> return false
-  let xAttrs = x[[Attributes]]
-  let yAttrs = y[[Attributes]]
-  let xAttrsCount = $ListLen(?xAttrs)
-  let yAttrsCount = $ListLen(?yAttrs)
-  if xAttrsCount != yAttrsCount -> return false
-  for_each xAttr : #"ImportAttribute Record" in xAttrs {
-    if yAttrs sat @ph-not-contains-such(data choice 1, data sort #"ImportAttribute Record", ?yAttr, closure 0) -> return false
+def @sec-ModuleRequestsKeyEqual "ModuleRequestsKeyEqual" (kind ao params [left : #"ModuleRequest Record" | #"LoadedModuleRequest Record", right : #"ModuleRequest Record" | #"LoadedModuleRequest Record"] -> Boolean) vars [left, right, leftAttrs, rightAttrs, leftAttrsCount, rightAttrsCount, l, r] {
+  if left[[Specifier]] is not val {right[[Specifier]]} -> return false
+  let leftAttrs = left[[Attributes]]
+  let rightAttrs = right[[Attributes]]
+  let leftAttrsCount = $ListLen(?leftAttrs)
+  let rightAttrsCount = $ListLen(?rightAttrs)
+  if leftAttrsCount != rightAttrsCount -> return false
+  for_each l : #"ImportAttribute Record" in leftAttrs {
+    if rightAttrs sat @ph-not-contains-such(data choice 1, data sort #"ImportAttribute Record", ?r, closure 0) -> return false
   }
   return true
-  closure abstract params [yAttr] captures [xAttr] {
-    return bool(xAttr[[Key]] is val {yAttr[[Key]]} and xAttr[[Value]] is val {yAttr[[Value]]})
+  closure abstract params [r] captures [l] {
+    return bool(l[[Key]] is val {r[[Key]]} and l[[Value]] is val {r[[Value]]})
   }
 }
 
 def @sec-EvaluateModuleSync "EvaluateModuleSync" (kind ao params [module : #"Module Record"] -> completion<val(~unused~)> | #"throw completion") vars [module, promise] {
-  assert module is not ty {#"Cyclic Module Record"}
+  if @sec-ReadyForSyncExecution(module) is val {false} -> throw @ph-new-error([[TypeError]])
   let promise = module.Evaluate()
   assert promise[[PromiseState]] is val {~fulfilled~; ~rejected~}
   if promise[[PromiseState]] is val {~rejected~} {
@@ -207,7 +207,7 @@ def @sec-InnerModuleLoading "InnerModuleLoading" (kind ao params [state : #"Grap
   }
   return ~unused~
   closure abstract params [#"record"] captures [request] {
-    return bool(@sec-ModuleRequestsEqual(#"record", request) is val {true})
+    return bool(@sec-ModuleRequestsKeyEqual(#"record", request) is val {true})
   }
 }
 
@@ -281,8 +281,21 @@ def @sec-InnerModuleLinking "InnerModuleLinking" (kind ao params [module : #"Mod
   return index
 }
 
-def @sec-moduleevaluation "Evaluate" (kind concrete_method recv module : #"Cyclic Module Record" params [] -> Promise) vars [module, stack, promiseCapability, result, requiredModule] {
-  assert pass "This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent"
+def @sec-moduleevaluation "Evaluate" (kind concrete_method recv module : #"Cyclic Module Record" params [] -> Promise) vars [module, pending, seen, m, request, stack, promiseCapability, result, requiredModule] {
+  let pending = [module]
+  let seen = $ListNew()
+  repeat_while pending fails $IsEmpty() {
+    let m = $ListElem(data choice 1, ?pending)
+    perform $RemoveFirst(?pending)
+    if seen fails $Contains(?m) and m is ty {#"Cyclic Module Record"} {
+      perform $Append(?m, ?seen)
+      assert m[[Status]] is val {~evaluating~; ~linked~; ~evaluating-async~; ~evaluated~}
+      for_each request : #"ModuleRequest Record" in m[[RequestedModules]] {
+        perform $Append(@sec-GetImportedModule(m, request), ?pending)
+      }
+    }
+  }
+  assert pass "If this call to Evaluate is happening at the same time as another call to Evaluate within the surrounding agent, ReadyForSyncExecution(_) is *true*"
   assert module[[Status]] is val {~linked~; ~evaluating-async~; ~evaluated~}
   if module[[Status]] is val {~evaluating-async~; ~evaluated~} {
     if module[[CycleRoot]] is not val {~empty~} {
@@ -322,7 +335,7 @@ def @sec-moduleevaluation "Evaluate" (kind concrete_method recv module : #"Cycli
   return promiseCapability[[Promise]]
 }
 
-def @sec-innermoduleevaluation "InnerModuleEvaluation" (kind ao params [module : #"Module Record", stack : list<#"Cyclic Module Record">, index : sort [#"non-negative"] integer] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [module, stack, index, moduleIndex, request, requiredModule, done] {
+def @sec-innermoduleevaluation "InnerModuleEvaluation" (kind ao params [module : #"Module Record", stack : list<#"Cyclic Module Record">, index : sort [#"non-negative"] integer] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [module, stack, index, moduleIndex, evaluationList, request, requiredModule, additionalModules, additionalModule, done] {
   if module is not ty {#"Cyclic Module Record"} {
     perform ? @sec-EvaluateModuleSync(module)
     return index
@@ -338,9 +351,23 @@ def @sec-innermoduleevaluation "InnerModuleEvaluation" (kind ao params [module :
   set field module[[DFSAncestorIndex]] = index
   set field module[[PendingAsyncDependencies]] = 0
   set var index = index + 1
-  perform $Append(?module, ?stack)
+  let evaluationList = $ListNew()
   for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
     let requiredModule = @sec-GetImportedModule(module, request)
+    if request[[Phase]] is val {~defer~} {
+      let additionalModules = @sec-GatherAsynchronousTransitiveDependencies(requiredModule)
+      for_each additionalModule : #"Module Record" in additionalModules {
+        if evaluationList fails $Contains(?additionalModule) {
+          perform $Append(?additionalModule, ?evaluationList)
+        }
+      }
+    }
+    else_if evaluationList fails $Contains(?requiredModule) {
+      perform $Append(?requiredModule, ?evaluationList)
+    }
+  }
+  perform $Append(?module, ?stack)
+  for_each requiredModule : #"Module Record" in evaluationList {
     set var index = ? @sec-innermoduleevaluation(requiredModule, stack, index)
     if requiredModule is ty {#"Cyclic Module Record"} {
       assert requiredModule[[Status]] is val {~evaluating~; ~evaluating-async~; ~evaluated~}
@@ -359,7 +386,7 @@ def @sec-innermoduleevaluation "InnerModuleEvaluation" (kind ao params [module :
       }
     }
   }
-  if module[[HasTLA]] is val {true} or module[[PendingAsyncDependencies]] > 0 {
+  if module[[PendingAsyncDependencies]] > 0 or module[[HasTLA]] is val {true} {
     assert module[[AsyncEvaluationOrder]] is val {~unset~}
     set field module[[AsyncEvaluationOrder]] = @sec-IncrementModuleAsyncEvaluationCount()
     if module[[PendingAsyncDependencies]] == 0 -> perform @sec-execute-async-module(module)
@@ -518,7 +545,7 @@ def @sec-parsemodule "ParseModule" (kind ao params [sourceText : String | seq<#"
     }
   }
   let async = @ph-contains(?body, term "await")
-  return record #"Source Text Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: async, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: [], [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: hostDefined, [[ECMAScriptCode]]: body, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: requestedModules, [[LoadedModules]]: [], [[ImportEntries]]: importEntries, [[LocalExportEntries]]: localExportEntries, [[IndirectExportEntries]]: indirectExportEntries, [[StarExportEntries]]: starExportEntries, [[DFSAncestorIndex]]: ~empty~ }
+  return record #"Source Text Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: async, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: [], [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: hostDefined, [[ECMAScriptCode]]: body, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: requestedModules, [[LoadedModules]]: [], [[ImportEntries]]: importEntries, [[LocalExportEntries]]: localExportEntries, [[IndirectExportEntries]]: indirectExportEntries, [[StarExportEntries]]: starExportEntries, [[DFSAncestorIndex]]: ~empty~ }
 }
 
 def @sec-getexportednames "GetExportedNames" (kind concrete_method recv module : #"Source Text Module Record" params [exportStarSet : list<#"Source Text Module Record"> opt] -> list<String>) vars [module, exportStarSet, exportedNames, exportEntry, requestedModule, starNames, name] {
@@ -577,7 +604,13 @@ def @sec-resolveexport "ResolveExport" (kind concrete_method recv module : #"Sou
       let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
       if exportEntry[[ImportName]] is val {~namespace~} {
         assert module[[LocalExportEntries]] fails $Contains(?exportEntry)
-        return record #"ResolvedBinding Record" { [[Module]]: importedModule, [[BindingName]]: ~namespace~ }
+        if exportEntry[[ModuleRequest]][[Phase]] is val {~defer~} {
+          return record #"ResolvedBinding Record" { [[Module]]: importedModule, [[BindingName]]: ~deferred-namespace~ }
+        }
+        else {
+          assert exportEntry[[ModuleRequest]][[Phase]] is val {~evaluation~}
+          return record #"ResolvedBinding Record" { [[Module]]: importedModule, [[BindingName]]: ~namespace~ }
+        }
       }
       assert module[[IndirectExportEntries]] sat $Contains(?exportEntry)
       assert exportEntry[[ImportName]] is ty {String}
@@ -610,7 +643,7 @@ def @sec-resolveexport "ResolveExport" (kind concrete_method recv module : #"Sou
   return starResolution
 }
 
-def @sec-source-text-module-record-initialize-environment "InitializeEnvironment" (kind concrete_method recv module : #"Source Text Module Record" params [] -> completion<val(~unused~)> | #"throw completion") vars [module, exportEntry, resolution, #"realm", envRecord, importEntry, importedModule, namespace, moduleContext, #"code", variableDecls, declaredVariableNames, variableDecl, name, lexicalDecls, privateEnv, lexicalDecl, funcObj] {
+def @sec-source-text-module-record-initialize-environment "InitializeEnvironment" (kind concrete_method recv module : #"Source Text Module Record" params [] -> completion<val(~unused~)> | #"throw completion") vars [module, exportEntry, resolution, #"realm", envRecord, importEntry, importedModule, namespace, phase, moduleContext, #"code", variableDecls, declaredVariableNames, variableDecl, name, lexicalDecls, privateEnv, lexicalDecl, funcObj] {
   for_each exportEntry : #"ExportEntry Record" in module[[IndirectExportEntries]] {
     assert exportEntry[[ExportName]] is not val {null}
     let resolution = module.ResolveExport(exportEntry[[ExportName]])
@@ -625,7 +658,7 @@ def @sec-source-text-module-record-initialize-environment "InitializeEnvironment
   for_each importEntry : #"ImportEntry Record" in module[[ImportEntries]] {
     let importedModule = @sec-GetImportedModule(module, importEntry[[ModuleRequest]])
     if importEntry[[ImportName]] is val {~namespace~} {
-      let namespace = @sec-getmodulenamespace(importedModule)
+      let namespace = @sec-getmodulenamespace(importedModule, importEntry[[ModuleRequest]][[Phase]])
       perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
       perform ! envRecord.InitializeBinding(importEntry[[LocalName]], namespace)
     }
@@ -633,8 +666,9 @@ def @sec-source-text-module-record-initialize-environment "InitializeEnvironment
       assert importEntry[[ImportName]] is ty {String}
       let resolution = importedModule.ResolveExport(importEntry[[ImportName]])
       if resolution is val {null; ~ambiguous~} -> throw @ph-new-error([[SyntaxError]])
-      if resolution[[BindingName]] is val {~namespace~} {
-        let namespace = @sec-getmodulenamespace(resolution[[Module]])
+      if resolution[[BindingName]] is val {~namespace~; ~deferred-namespace~} {
+        if_else resolution[[BindingName]] is val {~namespace~} { let phase = ~evaluation~ } else { let phase = ~defer~ }
+        let namespace = @sec-getmodulenamespace(resolution[[Module]], phase)
         perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
         perform ! envRecord.InitializeBinding(importEntry[[LocalName]], namespace)
       }
@@ -718,7 +752,7 @@ def @sec-source-text-module-record-execute-module "ExecuteModule" (kind concrete
 def @sec-create-default-export-synthetic-module "CreateDefaultExportSyntheticModule" (kind ao params [defaultExport : #"ECMAScript language value"] -> #"Synthetic Module Record") vars [defaultExport, #"realm", setDefaultExport, module] {
   let #"realm" = $CurrentRealm()
   let setDefaultExport = closure 0
-  return record #"Synthetic Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[HostDefined]]: undefined, [[ExportNames]]: ["default"], [[EvaluationSteps]]: setDefaultExport }
+  return record #"Synthetic Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[HostDefined]]: undefined, [[ExportNames]]: ["default"], [[EvaluationSteps]]: setDefaultExport }
   closure abstract params [module] captures [defaultExport] {
     perform @sec-setsyntheticmoduleexport(module, "default", defaultExport)
     return @sec-normalcompletion(~unused~)
@@ -794,7 +828,7 @@ def @sec-smr-Evaluate "Evaluate" (kind concrete_method recv module : #"Synthetic
 def @sec-GetImportedModule "GetImportedModule" (kind ao params [referrer : #"Cyclic Module Record", request : #"ModuleRequest Record"] -> #"Module Record") vars [referrer, request, records, r, #"record"] {
   let records = $ListNew()
   for_each r : #"LoadedModuleRequest Record" in referrer[[LoadedModules]] {
-    if @sec-ModuleRequestsEqual(r, request) is val {true} -> perform $Append(?r, ?records)
+    if @sec-ModuleRequestsKeyEqual(r, request) is val {true} -> perform $Append(?r, ?records)
   }
   assert $ListLen(?records) is val {1}
   let #"record" = $ListElem(data choice 0, ?records)
@@ -816,11 +850,11 @@ def @sec-FinishLoadingImportedModule "FinishLoadingImportedModule" (kind ao para
     perform @sec-ContinueModuleLoading(payload, result)
   }
   else {
-    perform @sec-ContinueDynamicImport(payload, result)
+    perform @sec-ContinueDynamicImport(payload, result, moduleRequest[[Phase]])
   }
   return ~unused~
   closure abstract params [#"record"] captures [moduleRequest] {
-    return bool(@sec-ModuleRequestsEqual(#"record", moduleRequest) is val {true})
+    return bool(@sec-ModuleRequestsKeyEqual(#"record", moduleRequest) is val {true})
   }
 }
 
@@ -832,21 +866,77 @@ def @sec-AllImportAttributesSupported "AllImportAttributesSupported" (kind ao pa
   return true
 }
 
-def @sec-getmodulenamespace "GetModuleNamespace" (kind ao params [module : doc "an instance of a concrete subclass of Module Record"] -> doc "a Module Namespace Object") vars [module, namespace, exportedNames, unambiguousNames, name, resolution] {
+def @sec-getmodulenamespace "GetModuleNamespace" (kind ao params [module : doc "an instance of a concrete subclass of Module Record", phase : val(~defer~) | val(~evaluation~)] -> doc "a Module Namespace Object") vars [module, phase, namespace, exportedNames, unambiguousNames, name, resolution] {
   if module is ty {#"Cyclic Module Record"} {
     assert module[[Status]] is neither val {~new~; ~unlinked~}
   }
-  let namespace = module[[Namespace]]
+  if_else phase is val {~defer~} { let namespace = module[[DeferredNamespace]] } else { let namespace = module[[Namespace]] }
   if namespace is val {~empty~} {
     let exportedNames = module.GetExportedNames()
     let unambiguousNames = $ListNew()
     for_each name in exportedNames {
-      let resolution = module.ResolveExport(name)
-      if resolution is ty {#"ResolvedBinding Record"} -> perform $Append(?name, ?unambiguousNames)
+      if phase is not val {~defer~} or name is not val {"then"} {
+        let resolution = module.ResolveExport(name)
+        if resolution is ty {#"ResolvedBinding Record"} -> perform $Append(?name, ?unambiguousNames)
+      }
     }
-    set var namespace = @sec-modulenamespacecreate(module, unambiguousNames)
+    set var namespace = @sec-modulenamespacecreate(module, unambiguousNames, phase)
   }
   return namespace
+}
+
+def @sec-IsModuleSCCEvaluated "IsModuleSCCEvaluated" (kind ao params [module : #"Cyclic Module Record"] -> Boolean) vars [module] {
+  if module[[CycleRoot]] is not val {~empty~} {
+    if module[[CycleRoot]][[Status]] is val {~evaluated~} -> return true
+    return false
+  }
+  if module[[Status]] is val {~evaluated~} -> return true
+  return false
+}
+
+def @sec-ReadyForSyncExecution "ReadyForSyncExecution" (kind ao params [module : #"Module Record", seen : list<#"Module Record"> opt] -> Boolean) vars [module, seen, request, requiredModule] {
+  if module is not ty {#"Cyclic Module Record"} -> return true
+  if seen fails $Present() -> set var seen = $ListNew()
+  if seen sat $Contains(?module) -> return true
+  perform $Append(?module, ?seen)
+  if @sec-IsModuleSCCEvaluated(module) is val {true} -> return true
+  if module[[Status]] is val {~evaluating~; ~evaluating-async~} -> return false
+  if module[[Status]] is val {~evaluated~} {
+    assert module[[CycleRoot]][[Status]] is val {~evaluating-async~}
+    return false
+  }
+  assert module[[Status]] is val {~linked~}
+  if module[[HasTLA]] is val {true} -> return false
+  for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
+    let requiredModule = @sec-GetImportedModule(module, request)
+    if @sec-ReadyForSyncExecution(requiredModule, seen) is val {false} {
+      return false
+    }
+  }
+  return true
+}
+
+def @sec-GatherAsynchronousTransitiveDependencies "GatherAsynchronousTransitiveDependencies" (kind ao params [module : #"Module Record", seen : list<#"Module Record"> opt] -> list<#"Module Record">) vars [module, seen, result, request, requiredModule, additionalModules, m] {
+  if seen fails $Present() -> set var seen = $ListNew()
+  let result = $ListNew()
+  if seen sat $Contains(?module) -> return result
+  perform $Append(?module, ?seen)
+  if module is not ty {#"Cyclic Module Record"} -> return result
+  if @sec-IsModuleSCCEvaluated(module) is val {true} {
+    if module[[HasTLA]] is val {false} or module[[EvaluationError]] is val {~empty~} -> return result
+  }
+  if module[[Status]] is not val {~linked~} or module[[HasTLA]] is val {true} {
+    perform $Append(?module, ?result)
+    return result
+  }
+  for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
+    let requiredModule = @sec-GetImportedModule(module, request)
+    let additionalModules = @sec-GatherAsynchronousTransitiveDependencies(requiredModule, seen)
+    for_each m : #"Module Record" in additionalModules {
+      if result fails $Contains(?m) -> perform $Append(?m, ?result)
+    }
+  }
+  return result
 }
 
 sdo_row @sec-scriptisstrict ScriptIsStrict form alg {
@@ -901,7 +991,7 @@ sdo_row @sec-static-semantics-modulerequests#2 ModuleRequests form alg {
     return requests
   }
   closure abstract params [otherModuleRequest] captures [moduleRequest] {
-    return bool(@sec-ModuleRequestsEqual(moduleRequest, otherModuleRequest) is val {true})
+    return bool(@sec-ModuleRequestsKeyEqual(moduleRequest, otherModuleRequest) is val {true} and moduleRequest[[Phase]] is val {otherModuleRequest[[Phase]]})
   }
 }
 
@@ -920,7 +1010,7 @@ sdo_row @sec-static-semantics-modulerequests#4 ModuleRequests form alg {
   vars [specifier]
   steps {
     let specifier = sdo SV(child 5 |FromClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~evaluation~ })
   }
 }
 
@@ -931,7 +1021,7 @@ sdo_row @sec-static-semantics-modulerequests#5 ModuleRequests form alg {
   steps {
     let specifier = sdo SV(child 5 |FromClause|)
     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~evaluation~ })
   }
 }
 
@@ -941,7 +1031,7 @@ sdo_row @sec-static-semantics-modulerequests#6 ModuleRequests form alg {
   vars [specifier]
   steps {
     let specifier = sdo SV(child 5 |ModuleSpecifier|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~evaluation~ })
   }
 }
 
@@ -952,32 +1042,53 @@ sdo_row @sec-static-semantics-modulerequests#7 ModuleRequests form alg {
   steps {
     let specifier = sdo SV(child 5 |ModuleSpecifier|)
     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~evaluation~ })
   }
 }
 
 sdo_row @sec-static-semantics-modulerequests#8 ModuleRequests form alg {
+  prods [p"Syntactic 0 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  keys ["\n          ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`\n        "]
+  vars [specifier]
+  steps {
+    let specifier = sdo SV(child 5 |FromClause|)
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~defer~ })
+  }
+}
+
+sdo_row @sec-static-semantics-modulerequests#9 ModuleRequests form alg {
+  prods [p"Syntactic 1 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  keys ["\n          ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause `;`\n        "]
+  vars [specifier, attrs]
+  steps {
+    let specifier = sdo SV(child 5 |FromClause|)
+    let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~defer~ })
+  }
+}
+
+sdo_row @sec-static-semantics-modulerequests#10 ModuleRequests form alg {
   prods [p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`"]
   keys ["\n          ExportDeclaration : `export` ExportFromClause FromClause `;`\n        "]
   vars [specifier]
   steps {
     let specifier = sdo SV(child 5 |FromClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~evaluation~ })
   }
 }
 
-sdo_row @sec-static-semantics-modulerequests#9 ModuleRequests form alg {
+sdo_row @sec-static-semantics-modulerequests#11 ModuleRequests form alg {
   prods [p"Syntactic 1 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`"]
   keys ["\n          ExportDeclaration : `export` ExportFromClause FromClause WithClause `;`\n        "]
   vars [specifier, attrs]
   steps {
     let specifier = sdo SV(child 5 |FromClause|)
     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~evaluation~ })
   }
 }
 
-sdo_row @sec-static-semantics-modulerequests#10 ModuleRequests form alg {
+sdo_row @sec-static-semantics-modulerequests#12 ModuleRequests form alg {
   prods [p"Syntactic - ExportDeclaration : `export` NamedExports `;`", p"Syntactic - ExportDeclaration : `export` VariableStatement[~Yield, +Await]", p"Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]", p"Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
   keys ["\n          ExportDeclaration :\n            `export` NamedExports `;`\n            `export` VariableStatement\n            `export` Declaration\n            `export` `default` HoistableDeclaration\n            `export` `default` ClassDeclaration\n            `export` `default` AssignmentExpression `;`\n        "]
   vars []
@@ -1068,6 +1179,16 @@ sdo_row @sec-static-semantics-importentries#3 ImportEntries form alg {
 }
 
 sdo_row @sec-static-semantics-importentries#4 ImportEntries form alg {
+  prods [p"Syntactic 0 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`", p"Syntactic 1 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  keys ["ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  vars [module]
+  steps {
+    let module = $ListElem(data choice 0, sdo ModuleRequests(child 6 |ImportDeclaration|))
+    return sdo ImportEntriesForModule(child 5 |NameSpaceImport|; module)
+  }
+}
+
+sdo_row @sec-static-semantics-importentries#5 ImportEntries form alg {
   prods [p"Syntactic 0 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`", p"Syntactic 1 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`"]
   keys ["ImportDeclaration : `import` ModuleSpecifier WithClause? `;`"]
   vars []

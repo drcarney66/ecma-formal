@@ -1,7 +1,8 @@
 // Proposal and TypeScript syntax that the parser accepts is not in the pinned
-// grammar: a SyntaxError (a getter's rest parameter too, §15.4).
+// grammar: a SyntaxError (a getter's rest parameter too, §15.4). `import.defer('x')` is in the text
+// (proposal-defer-import-eval, spec/proposals.txt): it parses, and evaluates to a rejected promise.
 // expect: normal: undefined
-// print: SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError
+// print: SyntaxError SyntaxError SyntaxError ok SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError SyntaxError
 // print: ok
 function t(s) { try { eval(s); return "ok"; } catch (e) { return e.name; } }
 print([

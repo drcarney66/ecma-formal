@@ -1268,16 +1268,17 @@ def @sec-module-namespace-exotic-objects-preventextensions "[[PreventExtensions]
 }
 
 def @sec-module-namespace-exotic-objects-getownproperty-p "[[GetOwnProperty]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key"] -> completion<#"Property Descriptor" | val(undefined)> | #"throw completion") vars [#"obj", propertyKey, exports, value] {
-  if propertyKey is ty {Symbol} -> return @sec-ordinarygetownproperty(#"obj", propertyKey)
-  let exports = #"obj"[[Exports]]
+  if @sec-IsSymbolLikeNamespaceKey(propertyKey, #"obj") is val {true} -> return @sec-ordinarygetownproperty(#"obj", propertyKey)
+  let exports = ? @sec-GetModuleExportsList(#"obj")
   if exports fails $Contains(?propertyKey) -> return undefined
   let value = ? #"obj"[[Get]](propertyKey, #"obj")
   return record PropertyDescriptor { [[Value]]: value, [[Writable]]: true, [[Enumerable]]: true, [[Configurable]]: false }
 }
 
 def @sec-module-namespace-exotic-objects-defineownproperty-p-desc "[[DefineOwnProperty]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, propertyDesc, current] {
-  if propertyKey is ty {Symbol} -> return ! @sec-ordinarydefineownproperty(#"obj", propertyKey, propertyDesc)
+  if @sec-IsSymbolLikeNamespaceKey(propertyKey, #"obj") is val {true} -> return ! @sec-ordinarydefineownproperty(#"obj", propertyKey, propertyDesc)
   let current = ? #"obj"[[GetOwnProperty]](propertyKey)
+  note "If _obj_.[[Deferred]] is *true*, the step above will ensure that the module is evaluated."
   if current is val {undefined} -> return false
   if propertyDesc sat $HasField([[Configurable]]) and propertyDesc[[Configurable]] is val {true} -> return false
   if propertyDesc sat $HasField([[Enumerable]]) and propertyDesc[[Enumerable]] is val {false} -> return false
@@ -1288,17 +1289,15 @@ def @sec-module-namespace-exotic-objects-defineownproperty-p-desc "[[DefineOwnPr
 }
 
 def @sec-module-namespace-exotic-objects-hasproperty-p "[[HasProperty]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key"] -> completion<Boolean>) vars [#"obj", propertyKey, exports] {
-  if propertyKey is ty {Symbol} -> return ! @sec-ordinaryhasproperty(#"obj", propertyKey)
-  let exports = #"obj"[[Exports]]
+  if @sec-IsSymbolLikeNamespaceKey(propertyKey, #"obj") is val {true} -> return ! @sec-ordinaryhasproperty(#"obj", propertyKey)
+  let exports = ? @sec-GetModuleExportsList(#"obj")
   if exports sat $Contains(?propertyKey) -> return true
   return false
 }
 
 def @sec-module-namespace-exotic-objects-get-p-receiver "[[Get]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key", receiver : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", propertyKey, receiver, exports, module, binding, targetModule, targetEnv] {
-  if propertyKey is ty {Symbol} {
-    return ! @sec-ordinaryget(#"obj", propertyKey, receiver)
-  }
-  let exports = #"obj"[[Exports]]
+  if @sec-IsSymbolLikeNamespaceKey(propertyKey, #"obj") is val {true} -> return ! @sec-ordinaryget(#"obj", propertyKey, receiver)
+  let exports = ? @sec-GetModuleExportsList(#"obj")
   if exports fails $Contains(?propertyKey) -> return undefined
   let module = #"obj"[[Module]]
   let binding = module.ResolveExport(propertyKey)
@@ -1306,7 +1305,10 @@ def @sec-module-namespace-exotic-objects-get-p-receiver "[[Get]]" (kind internal
   let targetModule = binding[[Module]]
   assert targetModule is not val {undefined}
   if binding[[BindingName]] is val {~namespace~} {
-    return @sec-getmodulenamespace(targetModule)
+    return @sec-getmodulenamespace(targetModule, ~evaluation~)
+  }
+  if binding[[BindingName]] is val {~deferred-namespace~} {
+    return @sec-getmodulenamespace(targetModule, ~defer~)
   }
   let targetEnv = targetModule[[Environment]]
   if targetEnv is val {~empty~} -> throw @ph-new-error([[ReferenceError]])
@@ -1318,32 +1320,38 @@ def @sec-module-namespace-exotic-objects-set-p-v-receiver "[[Set]]" (kind intern
 }
 
 def @sec-module-namespace-exotic-objects-delete-p "[[Delete]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key"] -> completion<Boolean>) vars [#"obj", propertyKey, exports] {
-  if propertyKey is ty {Symbol} {
-    return ! @sec-ordinarydelete(#"obj", propertyKey)
-  }
-  let exports = #"obj"[[Exports]]
+  if @sec-IsSymbolLikeNamespaceKey(propertyKey, #"obj") is val {true} -> return ! @sec-ordinarydelete(#"obj", propertyKey)
+  let exports = ? @sec-GetModuleExportsList(#"obj")
   if exports sat $Contains(?propertyKey) -> return false
   return true
 }
 
 def @sec-module-namespace-exotic-objects-ownpropertykeys "[[OwnPropertyKeys]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [] -> completion<list<#"property key">>) vars [#"obj", exports, symbolKeys] {
-  let exports = #"obj"[[Exports]]
+  let exports = ? @sec-GetModuleExportsList(#"obj")
   let symbolKeys = @sec-ordinaryownpropertykeys(#"obj")
   return $ListConcat([exports, symbolKeys])
 }
 
-def @sec-modulenamespacecreate "ModuleNamespaceCreate" (kind ao params [module : #"Module Record", exports : list<String>] -> #"module namespace exotic object") vars [module, exports, internalSlotsList, namespace, sortedExports, p] {
-  assert module[[Namespace]] is val {~empty~}
+def @sec-modulenamespacecreate "ModuleNamespaceCreate" (kind ao params [module : #"Module Record", exports : list<String>, phase : val(~defer~) | val(~evaluation~)] -> #"module namespace exotic object") vars [module, exports, phase, internalSlotsList, namespace, sortedExports, toStringTag] {
   let internalSlotsList = $SlotsListed(table t"table-internal-slots-of-module-namespace-exotic-objects")
   let namespace = @sec-makebasicobject(internalSlotsList)
   perform @ph-set-methods(?namespace, data choice 1, data choice 1, clause @sec-module-namespace-exotic-objects)
   set field namespace[[Module]] = module
   let sortedExports = @ph-elements-lexicographic(?exports)
   set field namespace[[Exports]] = sortedExports
-  for_each p : Record in $PropertyOrder(namespace, $ClauseProperties(namespace, clause @sec-module-namespace-objects)) {
-    perform $OwnPropertyCreate(namespace, p[[Key]], record PropertyDescriptor { [[Value]]: p[[Value]], [[Writable]]: p[[Writable]], [[Enumerable]]: p[[Enumerable]], [[Configurable]]: p[[Configurable]] }, ~data~)
+  if phase is val {~defer~} {
+    assert module[[DeferredNamespace]] is val {~empty~}
+    set field module[[DeferredNamespace]] = namespace
+    set field namespace[[Deferred]] = true
+    let toStringTag = "Deferred Module"
   }
-  set field module[[Namespace]] = namespace
+  else {
+    assert module[[Namespace]] is val {~empty~}
+    set field module[[Namespace]] = namespace
+    set field namespace[[Deferred]] = false
+    let toStringTag = "Module"
+  }
+  perform $OwnPropertyCreate(namespace, $WellKnownSymbol("Symbol.toStringTag"), record PropertyDescriptor { [[Value]]: toStringTag, [[Writable]]: false, [[Enumerable]]: false, [[Configurable]]: false }, ~data~)
   return namespace
 }
 
@@ -1673,6 +1681,20 @@ def @sec-proxycreate "ProxyCreate" (kind ao params [target : #"ECMAScript langua
   set field proxy[[ProxyTarget]] = target
   set field proxy[[ProxyHandler]] = handler
   return proxy
+}
+
+def @sec-IsSymbolLikeNamespaceKey "IsSymbolLikeNamespaceKey" (kind ao params [propertyKey : #"property key", ns : #"module namespace exotic object"] -> Boolean) vars [propertyKey, ns] {
+  if propertyKey is ty {Symbol} -> return true
+  if ns[[Deferred]] is val {true} and propertyKey is val {"then"} -> return true
+  return false
+}
+
+def @sec-GetModuleExportsList "GetModuleExportsList" (kind ao params [#"obj" : #"module namespace exotic object"] -> completion<list<String>> | #"throw completion") vars [#"obj", module] {
+  if #"obj"[[Deferred]] is val {true} {
+    let module = #"obj"[[Module]]
+    perform ? @sec-EvaluateModuleSync(module)
+  }
+  return #"obj"[[Exports]]
 }
 
 sdo_row @sec-runtime-semantics-evaluatebody EvaluateBody form alg {

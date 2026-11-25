@@ -1,0 +1,7 @@
+ignore sec-static-semantics-modulerequests 1
+patch sec-ContinueDynamicImport 0 "captures _module_, _promiseCapability_, _phase_ and _onRejected_" ==> "captures _module_, _promiseCapability_, _phase_, and _onRejected_"
+patch sec-innermoduleevaluation 0 "1. Otherwise, return ? _module_.[[EvaluationError]]." ==> "1. Return ? _module_.[[EvaluationError]]."
+patch sec-innermoduleevaluation 0 "1. Otherwise, set _requiredModule_.[[Status]] to ~evaluating-async~." ==> "1. Else, set _requiredModule_.[[Status]] to ~evaluating-async~."
+patch sec-GatherAsynchronousTransitiveDependencies 0 "1. If IsModuleSCCEvaluated(_module_) is *true* and either _module_.[[HasTLA]] is *false* or _module_.[[EvaluationError]] is ~empty~, return _result_." ==> "1. If IsModuleSCCEvaluated(_module_) is *true*, then\n                  1. If _module_.[[HasTLA]] is *false* or _module_.[[EvaluationError]] is ~empty~, return _result_."
+patch sec-source-text-module-record-initialize-environment 0 "1. If _resolution_.[[BindingName]] is ~namespace~ let _phase_ be ~evaluation~, else let _phase_ be ~defer~." ==> "1. If _resolution_.[[BindingName]] is ~namespace~, let _phase_ be ~evaluation~; else let _phase_ be ~defer~."
+patch sec-parsemodule 0 "[[Namespace]]: ~empty~," ==> "[[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~,"

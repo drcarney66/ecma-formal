@@ -118,18 +118,11 @@ def @sec-makesuperpropertyreference "MakeSuperPropertyReference" (kind ao params
   return record #"Reference Record" { [[Base]]: baseValue, [[ReferencedName]]: propertyKey, [[Strict]]: strict, [[ThisValue]]: actualThis }
 }
 
-def @sec-evaluate-import-call "EvaluateImportCall" (kind ao params [specifierExpr : #"Parse Node", optionsExpr : #"Parse Node" opt] -> completion<Promise> | #"abrupt completion") vars [specifierExpr, optionsExpr, referrer, specifierRef, specifier, optionsRef, options, promiseCapability, specifierString, attrs, attrsObj, entries, entry, key, value, #"rest", sorted, least, a, moduleRequest] {
+def @sec-evaluate-import-call "EvaluateImportCall" (kind ao params [arguments : #"Parse Node", phase : val(~defer~) | val(~evaluation~)] -> completion<Promise> | #"abrupt completion") vars [arguments, phase, referrer, specifier, options, promiseCapability, specifierString, attrs, attrsObj, entries, entry, key, value, #"rest", sorted, least, a, moduleRequest] {
   let referrer = @sec-getactivescriptormodule()
   if referrer is val {null} -> set var referrer = $CurrentRealm()
-  let specifierRef = ? sdo Evaluation(specifierExpr)
-  let specifier = ? @sec-getvalue(specifierRef)
-  if optionsExpr sat $Present() {
-    let optionsRef = ? sdo Evaluation(optionsExpr)
-    let options = ? @sec-getvalue(optionsRef)
-  }
-  else {
-    let options = undefined
-  }
+  let specifier = ? sdo EvaluateImportCallSpecifier(arguments)
+  let options = ? sdo EvaluateImportCallOptions(arguments)
   let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
   let specifierString = @sec-completion-ao(@sec-tostring(specifier))
   block {
@@ -197,12 +190,12 @@ def @sec-evaluate-import-call "EvaluateImportCall" (kind ao params [specifierExp
     }
     set var attrs = sorted
   }
-  let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: specifierString, [[Attributes]]: attrs })
+  let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: specifierString, [[Attributes]]: attrs, [[Phase]]: phase })
   perform @sec-HostLoadImportedModule(referrer, moduleRequest, ~empty~, promiseCapability)
   return promiseCapability[[Promise]]
 }
 
-def @sec-ContinueDynamicImport "ContinueDynamicImport" (kind ao params [promiseCapability : #"PromiseCapability Record", moduleCompletion : completion<#"Module Record"> | #"throw completion"] -> val(~unused~)) vars [promiseCapability, moduleCompletion, module, loadPromise, rejectedClosure, reason, onRejected, linkAndEvaluateClosure, #"link", evaluatePromise, fulfilledClosure, namespace, onFulfilled, linkAndEvaluate] {
+def @sec-ContinueDynamicImport "ContinueDynamicImport" (kind ao params [promiseCapability : #"PromiseCapability Record", moduleCompletion : completion<#"Module Record"> | #"throw completion", phase : val(~defer~) | val(~evaluation~)] -> val(~unused~)) vars [promiseCapability, moduleCompletion, phase, module, loadPromise, rejectedClosure, reason, onRejected, linkAndEvaluateClosure, #"link", fulfilledClosure, namespace, evaluationList, asyncDepsEvaluationPromises, dep, evaluatePromise, onFulfilled, linkAndEvaluate] {
   if moduleCompletion is ty {#"abrupt completion"} {
     perform ! @sec-call(promiseCapability[[Reject]], undefined, [moduleCompletion[[Value]]])
     return ~unused~
@@ -219,20 +212,35 @@ def @sec-ContinueDynamicImport "ContinueDynamicImport" (kind ao params [promiseC
     perform ! @sec-call(promiseCapability[[Reject]], undefined, [reason])
     return @sec-normalcompletion(undefined)
   }
-  closure abstract params none captures [module, promiseCapability, onRejected] {
+  closure abstract params none captures [module, promiseCapability, phase, onRejected] {
     let #"link" = @sec-completion-ao(module.Link())
     if #"link" is ty {#"abrupt completion"} {
       perform ! @sec-call(promiseCapability[[Reject]], undefined, [#"link"[[Value]]])
       return @sec-normalcompletion(undefined)
     }
-    let evaluatePromise = module.Evaluate()
     let fulfilledClosure = closure 2
+    if phase is val {~defer~} {
+      let evaluationList = @sec-GatherAsynchronousTransitiveDependencies(module)
+      if evaluationList sat $IsEmpty() {
+        perform fulfilledClosure()
+        return ~unused~
+      }
+      let asyncDepsEvaluationPromises = $ListNew()
+      for_each dep : #"Module Record" in evaluationList {
+        perform $Append(dep.Evaluate(), ?asyncDepsEvaluationPromises)
+      }
+      let evaluatePromise = @sec-safe-perform-promise-all(asyncDepsEvaluationPromises)
+    }
+    else {
+      assert phase is val {~evaluation~}
+      let evaluatePromise = module.Evaluate()
+    }
     let onFulfilled = @sec-createbuiltinfunction(fulfilledClosure, 0, "", [])
     perform @sec-performpromisethen(evaluatePromise, onFulfilled, onRejected)
     return ~unused~
   }
-  closure abstract params none captures [module, promiseCapability] {
-    let namespace = @sec-getmodulenamespace(module)
+  closure abstract params none captures [module, phase, promiseCapability] {
+    let namespace = @sec-getmodulenamespace(module, phase)
     perform ! @sec-call(promiseCapability[[Resolve]], undefined, [namespace])
     return @sec-normalcompletion(undefined)
   }
@@ -2065,20 +2073,59 @@ sdo_row @sec-optional-chaining-chain-evaluation#7 ChainEvaluation form alg {
 }
 
 sdo_row @sec-import-call-runtime-semantics-evaluation Evaluation form alg {
-  prods [p"Syntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
-  keys ["ImportCall : `import` `(` AssignmentExpression `,`? `)`"]
+  prods [p"Syntactic - ImportCall : `import` ImportCallArguments[?Yield, ?Await]"]
+  keys ["ImportCall : `import` ImportCallArguments"]
   vars []
   steps {
-    return ? @sec-evaluate-import-call(child 5 |AssignmentExpression|)
+    return ? @sec-evaluate-import-call(child 5 |ImportCallArguments|, ~evaluation~)
   }
 }
 
 sdo_row @sec-import-call-runtime-semantics-evaluation#1 Evaluation form alg {
-  prods [p"Syntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
-  keys ["ImportCall : `import` `(` AssignmentExpression `,` AssignmentExpression `,`? `)`"]
+  prods [p"Syntactic - ImportCall : `import` `.` `defer` ImportCallArguments[?Yield, ?Await]"]
+  keys ["ImportCall : `import` `.` `defer` ImportCallArguments"]
   vars []
   steps {
-    return ? @sec-evaluate-import-call(child 0 |AssignmentExpression|, child 1 |AssignmentExpression|)
+    return ? @sec-evaluate-import-call(child 5 |ImportCallArguments|, ~defer~)
+  }
+}
+
+sdo_row @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier EvaluateImportCallSpecifier form alg {
+  prods [p"Syntactic 0 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
+  keys ["ImportCallArguments : `(` AssignmentExpression `,`? `)`"]
+  vars [#"ref"]
+  steps {
+    let #"ref" = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    return ? @sec-getvalue(#"ref")
+  }
+}
+
+sdo_row @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier#1 EvaluateImportCallSpecifier form alg {
+  prods [p"Syntactic 0 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
+  keys ["ImportCallArguments : `(` AssignmentExpression `,` AssignmentExpression `,`? `)`"]
+  vars [#"ref"]
+  steps {
+    let #"ref" = ? sdo Evaluation(child 0 |AssignmentExpression|)
+    return ? @sec-getvalue(#"ref")
+  }
+}
+
+sdo_row @sec-import-call-runtime-semantics-EvaluateImportCallOptions EvaluateImportCallOptions form alg {
+  prods [p"Syntactic 0 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
+  keys ["ImportCallArguments : `(` AssignmentExpression `,`? `)`"]
+  vars []
+  steps {
+    return undefined
+  }
+}
+
+sdo_row @sec-import-call-runtime-semantics-EvaluateImportCallOptions#1 EvaluateImportCallOptions form alg {
+  prods [p"Syntactic 0 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
+  keys ["ImportCallArguments : `(` AssignmentExpression `,` AssignmentExpression `,`? `)`"]
+  vars [#"ref"]
+  steps {
+    let #"ref" = ? sdo Evaluation(child 1 |AssignmentExpression|)
+    return ? @sec-getvalue(#"ref")
   }
 }
 

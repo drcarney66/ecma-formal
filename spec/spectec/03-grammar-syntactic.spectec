@@ -190,8 +190,13 @@ rule syntactic |SuperCall| [Yield, Await] : {
 }
 
 rule syntactic |ImportCall| [Yield, Await] : {
-  | "import" "(" |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
-  | "import" "(" |AssignmentExpression[+In, ?Yield, ?Await]| "," |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
+  | "import" |ImportCallArguments[?Yield, ?Await]|
+  | "import" "." "defer" |ImportCallArguments[?Yield, ?Await]|
+}
+
+rule syntactic |ImportCallArguments| [Yield, Await] : {
+  | "(" |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
+  | "(" |AssignmentExpression[+In, ?Yield, ?Await]| "," |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
 }
 
 rule syntactic |Arguments| [Yield, Await] : {
@@ -963,6 +968,7 @@ rule syntactic |ModuleExportName| [] : {
 
 rule syntactic |ImportDeclaration| [] : {
   | "import" |ImportClause| |FromClause| |WithClause|? ";"
+  | "import" "defer" |NameSpaceImport| |FromClause| |WithClause|? ";"
   | "import" |ModuleSpecifier| |WithClause|? ";"
 }
 

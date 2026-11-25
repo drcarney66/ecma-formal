@@ -3549,6 +3549,15 @@ sdo_row @row-contains-if-function Contains form alg {
   }
 }
 
+sdo_row @row-boundnames-import-defer BoundNames form alg {
+  prods [p"Syntactic 0 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`", p"Syntactic 1 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  keys ["ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  vars []
+  steps {
+    return sdo BoundNames(child 5 |NameSpaceImport|)
+  }
+}
+
 sdo_row @row-ischaracterclass-classcontrolletter IsCharacterClass form alg annex {
   prods [p"AnnexB - ClassEscape :: [~UnicodeMode] `c` ClassControlLetter"]
   keys ["ClassEscape :: `c` ClassControlLetter"]

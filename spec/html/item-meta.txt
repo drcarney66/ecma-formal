@@ -55,13 +55,18 @@ alg @sec-ContinueDynamicImport base=10 close=8
 alg @sec-ContinueModuleLoading base=16 close=14
 alg @sec-EvaluateModuleSync base=12 close=10
 alg @sec-FinishLoadingImportedModule base=10 close=8
+alg @sec-GatherAsynchronousTransitiveDependencies base=16 close=14
 alg @sec-GetImportedModule base=10 close=8
+alg @sec-GetModuleExportsList base=10 close=8
 alg @sec-IncrementModuleAsyncEvaluationCount base=8 close=6
 alg @sec-InnerModuleLinking base=16 close=14
 alg @sec-InnerModuleLoading base=16 close=14
+alg @sec-IsModuleSCCEvaluated base=14 close=12
+alg @sec-IsSymbolLikeNamespaceKey base=10 close=8
 alg @sec-LoadRequestedModules base=14 close=12
-alg @sec-ModuleRequestsEqual base=12 close=10
+alg @sec-ModuleRequestsKeyEqual base=12 close=10
 alg @sec-ParseJSON base=10 close=8
+alg @sec-ReadyForSyncExecution base=14 close=12
 alg @sec-SetterThatIgnoresPrototypeProperties base=8 close=6
 alg @sec-add-entries-from-iterable base=10 close=8
 alg @sec-add-value-to-keyed-group base=8 close=6
@@ -228,6 +233,7 @@ alg @sec-copydataproperties base=8 close=6
 alg @sec-countleftcapturingparensbefore base=10 close=8
 alg @sec-countleftcapturingparenswithin base=10 close=8
 alg @sec-create-default-export-synthetic-module base=12 close=10
+alg @sec-create-promise-all-resolve-element base=12 close=10
 alg @sec-createarrayfromlist base=8 close=6
 alg @sec-createarrayiterator base=10 close=8
 alg @sec-createasyncfromsynciterator base=10 close=8
@@ -961,6 +967,7 @@ alg @sec-runtime-semantics-repeatmatcher-abstract-operation base=12 close=10
 alg @sec-runtime-semantics-scriptevaluation base=8 close=6
 alg @sec-runtime-semantics-unicodematchproperty-p base=12 close=10
 alg @sec-runtime-semantics-unicodematchpropertyvalue-p-v base=12 close=10
+alg @sec-safe-perform-promise-all base=12 close=10
 alg @sec-sametype base=8 close=6
 alg @sec-samevalue base=8 close=6
 alg @sec-samevaluenonnumber base=8 close=6
@@ -1703,6 +1710,10 @@ row @sec-identifiers-runtime-semantics-evaluation#1 base=8 close=6
 row @sec-identifiers-runtime-semantics-evaluation#2 base=8 close=6
 row @sec-if-statement-runtime-semantics-evaluation base=8 close=6
 row @sec-if-statement-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-import-call-runtime-semantics-EvaluateImportCallOptions base=10 close=8
+row @sec-import-call-runtime-semantics-EvaluateImportCallOptions#1 base=10 close=8
+row @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier base=10 close=8
+row @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier#1 base=10 close=8
 row @sec-import-call-runtime-semantics-evaluation base=10 close=8
 row @sec-import-call-runtime-semantics-evaluation#1 base=10 close=8
 row @sec-initializers-in-forin-statement-heads base=8 close=6
@@ -2297,6 +2308,7 @@ row @sec-static-semantics-importentries#1 base=10 close=8
 row @sec-static-semantics-importentries#2 base=10 close=8
 row @sec-static-semantics-importentries#3 base=10 close=8
 row @sec-static-semantics-importentries#4 base=10 close=8
+row @sec-static-semantics-importentries#5 base=10 close=8
 row @sec-static-semantics-importentriesformodule base=10 close=8
 row @sec-static-semantics-importentriesformodule#1 base=10 close=8
 row @sec-static-semantics-importentriesformodule#2 base=10 close=8
@@ -2437,6 +2449,8 @@ row @sec-static-semantics-modulerequests#7 base=10 close=8
 row @sec-static-semantics-modulerequests#8 base=10 close=8
 row @sec-static-semantics-modulerequests#9 base=10 close=8
 row @sec-static-semantics-modulerequests#10 base=10 close=8
+row @sec-static-semantics-modulerequests#11 base=10 close=8
+row @sec-static-semantics-modulerequests#12 base=10 close=8
 row @sec-static-semantics-nonconstructorelements base=8 close=6
 row @sec-static-semantics-nonconstructorelements#1 base=8 close=6
 row @sec-static-semantics-privateboundidentifiers base=8 close=6
@@ -3029,6 +3043,7 @@ spectec_only_def @spec-type-6
 spectec_only_def @spec-type-7
 spectec_only_def @spec-type-8
 spectec_only_def @spec-type-9
+spectec_only_row @row-boundnames-import-defer
 spectec_only_row @row-compileassertion-quantifiableassertion-lookahead
 spectec_only_row @row-compileassertion-quantifiableassertion-negative-lookahead
 spectec_only_row @row-compileatom-extendedatom-characterclass

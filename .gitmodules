@@ -5,3 +5,6 @@
 	path = external/test262
 	url = https://github.com/tc39/test262
 	shallow = true
+[submodule "external/proposal-defer-import-eval"]
+	path = external/proposal-defer-import-eval
+	url = https://github.com/tc39/proposal-defer-import-eval
