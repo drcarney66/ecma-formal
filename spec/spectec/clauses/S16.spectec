@@ -135,58 +135,79 @@ def @sec-importedlocalnames "ImportedLocalNames" (kind ao params [importEntries 
   return localNames
 }
 
-def @sec-ModuleRequestsEqual "ModuleRequestsEqual" (kind ao params [x : #"ModuleRequest Record" | #"LoadedModuleRequest Record", y : #"ModuleRequest Record" | #"LoadedModuleRequest Record"] -> Boolean) vars [x, y, xAttrs, yAttrs, xAttrsCount, yAttrsCount, xAttr, yAttr] {
-  if x[[Specifier]] is not val {y[[Specifier]]} -> return false
-  let xAttrs = x[[Attributes]]
-  let yAttrs = y[[Attributes]]
-  let xAttrsCount = $ListLen(?xAttrs)
-  let yAttrsCount = $ListLen(?yAttrs)
-  if xAttrsCount != yAttrsCount -> return false
-  for_each xAttr : #"ImportAttribute Record" in xAttrs {
-    if yAttrs sat @ph-not-contains-such(data choice 1, data sort #"ImportAttribute Record", ?yAttr, closure 0) -> return false
+def @sec-ModuleRequestsKeyEqual "ModuleRequestsKeyEqual" (kind ao params [left : #"ModuleRequest Record" | #"LoadedModuleRequest Record", right : #"ModuleRequest Record" | #"LoadedModuleRequest Record"] -> Boolean) vars [left, right, leftAttrs, rightAttrs, leftAttrsCount, rightAttrsCount, l, r] {
+  if left[[Specifier]] is not val {right[[Specifier]]} -> return false
+  let leftAttrs = left[[Attributes]]
+  let rightAttrs = right[[Attributes]]
+  let leftAttrsCount = $ListLen(?leftAttrs)
+  let rightAttrsCount = $ListLen(?rightAttrs)
+  if leftAttrsCount != rightAttrsCount -> return false
+  for_each l : #"ImportAttribute Record" in leftAttrs {
+    if rightAttrs sat @ph-not-contains-such(data choice 1, data sort #"ImportAttribute Record", ?r, closure 0) -> return false
   }
   return true
-  closure abstract params [yAttr] captures [xAttr] {
-    return bool(xAttr[[Key]] is val {yAttr[[Key]]} and xAttr[[Value]] is val {yAttr[[Value]]})
+  closure abstract params [r] captures [l] {
+    return bool(l[[Key]] is val {r[[Key]]} and l[[Value]] is val {r[[Value]]})
   }
 }
 
-def @sec-EvaluateModuleSync "EvaluateModuleSync" (kind ao params [module : #"Module Record"] -> completion<val(~unused~)> | #"throw completion") vars [module, promise] {
-  assert module is not ty {#"Cyclic Module Record"}
-  let promise = module.Evaluate()
-  assert promise[[PromiseState]] is val {~fulfilled~; ~rejected~}
-  if promise[[PromiseState]] is val {~rejected~} {
-    if promise[[PromiseIsHandled]] is val {false} -> perform @sec-host-promise-rejection-tracker(promise, "handle")
-    set field promise[[PromiseIsHandled]] = true
-    throw promise[[PromiseResult]]
+def @sec-EvaluateModuleSync "EvaluateModuleSync" (kind ao params [module : #"Module Record", importedNames : #"ImportedNames Record" opt] -> completion<val(~unused~)> | #"throw completion") vars [module, importedNames, allImportedNames, evaluationList, previouslyImportedNames, optionalIndirectRequests, moduleToEvaluate, promise] {
+  if importedNames fails $Present() -> set var importedNames = @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] })
+  let allImportedNames = @sec-AllImportedNames(importedNames)
+  if @sec-ReadyForSyncExecution(module, allImportedNames, ~ignore-deferred-namespace~) is val {false} -> throw @ph-new-error([[TypeError]])
+  let evaluationList = [module]
+  if module is ty {#"Cyclic Module Record"} {
+    let previouslyImportedNames = [@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: module, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) })]
+    let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(module, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: importedNames[[Direct]], [[Namespace]]: [] }), previouslyImportedNames)
+    perform @sec-BuildEvaluationList(evaluationList, module, optionalIndirectRequests, previouslyImportedNames, ~ignore-deferred-namespace~)
+  }
+  for_each moduleToEvaluate : #"Module Record" in evaluationList {
+    let promise = moduleToEvaluate.Evaluate()
+    assert promise[[PromiseState]] is val {~fulfilled~; ~rejected~}
+    if promise[[PromiseState]] is val {~rejected~} {
+      if promise[[PromiseIsHandled]] is val {false} -> perform @sec-host-promise-rejection-tracker(promise, "handle")
+      set field promise[[PromiseIsHandled]] = true
+      throw promise[[PromiseResult]]
+    }
   }
   return ~unused~
 }
 
-def @sec-LoadRequestedModules "LoadRequestedModules" (kind concrete_method recv module : #"Cyclic Module Record" params [hostDefined : pred(sat @ph-type-anything()) opt] -> Promise) vars [module, hostDefined, promiseCapability, state] {
+def @sec-cyclic-module-records "sec-cyclic-module-records" (kind untyped params []) vars [] {
+  return $ListNew()
+}
+
+def @sec-LoadRequestedModules "LoadRequestedModules" (kind concrete_method recv module : #"Cyclic Module Record" params [importedNames : val(~all~) | list<String> opt, hostDefined : pred(sat @ph-type-anything()) opt] -> Promise) vars [module, importedNames, hostDefined, promiseCapability, state] {
+  if importedNames fails $Present() -> set var importedNames = ~all~
   if hostDefined fails $Present() -> set var hostDefined = ~empty~
   let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
   let state = record #"GraphLoadingState Record" { [[IsLoading]]: true, [[PendingModulesCount]]: 1, [[Visited]]: [], [[PromiseCapability]]: promiseCapability, [[HostDefined]]: hostDefined }
-  perform @sec-InnerModuleLoading(state, module)
+  perform @sec-InnerModuleLoading(state, module, importedNames)
   return promiseCapability[[Promise]]
 }
 
-def @sec-InnerModuleLoading "InnerModuleLoading" (kind ao params [state : #"GraphLoadingState Record", module : #"Module Record"] -> val(~unused~)) vars [state, module, requestedModulesCount, request, error, #"record", loaded, values] {
+def @sec-InnerModuleLoading "InnerModuleLoading" (kind ao params [state : #"GraphLoadingState Record", module : #"Module Record", importedNames : val(~all~) | list<String>] -> val(~unused~)) vars [state, module, importedNames, requestsToLoad, r, optionalIndirectRequests, requestedModulesCount, request, error, #"record", loaded, values] {
   assert state[[IsLoading]] is val {true}
-  if module is ty {#"Cyclic Module Record"} and module[[Status]] is val {~new~} and state[[Visited]] fails $Contains(?module) {
-    perform $Append(?module, state[[Visited]])
-    let requestedModulesCount = $ListLen(module[[RequestedModules]])
+  if module is ty {#"Cyclic Module Record"} {
+    let requestsToLoad = $ListNew()
+    if state[[Visited]] sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0) {
+      if module[[Status]] is val {~new~} -> set var requestsToLoad = module[[RequestedModules]]
+      perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: module, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), state[[Visited]])
+    }
+    let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(module, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: importedNames, [[Namespace]]: [] }), state[[Visited]])
+    set var requestsToLoad = $ListConcat([requestsToLoad, optionalIndirectRequests])
+    let requestedModulesCount = $ListLen(?requestsToLoad)
     set field state[[PendingModulesCount]] = state[[PendingModulesCount]] + requestedModulesCount
-    for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
+    for_each request : #"ModuleRequest Record" in requestsToLoad {
       if @sec-AllImportAttributesSupported(request[[Attributes]]) is val {false} {
         let error = @sec-throwcompletion(@ph-new-error(err [[SyntaxError]]))
-        perform @sec-ContinueModuleLoading(state, error)
+        perform @sec-ContinueModuleLoading(state, error, @sec-AllImportedNames(request[[ImportedNames]]))
       }
       else {
-        let values = @ph-contains-such-binds(data choice 0, data sort #"LoadedModuleRequest Record", ?#"record", closure 0, module[[LoadedModules]])
+        let values = @ph-contains-such-binds(data choice 0, data sort #"LoadedModuleRequest Record", ?#"record", closure 1, module[[LoadedModules]])
         if $ListLen(values) == 1 or $ListLen(values) != 0 and expr $""() {
           let #"record" = values[0]
-          perform @sec-InnerModuleLoading(state, #"record"[[Module]])
+          perform @sec-InnerModuleLoading(state, #"record"[[Module]], @sec-AllImportedNames(request[[ImportedNames]]))
         }
         else {
           perform @sec-HostLoadImportedModule(module, request, state[[HostDefined]], state)
@@ -200,21 +221,24 @@ def @sec-InnerModuleLoading "InnerModuleLoading" (kind ao params [state : #"Grap
   set field state[[PendingModulesCount]] = state[[PendingModulesCount]] - 1
   if state[[PendingModulesCount]] == 0 {
     set field state[[IsLoading]] = false
-    for_each loaded : #"Cyclic Module Record" in state[[Visited]] {
-      if loaded[[Status]] is val {~new~} -> set field loaded[[Status]] = ~unlinked~
+    for_each loaded : #"ModuleImportedNames Record" in state[[Visited]] {
+      if loaded[[Module]][[Status]] is val {~new~} -> set field loaded[[Module]][[Status]] = ~unlinked~
     }
     perform ! @sec-call(state[[PromiseCapability]][[Resolve]], undefined, [undefined])
   }
   return ~unused~
+  closure abstract params [r] captures [module] {
+    return bool(r[[Module]] is val {module})
+  }
   closure abstract params [#"record"] captures [request] {
-    return bool(@sec-ModuleRequestsEqual(#"record", request) is val {true})
+    return bool(@sec-ModuleRequestsKeyEqual(#"record", request) is val {true})
   }
 }
 
-def @sec-ContinueModuleLoading "ContinueModuleLoading" (kind ao params [state : #"GraphLoadingState Record", moduleCompletion : completion<#"Module Record"> | #"throw completion"] -> val(~unused~)) vars [state, moduleCompletion] {
+def @sec-ContinueModuleLoading "ContinueModuleLoading" (kind ao params [state : #"GraphLoadingState Record", moduleCompletion : completion<#"Module Record"> | #"throw completion", importedNames : val(~all~) | list<String>] -> val(~unused~)) vars [state, moduleCompletion, importedNames] {
   if state[[IsLoading]] is val {false} -> return ~unused~
   if moduleCompletion is ty {#"normal completion"} {
-    perform @sec-InnerModuleLoading(state, moduleCompletion[[Value]])
+    perform @sec-InnerModuleLoading(state, moduleCompletion[[Value]], importedNames)
   }
   else {
     set field state[[IsLoading]] = false
@@ -223,8 +247,9 @@ def @sec-ContinueModuleLoading "ContinueModuleLoading" (kind ao params [state : 
   return ~unused~
 }
 
-def @sec-moduledeclarationlinking "Link" (kind concrete_method recv module : #"Cyclic Module Record" params [] -> completion<val(~unused~)> | #"throw completion") vars [module, stack, result, requiredModule] {
+def @sec-moduledeclarationlinking "Link" (kind concrete_method recv module : #"Cyclic Module Record" params [importedNames : val(~all~) | list<String> opt] -> completion<val(~unused~)> | #"throw completion") vars [module, importedNames, stack, result, requiredModule, optionalIndirectRequests, linkingList, previouslyImportedNames] {
   assert module[[Status]] is val {~unlinked~; ~linked~; ~evaluating-async~; ~evaluated~}
+  if importedNames fails $Present() -> set var importedNames = ~all~
   let stack = $ListNew()
   let result = @sec-completion-ao(@sec-InnerModuleLinking(module, stack, 0))
   if result is ty {#"abrupt completion"} {
@@ -237,10 +262,22 @@ def @sec-moduledeclarationlinking "Link" (kind concrete_method recv module : #"C
   }
   assert module[[Status]] is val {~linked~; ~evaluating-async~; ~evaluated~}
   assert stack sat $IsEmpty()
+  let optionalIndirectRequests = module.GetOptionalIndirectExportsModuleRequests(importedNames)
+  let linkingList = $ListNew()
+  let previouslyImportedNames = $ListNew()
+  perform @sec-BuildLinkingList(linkingList, module, optionalIndirectRequests, previouslyImportedNames)
+  for_each requiredModule : #"Module Record" in linkingList {
+    assert_if requiredModule is ty {#"Cyclic Module Record"} then requiredModule[[Status]] is val {~unlinked~; ~linked~; ~evaluating-async~; ~evaluated~}
+    perform ? requiredModule.Link([])
+  }
+  perform ? @sec-ValidateAllRequestedOptionalNamespaceExports(previouslyImportedNames)
+  perform ? @sec-ValidateRequestedOptionalIndirectExports(module, importedNames)
+  note "All exports of _module_ other than `export defer` ones are also validated by the InitializeEnvironment call on _module_ itself, and it is not observable which one throws the *SyntaxError*."
+  if importedNames is val {~all~} -> perform ? @sec-ValidateOwnNamespaceExports(module, ~all~)
   return ~unused~
 }
 
-def @sec-InnerModuleLinking "InnerModuleLinking" (kind ao params [module : #"Module Record", stack : list<#"Cyclic Module Record">, index : sort [#"non-negative"] integer] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [module, stack, index, moduleIndex, request, requiredModule, done] {
+def @sec-InnerModuleLinking "InnerModuleLinking" (kind ao params [module : #"Module Record", stack : list<#"Cyclic Module Record">, index : sort [#"non-negative"] integer] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [module, stack, index, moduleIndex, linkingList, previouslyImportedNames, requiredModule, done] {
   if module is not ty {#"Cyclic Module Record"} {
     perform ? module.Link()
     return index
@@ -254,8 +291,10 @@ def @sec-InnerModuleLinking "InnerModuleLinking" (kind ao params [module : #"Mod
   set field module[[DFSAncestorIndex]] = index
   set var index = index + 1
   perform $Append(?module, ?stack)
-  for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
-    let requiredModule = @sec-GetImportedModule(module, request)
+  let linkingList = $ListNew()
+  let previouslyImportedNames = $ListNew()
+  perform @sec-BuildLinkingList(linkingList, module, module[[RequestedModules]], previouslyImportedNames)
+  for_each requiredModule : #"Module Record" in linkingList {
     set var index = ? @sec-InnerModuleLinking(requiredModule, stack, index)
     if requiredModule is ty {#"Cyclic Module Record"} {
       assert requiredModule[[Status]] is val {~linking~; ~linked~; ~evaluating-async~; ~evaluated~}
@@ -266,6 +305,7 @@ def @sec-InnerModuleLinking "InnerModuleLinking" (kind ao params [module : #"Mod
     }
   }
   perform ? module.InitializeEnvironment()
+  perform ? @sec-ValidateAllRequestedOptionalNamespaceExports(previouslyImportedNames)
   assert module sat @ph-occurs-exactly-once(?stack)
   assert module[[DFSAncestorIndex]] <= moduleIndex
   if module[[DFSAncestorIndex]] == moduleIndex {
@@ -281,8 +321,21 @@ def @sec-InnerModuleLinking "InnerModuleLinking" (kind ao params [module : #"Mod
   return index
 }
 
-def @sec-moduleevaluation "Evaluate" (kind concrete_method recv module : #"Cyclic Module Record" params [] -> Promise) vars [module, stack, promiseCapability, result, requiredModule] {
-  assert pass "This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent"
+def @sec-moduleevaluation "Evaluate" (kind concrete_method recv module : #"Cyclic Module Record" params [] -> Promise) vars [module, pending, seen, m, request, stack, promiseCapability, result, requiredModule] {
+  let pending = [module]
+  let seen = $ListNew()
+  repeat_while pending fails $IsEmpty() {
+    let m = $ListElem(data choice 1, ?pending)
+    perform $RemoveFirst(?pending)
+    if seen fails $Contains(?m) and m is ty {#"Cyclic Module Record"} {
+      perform $Append(?m, ?seen)
+      assert m[[Status]] is val {~evaluating~; ~linked~; ~evaluating-async~; ~evaluated~}
+      for_each request : #"ModuleRequest Record" in m[[RequestedModules]] {
+        perform $Append(@sec-GetImportedModule(m, request), ?pending)
+      }
+    }
+  }
+  assert pass "If this call to Evaluate is happening at the same time as another call to Evaluate within the surrounding agent, ReadyForSyncExecution(_) is *true*"
   assert module[[Status]] is val {~linked~; ~evaluating-async~; ~evaluated~}
   if module[[Status]] is val {~evaluating-async~; ~evaluated~} {
     if module[[CycleRoot]] is not val {~empty~} {
@@ -322,7 +375,7 @@ def @sec-moduleevaluation "Evaluate" (kind concrete_method recv module : #"Cycli
   return promiseCapability[[Promise]]
 }
 
-def @sec-innermoduleevaluation "InnerModuleEvaluation" (kind ao params [module : #"Module Record", stack : list<#"Cyclic Module Record">, index : sort [#"non-negative"] integer] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [module, stack, index, moduleIndex, request, requiredModule, done] {
+def @sec-innermoduleevaluation "InnerModuleEvaluation" (kind ao params [module : #"Module Record", stack : list<#"Cyclic Module Record">, index : sort [#"non-negative"] integer] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [module, stack, index, moduleIndex, evaluationList, requiredModule, done] {
   if module is not ty {#"Cyclic Module Record"} {
     perform ? @sec-EvaluateModuleSync(module)
     return index
@@ -338,9 +391,10 @@ def @sec-innermoduleevaluation "InnerModuleEvaluation" (kind ao params [module :
   set field module[[DFSAncestorIndex]] = index
   set field module[[PendingAsyncDependencies]] = 0
   set var index = index + 1
+  let evaluationList = $ListNew()
+  perform @sec-BuildEvaluationList(evaluationList, module, module[[RequestedModules]], [], ~gather-async-deps~)
   perform $Append(?module, ?stack)
-  for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
-    let requiredModule = @sec-GetImportedModule(module, request)
+  for_each requiredModule : #"Module Record" in evaluationList {
     set var index = ? @sec-innermoduleevaluation(requiredModule, stack, index)
     if requiredModule is ty {#"Cyclic Module Record"} {
       assert requiredModule[[Status]] is val {~evaluating~; ~evaluating-async~; ~evaluated~}
@@ -488,7 +542,7 @@ def @sec-async-module-execution-rejected "AsyncModuleExecutionRejected" (kind ao
   return ~unused~
 }
 
-def @sec-parsemodule "ParseModule" (kind ao params [sourceText : String | seq<#"Unicode code point">, #"realm" : #"Realm Record", hostDefined : pred(sat @ph-type-anything())] -> #"Source Text Module Record" | pred(sat @ph-type-syntax-errors())) vars [sourceText, #"realm", hostDefined, body, requestedModules, importEntries, importedBoundNames, indirectExportEntries, localExportEntries, starExportEntries, exportEntries, exportEntry, importEntry, async] {
+def @sec-parsemodule "ParseModule" (kind ao params [sourceText : String | seq<#"Unicode code point">, #"realm" : #"Realm Record", hostDefined : pred(sat @ph-type-anything())] -> #"Source Text Module Record" | pred(sat @ph-type-syntax-errors())) vars [sourceText, #"realm", hostDefined, body, requestedModules, importEntries, importedBoundNames, indirectExportEntries, localExportEntries, starExportEntries, exportEntries, exportEntry, importEntry, optionalIndirectExportEntries, async] {
   let body = @sec-parsetext(sourceText, |Module|)
   if body is ty {list<error>} -> return body
   let requestedModules = sdo ModuleRequests(body)
@@ -506,7 +560,7 @@ def @sec-parsemodule "ParseModule" (kind ao params [sourceText : String | seq<#"
       else {
         note "When exporting a binding or namespace object which was originally imported from another module, the ExportEntry Record is rewritten to match the form it would have if the binding or namespace object had been re-exported directly from the original module rather than imported then exported. This allows conflicts which arise from exporting the same binding or namespace twice under the same name through `export * from` to be ignored rather than being treated as ambiguous in step <emu-xref href=\"#step-resolveexport-conflict\"></emu-xref> of <emu-xref href=\"#sec-resolveexport\">the ResolveExport concrete method of Source Text Module Records</emu-xref>."
         let importEntry = @ph-elem-whose(?importEntries, [[LocalName]], data choice 1, exportEntry[[LocalName]])
-        perform $Append(record #"ExportEntry Record" { [[ModuleRequest]]: importEntry[[ModuleRequest]], [[ImportName]]: importEntry[[ImportName]], [[LocalName]]: null, [[ExportName]]: exportEntry[[ExportName]] }, ?indirectExportEntries)
+        perform $Append(record #"ExportEntry Record" { [[ModuleRequest]]: importEntry[[ModuleRequest]], [[ImportName]]: importEntry[[ImportName]], [[LocalName]]: null, [[ExportName]]: exportEntry[[ExportName]], [[NamespaceNamesFilter]]: importEntry[[NamespaceNamesFilter]] }, ?indirectExportEntries)
       }
     }
     else_if exportEntry[[ImportName]] is val {~all-but-default~} {
@@ -517,8 +571,9 @@ def @sec-parsemodule "ParseModule" (kind ao params [sourceText : String | seq<#"
       perform $Append(?exportEntry, ?indirectExportEntries)
     }
   }
+  let optionalIndirectExportEntries = sdo OptionalIndirectExportEntries(body)
   let async = @ph-contains(?body, term "await")
-  return record #"Source Text Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: async, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: [], [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: hostDefined, [[ECMAScriptCode]]: body, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: requestedModules, [[LoadedModules]]: [], [[ImportEntries]]: importEntries, [[LocalExportEntries]]: localExportEntries, [[IndirectExportEntries]]: indirectExportEntries, [[StarExportEntries]]: starExportEntries, [[DFSAncestorIndex]]: ~empty~ }
+  return record #"Source Text Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: async, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: [], [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: hostDefined, [[ECMAScriptCode]]: body, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: requestedModules, [[LoadedModules]]: [], [[ImportEntries]]: importEntries, [[LocalExportEntries]]: localExportEntries, [[IndirectExportEntries]]: indirectExportEntries, [[StarExportEntries]]: starExportEntries, [[OptionalIndirectExportEntries]]: optionalIndirectExportEntries, [[PendingOptionalFilteredNamespaceExports]]: [], [[DFSAncestorIndex]]: ~empty~ }
 }
 
 def @sec-getexportednames "GetExportedNames" (kind concrete_method recv module : #"Source Text Module Record" params [exportStarSet : list<#"Source Text Module Record"> opt] -> list<String>) vars [module, exportStarSet, exportedNames, exportEntry, requestedModule, starNames, name] {
@@ -529,17 +584,7 @@ def @sec-getexportednames "GetExportedNames" (kind concrete_method recv module :
     return $ListNew()
   }
   perform $Append(?module, ?exportStarSet)
-  let exportedNames = $ListNew()
-  for_each exportEntry : #"ExportEntry Record" in module[[LocalExportEntries]] {
-    assert module[[LocalExportEntries]] sat $Contains(?exportEntry)
-    assert exportEntry[[ExportName]] is not val {null}
-    perform $Append(exportEntry[[ExportName]], ?exportedNames)
-  }
-  for_each exportEntry : #"ExportEntry Record" in module[[IndirectExportEntries]] {
-    assert module[[IndirectExportEntries]] sat $Contains(?exportEntry)
-    assert exportEntry[[ExportName]] is not val {null}
-    perform $Append(exportEntry[[ExportName]], ?exportedNames)
-  }
+  let exportedNames = @sec-getownexportednames(module)
   for_each exportEntry : #"ExportEntry Record" in module[[StarExportEntries]] {
     assert exportEntry[[ModuleRequest]] is not val {null}
     let requestedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
@@ -555,7 +600,7 @@ def @sec-getexportednames "GetExportedNames" (kind concrete_method recv module :
   return exportedNames
 }
 
-def @sec-resolveexport "ResolveExport" (kind concrete_method recv module : #"Source Text Module Record" params [exportName : String, resolveSet : list<record { [[Module]]: #"Module Record", [[ExportName]]: String }> opt] -> #"ResolvedBinding Record" | val(null) | val(~ambiguous~)) vars [module, exportName, resolveSet, #"record", exportEntry, importedModule, starResolution, resolution] {
+def @sec-resolveexport "ResolveExport" (kind concrete_method recv module : #"Source Text Module Record" params [exportName : String, resolveSet : list<record { [[Module]]: #"Module Record", [[ExportName]]: String }> opt] -> #"ResolvedBinding Record" | val(null) | val(~ambiguous~)) vars [module, exportName, resolveSet, #"record", exportEntry, allIndirectEntries, importedModule, localName, moduleNamespace, starResolution, resolution] {
   assert module[[Status]] is not val {~new~}
   if resolveSet fails $Present() -> set var resolveSet = $ListNew()
   for_each_rec [[[Module]], [[ExportName]]] #"record" in resolveSet {
@@ -571,15 +616,41 @@ def @sec-resolveexport "ResolveExport" (kind concrete_method recv module : #"Sou
       return record #"ResolvedBinding Record" { [[Module]]: module, [[BindingName]]: exportEntry[[LocalName]] }
     }
   }
-  for_each exportEntry : #"ExportEntry Record" in module[[IndirectExportEntries]] {
+  let allIndirectEntries = $ListConcat([module[[IndirectExportEntries]], module[[OptionalIndirectExportEntries]]])
+  for_each exportEntry : #"ExportEntry Record" in allIndirectEntries {
     if exportEntry[[ExportName]] is val {exportName} {
       assert exportEntry[[ModuleRequest]] is not val {null}
       let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
       if exportEntry[[ImportName]] is val {~namespace~} {
         assert module[[LocalExportEntries]] fails $Contains(?exportEntry)
-        return record #"ResolvedBinding Record" { [[Module]]: importedModule, [[BindingName]]: ~namespace~ }
+        assert exportEntry[[NamespaceNamesFilter]] is val {~empty~}
+        if exportEntry[[ModuleRequest]][[Phase]] is val {~defer~} {
+          return record #"ResolvedBinding Record" { [[Module]]: importedModule, [[BindingName]]: ~deferred-namespace~ }
+        }
+        else {
+          assert exportEntry[[ModuleRequest]][[Phase]] is val {~evaluation~}
+          return record #"ResolvedBinding Record" { [[Module]]: importedModule, [[BindingName]]: ~namespace~ }
+        }
       }
-      assert module[[IndirectExportEntries]] sat $Contains(?exportEntry)
+      else_if exportEntry[[ImportName]] is val {~filtered-namespace~} {
+        assert exportEntry[[NamespaceNamesFilter]] is ty {list<String>}
+        let localName = $"string-concatenation"("*", exportName, "*")
+        note "`export { ... } as ns from \"mod\"` introduces a local internal binding in the module that contains the |ExportDeclaration|. That binding is created by InitializeEnvironment, but for `export defer` declarations it is initialized here once a consumer attempts to resolve it."
+        if module[[OptionalIndirectExportEntries]] sat $Contains(?exportEntry) {
+          if module[[Environment]] is val {~empty~} {
+            assert module[[Status]] is val {~unlinked~; ~linking~}
+            note "When linking across cycles, _module_'s exports might be resolved by ResolveExport before InitializeEnvironment is called on _module_. In that case _module_.[[Environment]] is not set up yet, so the export is marked as needing initialization, which will then be performed by InitializeEnvironment itself."
+            if module[[PendingOptionalFilteredNamespaceExports]] fails $Contains(?localName) -> perform $Append(?localName, module[[PendingOptionalFilteredNamespaceExports]])
+          }
+          else_if ! module[[Environment]].HasBinding(localName) is val {false} {
+            perform ! module[[Environment]].CreateImmutableBinding(localName, true)
+            let moduleNamespace = @sec-getmodulenamespace(importedModule, exportEntry[[ModuleRequest]][[Phase]], exportEntry[[NamespaceNamesFilter]])
+            perform ! module[[Environment]].InitializeBinding(localName, moduleNamespace)
+          }
+        }
+        return record #"ResolvedBinding Record" { [[Module]]: module, [[BindingName]]: localName }
+      }
+      assert allIndirectEntries sat $Contains(?exportEntry)
       assert exportEntry[[ImportName]] is ty {String}
       return importedModule.ResolveExport(exportEntry[[ImportName]], resolveSet)
     }
@@ -610,12 +681,14 @@ def @sec-resolveexport "ResolveExport" (kind concrete_method recv module : #"Sou
   return starResolution
 }
 
-def @sec-source-text-module-record-initialize-environment "InitializeEnvironment" (kind concrete_method recv module : #"Source Text Module Record" params [] -> completion<val(~unused~)> | #"throw completion") vars [module, exportEntry, resolution, #"realm", envRecord, importEntry, importedModule, namespace, moduleContext, #"code", variableDecls, declaredVariableNames, variableDecl, name, lexicalDecls, privateEnv, lexicalDecl, funcObj] {
+def @sec-source-text-module-record-initialize-environment "InitializeEnvironment" (kind concrete_method recv module : #"Source Text Module Record" params [] -> completion<val(~unused~)> | #"throw completion") vars [module, exportEntry, importedModule, #"realm", envRecord, importEntry, namespace, resolution, phase, localName, filteredNamespace, moduleContext, #"code", variableDecls, declaredVariableNames, variableDecl, name, lexicalDecls, privateEnv, lexicalDecl, funcObj] {
   for_each exportEntry : #"ExportEntry Record" in module[[IndirectExportEntries]] {
-    assert exportEntry[[ExportName]] is not val {null}
-    let resolution = module.ResolveExport(exportEntry[[ExportName]])
-    if resolution is val {null; ~ambiguous~} -> throw @ph-new-error([[SyntaxError]])
-    assert resolution is ty {#"ResolvedBinding Record"}
+    perform ? @sec-ensureresolvablebinding(module, exportEntry[[ExportName]], ~disallow-ambiguous~)
+    if exportEntry[[ImportName]] is val {~namespace~} {
+      let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
+      note "All exports of _importedModule_ other than `export defer` ones are also validated by the InitializeEnvironment call on _importedModule_ itself, and it is not observable which of the two InitializeEnvironment calls throws the *SyntaxError*."
+      perform ? @sec-ValidateOwnNamespaceExports(importedModule, ~all~)
+    }
   }
   assert expr @ph-named-exports-resolvable(module)
   let #"realm" = module[[Realm]]
@@ -625,21 +698,48 @@ def @sec-source-text-module-record-initialize-environment "InitializeEnvironment
   for_each importEntry : #"ImportEntry Record" in module[[ImportEntries]] {
     let importedModule = @sec-GetImportedModule(module, importEntry[[ModuleRequest]])
     if importEntry[[ImportName]] is val {~namespace~} {
-      let namespace = @sec-getmodulenamespace(importedModule)
+      note "All exports of _importedModule_ other than `export defer` ones are also validated by the InitializeEnvironment call on _importedModule_ itself, and it is not observable which of the two InitializeEnvironment calls throws the *SyntaxError*."
+      perform ? @sec-ValidateOwnNamespaceExports(importedModule, ~all~)
+      let namespace = @sec-getmodulenamespace(importedModule, importEntry[[ModuleRequest]][[Phase]], ~all~)
+      perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
+      perform ! envRecord.InitializeBinding(importEntry[[LocalName]], namespace)
+    }
+    else_if importEntry[[ImportName]] is val {~filtered-namespace~} {
+      perform ? @sec-ValidateOwnNamespaceExports(importedModule, importEntry[[NamespaceNamesFilter]])
+      let namespace = @sec-getmodulenamespace(importedModule, importEntry[[ModuleRequest]][[Phase]], importEntry[[NamespaceNamesFilter]])
       perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
       perform ! envRecord.InitializeBinding(importEntry[[LocalName]], namespace)
     }
     else {
-      assert importEntry[[ImportName]] is ty {String}
       let resolution = importedModule.ResolveExport(importEntry[[ImportName]])
       if resolution is val {null; ~ambiguous~} -> throw @ph-new-error([[SyntaxError]])
-      if resolution[[BindingName]] is val {~namespace~} {
-        let namespace = @sec-getmodulenamespace(resolution[[Module]])
+      if resolution[[BindingName]] is val {~namespace~; ~deferred-namespace~} {
+        if_else resolution[[BindingName]] is val {~namespace~} { let phase = ~evaluation~ } else { let phase = ~defer~ }
+        let namespace = @sec-getmodulenamespace(resolution[[Module]], phase, ~all~)
         perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
         perform ! envRecord.InitializeBinding(importEntry[[LocalName]], namespace)
       }
       else {
         perform @sec-createimportbinding(envRecord, importEntry[[LocalName]], resolution[[Module]], resolution[[BindingName]])
+      }
+    }
+  }
+  for_each exportEntry : #"ExportEntry Record" in $ListConcat([module[[IndirectExportEntries]], module[[OptionalIndirectExportEntries]]]) {
+    if exportEntry[[ImportName]] is val {~filtered-namespace~} {
+      let localName = $"string-concatenation"("*", exportEntry[[ExportName]], "*")
+      if module[[IndirectExportEntries]] sat $Contains(?exportEntry) {
+        let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
+        perform ? @sec-ValidateOwnNamespaceExports(importedModule, exportEntry[[NamespaceNamesFilter]])
+        let filteredNamespace = @sec-getmodulenamespace(importedModule, exportEntry[[ModuleRequest]][[Phase]], exportEntry[[NamespaceNamesFilter]])
+        perform ! envRecord.CreateImmutableBinding(localName, true)
+        perform ! envRecord.InitializeBinding(localName, filteredNamespace)
+      }
+      else_if module[[PendingOptionalFilteredNamespaceExports]] sat $Contains(?localName) and ! envRecord.HasBinding(localName) is val {false} {
+        perform ! envRecord.CreateImmutableBinding(localName, true)
+        let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
+        let filteredNamespace = @sec-getmodulenamespace(importedModule, exportEntry[[ModuleRequest]][[Phase]], exportEntry[[NamespaceNamesFilter]])
+        perform ! envRecord.InitializeBinding(localName, filteredNamespace)
+        note "The _localName_ binding of `export defer { ... } as ns from \"mod\"` is created and initialized by whichever of ResolveExport and InitializeEnvironment first needs it. If no importer ever resolves that export, it is never created at all."
       }
     }
   }
@@ -718,7 +818,7 @@ def @sec-source-text-module-record-execute-module "ExecuteModule" (kind concrete
 def @sec-create-default-export-synthetic-module "CreateDefaultExportSyntheticModule" (kind ao params [defaultExport : #"ECMAScript language value"] -> #"Synthetic Module Record") vars [defaultExport, #"realm", setDefaultExport, module] {
   let #"realm" = $CurrentRealm()
   let setDefaultExport = closure 0
-  return record #"Synthetic Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[HostDefined]]: undefined, [[ExportNames]]: ["default"], [[EvaluationSteps]]: setDefaultExport }
+  return record #"Synthetic Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[HostDefined]]: undefined, [[ExportNames]]: ["default"], [[EvaluationSteps]]: setDefaultExport }
   closure abstract params [module] captures [defaultExport] {
     perform @sec-setsyntheticmoduleexport(module, "default", defaultExport)
     return @sec-normalcompletion(~unused~)
@@ -743,12 +843,12 @@ def @sec-smr-LoadRequestedModules "LoadRequestedModules" (kind concrete_method r
   return ! @sec-promise-resolve(intrinsic [[Promise]], undefined)
 }
 
-def @sec-smr-getexportednames "GetExportedNames.2" (kind concrete_method recv module : #"Synthetic Module Record" params [exportStarSet : list<#"Source Text Module Record"> opt] -> list<String>) vars [module, exportStarSet] {
+def @sec-smr-getexportednames "GetExportedNames" (kind concrete_method recv module : #"Synthetic Module Record" params [exportStarSet : list<#"Source Text Module Record"> opt] -> list<String>) vars [module, exportStarSet] {
   note "This implementation of GetExportedNames does not use _exportStarSet_."
   return module[[ExportNames]]
 }
 
-def @sec-smr-resolveexport "ResolveExport.2" (kind concrete_method recv module : #"Synthetic Module Record" params [exportName : String, resolveSet : list<record { [[Module]]: #"Module Record", [[ExportName]]: String }> opt] -> #"ResolvedBinding Record" | val(null) | val(~ambiguous~)) vars [module, exportName, resolveSet] {
+def @sec-smr-resolveexport "ResolveExport" (kind concrete_method recv module : #"Synthetic Module Record" params [exportName : String, resolveSet : list<record { [[Module]]: #"Module Record", [[ExportName]]: String }> opt] -> #"ResolvedBinding Record" | val(null) | val(~ambiguous~)) vars [module, exportName, resolveSet] {
   note "This implementation of ResolveExport does not use _resolveSet_."
   if module[[ExportNames]] fails $Contains(?exportName) -> return null
   return record #"ResolvedBinding Record" { [[Module]]: module, [[BindingName]]: exportName }
@@ -794,7 +894,7 @@ def @sec-smr-Evaluate "Evaluate" (kind concrete_method recv module : #"Synthetic
 def @sec-GetImportedModule "GetImportedModule" (kind ao params [referrer : #"Cyclic Module Record", request : #"ModuleRequest Record"] -> #"Module Record") vars [referrer, request, records, r, #"record"] {
   let records = $ListNew()
   for_each r : #"LoadedModuleRequest Record" in referrer[[LoadedModules]] {
-    if @sec-ModuleRequestsEqual(r, request) is val {true} -> perform $Append(?r, ?records)
+    if @sec-ModuleRequestsKeyEqual(r, request) is val {true} -> perform $Append(?r, ?records)
   }
   assert $ListLen(?records) is val {1}
   let #"record" = $ListElem(data choice 0, ?records)
@@ -813,14 +913,14 @@ def @sec-FinishLoadingImportedModule "FinishLoadingImportedModule" (kind ao para
     }
   }
   if payload is ty {#"GraphLoadingState Record"} {
-    perform @sec-ContinueModuleLoading(payload, result)
+    perform @sec-ContinueModuleLoading(payload, result, @sec-AllImportedNames(moduleRequest[[ImportedNames]]))
   }
   else {
-    perform @sec-ContinueDynamicImport(payload, result)
+    perform @sec-ContinueDynamicImport(payload, result, moduleRequest[[Phase]], @sec-AllImportedNames(moduleRequest[[ImportedNames]]))
   }
   return ~unused~
   closure abstract params [#"record"] captures [moduleRequest] {
-    return bool(@sec-ModuleRequestsEqual(#"record", moduleRequest) is val {true})
+    return bool(@sec-ModuleRequestsKeyEqual(#"record", moduleRequest) is val {true})
   }
 }
 
@@ -832,21 +932,348 @@ def @sec-AllImportAttributesSupported "AllImportAttributesSupported" (kind ao pa
   return true
 }
 
-def @sec-getmodulenamespace "GetModuleNamespace" (kind ao params [module : doc "an instance of a concrete subclass of Module Record"] -> doc "a Module Namespace Object") vars [module, namespace, exportedNames, unambiguousNames, name, resolution] {
-  if module is ty {#"Cyclic Module Record"} {
-    assert module[[Status]] is neither val {~new~; ~unlinked~}
+def @sec-getmodulenamespace "GetModuleNamespace" (kind ao params [module : doc "an instance of a concrete subclass of Module Record", phase : val(~defer~) | val(~evaluation~), importedNames : val(~all~) | list<String>] -> doc "a Module Namespace Object") vars [module, phase, importedNames, namespace, exportedNames, unambiguousNames, name, resolution] {
+  assert_if module is ty {#"Cyclic Module Record"} then module[[Status]] is not val {~new~}
+  note "A filtered namespace object can be requested during linking, by ResolveExport or by InitializeEnvironment, for a module that has not been linked yet. A module's exported names and their resolutions are fully determined once loading has completed, so they do not depend on linking having run."
+  let namespace = ~empty~
+  if importedNames is val {~all~} {
+    if_else phase is val {~defer~} { set var namespace = module[[DeferredNamespace]] } else { set var namespace = module[[Namespace]] }
   }
-  let namespace = module[[Namespace]]
   if namespace is val {~empty~} {
     let exportedNames = module.GetExportedNames()
     let unambiguousNames = $ListNew()
     for_each name in exportedNames {
-      let resolution = module.ResolveExport(name)
-      if resolution is ty {#"ResolvedBinding Record"} -> perform $Append(?name, ?unambiguousNames)
+      if importedNames is val {~all~} or importedNames sat $Contains(?name) {
+        if phase is not val {~defer~} or name is not val {"then"} {
+          let resolution = module.ResolveExport(name)
+          if resolution is ty {#"ResolvedBinding Record"} -> perform $Append(?name, ?unambiguousNames)
+        }
+      }
     }
-    set var namespace = @sec-modulenamespacecreate(module, unambiguousNames)
+    set var namespace = @sec-modulenamespacecreate(module, unambiguousNames, phase)
+    if importedNames is val {~all~} {
+      if phase is val {~defer~} -> set field module[[DeferredNamespace]] = namespace
+      else -> set field module[[Namespace]] = namespace
+    }
   }
   return namespace
+}
+
+def @sec-AllImportedNames "AllImportedNames" (kind ao params [importedNames : #"ImportedNames Record"] -> val(~all~) | list<String>) vars [importedNames] {
+  return @sec-MergeImportedNames(importedNames[[Direct]], importedNames[[Namespace]])
+}
+
+def @sec-MergeImportedNames "MergeImportedNames" (kind ao params [a : val(~all~) | list<String>, b : val(~all~) | list<String>] -> val(~all~) | list<String>) vars [a, b, merged, name] {
+  if a is val {~all~} or b is val {~all~} -> return ~all~
+  assert a is ty {list<String>} and b is ty {list<String>}
+  let merged = $Copy(@ph-the-list(?a))
+  for_each name : String in b {
+    if merged fails $Contains(?name) {
+      perform $Append(?name, ?merged)
+    }
+  }
+  return merged
+}
+
+def @sec-ExcludeImportedNames "ExcludeImportedNames" (kind ao params [a : val(~all~) | list<String>, b : val(~all~) | list<String>] -> val(~all~) | list<String>) vars [a, b, result, e] {
+  if b is val {~all~} -> return $ListNew()
+  if a is val {~all~} -> return ~all~
+  assert a is ty {list<String>} and b is ty {list<String>}
+  let result = $ListNew()
+  for_each e : String in a {
+    if b fails $Contains(?e) -> perform $Append(?e, ?result)
+  }
+  return result
+}
+
+def @sec-ListAppendUnique "ListAppendUnique" (kind ao params [list1 : list<Record>, list2 : list<Record>] -> val(~unused~)) vars [list1, list2, r] {
+  for_each r : Record in list2 {
+    if list1 fails $Contains(?r) -> perform $Append(?r, ?list1)
+  }
+  return ~unused~
+}
+
+def @sec-ExportFromDeclarationModuleRequest "ExportFromDeclarationModuleRequest" (kind ao params [exportFromClause : |ExportFromClause| | |ExplicitExportFromClause|, fromClause : |FromClause|, phase : val(~defer~) | val(~evaluation~), withClause : |WithClause| opt] -> #"ModuleRequest Record") vars [exportFromClause, fromClause, phase, withClause, directImportedNames, filteredNamespaceImportedNames, specifier, attrs] {
+  let directImportedNames = sdo DirectImportedNames(exportFromClause)
+  let filteredNamespaceImportedNames = sdo FilteredNamespaceImportedNames(exportFromClause)
+  let specifier = sdo SV(fromClause)
+  if withClause sat $Present() -> let attrs = sdo WithClauseToAttributes(withClause)
+  else -> let attrs = $ListNew()
+  return record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: phase, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) }
+}
+
+def @sec-IsModuleSCCEvaluated "IsModuleSCCEvaluated" (kind ao params [module : #"Cyclic Module Record"] -> Boolean) vars [module] {
+  if module[[CycleRoot]] is not val {~empty~} {
+    if module[[CycleRoot]][[Status]] is val {~evaluated~} -> return true
+    return false
+  }
+  if module[[Status]] is val {~evaluated~} -> return true
+  return false
+}
+
+def @sec-ReadyForSyncExecution "ReadyForSyncExecution" (kind ao params [module : #"Module Record", importedNames : val(~all~) | list<String>, onDeferredNamespace : val(~ignore-deferred-namespace~) | val(~gather-async-deps~), seen : list<#"ModuleImportedNames Record"> opt] -> Boolean) vars [module, importedNames, onDeferredNamespace, seen, r, seenForAsyncDeps, request, requiredModule] {
+  if module is not ty {#"Cyclic Module Record"} -> return true
+  if seen fails $Present() -> set var seen = $ListNew()
+  if seen sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0) {
+    perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: module, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), ?seen)
+    if @sec-IsModuleSCCEvaluated(module) is val {false} {
+      if module[[Status]] is val {~evaluating~; ~evaluating-async~} -> return false
+      assert module[[Status]] is val {~linked~; ~evaluated~}
+      if module[[HasTLA]] is val {true} -> return false
+      if_else onDeferredNamespace is val {~gather-async-deps~} { let seenForAsyncDeps = seen } else { let seenForAsyncDeps = $ListNew() }
+      for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
+        let requiredModule = @sec-GetImportedModule(module, request)
+        if @sec-ReadyForSyncExecution(requiredModule, @sec-AllImportedNames(request[[ImportedNames]]), ~gather-async-deps~, seenForAsyncDeps) is val {false} {
+          return false
+        }
+      }
+    }
+  }
+  for_each request : #"ModuleRequest Record" in @sec-GetNewOptionalIndirectExportsModuleRequests(module, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: importedNames, [[Namespace]]: [] }), seen) {
+    if request[[Phase]] is val {~evaluation~} {
+      let requiredModule = @sec-GetImportedModule(module, request)
+      if @sec-ReadyForSyncExecution(requiredModule, @sec-AllImportedNames(request[[ImportedNames]]), onDeferredNamespace, seen) is val {false} -> return false
+    }
+    else {
+      assert request[[Phase]] is val {~defer~}
+      if onDeferredNamespace is val {~gather-async-deps~} {
+        if @sec-GatherAsynchronousTransitiveDependenciesForRequests(module, [request], [], @sec-CopyPreviouslyImportedNames(seen)) fails $IsEmpty() -> return false
+      }
+      else {
+        if @sec-GatherAsynchronousTransitiveDependencies(@sec-GetImportedModule(module, request)) fails $IsEmpty() -> return false
+      }
+    }
+  }
+  return true
+  closure abstract params [r] captures [module] {
+    return bool(r[[Module]] is val {module})
+  }
+}
+
+def @sec-BuildLinkingList "BuildLinkingList" (kind ao params [linkingList : list<#"Module Record">, referrer : #"Cyclic Module Record", moduleRequests : list<#"ModuleRequest Record">, previouslyImportedNames : list<#"ModuleImportedNames Record">] -> val(~unused~)) vars [linkingList, referrer, moduleRequests, previouslyImportedNames, request, requiredModule, r, optionalIndirectRequests] {
+  for_each request : #"ModuleRequest Record" in moduleRequests {
+    let requiredModule = @sec-GetImportedModule(referrer, request)
+    if linkingList fails $Contains(?requiredModule) {
+      perform $Append(?requiredModule, ?linkingList)
+      if requiredModule is ty {#"Cyclic Module Record"} {
+        assert previouslyImportedNames sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0)
+        perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: requiredModule, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), ?previouslyImportedNames)
+      }
+    }
+    if requiredModule is ty {#"Cyclic Module Record"} {
+      let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(requiredModule, request[[ImportedNames]], previouslyImportedNames)
+      perform @sec-BuildLinkingList(linkingList, requiredModule, optionalIndirectRequests, previouslyImportedNames)
+    }
+  }
+  return ~unused~
+  closure abstract params [r] captures [requiredModule] {
+    return bool(r[[Module]] is val {requiredModule})
+  }
+}
+
+def @sec-ValidateAllRequestedOptionalNamespaceExports "ValidateAllRequestedOptionalNamespaceExports" (kind ao params [previouslyImportedNames : list<#"ModuleImportedNames Record">] -> completion<val(~unused~)> | #"throw completion") vars [previouslyImportedNames, r, names] {
+  for_each r : #"ModuleImportedNames Record" in previouslyImportedNames {
+    let names = r[[ImportedNames]]
+    if names[[Namespace]] is val {~all~} -> perform ? @sec-ValidateOwnNamespaceExports(r[[Module]], ~all~)
+    perform ? @sec-ValidateRequestedOptionalIndirectExports(r[[Module]], @sec-AllImportedNames(names))
+  }
+  return ~unused~
+}
+
+def @sec-ValidateOwnNamespaceExports "ValidateOwnNamespaceExports" (kind ao params [module : #"Module Record", names : val(~all~) | list<String>] -> completion<val(~unused~)> | #"throw completion") vars [module, names, name] {
+  if names is val {~all~} {
+    if module is not ty {#"Cyclic Module Record"} -> return ~unused~
+    note "Only Cyclic Module Records can have invalid optional indirect exports."
+    for_each name : String in module.GetExportedNames() {
+      perform ? @sec-ensureresolvablebinding(module, name, ~allow-ambiguous~)
+    }
+  }
+  else {
+    for_each name : String in names {
+      perform ? @sec-ensureresolvablebinding(module, name, ~disallow-ambiguous~)
+    }
+  }
+  return ~unused~
+}
+
+def @sec-ensureresolvablebinding "EnsureResolvableBinding" (kind ao params [module : #"Module Record", name : String, onAmbiguous : val(~allow-ambiguous~) | val(~disallow-ambiguous~)] -> completion<val(~unused~)> | #"throw completion") vars [module, name, onAmbiguous, resolution] {
+  let resolution = module.ResolveExport(name)
+  if resolution is val {null} -> throw @ph-new-error([[SyntaxError]])
+  if onAmbiguous is val {~disallow-ambiguous~} {
+    if resolution is val {~ambiguous~} -> throw @ph-new-error([[SyntaxError]])
+    assert resolution is ty {#"ResolvedBinding Record"}
+  }
+  return ~unused~
+}
+
+def @sec-ValidateRequestedOptionalIndirectExports "ValidateRequestedOptionalIndirectExports" (kind ao params [module : #"Cyclic Module Record", importedNames : val(~all~) | list<String>] -> completion<val(~unused~)> | #"throw completion") vars [module, importedNames, name, request] {
+  if importedNames is val {~all~} -> set var importedNames = module.GetExportedNames()
+  for_each name : String in importedNames {
+    for_each request : #"OptionalModuleRequest Record" in module.GetOptionalIndirectExportsModuleRequests([name]) {
+      if request[[IsStarExport]] is val {false} {
+        perform ? @sec-ensureresolvablebinding(module, name, ~disallow-ambiguous~)
+        if request[[ImportedNames]][[Namespace]] is ty {List} {
+          perform ? @sec-ValidateOwnNamespaceExports(@sec-GetImportedModule(module, request), request[[ImportedNames]][[Namespace]])
+        }
+      }
+    }
+  }
+  return ~unused~
+}
+
+def @sec-BuildEvaluationList "BuildEvaluationList" (kind ao params [evaluationList : list<#"Module Record">, referrer : #"Cyclic Module Record", moduleRequests : list<#"ModuleRequest Record">, previouslyImportedNames : list<#"ModuleImportedNames Record">, onDeferredNamespace : val(~ignore-deferred-namespace~) | val(~gather-async-deps~)] -> val(~unused~)) vars [evaluationList, referrer, moduleRequests, previouslyImportedNames, onDeferredNamespace, request, requiredModule, r, namespaceOptionalIndirectRequests, seen, previouslyImportedNamesCopy, optionalIndirectRequests] {
+  for_each request : #"ModuleRequest Record" in moduleRequests {
+    if request[[Phase]] is val {~evaluation~} or onDeferredNamespace is val {~gather-async-deps~} {
+      let requiredModule = @sec-GetImportedModule(referrer, request)
+      if request[[Phase]] is val {~defer~} {
+        note "The names requested while gathering the asynchronous dependencies of a deferred module are recorded in a copy of _previouslyImportedNames_, because the modules re-exporting them are not being scheduled for evaluation: a later request with the ~evaluation~ phase for the same names must still add them to _evaluationList_."
+        perform @sec-ListAppendUnique(evaluationList, @sec-GatherAsynchronousTransitiveDependencies(requiredModule, [], @sec-CopyPreviouslyImportedNames(previouslyImportedNames)))
+      }
+      else_if evaluationList fails $Contains(?requiredModule) {
+        perform $Append(?requiredModule, ?evaluationList)
+      }
+      if requiredModule is ty {#"Cyclic Module Record"} {
+        if previouslyImportedNames sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0) {
+          perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: requiredModule, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), ?previouslyImportedNames)
+        }
+        if onDeferredNamespace is val {~gather-async-deps~} and (request[[ImportedNames]][[Namespace]] is val {~all~} or request[[ImportedNames]][[Namespace]] fails $IsEmpty()) {
+          let namespaceOptionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(requiredModule, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: request[[ImportedNames]][[Namespace]] }), previouslyImportedNames)
+          let seen = $ListNew()
+          let previouslyImportedNamesCopy = @sec-CopyPreviouslyImportedNames(previouslyImportedNames)
+          perform @sec-ListAppendUnique(evaluationList, @sec-GatherAsynchronousTransitiveDependenciesForRequests(requiredModule, namespaceOptionalIndirectRequests, seen, previouslyImportedNamesCopy))
+        }
+        let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(requiredModule, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: request[[ImportedNames]][[Direct]], [[Namespace]]: [] }), previouslyImportedNames)
+        perform @sec-BuildEvaluationList(evaluationList, requiredModule, optionalIndirectRequests, previouslyImportedNames, onDeferredNamespace)
+      }
+    }
+  }
+  return ~unused~
+  closure abstract params [r] captures [requiredModule] {
+    return bool(r[[Module]] is val {requiredModule})
+  }
+}
+
+def @sec-GatherAsynchronousTransitiveDependencies "GatherAsynchronousTransitiveDependencies" (kind ao params [module : #"Module Record", seen : list<#"Module Record"> opt, previouslyImportedNames : list<#"ModuleImportedNames Record"> opt] -> list<#"Module Record">) vars [module, seen, previouslyImportedNames] {
+  if seen fails $Present() -> set var seen = $ListNew()
+  if previouslyImportedNames fails $Present() -> set var previouslyImportedNames = $ListNew()
+  if seen sat $Contains(?module) -> return $ListNew()
+  perform $Append(?module, ?seen)
+  if module is not ty {#"Cyclic Module Record"} -> return $ListNew()
+  if module[[Status]] is val {~evaluating~} or @sec-IsModuleSCCEvaluated(module) is val {true} -> return $ListNew()
+  if module[[HasTLA]] is val {true} {
+    return [module]
+  }
+  return @sec-GatherAsynchronousTransitiveDependenciesForRequests(module, module[[RequestedModules]], seen, previouslyImportedNames)
+}
+
+def @sec-GatherAsynchronousTransitiveDependenciesForRequests "GatherAsynchronousTransitiveDependenciesForRequests" (kind ao params [referrer : #"Cyclic Module Record", moduleRequests : list<#"ModuleRequest Record">, seen : list<#"Module Record">, previouslyImportedNames : list<#"ModuleImportedNames Record">] -> list<#"Module Record">) vars [referrer, moduleRequests, seen, previouslyImportedNames, result, request, requiredModule, r, optionalIndirectRequests] {
+  let result = $ListNew()
+  for_each request : #"ModuleRequest Record" in moduleRequests {
+    let requiredModule = @sec-GetImportedModule(referrer, request)
+    perform @sec-ListAppendUnique(result, @sec-GatherAsynchronousTransitiveDependencies(requiredModule, seen, previouslyImportedNames))
+    if requiredModule is ty {#"Cyclic Module Record"} {
+      if previouslyImportedNames sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0) {
+        perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: requiredModule, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), ?previouslyImportedNames)
+      }
+      let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(requiredModule, request[[ImportedNames]], previouslyImportedNames)
+      perform @sec-ListAppendUnique(result, @sec-GatherAsynchronousTransitiveDependenciesForRequests(requiredModule, optionalIndirectRequests, seen, previouslyImportedNames))
+    }
+  }
+  return result
+  closure abstract params [r] captures [requiredModule] {
+    return bool(r[[Module]] is val {requiredModule})
+  }
+}
+
+def @sec-GetNewOptionalIndirectExportsModuleRequests "GetNewOptionalIndirectExportsModuleRequests" (kind ao params [module : #"Cyclic Module Record", importedNames : #"ImportedNames Record", previouslyImportedNames : list<#"ModuleImportedNames Record">] -> list<#"OptionalModuleRequest Record">) vars [module, importedNames, previouslyImportedNames, r, previous, previousNames, newDirectImportedNames, newNamespaceImportedNames] {
+  assert previouslyImportedNames sat @ph-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0)
+  let previous = @ph-elem-whose-tn(data sort #"ModuleImportedNames Record", ?previouslyImportedNames, [[Module]], data choice 0, ?module)
+  let previousNames = previous[[ImportedNames]]
+  let newDirectImportedNames = @sec-ExcludeImportedNames(importedNames[[Direct]], previousNames[[Direct]])
+  let newNamespaceImportedNames = @sec-ExcludeImportedNames(importedNames[[Namespace]], previousNames[[Namespace]])
+  set field previousNames[[Direct]] = @sec-MergeImportedNames(previousNames[[Direct]], newDirectImportedNames)
+  set field previousNames[[Namespace]] = @sec-MergeImportedNames(previousNames[[Namespace]], newNamespaceImportedNames)
+  return module.GetOptionalIndirectExportsModuleRequests(@sec-MergeImportedNames(newDirectImportedNames, newNamespaceImportedNames))
+  closure abstract params [r] captures [module] {
+    return bool(r[[Module]] is val {module})
+  }
+}
+
+def @sec-CopyPreviouslyImportedNames "CopyPreviouslyImportedNames" (kind ao params [previouslyImportedNames : list<#"ModuleImportedNames Record">] -> list<#"ModuleImportedNames Record">) vars [previouslyImportedNames, copy, r, names, direct, namespace] {
+  let copy = $ListNew()
+  for_each r : #"ModuleImportedNames Record" in previouslyImportedNames {
+    let names = r[[ImportedNames]]
+    if_else names[[Direct]] is val {~all~} { let direct = ~all~ } else { let direct = $Copy(@ph-the-list(names[[Direct]])) }
+    if_else names[[Namespace]] is val {~all~} { let namespace = ~all~ } else { let namespace = $Copy(@ph-the-list(names[[Namespace]])) }
+    perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: r[[Module]], [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: direct, [[Namespace]]: namespace }) }), ?copy)
+  }
+  return copy
+}
+
+def @sec-getownexportednames "GetOwnExportedNames" (kind ao params [module : #"Source Text Module Record"] -> list<String>) vars [module, exportedNames, exportEntry] {
+  let exportedNames = $ListNew()
+  for_each exportEntry : #"ExportEntry Record" in module[[LocalExportEntries]] {
+    assert module[[LocalExportEntries]] sat $Contains(?exportEntry)
+    assert exportEntry[[ExportName]] is not val {null}
+    perform $Append(exportEntry[[ExportName]], ?exportedNames)
+  }
+  for_each exportEntry : #"ExportEntry Record" in module[[IndirectExportEntries]] {
+    assert module[[IndirectExportEntries]] sat $Contains(?exportEntry)
+    assert exportEntry[[ExportName]] is not val {null}
+    perform $Append(exportEntry[[ExportName]], ?exportedNames)
+  }
+  for_each exportEntry : #"ExportEntry Record" in module[[OptionalIndirectExportEntries]] {
+    if exportEntry[[ExportName]] is not val {null} {
+      assert module[[OptionalIndirectExportEntries]] sat $Contains(?exportEntry)
+      perform $Append(exportEntry[[ExportName]], ?exportedNames)
+    }
+  }
+  return exportedNames
+}
+
+def @sec-GetOptionalIndirectExportsModuleRequests "GetOptionalIndirectExportsModuleRequests" (kind concrete_method recv module : #"Source Text Module Record" params [importedNames : val(~all~) | list<String>] -> list<#"OptionalModuleRequest Record">) vars [module, importedNames, requests, optionalEntry, processEntry, isStarExport, newNamespaceImportedNames, newDirectImportedNames, nextRequest, existingRequest, newRequest, values] {
+  let requests = $ListNew()
+  for_each optionalEntry : #"ExportEntry Record" in module[[OptionalIndirectExportEntries]] {
+    let processEntry = true
+    let isStarExport = false
+    if optionalEntry[[ImportName]] is val {~all-but-default~} {
+      let newNamespaceImportedNames = $ListNew()
+      let newDirectImportedNames = @sec-ExcludeImportedNames(@sec-ExcludeImportedNames(importedNames, ["default"]), @sec-getownexportednames(module))
+      if newDirectImportedNames sat $IsEmpty() -> set var processEntry = false
+      set var isStarExport = true
+      note "_optionalEntry_ is for an `export * from \"mod\"` declaration. While it is not by itself an optional indirect export, it is treated as one because it may re-export the optional indirect exports of `\"mod\"`. The resulting OptionalModuleRequest Record has [[IsStarExport]] set to *true* so that the evaluation logic can handle it appropriately."
+    }
+    else_if importedNames is val {~all~} or importedNames sat $Contains(optionalEntry[[ExportName]]) {
+      let newDirectImportedNames = $ListNew()
+      let newNamespaceImportedNames = ~all~
+      assert optionalEntry[[ImportName]] is ty {String} or optionalEntry[[ImportName]] is val {~filtered-namespace~} or optionalEntry[[ImportName]] is val {~namespace~}
+      if optionalEntry[[ImportName]] is ty {String} {
+        set var newDirectImportedNames = [optionalEntry[[ImportName]]]
+        set var newNamespaceImportedNames = $ListNew()
+      }
+      if optionalEntry[[ImportName]] is val {~filtered-namespace~} -> set var newNamespaceImportedNames = optionalEntry[[NamespaceNamesFilter]]
+    }
+    else {
+      set var processEntry = false
+    }
+    if processEntry is val {true} {
+      let nextRequest = optionalEntry[[ModuleRequest]]
+      let values = @ph-contains-such-binds(data choice 1, data sort #"OptionalModuleRequest Record", ?existingRequest, closure 0, requests)
+      if $ListLen(values) == 1 or $ListLen(values) != 0 and expr $""() {
+        let existingRequest = values[0]
+        set field existingRequest[[ImportedNames]][[Direct]] = @sec-MergeImportedNames(existingRequest[[ImportedNames]][[Direct]], newDirectImportedNames)
+        set field existingRequest[[ImportedNames]][[Namespace]] = @sec-MergeImportedNames(existingRequest[[ImportedNames]][[Namespace]], newNamespaceImportedNames)
+      }
+      else {
+        let newRequest = record #"OptionalModuleRequest Record" { [[Specifier]]: nextRequest[[Specifier]], [[Attributes]]: nextRequest[[Attributes]], [[Phase]]: nextRequest[[Phase]], [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: newDirectImportedNames, [[Namespace]]: newNamespaceImportedNames }), [[IsStarExport]]: isStarExport }
+        perform $Append(?newRequest, ?requests)
+      }
+    }
+  }
+  return requests
+  closure abstract params [existingRequest] captures [nextRequest, isStarExport] {
+    return bool(@sec-ModuleRequestsKeyEqual(existingRequest, nextRequest) is val {true} and existingRequest[[Phase]] is val {nextRequest[[Phase]]} and existingRequest[[IsStarExport]] is val {isStarExport})
+  }
 }
 
 sdo_row @sec-scriptisstrict ScriptIsStrict form alg {
@@ -889,19 +1316,25 @@ sdo_row @sec-static-semantics-modulerequests#1 ModuleRequests form alg {
 sdo_row @sec-static-semantics-modulerequests#2 ModuleRequests form alg {
   prods [p"Syntactic - ModuleItemList : ModuleItemList ModuleItem"]
   keys ["ModuleItemList : ModuleItemList ModuleItem"]
-  vars [requests, additionalRequests, moduleRequest, otherModuleRequest]
+  vars [requests, additionalRequests, moduleRequest, otherModuleRequest, values]
   steps {
     let requests = sdo ModuleRequests(child 5 |ModuleItemList|)
     let additionalRequests = sdo ModuleRequests(child 5 |ModuleItem|)
     for_each moduleRequest : #"ModuleRequest Record" in additionalRequests {
-      if requests sat @ph-not-contains-such(data choice 0, data sort #"ModuleRequest Record", ?otherModuleRequest, closure 0) {
+      let values = @ph-contains-such-binds(data choice 0, data sort #"ModuleRequest Record", ?otherModuleRequest, closure 0, requests)
+      if $ListLen(values) == 1 or $ListLen(values) != 0 and expr $""() {
+        let otherModuleRequest = values[0]
+        set field otherModuleRequest[[ImportedNames]][[Direct]] = @sec-MergeImportedNames(otherModuleRequest[[ImportedNames]][[Direct]], moduleRequest[[ImportedNames]][[Direct]])
+        set field otherModuleRequest[[ImportedNames]][[Namespace]] = @sec-MergeImportedNames(otherModuleRequest[[ImportedNames]][[Namespace]], moduleRequest[[ImportedNames]][[Namespace]])
+      }
+      else {
         perform $Append(?moduleRequest, ?requests)
       }
     }
     return requests
   }
   closure abstract params [otherModuleRequest] captures [moduleRequest] {
-    return bool(@sec-ModuleRequestsEqual(moduleRequest, otherModuleRequest) is val {true})
+    return bool(@sec-ModuleRequestsKeyEqual(moduleRequest, otherModuleRequest) is val {true} and moduleRequest[[Phase]] is val {otherModuleRequest[[Phase]]})
   }
 }
 
@@ -917,21 +1350,25 @@ sdo_row @sec-static-semantics-modulerequests#3 ModuleRequests form alg {
 sdo_row @sec-static-semantics-modulerequests#4 ModuleRequests form alg {
   prods [p"Syntactic 0 ImportDeclaration : `import` ImportClause FromClause WithClause? `;`"]
   keys ["ImportDeclaration : `import` ImportClause FromClause `;`"]
-  vars [specifier]
+  vars [specifier, directImportedNames, filteredNamespaceImportedNames]
   steps {
     let specifier = sdo SV(child 5 |FromClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+    let directImportedNames = sdo DirectImportedNames(child 5 |ImportClause|)
+    let filteredNamespaceImportedNames = sdo FilteredNamespaceImportedNames(child 5 |ImportClause|)
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~evaluation~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) })
   }
 }
 
 sdo_row @sec-static-semantics-modulerequests#5 ModuleRequests form alg {
   prods [p"Syntactic 1 ImportDeclaration : `import` ImportClause FromClause WithClause? `;`"]
   keys ["ImportDeclaration : `import` ImportClause FromClause WithClause `;`"]
-  vars [specifier, attrs]
+  vars [specifier, attrs, directImportedNames, filteredNamespaceImportedNames]
   steps {
     let specifier = sdo SV(child 5 |FromClause|)
     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+    let directImportedNames = sdo DirectImportedNames(child 5 |ImportClause|)
+    let filteredNamespaceImportedNames = sdo FilteredNamespaceImportedNames(child 5 |ImportClause|)
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~evaluation~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) })
   }
 }
 
@@ -941,7 +1378,7 @@ sdo_row @sec-static-semantics-modulerequests#6 ModuleRequests form alg {
   vars [specifier]
   steps {
     let specifier = sdo SV(child 5 |ModuleSpecifier|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~evaluation~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) })
   }
 }
 
@@ -952,32 +1389,63 @@ sdo_row @sec-static-semantics-modulerequests#7 ModuleRequests form alg {
   steps {
     let specifier = sdo SV(child 5 |ModuleSpecifier|)
     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~evaluation~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) })
   }
 }
 
 sdo_row @sec-static-semantics-modulerequests#8 ModuleRequests form alg {
-  prods [p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`"]
-  keys ["\n          ExportDeclaration : `export` ExportFromClause FromClause `;`\n        "]
-  vars [specifier]
+  prods [p"Syntactic 0 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  keys ["\n          ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`\n        "]
+  vars [specifier, directImportedNames, filteredNamespaceImportedNames]
   steps {
     let specifier = sdo SV(child 5 |FromClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+    let directImportedNames = sdo DirectImportedNames(child 5 |NameSpaceImport|)
+    let filteredNamespaceImportedNames = sdo FilteredNamespaceImportedNames(child 5 |NameSpaceImport|)
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~defer~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) })
   }
 }
 
 sdo_row @sec-static-semantics-modulerequests#9 ModuleRequests form alg {
-  prods [p"Syntactic 1 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`"]
-  keys ["\n          ExportDeclaration : `export` ExportFromClause FromClause WithClause `;`\n        "]
-  vars [specifier, attrs]
+  prods [p"Syntactic 1 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  keys ["\n          ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause `;`\n        "]
+  vars [specifier, attrs, directImportedNames, filteredNamespaceImportedNames]
   steps {
     let specifier = sdo SV(child 5 |FromClause|)
     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+    let directImportedNames = sdo DirectImportedNames(child 5 |NameSpaceImport|)
+    let filteredNamespaceImportedNames = sdo FilteredNamespaceImportedNames(child 5 |NameSpaceImport|)
+    return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~defer~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) })
   }
 }
 
 sdo_row @sec-static-semantics-modulerequests#10 ModuleRequests form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`"]
+  keys ["\n          ExportDeclaration : `export` ExportFromClause FromClause `;`\n        "]
+  vars []
+  steps {
+    return $ListOf1(@sec-ExportFromDeclarationModuleRequest(child 5 |ExportFromClause|, child 5 |FromClause|, ~evaluation~))
+  }
+}
+
+sdo_row @sec-static-semantics-modulerequests#11 ModuleRequests form alg {
+  prods [p"Syntactic 1 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`"]
+  keys ["\n          ExportDeclaration : `export` ExportFromClause FromClause WithClause `;`\n        "]
+  vars []
+  steps {
+    return $ListOf1(@sec-ExportFromDeclarationModuleRequest(child 5 |ExportFromClause|, child 5 |FromClause|, ~evaluation~, child 5 |WithClause|))
+  }
+}
+
+sdo_row @sec-static-semantics-modulerequests#12 ModuleRequests form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  keys ["\n          ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`\n        "]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-modulerequests#13 ModuleRequests form alg {
   prods [p"Syntactic - ExportDeclaration : `export` NamedExports `;`", p"Syntactic - ExportDeclaration : `export` VariableStatement[~Yield, +Await]", p"Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]", p"Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
   keys ["\n          ExportDeclaration :\n            `export` NamedExports `;`\n            `export` VariableStatement\n            `export` Declaration\n            `export` `default` HoistableDeclaration\n            `export` `default` ClassDeclaration\n            `export` `default` AssignmentExpression `;`\n        "]
   vars []
@@ -1068,6 +1536,16 @@ sdo_row @sec-static-semantics-importentries#3 ImportEntries form alg {
 }
 
 sdo_row @sec-static-semantics-importentries#4 ImportEntries form alg {
+  prods [p"Syntactic 0 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`", p"Syntactic 1 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  keys ["ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"]
+  vars [module]
+  steps {
+    let module = $ListElem(data choice 0, sdo ModuleRequests(child 6 |ImportDeclaration|))
+    return sdo ImportEntriesForModule(child 5 |NameSpaceImport|; module)
+  }
+}
+
+sdo_row @sec-static-semantics-importentries#5 ImportEntries form alg {
   prods [p"Syntactic 0 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`", p"Syntactic 1 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`"]
   keys ["ImportDeclaration : `import` ModuleSpecifier WithClause? `;`"]
   vars []
@@ -1104,7 +1582,7 @@ sdo_row @sec-static-semantics-importentriesformodule#2 ImportEntriesForModule fo
   vars [module, localName, defaultEntry]
   steps {
     let localName = $ListElem(data choice 0, sdo BoundNames(child 5 |ImportedBinding|))
-    let defaultEntry = record #"ImportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: "default", [[LocalName]]: localName }
+    let defaultEntry = record #"ImportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: "default", [[LocalName]]: localName, [[NamespaceNamesFilter]]: ~empty~ }
     return [defaultEntry]
   }
 }
@@ -1115,12 +1593,24 @@ sdo_row @sec-static-semantics-importentriesformodule#3 ImportEntriesForModule fo
   vars [module, localName, entry]
   steps {
     let localName = sdo StringValue(child 5 |ImportedBinding|)
-    let entry = record #"ImportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: ~namespace~, [[LocalName]]: localName }
+    let entry = record #"ImportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: ~namespace~, [[LocalName]]: localName, [[NamespaceNamesFilter]]: ~empty~ }
     return [entry]
   }
 }
 
 sdo_row @sec-static-semantics-importentriesformodule#4 ImportEntriesForModule form alg {
+  prods [p"Syntactic - NameSpaceImport : NamedImports `as` ImportedBinding"]
+  keys ["NameSpaceImport : NamedImports `as` ImportedBinding"]
+  vars [module, localName, namespaceImportedNames, entry]
+  steps {
+    let localName = sdo StringValue(child 5 |ImportedBinding|)
+    let namespaceImportedNames = sdo FilteredNamespaceImportedNames(child 5 |NamedImports|)
+    let entry = record #"ImportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: ~filtered-namespace~, [[LocalName]]: localName, [[NamespaceNamesFilter]]: namespaceImportedNames }
+    return [entry]
+  }
+}
+
+sdo_row @sec-static-semantics-importentriesformodule#5 ImportEntriesForModule form alg {
   prods [p"Syntactic - NamedImports : `{` `}`"]
   keys ["NamedImports : `{` `}`"]
   vars [module]
@@ -1129,7 +1619,7 @@ sdo_row @sec-static-semantics-importentriesformodule#4 ImportEntriesForModule fo
   }
 }
 
-sdo_row @sec-static-semantics-importentriesformodule#5 ImportEntriesForModule form alg {
+sdo_row @sec-static-semantics-importentriesformodule#6 ImportEntriesForModule form alg {
   prods [p"Syntactic - ImportsList : ImportsList `,` ImportSpecifier"]
   keys ["ImportsList : ImportsList `,` ImportSpecifier"]
   vars [module, specs1, specs2]
@@ -1140,26 +1630,396 @@ sdo_row @sec-static-semantics-importentriesformodule#5 ImportEntriesForModule fo
   }
 }
 
-sdo_row @sec-static-semantics-importentriesformodule#6 ImportEntriesForModule form alg {
-  prods [p"Syntactic - ImportSpecifier : ImportedBinding"]
-  keys ["ImportSpecifier : ImportedBinding"]
+sdo_row @sec-static-semantics-importentriesformodule#7 ImportEntriesForModule form alg {
+  prods [p"Syntactic - ImportSpecifier : ModuleExportName"]
+  keys ["\n          ImportSpecifier : ModuleExportName\n        "]
   vars [module, localName, entry]
   steps {
-    let localName = $ListElem(data choice 0, sdo BoundNames(child 5 |ImportedBinding|))
-    let entry = record #"ImportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: localName, [[LocalName]]: localName }
+    let localName = sdo StringValue(child 5 |ModuleExportName|)
+    let entry = record #"ImportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: localName, [[LocalName]]: localName, [[NamespaceNamesFilter]]: ~empty~ }
     return [entry]
   }
 }
 
-sdo_row @sec-static-semantics-importentriesformodule#7 ImportEntriesForModule form alg {
-  prods [p"Syntactic - ImportSpecifier : ModuleExportName `as` ImportedBinding"]
-  keys ["ImportSpecifier : ModuleExportName `as` ImportedBinding"]
+sdo_row @sec-static-semantics-importentriesformodule#8 ImportEntriesForModule form alg {
+  prods [p"Syntactic - AliasedImportSpecifier : ModuleExportName `as` ImportedBinding"]
+  keys ["\n          AliasedImportSpecifier : ModuleExportName `as` ImportedBinding\n        "]
   vars [module, importName, localName, entry]
   steps {
     let importName = sdo StringValue(child 5 |ModuleExportName|)
     let localName = sdo StringValue(child 5 |ImportedBinding|)
-    let entry = record #"ImportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName }
+    let entry = record #"ImportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName, [[NamespaceNamesFilter]]: ~empty~ }
     return [entry]
+  }
+}
+
+sdo_row @sec-DirectImportedNames DirectImportedNames form alg {
+  prods [p"Syntactic - ImportClause : ImportedDefaultBinding `,` NameSpaceImport"]
+  keys ["ImportClause : ImportedDefaultBinding `,` NameSpaceImport"]
+  vars []
+  steps {
+    return sdo DirectImportedNames(child 5 |ImportedDefaultBinding|)
+  }
+}
+
+sdo_row @sec-DirectImportedNames#1 DirectImportedNames form alg {
+  prods [p"Syntactic - ImportClause : ImportedDefaultBinding `,` NamedImports"]
+  keys ["ImportClause : ImportedDefaultBinding `,` NamedImports"]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo DirectImportedNames(child 5 |ImportedDefaultBinding|)
+    let names2 = sdo DirectImportedNames(child 5 |NamedImports|)
+    return @sec-MergeImportedNames(names1, names2)
+  }
+}
+
+sdo_row @sec-DirectImportedNames#2 DirectImportedNames form alg {
+  prods [p"Syntactic - ImportedDefaultBinding : ImportedBinding"]
+  keys ["ImportedDefaultBinding : ImportedBinding"]
+  vars []
+  steps {
+    return ["default"]
+  }
+}
+
+sdo_row @sec-DirectImportedNames#3 DirectImportedNames form alg {
+  prods [p"Syntactic - NameSpaceImport : `*` `as` ImportedBinding", p"Syntactic - NameSpaceImport : NamedImports `as` ImportedBinding", p"Syntactic - NamedImports : `{` `}`"]
+  keys ["\n            NameSpaceImport : `*` `as` ImportedBinding\n            NameSpaceImport : NamedImports `as` ImportedBinding\n            NamedImports : `{` `}`\n        "]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-DirectImportedNames#4 DirectImportedNames form alg {
+  prods [p"Syntactic - ImportsList : ImportsList `,` ImportSpecifier"]
+  keys ["ImportsList : ImportsList `,` ImportSpecifier"]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo DirectImportedNames(child 5 |ImportsList|)
+    let names2 = sdo DirectImportedNames(child 5 |ImportSpecifier|)
+    return @sec-MergeImportedNames(names1, names2)
+  }
+}
+
+sdo_row @sec-DirectImportedNames#5 DirectImportedNames form alg {
+  prods [p"Syntactic - ImportSpecifier : ModuleExportName"]
+  keys ["\n          ImportSpecifier : ModuleExportName\n        "]
+  vars [importedName]
+  steps {
+    let importedName = sdo StringValue(child 5 |ModuleExportName|)
+    return [importedName]
+  }
+}
+
+sdo_row @sec-DirectImportedNames#6 DirectImportedNames form alg {
+  prods [p"Syntactic - AliasedImportSpecifier : ModuleExportName `as` ImportedBinding"]
+  keys ["\n          AliasedImportSpecifier : ModuleExportName `as` ImportedBinding\n        "]
+  vars [importedName]
+  steps {
+    let importedName = sdo StringValue(child 5 |ModuleExportName|)
+    return [importedName]
+  }
+}
+
+sdo_row @sec-DirectImportedNames#7 DirectImportedNames form alg {
+  prods [p"Syntactic - ExportFromClause : `*`"]
+  keys ["ExportFromClause : `*`"]
+  vars []
+  steps {
+    note "`export * from \"mod\"` does not directly cause loading of any of `\"mod\"`'s `export defer` declarations."
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-DirectImportedNames#8 DirectImportedNames form alg {
+  prods [p"Syntactic - ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  keys ["ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  vars []
+  steps {
+    note "The names are reached through the re-exported namespace object, so they are not directly imported."
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-DirectImportedNames#9 DirectImportedNames form alg {
+  prods [p"Syntactic - ExplicitExportFromClause : `*` `as` ModuleExportName", p"Syntactic - NamedExports : `{` `}`"]
+  keys ["\n            ExplicitExportFromClause : `*` `as` ModuleExportName\n            NamedExports : `{` `}`\n        "]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-DirectImportedNames#10 DirectImportedNames form alg {
+  prods [p"Syntactic - ExportsList : ExportsList `,` ExportSpecifier"]
+  keys ["ExportsList : ExportsList `,` ExportSpecifier"]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo DirectImportedNames(child 5 |ExportsList|)
+    let names2 = sdo DirectImportedNames(child 5 |ExportSpecifier|)
+    return @sec-MergeImportedNames(names1, names2)
+  }
+}
+
+sdo_row @sec-DirectImportedNames#11 DirectImportedNames form alg {
+  prods [p"Syntactic - ExportSpecifier : ModuleExportName"]
+  keys ["ExportSpecifier : ModuleExportName"]
+  vars [importedName]
+  steps {
+    let importedName = sdo StringValue(child 5 |ModuleExportName|)
+    return [importedName]
+  }
+}
+
+sdo_row @sec-DirectImportedNames#12 DirectImportedNames form alg {
+  prods [p"Syntactic - AliasedExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  keys ["AliasedExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  vars [importedName]
+  steps {
+    let importedName = sdo StringValue(child 0 |ModuleExportName|)
+    return [importedName]
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ImportClause : ImportedDefaultBinding `,` NameSpaceImport"]
+  keys ["ImportClause : ImportedDefaultBinding `,` NameSpaceImport"]
+  vars []
+  steps {
+    return sdo FilteredNamespaceImportedNames(child 5 |NameSpaceImport|)
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#1 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ImportClause : ImportedDefaultBinding `,` NamedImports", p"Syntactic - ImportClause : NamedImports", p"Syntactic - ImportClause : ImportedDefaultBinding"]
+  keys ["\n            ImportClause : ImportedDefaultBinding `,` NamedImports\n            ImportClause : NamedImports\n            ImportClause : ImportedDefaultBinding\n        "]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#2 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - NameSpaceImport : `*` `as` ImportedBinding"]
+  keys ["NameSpaceImport : `*` `as` ImportedBinding"]
+  vars []
+  steps {
+    return ~all~
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#3 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - NameSpaceImport : NamedImports `as` ImportedBinding"]
+  keys ["NameSpaceImport : NamedImports `as` ImportedBinding"]
+  vars []
+  steps {
+    return sdo FilteredNamespaceImportedNames(child 5 |NamedImports|)
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#4 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - NamedImports : `{` `}`"]
+  keys ["NamedImports : `{` `}`"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#5 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ImportsList : ImportsList `,` ImportSpecifier"]
+  keys ["ImportsList : ImportsList `,` ImportSpecifier"]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo FilteredNamespaceImportedNames(child 5 |ImportsList|)
+    let names2 = sdo FilteredNamespaceImportedNames(child 5 |ImportSpecifier|)
+    return @sec-MergeImportedNames(names1, names2)
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#6 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ImportSpecifier : ModuleExportName"]
+  keys ["\n          ImportSpecifier : ModuleExportName\n        "]
+  vars [importedName]
+  steps {
+    let importedName = sdo StringValue(child 5 |ModuleExportName|)
+    return [importedName]
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#7 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - AliasedImportSpecifier : ModuleExportName `as` ImportedBinding"]
+  keys ["\n          AliasedImportSpecifier : ModuleExportName `as` ImportedBinding\n        "]
+  vars [importedName]
+  steps {
+    let importedName = sdo StringValue(child 5 |ModuleExportName|)
+    return [importedName]
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#8 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ExportFromClause : `*`"]
+  keys ["ExportFromClause : `*`"]
+  vars []
+  steps {
+    note "`export * from \"mod\"` does not directly cause loading of any of `\"mod\"`'s `export defer` declarations."
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#9 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ExplicitExportFromClause : NamedExports", p"Syntactic - NamedExports : `{` `}`", p"Syntactic - AliasedExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  keys ["\n            ExplicitExportFromClause : NamedExports\n            NamedExports : `{` `}`\n            AliasedExportSpecifier : ModuleExportName `as` ModuleExportName\n        "]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#10 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ExplicitExportFromClause : `*` `as` ModuleExportName"]
+  keys ["ExplicitExportFromClause : `*` `as` ModuleExportName"]
+  vars []
+  steps {
+    return ~all~
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#11 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  keys ["ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  vars []
+  steps {
+    return sdo FilteredNamespaceImportedNames(child 5 |NamedExports|)
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#12 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ExportsList : ExportsList `,` ExportSpecifier"]
+  keys ["ExportsList : ExportsList `,` ExportSpecifier"]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo FilteredNamespaceImportedNames(child 5 |ExportsList|)
+    let names2 = sdo FilteredNamespaceImportedNames(child 5 |ExportSpecifier|)
+    return @sec-MergeImportedNames(names1, names2)
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#13 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - ExportSpecifier : ModuleExportName"]
+  keys ["ExportSpecifier : ModuleExportName"]
+  vars [importedName]
+  steps {
+    let importedName = sdo StringValue(child 5 |ModuleExportName|)
+    return [importedName]
+  }
+}
+
+sdo_row @sec-FilteredNamespaceImportedNames#14 FilteredNamespaceImportedNames form alg {
+  prods [p"Syntactic - AliasedExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  keys ["AliasedExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  vars [importedName]
+  steps {
+    let importedName = sdo StringValue(child 0 |ModuleExportName|)
+    return [importedName]
+  }
+}
+
+sdo_row @sec-imports-UnaliasedImportNames UnaliasedImportNames form alg {
+  prods [p"Syntactic - NamedImports : `{` `}`"]
+  keys ["NamedImports : `{` `}`"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-imports-UnaliasedImportNames#1 UnaliasedImportNames form alg {
+  prods [p"Syntactic - ImportsList : ImportsList `,` ImportSpecifier"]
+  keys ["ImportsList : ImportsList `,` ImportSpecifier"]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo UnaliasedImportNames(child 5 |ImportsList|)
+    let names2 = sdo UnaliasedImportNames(child 5 |ImportSpecifier|)
+    return $ListConcat([names1, names2])
+  }
+}
+
+sdo_row @sec-imports-UnaliasedImportNames#2 UnaliasedImportNames form alg {
+  prods [p"Syntactic - AliasedImportSpecifier : ModuleExportName `as` ImportedBinding"]
+  keys ["AliasedImportSpecifier : ModuleExportName `as` ImportedBinding"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-imports-UnaliasedImportNames#3 UnaliasedImportNames form alg {
+  prods [p"Syntactic - ModuleExportName : IdentifierName"]
+  keys ["ModuleExportName : IdentifierName"]
+  vars []
+  steps {
+    return $ListOf1(child 5 |IdentifierName|)
+  }
+}
+
+sdo_row @sec-imports-UnaliasedImportNames#4 UnaliasedImportNames form alg {
+  prods [p"Syntactic - ModuleExportName : StringLiteral"]
+  keys ["ModuleExportName : StringLiteral"]
+  vars []
+  steps {
+    return $ListOf1(child 5 |StringLiteral|)
+  }
+}
+
+sdo_row @sec-FilteredNamespaceNames FilteredNamespaceNames form alg {
+  prods [p"Syntactic - NamedImports : `{` `}`", p"Syntactic - NamedExports : `{` `}`"]
+  keys ["\n          NamedImports : `{` `}`\n          NamedExports : `{` `}`\n        "]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-FilteredNamespaceNames#1 FilteredNamespaceNames form alg {
+  prods [p"Syntactic - ImportsList : ImportsList `,` ImportSpecifier"]
+  keys ["\n          ImportsList : ImportsList `,` ImportSpecifier\n        "]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo FilteredNamespaceNames(child 5 |ImportsList|)
+    let names2 = sdo FilteredNamespaceNames(child 5 |ImportSpecifier|)
+    return $ListConcat([names1, names2])
+  }
+}
+
+sdo_row @sec-FilteredNamespaceNames#2 FilteredNamespaceNames form alg {
+  prods [p"Syntactic - ExportsList : ExportsList `,` ExportSpecifier"]
+  keys ["\n          ExportsList : ExportsList `,` ExportSpecifier\n        "]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo FilteredNamespaceNames(child 5 |ExportsList|)
+    let names2 = sdo FilteredNamespaceNames(child 5 |ExportSpecifier|)
+    return $ListConcat([names1, names2])
+  }
+}
+
+sdo_row @sec-FilteredNamespaceNames#3 FilteredNamespaceNames form alg {
+  prods [p"Syntactic - ImportSpecifier : ModuleExportName", p"Syntactic - ExportSpecifier : ModuleExportName"]
+  keys ["\n          ImportSpecifier : ModuleExportName\n          ExportSpecifier : ModuleExportName\n        "]
+  vars []
+  steps {
+    return $ListOf1(sdo StringValue(child 5 |ModuleExportName|))
+  }
+}
+
+sdo_row @sec-FilteredNamespaceNames#4 FilteredNamespaceNames form alg {
+  prods [p"Syntactic - ImportSpecifier : AliasedImportSpecifier", p"Syntactic - ExportSpecifier : AliasedExportSpecifier"]
+  keys ["\n          ImportSpecifier : AliasedImportSpecifier\n          ExportSpecifier : AliasedExportSpecifier\n        "]
+  vars []
+  steps {
+    note "It is an early error if a filtered namespace contains an |AliasedImportSpecifier| or |AliasedExportSpecifier| (see <emu-xref href=\"#sec-imports-static-semantics-early-errors\"></emu-xref> and <emu-xref href=\"#sec-exports-static-semantics-early-errors\"></emu-xref>)."
+    return $ListNew()
   }
 }
 
@@ -1246,6 +2106,15 @@ sdo_row @sec-static-semantics-exportedbindings#2 ExportedBindings form alg {
 }
 
 sdo_row @sec-static-semantics-exportedbindings#3 ExportedBindings form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  keys ["ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-exportedbindings#4 ExportedBindings form alg {
   prods [p"Syntactic - ExportDeclaration : `export` NamedExports `;`"]
   keys ["ExportDeclaration : `export` NamedExports `;`"]
   vars []
@@ -1254,7 +2123,7 @@ sdo_row @sec-static-semantics-exportedbindings#3 ExportedBindings form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportedbindings#4 ExportedBindings form alg {
+sdo_row @sec-static-semantics-exportedbindings#5 ExportedBindings form alg {
   prods [p"Syntactic - ExportDeclaration : `export` VariableStatement[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` VariableStatement"]
   vars []
@@ -1263,7 +2132,7 @@ sdo_row @sec-static-semantics-exportedbindings#4 ExportedBindings form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportedbindings#5 ExportedBindings form alg {
+sdo_row @sec-static-semantics-exportedbindings#6 ExportedBindings form alg {
   prods [p"Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` Declaration"]
   vars []
@@ -1272,7 +2141,7 @@ sdo_row @sec-static-semantics-exportedbindings#5 ExportedBindings form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportedbindings#6 ExportedBindings form alg {
+sdo_row @sec-static-semantics-exportedbindings#7 ExportedBindings form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
   keys ["\n          ExportDeclaration :\n            `export` `default` HoistableDeclaration\n            `export` `default` ClassDeclaration\n            `export` `default` AssignmentExpression `;`\n        "]
   vars []
@@ -1281,7 +2150,7 @@ sdo_row @sec-static-semantics-exportedbindings#6 ExportedBindings form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportedbindings#7 ExportedBindings form alg {
+sdo_row @sec-static-semantics-exportedbindings#8 ExportedBindings form alg {
   prods [p"Syntactic - NamedExports : `{` `}`"]
   keys ["NamedExports : `{` `}`"]
   vars []
@@ -1290,7 +2159,7 @@ sdo_row @sec-static-semantics-exportedbindings#7 ExportedBindings form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportedbindings#8 ExportedBindings form alg {
+sdo_row @sec-static-semantics-exportedbindings#9 ExportedBindings form alg {
   prods [p"Syntactic - ExportsList : ExportsList `,` ExportSpecifier"]
   keys ["ExportsList : ExportsList `,` ExportSpecifier"]
   vars [names1, names2]
@@ -1301,7 +2170,7 @@ sdo_row @sec-static-semantics-exportedbindings#8 ExportedBindings form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportedbindings#9 ExportedBindings form alg {
+sdo_row @sec-static-semantics-exportedbindings#10 ExportedBindings form alg {
   prods [p"Syntactic - ExportSpecifier : ModuleExportName"]
   keys ["ExportSpecifier : ModuleExportName"]
   vars []
@@ -1310,9 +2179,9 @@ sdo_row @sec-static-semantics-exportedbindings#9 ExportedBindings form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportedbindings#10 ExportedBindings form alg {
-  prods [p"Syntactic - ExportSpecifier : ModuleExportName `as` ModuleExportName"]
-  keys ["ExportSpecifier : ModuleExportName `as` ModuleExportName"]
+sdo_row @sec-static-semantics-exportedbindings#11 ExportedBindings form alg {
+  prods [p"Syntactic - AliasedExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  keys ["\n          AliasedExportSpecifier : ModuleExportName `as` ModuleExportName\n        "]
   vars []
   steps {
     return $ListOf1(sdo StringValue(child 0 |ModuleExportName|))
@@ -1358,6 +2227,15 @@ sdo_row @sec-static-semantics-exportednames#3 ExportedNames form alg {
 }
 
 sdo_row @sec-static-semantics-exportednames#4 ExportedNames form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  keys ["ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  vars []
+  steps {
+    return sdo ExportedNames(child 5 |ExplicitExportFromClause|)
+  }
+}
+
+sdo_row @sec-static-semantics-exportednames#5 ExportedNames form alg {
   prods [p"Syntactic - ExportFromClause : `*`"]
   keys ["ExportFromClause : `*`"]
   vars []
@@ -1366,25 +2244,25 @@ sdo_row @sec-static-semantics-exportednames#4 ExportedNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportednames#5 ExportedNames form alg {
-  prods [p"Syntactic - ExportFromClause : `*` `as` ModuleExportName"]
-  keys ["ExportFromClause : `*` `as` ModuleExportName"]
+sdo_row @sec-static-semantics-exportednames#6 ExportedNames form alg {
+  prods [p"Syntactic - ExplicitExportFromClause : `*` `as` ModuleExportName", p"Syntactic - ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  keys ["\n          ExplicitExportFromClause :\n            `*` `as` ModuleExportName\n            NamedExports `as` ModuleExportName\n        "]
   vars []
   steps {
     return $ListOf1(sdo StringValue(child 5 |ModuleExportName|))
   }
 }
 
-sdo_row @sec-static-semantics-exportednames#6 ExportedNames form alg {
-  prods [p"Syntactic - ExportFromClause : NamedExports"]
-  keys ["ExportFromClause : NamedExports"]
+sdo_row @sec-static-semantics-exportednames#7 ExportedNames form alg {
+  prods [p"Syntactic - ExplicitExportFromClause : NamedExports"]
+  keys ["\n          ExplicitExportFromClause : NamedExports\n        "]
   vars []
   steps {
     return sdo ExportedNames(child 5 |NamedExports|)
   }
 }
 
-sdo_row @sec-static-semantics-exportednames#7 ExportedNames form alg {
+sdo_row @sec-static-semantics-exportednames#8 ExportedNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` VariableStatement[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` VariableStatement"]
   vars []
@@ -1393,7 +2271,7 @@ sdo_row @sec-static-semantics-exportednames#7 ExportedNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportednames#8 ExportedNames form alg {
+sdo_row @sec-static-semantics-exportednames#9 ExportedNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` Declaration"]
   vars []
@@ -1402,7 +2280,7 @@ sdo_row @sec-static-semantics-exportednames#8 ExportedNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportednames#9 ExportedNames form alg {
+sdo_row @sec-static-semantics-exportednames#10 ExportedNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
   keys ["\n          ExportDeclaration :\n            `export` `default` HoistableDeclaration\n            `export` `default` ClassDeclaration\n            `export` `default` AssignmentExpression `;`\n        "]
   vars []
@@ -1411,7 +2289,7 @@ sdo_row @sec-static-semantics-exportednames#9 ExportedNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportednames#10 ExportedNames form alg {
+sdo_row @sec-static-semantics-exportednames#11 ExportedNames form alg {
   prods [p"Syntactic - NamedExports : `{` `}`"]
   keys ["NamedExports : `{` `}`"]
   vars []
@@ -1420,7 +2298,7 @@ sdo_row @sec-static-semantics-exportednames#10 ExportedNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportednames#11 ExportedNames form alg {
+sdo_row @sec-static-semantics-exportednames#12 ExportedNames form alg {
   prods [p"Syntactic - ExportsList : ExportsList `,` ExportSpecifier"]
   keys ["ExportsList : ExportsList `,` ExportSpecifier"]
   vars [names1, names2]
@@ -1431,7 +2309,7 @@ sdo_row @sec-static-semantics-exportednames#11 ExportedNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportednames#12 ExportedNames form alg {
+sdo_row @sec-static-semantics-exportednames#13 ExportedNames form alg {
   prods [p"Syntactic - ExportSpecifier : ModuleExportName"]
   keys ["ExportSpecifier : ModuleExportName"]
   vars []
@@ -1440,9 +2318,9 @@ sdo_row @sec-static-semantics-exportednames#12 ExportedNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportednames#13 ExportedNames form alg {
-  prods [p"Syntactic - ExportSpecifier : ModuleExportName `as` ModuleExportName"]
-  keys ["ExportSpecifier : ModuleExportName `as` ModuleExportName"]
+sdo_row @sec-static-semantics-exportednames#14 ExportedNames form alg {
+  prods [p"Syntactic - AliasedExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  keys ["\n          AliasedExportSpecifier : ModuleExportName `as` ModuleExportName\n        "]
   vars []
   steps {
     return $ListOf1(sdo StringValue(child 1 |ModuleExportName|))
@@ -1489,6 +2367,15 @@ sdo_row @sec-static-semantics-exportentries#3 ExportEntries form alg {
 }
 
 sdo_row @sec-static-semantics-exportentries#4 ExportEntries form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  keys ["ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-exportentries#5 ExportEntries form alg {
   prods [p"Syntactic - ExportDeclaration : `export` NamedExports `;`"]
   keys ["ExportDeclaration : `export` NamedExports `;`"]
   vars []
@@ -1497,7 +2384,7 @@ sdo_row @sec-static-semantics-exportentries#4 ExportEntries form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportentries#5 ExportEntries form alg {
+sdo_row @sec-static-semantics-exportentries#6 ExportEntries form alg {
   prods [p"Syntactic - ExportDeclaration : `export` VariableStatement[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` VariableStatement"]
   vars [entries, names, name]
@@ -1505,13 +2392,13 @@ sdo_row @sec-static-semantics-exportentries#5 ExportEntries form alg {
     let entries = $ListNew()
     let names = sdo BoundNames(child 5 |VariableStatement|)
     for_each name in names {
-      perform $Append(record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: name, [[ExportName]]: name }, ?entries)
+      perform $Append(record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: name, [[ExportName]]: name, [[NamespaceNamesFilter]]: ~empty~ }, ?entries)
     }
     return entries
   }
 }
 
-sdo_row @sec-static-semantics-exportentries#6 ExportEntries form alg {
+sdo_row @sec-static-semantics-exportentries#7 ExportEntries form alg {
   prods [p"Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` Declaration"]
   vars [entries, names, name]
@@ -1519,13 +2406,13 @@ sdo_row @sec-static-semantics-exportentries#6 ExportEntries form alg {
     let entries = $ListNew()
     let names = sdo BoundNames(child 5 |Declaration|)
     for_each name in names {
-      perform $Append(record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: name, [[ExportName]]: name }, ?entries)
+      perform $Append(record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: name, [[ExportName]]: name, [[NamespaceNamesFilter]]: ~empty~ }, ?entries)
     }
     return entries
   }
 }
 
-sdo_row @sec-static-semantics-exportentries#7 ExportEntries form alg {
+sdo_row @sec-static-semantics-exportentries#8 ExportEntries form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]"]
   keys ["ExportDeclaration : `export` `default` HoistableDeclaration"]
   vars [names, localName]
@@ -1536,7 +2423,7 @@ sdo_row @sec-static-semantics-exportentries#7 ExportEntries form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportentries#8 ExportEntries form alg {
+sdo_row @sec-static-semantics-exportentries#9 ExportEntries form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]"]
   keys ["ExportDeclaration : `export` `default` ClassDeclaration"]
   vars [names, localName]
@@ -1547,12 +2434,12 @@ sdo_row @sec-static-semantics-exportentries#8 ExportEntries form alg {
   }
 }
 
-sdo_row @sec-static-semantics-exportentries#9 ExportEntries form alg {
+sdo_row @sec-static-semantics-exportentries#10 ExportEntries form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
   keys ["ExportDeclaration : `export` `default` AssignmentExpression `;`"]
   vars [entry]
   steps {
-    let entry = record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: "*default*", [[ExportName]]: "default" }
+    let entry = record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: "*default*", [[ExportName]]: "default", [[NamespaceNamesFilter]]: ~empty~ }
     return [entry]
   }
 }
@@ -1562,23 +2449,35 @@ sdo_row @sec-static-semantics-exportentriesformodule ExportEntriesForModule form
   keys ["ExportFromClause : `*`"]
   vars [module, entry]
   steps {
-    let entry = record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: ~all-but-default~, [[LocalName]]: null, [[ExportName]]: null }
+    let entry = record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: ~all-but-default~, [[LocalName]]: null, [[ExportName]]: null, [[NamespaceNamesFilter]]: ~empty~ }
     return [entry]
   }
 }
 
 sdo_row @sec-static-semantics-exportentriesformodule#1 ExportEntriesForModule form alg {
-  prods [p"Syntactic - ExportFromClause : `*` `as` ModuleExportName"]
-  keys ["ExportFromClause : `*` `as` ModuleExportName"]
+  prods [p"Syntactic - ExplicitExportFromClause : `*` `as` ModuleExportName"]
+  keys ["\n          ExplicitExportFromClause : `*` `as` ModuleExportName\n        "]
   vars [module, exportName, entry]
   steps {
     let exportName = sdo StringValue(child 5 |ModuleExportName|)
-    let entry = record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: ~namespace~, [[LocalName]]: null, [[ExportName]]: exportName }
+    let entry = record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: ~namespace~, [[LocalName]]: null, [[ExportName]]: exportName, [[NamespaceNamesFilter]]: ~empty~ }
     return [entry]
   }
 }
 
 sdo_row @sec-static-semantics-exportentriesformodule#2 ExportEntriesForModule form alg {
+  prods [p"Syntactic - ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  keys ["ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  vars [module, exportName, importedNames, entry]
+  steps {
+    let exportName = sdo StringValue(child 5 |ModuleExportName|)
+    let importedNames = sdo FilteredNamespaceImportedNames(child 5 |NamedExports|)
+    let entry = record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: ~filtered-namespace~, [[LocalName]]: null, [[ExportName]]: exportName, [[NamespaceNamesFilter]]: importedNames }
+    return [entry]
+  }
+}
+
+sdo_row @sec-static-semantics-exportentriesformodule#3 ExportEntriesForModule form alg {
   prods [p"Syntactic - NamedExports : `{` `}`"]
   keys ["NamedExports : `{` `}`"]
   vars [module]
@@ -1587,7 +2486,7 @@ sdo_row @sec-static-semantics-exportentriesformodule#2 ExportEntriesForModule fo
   }
 }
 
-sdo_row @sec-static-semantics-exportentriesformodule#3 ExportEntriesForModule form alg {
+sdo_row @sec-static-semantics-exportentriesformodule#4 ExportEntriesForModule form alg {
   prods [p"Syntactic - ExportsList : ExportsList `,` ExportSpecifier"]
   keys ["ExportsList : ExportsList `,` ExportSpecifier"]
   vars [module, specs1, specs2]
@@ -1598,7 +2497,7 @@ sdo_row @sec-static-semantics-exportentriesformodule#3 ExportEntriesForModule fo
   }
 }
 
-sdo_row @sec-static-semantics-exportentriesformodule#4 ExportEntriesForModule form alg {
+sdo_row @sec-static-semantics-exportentriesformodule#5 ExportEntriesForModule form alg {
   prods [p"Syntactic - ExportSpecifier : ModuleExportName"]
   keys ["ExportSpecifier : ModuleExportName"]
   vars [module, sourceName, localName, importName]
@@ -1612,13 +2511,13 @@ sdo_row @sec-static-semantics-exportentriesformodule#4 ExportEntriesForModule fo
       let localName = null
       let importName = sourceName
     }
-    return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName, [[ExportName]]: sourceName }))
+    return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName, [[ExportName]]: sourceName, [[NamespaceNamesFilter]]: ~empty~ }))
   }
 }
 
-sdo_row @sec-static-semantics-exportentriesformodule#5 ExportEntriesForModule form alg {
-  prods [p"Syntactic - ExportSpecifier : ModuleExportName `as` ModuleExportName"]
-  keys ["ExportSpecifier : ModuleExportName `as` ModuleExportName"]
+sdo_row @sec-static-semantics-exportentriesformodule#6 ExportEntriesForModule form alg {
+  prods [p"Syntactic - AliasedExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  keys ["\n          AliasedExportSpecifier : ModuleExportName `as` ModuleExportName\n        "]
   vars [module, sourceName, exportName, localName, importName]
   steps {
     let sourceName = sdo StringValue(child 0 |ModuleExportName|)
@@ -1631,7 +2530,7 @@ sdo_row @sec-static-semantics-exportentriesformodule#5 ExportEntriesForModule fo
       let localName = null
       let importName = sourceName
     }
-    return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName, [[ExportName]]: exportName }))
+    return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName, [[ExportName]]: exportName, [[NamespaceNamesFilter]]: ~empty~ }))
   }
 }
 
@@ -1656,8 +2555,8 @@ sdo_row @sec-static-semantics-referencedbindings#1 ReferencedBindings form alg {
 }
 
 sdo_row @sec-static-semantics-referencedbindings#2 ReferencedBindings form alg {
-  prods [p"Syntactic - ExportSpecifier : ModuleExportName `as` ModuleExportName"]
-  keys ["ExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  prods [p"Syntactic - AliasedExportSpecifier : ModuleExportName `as` ModuleExportName"]
+  keys ["\n          AliasedExportSpecifier : ModuleExportName `as` ModuleExportName\n        "]
   vars []
   steps {
     return sdo ReferencedBindings(child 0 |ModuleExportName|)
@@ -1683,8 +2582,8 @@ sdo_row @sec-static-semantics-referencedbindings#4 ReferencedBindings form alg {
 }
 
 sdo_row @sec-exports-runtime-semantics-evaluation Evaluation form alg {
-  prods [p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic - ExportDeclaration : `export` NamedExports `;`"]
-  keys ["\n          ExportDeclaration :\n            `export` ExportFromClause FromClause WithClause? `;`\n            `export` NamedExports `;`\n        "]
+  prods [p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic 0 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic - ExportDeclaration : `export` NamedExports `;`"]
+  keys ["\n          ExportDeclaration :\n            `export` ExportFromClause FromClause WithClause? `;`\n            `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`\n            `export` NamedExports `;`\n        "]
   vars []
   steps {
     return ~empty~
@@ -1748,6 +2647,60 @@ sdo_row @sec-exports-runtime-semantics-evaluation#5 Evaluation form alg {
     let envRecord = $Component($Running(), [[LexicalEnvironment]])
     perform ? @sec-initializeboundname("*default*", value, envRecord)
     return ~empty~
+  }
+}
+
+sdo_row @sec-static-semantics-optionalindirectexportentries OptionalIndirectExportEntries form alg {
+  prods [p"Syntactic 0 Module : ModuleBody?"]
+  keys ["Module : [empty]"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-optionalindirectexportentries#1 OptionalIndirectExportEntries form alg {
+  prods [p"Syntactic - ModuleItemList : ModuleItemList ModuleItem"]
+  keys ["ModuleItemList : ModuleItemList ModuleItem"]
+  vars [entries1, entries2]
+  steps {
+    let entries1 = sdo OptionalIndirectExportEntries(child 5 |ModuleItemList|)
+    let entries2 = sdo OptionalIndirectExportEntries(child 5 |ModuleItem|)
+    return $ListConcat([entries1, entries2])
+  }
+}
+
+sdo_row @sec-static-semantics-optionalindirectexportentries#2 OptionalIndirectExportEntries form alg {
+  prods [p"Syntactic - ModuleItem : ImportDeclaration", p"Syntactic - ModuleItem : StatementListItem[~Yield, +Await, ~Return]", p"Syntactic - ExportDeclaration : `export` NamedExports `;`", p"Syntactic - ExportDeclaration : `export` VariableStatement[~Yield, +Await]", p"Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]", p"Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]", p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
+  keys ["\n          ModuleItem :\n            ImportDeclaration\n            StatementListItem\n\n          ExportDeclaration :\n            `export` NamedExports `;`\n            `export` VariableStatement\n            `export` Declaration\n            `export` `default` HoistableDeclaration\n            `export` `default` ClassDeclaration\n            `export` `default` AssignmentExpression `;`\n        "]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-optionalindirectexportentries#3 OptionalIndirectExportEntries form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`"]
+  keys ["ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`"]
+  vars [request]
+  steps {
+    if child 5 |ExportFromClause| is val {prods [p"Syntactic - ExportFromClause : ExplicitExportFromClause"]} -> return $ListNew()
+    if child 5 |WithClause| sat $Present() -> let request = @sec-ExportFromDeclarationModuleRequest(child 5 |ExportFromClause|, child 5 |FromClause|, ~evaluation~, child 5 |WithClause|)
+    else -> let request = @sec-ExportFromDeclarationModuleRequest(child 5 |ExportFromClause|, child 5 |FromClause|, ~evaluation~)
+    return sdo ExportEntriesForModule(child 5 |ExportFromClause|; request)
+  }
+}
+
+sdo_row @sec-static-semantics-optionalindirectexportentries#4 OptionalIndirectExportEntries form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  keys ["ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  vars [phase, request]
+  steps {
+    if_else child 5 |ExplicitExportFromClause| is val {prods [p"Syntactic - ExplicitExportFromClause : NamedExports"]} { let phase = ~evaluation~ } else { let phase = ~defer~ }
+    note "A deferred re-export of a namespace object creates a deferred namespace, in the same way as `import defer`. A deferred re-export of individual bindings only defers loading and evaluating the dependency until the bindings are imported."
+    if child 5 |WithClause| sat $Present() -> let request = @sec-ExportFromDeclarationModuleRequest(child 5 |ExplicitExportFromClause|, child 5 |FromClause|, phase, child 5 |WithClause|)
+    else -> let request = @sec-ExportFromDeclarationModuleRequest(child 5 |ExplicitExportFromClause|, child 5 |FromClause|, phase)
+    return sdo ExportEntriesForModule(child 5 |ExplicitExportFromClause|; request)
   }
 }
 

@@ -1,0 +1,46 @@
+# Merge resolutions for proposal-defer-import-eval (PR #97, f19b6c5) onto ECMA-262.
+
+use-new sec-module-namespace-exotic-objects-getownproperty-p 2
+use-new sec-module-namespace-exotic-objects-get-p-receiver 2
+use-new sec-module-namespace-exotic-objects-delete-p 2
+rebase sec-ContinueDynamicImport 2
+
+ignore sec-static-semantics-modulerequests 5
+place sec-static-semantics-modulerequests 14 after 17
+place sec-static-semantics-modulerequests 15 after 17
+place sec-static-semantics-modulerequests 16 after 17
+place sec-static-semantics-modulerequests 17 after 17
+ignore sec-static-semantics-modulerequests 18
+ignore sec-static-semantics-modulerequests 19
+rebase sec-static-semantics-modulerequests 21
+
+ignore sec-abstract-module-records 2
+rebase-take sec-abstract-module-records 4
+
+ignore sec-LoadRequestedModules 1
+ignore sec-InnerModuleLoading 1
+place sec-InnerModuleLoading 2 after 2
+ignore sec-moduledeclarationlinking 1
+ignore sec-InnerModuleLinking 1
+place sec-InnerModuleLinking 2 after 2
+
+use-new sec-innermoduleevaluation 2
+
+ignore sec-example-cyclic-module-record-graphs 4
+ignore sec-example-cyclic-module-record-graphs 23
+ignore sec-example-cyclic-module-record-graphs 35
+ignore sec-example-cyclic-module-record-graphs 39
+
+rebase sec-source-text-module-record-initialize-environment 2
+rebase sec-resolveexport 2
+
+ignore sec-imports 2
+
+ignore sec-static-semantics-importentries 5
+ignore sec-static-semantics-importentries 9
+place sec-static-semantics-importentries 10 after 9
+place sec-static-semantics-importentries 11 after 9
+
+ignore sec-performpromiseall 0
+
+rename ModuleRequestsEqual ModuleRequestsKeyEqual

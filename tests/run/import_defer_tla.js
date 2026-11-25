@@ -1,10 +1,7 @@
 // args: --bundle
-// expect: throw: SyntaxError
-// ECMA-262 as it stands has no `import defer` and no `import.defer()`: this is a SyntaxError.
-// With proposal-defer-import-eval applied (branch proposal-defer-import-eval; the debugger's build
-// "Proposal: import defer") it completes normally and prints:
-//   before access: b, e, d, a
-//   after access: b, e, d, a, f, c
+// expect: normal: undefined
+// print: before access: b, e, d, a
+// print: after access: b, e, d, a, f, c
 // proposal-defer-import-eval, the README's graph: c is deferred, but its dependency d has top-level await, so d and
 // its dependency e evaluate with the graph (InnerModuleEvaluation, GatherAsynchronousTransitiveDependencies); f and
 // c wait for the first read of c's namespace.

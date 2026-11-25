@@ -308,6 +308,113 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   1. If _supported_ does not contain _attr_.[[Key]], return *false*.
 @@end
 
+@@patch alg @sec-BuildEvaluationList root:0..1
+@@spectec
+|   for_each request : #"ModuleRequest Record" in moduleRequests {
+|     if request[[Phase]] is val {~evaluation~} or onDeferredNamespace is val {~gather-async-deps~} {
+|       let requiredModule = @sec-GetImportedModule(referrer, request)
+|       if request[[Phase]] is val {~defer~} {
+|         note "The names requested while gathering the asynchronous dependencies of a deferred module are recorded in a copy of _previouslyImportedNames_, because the modules re-exporting them are not being scheduled for evaluation: a later request with the ~evaluation~ phase for the same names must still add them to _evaluationList_."
+|         perform @sec-ListAppendUnique(evaluationList, @sec-GatherAsynchronousTransitiveDependencies(requiredModule, [], @sec-CopyPreviouslyImportedNames(previouslyImportedNames)))
+|       }
+|       else_if evaluationList fails $Contains(?requiredModule) {
+|         perform $Append(?requiredModule, ?evaluationList)
+|       }
+|       if requiredModule is ty {#"Cyclic Module Record"} {
+|         if previouslyImportedNames sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0) {
+|           perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: requiredModule, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), ?previouslyImportedNames)
+|         }
+|         if onDeferredNamespace is val {~gather-async-deps~} and (request[[ImportedNames]][[Namespace]] is val {~all~} or request[[ImportedNames]][[Namespace]] fails $IsEmpty()) {
+|           let namespaceOptionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(requiredModule, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: request[[ImportedNames]][[Namespace]] }), previouslyImportedNames)
+|           let seen = $ListNew()
+|           let previouslyImportedNamesCopy = @sec-CopyPreviouslyImportedNames(previouslyImportedNames)
+|           perform @sec-ListAppendUnique(evaluationList, @sec-GatherAsynchronousTransitiveDependenciesForRequests(requiredModule, namespaceOptionalIndirectRequests, seen, previouslyImportedNamesCopy))
+|         }
+|         let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(requiredModule, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: request[[ImportedNames]][[Direct]], [[Namespace]]: [] }), previouslyImportedNames)
+|         perform @sec-BuildEvaluationList(evaluationList, requiredModule, optionalIndirectRequests, previouslyImportedNames, onDeferredNamespace)
+|       }
+|     }
+|   }
+@@html
+| 1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+|   1. If _request_.[[Phase]] is ~evaluation~ or _onDeferredNamespace_ is ~gather-async-deps~, then
+|     1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
+|     1. If _request_.[[Phase]] is ~defer~, then
+|       1. NOTE: The names requested while gathering the asynchronous dependencies of a deferred module are recorded in a copy of _previouslyImportedNames_, because the modules re-exporting them are not being scheduled for evaluation: a later request with the ~evaluation~ phase for the same names must still add them to _evaluationList_.
+|       1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependencies(_requiredModule_, « », CopyPreviouslyImportedNames(_previouslyImportedNames_))).
+|     1. Else if _evaluationList_ does not contain _requiredModule_, then
+|       1. Append _requiredModule_ to _evaluationList_.
+|     1. If _requiredModule_ is a Cyclic Module Record, then
+|       1. If _previouslyImportedNames_ does not contain a ModuleImportedNames Record _r_ such that _r_.[[Module]] is _requiredModule_, then
+|         1. Append a new ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+|       1. [id="step-buildevaluationlist-namespace-importednames"] If _onDeferredNamespace_ is ~gather-async-deps~ and (_request_.[[ImportedNames]].[[Namespace]] is ~all~ or _request_.[[ImportedNames]].[[Namespace]] is not empty), then
+|         1. Let _namespaceOptionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: _request_.[[ImportedNames]].[[Namespace]] }, _previouslyImportedNames_).
+|         1. Let _seen_ be a new empty List.
+|         1. Let _previouslyImportedNamesCopy_ be CopyPreviouslyImportedNames(_previouslyImportedNames_).
+|         1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceOptionalIndirectRequests_, _seen_, _previouslyImportedNamesCopy_)).
+|       1. [id="step-buildevaluationlist-direct-importednames"] Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, a new ImportedNames Record { [[Direct]]: _request_.[[ImportedNames]].[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
+|       1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_, _onDeferredNamespace_).
+@@end
+
+@@patch alg @sec-BuildLinkingList root:0..1
+@@spectec
+|   for_each request : #"ModuleRequest Record" in moduleRequests {
+|     let requiredModule = @sec-GetImportedModule(referrer, request)
+|     if linkingList fails $Contains(?requiredModule) {
+|       perform $Append(?requiredModule, ?linkingList)
+|       if requiredModule is ty {#"Cyclic Module Record"} {
+|         assert previouslyImportedNames sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0)
+|         perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: requiredModule, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), ?previouslyImportedNames)
+|       }
+|     }
+|     if requiredModule is ty {#"Cyclic Module Record"} {
+|       let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(requiredModule, request[[ImportedNames]], previouslyImportedNames)
+|       perform @sec-BuildLinkingList(linkingList, requiredModule, optionalIndirectRequests, previouslyImportedNames)
+|     }
+|   }
+@@html
+| 1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+|   1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
+|   1. If _linkingList_ does not contain _requiredModule_, then
+|     1. Append _requiredModule_ to _linkingList_.
+|     1. If _requiredModule_ is a Cyclic Module Record, then
+|       1. Assert: _previouslyImportedNames_ does not contain a ModuleImportedNames Record _r_ such that _r_.[[Module]] is _requiredModule_.
+|       1. Append a new ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+|   1. If _requiredModule_ is a Cyclic Module Record, then
+|     1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
+|     1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
+@@end
+
+@@patch alg @sec-ContinueDynamicImport cl1/7:else:1..2
+@@spectec
+|     for_each dep : #"Module Record" in evaluationList {
+|       perform $Append(dep.Evaluate(), ?evaluationPromises)
+|     }
+@@html
+|     1. For each Module Record _dep_ of _evaluationList_, do
+|       1. Append _dep_.Evaluate() to _evaluationPromises_.
+@@end
+
+@@patch alg @sec-ContinueDynamicImport cl1:2..3
+@@spectec
+|   if importedNames is ty {list<String>} {
+|     for_each name : String in importedNames {
+|       let resolvable = @sec-completion-ao(@sec-ensureresolvablebinding(module, name, ~disallow-ambiguous~))
+|       if resolvable is ty {#"abrupt completion"} {
+|         perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[ReferenceError]])])
+|         return @sec-normalcompletion(undefined)
+|       }
+|     }
+|   }
+@@html
+|   1. If _importedNames_ is a List of Strings, then
+|     1. For each String _name_ of _importedNames_, do
+|       1. Let _resolvable_ be Completion(EnsureResolvableBinding(_module_, _name_, ~disallow-ambiguous~)).
+|       1. If _resolvable_ is an abrupt completion, then
+|         1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *ReferenceError* object »).
+|         1. Return NormalCompletion(*undefined*).
+@@end
+
 @@patch alg @sec-ContinueDynamicImport cl2:1..2
 @@spectec
 |   perform ! @sec-call(promiseCapability[[Resolve]], undefined, [namespace])
@@ -315,11 +422,112 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Perform ! <emu-meta effects="user-code">Call(_promiseCapability_.[[Resolve]], *undefined*, « _namespace_ »)</emu-meta>.
 @@end
 
-@@patch alg @sec-EvaluateModuleSync root:2..3
+@@patch alg @sec-CopyPreviouslyImportedNames root:1..2
 @@spectec
-|   assert promise[[PromiseState]] is val {~fulfilled~; ~rejected~}
+|   for_each r : #"ModuleImportedNames Record" in previouslyImportedNames {
+|     let names = r[[ImportedNames]]
+|     if_else names[[Direct]] is val {~all~} { let direct = ~all~ } else { let direct = $Copy(@ph-the-list(names[[Direct]])) }
+|     if_else names[[Namespace]] is val {~all~} { let namespace = ~all~ } else { let namespace = $Copy(@ph-the-list(names[[Namespace]])) }
+|     perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: r[[Module]], [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: direct, [[Namespace]]: namespace }) }), ?copy)
+|   }
 @@html
-| 1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
+| 1. For each ModuleImportedNames Record _r_ of _previouslyImportedNames_, do
+|   1. Let _names_ be _r_.[[ImportedNames]].
+|   1. If _names_.[[Direct]] is ~all~, let _direct_ be ~all~; else let _direct_ be a copy of the List _names_.[[Direct]].
+|   1. If _names_.[[Namespace]] is ~all~, let _namespace_ be ~all~; else let _namespace_ be a copy of the List _names_.[[Namespace]].
+|   1. Append a new ModuleImportedNames Record { [[Module]]: _r_.[[Module]], [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _direct_, [[Namespace]]: _namespace_ } } to _copy_.
+@@end
+
+@@patch alg @sec-EnsureDeferredExportEvaluated root:3..4
+@@spectec
+|   for_each request : #"OptionalModuleRequest Record" in optionalRequests {
+|     if request[[Phase]] is val {~evaluation~} {
+|       let requestedModule = @sec-GetImportedModule(module, request)
+|       if request[[IsStarExport]] is val {true} {
+|         if requestedModule is ty {#"Cyclic Module Record"} -> perform ? @sec-EnsureDeferredExportEvaluated(requestedModule, exportName, seen)
+|       }
+|       else {
+|         perform ? @sec-EvaluateModuleSync(requestedModule, request[[ImportedNames]])
+|       }
+|     }
+|   }
+@@html
+| 1. For each OptionalModuleRequest Record _request_ of _optionalRequests_, do
+|   1. If _request_.[[Phase]] is ~evaluation~, then
+|     1. Let _requestedModule_ be GetImportedModule(_module_, _request_).
+|     1. If _request_.[[IsStarExport]] is *true*, then
+|       1. If _requestedModule_ is a Cyclic Module Record, perform ? EnsureDeferredExportEvaluated(_requestedModule_, _exportName_, _seen_).
+|     1. Else,
+|       1. Perform ? EvaluateModuleSync(_requestedModule_, _request_.[[ImportedNames]]).
+@@end
+
+@@patch alg @sec-EvaluateModuleSync root/4:then:0..2
+@@spectec
+|     let previouslyImportedNames = [@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: module, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) })]
+|     let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(module, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: importedNames[[Direct]], [[Namespace]]: [] }), previouslyImportedNames)
+@@html
+|   1. Let _previouslyImportedNames_ be « a new ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } ».
+|   1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, a new ImportedNames Record { [[Direct]]: _importedNames_.[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
+@@end
+
+@@patch alg @sec-EvaluateModuleSync root:0..1
+@@spectec
+|   if importedNames fails $Present() -> set var importedNames = @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] })
+@@html
+| 1. If _importedNames_ is not present, set _importedNames_ to a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }.
+@@end
+
+@@patch alg @sec-EvaluateModuleSync root:5..6
+@@spectec
+|   for_each moduleToEvaluate : #"Module Record" in evaluationList {
+|     let promise = moduleToEvaluate.Evaluate()
+|     assert promise[[PromiseState]] is val {~fulfilled~; ~rejected~}
+|     if promise[[PromiseState]] is val {~rejected~} {
+|       if promise[[PromiseIsHandled]] is val {false} -> perform @sec-host-promise-rejection-tracker(promise, "handle")
+|       set field promise[[PromiseIsHandled]] = true
+|       throw promise[[PromiseResult]]
+|     }
+|   }
+@@html
+| 1. For each Module Record _moduleToEvaluate_ of _evaluationList_, do
+|   1. Let _promise_ be _moduleToEvaluate_.Evaluate().
+|   1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
+|   1. If _promise_.[[PromiseState]] is ~rejected~, then
+|     1. If _promise_.[[PromiseIsHandled]] is *false*, perform HostPromiseRejectionTracker(_promise_, *"handle"*).
+|     1. Set _promise_.[[PromiseIsHandled]] to *true*.
+|     1. Throw _promise_.[[PromiseResult]].
+@@end
+
+@@patch alg @sec-ExcludeImportedNames root:2..3
+@@spectec
+|   assert a is ty {list<String>} and b is ty {list<String>}
+@@html
+| 1. Assert: _a_ is a List of Strings and _b_ is a List of Strings.
+@@end
+
+@@patch alg @sec-ExcludeImportedNames root:4..5
+@@spectec
+|   for_each e : String in a {
+|     if b fails $Contains(?e) -> perform $Append(?e, ?result)
+|   }
+@@html
+| 1. For each String _e_ of _a_, do
+|   1. If _b_ does not contain _e_, append _e_ to _result_.
+@@end
+
+@@patch alg @sec-ExportFromDeclarationModuleRequest root:3..4
+@@spectec
+| if withClause sat $Present() -> let attrs = sdo WithClauseToAttributes(withClause)
+|   else -> let attrs = $ListNew()
+@@html
+| 1. If _withClause_ is present, let _attrs_ be WithClauseToAttributes of _withClause_.
+@@end
+
+@@patch alg @sec-ExportFromDeclarationModuleRequest root:5..6
+@@spectec
+|   return record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: phase, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) }
+@@html
+| 1. Return the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ } }.
 @@end
 
 @@patch alg @sec-FinishLoadingImportedModule root/0:then:0..2
@@ -333,20 +541,122 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       perform $Append(record #"LoadedModuleRequest Record" { [[Specifier]]: moduleRequest[[Specifier]], [[Attributes]]: moduleRequest[[Attributes]], [[Module]]: result[[Value]] }, referrer[[LoadedModules]])
 |     }
 @@html
-|   1. If _referrer_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _moduleRequest_) is *true*, then
+|   1. If _referrer_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsKeyEqual(_record_, _moduleRequest_) is *true*, then
 |     1. Assert: _record_.[[Module]] and _result_.[[Value]] are the same Module Record.
+@@end
+
+@@patch alg @sec-GatherAsynchronousTransitiveDependenciesForRequests root:1..2
+@@spectec
+|   for_each request : #"ModuleRequest Record" in moduleRequests {
+|     let requiredModule = @sec-GetImportedModule(referrer, request)
+|     perform @sec-ListAppendUnique(result, @sec-GatherAsynchronousTransitiveDependencies(requiredModule, seen, previouslyImportedNames))
+|     if requiredModule is ty {#"Cyclic Module Record"} {
+|       if previouslyImportedNames sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0) {
+|         perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: requiredModule, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), ?previouslyImportedNames)
+|       }
+|       let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(requiredModule, request[[ImportedNames]], previouslyImportedNames)
+|       perform @sec-ListAppendUnique(result, @sec-GatherAsynchronousTransitiveDependenciesForRequests(requiredModule, optionalIndirectRequests, seen, previouslyImportedNames))
+|     }
+|   }
+@@html
+| 1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+|   1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
+|   1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_, _previouslyImportedNames_)).
+|   1. If _requiredModule_ is a Cyclic Module Record, then
+|     1. If _previouslyImportedNames_ does not contain a ModuleImportedNames Record _r_ such that _r_.[[Module]] is _requiredModule_, then
+|       1. Append a new ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+|     1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
+|     1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
 @@end
 
 @@patch alg @sec-GetImportedModule root:0..3
 @@spectec
 |   let records = $ListNew()
 |   for_each r : #"LoadedModuleRequest Record" in referrer[[LoadedModules]] {
-|     if @sec-ModuleRequestsEqual(r, request) is val {true} -> perform $Append(?r, ?records)
+|     if @sec-ModuleRequestsKeyEqual(r, request) is val {true} -> perform $Append(?r, ?records)
 |   }
 |   assert $ListLen(?records) is val {1}
 @@html
-| 1. [declared="r"] Let _records_ be a List consisting of each LoadedModuleRequest Record _r_ of _referrer_.[[LoadedModules]] such that ModuleRequestsEqual(_r_, _request_) is *true*.
+| 1. [declared="r"] Let _records_ be a List consisting of each LoadedModuleRequest Record _r_ of _referrer_.[[LoadedModules]] such that ModuleRequestsKeyEqual(_r_, _request_) is *true*.
 | 1. Assert: _records_ has exactly one element, since LoadRequestedModules has completed successfully on _referrer_ prior to invoking this abstract operation.
+@@end
+
+@@patch alg @sec-GetNewOptionalIndirectExportsModuleRequests root:0..2
+@@spectec
+|   assert previouslyImportedNames sat @ph-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0)
+|   let previous = @ph-elem-whose-tn(data sort #"ModuleImportedNames Record", ?previouslyImportedNames, [[Module]], data choice 0, ?module)
+@@html
+| 1. Assert: _previouslyImportedNames_ contains a ModuleImportedNames Record _r_ such that _r_.[[Module]] is _module_.
+| 1. Let _previous_ be the ModuleImportedNames Record in _previouslyImportedNames_ whose [[Module]] field is _module_.
+@@end
+
+@@patch alg @sec-GetOptionalIndirectExportsModuleRequests root:1..2
+@@spectec
+|   for_each optionalEntry : #"ExportEntry Record" in module[[OptionalIndirectExportEntries]] {
+|     let processEntry = true
+|     let isStarExport = false
+|     if optionalEntry[[ImportName]] is val {~all-but-default~} {
+|       let newNamespaceImportedNames = $ListNew()
+|       let newDirectImportedNames = @sec-ExcludeImportedNames(@sec-ExcludeImportedNames(importedNames, ["default"]), @sec-getownexportednames(module))
+|       if newDirectImportedNames sat $IsEmpty() -> set var processEntry = false
+|       set var isStarExport = true
+|       note "_optionalEntry_ is for an `export * from \"mod\"` declaration. While it is not by itself an optional indirect export, it is treated as one because it may re-export the optional indirect exports of `\"mod\"`. The resulting OptionalModuleRequest Record has [[IsStarExport]] set to *true* so that the evaluation logic can handle it appropriately."
+|     }
+|     else_if importedNames is val {~all~} or importedNames sat $Contains(optionalEntry[[ExportName]]) {
+|       let newDirectImportedNames = $ListNew()
+|       let newNamespaceImportedNames = ~all~
+|       assert optionalEntry[[ImportName]] is ty {String} or optionalEntry[[ImportName]] is val {~filtered-namespace~} or optionalEntry[[ImportName]] is val {~namespace~}
+|       if optionalEntry[[ImportName]] is ty {String} {
+|         set var newDirectImportedNames = [optionalEntry[[ImportName]]]
+|         set var newNamespaceImportedNames = $ListNew()
+|       }
+|       if optionalEntry[[ImportName]] is val {~filtered-namespace~} -> set var newNamespaceImportedNames = optionalEntry[[NamespaceNamesFilter]]
+|     }
+|     else {
+|       set var processEntry = false
+|     }
+|     if processEntry is val {true} {
+|       let nextRequest = optionalEntry[[ModuleRequest]]
+|       let values = @ph-contains-such-binds(data choice 1, data sort #"OptionalModuleRequest Record", ?existingRequest, closure 0, requests)
+|       if $ListLen(values) == 1 or $ListLen(values) != 0 and expr $""() {
+|         let existingRequest = values[0]
+|         set field existingRequest[[ImportedNames]][[Direct]] = @sec-MergeImportedNames(existingRequest[[ImportedNames]][[Direct]], newDirectImportedNames)
+|         set field existingRequest[[ImportedNames]][[Namespace]] = @sec-MergeImportedNames(existingRequest[[ImportedNames]][[Namespace]], newNamespaceImportedNames)
+|       }
+|       else {
+|         let newRequest = record #"OptionalModuleRequest Record" { [[Specifier]]: nextRequest[[Specifier]], [[Attributes]]: nextRequest[[Attributes]], [[Phase]]: nextRequest[[Phase]], [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: newDirectImportedNames, [[Namespace]]: newNamespaceImportedNames }), [[IsStarExport]]: isStarExport }
+|         perform $Append(?newRequest, ?requests)
+|       }
+|     }
+|   }
+@@html
+| 1. For each ExportEntry Record _optionalEntry_ of _module_.[[OptionalIndirectExportEntries]], do
+|   1. Let _processEntry_ be *true*.
+|   1. Let _isStarExport_ be *false*.
+|   1. If _optionalEntry_.[[ImportName]] is ~all-but-default~, then
+|     1. Let _newNamespaceImportedNames_ be a new empty List.
+|     1. Let _newDirectImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_importedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
+|     1. If _newDirectImportedNames_ is an empty List, set _processEntry_ to *false*.
+|     1. Set _isStarExport_ to *true*.
+|     1. NOTE: _optionalEntry_ is for an `export * from "mod"` declaration. While it is not by itself an optional indirect export, it is treated as one because it may re-export the optional indirect exports of `"mod"`. The resulting OptionalModuleRequest Record has [[IsStarExport]] set to *true* so that the evaluation logic can handle it appropriately.
+|   1. Else if _importedNames_ is ~all~ or _importedNames_ contains _optionalEntry_.[[ExportName]], then
+|     1. Let _newDirectImportedNames_ be a new empty List.
+|     1. Let _newNamespaceImportedNames_ be ~all~.
+|     1. Assert: _optionalEntry_.[[ImportName]] is a String or _optionalEntry_.[[ImportName]] is ~filtered-namespace~ or _optionalEntry_.[[ImportName]] is ~namespace~.
+|     1. If _optionalEntry_.[[ImportName]] is a String, then
+|       1. Set _newDirectImportedNames_ to « _optionalEntry_.[[ImportName]] ».
+|       1. Set _newNamespaceImportedNames_ to a new empty List.
+|     1. If _optionalEntry_.[[ImportName]] is ~filtered-namespace~, set _newNamespaceImportedNames_ to _optionalEntry_.[[NamespaceNamesFilter]].
+|   1. Else,
+|     1. Set _processEntry_ to *false*.
+|   1. If _processEntry_ is *true*, then
+|     1. Let _nextRequest_ be _optionalEntry_.[[ModuleRequest]].
+|     1. If _requests_ contains an OptionalModuleRequest Record _existingRequest_ such that ModuleRequestsKeyEqual(_existingRequest_, _nextRequest_) is *true*, _existingRequest_.[[Phase]] is _nextRequest_.[[Phase]], and _existingRequest_.[[IsStarExport]] is _isStarExport_, then
+|       1. Set _existingRequest_.[[ImportedNames]].[[Direct]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Direct]], _newDirectImportedNames_).
+|       1. Set _existingRequest_.[[ImportedNames]].[[Namespace]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Namespace]], _newNamespaceImportedNames_).
+|     1. Else,
+|       1. Let _newRequest_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _newDirectImportedNames_, [[Namespace]]: _newNamespaceImportedNames_ }, [[IsStarExport]]: _isStarExport_ }.
+|       1. Append _newRequest_ to _requests_.
 @@end
 
 @@patch alg @sec-IncrementModuleAsyncEvaluationCount root:0..1
@@ -356,17 +666,16 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Let _agentRecord_ be the Agent Record of the surrounding agent.
 @@end
 
-@@patch alg @sec-InnerModuleLinking root/12:then/1:do:1..2
+@@patch alg @sec-InnerModuleLinking root/16:then/1:do:1..2
 @@spectec
 |       perform $RemoveLast(?stack)
 @@html
 |     1. Remove the last element of _stack_.
 @@end
 
-@@patch alg @sec-InnerModuleLinking root:8..9
+@@patch alg @sec-InnerModuleLinking root:11..12
 @@spectec
-|   for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
-|     let requiredModule = @sec-GetImportedModule(module, request)
+|   for_each requiredModule : #"Module Record" in linkingList {
 |     set var index = ? @sec-InnerModuleLinking(requiredModule, stack, index)
 |     if requiredModule is ty {#"Cyclic Module Record"} {
 |       assert requiredModule[[Status]] is val {~linking~; ~linked~; ~evaluating-async~; ~evaluated~}
@@ -377,8 +686,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     }
 |   }
 @@html
-| 1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
-|   1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
+| 1. For each Module Record _requiredModule_ of _linkingList_, do
 |   1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
 |   1. If _requiredModule_ is a Cyclic Module Record, then
 |     1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
@@ -387,32 +695,32 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
 @@end
 
-@@patch alg @sec-InnerModuleLoading root/4:then:1..2
+@@patch alg @sec-InnerModuleLoading root/1:then:1..3
 @@spectec
-|     for_each loaded : #"Cyclic Module Record" in state[[Visited]] {
-|       if loaded[[Status]] is val {~new~} -> set field loaded[[Status]] = ~unlinked~
+|     if state[[Visited]] sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0) {
+|       if module[[Status]] is val {~new~} -> set var requestsToLoad = module[[RequestedModules]]
+|       perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: module, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), state[[Visited]])
 |     }
+|     let optionalIndirectRequests = @sec-GetNewOptionalIndirectExportsModuleRequests(module, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: importedNames, [[Namespace]]: [] }), state[[Visited]])
 @@html
-|   1. For each Cyclic Module Record _loaded_ of _state_.[[Visited]], do
-|     1. If _loaded_.[[Status]] is ~new~, set _loaded_.[[Status]] to ~unlinked~.
+|   1. If _state_.[[Visited]] does not contain a ModuleImportedNames Record _r_ such that _r_.[[Module]] is _module_, then
+|     1. If _module_.[[Status]] is ~new~, set _requestsToLoad_ to _module_.[[RequestedModules]].
+|     1. Append a new ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _state_.[[Visited]].
+|   1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, a new ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _state_.[[Visited]]).
 @@end
 
-@@patch alg @sec-InnerModuleLoading root:1..2
+@@patch alg @sec-InnerModuleLoading root/1:then:6..7
 @@spectec
-|   if module is ty {#"Cyclic Module Record"} and module[[Status]] is val {~new~} and state[[Visited]] fails $Contains(?module) {
-|     perform $Append(?module, state[[Visited]])
-|     let requestedModulesCount = $ListLen(module[[RequestedModules]])
-|     set field state[[PendingModulesCount]] = state[[PendingModulesCount]] + requestedModulesCount
-|     for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
+|     for_each request : #"ModuleRequest Record" in requestsToLoad {
 |       if @sec-AllImportAttributesSupported(request[[Attributes]]) is val {false} {
 |         let error = @sec-throwcompletion(@ph-new-error(err [[SyntaxError]]))
-|         perform @sec-ContinueModuleLoading(state, error)
+|         perform @sec-ContinueModuleLoading(state, error, @sec-AllImportedNames(request[[ImportedNames]]))
 |       }
 |       else {
-|         let values = @ph-contains-such-binds(data choice 0, data sort #"LoadedModuleRequest Record", ?#"record", closure 0, module[[LoadedModules]])
+|         let values = @ph-contains-such-binds(data choice 0, data sort #"LoadedModuleRequest Record", ?#"record", closure 1, module[[LoadedModules]])
 |         if $ListLen(values) == 1 or $ListLen(values) != 0 and expr $""() {
 |           let #"record" = values[0]
-|           perform @sec-InnerModuleLoading(state, #"record"[[Module]])
+|           perform @sec-InnerModuleLoading(state, #"record"[[Module]], @sec-AllImportedNames(request[[ImportedNames]]))
 |         }
 |         else {
 |           perform @sec-HostLoadImportedModule(module, request, state[[HostDefined]], state)
@@ -421,32 +729,67 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       }
 |       if state[[IsLoading]] is val {false} -> return ~unused~
 |     }
-|   }
 @@html
-| 1. If _module_ is a Cyclic Module Record, _module_.[[Status]] is ~new~, and _state_.[[Visited]] does not contain _module_, then
-|   1. Append _module_ to _state_.[[Visited]].
-|   1. Let _requestedModulesCount_ be the number of elements in _module_.[[RequestedModules]].
-|   1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
-|   1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
+|   1. For each ModuleRequest Record _request_ of _requestsToLoad_, do
 |     1. If AllImportAttributesSupported(_request_.[[Attributes]]) is *false*, then
 |       1. Let _error_ be ThrowCompletion(a newly created *SyntaxError* object).
-|       1. Perform ContinueModuleLoading(_state_, _error_).
-|     1. Else if _module_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _request_) is *true*, then
-|       1. Perform InnerModuleLoading(_state_, _record_.[[Module]]).
+|       1. Perform ContinueModuleLoading(_state_, _error_, AllImportedNames(_request_.[[ImportedNames]])).
+|     1. Else if _module_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsKeyEqual(_record_, _request_) is *true*, then
+|       1. Perform InnerModuleLoading(_state_, _record_.[[Module]], AllImportedNames(_request_.[[ImportedNames]])).
 |     1. Else,
 |       1. Perform HostLoadImportedModule(_module_, _request_, _state_.[[HostDefined]], _state_).
 |       1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
 |     1. If _state_.[[IsLoading]] is *false*, return ~unused~.
 @@end
 
-@@patch alg @sec-ModuleRequestsEqual root:6..7
+@@patch alg @sec-InnerModuleLoading root/4:then:1..2
 @@spectec
-|   for_each xAttr : #"ImportAttribute Record" in xAttrs {
-|     if yAttrs sat @ph-not-contains-such(data choice 1, data sort #"ImportAttribute Record", ?yAttr, closure 0) -> return false
+|     for_each loaded : #"ModuleImportedNames Record" in state[[Visited]] {
+|       if loaded[[Module]][[Status]] is val {~new~} -> set field loaded[[Module]][[Status]] = ~unlinked~
+|     }
+@@html
+|   1. For each ModuleImportedNames Record _loaded_ of _state_.[[Visited]], do
+|     1. If _loaded_.[[Module]].[[Status]] is ~new~, set _loaded_.[[Module]].[[Status]] to ~unlinked~.
+@@end
+
+@@patch alg @sec-ListAppendUnique root:0..1
+@@spectec
+|   for_each r : Record in list2 {
+|     if list1 fails $Contains(?r) -> perform $Append(?r, ?list1)
 |   }
 @@html
-| 1. For each ImportAttribute Record _xAttr_ of _xAttrs_, do
-|   1. If _yAttrs_ does not contain an ImportAttribute Record _yAttr_ such that _xAttr_.[[Key]] is _yAttr_.[[Key]] and _xAttr_.[[Value]] is _yAttr_.[[Value]], return *false*.
+| 1. For each Record _r_ of _list2_, do
+|   1. If _list1_ does not contain _r_, append _r_ to _list1_.
+@@end
+
+@@patch alg @sec-MergeImportedNames root:1..2
+@@spectec
+|   assert a is ty {list<String>} and b is ty {list<String>}
+@@html
+| 1. Assert: _a_ is a List of Strings and _b_ is a List of Strings.
+@@end
+
+@@patch alg @sec-MergeImportedNames root:3..4
+@@spectec
+|   for_each name : String in b {
+|     if merged fails $Contains(?name) {
+|       perform $Append(?name, ?merged)
+|     }
+|   }
+@@html
+| 1. For each String _name_ of _b_, do
+|   1. If _merged_ does not contain _name_, then
+|     1. Append _name_ to _merged_.
+@@end
+
+@@patch alg @sec-ModuleRequestsKeyEqual root:6..7
+@@spectec
+|   for_each l : #"ImportAttribute Record" in leftAttrs {
+|     if rightAttrs sat @ph-not-contains-such(data choice 1, data sort #"ImportAttribute Record", ?r, closure 0) -> return false
+|   }
+@@html
+| 1. For each ImportAttribute Record _l_ of _leftAttrs_, do
+|   1. If _rightAttrs_ does not contain an ImportAttribute Record _r_ such that _l_.[[Key]] is _r_.[[Key]] and _l_.[[Value]] is _r_.[[Value]], return *false*.
 @@end
 
 @@patch alg @sec-ParseJSON root:0..1
@@ -480,6 +823,117 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   }
 @@html
 | 1. [id="step-json-parse-assert-type"] Assert: _result_ is either a String, a Number, a Boolean, an Object that is defined by either an |ArrayLiteral| or an |ObjectLiteral|, or *null*.
+@@end
+
+@@patch alg @sec-ReadyForSyncExecution root:2..4
+@@spectec
+|   if seen sat @ph-not-contains-such(data choice 0, data sort #"ModuleImportedNames Record", ?r, closure 0) {
+|     perform $Append(@ph-new-record(record #"ModuleImportedNames Record" { [[Module]]: module, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) }), ?seen)
+|     if @sec-IsModuleSCCEvaluated(module) is val {false} {
+|       if module[[Status]] is val {~evaluating~; ~evaluating-async~} -> return false
+|       assert module[[Status]] is val {~linked~; ~evaluated~}
+|       if module[[HasTLA]] is val {true} -> return false
+|       if_else onDeferredNamespace is val {~gather-async-deps~} { let seenForAsyncDeps = seen } else { let seenForAsyncDeps = $ListNew() }
+|       for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
+|         let requiredModule = @sec-GetImportedModule(module, request)
+|         if @sec-ReadyForSyncExecution(requiredModule, @sec-AllImportedNames(request[[ImportedNames]]), ~gather-async-deps~, seenForAsyncDeps) is val {false} {
+|           return false
+|         }
+|       }
+|     }
+|   }
+|   for_each request : #"ModuleRequest Record" in @sec-GetNewOptionalIndirectExportsModuleRequests(module, @ph-new-record(record #"ImportedNames Record" { [[Direct]]: importedNames, [[Namespace]]: [] }), seen) {
+|     if request[[Phase]] is val {~evaluation~} {
+|       let requiredModule = @sec-GetImportedModule(module, request)
+|       if @sec-ReadyForSyncExecution(requiredModule, @sec-AllImportedNames(request[[ImportedNames]]), onDeferredNamespace, seen) is val {false} -> return false
+|     }
+|     else {
+|       assert request[[Phase]] is val {~defer~}
+|       if onDeferredNamespace is val {~gather-async-deps~} {
+|         if @sec-GatherAsynchronousTransitiveDependenciesForRequests(module, [request], [], @sec-CopyPreviouslyImportedNames(seen)) fails $IsEmpty() -> return false
+|       }
+|       else {
+|         if @sec-GatherAsynchronousTransitiveDependencies(@sec-GetImportedModule(module, request)) fails $IsEmpty() -> return false
+|       }
+|     }
+|   }
+@@html
+| 1. If _seen_ does not contain a ModuleImportedNames Record _r_ such that _r_.[[Module]] is _module_, then
+|   1. Append a new ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _seen_.
+|   1. If IsModuleSCCEvaluated(_module_) is *false*, then
+|     1. If _module_.[[Status]] is either ~evaluating~ or ~evaluating-async~, return *false*.
+|     1. Assert: _module_.[[Status]] is either ~linked~ or ~evaluated~.
+|     1. If _module_.[[HasTLA]] is *true*, return *false*.
+|     1. If _onDeferredNamespace_ is ~gather-async-deps~, let _seenForAsyncDeps_ be _seen_; else let _seenForAsyncDeps_ be a new empty List.
+|     1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
+|       1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
+|       1. If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_.[[ImportedNames]]), ~gather-async-deps~, _seenForAsyncDeps_) is *false*, then
+|         1. Return *false*.
+| 1. For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, a new ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _seen_), do
+|   1. If _request_.[[Phase]] is ~evaluation~, then
+|     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
+|     1. If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_.[[ImportedNames]]), _onDeferredNamespace_, _seen_) is *false*, return *false*.
+|   1. Else,
+|     1. Assert: _request_.[[Phase]] is ~defer~.
+|     1. If _onDeferredNamespace_ is ~gather-async-deps~, then
+|       1. If GatherAsynchronousTransitiveDependenciesForRequests(_module_, « _request_ », « », CopyPreviouslyImportedNames(_seen_)) is not empty, return *false*.
+|     1. Else,
+|       1. If GatherAsynchronousTransitiveDependencies(GetImportedModule(_module_, _request_)) is not empty, return *false*.
+@@end
+
+@@patch alg @sec-ValidateAllRequestedOptionalNamespaceExports root:0..1
+@@spectec
+|   for_each r : #"ModuleImportedNames Record" in previouslyImportedNames {
+|     let names = r[[ImportedNames]]
+|     if names[[Namespace]] is val {~all~} -> perform ? @sec-ValidateOwnNamespaceExports(r[[Module]], ~all~)
+|     perform ? @sec-ValidateRequestedOptionalIndirectExports(r[[Module]], @sec-AllImportedNames(names))
+|   }
+@@html
+| 1. For each ModuleImportedNames Record _r_ of _previouslyImportedNames_, do
+|   1. Let _names_ be _r_.[[ImportedNames]].
+|   1. If _names_.[[Namespace]] is ~all~, perform ? ValidateOwnNamespaceExports(_r_.[[Module]], ~all~).
+|   1. Perform ? ValidateRequestedOptionalIndirectExports(_r_.[[Module]], AllImportedNames(_names_)).
+@@end
+
+@@patch alg @sec-ValidateOwnNamespaceExports root/0:else:0..1
+@@spectec
+|     for_each name : String in names {
+|       perform ? @sec-ensureresolvablebinding(module, name, ~disallow-ambiguous~)
+|     }
+@@html
+|   1. For each String _name_ of _names_, do
+|     1. Perform ? EnsureResolvableBinding(_module_, _name_, ~disallow-ambiguous~).
+@@end
+
+@@patch alg @sec-ValidateOwnNamespaceExports root/0:then:2..3
+@@spectec
+|     for_each name : String in module.GetExportedNames() {
+|       perform ? @sec-ensureresolvablebinding(module, name, ~allow-ambiguous~)
+|     }
+@@html
+|   1. For each String _name_ of _module_.GetExportedNames(), do
+|     1. Perform ? EnsureResolvableBinding(_module_, _name_, ~allow-ambiguous~).
+@@end
+
+@@patch alg @sec-ValidateRequestedOptionalIndirectExports root:1..2
+@@spectec
+|   for_each name : String in importedNames {
+|     for_each request : #"OptionalModuleRequest Record" in module.GetOptionalIndirectExportsModuleRequests([name]) {
+|       if request[[IsStarExport]] is val {false} {
+|         perform ? @sec-ensureresolvablebinding(module, name, ~disallow-ambiguous~)
+|         if request[[ImportedNames]][[Namespace]] is ty {List} {
+|           perform ? @sec-ValidateOwnNamespaceExports(@sec-GetImportedModule(module, request), request[[ImportedNames]][[Namespace]])
+|         }
+|       }
+|     }
+|   }
+@@html
+| 1. For each String _name_ of _importedNames_, do
+|   1. For each OptionalModuleRequest Record _request_ of _module_.GetOptionalIndirectExportsModuleRequests(« _name_ »), do
+|     1. If _request_.[[IsStarExport]] is *false*, then
+|       1. Perform ? EnsureResolvableBinding(_module_, _name_, ~disallow-ambiguous~).
+|       1. If _request_.[[ImportedNames]].[[Namespace]] is a List, then
+|         1. Perform ? ValidateOwnNamespaceExports(GetImportedModule(_module_, _request_), _request_.[[ImportedNames]].[[Namespace]]).
 @@end
 
 @@patch alg @sec-add-entries-from-iterable root/1:do:4..5
@@ -1746,6 +2200,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Return the number of <emu-grammar>Atom :: `(` GroupSpecifier? Disjunction `)`</emu-grammar> Parse Nodes contained within _parseNode_.
 @@end
 
+@@patch alg @sec-create-default-export-synthetic-module root:2..3
+@@spectec
+|   return record #"Synthetic Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[HostDefined]]: undefined, [[ExportNames]]: ["default"], [[EvaluationSteps]]: setDefaultExport }
+@@html
+| 1. Return the Synthetic Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[HostDefined]]: *undefined*, [[ExportNames]]: « *"default"* », [[EvaluationSteps]]: _setDefaultExport_ }.
+@@end
+
 @@patch alg @sec-createbuiltinfunction root:3..4
 @@spectec
 |   let internalSlotsList = $BuiltinFunctionSlots()
@@ -2814,11 +3275,32 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If AllPrivateIdentifiersValid of _body_ with argument _privateIdentifiers_ is *false*, throw a *SyntaxError* exception.
 @@end
 
-@@patch alg @sec-evaluate-import-call root/4:then:0..1
+@@patch alg @sec-evaluate-import-call root/9:then/11:then/5:do:1..2
 @@spectec
-|     let optionsRef = ? sdo Evaluation(optionsExpr)
+|         block {
+|           assert next is ty {#"Completion Record"}
+|           if next is ty {#"abrupt completion"} {
+|             perform ? @sec-call(promiseCapability[[Reject]], undefined, [next[[Value]]])
+|             return promiseCapability[[Promise]]
+|           }
+|           set var next = ! next
+|         }
 @@html
-|   1. Let _optionsRef_ be ? Evaluation of _optionsExpr_.
+|       1. IfAbruptRejectPromise(_next_, _promiseCapability_).
+@@end
+
+@@patch alg @sec-evaluate-import-call root/9:then/11:then:2..3
+@@spectec
+|       block {
+|         assert iteratorRecord is ty {#"Completion Record"}
+|         if iteratorRecord is ty {#"abrupt completion"} {
+|           perform ? @sec-call(promiseCapability[[Reject]], undefined, [iteratorRecord[[Value]]])
+|           return promiseCapability[[Promise]]
+|         }
+|         set var iteratorRecord = ! iteratorRecord
+|       }
+@@html
+|     1. IfAbruptRejectPromise(_iteratorRecord_, _promiseCapability_).
 @@end
 
 @@patch alg @sec-evaluate-import-call root/9:then/3:then:2..3
@@ -2833,6 +3315,20 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       }
 @@html
 |     1. IfAbruptRejectPromise(_entries_, _promiseCapability_).
+@@end
+
+@@patch alg @sec-evaluate-import-call root/9:then:10..11
+@@spectec
+|     block {
+|       assert exports is ty {#"Completion Record"}
+|       if exports is ty {#"abrupt completion"} {
+|         perform ? @sec-call(promiseCapability[[Reject]], undefined, [exports[[Value]]])
+|         return promiseCapability[[Promise]]
+|       }
+|       set var exports = ! exports
+|     }
+@@html
+|   1. IfAbruptRejectPromise(_exports_, _promiseCapability_).
 @@end
 
 @@patch alg @sec-evaluate-import-call root/9:then:2..3
@@ -2866,21 +3362,23 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   1. Sort _attrs_ according to the lexicographic order of their [[Key]] field, treating the value of each such field as a sequence of UTF-16 code unit values. NOTE: This sorting is observable only in that hosts are prohibited from changing behaviour based on the order in which attributes are enumerated.
 @@end
 
-@@patch alg @sec-evaluate-import-call root:11..12
+@@patch alg @sec-evaluate-import-call root:10..11
 @@spectec
-|   let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: specifierString, [[Attributes]]: attrs })
+|   let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: specifierString, [[Attributes]]: attrs, [[Phase]]: phase, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: importedNames }) })
 @@html
-| 1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attrs_ }.
+| 1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: _importedNames_ } }.
 @@end
 
-@@patch alg @sec-evaluate-import-call root:2..3
+@@patch alg @sec-evaluate-import-call root:2..4
 @@spectec
-|   let specifierRef = ? sdo Evaluation(specifierExpr)
+|   let specifier = ? sdo EvaluateImportCallSpecifier(args)
+|   let options = ? sdo EvaluateImportCallOptions(args)
 @@html
-| 1. Let _specifierRef_ be ? Evaluation of _specifierExpr_.
+| 1. Let _specifier_ be ? EvaluateImportCallSpecifier of _args_.
+| 1. Let _options_ be ? EvaluateImportCallOptions of _args_.
 @@end
 
-@@patch alg @sec-evaluate-import-call root:8..9
+@@patch alg @sec-evaluate-import-call root:6..7
 @@spectec
 |   block {
 |     assert specifierString is ty {#"Completion Record"}
@@ -3407,18 +3905,8 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   1. IfAbruptRejectPromise(_result_, _promiseCapability_).
 @@end
 
-@@patch alg @sec-getexportednames root:5..8
+@@patch alg @sec-getexportednames root:5..6
 @@spectec
-|   for_each exportEntry : #"ExportEntry Record" in module[[LocalExportEntries]] {
-|     assert module[[LocalExportEntries]] sat $Contains(?exportEntry)
-|     assert exportEntry[[ExportName]] is not val {null}
-|     perform $Append(exportEntry[[ExportName]], ?exportedNames)
-|   }
-|   for_each exportEntry : #"ExportEntry Record" in module[[IndirectExportEntries]] {
-|     assert module[[IndirectExportEntries]] sat $Contains(?exportEntry)
-|     assert exportEntry[[ExportName]] is not val {null}
-|     perform $Append(exportEntry[[ExportName]], ?exportedNames)
-|   }
 |   for_each exportEntry : #"ExportEntry Record" in module[[StarExportEntries]] {
 |     assert exportEntry[[ModuleRequest]] is not val {null}
 |     let requestedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
@@ -3432,14 +3920,6 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     }
 |   }
 @@html
-| 1. For each ExportEntry Record _exportEntry_ of _module_.[[LocalExportEntries]], do
-|   1. Assert: _module_ provides the direct binding for this export.
-|   1. Assert: _exportEntry_.[[ExportName]] is not *null*.
-|   1. Append _exportEntry_.[[ExportName]] to _exportedNames_.
-| 1. For each ExportEntry Record _exportEntry_ of _module_.[[IndirectExportEntries]], do
-|   1. Assert: _module_ imports a specific binding for this export.
-|   1. Assert: _exportEntry_.[[ExportName]] is not *null*.
-|   1. Append _exportEntry_.[[ExportName]] to _exportedNames_.
 | 1. For each ExportEntry Record _exportEntry_ of _module_.[[StarExportEntries]], do
 |   1. Assert: _exportEntry_.[[ModuleRequest]] is not *null*.
 |   1. Let _requestedModule_ be GetImportedModule(_module_, _exportEntry_.[[ModuleRequest]]).
@@ -3555,13 +4035,37 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Let _agentRecord_ be the Agent Record of the surrounding agent.
 @@end
 
-@@patch alg @sec-getmodulenamespace root:0..1
+@@patch alg @sec-getownexportednames root:1..4
 @@spectec
-|   if module is ty {#"Cyclic Module Record"} {
-|     assert module[[Status]] is neither val {~new~; ~unlinked~}
+|   for_each exportEntry : #"ExportEntry Record" in module[[LocalExportEntries]] {
+|     assert module[[LocalExportEntries]] sat $Contains(?exportEntry)
+|     assert exportEntry[[ExportName]] is not val {null}
+|     perform $Append(exportEntry[[ExportName]], ?exportedNames)
+|   }
+|   for_each exportEntry : #"ExportEntry Record" in module[[IndirectExportEntries]] {
+|     assert module[[IndirectExportEntries]] sat $Contains(?exportEntry)
+|     assert exportEntry[[ExportName]] is not val {null}
+|     perform $Append(exportEntry[[ExportName]], ?exportedNames)
+|   }
+|   for_each exportEntry : #"ExportEntry Record" in module[[OptionalIndirectExportEntries]] {
+|     if exportEntry[[ExportName]] is not val {null} {
+|       assert module[[OptionalIndirectExportEntries]] sat $Contains(?exportEntry)
+|       perform $Append(exportEntry[[ExportName]], ?exportedNames)
+|     }
 |   }
 @@html
-| 1. Assert: If _module_ is a Cyclic Module Record, then _module_.[[Status]] is not ~new~ or ~unlinked~.
+| 1. For each ExportEntry Record _exportEntry_ of _module_.[[LocalExportEntries]], do
+|   1. Assert: _module_ provides the direct binding for this export.
+|   1. Assert: _exportEntry_.[[ExportName]] is not *null*.
+|   1. Append _exportEntry_.[[ExportName]] to _exportedNames_.
+| 1. For each ExportEntry Record _exportEntry_ of _module_.[[IndirectExportEntries]], do
+|   1. Assert: _module_ imports a specific binding for this export.
+|   1. Assert: _exportEntry_.[[ExportName]] is not *null*.
+|   1. Append _exportEntry_.[[ExportName]] to _exportedNames_.
+| 1. For each ExportEntry Record _exportEntry_ of _module_.[[OptionalIndirectExportEntries]], do
+|   1. If _exportEntry_.[[ExportName]] is not *null*, then
+|     1. Assert: _module_ exposes an `export defer` binding for this export.
+|     1. Append _exportEntry_.[[ExportName]] to _exportedNames_.
 @@end
 
 @@patch alg @sec-getownpropertykeys root/3:do:0..1
@@ -4285,21 +4789,21 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   1. Let _data_ be ? <emu-meta suppress-effects="user-code">AllocateArrayBuffer(%ArrayBuffer%, _byteLength_)</emu-meta>.
 @@end
 
-@@patch alg @sec-innermoduleevaluation root/11:else:0..1
+@@patch alg @sec-innermoduleevaluation root/13:else:0..1
 @@spectec
 |     perform ? module.ExecuteModule()
 @@html
 |   1. Perform ? <emu-meta effects="user-code">_module_.ExecuteModule()</emu-meta>.
 @@end
 
-@@patch alg @sec-innermoduleevaluation root/14:then/1:do:1..2
+@@patch alg @sec-innermoduleevaluation root/16:then/1:do:1..2
 @@spectec
 |       perform $RemoveLast(?stack)
 @@html
 |     1. Remove the last element of _stack_.
 @@end
 
-@@patch alg @sec-innermoduleevaluation root/14:then/1:do:3..4
+@@patch alg @sec-innermoduleevaluation root/16:then/1:do:3..4
 @@spectec
 |       assert requiredModule[[AsyncEvaluationOrder]] is ty {integer} or requiredModule[[AsyncEvaluationOrder]] is val {~unset~}
 @@html
@@ -4318,10 +4822,9 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   1. Return ? _module_.[[EvaluationError]].
 @@end
 
-@@patch alg @sec-innermoduleevaluation root:10..11
+@@patch alg @sec-innermoduleevaluation root:12..13
 @@spectec
-|   for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
-|     let requiredModule = @sec-GetImportedModule(module, request)
+|   for_each requiredModule : #"Module Record" in evaluationList {
 |     set var index = ? @sec-innermoduleevaluation(requiredModule, stack, index)
 |     if requiredModule is ty {#"Cyclic Module Record"} {
 |       assert requiredModule[[Status]] is val {~evaluating~; ~evaluating-async~; ~evaluated~}
@@ -4341,8 +4844,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     }
 |   }
 @@html
-| 1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
-|   1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
+| 1. For each Module Record _requiredModule_ of _evaluationList_, do
 |   1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
 |   1. If _requiredModule_ is a Cyclic Module Record, then
 |     1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
@@ -5595,11 +6097,25 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If the binding for _name_ in _envRecord_ is an uninitialized binding, throw a *ReferenceError* exception.
 @@end
 
-@@patch alg @sec-module-namespace-exotic-objects-defineownproperty-p-desc root:4..5
+@@patch alg @sec-module-namespace-exotic-objects-defineownproperty-p-desc root:0..1
+@@spectec
+|   if @sec-IsSymbolLikeNamespaceKey(propertyKey, #"obj") is val {true} -> return ! @sec-ordinarydefineownproperty(#"obj", propertyKey, propertyDesc)
+@@html
+| 1. If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_), return ! OrdinaryDefineOwnProperty(_obj_, _propertyKey_, _propertyDesc_).
+@@end
+
+@@patch alg @sec-module-namespace-exotic-objects-defineownproperty-p-desc root:5..6
 @@spectec
 |   if propertyDesc sat $HasField([[Enumerable]]) and propertyDesc[[Enumerable]] is val {false} -> return false
 @@html
 | 1. If _propertyDesc_ has an [[Enumerable]] field and _propertyDesc_.[[Enumerable]] is *false*, return *false*.
+@@end
+
+@@patch alg @sec-module-namespace-exotic-objects-delete-p root:0..1
+@@spectec
+|   if @sec-IsSymbolLikeNamespaceKey(propertyKey, #"obj") is val {true} -> return ! @sec-ordinarydelete(#"obj", propertyKey)
+@@html
+| 1. If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_), return ! OrdinaryDelete(_obj_, _propertyKey_).
 @@end
 
 @@patch alg @sec-module-namespace-exotic-objects-getownproperty-p root:4..5
@@ -5609,7 +6125,14 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Return PropertyDescriptor { [[Value]]: _value_, [[Writable]]: *true*, [[Enumerable]]: *true*, [[Configurable]]: *false* }.
 @@end
 
-@@patch alg @sec-moduledeclarationlinking root/3:then:0..1
+@@patch alg @sec-module-namespace-exotic-objects-hasproperty-p root:0..1
+@@spectec
+|   if @sec-IsSymbolLikeNamespaceKey(propertyKey, #"obj") is val {true} -> return ! @sec-ordinaryhasproperty(#"obj", propertyKey)
+@@html
+| 1. If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_), return ! OrdinaryHasProperty(_obj_, _propertyKey_).
+@@end
+
+@@patch alg @sec-moduledeclarationlinking root/4:then:0..1
 @@spectec
 |     for_each requiredModule : #"Cyclic Module Record" in stack {
 |       assert requiredModule[[Status]] is val {~linking~}
@@ -5621,21 +6144,33 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Set _requiredModule_.[[Status]] to ~unlinked~.
 @@end
 
-@@patch alg @sec-moduleevaluation root/8:else/2:then:0..1
+@@patch alg @sec-moduledeclarationlinking root:11..12
+@@spectec
+|   for_each requiredModule : #"Module Record" in linkingList {
+|     assert_if requiredModule is ty {#"Cyclic Module Record"} then requiredModule[[Status]] is val {~unlinked~; ~linked~; ~evaluating-async~; ~evaluated~}
+|     perform ? requiredModule.Link([])
+|   }
+@@html
+| 1. For each Module Record _requiredModule_ of _linkingList_, do
+|   1. Assert: If _requiredModule_ is a Cyclic Module Record, then _requiredModule_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.
+|   1. Perform ? _requiredModule_.Link(« »).
+@@end
+
+@@patch alg @sec-moduleevaluation root/11:else/2:then:0..1
 @@spectec
 |       assert module[[AsyncEvaluationOrder]] is val {~unset~; ~done~}
 @@html
 |     1. Assert: _module_.[[AsyncEvaluationOrder]] is either ~unset~ or ~done~.
 @@end
 
-@@patch alg @sec-moduleevaluation root/8:else:0..1
+@@patch alg @sec-moduleevaluation root/11:else:0..1
 @@spectec
 |     assert module[[Status]] is val {~evaluating-async~; ~evaluated~}
 @@html
 |   1. Assert: _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
 @@end
 
-@@patch alg @sec-moduleevaluation root/8:then:0..1
+@@patch alg @sec-moduleevaluation root/11:then:0..1
 @@spectec
 |     for_each requiredModule : #"Cyclic Module Record" in stack {
 |       assert requiredModule[[Status]] is val {~evaluating~}
@@ -5649,7 +6184,28 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Set _requiredModule_.[[EvaluationError]] to _result_.
 @@end
 
-@@patch alg @sec-moduleevaluation root:2..3
+@@patch alg @sec-moduleevaluation root:0..4
+@@spectec
+|   let pending = [module]
+|   let seen = $ListNew()
+|   repeat_while pending fails $IsEmpty() {
+|     let m = $ListElem(data choice 1, ?pending)
+|     perform $RemoveFirst(?pending)
+|     if seen fails $Contains(?m) and m is ty {#"Cyclic Module Record"} {
+|       perform $Append(?m, ?seen)
+|       assert m[[Status]] is val {~evaluating~; ~linked~; ~evaluating-async~; ~evaluated~}
+|       for_each request : #"ModuleRequest Record" in m[[RequestedModules]] {
+|         perform $Append(@sec-GetImportedModule(m, request), ?pending)
+|       }
+|     }
+|   }
+|   assert pass "If this call to Evaluate is happening at the same time as another call to Evaluate within the surrounding agent, ReadyForSyncExecution(_) is *true*"
+@@html
+| 1. Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~linking~, ~unlinked~, or ~new~.
+| 1. Assert: If this call to Evaluate is happening at the same time as another call to Evaluate within the surrounding agent, ReadyForSyncExecution(_module_) is *true*.
+@@end
+
+@@patch alg @sec-moduleevaluation root:5..6
 @@spectec
 |   if module[[Status]] is val {~evaluating-async~; ~evaluated~} {
 |     if module[[CycleRoot]] is not val {~empty~} {
@@ -5667,20 +6223,18 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Assert: _module_.[[Status]] is ~evaluated~ and _module_.[[EvaluationError]] is a throw completion.
 @@end
 
-@@patch alg @sec-modulenamespacecreate root:1..2
+@@patch alg @sec-modulenamespacecreate root:0..1
 @@spectec
 |   let internalSlotsList = $SlotsListed(table t"table-internal-slots-of-module-namespace-exotic-objects")
 @@html
 | 1. Let _internalSlotsList_ be the internal slots listed in <emu-xref href="#table-internal-slots-of-module-namespace-exotic-objects"></emu-xref>.
 @@end
 
-@@patch alg @sec-modulenamespacecreate root:7..8
+@@patch alg @sec-modulenamespacecreate root:8..9
 @@spectec
-|   for_each p : Record in $PropertyOrder(namespace, $ClauseProperties(namespace, clause @sec-module-namespace-objects)) {
-|     perform $OwnPropertyCreate(namespace, p[[Key]], record PropertyDescriptor { [[Value]]: p[[Value]], [[Writable]]: p[[Writable]], [[Enumerable]]: p[[Enumerable]], [[Configurable]]: p[[Configurable]] }, ~data~)
-|   }
+|   perform $OwnPropertyCreate(namespace, $WellKnownSymbol("Symbol.toStringTag"), record PropertyDescriptor { [[Value]]: toStringTag, [[Writable]]: false, [[Enumerable]]: false, [[Configurable]]: false }, ~data~)
 @@html
-| 1. Create own properties of _namespace_ corresponding to the definitions in <emu-xref href="#sec-module-namespace-objects"></emu-xref>.
+| 1. Create an own data property of _namespace_ named %Symbol.toStringTag% whose [[Value]] is _toStringTag_ and whose [[Writable]], [[Enumerable]], and [[Configurable]] attributes are *false*.
 @@end
 
 @@patch alg @sec-nativeerror/EvalError root:4..5
@@ -6764,11 +7318,11 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If _body_ is a List of errors, return _body_.
 @@end
 
-@@patch alg @sec-parsemodule root:11..12
+@@patch alg @sec-parsemodule root:12..13
 @@spectec
-|   return record #"Source Text Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: async, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: [], [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: hostDefined, [[ECMAScriptCode]]: body, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: requestedModules, [[LoadedModules]]: [], [[ImportEntries]]: importEntries, [[LocalExportEntries]]: localExportEntries, [[IndirectExportEntries]]: indirectExportEntries, [[StarExportEntries]]: starExportEntries, [[DFSAncestorIndex]]: ~empty~ }
+|   return record #"Source Text Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: async, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: [], [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: hostDefined, [[ECMAScriptCode]]: body, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: requestedModules, [[LoadedModules]]: [], [[ImportEntries]]: importEntries, [[LocalExportEntries]]: localExportEntries, [[IndirectExportEntries]]: indirectExportEntries, [[StarExportEntries]]: starExportEntries, [[OptionalIndirectExportEntries]]: optionalIndirectExportEntries, [[PendingOptionalFilteredNamespaceExports]]: [], [[DFSAncestorIndex]]: ~empty~ }
 @@html
-| 1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, [[DFSAncestorIndex]]: ~empty~ }.
+| 1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, [[OptionalIndirectExportEntries]]: _optionalIndirectExportEntries_, [[PendingOptionalFilteredNamespaceExports]]: « », [[DFSAncestorIndex]]: ~empty~ }.
 @@end
 
 @@patch alg @sec-parsemodule root:9..10
@@ -6781,7 +7335,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       else {
 |         note "When exporting a binding or namespace object which was originally imported from another module, the ExportEntry Record is rewritten to match the form it would have if the binding or namespace object had been re-exported directly from the original module rather than imported then exported. This allows conflicts which arise from exporting the same binding or namespace twice under the same name through `export * from` to be ignored rather than being treated as ambiguous in step <emu-xref href=\"#step-resolveexport-conflict\"></emu-xref> of <emu-xref href=\"#sec-resolveexport\">the ResolveExport concrete method of Source Text Module Records</emu-xref>."
 |         let importEntry = @ph-elem-whose(?importEntries, [[LocalName]], data choice 1, exportEntry[[LocalName]])
-|         perform $Append(record #"ExportEntry Record" { [[ModuleRequest]]: importEntry[[ModuleRequest]], [[ImportName]]: importEntry[[ImportName]], [[LocalName]]: null, [[ExportName]]: exportEntry[[ExportName]] }, ?indirectExportEntries)
+|         perform $Append(record #"ExportEntry Record" { [[ModuleRequest]]: importEntry[[ModuleRequest]], [[ImportName]]: importEntry[[ImportName]], [[LocalName]]: null, [[ExportName]]: exportEntry[[ExportName]], [[NamespaceNamesFilter]]: importEntry[[NamespaceNamesFilter]] }, ?indirectExportEntries)
 |       }
 |     }
 |     else_if exportEntry[[ImportName]] is val {~all-but-default~} {
@@ -6800,7 +7354,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Else,
 |       1. NOTE: When exporting a binding or namespace object which was originally imported from another module, the ExportEntry Record is rewritten to match the form it would have if the binding or namespace object had been re-exported directly from the original module rather than imported then exported. This allows conflicts which arise from exporting the same binding or namespace twice under the same name through `export * from` to be ignored rather than being treated as ambiguous in step <emu-xref href="#step-resolveexport-conflict"></emu-xref> of <emu-xref href="#sec-resolveexport">the ResolveExport concrete method of Source Text Module Records</emu-xref>.
 |       1. Let _importEntry_ be the element of _importEntries_ whose [[LocalName]] is _exportEntry_.[[LocalName]].
-|       1. Append the ExportEntry Record { [[ModuleRequest]]: _importEntry_.[[ModuleRequest]], [[ImportName]]: _importEntry_.[[ImportName]], [[LocalName]]: *null*, [[ExportName]]: _exportEntry_.[[ExportName]] } to _indirectExportEntries_.
+|       1. Append the ExportEntry Record { [[ModuleRequest]]: _importEntry_.[[ModuleRequest]], [[ImportName]]: _importEntry_.[[ImportName]], [[LocalName]]: *null*, [[ExportName]]: _exportEntry_.[[ExportName]], [[NamespaceNamesFilter]]: _importEntry_.[[NamespaceNamesFilter]] } to _indirectExportEntries_.
 |   1. Else if _exportEntry_.[[ImportName]] is ~all-but-default~, then
 |     1. Assert: _exportEntry_.[[ExportName]] is *null*.
 |     1. Append _exportEntry_ to _starExportEntries_.
@@ -7764,14 +8318,14 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Let _strict_ be IsStrict(the syntactic production that is being evaluated).
 @@end
 
-@@patch alg @sec-resolveexport root/6:then:0..1
+@@patch alg @sec-resolveexport root/7:then:0..1
 @@spectec
 |     assert module sat @ph-not-explicitly-defined-export("default")
 @@html
 |   1. Assert: A `default` export was not explicitly defined by this module.
 @@end
 
-@@patch alg @sec-resolveexport root:4..6
+@@patch alg @sec-resolveexport root:4..5
 @@spectec
 |   for_each exportEntry : #"ExportEntry Record" in module[[LocalExportEntries]] {
 |     if exportEntry[[ExportName]] is val {exportName} {
@@ -7779,37 +8333,86 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       return record #"ResolvedBinding Record" { [[Module]]: module, [[BindingName]]: exportEntry[[LocalName]] }
 |     }
 |   }
-|   for_each exportEntry : #"ExportEntry Record" in module[[IndirectExportEntries]] {
-|     if exportEntry[[ExportName]] is val {exportName} {
-|       assert exportEntry[[ModuleRequest]] is not val {null}
-|       let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
-|       if exportEntry[[ImportName]] is val {~namespace~} {
-|         assert module[[LocalExportEntries]] fails $Contains(?exportEntry)
-|         return record #"ResolvedBinding Record" { [[Module]]: importedModule, [[BindingName]]: ~namespace~ }
-|       }
-|       assert module[[IndirectExportEntries]] sat $Contains(?exportEntry)
-|       assert exportEntry[[ImportName]] is ty {String}
-|       return importedModule.ResolveExport(exportEntry[[ImportName]], resolveSet)
-|     }
-|   }
 @@html
 | 1. For each ExportEntry Record _exportEntry_ of _module_.[[LocalExportEntries]], do
 |   1. If _exportEntry_.[[ExportName]] is _exportName_, then
 |     1. Assert: _module_ provides the direct binding for this export.
 |     1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _exportEntry_.[[LocalName]] }.
-| 1. For each ExportEntry Record _exportEntry_ of _module_.[[IndirectExportEntries]], do
+@@end
+
+@@patch alg @sec-resolveexport root:6..7
+@@spectec
+|   for_each exportEntry : #"ExportEntry Record" in allIndirectEntries {
+|     if exportEntry[[ExportName]] is val {exportName} {
+|       assert exportEntry[[ModuleRequest]] is not val {null}
+|       let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
+|       if exportEntry[[ImportName]] is val {~namespace~} {
+|         assert module[[LocalExportEntries]] fails $Contains(?exportEntry)
+|         assert exportEntry[[NamespaceNamesFilter]] is val {~empty~}
+|         if exportEntry[[ModuleRequest]][[Phase]] is val {~defer~} {
+|           return record #"ResolvedBinding Record" { [[Module]]: importedModule, [[BindingName]]: ~deferred-namespace~ }
+|         }
+|         else {
+|           assert exportEntry[[ModuleRequest]][[Phase]] is val {~evaluation~}
+|           return record #"ResolvedBinding Record" { [[Module]]: importedModule, [[BindingName]]: ~namespace~ }
+|         }
+|       }
+|       else_if exportEntry[[ImportName]] is val {~filtered-namespace~} {
+|         assert exportEntry[[NamespaceNamesFilter]] is ty {list<String>}
+|         let localName = $"string-concatenation"("*", exportName, "*")
+|         note "`export { ... } as ns from \"mod\"` introduces a local internal binding in the module that contains the |ExportDeclaration|. That binding is created by InitializeEnvironment, but for `export defer` declarations it is initialized here once a consumer attempts to resolve it."
+|         if module[[OptionalIndirectExportEntries]] sat $Contains(?exportEntry) {
+|           if module[[Environment]] is val {~empty~} {
+|             assert module[[Status]] is val {~unlinked~; ~linking~}
+|             note "When linking across cycles, _module_'s exports might be resolved by ResolveExport before InitializeEnvironment is called on _module_. In that case _module_.[[Environment]] is not set up yet, so the export is marked as needing initialization, which will then be performed by InitializeEnvironment itself."
+|             if module[[PendingOptionalFilteredNamespaceExports]] fails $Contains(?localName) -> perform $Append(?localName, module[[PendingOptionalFilteredNamespaceExports]])
+|           }
+|           else_if ! module[[Environment]].HasBinding(localName) is val {false} {
+|             perform ! module[[Environment]].CreateImmutableBinding(localName, true)
+|             let moduleNamespace = @sec-getmodulenamespace(importedModule, exportEntry[[ModuleRequest]][[Phase]], exportEntry[[NamespaceNamesFilter]])
+|             perform ! module[[Environment]].InitializeBinding(localName, moduleNamespace)
+|           }
+|         }
+|         return record #"ResolvedBinding Record" { [[Module]]: module, [[BindingName]]: localName }
+|       }
+|       assert allIndirectEntries sat $Contains(?exportEntry)
+|       assert exportEntry[[ImportName]] is ty {String}
+|       return importedModule.ResolveExport(exportEntry[[ImportName]], resolveSet)
+|     }
+|   }
+@@html
+| 1. For each ExportEntry Record _exportEntry_ of _allIndirectEntries_, do
 |   1. If _exportEntry_.[[ExportName]] is _exportName_, then
 |     1. Assert: _exportEntry_.[[ModuleRequest]] is not *null*.
 |     1. Let _importedModule_ be GetImportedModule(_module_, _exportEntry_.[[ModuleRequest]]).
 |     1. If _exportEntry_.[[ImportName]] is ~namespace~, then
 |       1. Assert: _module_ does not provide the direct binding for this export.
-|       1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
+|       1. Assert: _exportEntry_.[[NamespaceNamesFilter]] is ~empty~.
+|       1. If _exportEntry_.[[ModuleRequest]].[[Phase]] is ~defer~, then
+|         1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~deferred-namespace~ }.
+|       1. Else,
+|         1. Assert: _exportEntry_.[[ModuleRequest]].[[Phase]] is ~evaluation~.
+|         1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
+|     1. Else if _exportEntry_.[[ImportName]] is ~filtered-namespace~, then
+|       1. Assert: _exportEntry_.[[NamespaceNamesFilter]] is a List of Strings.
+|       1. Let _localName_ be the string-concatenation of *"\*"*, _exportName_, and *"\*"*.
+|       1. NOTE: `export { ... } as ns from "mod"` introduces a local internal binding in the module that contains the |ExportDeclaration|. That binding is created by InitializeEnvironment, but for `export defer` declarations it is initialized here once a consumer attempts to resolve it.
+|       1. If _module_.[[OptionalIndirectExportEntries]] contains _exportEntry_, then
+|         1. If _module_.[[Environment]] is ~empty~, then
+|           1. Assert: _module_.[[Status]] is either ~unlinked~ or ~linking~.
+|           1. NOTE: When linking across cycles, _module_'s exports might be resolved by ResolveExport before InitializeEnvironment is called on _module_. In that case _module_.[[Environment]] is not set up yet, so the export is marked as needing initialization, which will then be performed by InitializeEnvironment itself.
+|           1. If _module_.[[PendingOptionalFilteredNamespaceExports]] does not contain _localName_, append _localName_ to _module_.[[PendingOptionalFilteredNamespaceExports]].
+|         1. Else if ! _module_.[[Environment]].HasBinding(_localName_) is *false*, then
+|           1. Perform ! _module_.[[Environment]].CreateImmutableBinding(_localName_, *true*).
+|           1. Let _moduleNamespace_ be GetModuleNamespace(_importedModule_, _exportEntry_.[[ModuleRequest]].[[Phase]], _exportEntry_.[[NamespaceNamesFilter]]).
+|           1. Perform ! _module_.[[Environment]].InitializeBinding(_localName_, _moduleNamespace_).
+|       1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _localName_ }.
 |     1. Assert: _module_ imports a specific binding for this export.
 |     1. Assert: _exportEntry_.[[ImportName]] is a String.
 |     1. Return _importedModule_.ResolveExport(_exportEntry_.[[ImportName]], _resolveSet_).
 @@end
 
-@@patch alg @sec-resolveexport root:8..9
+@@patch alg @sec-resolveexport root:9..10
 @@spectec
 |   for_each exportEntry : #"ExportEntry Record" in module[[StarExportEntries]] {
 |     assert exportEntry[[ModuleRequest]] is not val {null}
@@ -8667,7 +9270,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Assert: _module_ has been linked and declarations in its module environment have been instantiated.
 @@end
 
-@@patch alg @sec-source-text-module-record-initialize-environment root/23:do/0:do:0..1
+@@patch alg @sec-source-text-module-record-initialize-environment root/24:do/0:do:0..1
 @@spectec
 | if sdo IsConstantDeclaration(lexicalDecl) is val {true} {
 |         perform ! envRecord.CreateImmutableBinding(name, true)
@@ -8680,7 +9283,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       1. Perform ! _envRecord_.CreateImmutableBinding(_name_, *true*).
 @@end
 
-@@patch alg @sec-source-text-module-record-initialize-environment root/23:do/0:do:2..3
+@@patch alg @sec-source-text-module-record-initialize-environment root/24:do/0:do:2..3
 @@spectec
 |       if lexicalDecl is ty {|FunctionDeclaration|; |GeneratorDeclaration|; |AsyncFunctionDeclaration|; |AsyncGeneratorDeclaration|} {
 |         let funcObj = sdo InstantiateFunctionDeclaration(lexicalDecl; envRecord, privateEnv)
@@ -8695,34 +9298,45 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 @@patch alg @sec-source-text-module-record-initialize-environment root:0..1
 @@spectec
 |   for_each exportEntry : #"ExportEntry Record" in module[[IndirectExportEntries]] {
-|     assert exportEntry[[ExportName]] is not val {null}
-|     let resolution = module.ResolveExport(exportEntry[[ExportName]])
-|     if resolution is val {null; ~ambiguous~} -> throw @ph-new-error([[SyntaxError]])
-|     assert resolution is ty {#"ResolvedBinding Record"}
+|     perform ? @sec-ensureresolvablebinding(module, exportEntry[[ExportName]], ~disallow-ambiguous~)
+|     if exportEntry[[ImportName]] is val {~namespace~} {
+|       let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
+|       note "All exports of _importedModule_ other than `export defer` ones are also validated by the InitializeEnvironment call on _importedModule_ itself, and it is not observable which of the two InitializeEnvironment calls throws the *SyntaxError*."
+|       perform ? @sec-ValidateOwnNamespaceExports(importedModule, ~all~)
+|     }
 |   }
 @@html
 | 1. For each ExportEntry Record _exportEntry_ of _module_.[[IndirectExportEntries]], do
-|   1. Assert: _exportEntry_.[[ExportName]] is not *null*.
-|   1. Let _resolution_ be _module_.ResolveExport(_exportEntry_.[[ExportName]]).
-|   1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
-|   1. Assert: _resolution_ is a ResolvedBinding Record.
+|   1. Perform ? EnsureResolvableBinding(_module_, _exportEntry_.[[ExportName]], ~disallow-ambiguous~).
+|   1. If _exportEntry_.[[ImportName]] is ~namespace~, then
+|     1. Let _importedModule_ be GetImportedModule(_module_, _exportEntry_.[[ModuleRequest]]).
+|     1. NOTE: All exports of _importedModule_ other than `export defer` ones are also validated by the InitializeEnvironment call on _importedModule_ itself, and it is not observable which of the two InitializeEnvironment calls throws the *SyntaxError*.
+|     1. Perform ? ValidateOwnNamespaceExports(_importedModule_, ~all~).
 @@end
 
-@@patch alg @sec-source-text-module-record-initialize-environment root:6..8
+@@patch alg @sec-source-text-module-record-initialize-environment root:6..9
 @@spectec
 |   for_each importEntry : #"ImportEntry Record" in module[[ImportEntries]] {
 |     let importedModule = @sec-GetImportedModule(module, importEntry[[ModuleRequest]])
 |     if importEntry[[ImportName]] is val {~namespace~} {
-|       let namespace = @sec-getmodulenamespace(importedModule)
+|       note "All exports of _importedModule_ other than `export defer` ones are also validated by the InitializeEnvironment call on _importedModule_ itself, and it is not observable which of the two InitializeEnvironment calls throws the *SyntaxError*."
+|       perform ? @sec-ValidateOwnNamespaceExports(importedModule, ~all~)
+|       let namespace = @sec-getmodulenamespace(importedModule, importEntry[[ModuleRequest]][[Phase]], ~all~)
+|       perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
+|       perform ! envRecord.InitializeBinding(importEntry[[LocalName]], namespace)
+|     }
+|     else_if importEntry[[ImportName]] is val {~filtered-namespace~} {
+|       perform ? @sec-ValidateOwnNamespaceExports(importedModule, importEntry[[NamespaceNamesFilter]])
+|       let namespace = @sec-getmodulenamespace(importedModule, importEntry[[ModuleRequest]][[Phase]], importEntry[[NamespaceNamesFilter]])
 |       perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
 |       perform ! envRecord.InitializeBinding(importEntry[[LocalName]], namespace)
 |     }
 |     else {
-|       assert importEntry[[ImportName]] is ty {String}
 |       let resolution = importedModule.ResolveExport(importEntry[[ImportName]])
 |       if resolution is val {null; ~ambiguous~} -> throw @ph-new-error([[SyntaxError]])
-|       if resolution[[BindingName]] is val {~namespace~} {
-|         let namespace = @sec-getmodulenamespace(resolution[[Module]])
+|       if resolution[[BindingName]] is val {~namespace~; ~deferred-namespace~} {
+|         if_else resolution[[BindingName]] is val {~namespace~} { let phase = ~evaluation~ } else { let phase = ~defer~ }
+|         let namespace = @sec-getmodulenamespace(resolution[[Module]], phase, ~all~)
 |         perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
 |         perform ! envRecord.InitializeBinding(importEntry[[LocalName]], namespace)
 |       }
@@ -8731,24 +9345,65 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       }
 |     }
 |   }
+|   for_each exportEntry : #"ExportEntry Record" in $ListConcat([module[[IndirectExportEntries]], module[[OptionalIndirectExportEntries]]]) {
+|     if exportEntry[[ImportName]] is val {~filtered-namespace~} {
+|       let localName = $"string-concatenation"("*", exportEntry[[ExportName]], "*")
+|       if module[[IndirectExportEntries]] sat $Contains(?exportEntry) {
+|         let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
+|         perform ? @sec-ValidateOwnNamespaceExports(importedModule, exportEntry[[NamespaceNamesFilter]])
+|         let filteredNamespace = @sec-getmodulenamespace(importedModule, exportEntry[[ModuleRequest]][[Phase]], exportEntry[[NamespaceNamesFilter]])
+|         perform ! envRecord.CreateImmutableBinding(localName, true)
+|         perform ! envRecord.InitializeBinding(localName, filteredNamespace)
+|       }
+|       else_if module[[PendingOptionalFilteredNamespaceExports]] sat $Contains(?localName) and ! envRecord.HasBinding(localName) is val {false} {
+|         perform ! envRecord.CreateImmutableBinding(localName, true)
+|         let importedModule = @sec-GetImportedModule(module, exportEntry[[ModuleRequest]])
+|         let filteredNamespace = @sec-getmodulenamespace(importedModule, exportEntry[[ModuleRequest]][[Phase]], exportEntry[[NamespaceNamesFilter]])
+|         perform ! envRecord.InitializeBinding(localName, filteredNamespace)
+|         note "The _localName_ binding of `export defer { ... } as ns from \"mod\"` is created and initialized by whichever of ResolveExport and InitializeEnvironment first needs it. If no importer ever resolves that export, it is never created at all."
+|       }
+|     }
+|   }
 |   let moduleContext = $NewRecord(data sort #"ECMAScript code execution context")
 @@html
 | 1. For each ImportEntry Record _importEntry_ of _module_.[[ImportEntries]], do
 |   1. Let _importedModule_ be GetImportedModule(_module_, _importEntry_.[[ModuleRequest]]).
 |   1. If _importEntry_.[[ImportName]] is ~namespace~, then
-|     1. Let _namespace_ be GetModuleNamespace(_importedModule_).
+|     1. NOTE: All exports of _importedModule_ other than `export defer` ones are also validated by the InitializeEnvironment call on _importedModule_ itself, and it is not observable which of the two InitializeEnvironment calls throws the *SyntaxError*.
+|     1. Perform ? ValidateOwnNamespaceExports(_importedModule_, ~all~).
+|     1. Let _namespace_ be GetModuleNamespace(_importedModule_, _importEntry_.[[ModuleRequest]].[[Phase]], ~all~).
+|     1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*).
+|     1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _namespace_).
+|   1. Else if _importEntry_.[[ImportName]] is ~filtered-namespace~, then
+|     1. Perform ? ValidateOwnNamespaceExports(_importedModule_, _importEntry_.[[NamespaceNamesFilter]]).
+|     1. Let _namespace_ be GetModuleNamespace(_importedModule_, _importEntry_.[[ModuleRequest]].[[Phase]], _importEntry_.[[NamespaceNamesFilter]]).
 |     1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*).
 |     1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _namespace_).
 |   1. Else,
-|     1. Assert: _importEntry_.[[ImportName]] is a String.
 |     1. Let _resolution_ be _importedModule_.ResolveExport(_importEntry_.[[ImportName]]).
 |     1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
-|     1. If _resolution_.[[BindingName]] is ~namespace~, then
-|       1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]]).
+|     1. If _resolution_.[[BindingName]] is either ~namespace~ or ~deferred-namespace~, then
+|       1. If _resolution_.[[BindingName]] is ~namespace~, let _phase_ be ~evaluation~; else let _phase_ be ~defer~.
+|       1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], _phase_, ~all~).
 |       1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*).
 |       1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _namespace_).
 |     1. Else,
 |       1. Perform CreateImportBinding(_envRecord_, _importEntry_.[[LocalName]], _resolution_.[[Module]], _resolution_.[[BindingName]]).
+| 1. For each ExportEntry Record _exportEntry_ of the list-concatenation of _module_.[[IndirectExportEntries]] and _module_.[[OptionalIndirectExportEntries]], do
+|   1. If _exportEntry_.[[ImportName]] is ~filtered-namespace~, then
+|     1. Let _localName_ be the string-concatenation of *"\*"*, _exportEntry_.[[ExportName]], and *"\*"*.
+|     1. If _module_.[[IndirectExportEntries]] contains _exportEntry_, then
+|       1. Let _importedModule_ be GetImportedModule(_module_, _exportEntry_.[[ModuleRequest]]).
+|       1. Perform ? ValidateOwnNamespaceExports(_importedModule_, _exportEntry_.[[NamespaceNamesFilter]]).
+|       1. Let _filteredNamespace_ be GetModuleNamespace(_importedModule_, _exportEntry_.[[ModuleRequest]].[[Phase]], _exportEntry_.[[NamespaceNamesFilter]]).
+|       1. Perform ! _envRecord_.CreateImmutableBinding(_localName_, *true*).
+|       1. Perform ! _envRecord_.InitializeBinding(_localName_, _filteredNamespace_).
+|     1. Else if _module_.[[PendingOptionalFilteredNamespaceExports]] contains _localName_ and ! _envRecord_.HasBinding(_localName_) is *false*, then
+|       1. Perform ! _envRecord_.CreateImmutableBinding(_localName_, *true*).
+|       1. Let _importedModule_ be GetImportedModule(_module_, _exportEntry_.[[ModuleRequest]]).
+|       1. Let _filteredNamespace_ be GetModuleNamespace(_importedModule_, _exportEntry_.[[ModuleRequest]].[[Phase]], _exportEntry_.[[NamespaceNamesFilter]]).
+|       1. Perform ! _envRecord_.InitializeBinding(_localName_, _filteredNamespace_).
+|       1. NOTE: The _localName_ binding of `export defer { ... } as ns from "mod"` is created and initialized by whichever of ResolveExport and InitializeEnvironment first needs it. If no importer ever resolves that export, it is never created at all.
 | 1. Let _moduleContext_ be a new ECMAScript code execution context.
 @@end
 
@@ -10100,6 +10755,24 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 
 @@patch early @sec-imports-static-semantics-early-errors#1 body
 @@spectec
+|     syntax_error sdo UnaliasedImportNames(child 5 |NamedImports|) sat @ph-contains-any-nts(|StringLiteral|)
+@@html
+| 
+|             It is a Syntax Error if UnaliasedImportNames of |NamedImports| contains any |StringLiteral|s.
+|           
+@@end
+
+@@patch early @sec-imports-static-semantics-early-errors#2 body
+@@spectec
+|     for_each_in n : |IdentifierName| in sdo UnaliasedImportNames(child 5 |NamedImports|) where sdo StringValue(n) is ty {|ReservedWord|} or sdo StringValue(n) is val {"arguments"; "await"; "eval"; "implements"; "interface"; "let"; "package"; "private"; "protected"; "public"; "static"; "yield"} { perform $""(|IdentifierName|, ?n, sdo UnaliasedImportNames(child 5 |NamedImports|)) }
+@@html
+| 
+|             For each |IdentifierName| _n_ in the UnaliasedImportNames of |NamedImports|: It is a Syntax Error if the StringValue of _n_ is a |ReservedWord| or the StringValue of _n_ is one of *"arguments"*, *"await"*, *"eval"*, *"implements"*, *"interface"*, *"let"*, *"package"*, *"private"*, *"protected"*, *"public"*, *"static"*, or *"yield"*.
+|           
+@@end
+
+@@patch early @sec-imports-static-semantics-early-errors#5 body
+@@spectec
 |     syntax_error sdo WithClauseToAttributes(child 6 |WithClause|) sat @ph-two-entries(?a, ?b, ref @spec-cond-0)
 @@html
 | 
@@ -10760,6 +11433,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     return $StrOfUnits($CodeUnit(cu(36, "0024", "DOLLAR SIGN")))
 @@html
 | The TV of <emu-grammar>TemplateCharacter :: `$`</emu-grammar> is the String value consisting of the code unit 0x0024 (DOLLAR SIGN).
+@@end
+
+@@patch row @sec-FilteredNamespaceNames#3 root:0..1
+@@spectec
+|     return $ListOf1(sdo StringValue(child 5 |ModuleExportName|))
+@@html
+| 1. Return a List whose sole element is the StringValue of |ModuleExportName|.
 @@end
 
 @@patch row @sec-array-initializer-runtime-semantics-evaluation root/1:then:0..1
@@ -12298,6 +12978,41 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     let stmtCompletion = @sec-completion-ao(sdo Evaluation(child 5 |Statement|))
 @@html
 | 1. Let _stmtCompletion_ be Completion(Evaluation of |Statement|).
+@@end
+
+@@patch row @sec-import-call-runtime-semantics-EvaluateImportCallOptions#1 root:0..1
+@@spectec
+|     let #"ref" = ? sdo Evaluation(child 1 |AssignmentExpression|)
+@@html
+| 1. Let _ref_ be ? Evaluation of the second |AssignmentExpression|.
+@@end
+
+@@patch row @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier root:0..1
+@@spectec
+|     let #"ref" = ? sdo Evaluation(child 5 |AssignmentExpression|)
+@@html
+| 1. Let _ref_ be ? Evaluation of |AssignmentExpression|.
+@@end
+
+@@patch row @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier#1 root:0..1
+@@spectec
+|     let #"ref" = ? sdo Evaluation(child 0 |AssignmentExpression|)
+@@html
+| 1. Let _ref_ be ? Evaluation of the first |AssignmentExpression|.
+@@end
+
+@@patch row @sec-imports-UnaliasedImportNames#3 root:0..1
+@@spectec
+|     return $ListOf1(child 5 |IdentifierName|)
+@@html
+| 1. Return a List whose sole element is |IdentifierName|.
+@@end
+
+@@patch row @sec-imports-UnaliasedImportNames#4 root:0..1
+@@spectec
+|     return $ListOf1(child 5 |StringLiteral|)
+@@html
+| 1. Return a List whose sole element is |StringLiteral|.
 @@end
 
 @@patch row @sec-initializers-in-forin-statement-heads root:0..1
@@ -14447,21 +15162,28 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Return « *"\*default\*"* ».
 @@end
 
-@@patch row @sec-static-semantics-boundnames#49 root:1..2
+@@patch row @sec-static-semantics-boundnames#46 root:0..1
+@@spectec
+|     return $ListOf1(sdo StringValue(child 5 |ModuleExportName|))
+@@html
+| 1. Return a List whose sole element is the StringValue of |ModuleExportName|.
+@@end
+
+@@patch row @sec-static-semantics-boundnames#52 root:1..2
 @@spectec
 |     if declNames fails $Contains("*default*") -> perform $Append("*default*", ?declNames)
 @@html
 | 1. If _declNames_ does not include the element *"\*default\*"*, append *"\*default\*"* to _declNames_.
 @@end
 
-@@patch row @sec-static-semantics-boundnames#50 root:1..2
+@@patch row @sec-static-semantics-boundnames#53 root:1..2
 @@spectec
 |     if declNames fails $Contains("*default*") -> perform $Append("*default*", ?declNames)
 @@html
 | 1. If _declNames_ does not include the element *"\*default\*"*, append *"\*default\*"* to _declNames_.
 @@end
 
-@@patch row @sec-static-semantics-boundnames#51 root:0..1
+@@patch row @sec-static-semantics-boundnames#54 root:0..1
 @@spectec
 |     return ["*default*"]
 @@html
@@ -15307,28 +16029,21 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If HasInitializer of |FormalParameter| is *true*, return 0.
 @@end
 
-@@patch row @sec-static-semantics-exportedbindings#9 root:0..1
+@@patch row @sec-static-semantics-exportedbindings#10 root:0..1
 @@spectec
 |     return $ListOf1(sdo StringValue(child 5 |ModuleExportName|))
 @@html
 | 1. Return a List whose sole element is the StringValue of |ModuleExportName|.
 @@end
 
-@@patch row @sec-static-semantics-exportedbindings#10 root:0..1
+@@patch row @sec-static-semantics-exportedbindings#11 root:0..1
 @@spectec
 |     return $ListOf1(sdo StringValue(child 0 |ModuleExportName|))
 @@html
 | 1. Return a List whose sole element is the StringValue of the first |ModuleExportName|.
 @@end
 
-@@patch row @sec-static-semantics-exportednames#5 root:0..1
-@@spectec
-|     return $ListOf1(sdo StringValue(child 5 |ModuleExportName|))
-@@html
-| 1. Return a List whose sole element is the StringValue of |ModuleExportName|.
-@@end
-
-@@patch row @sec-static-semantics-exportednames#12 root:0..1
+@@patch row @sec-static-semantics-exportednames#6 root:0..1
 @@spectec
 |     return $ListOf1(sdo StringValue(child 5 |ModuleExportName|))
 @@html
@@ -15337,16 +16052,16 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 
 @@patch row @sec-static-semantics-exportednames#13 root:0..1
 @@spectec
+|     return $ListOf1(sdo StringValue(child 5 |ModuleExportName|))
+@@html
+| 1. Return a List whose sole element is the StringValue of |ModuleExportName|.
+@@end
+
+@@patch row @sec-static-semantics-exportednames#14 root:0..1
+@@spectec
 |     return $ListOf1(sdo StringValue(child 1 |ModuleExportName|))
 @@html
 | 1. Return a List whose sole element is the StringValue of the second |ModuleExportName|.
-@@end
-
-@@patch row @sec-static-semantics-exportentries#7 root:2..3
-@@spectec
-|     return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: localName, [[ExportName]]: "default" }))
-@@html
-| 1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _localName_, [[ExportName]]: *"default"* }.
 @@end
 
 @@patch row @sec-static-semantics-exportentries#8 root:2..3
@@ -15356,25 +16071,32 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _localName_, [[ExportName]]: *"default"* }.
 @@end
 
-@@patch row @sec-static-semantics-exportentries#9 root:0..1
+@@patch row @sec-static-semantics-exportentries#9 root:2..3
 @@spectec
-|     let entry = record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: "*default*", [[ExportName]]: "default" }
+|     return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: localName, [[ExportName]]: "default" }))
 @@html
-| 1. Let _entry_ be the ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: *"\*default\*"*, [[ExportName]]: *"default"* }.
+| 1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _localName_, [[ExportName]]: *"default"* }.
 @@end
 
-@@patch row @sec-static-semantics-exportentriesformodule#4 root:3..4
+@@patch row @sec-static-semantics-exportentries#10 root:0..1
 @@spectec
-|     return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName, [[ExportName]]: sourceName }))
+|     let entry = record #"ExportEntry Record" { [[ModuleRequest]]: null, [[ImportName]]: null, [[LocalName]]: "*default*", [[ExportName]]: "default", [[NamespaceNamesFilter]]: ~empty~ }
 @@html
-| 1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _importName_, [[LocalName]]: _localName_, [[ExportName]]: _sourceName_ }.
+| 1. Let _entry_ be the ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: *"\*default\*"*, [[ExportName]]: *"default"*, [[NamespaceNamesFilter]]: ~empty~ }.
 @@end
 
-@@patch row @sec-static-semantics-exportentriesformodule#5 root:4..5
+@@patch row @sec-static-semantics-exportentriesformodule#5 root:3..4
 @@spectec
-|     return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName, [[ExportName]]: exportName }))
+|     return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName, [[ExportName]]: sourceName, [[NamespaceNamesFilter]]: ~empty~ }))
 @@html
-| 1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _importName_, [[LocalName]]: _localName_, [[ExportName]]: _exportName_ }.
+| 1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _importName_, [[LocalName]]: _localName_, [[ExportName]]: _sourceName_, [[NamespaceNamesFilter]]: ~empty~ }.
+@@end
+
+@@patch row @sec-static-semantics-exportentriesformodule#6 root:4..5
+@@spectec
+|     return $ListOf1(@ph-new-record(record #"ExportEntry Record" { [[ModuleRequest]]: module, [[ImportName]]: importName, [[LocalName]]: localName, [[ExportName]]: exportName, [[NamespaceNamesFilter]]: ~empty~ }))
+@@html
+| 1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _importName_, [[LocalName]]: _localName_, [[ExportName]]: _exportName_, [[NamespaceNamesFilter]]: ~empty~ }.
 @@end
 
 @@patch row @sec-static-semantics-flagtext root:0..1
@@ -15672,28 +16394,28 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Return a List whose sole element is the DeclarationPart of |Declaration|.
 @@end
 
-@@patch row @sec-static-semantics-lexicallyscopeddeclarations#23 root:0..1
+@@patch row @sec-static-semantics-lexicallyscopeddeclarations#24 root:0..1
 @@spectec
 |     return $ListOf1(sdo DeclarationPart(child 5 |Declaration|))
 @@html
 | 1. Return a List whose sole element is the DeclarationPart of |Declaration|.
 @@end
 
-@@patch row @sec-static-semantics-lexicallyscopeddeclarations#24 root:0..1
+@@patch row @sec-static-semantics-lexicallyscopeddeclarations#25 root:0..1
 @@spectec
 |     return $ListOf1(sdo DeclarationPart(child 5 |HoistableDeclaration|))
 @@html
 | 1. Return a List whose sole element is the DeclarationPart of |HoistableDeclaration|.
 @@end
 
-@@patch row @sec-static-semantics-lexicallyscopeddeclarations#25 root:0..1
+@@patch row @sec-static-semantics-lexicallyscopeddeclarations#26 root:0..1
 @@spectec
 |     return $ListOf1(child 5 |ClassDeclaration|)
 @@html
 | 1. Return a List whose sole element is |ClassDeclaration|.
 @@end
 
-@@patch row @sec-static-semantics-lexicallyscopeddeclarations#26 root:0..1
+@@patch row @sec-static-semantics-lexicallyscopeddeclarations#27 root:0..1
 @@spectec
 |     return $ListOf1(call_at @ph-this-nt(|ExportDeclaration|))
 @@html
@@ -15767,62 +16489,95 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 @@patch row @sec-static-semantics-modulerequests#2 root:2..3
 @@spectec
 |     for_each moduleRequest : #"ModuleRequest Record" in additionalRequests {
-|       if requests sat @ph-not-contains-such(data choice 0, data sort #"ModuleRequest Record", ?otherModuleRequest, closure 0) {
+|       let values = @ph-contains-such-binds(data choice 0, data sort #"ModuleRequest Record", ?otherModuleRequest, closure 0, requests)
+|       if $ListLen(values) == 1 or $ListLen(values) != 0 and expr $""() {
+|         let otherModuleRequest = values[0]
+|         set field otherModuleRequest[[ImportedNames]][[Direct]] = @sec-MergeImportedNames(otherModuleRequest[[ImportedNames]][[Direct]], moduleRequest[[ImportedNames]][[Direct]])
+|         set field otherModuleRequest[[ImportedNames]][[Namespace]] = @sec-MergeImportedNames(otherModuleRequest[[ImportedNames]][[Namespace]], moduleRequest[[ImportedNames]][[Namespace]])
+|       }
+|       else {
 |         perform $Append(?moduleRequest, ?requests)
 |       }
 |     }
 @@html
 | 1. For each ModuleRequest Record _moduleRequest_ of _additionalRequests_, do
-|   1. If _requests_ does not contain a ModuleRequest Record _otherModuleRequest_ such that ModuleRequestsEqual(_moduleRequest_, _otherModuleRequest_) is *true*, then
+|   1. If _requests_ contains a ModuleRequest Record _otherModuleRequest_ such that ModuleRequestsKeyEqual(_moduleRequest_, _otherModuleRequest_) is *true* and _moduleRequest_.[[Phase]] is _otherModuleRequest_.[[Phase]], then
+|     1. Set _otherModuleRequest_.[[ImportedNames]].[[Direct]] to MergeImportedNames(_otherModuleRequest_.[[ImportedNames]].[[Direct]], _moduleRequest_.[[ImportedNames]].[[Direct]]).
+|     1. Set _otherModuleRequest_.[[ImportedNames]].[[Namespace]] to MergeImportedNames(_otherModuleRequest_.[[ImportedNames]].[[Namespace]], _moduleRequest_.[[ImportedNames]].[[Namespace]]).
+|   1. Else,
 |     1. Append _moduleRequest_ to _requests_.
 @@end
 
-@@patch row @sec-static-semantics-modulerequests#4 root:1..2
+@@patch row @sec-static-semantics-modulerequests#4 root:3..4
 @@spectec
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~evaluation~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) })
 @@html
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « » }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ } }.
 @@end
 
-@@patch row @sec-static-semantics-modulerequests#5 root:1..3
+@@patch row @sec-static-semantics-modulerequests#5 root:1..2
 @@spectec
 |     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
 @@html
 | 1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_ }.
+@@end
+
+@@patch row @sec-static-semantics-modulerequests#5 root:4..5
+@@spectec
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~evaluation~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) })
+@@html
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ } }.
 @@end
 
 @@patch row @sec-static-semantics-modulerequests#6 root:1..2
 @@spectec
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~evaluation~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) })
 @@html
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « » }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } }.
 @@end
 
 @@patch row @sec-static-semantics-modulerequests#7 root:1..3
 @@spectec
 |     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~evaluation~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: [], [[Namespace]]: [] }) })
 @@html
 | 1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_ }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } }.
 @@end
 
-@@patch row @sec-static-semantics-modulerequests#8 root:1..2
+@@patch row @sec-static-semantics-modulerequests#8 root:3..4
 @@spectec
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [], [[Phase]]: ~defer~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) })
 @@html
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « » }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ } }.
 @@end
 
-@@patch row @sec-static-semantics-modulerequests#9 root:1..3
+@@patch row @sec-static-semantics-modulerequests#9 root:1..2
 @@spectec
 |     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
 @@html
 | 1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_ }.
+@@end
+
+@@patch row @sec-static-semantics-modulerequests#9 root:4..5
+@@spectec
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs, [[Phase]]: ~defer~, [[ImportedNames]]: @ph-new-record(record #"ImportedNames Record" { [[Direct]]: directImportedNames, [[Namespace]]: filteredNamespaceImportedNames }) })
+@@html
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~defer~, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ } }.
+@@end
+
+@@patch row @sec-static-semantics-modulerequests#10 root:0..1
+@@spectec
+|     return $ListOf1(@sec-ExportFromDeclarationModuleRequest(child 5 |ExportFromClause|, child 5 |FromClause|, ~evaluation~))
+@@html
+| 1. Return a List whose sole element is ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, ~evaluation~).
+@@end
+
+@@patch row @sec-static-semantics-modulerequests#11 root:0..1
+@@spectec
+|     return $ListOf1(@sec-ExportFromDeclarationModuleRequest(child 5 |ExportFromClause|, child 5 |FromClause|, ~evaluation~, child 5 |WithClause|))
+@@html
+| 1. Return a List whose sole element is ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, ~evaluation~, |WithClause|).
 @@end
 
 @@patch row @sec-static-semantics-privateboundidentifiers#1 root:0..1

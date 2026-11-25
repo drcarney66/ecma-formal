@@ -359,7 +359,7 @@ table t"table-abstract-methods-of-environment-records" @sec-the-environment-reco
 table t"table-abstract-methods-of-module-records" @sec-abstract-module-records#1 {
   kind abstract_methods
   thead true
-  vars [hostDefined, exportStarSet, exportName, resolveSet]
+  vars [importedNames, hostDefined, exportStarSet, exportName, resolveSet]
   rows [
     row [
       cell { text "Method" }
@@ -367,8 +367,8 @@ table t"table-abstract-methods-of-module-records" @sec-abstract-module-records#1
       cell { text "Definitions" }
     ]
     row [
-      cell { sig (method LoadRequestedModules (hostDefined: pred(sat @ph-type-anything()) opt) -> Promise) }
-      cell { text "<p>It prepares the module for linking by recursively loading all its dependencies.</p>" }
+      cell { sig (method LoadRequestedModules (importedNames: val(~all~) | list<String> opt, hostDefined: pred(sat @ph-type-anything()) opt) -> Promise) }
+      cell { text "<p>It prepares the module for linking by recursively loading all its dependencies.</p>\n<p>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names whose additional modules need to be loaded, for usage with GetOptionalIndirectExportsModuleRequests(). By default, all modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are loaded.</p>" }
       cell { text "Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:\n<emu-concrete-method-dfns for=\"LoadRequestedModules\"></emu-concrete-method-dfns>" }
     ]
     row [
@@ -378,12 +378,12 @@ table t"table-abstract-methods-of-module-records" @sec-abstract-module-records#1
     ]
     row [
       cell { sig (method ResolveExport (exportName: String, resolveSet: records [[[Module]]: #"Module Record", [[ExportName]]: String] opt) -> #"ResolvedBinding Record" | val(null) | val(~ambiguous~)) }
-      cell { text "<p>It returns the binding of a name exported by this module. Bindings are represented by a <dfn id=\"resolvedbinding-record\" variants=\"ResolvedBinding Records\">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~ }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. It returns *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>\n<p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>\n<p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>" }
+      cell { text "<p>It returns the binding of a name exported by this module. Bindings are represented by ResolvedBinding Records  It returns *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>\n<p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>\n<p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>" }
       cell { text "Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:\n<emu-concrete-method-dfns for=\"ResolveExport\"></emu-concrete-method-dfns>" }
     ]
     row [
-      cell { sig (method Link () -> completion<val(~unused~)> | #"throw completion") }
-      cell { text "<p>It prepares the module for evaluation by transitively resolving all module dependencies and creating a Module Environment Record.</p>\n<p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>" }
+      cell { sig (method Link (importedNames: val(~all~) | list<String> opt) -> completion<val(~unused~)> | #"throw completion") }
+      cell { text "<p>It prepares the module for evaluation by transitively resolving all module dependencies and creating a Module Environment Record.</p>\n<p>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names whose additional modules need to be linked, for usage with GetOptionalIndirectExportsModuleRequests(). By default, all modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are linked.</p>\n<p>LoadRequestedModules must have completed successfully prior to invoking this method, with an _importedNames_ list that includes at least the _importedNames_ passed to Link.</p>" }
       cell { text "Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:\n<emu-concrete-method-dfns for=\"Link\"></emu-concrete-method-dfns>" }
     ]
     row [
@@ -549,6 +549,16 @@ table t"table-additional-fields-of-source-text-module-records" @sec-source-text-
       cell { field [[StarExportEntries]] }
       cell { ty (list<#"ExportEntry Record">) }
       cell { text "A List of ExportEntry records derived from the code of this module that correspond to `export *` declarations that occur within the module, not including `export * as namespace` declarations." }
+    ]
+    row [
+      cell { field [[OptionalIndirectExportEntries]] }
+      cell { raw "a List of ExportEntry Records whose [[LocalName]] is *null*" }
+      cell { text "A list of the entries for the `export defer ... from \"...\"` declarations, and for the `export * from \"...\"` declarations through which the `export defer` bindings of other modules may be re-exported. The List is in source text occurrence order." }
+    ]
+    row [
+      cell { field [[PendingOptionalFilteredNamespaceExports]] }
+      cell { ty (list<String>) }
+      cell { text "The local names of the `export defer { ... } as ns from \"mod\"` declarations of this module that ResolveExport has resolved while [[Environment]] was still ~empty~, and whose bindings InitializeEnvironment must therefore create and initialize itself. It is initially empty." }
     ]
   ]
 }
@@ -1402,7 +1412,7 @@ table t"table-cyclic-module-fields" @sec-cyclic-module-records#0 {
     row [
       cell { field [[LoadedModules]] }
       cell { ty (list<#"LoadedModuleRequest Record">) }
-      cell { text "A map from the specifier strings used by the module represented by this record to request the importation of a module with the relative import attributes to the resolved Module Record. The list does not contain two different Records _r1_ and _r2_ such that ModuleRequestsEqual(_r1_, _r2_) is *true*." }
+      cell { text "A map from the specifier strings used by the module represented by this record to request the importation of a module with the relative import attributes to the resolved Module Record. The list does not contain two different Records _r1_ and _r2_ such that ModuleRequestsKeyEqual(_r1_, _r2_) is *true*." }
     ]
     row [
       cell { field [[CycleRoot]] }
@@ -1456,6 +1466,11 @@ table t"table-cyclic-module-methods" @sec-cyclic-module-records#1 {
       cell { sig (method ExecuteModule (capability: #"PromiseCapability Record" opt) -> completion<val(~unused~)> | #"throw completion") }
       cell { text "It evaluates the module's code within its execution context. If this module has *true* in [[HasTLA]], then a PromiseCapability Record is passed as an argument, and the method is expected to resolve or reject the given capability. In this case, the method must not throw an exception, but instead reject the PromiseCapability Record if necessary." }
       cell { text "Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:\n<emu-concrete-method-dfns for=\"ExecuteModule\"></emu-concrete-method-dfns>" }
+    ]
+    row [
+      cell { raw "  GetOptionalIndirectExportsModuleRequests (\n    _importedNames_: ~all~ or a List of Strings,\n  ): a List of OptionalModuleRequest Records" }
+      cell { text "<p>It computes the ModuleRequest Records for the optional dependencies needed to be able to import _importedNames_ from this module, which are only loaded, linked, and evaluated when some of the names they provide are imported. In case of a Source Text Module Record, these are the dependencies specified through `export defer`, and the dependencies specified through `export * from` that may re-export `export defer` bindings of other modules.</p>\n\n<p>This abstract method has the following default implementation:</p>\n<emu-alg>\n  1. Return a new empty List.\n</emu-alg>" }
+      cell { text "Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:\n<emu-concrete-method-dfns for=\"GetOptionalIndirectExportsModuleRequests\"></emu-concrete-method-dfns>" }
     ]
   ]
 }
@@ -1610,6 +1625,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { text "[[ModuleRequest]]" }
       cell { text "[[ImportName]]" }
       cell { text "[[LocalName]]" }
+      cell { text "[[NamespaceNamesFilter]]" }
     ]
     row [
       cell { expr (code "export var v;") }
@@ -1617,6 +1633,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr (null) }
       cell { expr (null) }
       cell { expr ("v") }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "export default function f() {}") }
@@ -1624,6 +1641,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr (null) }
       cell { expr (null) }
       cell { expr ("f") }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "export default function () {}") }
@@ -1631,6 +1649,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr (null) }
       cell { expr (null) }
       cell { expr ("*default*") }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "export default 42;") }
@@ -1638,6 +1657,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr (null) }
       cell { expr (null) }
       cell { expr ("*default*") }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "export {x};") }
@@ -1645,6 +1665,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr (null) }
       cell { expr (null) }
       cell { expr ("x") }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "export {v as x};") }
@@ -1652,6 +1673,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr (null) }
       cell { expr (null) }
       cell { expr ("v") }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "export {x} from \"mod\";") }
@@ -1659,6 +1681,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr ("mod") }
       cell { expr ("x") }
       cell { expr (null) }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "export {v as x} from \"mod\";") }
@@ -1666,6 +1689,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr ("mod") }
       cell { expr ("v") }
       cell { expr (null) }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "export * from \"mod\";") }
@@ -1673,6 +1697,7 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr ("mod") }
       cell { expr (~all-but-default~) }
       cell { expr (null) }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "export * as ns from \"mod\";") }
@@ -1680,6 +1705,15 @@ table t"table-export-forms-mapping-to-exportentry-records" @sec-source-text-modu
       cell { expr ("mod") }
       cell { expr (~namespace~) }
       cell { expr (null) }
+      cell { expr (~empty~) }
+    ]
+    row [
+      cell { expr (code "export {x, y} as ns from \"mod\";") }
+      cell { expr ("ns") }
+      cell { expr ("mod") }
+      cell { expr (~filtered-namespace~) }
+      cell { expr (null) }
+      cell { expr (["x", "y"]) }
     ]
   ]
 }
@@ -1707,13 +1741,18 @@ table t"table-exportentry-records" @sec-source-text-module-records#3 {
     ]
     row [
       cell { field [[ImportName]] }
-      cell { ty (String | val(null) | val(~namespace~) | val(~all-but-default~)) }
-      cell { text "The name under which the desired binding is exported by the module identified by [[ModuleRequest]]. *null* if the |ExportDeclaration| does not have a |ModuleSpecifier|. ~namespace~ is used for `export * as ns from \"mod\"` declarations. ~all-but-default~ is used for `export * from \"mod\"` declarations." }
+      cell { ty (String | val(null) | val(~namespace~) | val(~filtered-namespace~) | val(~all-but-default~)) }
+      cell { text "The name under which the desired binding is exported by the module identified by [[ModuleRequest]]. *null* if the |ExportDeclaration| does not have a |ModuleSpecifier|. ~namespace~ is used for `export * as ns from \"mod\"` declarations. ~all-but-default~ is used for `export * from \"mod\"` declarations. ~filtered-namespace~ is used for `export {x, y} as ns from \"mod\"` declarations where only selected exports are included in the namespace." }
     ]
     row [
       cell { field [[LocalName]] }
       cell { ty (String | val(null)) }
       cell { text "The name that is used to locally access the exported value from within the importing module. *null* if the exported value is not locally accessible from within the module." }
+    ]
+    row [
+      cell { field [[NamespaceNamesFilter]] }
+      cell { ty (list<String> | val(~empty~)) }
+      cell { text "When [[ImportName]] is ~filtered-namespace~, this field contains the list of export names to include in the namespace object. For all other values of [[ImportName]], this field is ~empty~." }
     ]
   ]
 }
@@ -1804,8 +1843,8 @@ table t"table-graphloadingstate-record-fields" @sec-cyclic-module-records#2 {
     ]
     row [
       cell { field [[Visited]] }
-      cell { ty (list<#"Cyclic Module Record">) }
-      cell { text "It is a list of the Cyclic Module Records that have been already loaded by the current loading process, to avoid infinite loops with circular dependencies." }
+      cell { ty (list<#"ModuleImportedNames Record">) }
+      cell { text "It is a list of the Cyclic Module Records that have been already loaded by the current loading process, together with the list of bindings that have already been imported from them, to avoid infinite loops with circular dependencies." }
     ]
     row [
       cell { field [[HostDefined]] }
@@ -1825,39 +1864,47 @@ table t"table-import-forms-mapping-to-importentry-records" @sec-source-text-modu
       cell { text "[[ModuleRequest]]" }
       cell { text "[[ImportName]]" }
       cell { text "[[LocalName]]" }
+      cell { text "[[NamespaceNamesFilter]]" }
     ]
     row [
       cell { expr (code "import v from \"mod\";") }
       cell { expr ("mod") }
       cell { expr ("default") }
       cell { expr ("v") }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "import * as ns from \"mod\";") }
       cell { expr ("mod") }
       cell { expr (~namespace~) }
       cell { expr ("ns") }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "import {x} from \"mod\";") }
       cell { expr ("mod") }
       cell { expr ("x") }
       cell { expr ("x") }
+      cell { expr (~empty~) }
     ]
     row [
       cell { expr (code "import {x as v} from \"mod\";") }
       cell { expr ("mod") }
       cell { expr ("x") }
       cell { expr ("v") }
+      cell { expr (~empty~) }
     ]
     row [
-      cell { expr (code "import \"mod\";") }
-      cell span (1, 3) { raw "An ImportEntry Record is not created." }
+      cell { expr (code "import {x, y} as ns from \"mod\";") }
+      cell { expr ("mod") }
+      cell { expr (~filtered-namespace~) }
+      cell { expr ("ns") }
+      cell { expr (["x", "y"]) }
     ]
   ]
 }
 
-table t"table-importattribute-fields" @sec-modulerequest-record#2 {
+table t"table-importattribute-fields" @sec-modulerequest-record#5 {
   kind fields
   thead false
   schema ("ImportAttribute Record", false)
@@ -1881,6 +1928,30 @@ table t"table-importattribute-fields" @sec-modulerequest-record#2 {
   ]
 }
 
+table t"table-importednames-fields" @sec-modulerequest-record#1 {
+  kind fields
+  thead false
+  schema ("ImportedNames Record", false)
+  vars []
+  rows [
+    row [
+      cell { text "Field Name" }
+      cell { text "Value Type" }
+      cell { text "Meaning" }
+    ]
+    row [
+      cell { field [[Direct]] }
+      cell { ty (val(~all~) | list<String>) }
+      cell { text "The list of non-namespace names imported from the requested module." }
+    ]
+    row [
+      cell { field [[Namespace]] }
+      cell { ty (val(~all~) | list<String>) }
+      cell { text "The list of names imported from the requested module through a namespace object." }
+    ]
+  ]
+}
+
 table t"table-importentry-record-fields" @sec-source-text-module-records#1 {
   kind fields
   thead true
@@ -1899,13 +1970,18 @@ table t"table-importentry-record-fields" @sec-source-text-module-records#1 {
     ]
     row [
       cell { field [[ImportName]] }
-      cell { ty (String | val(~namespace~)) }
-      cell { text "The name under which the desired binding is exported by the module identified by [[ModuleRequest]]. The value ~namespace~ indicates that the import request is for the target module's namespace object." }
+      cell { ty (String | val(~namespace~) | val(~filtered-namespace~)) }
+      cell { text "The name under which the desired binding is exported by the module identified by [[ModuleRequest]]. The value ~namespace~ indicates that the import request is for the target module's namespace object, and the value ~filtered-namespace~ indicates that the import request is for a filtered namespace created from the module." }
     ]
     row [
       cell { field [[LocalName]] }
       cell { ty (String) }
       cell { text "The name that is used to locally access the imported value from within the importing module." }
+    ]
+    row [
+      cell { field [[NamespaceNamesFilter]] }
+      cell { ty (list<String> | val(~empty~)) }
+      cell { text "When [[ImportName]] is ~filtered-namespace~, this field contains the list of export names to include in the namespace object. For all other values of [[ImportName]], this field is ~empty~." }
     ]
   ]
 }
@@ -2188,6 +2264,11 @@ table t"table-internal-slots-of-module-namespace-exotic-objects" @sec-module-nam
       cell { field [[Exports]] }
       cell { ty (list<String>) }
       cell { text "A List whose elements are the String values of the exported names exposed as own properties of this object. The list is sorted according to lexicographic code unit order." }
+    ]
+    row [
+      cell { field [[Deferred]] }
+      cell { ty (Boolean) }
+      cell { text "Whether this module namespace was obtained through `import defer`/`import.defer()`. Deferred namespaces can have side effects when accessing properties on them." }
     ]
   ]
 }
@@ -2525,7 +2606,7 @@ table t"table-line-terminator-code-points" @sec-line-terminators#0 {
   ]
 }
 
-table t"table-loadedmodulerequest-fields" @sec-modulerequest-record#1 {
+table t"table-loadedmodulerequest-fields" @sec-modulerequest-record#4 {
   kind fields
   thead false
   schema ("LoadedModuleRequest Record", false)
@@ -2946,6 +3027,274 @@ table t"table-module-graph-cycle-async-fields-9" @sec-example-cyclic-module-reco
   ]
 }
 
+table t"table-module-graph-deferred-async-cycle-root-fields-1" @sec-example-cyclic-module-record-graphs-deferred-imports#3 {
+  kind data
+  thead true
+  vars [A]
+  rows [
+    row [
+      cell { text "<span class=\"column\">Field</span>\n<div class=\"slash\">\n</div>\n<span class=\"row\">Module</span>" }
+      cell { text "_A_" }
+      cell { text "_B_" }
+      cell { text "_C_" }
+    ]
+    row [
+      cell { text "[[Status]]" }
+      cell { expr (~evaluating-async~) }
+      cell { expr (~linked~) }
+      cell { expr (~evaluating-async~) }
+    ]
+    row [
+      cell { text "[[AsyncEvaluationOrder]]" }
+      cell { expr (1) }
+      cell { expr (~unset~) }
+      cell { expr (0) }
+    ]
+    row [
+      cell { text "[[AsyncParentModules]]" }
+      cell { expr ([]) }
+      cell { expr ([]) }
+      cell { expr ([A]) }
+    ]
+    row [
+      cell { text "[[PendingAsyncDependencies]]" }
+      cell { raw "1 (_C_)" }
+      cell { expr (0) }
+      cell { expr (0) }
+    ]
+    row [
+      cell { text "[[CycleRoot]]" }
+      cell { expr (A) }
+      cell { expr (~empty~) }
+      cell { expr (A) }
+    ]
+  ]
+}
+
+table t"table-module-graph-deferred-async-cycle-root-fields-2" @sec-example-cyclic-module-record-graphs-deferred-imports#4 {
+  kind data
+  thead true
+  vars [A]
+  rows [
+    row [
+      cell { text "<span class=\"column\">Field</span>\n<div class=\"slash\">\n</div>\n<span class=\"row\">Module</span>" }
+      cell { text "_A_" }
+      cell { text "_B_" }
+      cell { text "_C_" }
+    ]
+    row [
+      cell { text "[[Status]]" }
+      cell { expr (~evaluated~) }
+      cell { expr (~linked~) }
+      cell { expr (~evaluated~) }
+    ]
+    row [
+      cell { text "[[AsyncEvaluationOrder]]" }
+      cell { expr (~done~) }
+      cell { expr (~unset~) }
+      cell { expr (~done~) }
+    ]
+    row [
+      cell { text "[[AsyncParentModules]]" }
+      cell { expr ([]) }
+      cell { expr ([]) }
+      cell { expr ([A]) }
+    ]
+    row [
+      cell { text "[[PendingAsyncDependencies]]" }
+      cell { expr (0) }
+      cell { expr (0) }
+      cell { expr (0) }
+    ]
+    row [
+      cell { text "[[CycleRoot]]" }
+      cell { expr (A) }
+      cell { expr (~empty~) }
+      cell { expr (A) }
+    ]
+  ]
+}
+
+table t"table-module-graph-deferred-async-cycle-root-fields-3" @sec-example-cyclic-module-record-graphs-deferred-imports#5 {
+  kind data
+  thead true
+  vars [A, B]
+  rows [
+    row [
+      cell { text "<span class=\"column\">Field</span>\n<div class=\"slash\">\n</div>\n<span class=\"row\">Module</span>" }
+      cell { text "_A_" }
+      cell { text "_B_" }
+      cell { text "_C_" }
+    ]
+    row [
+      cell { text "[[Status]]" }
+      cell { expr (~evaluated~) }
+      cell { expr (~evaluated~) }
+      cell { expr (~evaluated~) }
+    ]
+    row [
+      cell { text "[[AsyncEvaluationOrder]]" }
+      cell { expr (~done~) }
+      cell { expr (~unset~) }
+      cell { expr (~done~) }
+    ]
+    row [
+      cell { text "[[AsyncParentModules]]" }
+      cell { expr ([]) }
+      cell { expr ([]) }
+      cell { expr ([A]) }
+    ]
+    row [
+      cell { text "[[PendingAsyncDependencies]]" }
+      cell { expr (0) }
+      cell { expr (0) }
+      cell { expr (0) }
+    ]
+    row [
+      cell { text "[[CycleRoot]]" }
+      cell { expr (A) }
+      cell { expr (B) }
+      cell { expr (A) }
+    ]
+  ]
+}
+
+table t"table-module-graph-deferred-async-fields-1" @sec-example-cyclic-module-record-graphs-deferred-imports#0 {
+  kind data
+  thead true
+  vars [A]
+  rows [
+    row [
+      cell { text "<span class=\"column\">Field</span>\n<div class=\"slash\">\n</div>\n<span class=\"row\">Module</span>" }
+      cell { text "_A_" }
+      cell { text "_B_" }
+      cell { text "_C_" }
+      cell { text "_D_" }
+    ]
+    row [
+      cell { text "[[Status]]" }
+      cell { expr (~evaluating-async~) }
+      cell { expr (~linked~) }
+      cell { expr (~evaluating-async~) }
+      cell { expr (~evaluated~) }
+    ]
+    row [
+      cell { text "[[AsyncEvaluationOrder]]" }
+      cell { expr (1) }
+      cell { expr (~unset~) }
+      cell { expr (0) }
+      cell { expr (~unset~) }
+    ]
+    row [
+      cell { text "[[AsyncParentModules]]" }
+      cell { expr ([]) }
+      cell { expr ([]) }
+      cell { expr ([A]) }
+      cell { expr ([]) }
+    ]
+    row [
+      cell { text "[[PendingAsyncDependencies]]" }
+      cell { raw "1 (_C_)" }
+      cell { expr (0) }
+      cell { expr (0) }
+      cell { expr (0) }
+    ]
+  ]
+}
+
+table t"table-module-graph-deferred-async-fields-2" @sec-example-cyclic-module-record-graphs-deferred-imports#1 {
+  kind data
+  thead true
+  vars [A]
+  rows [
+    row [
+      cell { text "<span class=\"column\">Field</span>\n<div class=\"slash\">\n</div>\n<span class=\"row\">Module</span>" }
+      cell { text "_A_" }
+      cell { text "_B_" }
+      cell { text "_C_" }
+      cell { text "_D_" }
+    ]
+    row [
+      cell { text "[[Status]]" }
+      cell { expr (~evaluated~) }
+      cell { expr (~linked~) }
+      cell { expr (~evaluated~) }
+      cell { expr (~evaluated~) }
+    ]
+    row [
+      cell { text "[[AsyncEvaluationOrder]]" }
+      cell { expr (~done~) }
+      cell { expr (~unset~) }
+      cell { expr (~done~) }
+      cell { expr (~unset~) }
+    ]
+    row [
+      cell { text "[[AsyncParentModules]]" }
+      cell { expr ([]) }
+      cell { expr ([]) }
+      cell { expr ([A]) }
+      cell { expr ([]) }
+    ]
+    row [
+      cell { text "[[PendingAsyncDependencies]]" }
+      cell { expr (0) }
+      cell { expr (0) }
+      cell { expr (0) }
+      cell { expr (0) }
+    ]
+  ]
+}
+
+table t"table-module-graph-deferred-async-fields-3" @sec-example-cyclic-module-record-graphs-deferred-imports#2 {
+  kind data
+  thead true
+  vars [B, error]
+  rows [
+    row [
+      cell { text "<span class=\"column\">Field</span>\n<div class=\"slash\">\n</div>\n<span class=\"row\">Module</span>" }
+      cell { text "_A_" }
+      cell { text "_B_" }
+      cell { text "_C_" }
+      cell { text "_D_" }
+    ]
+    row [
+      cell { text "[[Status]]" }
+      cell { expr (~evaluated~) }
+      cell { expr (~linked~) }
+      cell { expr (~evaluated~) }
+      cell { expr (~evaluated~) }
+    ]
+    row [
+      cell { text "[[AsyncEvaluationOrder]]" }
+      cell { expr (~done~) }
+      cell { expr (~unset~) }
+      cell { expr (~done~) }
+      cell { expr (~unset~) }
+    ]
+    row [
+      cell { text "[[AsyncParentModules]]" }
+      cell { expr ([]) }
+      cell { expr ([]) }
+      cell { expr ([B]) }
+      cell { expr ([]) }
+    ]
+    row [
+      cell { text "[[PendingAsyncDependencies]]" }
+      cell { raw "1 (_C_)" }
+      cell { expr (0) }
+      cell { expr (0) }
+      cell { expr (0) }
+    ]
+    row [
+      cell { text "[[EvaluationError]]" }
+      cell { expr (error) }
+      cell { expr (~empty~) }
+      cell { expr (error) }
+      cell { expr (~empty~) }
+    ]
+  ]
+}
+
 table t"table-module-record-fields" @sec-abstract-module-records#0 {
   kind fields
   thead true
@@ -2970,12 +3319,41 @@ table t"table-module-record-fields" @sec-abstract-module-records#0 {
     row [
       cell { field [[Namespace]] }
       cell { ty (Object | val(~empty~)) }
-      cell { text "The Module Namespace Object (<emu-xref href=\"#sec-module-namespace-objects\"></emu-xref>) if one has been created for this module." }
+      cell { text "The Module Namespace Object (<emu-xref href=\"#sec-module-namespace-exotic-objects\"></emu-xref>) whose [[Deferred]] slot is *false*, if one has been created for this module." }
+    ]
+    row [
+      cell { field [[DeferredNamespace]] }
+      cell { ty (Object | val(~empty~)) }
+      cell { text "The Module Namespace Object (<emu-xref href=\"#sec-module-namespace-exotic-objects\"></emu-xref>) whose [[Deferred]] slot is *true*, if one has been requested for this module." }
     ]
     row [
       cell { field [[HostDefined]] }
       cell { ty (pred(sat @spec-copy-6(data choice 0, undefined))) }
       cell { text "Field reserved for use by host environments that need to associate additional information with a module." }
+    ]
+  ]
+}
+
+table t"table-moduleimportednames-fields" @sec-modulerequest-record#2 {
+  kind fields
+  thead false
+  schema ("ModuleImportedNames Record", false)
+  vars []
+  rows [
+    row [
+      cell { text "Field Name" }
+      cell { text "Value Type" }
+      cell { text "Meaning" }
+    ]
+    row [
+      cell { field [[Module]] }
+      cell { ty (#"Cyclic Module Record") }
+      cell { text "The module from which the names have been requested." }
+    ]
+    row [
+      cell { field [[ImportedNames]] }
+      cell { ty (#"ImportedNames Record") }
+      cell { text "The names that have been requested from [[Module]]." }
     ]
   ]
 }
@@ -3000,6 +3378,16 @@ table t"table-modulerequest-fields" @sec-modulerequest-record#0 {
       cell { field [[Attributes]] }
       cell { ty (list<#"ImportAttribute Record">) }
       cell { text "The import attributes" }
+    ]
+    row [
+      cell { field [[Phase]] }
+      cell { ty (val(~defer~) | val(~evaluation~)) }
+      cell { text "The target import phase" }
+    ]
+    row [
+      cell { field [[ImportedNames]] }
+      cell { ty (#"ImportedNames Record") }
+      cell { text "The names imported from the requested module, used for filtering `export defer` declarations." }
     ]
   ]
 }
@@ -3287,6 +3675,25 @@ table t"table-object-property-attributes" @sec-property-attributes#0 {
   ]
 }
 
+table t"table-optionalmodulerequest-fields" @sec-modulerequest-record#3 {
+  kind fields
+  thead false
+  schema ("OptionalModuleRequest Record", false)
+  vars []
+  rows [
+    row [
+      cell { text "Field Name" }
+      cell { text "Value Type" }
+      cell { text "Meaning" }
+    ]
+    row [
+      cell { field [[IsStarExport]] }
+      cell { ty (Boolean) }
+      cell { text "Indicates whether the request is not due to an own optional export, but due to the module re-exposing the requested module's optional exports. In Source Text Module Records this is done by `export * from` declarations." }
+    ]
+  ]
+}
+
 table t"table-privateelement-fields" @sec-privateelement-specification-type#0 {
   kind fields
   thead true
@@ -3556,7 +3963,7 @@ table t"table-realm-record-fields" @sec-code-realms#0 {
     row [
       cell { field [[LoadedModules]] }
       cell { ty (list<#"LoadedModuleRequest Record">) }
-      cell { text "<p>A map from the specifier strings imported by this realm to the resolved Module Record. The list does not contain two different Records _r1_ and _r2_ such that ModuleRequestsEqual(_r1_, _r2_) is *true*.</p>\n<emu-note>\n  As mentioned in HostLoadImportedModule (<emu-xref href=\"#note-HostLoadImportedModule-referrer-Realm-Record\"></emu-xref>), [[LoadedModules]] in Realm Records is only used when running an `import()` expression in a context where there is no active script or module.\n</emu-note>" }
+      cell { text "<p>A map from the specifier strings imported by this realm to the resolved Module Record. The list does not contain two different Records _r1_ and _r2_ such that ModuleRequestsKeyEqual(_r1_, _r2_) is *true*.</p>\n<emu-note>\n  As mentioned in HostLoadImportedModule (<emu-xref href=\"#note-HostLoadImportedModule-referrer-Realm-Record\"></emu-xref>), [[LoadedModules]] in Realm Records is only used when running an `import()` expression in a context where there is no active script or module.\n</emu-note>" }
     ]
     row [
       cell { field [[HostDefined]] }
@@ -3683,6 +4090,30 @@ table t"table-regexp-string-iterator-instance-slots" @sec-properties-of-regexp-s
   ]
 }
 
+table t"table-resolvedbinding-fields" @sec-abstract-module-records#2 {
+  kind fields
+  thead false
+  schema ("ResolvedBinding Record", false)
+  vars []
+  rows [
+    row [
+      cell { text "Field Name" }
+      cell { text "Value Type" }
+      cell { text "Meaning" }
+    ]
+    row [
+      cell { field [[Module]] }
+      cell { ty (#"Module Record") }
+      cell { text "The module that provides the binding" }
+    ]
+    row [
+      cell { field [[BindingName]] }
+      cell { ty (String | val(~namespace~) | val(~deferred-namespace~)) }
+      cell { text "The name of the binding within that module, or ~namespace~ or ~deferred-namespace~ if the export is the module's (deferred) namespace object." }
+    ]
+  ]
+}
+
 table t"table-rmwsharedmemory-fields" @sec-memory-model-fundamentals#2 {
   kind fields
   thead true
@@ -3756,7 +4187,7 @@ table t"table-script-records" @sec-script-records#0 {
     row [
       cell { field [[LoadedModules]] }
       cell { ty (list<#"LoadedModuleRequest Record">) }
-      cell { text "A map from the specifier strings imported by this script to the resolved Module Record. The list does not contain two different Records _r1_ and _r2_ such that ModuleRequestsEqual(_r1_, _r2_) is *true*." }
+      cell { text "A map from the specifier strings imported by this script to the resolved Module Record. The list does not contain two different Records _r1_ and _r2_ such that ModuleRequestsKeyEqual(_r1_, _r2_) is *true*." }
     ]
     row [
       cell { field [[HostDefined]] }

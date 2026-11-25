@@ -5,3 +5,9 @@
 	path = external/test262
 	url = https://github.com/tc39/test262
 	shallow = true
+[submodule "external/proposal-deferred-reexports"]
+	path = external/proposal-deferred-reexports
+	url = https://github.com/tc39/proposal-deferred-reexports
+[submodule "external/proposal-defer-import-eval"]
+	path = external/proposal-defer-import-eval
+	url = https://github.com/tc39/proposal-defer-import-eval.git

@@ -1,0 +1,67 @@
+# Merge resolutions for tc39/proposal-deferred-reexports layered atop proposal-defer-import-eval.
+
+place sec-static-semantics-boundnames 4 after 94
+place sec-static-semantics-boundnames 5 after 94
+place sec-static-semantics-boundnames 6 after 94
+place sec-static-semantics-boundnames 7 after 94
+place sec-static-semantics-boundnames 8 after 96
+place sec-static-semantics-boundnames 9 after 96
+
+place sec-static-semantics-isconstantdeclaration 2 after 15
+place sec-static-semantics-isconstantdeclaration 3 after 15
+
+place sec-static-semantics-lexicallyscopeddeclarations 2 after 47
+place sec-static-semantics-lexicallyscopeddeclarations 3 after 47
+
+use-new sec-module-namespace-exotic-objects-get-p-receiver 2
+use-new sec-evaluate-import-call 0
+use-new sec-evaluate-import-call 2
+use-new sec-ContinueDynamicImport 2
+
+place sec-modulerequest-record 3 after 2
+place sec-modulerequest-record 4 after 2
+place sec-modulerequest-record 5 after 2
+place sec-modulerequest-record 6 after 2
+place sec-modulerequest-record 7 after 2
+place sec-modulerequest-record 8 after 2
+
+place sec-static-semantics-modulerequests 26 after 25
+place sec-static-semantics-modulerequests 27 after 25
+ignore sec-static-semantics-modulerequests 28
+ignore sec-static-semantics-modulerequests 29
+
+ignore sec-abstract-module-records 4
+use-new sec-abstract-module-records 5
+place sec-abstract-module-records 6 after 5
+place sec-abstract-module-records 7 after 5
+
+ignore sec-ReadyForSyncExecution 1
+use-new sec-ReadyForSyncExecution 2
+place sec-ReadyForSyncExecution 3 after 2
+
+ignore sec-moduleevaluation 2
+place sec-moduleevaluation 3 after 2
+use-new sec-innermoduleevaluation 2
+
+ignore sec-GatherAsynchronousTransitiveDependencies 1
+use-new sec-GatherAsynchronousTransitiveDependencies 2
+
+use-new sec-source-text-module-records 6
+use-new sec-source-text-module-records 7
+use-new sec-source-text-module-records 9
+use-new sec-source-text-module-records 10
+
+ignore sec-parsemodule 0
+use-new sec-parsemodule 2
+rebase sec-resolveexport 2
+use-new sec-source-text-module-record-initialize-environment 2
+use-new sec-getmodulenamespace 2
+
+ignore sec-static-semantics-importentries 11
+use-new sec-static-semantics-importentriesformodule 17
+
+place sec-static-semantics-exportedbindings 2 after 8
+place sec-static-semantics-exportedbindings 3 after 8
+
+ignore sec-static-semantics-exportentries 19
+ignore sec-static-semantics-exportentries 21

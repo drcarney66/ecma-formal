@@ -327,6 +327,7 @@ clause @ph-utf8-encode
 clause @ph-value-less-than
 clause @ph-zero-after-twentieth
 clause @ph-zero-after-twentieth-incremented
+clause @row-boundnames-import-defer
 clause @row-compileassertion-quantifiableassertion-lookahead
 clause @row-compileassertion-quantifiableassertion-negative-lookahead
 clause @row-compileatom-extendedatom-characterclass
@@ -419,20 +420,43 @@ clause @sec-%wrapforvaliditeratorprototype%-object
 clause @sec-%wrapforvaliditeratorprototype%.next op "%WrapForValidIteratorPrototype%.next"
 clause @sec-%wrapforvaliditeratorprototype%.return op "%WrapForValidIteratorPrototype%.return"
 clause @sec-AllImportAttributesSupported op "AllImportAttributesSupported"
+clause @sec-AllImportedNames op "AllImportedNames"
+clause @sec-BuildEvaluationList op "BuildEvaluationList"
+clause @sec-BuildLinkingList op "BuildLinkingList"
 clause @sec-ContinueDynamicImport op "ContinueDynamicImport"
 clause @sec-ContinueModuleLoading op "ContinueModuleLoading"
+clause @sec-CopyPreviouslyImportedNames op "CopyPreviouslyImportedNames"
+clause @sec-DirectImportedNames op "DirectImportedNames"
+clause @sec-EnsureDeferredExportEvaluated op "EnsureDeferredExportEvaluated"
 clause @sec-EvaluateModuleSync op "EvaluateModuleSync"
+clause @sec-ExcludeImportedNames op "ExcludeImportedNames"
+clause @sec-ExportFromDeclarationModuleRequest op "ExportFromDeclarationModuleRequest"
+clause @sec-FilteredNamespaceImportedNames op "FilteredNamespaceImportedNames"
+clause @sec-FilteredNamespaceNames op "FilteredNamespaceNames"
 clause @sec-FinishLoadingImportedModule op "FinishLoadingImportedModule"
+clause @sec-GatherAsynchronousTransitiveDependencies op "GatherAsynchronousTransitiveDependencies"
+clause @sec-GatherAsynchronousTransitiveDependenciesForRequests op "GatherAsynchronousTransitiveDependenciesForRequests"
 clause @sec-GetImportedModule op "GetImportedModule"
+clause @sec-GetModuleExportsList op "GetModuleExportsList"
+clause @sec-GetNewOptionalIndirectExportsModuleRequests op "GetNewOptionalIndirectExportsModuleRequests"
+clause @sec-GetOptionalIndirectExportsModuleRequests op "GetOptionalIndirectExportsModuleRequests"
 clause @sec-HostLoadImportedModule op "HostLoadImportedModule"
 clause @sec-IncrementModuleAsyncEvaluationCount op "IncrementModuleAsyncEvaluationCount"
 clause @sec-InnerModuleLinking op "InnerModuleLinking"
 clause @sec-InnerModuleLoading op "InnerModuleLoading"
 clause @sec-IsHTMLDDA-internal-slot
+clause @sec-IsModuleSCCEvaluated op "IsModuleSCCEvaluated"
+clause @sec-IsSymbolLikeNamespaceKey op "IsSymbolLikeNamespaceKey"
+clause @sec-ListAppendUnique op "ListAppendUnique"
 clause @sec-LoadRequestedModules op "LoadRequestedModules"
-clause @sec-ModuleRequestsEqual op "ModuleRequestsEqual"
+clause @sec-MergeImportedNames op "MergeImportedNames"
+clause @sec-ModuleRequestsKeyEqual op "ModuleRequestsKeyEqual"
 clause @sec-ParseJSON op "ParseJSON"
+clause @sec-ReadyForSyncExecution op "ReadyForSyncExecution"
 clause @sec-SetterThatIgnoresPrototypeProperties op "SetterThatIgnoresPrototypeProperties"
+clause @sec-ValidateAllRequestedOptionalNamespaceExports op "ValidateAllRequestedOptionalNamespaceExports"
+clause @sec-ValidateOwnNamespaceExports op "ValidateOwnNamespaceExports"
+clause @sec-ValidateRequestedOptionalIndirectExports op "ValidateRequestedOptionalIndirectExports"
 clause @sec-abstract-closure
 clause @sec-abstract-module-records
 clause @sec-abstract-operations
@@ -833,6 +857,7 @@ clause @sec-countleftcapturingparens-annexb
 clause @sec-countleftcapturingparensbefore op "CountLeftCapturingParensBefore"
 clause @sec-countleftcapturingparenswithin op "CountLeftCapturingParensWithin"
 clause @sec-create-default-export-synthetic-module op "CreateDefaultExportSyntheticModule"
+clause @sec-create-promise-all-resolve-element op "CreatePromiseAllResolveElement"
 clause @sec-createarrayfromlist op "CreateArrayFromList"
 clause @sec-createarrayiterator op "CreateArrayIterator"
 clause @sec-createasyncfromsynciterator op "CreateAsyncFromSyncIterator"
@@ -1042,6 +1067,7 @@ clause @sec-encodeuri-uri op "encodeURI"
 clause @sec-encodeuricomponent-uricomponent op "encodeURIComponent"
 clause @sec-enqueueatomicswaitasynctimeoutjob op "EnqueueAtomicsWaitAsyncTimeoutJob"
 clause @sec-enqueueresolveinagentjob op "EnqueueResolveInAgentJob"
+clause @sec-ensureresolvablebinding op "EnsureResolvableBinding"
 clause @sec-entercriticalsection op "EnterCriticalSection"
 clause @sec-enum-specification-type
 clause @sec-enumerableownproperties op "EnumerableOwnProperties"
@@ -1075,6 +1101,7 @@ clause @sec-evaluation op "Evaluation"
 clause @sec-evaluation-order
 clause @sec-event-set op "EventSet"
 clause @sec-example-cyclic-module-record-graphs
+clause @sec-example-cyclic-module-record-graphs-deferred-imports
 clause @sec-examples-of-automatic-semicolon-insertion
 clause @sec-executable-code-and-execution-contexts
 clause @sec-execute-async-module op "ExecuteAsyncModule"
@@ -1235,6 +1262,7 @@ clause @sec-getnamedtimezoneepochnanoseconds op "GetNamedTimeZoneEpochNanosecond
 clause @sec-getnamedtimezoneoffsetnanoseconds op "GetNamedTimeZoneOffsetNanoseconds"
 clause @sec-getnewtarget op "GetNewTarget"
 clause @sec-getoptionsobject op "GetOptionsObject"
+clause @sec-getownexportednames op "GetOwnExportedNames"
 clause @sec-getownpropertykeys op "GetOwnPropertyKeys"
 clause @sec-getpromiseresolve op "GetPromiseResolve"
 clause @sec-getprototypefromconstructor op "GetPrototypeFromConstructor"
@@ -1333,10 +1361,13 @@ clause @sec-ifabruptrejectpromise op "IfAbruptRejectPromise"
 clause @sec-immutable-prototype-exotic-objects
 clause @sec-immutable-prototype-exotic-objects-setprototypeof-v op "[[SetPrototypeOf]]"
 clause @sec-implicit-normal-completion
+clause @sec-import-call-runtime-semantics-EvaluateImportCallOptions op "EvaluateImportCallOptions"
+clause @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier op "EvaluateImportCallSpecifier"
 clause @sec-import-call-runtime-semantics-evaluation op "Evaluation"
 clause @sec-import-calls
 clause @sec-importedlocalnames op "ImportedLocalNames"
 clause @sec-imports
+clause @sec-imports-UnaliasedImportNames op "UnaliasedImportNames"
 clause @sec-imports-static-semantics-early-errors
 clause @sec-indexed-collections
 clause @sec-inherited-property
@@ -2266,6 +2297,7 @@ clause @sec-runtime-semantics-substitutionevaluation op "SubstitutionEvaluation"
 clause @sec-runtime-semantics-unicodematchproperty-p op "UnicodeMatchProperty"
 clause @sec-runtime-semantics-unicodematchpropertyvalue-p-v op "UnicodeMatchPropertyValue"
 clause @sec-runtime-semantics-whileloopevaluation op "WhileLoopEvaluation"
+clause @sec-safe-perform-promise-all op "SafePerformPromiseAll"
 clause @sec-sametype op "SameType"
 clause @sec-samevalue op "SameValue"
 clause @sec-samevaluenonnumber op "SameValueNonNumber"
@@ -2410,6 +2442,7 @@ clause @sec-static-semantics-maycontainstrings op "MayContainStrings"
 clause @sec-static-semantics-modulerequests op "ModuleRequests"
 clause @sec-static-semantics-mv
 clause @sec-static-semantics-nonconstructorelements op "NonConstructorElements"
+clause @sec-static-semantics-optionalindirectexportentries op "OptionalIndirectExportEntries"
 clause @sec-static-semantics-privateboundidentifiers op "PrivateBoundIdentifiers"
 clause @sec-static-semantics-propertydefinitionnodes op "PropertyDefinitionNodes"
 clause @sec-static-semantics-propertynamelist op "PropertyNameList"
@@ -3196,11 +3229,14 @@ field [[Date.prototype]]
 field [[Date.prototype.toUTCString]]
 field [[DateValue]]
 field [[DeclarativeRecord]]
+field [[Deferred]]
+field [[DeferredNamespace]]
 field [[DefineOwnProperty]]
 field [[Deletable]]
 field [[Delete]]
 field [[Description]]
 field [[Descriptor]]
+field [[Direct]]
 field [[DisposableResourceStack]]
 field [[DisposableStack]]
 field [[DisposableStack.prototype]]
@@ -3279,6 +3315,7 @@ field [[IgnoreCase]]
 field [[ImportEntries]]
 field [[ImportMeta]]
 field [[ImportName]]
+field [[ImportedNames]]
 field [[Indent]]
 field [[Index]]
 field [[IndirectExportEntries]]
@@ -3303,6 +3340,7 @@ field [[IsLockFree1]]
 field [[IsLockFree2]]
 field [[IsLockFree8]]
 field [[IsRawJSON]]
+field [[IsStarExport]]
 field [[IsUnpairedSurrogate]]
 field [[IsWithEnvironment]]
 field [[Iterable]]
@@ -3345,6 +3383,7 @@ field [[Name]]
 field [[NameAttributes]]
 field [[Names]]
 field [[Namespace]]
+field [[NamespaceNamesFilter]]
 field [[NewTarget]]
 field [[NextMethod]]
 field [[NoTear]]
@@ -3359,6 +3398,7 @@ field [[ObjectWasVisited]]
 field [[Omittable]]
 field [[OpenMethod]]
 field [[Optional]]
+field [[OptionalIndirectExportEntries]]
 field [[Order]]
 field [[OriginalFlags]]
 field [[OriginalSource]]
@@ -3371,6 +3411,8 @@ field [[ParseNode]]
 field [[Payload]]
 field [[PendingAsyncDependencies]]
 field [[PendingModulesCount]]
+field [[PendingOptionalFilteredNamespaceExports]]
+field [[Phase]]
 field [[Prefix]]
 field [[PreventExtensions]]
 field [[PrimaryIdentifier]]
@@ -3527,6 +3569,7 @@ field [[unescape]]
 enum ~accessor~
 enum ~all~
 enum ~all-but-default~
+enum ~allow-ambiguous~
 enum ~ambiguous~
 enum ~any~
 enum ~ascending~
@@ -3550,10 +3593,13 @@ enum ~continue~
 enum ~cooked~
 enum ~data~
 enum ~date~
+enum ~defer~
+enum ~deferred-namespace~
 enum ~derived~
 enum ~descending~
 enum ~detached~
 enum ~direct-eval~
+enum ~disallow-ambiguous~
 enum ~disposed~
 enum ~done~
 enum ~draining-queue~
@@ -3563,9 +3609,11 @@ enum ~enumerate~
 enum ~evaluated~
 enum ~evaluating~
 enum ~evaluating-async~
+enum ~evaluation~
 enum ~executing~
 enum ~failure~
 enum ~field~
+enum ~filtered-namespace~
 enum ~finite~
 enum ~fixed-length~
 enum ~float16~
@@ -3576,11 +3624,13 @@ enum ~frozen~
 enum ~fulfill~
 enum ~fulfilled~
 enum ~function~
+enum ~gather-async-deps~
 enum ~generator~
 enum ~get-own-property~
 enum ~get-prototype-of~
 enum ~global~
 enum ~handled~
+enum ~ignore-deferred-namespace~
 enum ~indirect-eval~
 enum ~init~
 enum ~initialized~
@@ -3669,6 +3719,7 @@ method Evaluate
 method ExecuteModule
 method GetBindingValue
 method GetExportedNames
+method GetOptionalIndirectExportsModuleRequests
 method GetThisBinding
 method HasBinding
 method HasSuperBinding
@@ -4029,6 +4080,7 @@ syntax #"GlobalSymbolRegistry Record" defined {}
 syntax #"GraphLoadingState Record" defined { super [] record true test none }
 syntax #"ImportAttribute Record" defined { super [] record true test none }
 syntax #"ImportEntry Record" defined { super [] record true test none }
+syntax #"ImportedNames Record" defined { super [] record true test none }
 syntax #"Iterator Record" defined { super [] record true test none }
 syntax #"IteratorResult object" defined {}
 syntax #"JSON Parse Record" defined { super [] record true test none }
@@ -4044,12 +4096,14 @@ syntax MatcherContinuation defined { super [#"Abstract Closure"] record false te
 syntax #"Memory event" defined { super [] record true test none }
 syntax #"Module Environment Record" defined { super [#"Declarative Environment Record"] record true test none }
 syntax #"Module Record" defined { super [] record true test none }
+syntax #"ModuleImportedNames Record" defined { super [] record true test none }
 syntax #"ModuleRequest Record" defined { super [] record true test none }
 syntax NaN defined { super [Number] record false test alg @sort-NaN }
 syntax Null defined { super [] record false test alg @sort-Null }
 syntax Number
 syntax Object
 syntax #"Object Environment Record" defined { super [#"Environment Record"] record true test none }
+syntax #"OptionalModuleRequest Record" defined { super [#"ModuleRequest Record"] record true test none }
 syntax #"Parse Node"
 syntax #"Private Name" defined { super [] record true test none }
 syntax PrivateElement defined { super [] record true test none }
@@ -4219,6 +4273,7 @@ sdo ContainsUsing { header (kind sdo params [] -> Boolean) }
 sdo DeclarationPart { header (kind sdo params [] -> #"Parse Node") }
 sdo DefineMethod { header (kind sdo params [slot 0 : Object, slot 1 : Object opt] -> completion<record { [[Key]]: #"property key", [[Closure]]: #"ECMAScript function object" }> | #"abrupt completion") }
 sdo DestructuringAssignmentEvaluation { header (kind sdo params [slot 0 : #"ECMAScript language value"] -> completion<val(~unused~)> | #"abrupt completion") }
+sdo DirectImportedNames { header (kind sdo params [] -> doc "a List of unique Strings") }
 sdo DoWhileLoopEvaluation { header (kind sdo params [slot 0 : list<String>] -> completion<#"ECMAScript language value"> | #"abrupt completion") }
 sdo #"Early Errors"
 sdo EvaluateAsyncConciseBody { header (kind sdo params [slot 0 : #"ECMAScript function object", slot 1 : list<#"ECMAScript language value">] -> #"return completion") }
@@ -4229,12 +4284,16 @@ sdo EvaluateClassStaticBlockBody { header (kind sdo params [slot 0 : #"ECMAScrip
 sdo EvaluateConciseBody { header (kind sdo params [slot 0 : #"ECMAScript function object", slot 1 : list<#"ECMAScript language value">] -> #"return completion" | #"throw completion") }
 sdo EvaluateFunctionBody { header (kind sdo params [slot 0 : #"ECMAScript function object", slot 1 : list<#"ECMAScript language value">] -> #"return completion" | #"throw completion") }
 sdo EvaluateGeneratorBody { header (kind sdo params [slot 0 : #"ECMAScript function object", slot 1 : list<#"ECMAScript language value">] -> #"throw completion" | #"return completion") }
+sdo EvaluateImportCallOptions { header (kind sdo params []) }
+sdo EvaluateImportCallSpecifier { header (kind sdo params []) }
 sdo Evaluation { header (kind sdo params [] -> #"Completion Record") }
 sdo ExpectedArgumentCount { header (kind sdo params [] -> sort [#"non-negative"] integer) }
 sdo ExportEntries { header (kind sdo params [] -> list<#"ExportEntry Record">) }
 sdo ExportEntriesForModule { header (kind sdo params [slot 0 : #"ModuleRequest Record" | val(null)] -> list<#"ExportEntry Record">) }
 sdo ExportedBindings { header (kind sdo params [] -> list<String>) }
 sdo ExportedNames { header (kind sdo params [] -> list<String>) }
+sdo FilteredNamespaceImportedNames { header (kind sdo params [] -> doc "~all~ or a List of unique Strings") }
+sdo FilteredNamespaceNames { header (kind sdo params [] -> list<String>) }
 sdo FlagText { header (kind sdo params [] -> doc "source text") }
 sdo ForDeclarationBindingInitialization { header (kind sdo params [slot 0 : #"ECMAScript language value", slot 1 : #"Environment Record"] -> completion<val(~unused~)> | #"abrupt completion") }
 sdo ForDeclarationBindingInstantiation { header (kind sdo params [slot 0 : #"Declarative Environment Record"] -> val(~unused~)) }
@@ -4291,6 +4350,7 @@ sdo ModuleRequests { header (kind sdo params [] -> list<#"ModuleRequest Record">
 sdo NamedEvaluation { header (kind sdo params [slot 0 : #"property key" | #"Private Name"] -> completion<#"function object"> | #"abrupt completion") }
 sdo NonConstructorElements { header (kind sdo params [] -> doc "a List of |ClassElement| Parse Nodes") }
 sdo NumericValue { header (kind sdo params [] -> Number | BigInt) }
+sdo OptionalIndirectExportEntries { header (kind sdo params [] -> list<#"ExportEntry Record">) }
 sdo PrivateBoundIdentifiers { header (kind sdo params [] -> list<String>) }
 sdo PropName { header (kind sdo params [] -> String | val(~empty~)) }
 sdo PropertyBindingInitialization { header (kind sdo params [slot 0 : #"ECMAScript language value", slot 1 : #"Environment Record" | val(undefined)] -> completion<list<#"property key">> | #"abrupt completion") }
@@ -4317,6 +4377,7 @@ sdo TopLevelLexicallyDeclaredNames { header (kind sdo params [] -> list<String>)
 sdo TopLevelLexicallyScopedDeclarations { header (kind sdo params [] -> list<#"Parse Node">) }
 sdo TopLevelVarDeclaredNames { header (kind sdo params [] -> list<String>) }
 sdo TopLevelVarScopedDeclarations { header (kind sdo params [] -> list<#"Parse Node">) }
+sdo UnaliasedImportNames { header (kind sdo params [] -> doc "a List of either |StringLiteral| or |IdentifierName| Parse Nodes") }
 sdo VarDeclaredNames { header (kind sdo params [] -> list<String>) }
 sdo VarScopedDeclarations { header (kind sdo params [] -> list<#"Parse Node">) }
 sdo WhileLoopEvaluation { header (kind sdo params [slot 0 : list<String>] -> completion<#"ECMAScript language value"> | #"abrupt completion") }

@@ -1,0 +1,61 @@
+<emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver" type="internal method">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-ContinueDynamicImport" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-ExcludeImportedNames" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-ReadyForSyncExecution" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-InnerModuleLoading" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-BuildEvaluationList" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-GatherAsynchronousTransitiveDependenciesForRequests" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-getmodulenamespace" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-static-semantics-importentriesformodule" type="sdo">
+  <emu-grammar>ImportSpecifier : ModuleExportName</emu-grammar>
+  <emu-alg>
+    1. Let _localName_ be <del> the</del><ins>the</ins> StringValue of |ModuleExportName|.
+    1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _localName_, [[LocalName]]: _localName_, [[NamespaceNamesFilter]]: ~empty~ }.
+    1. Return « _entry_ ».
+  </emu-alg>
+</emu-clause>
+<emu-clause id="sec-DirectImportedNames" type="sdo">
+  <emu-grammar>ImportSpecifier : ModuleExportName</emu-grammar>
+  <emu-alg>
+    1. Let _importedName_ be the StringValue of <del> |ModuleExportName|</del><ins>|ModuleExportName|</ins>.
+    1. Return « _importedName_ ».
+  </emu-alg>
+</emu-clause>
+<emu-clause id="sec-FilteredNamespaceImportedNames" type="sdo">
+  <emu-grammar>ImportSpecifier : ModuleExportName</emu-grammar>
+  <emu-alg>
+    1. Let _importedName_ be the StringValue of <del> |ModuleExportName|</del><ins>|ModuleExportName|</ins>.
+    1. Return « _importedName_ ».
+  </emu-alg>
+</emu-clause>
+<emu-clause id="sec-MergeImportedNames" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-moduledeclarationlinking" type="concrete method">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-BuildLinkingList" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-GetNewOptionalIndirectExportsModuleRequests" type="abstract operation">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>
+<emu-clause id="sec-GetOptionalIndirectExportsModuleRequests" type="concrete method">
+  <emu-alg>1. <del>mismatch</del></emu-alg>
+</emu-clause>

@@ -1,9 +1,6 @@
 // args: --bundle
-// expect: throw: SyntaxError
-// ECMA-262 as it stands has no `import defer` and no `import.defer()`: this is a SyntaxError.
-// With proposal-defer-import-eval applied (branch proposal-defer-import-eval; the debugger's build
-// "Proposal: import defer") it completes normally and prints:
-//   promise settled; then in ns: false; dep evaluates; x is 1
+// expect: normal: undefined
+// print: promise settled; then in ns: false; dep evaluates; x is 1
 // proposal-defer-import-eval: `import.defer()` settles with a deferred namespace without evaluating the module
 // (ContinueDynamicImport, GatherAsynchronousTransitiveDependencies finds nothing); "then" is not an export of a
 // deferred namespace (GetModuleNamespace), so the promise's resolution does not evaluate it either

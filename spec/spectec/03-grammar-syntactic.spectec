@@ -190,8 +190,13 @@ rule syntactic |SuperCall| [Yield, Await] : {
 }
 
 rule syntactic |ImportCall| [Yield, Await] : {
-  | "import" "(" |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
-  | "import" "(" |AssignmentExpression[+In, ?Yield, ?Await]| "," |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
+  | "import" |ImportCallArguments[?Yield, ?Await]|
+  | "import" "." "defer" |ImportCallArguments[?Yield, ?Await]|
+}
+
+rule syntactic |ImportCallArguments| [Yield, Await] : {
+  | "(" |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
+  | "(" |AssignmentExpression[+In, ?Yield, ?Await]| "," |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
 }
 
 rule syntactic |Arguments| [Yield, Await] : {
@@ -963,6 +968,7 @@ rule syntactic |ModuleExportName| [] : {
 
 rule syntactic |ImportDeclaration| [] : {
   | "import" |ImportClause| |FromClause| |WithClause|? ";"
+  | "import" "defer" |NameSpaceImport| |FromClause| |WithClause|? ";"
   | "import" |ModuleSpecifier| |WithClause|? ";"
 }
 
@@ -980,6 +986,7 @@ rule syntactic |ImportedDefaultBinding| [] : {
 
 rule syntactic |NameSpaceImport| [] : {
   | "*" "as" |ImportedBinding|
+  | |NamedImports| "as" |ImportedBinding|
 }
 
 rule syntactic |NamedImports| [] : {
@@ -997,7 +1004,11 @@ rule syntactic |ImportsList| [] : {
 }
 
 rule syntactic |ImportSpecifier| [] : {
-  | |ImportedBinding|
+  | |ModuleExportName|
+  | |AliasedImportSpecifier|
+}
+
+rule syntactic |AliasedImportSpecifier| [] : {
   | |ModuleExportName| "as" |ImportedBinding|
 }
 
@@ -1026,6 +1037,7 @@ rule syntactic |AttributeKey| [] : {
 
 rule syntactic |ExportDeclaration| [] : {
   | "export" |ExportFromClause| |FromClause| |WithClause|? ";"
+  | "export" "defer" |ExplicitExportFromClause| |FromClause| |WithClause|? ";"
   | "export" |NamedExports| ";"
   | "export" |VariableStatement[~Yield, +Await]|
   | "export" [lookahead not_in { "using", "await" }] |Declaration[~Yield, +Await]|
@@ -1036,8 +1048,13 @@ rule syntactic |ExportDeclaration| [] : {
 
 rule syntactic |ExportFromClause| [] : {
   | "*"
+  | |ExplicitExportFromClause|
+}
+
+rule syntactic |ExplicitExportFromClause| [] : {
   | "*" "as" |ModuleExportName|
   | |NamedExports|
+  | |NamedExports| "as" |ModuleExportName|
 }
 
 rule syntactic |NamedExports| [] : {
@@ -1052,6 +1069,10 @@ rule syntactic |ExportsList| [] : {
 
 rule syntactic |ExportSpecifier| [] : {
   | |ModuleExportName|
+  | |AliasedExportSpecifier|
+}
+
+rule syntactic |AliasedExportSpecifier| [] : {
   | |ModuleExportName| "as" |ModuleExportName|
 }
 

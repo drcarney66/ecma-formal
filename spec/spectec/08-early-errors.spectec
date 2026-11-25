@@ -1670,6 +1670,42 @@ early @sec-imports-static-semantics-early-errors #"Early Errors" {
 }
 
 early @sec-imports-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - ImportClause : NamedImports", p"Syntactic - ImportClause : ImportedDefaultBinding `,` NamedImports"]
+  keys ["\n          \n            ImportClause :\n              NamedImports\n              ImportedDefaultBinding `,` NamedImports\n          \n        "]
+  vars []
+  sentences {
+    syntax_error sdo UnaliasedImportNames(child 5 |NamedImports|) sat @ph-contains-any-nts(|StringLiteral|)
+  }
+}
+
+early @sec-imports-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - ImportClause : NamedImports", p"Syntactic - ImportClause : ImportedDefaultBinding `,` NamedImports"]
+  keys ["\n          \n            ImportClause :\n              NamedImports\n              ImportedDefaultBinding `,` NamedImports\n          \n        "]
+  vars [n]
+  sentences {
+    for_each_in n : |IdentifierName| in sdo UnaliasedImportNames(child 5 |NamedImports|) where sdo StringValue(n) is ty {|ReservedWord|} or sdo StringValue(n) is val {"arguments"; "await"; "eval"; "implements"; "interface"; "let"; "package"; "private"; "protected"; "public"; "static"; "yield"} { perform $""(|IdentifierName|, ?n, sdo UnaliasedImportNames(child 5 |NamedImports|)) }
+  }
+}
+
+early @sec-imports-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - NameSpaceImport : NamedImports `as` ImportedBinding"]
+  keys ["NameSpaceImport : NamedImports `as` ImportedBinding"]
+  vars []
+  sentences {
+    syntax_error expr @ph-contains-cond(child 5 |NamedImports|, |AliasedImportSpecifier|)
+  }
+}
+
+early @sec-imports-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - NameSpaceImport : NamedImports `as` ImportedBinding"]
+  keys ["NameSpaceImport : NamedImports `as` ImportedBinding"]
+  vars []
+  sentences {
+    syntax_error sdo FilteredNamespaceNames(child 5 |NamedImports|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-imports-static-semantics-early-errors#5 #"Early Errors" {
   prods [p"Syntactic 0 WithClause : `with` `{` WithEntries `,`? `}`", p"Syntactic 1 WithClause : `with` `{` WithEntries `,`? `}`"]
   keys ["WithClause : `with` `{` WithEntries `,`? `}`"]
   vars [a, b]
@@ -1693,6 +1729,24 @@ early @sec-exports-static-semantics-early-errors#1 #"Early Errors" {
   vars [n]
   sentences {
     for_each_in n : |IdentifierName| in sdo ReferencedBindings(child 5 |NamedExports|) where sdo StringValue(n) is ty {|ReservedWord|} or sdo StringValue(n) is val {"implements"; "interface"; "let"; "package"; "private"; "protected"; "public"; "static"} { perform $""(|IdentifierName|, ?n, sdo ReferencedBindings(child 5 |NamedExports|)) }
+  }
+}
+
+early @sec-exports-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  keys ["ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  vars []
+  sentences {
+    syntax_error expr @ph-contains-cond(child 5 |NamedExports|, |AliasedExportSpecifier|)
+  }
+}
+
+early @sec-exports-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  keys ["ExplicitExportFromClause : NamedExports `as` ModuleExportName"]
+  vars []
+  sentences {
+    syntax_error sdo FilteredNamespaceNames(child 5 |NamedExports|) sat @ph-duplicate-entries(data choice 0)
   }
 }
 

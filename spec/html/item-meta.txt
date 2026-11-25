@@ -51,18 +51,38 @@ alg @sec-%typedarray%.prototype.with base=10 close=8
 alg @sec-%wrapforvaliditeratorprototype%.next base=16 close=14
 alg @sec-%wrapforvaliditeratorprototype%.return base=16 close=14
 alg @sec-AllImportAttributesSupported base=10 close=8
+alg @sec-AllImportedNames base=12 close=10
+alg @sec-BuildEvaluationList base=16 close=14
+alg @sec-BuildLinkingList base=16 close=14
 alg @sec-ContinueDynamicImport base=10 close=8
 alg @sec-ContinueModuleLoading base=16 close=14
+alg @sec-CopyPreviouslyImportedNames base=14 close=12
+alg @sec-EnsureDeferredExportEvaluated base=12 close=10
 alg @sec-EvaluateModuleSync base=12 close=10
+alg @sec-ExcludeImportedNames base=12 close=10
+alg @sec-ExportFromDeclarationModuleRequest base=12 close=10
 alg @sec-FinishLoadingImportedModule base=10 close=8
+alg @sec-GatherAsynchronousTransitiveDependencies base=16 close=14
+alg @sec-GatherAsynchronousTransitiveDependenciesForRequests base=18 close=16
 alg @sec-GetImportedModule base=10 close=8
+alg @sec-GetModuleExportsList base=10 close=8
+alg @sec-GetNewOptionalIndirectExportsModuleRequests base=14 close=12
+alg @sec-GetOptionalIndirectExportsModuleRequests base=14 close=12
 alg @sec-IncrementModuleAsyncEvaluationCount base=8 close=6
 alg @sec-InnerModuleLinking base=16 close=14
 alg @sec-InnerModuleLoading base=16 close=14
+alg @sec-IsModuleSCCEvaluated base=14 close=12
+alg @sec-IsSymbolLikeNamespaceKey base=10 close=8
+alg @sec-ListAppendUnique base=12 close=10
 alg @sec-LoadRequestedModules base=14 close=12
-alg @sec-ModuleRequestsEqual base=12 close=10
+alg @sec-MergeImportedNames base=12 close=10
+alg @sec-ModuleRequestsKeyEqual base=12 close=10
 alg @sec-ParseJSON base=10 close=8
+alg @sec-ReadyForSyncExecution base=14 close=12
 alg @sec-SetterThatIgnoresPrototypeProperties base=8 close=6
+alg @sec-ValidateAllRequestedOptionalNamespaceExports base=16 close=14
+alg @sec-ValidateOwnNamespaceExports base=16 close=14
+alg @sec-ValidateRequestedOptionalIndirectExports base=16 close=14
 alg @sec-add-entries-from-iterable base=10 close=8
 alg @sec-add-value-to-keyed-group base=8 close=6
 alg @sec-adddisposableresource base=8 close=6
@@ -228,6 +248,7 @@ alg @sec-copydataproperties base=8 close=6
 alg @sec-countleftcapturingparensbefore base=10 close=8
 alg @sec-countleftcapturingparenswithin base=10 close=8
 alg @sec-create-default-export-synthetic-module base=12 close=10
+alg @sec-create-promise-all-resolve-element base=12 close=10
 alg @sec-createarrayfromlist base=8 close=6
 alg @sec-createarrayiterator base=10 close=8
 alg @sec-createasyncfromsynciterator base=10 close=8
@@ -256,6 +277,7 @@ alg @sec-createresolvingfunctions base=10 close=8
 alg @sec-createsetiterator base=10 close=8
 alg @sec-createsharedbytedatablock base=10 close=8
 alg @sec-createunmappedargumentsobject base=10 close=8
+alg @sec-cyclic-module-records base=18 close=16
 alg @sec-data-races base=6 close=4
 alg @sec-dataview-buffer-byteoffset-bytelength base=10 close=8
 alg @sec-dataview.prototype.getbigint64 base=10 close=8
@@ -367,6 +389,7 @@ alg @sec-encodeuri-uri base=10 close=8
 alg @sec-encodeuricomponent-uricomponent base=10 close=8
 alg @sec-enqueueatomicswaitasynctimeoutjob base=10 close=8
 alg @sec-enqueueresolveinagentjob base=10 close=8
+alg @sec-ensureresolvablebinding base=16 close=14
 alg @sec-entercriticalsection base=10 close=8
 alg @sec-enumerableownproperties base=8 close=6
 alg @sec-enumerate-object-properties base=10 close=8
@@ -476,6 +499,7 @@ alg @sec-getnamedtimezoneepochnanoseconds base=10 close=8
 alg @sec-getnamedtimezoneoffsetnanoseconds base=10 close=8
 alg @sec-getnewtarget base=8 close=6
 alg @sec-getoptionsobject base=8 close=6
+alg @sec-getownexportednames base=16 close=14
 alg @sec-getownpropertykeys base=12 close=10
 alg @sec-getpromiseresolve base=12 close=10
 alg @sec-getprototypefromconstructor base=8 close=6
@@ -961,6 +985,7 @@ alg @sec-runtime-semantics-repeatmatcher-abstract-operation base=12 close=10
 alg @sec-runtime-semantics-scriptevaluation base=8 close=6
 alg @sec-runtime-semantics-unicodematchproperty-p base=12 close=10
 alg @sec-runtime-semantics-unicodematchpropertyvalue-p-v base=12 close=10
+alg @sec-safe-perform-promise-all base=12 close=10
 alg @sec-sametype base=8 close=6
 alg @sec-samevalue base=8 close=6
 alg @sec-samevaluenonnumber base=8 close=6
@@ -1274,6 +1299,8 @@ early @sec-destructuring-assignment-static-semantics-early-errors#3 indent=10 la
 early @sec-do-while-statement-static-semantics-early-errors indent=10 layout=block
 early @sec-exports-static-semantics-early-errors indent=10 layout=block
 early @sec-exports-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-exports-static-semantics-early-errors#2 indent=10 layout=block
+early @sec-exports-static-semantics-early-errors#3 indent=10 layout=block
 early @sec-for-in-and-for-of-statements-static-semantics-early-errors indent=10 layout=block
 early @sec-for-in-and-for-of-statements-static-semantics-early-errors#1 indent=10 layout=block
 early @sec-for-in-and-for-of-statements-static-semantics-early-errors#2 indent=10 layout=block
@@ -1326,6 +1353,10 @@ early @sec-if-statement-static-semantics-early-errors#1 indent=8 layout=block
 early @sec-if-statement-static-semantics-early-errors#2 indent=8 layout=block
 early @sec-imports-static-semantics-early-errors indent=10 layout=block
 early @sec-imports-static-semantics-early-errors#1 indent=10 layout=block
+early @sec-imports-static-semantics-early-errors#2 indent=10 layout=block
+early @sec-imports-static-semantics-early-errors#3 indent=10 layout=block
+early @sec-imports-static-semantics-early-errors#4 indent=10 layout=block
+early @sec-imports-static-semantics-early-errors#5 indent=10 layout=block
 early @sec-labelled-statements-static-semantics-early-errors indent=8 layout=block
 early @sec-left-hand-side-expressions-static-semantics-early-errors indent=10 layout=block
 early @sec-left-hand-side-expressions-static-semantics-early-errors#1 indent=10 layout=block
@@ -1538,6 +1569,39 @@ eq @sec-string-literals-static-semantics-mv#9 indent=10
 eq @sec-string-literals-static-semantics-mv#10 indent=10
 eq @sec-string-literals-static-semantics-mv#11 indent=10
 eq @sec-string-literals-static-semantics-mv#12 indent=10
+row @sec-DirectImportedNames base=10 close=8
+row @sec-DirectImportedNames#1 base=10 close=8
+row @sec-DirectImportedNames#2 base=10 close=8
+row @sec-DirectImportedNames#3 base=10 close=8
+row @sec-DirectImportedNames#4 base=10 close=8
+row @sec-DirectImportedNames#5 base=10 close=8
+row @sec-DirectImportedNames#6 base=10 close=8
+row @sec-DirectImportedNames#7 base=10 close=8
+row @sec-DirectImportedNames#8 base=10 close=8
+row @sec-DirectImportedNames#9 base=10 close=8
+row @sec-DirectImportedNames#10 base=10 close=8
+row @sec-DirectImportedNames#11 base=10 close=8
+row @sec-DirectImportedNames#12 base=10 close=8
+row @sec-FilteredNamespaceImportedNames base=10 close=8
+row @sec-FilteredNamespaceImportedNames#1 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#2 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#3 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#4 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#5 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#6 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#7 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#8 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#9 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#10 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#11 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#12 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#13 base=10 close=8
+row @sec-FilteredNamespaceImportedNames#14 base=10 close=8
+row @sec-FilteredNamespaceNames base=10 close=8
+row @sec-FilteredNamespaceNames#1 base=10 close=8
+row @sec-FilteredNamespaceNames#2 base=10 close=8
+row @sec-FilteredNamespaceNames#3 base=10 close=8
+row @sec-FilteredNamespaceNames#4 base=10 close=8
 row @sec-addition-operator-plus-runtime-semantics-evaluation base=10 close=8
 row @sec-array-initializer-runtime-semantics-evaluation base=10 close=8
 row @sec-array-initializer-runtime-semantics-evaluation#1 base=10 close=8
@@ -1703,8 +1767,17 @@ row @sec-identifiers-runtime-semantics-evaluation#1 base=8 close=6
 row @sec-identifiers-runtime-semantics-evaluation#2 base=8 close=6
 row @sec-if-statement-runtime-semantics-evaluation base=8 close=6
 row @sec-if-statement-runtime-semantics-evaluation#1 base=8 close=6
+row @sec-import-call-runtime-semantics-EvaluateImportCallOptions base=10 close=8
+row @sec-import-call-runtime-semantics-EvaluateImportCallOptions#1 base=10 close=8
+row @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier base=10 close=8
+row @sec-import-call-runtime-semantics-EvaluateImportCallSpecifier#1 base=10 close=8
 row @sec-import-call-runtime-semantics-evaluation base=10 close=8
 row @sec-import-call-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-imports-UnaliasedImportNames base=10 close=8
+row @sec-imports-UnaliasedImportNames#1 base=10 close=8
+row @sec-imports-UnaliasedImportNames#2 base=10 close=8
+row @sec-imports-UnaliasedImportNames#3 base=10 close=8
+row @sec-imports-UnaliasedImportNames#4 base=10 close=8
 row @sec-initializers-in-forin-statement-heads base=8 close=6
 row @sec-initializers-in-forin-statement-heads#1 base=8 close=6
 row @sec-initializers-in-forin-statement-heads#2 base=8 close=6
@@ -2050,6 +2123,9 @@ row @sec-static-semantics-boundnames#48 base=8 close=6
 row @sec-static-semantics-boundnames#49 base=8 close=6
 row @sec-static-semantics-boundnames#50 base=8 close=6
 row @sec-static-semantics-boundnames#51 base=8 close=6
+row @sec-static-semantics-boundnames#52 base=8 close=6
+row @sec-static-semantics-boundnames#53 base=8 close=6
+row @sec-static-semantics-boundnames#54 base=8 close=6
 row @sec-static-semantics-capturinggroupname base=10 close=8
 row @sec-static-semantics-classelementevaluation base=8 close=6
 row @sec-static-semantics-classelementevaluation#1 base=8 close=6
@@ -2220,6 +2296,7 @@ row @sec-static-semantics-exportedbindings#7 base=10 close=8
 row @sec-static-semantics-exportedbindings#8 base=10 close=8
 row @sec-static-semantics-exportedbindings#9 base=10 close=8
 row @sec-static-semantics-exportedbindings#10 base=10 close=8
+row @sec-static-semantics-exportedbindings#11 base=10 close=8
 row @sec-static-semantics-exportednames base=10 close=8
 row @sec-static-semantics-exportednames#1 base=10 close=8
 row @sec-static-semantics-exportednames#2 base=10 close=8
@@ -2234,6 +2311,7 @@ row @sec-static-semantics-exportednames#10 base=10 close=8
 row @sec-static-semantics-exportednames#11 base=10 close=8
 row @sec-static-semantics-exportednames#12 base=10 close=8
 row @sec-static-semantics-exportednames#13 base=10 close=8
+row @sec-static-semantics-exportednames#14 base=10 close=8
 row @sec-static-semantics-exportentries base=10 close=8
 row @sec-static-semantics-exportentries#1 base=10 close=8
 row @sec-static-semantics-exportentries#2 base=10 close=8
@@ -2244,12 +2322,14 @@ row @sec-static-semantics-exportentries#6 base=10 close=8
 row @sec-static-semantics-exportentries#7 base=10 close=8
 row @sec-static-semantics-exportentries#8 base=10 close=8
 row @sec-static-semantics-exportentries#9 base=10 close=8
+row @sec-static-semantics-exportentries#10 base=10 close=8
 row @sec-static-semantics-exportentriesformodule base=10 close=8
 row @sec-static-semantics-exportentriesformodule#1 base=10 close=8
 row @sec-static-semantics-exportentriesformodule#2 base=10 close=8
 row @sec-static-semantics-exportentriesformodule#3 base=10 close=8
 row @sec-static-semantics-exportentriesformodule#4 base=10 close=8
 row @sec-static-semantics-exportentriesformodule#5 base=10 close=8
+row @sec-static-semantics-exportentriesformodule#6 base=10 close=8
 row @sec-static-semantics-flagtext base=10 close=8
 row @sec-static-semantics-functionbodycontainsusestrict base=8 close=6
 row @sec-static-semantics-hascallintailposition base=8 close=6
@@ -2297,6 +2377,7 @@ row @sec-static-semantics-importentries#1 base=10 close=8
 row @sec-static-semantics-importentries#2 base=10 close=8
 row @sec-static-semantics-importentries#3 base=10 close=8
 row @sec-static-semantics-importentries#4 base=10 close=8
+row @sec-static-semantics-importentries#5 base=10 close=8
 row @sec-static-semantics-importentriesformodule base=10 close=8
 row @sec-static-semantics-importentriesformodule#1 base=10 close=8
 row @sec-static-semantics-importentriesformodule#2 base=10 close=8
@@ -2305,6 +2386,7 @@ row @sec-static-semantics-importentriesformodule#4 base=10 close=8
 row @sec-static-semantics-importentriesformodule#5 base=10 close=8
 row @sec-static-semantics-importentriesformodule#6 base=10 close=8
 row @sec-static-semantics-importentriesformodule#7 base=10 close=8
+row @sec-static-semantics-importentriesformodule#8 base=10 close=8
 row @sec-static-semantics-isawaitusingdeclaration base=8 close=6
 row @sec-static-semantics-isawaitusingdeclaration#1 base=8 close=6
 row @sec-static-semantics-isawaitusingdeclaration#2 base=8 close=6
@@ -2322,6 +2404,7 @@ row @sec-static-semantics-isconstantdeclaration#3 base=8 close=6
 row @sec-static-semantics-isconstantdeclaration#4 base=8 close=6
 row @sec-static-semantics-isconstantdeclaration#5 base=8 close=6
 row @sec-static-semantics-isconstantdeclaration#6 base=8 close=6
+row @sec-static-semantics-isconstantdeclaration#7 base=8 close=6
 row @sec-static-semantics-isdestructuring base=10 close=8
 row @sec-static-semantics-isdestructuring#1 base=10 close=8
 row @sec-static-semantics-isdestructuring#2 base=10 close=8
@@ -2414,6 +2497,7 @@ row @sec-static-semantics-lexicallyscopeddeclarations#23 base=8 close=6
 row @sec-static-semantics-lexicallyscopeddeclarations#24 base=8 close=6
 row @sec-static-semantics-lexicallyscopeddeclarations#25 base=8 close=6
 row @sec-static-semantics-lexicallyscopeddeclarations#26 base=8 close=6
+row @sec-static-semantics-lexicallyscopeddeclarations#27 base=8 close=6
 row @sec-static-semantics-maycontainstrings base=10 close=8
 row @sec-static-semantics-maycontainstrings#1 base=10 close=8
 row @sec-static-semantics-maycontainstrings#2 base=10 close=8
@@ -2437,8 +2521,16 @@ row @sec-static-semantics-modulerequests#7 base=10 close=8
 row @sec-static-semantics-modulerequests#8 base=10 close=8
 row @sec-static-semantics-modulerequests#9 base=10 close=8
 row @sec-static-semantics-modulerequests#10 base=10 close=8
+row @sec-static-semantics-modulerequests#11 base=10 close=8
+row @sec-static-semantics-modulerequests#12 base=10 close=8
+row @sec-static-semantics-modulerequests#13 base=10 close=8
 row @sec-static-semantics-nonconstructorelements base=8 close=6
 row @sec-static-semantics-nonconstructorelements#1 base=8 close=6
+row @sec-static-semantics-optionalindirectexportentries base=10 close=8
+row @sec-static-semantics-optionalindirectexportentries#1 base=10 close=8
+row @sec-static-semantics-optionalindirectexportentries#2 base=10 close=8
+row @sec-static-semantics-optionalindirectexportentries#3 base=10 close=8
+row @sec-static-semantics-optionalindirectexportentries#4 base=10 close=8
 row @sec-static-semantics-privateboundidentifiers base=8 close=6
 row @sec-static-semantics-privateboundidentifiers#1 base=8 close=6
 row @sec-static-semantics-privateboundidentifiers#2 base=8 close=6
@@ -3029,6 +3121,7 @@ spectec_only_def @spec-type-6
 spectec_only_def @spec-type-7
 spectec_only_def @spec-type-8
 spectec_only_def @spec-type-9
+spectec_only_row @row-boundnames-import-defer
 spectec_only_row @row-compileassertion-quantifiableassertion-lookahead
 spectec_only_row @row-compileassertion-quantifiableassertion-negative-lookahead
 spectec_only_row @row-compileatom-extendedatom-characterclass

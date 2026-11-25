@@ -458,8 +458,8 @@ sdo_row @sec-static-semantics-boundnames#44 BoundNames form alg {
 }
 
 sdo_row @sec-static-semantics-boundnames#45 BoundNames form alg {
-  prods [p"Syntactic - ImportSpecifier : ModuleExportName `as` ImportedBinding"]
-  keys ["ImportSpecifier : ModuleExportName `as` ImportedBinding"]
+  prods [p"Syntactic - AliasedImportSpecifier : ModuleExportName `as` ImportedBinding"]
+  keys ["\n        AliasedImportSpecifier : ModuleExportName `as` ImportedBinding\n      "]
   vars []
   steps {
     return sdo BoundNames(child 5 |ImportedBinding|)
@@ -467,6 +467,24 @@ sdo_row @sec-static-semantics-boundnames#45 BoundNames form alg {
 }
 
 sdo_row @sec-static-semantics-boundnames#46 BoundNames form alg {
+  prods [p"Syntactic - ImportSpecifier : ModuleExportName"]
+  keys ["ImportSpecifier : ModuleExportName"]
+  vars []
+  steps {
+    return $ListOf1(sdo StringValue(child 5 |ModuleExportName|))
+  }
+}
+
+sdo_row @sec-static-semantics-boundnames#47 BoundNames form alg {
+  prods [p"Syntactic - NameSpaceImport : NamedImports `as` ImportedBinding"]
+  keys ["NameSpaceImport : NamedImports `as` ImportedBinding"]
+  vars []
+  steps {
+    return sdo BoundNames(child 5 |ImportedBinding|)
+  }
+}
+
+sdo_row @sec-static-semantics-boundnames#48 BoundNames form alg {
   prods [p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic - ExportDeclaration : `export` NamedExports `;`"]
   keys ["\n        ExportDeclaration :\n          `export` ExportFromClause FromClause WithClause? `;`\n          `export` NamedExports `;`\n      "]
   vars []
@@ -475,7 +493,16 @@ sdo_row @sec-static-semantics-boundnames#46 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#47 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#49 BoundNames form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  keys ["ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-boundnames#50 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` VariableStatement[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` VariableStatement"]
   vars []
@@ -484,7 +511,7 @@ sdo_row @sec-static-semantics-boundnames#47 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#48 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#51 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` Declaration"]
   vars []
@@ -493,7 +520,7 @@ sdo_row @sec-static-semantics-boundnames#48 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#49 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#52 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]"]
   keys ["ExportDeclaration : `export` `default` HoistableDeclaration"]
   vars [declNames]
@@ -504,7 +531,7 @@ sdo_row @sec-static-semantics-boundnames#49 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#50 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#53 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]"]
   keys ["ExportDeclaration : `export` `default` ClassDeclaration"]
   vars [declNames]
@@ -515,7 +542,7 @@ sdo_row @sec-static-semantics-boundnames#50 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#51 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#54 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
   keys ["ExportDeclaration : `export` `default` AssignmentExpression `;`"]
   vars []
@@ -635,6 +662,15 @@ sdo_row @sec-static-semantics-isconstantdeclaration#5 IsConstantDeclaration form
 sdo_row @sec-static-semantics-isconstantdeclaration#6 IsConstantDeclaration form alg {
   prods [p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic - ExportDeclaration : `export` NamedExports `;`", p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
   keys ["\n        ExportDeclaration :\n          `export` ExportFromClause FromClause `;`\n          `export` NamedExports `;`\n          `export` `default` AssignmentExpression `;`\n      "]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-isconstantdeclaration#7 IsConstantDeclaration form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  keys ["ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
   vars []
   steps {
     return false
@@ -1238,6 +1274,15 @@ sdo_row @sec-static-semantics-lexicallyscopeddeclarations#22 LexicallyScopedDecl
 }
 
 sdo_row @sec-static-semantics-lexicallyscopeddeclarations#23 LexicallyScopedDeclarations form alg {
+  prods [p"Syntactic 0 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  keys ["ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-lexicallyscopeddeclarations#24 LexicallyScopedDeclarations form alg {
   prods [p"Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` Declaration"]
   vars []
@@ -1246,7 +1291,7 @@ sdo_row @sec-static-semantics-lexicallyscopeddeclarations#23 LexicallyScopedDecl
   }
 }
 
-sdo_row @sec-static-semantics-lexicallyscopeddeclarations#24 LexicallyScopedDeclarations form alg {
+sdo_row @sec-static-semantics-lexicallyscopeddeclarations#25 LexicallyScopedDeclarations form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]"]
   keys ["ExportDeclaration : `export` `default` HoistableDeclaration"]
   vars []
@@ -1255,7 +1300,7 @@ sdo_row @sec-static-semantics-lexicallyscopeddeclarations#24 LexicallyScopedDecl
   }
 }
 
-sdo_row @sec-static-semantics-lexicallyscopeddeclarations#25 LexicallyScopedDeclarations form alg {
+sdo_row @sec-static-semantics-lexicallyscopeddeclarations#26 LexicallyScopedDeclarations form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]"]
   keys ["ExportDeclaration : `export` `default` ClassDeclaration"]
   vars []
@@ -1264,7 +1309,7 @@ sdo_row @sec-static-semantics-lexicallyscopeddeclarations#25 LexicallyScopedDecl
   }
 }
 
-sdo_row @sec-static-semantics-lexicallyscopeddeclarations#26 LexicallyScopedDeclarations form alg {
+sdo_row @sec-static-semantics-lexicallyscopeddeclarations#27 LexicallyScopedDeclarations form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
   keys ["ExportDeclaration : `export` `default` AssignmentExpression `;`"]
   vars []

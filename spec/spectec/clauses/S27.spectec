@@ -1308,7 +1308,7 @@ def @sec-getpromiseresolve "GetPromiseResolve" (kind ao params [promiseCtor : co
   return promiseResolve
 }
 
-def @sec-performpromiseall "PerformPromiseAll" (kind ao params [iteratorRecord : #"Iterator Record", ctor : constructor, resultCapability : #"PromiseCapability Record", promiseResolve : #"function object"] -> completion<Object> | #"throw completion") vars [iteratorRecord, ctor, resultCapability, promiseResolve, values, remainingElementsCount, index, next, valuesArray, nextPromise, fulfilledSteps, value, activeFunc, thisIndex, onFulfilled] {
+def @sec-performpromiseall "PerformPromiseAll" (kind ao params [iteratorRecord : #"Iterator Record", ctor : constructor, resultCapability : #"PromiseCapability Record", promiseResolve : #"function object"] -> completion<Object> | #"throw completion") vars [iteratorRecord, ctor, resultCapability, promiseResolve, values, remainingElementsCount, index, next, valuesArray, nextPromise, onFulfilled] {
   let values = $ListNew()
   note "_remainingElementsCount_ starts at 1 instead of 0 to ensure _resultCapability_.[[Resolve]] is only called once, even in the presence of a misbehaving *\"then\"* which calls the passed callback before the input iterator is exhausted."
   let remainingElementsCount = record Record { [[Value]]: 1 }
@@ -1325,26 +1325,10 @@ def @sec-performpromiseall "PerformPromiseAll" (kind ao params [iteratorRecord :
     }
     perform $Append(undefined, ?values)
     let nextPromise = ? @sec-call(promiseResolve, ctor, [next])
-    let fulfilledSteps = closure 0
-    let onFulfilled = @sec-createbuiltinfunction(fulfilledSteps, 1, "", [[[AlreadyCalled]], [[Index]]])
-    set field onFulfilled[[AlreadyCalled]] = false
-    set field onFulfilled[[Index]] = index
+    let onFulfilled = @sec-create-promise-all-resolve-element(index, values, resultCapability, remainingElementsCount)
     set var index = index + 1
     set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] + 1
     perform ? @sec-invoke(nextPromise, "then", [onFulfilled, resultCapability[[Reject]]])
-  }
-  closure abstract params [value] captures [values, resultCapability, remainingElementsCount] {
-    let activeFunc = $ActiveFunction()
-    if activeFunc[[AlreadyCalled]] is val {true} -> return undefined
-    set field activeFunc[[AlreadyCalled]] = true
-    let thisIndex = activeFunc[[Index]]
-    set expr values[thisIndex] = value
-    set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] - 1
-    if remainingElementsCount[[Value]] == 0 {
-      let valuesArray = @sec-createarrayfromlist(values)
-      return ? @sec-call(resultCapability[[Resolve]], undefined, [valuesArray])
-    }
-    return undefined
   }
 }
 
@@ -2184,5 +2168,44 @@ def @await "Await" (kind ao params [arg : #"ECMAScript language value"] -> compl
     note "The Completion Record returned by RunSuspendedContext is intentionally ignored."
     return @sec-normalcompletion(undefined)
   }
+}
+
+def @sec-create-promise-all-resolve-element "CreatePromiseAllResolveElement" (kind ao params [index : sort [#"non-negative"] integer, values : List, resultCapability : #"PromiseCapability Record", remainingElementsCount : doc "a Record { [[Value]]: a non-negative integer }"] -> #"function object") vars [index, values, resultCapability, remainingElementsCount, fulfilledSteps, value, F, thisIndex, valuesArray, onFulfilled] {
+  let fulfilledSteps = closure 0
+  let onFulfilled = @sec-createbuiltinfunction(fulfilledSteps, 1, "", [[[AlreadyCalled]], [[Index]]])
+  set field onFulfilled[[AlreadyCalled]] = false
+  set field onFulfilled[[Index]] = index
+  return onFulfilled
+  closure abstract params [value] captures [values, resultCapability, remainingElementsCount] {
+    let F = $ActiveFunction()
+    if F[[AlreadyCalled]] is val {true} -> return undefined
+    set field F[[AlreadyCalled]] = true
+    let thisIndex = F[[Index]]
+    set expr values[thisIndex] = value
+    set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] - 1
+    if remainingElementsCount[[Value]] == 0 {
+      let valuesArray = @sec-createarrayfromlist(values)
+      return ? @sec-call(resultCapability[[Resolve]], undefined, [valuesArray])
+    }
+    return undefined
+  }
+}
+
+def @sec-safe-perform-promise-all "SafePerformPromiseAll" (kind ao params [promises : list<Promise>] -> Promise) vars [promises, resultCapability, values, remainingElementsCount, index, promise, onFulfilled] {
+  let resultCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  if promises sat $IsEmpty() {
+    perform ! @sec-call(resultCapability[[Resolve]], undefined, [@sec-createarrayfromlist([])])
+    return resultCapability[[Promise]]
+  }
+  let values = $ListNew()
+  let remainingElementsCount = record Record { [[Value]]: $ListLen(?promises) }
+  let index = 0
+  for_each promise in promises {
+    perform $Append(undefined, ?values)
+    let onFulfilled = @sec-create-promise-all-resolve-element(index, values, resultCapability, remainingElementsCount)
+    set var index = index + 1
+    perform @sec-performpromisethen(promise, onFulfilled, resultCapability[[Reject]])
+  }
+  return resultCapability[[Promise]]
 }
 
