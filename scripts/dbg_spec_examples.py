@@ -53,9 +53,9 @@ UNRUNNABLE: dict[str, str] = {
 # The model's options per example (ecma-run's, as launch `args`); RESULTS.md runs every one with none.
 ARGS: dict[str, list[str]] = {}
 
-# A model stop the `stop` filter pauses at: an erratum's or an Assert's at a step (not a fuel
+# A model stop the `stop` filter pauses at: an Assert's at a step (not a fuel
 # limit's, nor one at a Job's end, whose step is `-`).
-STOPS = re.compile(r"stop: (erratum|assertion failed) .* (?!-$)\S+$")
+STOPS = re.compile(r"stop: (erratum|assertFailed|assertion failed) .* (?!-$)\S+$")
 LOCATION_STEP = re.compile(r"\(`#([^`]+)`\),\s+steps?\s+(\d+(?:\.[0-9a-z]+)*)")
 
 

@@ -3,8 +3,8 @@
 
     python3 scripts/law_quotes.py [--show ID] [-v]
 
-Every docstring of a field under lean/Ecma/Gen/ProseHostLaws_*.lean and of lean/Ecma/Gen/ProseModelLaws.lean is read as the
-convention has it: the id of a clause (or table, note, …) of the text's spec.html (`scripts/spec_text.py`) with a step or
+Every docstring of a law under spec/spectec/prose/*-host-laws-*.spectec and spec/spectec/prose/05-model-laws.spectec is
+read as the convention has it: the id of a clause (or table, note, …) of the text's spec.html (`scripts/spec_text.py`) with a step or
 paragraph, the governing sentence quoted in double quotes, then `Reading:` and one line; or, where no sentence
 governs, `No sentence:` and why. A quotation may be several, each on lines of its own, and one may begin with
 another id and a colon to be looked for in that clause instead. An ellipsis (… or ...) in a quotation skips
@@ -24,7 +24,10 @@ import spec_text
 ROOT = Path(__file__).resolve().parent.parent
 # the spec.html read: the text (scripts/spec_text.py) unless a caller sets another
 SPEC: Path | None = None
-FILES = sorted((ROOT / "lean/Ecma/Gen").glob("ProseHostLaws_*.lean")) + [ROOT / "lean/Ecma/Gen/ProseModelLaws.lean"]
+FILES = [
+    f for f in sorted((ROOT / "spec/spectec/prose").glob("*-host-laws-*.spectec"))
+    if f.name != "14-host-laws-basic.spectec"
+] + [ROOT / "spec/spectec/prose/05-model-laws.spectec"]
 
 ID = r"(?:sec|table|figure|note|prod|eqn|step)-[A-Za-z0-9_.%-]+"
 
@@ -63,8 +66,25 @@ class Spec:
 
 
 def docstrings(path: Path):
-    """(line, name, docstring) of each field: a `/-- … -/` followed by `name :`."""
+    """(line, name, docstring) of each law in a `.spectec` `laws` block (or field in a `.lean` structure)."""
     src = path.read_text()
+    if path.suffix == ".spectec":
+        lines = src.split("\n")
+        doc: list[str] = []
+        doc_line = 0
+        for idx, ln in enumerate(lines, 1):
+            s = ln.strip()
+            if s.startswith("---") and not s.startswith("---!"):
+                if not doc:
+                    doc_line = idx
+                doc.append(s[3:].lstrip(" ") if s.startswith("--- ") else s[3:])
+                continue
+            m = re.match(r"law\s+([A-Za-z_][A-Za-z0-9_']*)\s*:", s)
+            if m:
+                yield (doc_line or idx), m.group(1), "\n".join(doc)
+            doc = []
+            doc_line = 0
+        return
     for m in re.finditer(r"/--((?:(?!-/).)*?)-/\s*\n\s*([A-Za-z_][A-Za-z0-9_']*)\s*:", src, re.S):
         yield src.count("\n", 0, m.start()) + 1, m.group(2), m.group(1)
 

@@ -68,9 +68,11 @@
       btn.type = "button";
       btn.className = "theme";
       btn.id = "foldall";
+      var firstSum = folds[0].querySelector("summary");
+      var foldLang = firstSum && firstSum.textContent.indexOf("SpecTec") === 0 ? "SpecTec" : "Lean";
       var set = function (open) {
         folds.forEach(function (d) { d.open = open; });
-        btn.textContent = open ? "Fold all Lean" : "Show all Lean (" + folds.length + ")";
+        btn.textContent = open ? "Fold all " + foldLang : "Show all " + foldLang + " (" + folds.length + ")";
         btn.setAttribute("aria-pressed", open ? "true" : "false");
       };
       var open = load("lean-open") === "1";

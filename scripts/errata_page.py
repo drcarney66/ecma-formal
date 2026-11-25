@@ -1,37 +1,13 @@
 #!/usr/bin/env python3
-"""The errata as a page: from the overlay's own data, each quotation checked against spec.html, each program run.
+"""The errata as a page: from spec/DECISIONS.md and site/errata.json, each quotation checked against spec.html, each program run.
 
     python3 scripts/errata_page.py run --ecma-run .lake/build/bin/ecma-run --out build/errata-runs.json [-j 3]
     python3 scripts/errata_page.py check                     # the data and the quotations, no run
 
-The errata are spec/formal/readings.emu's `<emu-erratum>` elements with spec/formal/errata.txt's columns (the
-resolution, `kind`, `switch`, where the literal text stops) and the default reading the generated data applies
-(`Ecma.Gen.parity` in lean/Ecma/Gen/Decls.lean). For each erratum the page quotes the text it is about from
-external/ecma262/spec.html:
-
-- an `emu-reading` of a step: the step's text, found by its path and checked by the hash the overlay gives
-  (SHA-256 of the step's text, as crates/spec-gen computes it);
-- an `emu-reading` of an early-error rule: the rule's bullet, checked the same way;
-- an `emu-rule-reading`: the grammar rule's definition, checked by its hash (scripts/jsgrammar.py's);
-- an `emu-orphan-row`: the equation row the grammar has no production for;
-- an erratum with none of these (its readings are a note): the sentences `site/errata.json` names under
-  `anchors`, each checked to occur in its clause as the laws' quotations are (scripts/law_quotes.py).
-
-`site/errata.json` also names, under `programs`, the programs that show an erratum (tests/run, tests/dbg,
-tools/dbg/demo; the debugger's example ids), each with the outcome it must have under each reading it is run
-under: the default reading, and the literal one (or, where the default is the literal text, the erratum's other
-reading). `run` runs each on the native ecma-run, with the program's header arguments (tests/run's
-`// module:` and `// args:`, without the ones that set this erratum's reading) and `--erratum NAME=READING`,
-and fails unless every outcome is the one recorded (`[object #N]` stands for any object number). It writes
-the runs for `scripts/site_pages.py --errata-runs`, which writes errata.html and checks that the runs are of
-the data as it is.
-
-Each erratum links to its write-ups (docs/spec-issues/NN-*.md, errata.txt's last column), which the site publishes
-under spec-issues/ (scripts/spec_issue_pages.py); the overlay's notes cite them in parentheses, and those
-references become links to the same pages (the notes' references to decisions.md are left out). The list of
-errata that earlier reviews removed because the editors fixed the text is docs/spec-issues/README.md's "Fixed
-upstream": the names and the upstream commits, each commit checked to be one of external/ecma262 before the
-pinned one when the clone has the history, and each name a retired erratum id.
+The errata are the 38 active decisions in `spec/DECISIONS.md` (§1 Summary Table: resolution, kind, layer, where the
+literal text stops, source write-up) paired with `site/errata.json` (the step, rule, grammar and prose anchors in
+`external/ecma262/spec.html`, alternative readings, notes, and demonstration programs). SpecTec bakes one resolved
+reading directly into `spec/spectec/` for each erratum rather than switching readings at run time.
 """
 
 from __future__ import annotations
@@ -52,10 +28,7 @@ import law_quotes  # noqa: E402
 import spec_text  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-READINGS = ROOT / "spec/formal/readings.emu"
-ERRATA = ROOT / "spec/formal/errata.txt"
-IDS = spec_text.ids_dir() / "erratum-ids.txt"
-DECLS = ROOT / "lean/Ecma/Gen/Decls.lean"
+DECISIONS = ROOT / "spec/DECISIONS.md"
 DATA = ROOT / "site/errata.json"
 ISSUES = ROOT / "docs/spec-issues/README.md"
 ECMA262 = ROOT / "external/ecma262"
@@ -72,7 +45,7 @@ def esc(s: str) -> str:
 
 
 # ---------------------------------------------------------------------------------------------------------------
-# The overlay's data
+# SpecTec's decisions & errata data
 
 
 @dataclass
@@ -95,75 +68,52 @@ class Erratum:
     name: str
     resolution: str
     kind: str
-    switch: str
+    switch: str  # layer in spec/DECISIONS.md: "spec", "parser", "none"
     stops: list[str] | None  # None: not given; []: never stops
-    default: str
+    default: str  # baked-in reading in SpecTec
     anchors: list[Anchor]
     notes: list[str]
-
-
-def attrs_of(s: str) -> dict[str, str]:
-    return {k: html.unescape(v) for k, v in re.findall(r'([\w-]+)="([^"]*)"', s)}
-
-
-def notes_in(body: str) -> list[str]:
-    return [p for n in re.findall(r"<emu-note>(.*?)</emu-note>", body, re.DOTALL)
-            for p in re.findall(r"<p>(.*?)</p>", n, re.DOTALL)]
-
-
-def parity() -> dict[str, str]:
-    """Each erratum's default reading, as the generated data has it (`Ecma.Gen.errata`, `Ecma.Gen.parity`)."""
-    src = DECLS.read_text()
-
-    def array(name: str) -> list[str]:
-        m = re.search(r"(?m)^def " + name + r" : Array \w+ :=\n(.*?)(?=\n\n|\n/--)", src, re.DOTALL)
-        if not m:
-            raise SystemExit(f"{DECLS}: no def {name}")
-        return re.findall(r'"([^"]*)"' if name == "errata" else r"\.(\w+)", m.group(1))
-
-    names, rd = array("errata"), array("parity")
-    if len(names) != len(rd):
-        raise SystemExit(f"{DECLS}: {len(names)} errata, {len(rd)} parities")
-    return dict(zip(names, rd))
+    reports: list[str] = field(default_factory=list)
 
 
 def read_errata() -> list[Erratum]:
-    rows = {}
-    for ln in ERRATA.read_text().split("\n"):
-        if ln.strip() and not ln.startswith("#"):
-            f = ln.split("\t")
-            rows[f[0]] = f
-    par = parity()
-    src = READINGS.read_text()
-    out = []
-    for m in re.finditer(r"<emu-erratum\b([^>]*)>(.*?)</emu-erratum>", src, re.DOTALL):
-        a = attrs_of(m.group(1))
-        body = m.group(2)
-        name = a["name"]
-        anchors = []
-        for r in re.finditer(r"<(emu-reading|emu-rule-reading)\b([^>]*)>(.*?)</\1>|<(emu-orphan-row)\b([^>]*)></emu-orphan-row>",
-                             body, re.DOTALL):
-            if r.group(4):
-                anchors.append(Anchor(r.group(4), attrs_of(r.group(5))))
-                continue
-            an = Anchor(r.group(1), attrs_of(r.group(2)), notes=notes_in(r.group(3)))
-            for alt in re.finditer(r'<(emu-alg|p|emu-grammar)\b([^>]*)\breading="([^"]+)"[^>]*>(.*?)</\1>', r.group(3), re.DOTALL):
-                kind = {"emu-alg": "alg", "p": "p", "emu-grammar": "grammar"}[alt.group(1)]
-                an.alts.append(Alt(alt.group(3).split(), kind, alt.group(4)))
-            anchors.append(an)
-        rest = re.sub(r"<(emu-reading|emu-rule-reading)\b.*?</\1>", "", body, flags=re.DOTALL)
-        row = rows.get(name)
-        if not row:
-            raise SystemExit(f"{ERRATA}: no row for {name}")
-        res, kind, switch, stops = row[1], row[2], row[3], row[4]
-        if res != a.get("resolution") or kind != a.get("kind", "defect") or switch != a.get("switch", "spec"):
-            raise SystemExit(f"{name}: errata.txt and readings.emu differ (run `spec-gen errata -check`)")
-        st = None if stops == "-" else [] if stops == "none" else stops.split()
-        if name not in par:
-            raise SystemExit(f"{name}: not in Ecma.Gen.errata")
-        out.append(Erratum(name, res, kind, switch, st, par[name], anchors, notes_in(rest)))
-    if len(out) != len(rows):
-        raise SystemExit(f"readings.emu has {len(out)} errata, errata.txt {len(rows)}")
+    dec = DECISIONS.read_text()
+    m = re.search(r"\*\*Summary Table:\*\*\s*\n+(.*?)(?=\n### |\Z)", dec, re.DOTALL)
+    if not m:
+        raise SystemExit(f"{DECISIONS}: no Summary Table")
+    data = json.loads(DATA.read_text())
+    rd_map = data.get("readings", {})
+    out: list[Erratum] = []
+    for ln in m.group(1).strip().split("\n"):
+        ln = ln.strip()
+        if not ln.startswith("|"):
+            continue
+        cells = [c.strip() for c in ln.strip("|").split("|")]
+        if len(cells) < 6 or cells[0] in ("Erratum", "---") or set(cells[0]) <= {"-"}:
+            continue
+        name = cells[0].strip("`")
+        kind = cells[1].strip("`")
+        res = cells[2].strip("`")
+        layer = cells[3].strip("`")
+        stops_raw = cells[4].strip("`")
+        reports = [r.strip("`") for r in cells[5].split() if r.strip("`") and r.strip("`") != "—"]
+        st = None if stops_raw in ("-", "—") else [] if stops_raw == "none" else stops_raw.split()
+        baked = "proposed" if res == "pending" else res
+        entry = rd_map.get(name)
+        if entry is None:
+            raise SystemExit(f"{DATA}: no readings entry for {name}")
+        anchors = [
+            Anchor(
+                it["tag"],
+                it["attrs"],
+                [Alt(a["readings"], a["kind"], a["text"]) for a in it.get("alts", [])],
+                it.get("notes", []),
+            )
+            for it in entry.get("items", [])
+        ]
+        out.append(Erratum(name, res, kind, layer, st, baked, anchors, entry.get("notes", []), reports))
+    if not out:
+        raise SystemExit(f"{DECISIONS}: parsed 0 errata rows")
     return out
 
 
@@ -410,21 +360,24 @@ def header_args(src: str, name: str) -> list[str]:
 
 
 def runs_wanted(errata: list[Erratum], data: dict) -> list[dict]:
-    """Every run the page states: (erratum, program, reading, its arguments, the recorded outcome)."""
+    """Every run the page verifies on native ecma-run: SpecTec's baked-in reading for each demonstration program."""
     by = {e.name: e for e in errata}
     want = []
     for name, progs in data["programs"].items():
         if name not in by:
             raise SystemExit(f"site/errata.json: no erratum {name}")
+        e = by[name]
         for p in progs:
             f = program_file(p["program"])
             base = header_args(f.read_text(), name)
-            for rd, exp in p["outcomes"].items():
+            for rd in p["outcomes"]:
                 if rd not in READING_NAMES:
                     raise SystemExit(f"site/errata.json: {name} {p['program']}: no reading {rd}")
-                want.append({"erratum": name, "program": p["program"], "reading": rd,
-                             "args": base + ["--erratum", f"{name}={rd}"], "file": f.relative_to(ROOT).as_posix(),
-                             "expect": exp})
+            if e.default not in p["outcomes"]:
+                raise SystemExit(f"site/errata.json: {name} {p['program']}: no outcome for baked-in reading {e.default}")
+            want.append({"erratum": name, "program": p["program"], "reading": e.default,
+                         "args": base, "file": f.relative_to(ROOT).as_posix(),
+                         "expect": p["outcomes"][e.default]})
     return want
 
 
@@ -459,15 +412,14 @@ def check_data(errata: list[Erratum], data: dict, sp: Text) -> list[str]:
 # What earlier reviews removed
 
 
-def fixed_upstream() -> list[dict]:
+def fixed_upstream(active_names: set[str] | None = None) -> list[dict]:
     """docs/spec-issues/README.md's "Fixed upstream": the errata and the commits that fixed their text, each
-    commit checked to be of external/ecma262 and before the pinned one, each name a retired erratum id."""
+    commit checked to be of external/ecma262 and before the pinned one, and none an active erratum."""
     t = ISSUES.read_text()
     m = re.search(r"(?ms)^## Fixed upstream\n(.*?)(?=^## |\Z)", t)
     if not m:
         raise SystemExit(f"{ISSUES}: no section Fixed upstream")
-    pin = re.search(r"Fixed in `([0-9a-f]+)`", m.group(1))
-    retired = {ln.split("\t")[1] for ln in IDS.read_text().split("\n") if ln.endswith("\tretired")}
+    active = active_names if active_names is not None else {e.name for e in read_errata()}
     out = []
     for item in re.findall(r"(?ms)^- (.*?)(?=^- |\Z)", m.group(1)):
         item = re.sub(r"\s+", " ", item).strip()
@@ -476,8 +428,8 @@ def fixed_upstream() -> list[dict]:
             raise SystemExit(f"{ISSUES}: an entry of Fixed upstream not read: {item!r}")
         names = re.split(r",? and |, ", im.group(1))
         for n in names:
-            if n not in retired:
-                raise SystemExit(f"{ISSUES}: {n} is no retired erratum id ({IDS.name})")
+            if n in active:
+                raise SystemExit(f"{ISSUES}: {n} is listed in Fixed upstream but still active in {DECISIONS.name}")
         commit = im.group(2)
         full = subprocess.run(["git", "-C", str(ECMA262), "rev-parse", "--verify", "--quiet", commit + "^{commit}"],
                               capture_output=True, text=True).stdout.strip()
@@ -589,16 +541,13 @@ def grammar_html(text: str) -> str:
 # The page
 
 READING_LABEL = {"literal": "the literal text", "test262": "the test262 reading", "proposed": "the proposed reading"}
-SWITCH = {
-    "spec": ("In the specification, at run time",
-             "Its readings are a parameter of the specification's machine: <code>{run} --erratum {name}=READING</code> "
-             "runs a program under one of them ({readings}), and the engine's theorem holds under every choice."),
-    "parser": ("Only in the engine's parser",
-               "The specification's grammar (<code>lean/Ecma/Grammar/Gen</code>) has the default reading; the engine's "
-               "parser has both, and <code>{run} --erratum {name}=literal</code> parses as the text is written. The "
-               "literal reading is the engine's parser's, not the specification layer's."),
-    "none": ("Nowhere",
-             "The overlay holds one reading, and no option changes it."),
+LAYER = {
+    "spec": ("Algorithm & early-error SpecTec",
+             "Baked directly into the clause or early-error rules of <code>spec/spectec/</code>."),
+    "parser": ("Grammar & parser",
+               "Baked into the SpecTec grammars (<code>spec/spectec/01..07-grammar-*.spectec</code>) and the parser."),
+    "none": ("Prose relations & unused rows",
+             "Applies in the SpecTec prose model (<code>spec/spectec/prose/</code>) or an unreachable grammar row."),
 }
 STOP_KIND = {
     "sortError": "a value of the wrong sort reaches the step",
@@ -687,61 +636,60 @@ def program_html(sp: Text, e: Erratum, p: dict, runs: dict, gallery: dict, build
     pid = p["program"]
     f = program_file(pid)
     rows = []
-    for rd in p["outcomes"]:
-        r = runs[(e.name, pid, rd)]
-        tag = "default" if rd == e.default else "other"
-        printed = "".join(f"<li><code>{esc(x)}</code></li>" for x in r["got"]["printed"])
+    for rd, exp in p["outcomes"].items():
+        if rd == e.default:
+            r = runs[(e.name, pid, rd)]
+            end_s = r["got"]["end"]
+            printed_lines = r["got"]["printed"]
+            tag = "default"
+            badge = " (baked into SpecTec · verified)"
+        else:
+            end_s = exp["end"]
+            printed_lines = exp.get("printed", [])
+            tag = "other"
+            badge = " (alternative reading)"
+        printed = "".join(f"<li><code>{esc(x)}</code></li>" for x in printed_lines)
         rows.append(f'<tr class="{tag}"><th scope="row">{READING_LABEL[rd][0].upper() + READING_LABEL[rd][1:]}'
-                    f'{" (the default)" if rd == e.default else ""}<br><code class="cmd">--erratum {esc(e.name)}={rd}</code></th>'
-                    f'<td>{outcome_html(sp, r["got"]["end"])}'
+                    f'{badge}</th>'
+                    f'<td>{outcome_html(sp, end_s)}'
                     f'{f"<ul class=printed>{printed}</ul>" if printed else ""}</td></tr>')
-    other = [rd for rd in p["outcomes"] if rd != e.default]
     links = []
     ex = next((x for x in gallery.get("examples", []) if x["id"] == pid), None) if gallery else None
     by_id = {b["id"]: b for b in builds}
-    if ex:
+    if ex and builds:
         first = builds[0]["id"]
         for b in ex["builds"]:
             if b not in by_id:
                 continue
             q = f"?example={pid}" + ("" if b == first else f"&amp;build={b}")
             links.append(f'<a class="open" href="debugger/{q}">Open in the debugger: {esc(by_id[b]["label"])}</a>')
-            if b == first:
-                for rd in other:
-                    args = f"--erratum {e.name}={rd}".replace(" ", "%20").replace("=", "%3D")
-                    links.append(f'<a class="open" href="debugger/{q}&amp;args={args}">Open in the debugger: '
-                                 f'{esc(by_id[b]["label"])}, with {esc(READING_LABEL[rd])}</a>')
     args = header_args(f.read_text(), e.name)
     run_line = " ".join([run_name, *args, f.relative_to(ROOT).as_posix()])
     return (f'<div class="program"><p class="prog-head">The program <code>{esc(f.relative_to(ROOT).as_posix())}</code>'
-            f', run as <code class="cmd">{esc(run_line)}</code> with the option of each row:</p>'
+            f', verified with <code class="cmd">{esc(run_line)}</code>:</p>'
             f'<div class="tablebox"><table class="outcomes"><tbody>{"".join(rows)}</tbody></table></div>'
             f'{"<p class=opens>" + " ".join(links) + "</p>" if links else ""}'
             f'<details class="jssrc"><summary>Source</summary><pre class="js">{esc(f.read_text())}</pre></details></div>')
 
 
-def writeups(name: str) -> list[tuple[str, str]]:
-    """The write-ups errata.txt names for an erratum, as (page under the site, its number and title)."""
+def writeups(e: Erratum) -> list[tuple[str, str]]:
+    """The write-ups spec/DECISIONS.md names for an erratum, as (page under the site, its number and title)."""
     out = []
-    for ln in ERRATA.read_text().split("\n"):
-        f = ln.split("\t")
-        if ln.startswith("#") or len(f) < 6 or f[0] != name:
-            continue
-        for p in f[5].split():
-            w = ROOT / p
-            if not w.is_file():
-                raise SystemExit(f"{ERRATA}: {name} names {p}, which is not there")
-            title = re.sub(r"^#\s*", "", w.read_text().split("\n", 1)[0])
-            out.append((f"spec-issues/{w.stem}.html", title))
+    for p in e.reports:
+        w = ROOT / p
+        if not w.is_file():
+            raise SystemExit(f"{DECISIONS}: {e.name} names {p}, which is not there")
+        title = re.sub(r"^#\s*", "", w.read_text().split("\n", 1)[0])
+        out.append((f"spec-issues/{w.stem}.html", title))
     return out
 
 
 def erratum_html(sp: Text, e: Erratum, quotes: list[Quote], data: dict, runs: dict, gallery: dict, builds: list[dict],
                  run_name: str) -> str:
-    wl = "".join(f'<a class="open" href="{esc(href)}">Write-up {md(title)}</a>' for href, title in writeups(e.name))
+    wl = "".join(f'<a class="open" href="{esc(href)}">Write-up {md(title)}</a>' for href, title in writeups(e))
     parts = [f'<article class="erratum" id="{esc(e.name)}"><h3><a class="self" href="#{esc(e.name)}">{esc(e.name)}</a></h3>',
-             f'<p class="erratum-meta"><span class="badge rd">default: {esc(e.default)}</span>'
-             f'<span class="badge sw-{e.switch}">switched: {esc(e.switch)}</span></p>',
+             f'<p class="erratum-meta"><span class="badge rd">SpecTec: {esc(e.default)}</span>'
+             f'<span class="badge sw-{e.switch}">layer: {esc(e.switch)}</span></p>',
              f'<p class="opens">{wl}</p>' if wl else ""]
     for q in quotes:
         if q.block == "none":
@@ -751,18 +699,17 @@ def erratum_html(sp: Text, e: Erratum, quotes: list[Quote], data: dict, runs: di
         parts.append(alts_html(sp, q))
     notes = [n for q in quotes for n in q.notes] + e.notes
     if notes:
-        parts.append('<div class="ov-note"><p class="ov-label">The overlay\'s note</p>'
+        parts.append('<div class="ov-note"><p class="ov-label">Formalization note</p>'
                      + "".join(f"<p>{md(n, sp)}</p>" for n in notes) + "</div>")
     facts = []
     st = stops_html(sp, e)
     if st:
         facts.append(f"<dt>Read as written</dt><dd>{st}</dd>")
-    res = (f" The overlay's resolution is <code>{esc(e.resolution)}</code>: not yet decided; the machine runs "
-           f"{READING_LABEL[e.default]} until it is." if e.resolution == "pending" else "")
-    facts.append(f"<dt>Default</dt><dd>{READING_LABEL[e.default][0].upper() + READING_LABEL[e.default][1:]}.{res}</dd>")
-    title, sentence = SWITCH[e.switch]
-    rds = ", ".join(f"<code>{r}</code>" for r in ["literal", *other_readings(e)])
-    facts.append(f"<dt>Switched</dt><dd>{title}. {sentence.format(run=run_name, name=esc(e.name), readings=rds)}</dd>")
+    res = (f" Upstream resolution is <code>pending</code>; SpecTec bakes in {READING_LABEL[e.default]}."
+           if e.resolution == "pending" else "")
+    facts.append(f"<dt>In SpecTec</dt><dd>{READING_LABEL[e.default][0].upper() + READING_LABEL[e.default][1:]}.{res}</dd>")
+    title, sentence = LAYER[e.switch]
+    facts.append(f"<dt>Layer</dt><dd>{title}. {sentence}</dd>")
     parts.append(f'<dl class="split efacts">{"".join(facts)}</dl>')
     progs = data["programs"].get(e.name, [])
     if progs:
@@ -807,7 +754,7 @@ def page(runs_file: dict, gallery: dict | None, builds: list[dict], run_name: st
                        f'<td><span class="secnum">{esc(num)}</span> {esc(sp.short(q.cid))}</td>'
                        f'<td>{esc(e.default)}</td><td>{esc(e.switch)}</td><td class="num">{"yes" if n else ""}</td></tr>')
         return ('<div class="tablebox"><table class="errata-index"><thead><tr><th>Erratum</th><th>Clause</th>'
-                '<th>Default</th><th>Switched</th><th class="num">Program</th></tr></thead><tbody>'
+                '<th>SpecTec reading</th><th>Layer</th><th class="num">Program</th></tr></thead><tbody>'
                 + "".join(trs) + "</tbody></table></div>")
 
     def section(sid: str, title: str, es: list[Erratum], intro: str) -> str:
@@ -821,24 +768,25 @@ def page(runs_file: dict, gallery: dict | None, builds: list[dict], run_name: st
     sw = Counter(e.switch for e in errata)
     with_prog = sum(1 for e in errata if data["programs"].get(e.name))
     nruns = len(want)
-    fixed = fixed_upstream()
+    fixed = fixed_upstream({e.name for e in errata})
     nfixed = sum(len(x["names"]) for x in fixed)
     how = (f'<section class="part" id="reading"><h2 class="part-title"><a class="self" href="#reading">How to read an '
            f'erratum</a></h2>'
-           f'<p>Each erratum names the sentences of the text it is about, quoted from the pinned spec.html (a step or a '
-           f'rule is found by the hash the overlay records of its text, so a change to the text fails the build), '
-           f'and the readings the overlay holds: <em>the literal text</em>, the sentence as written; <em>the test262 '
-           f'reading</em>, the one test262\'s tests require; <em>the proposed reading</em>, the text proposed in its '
-           f'place. Where two readings have the same text, it is given once. The notes are the overlay\'s own.</p>'
-           f'<p>Of the {len(errata)} errata, {dflt.get("test262", 0)} are read by default as test262 requires, '
-           f'{dflt.get("literal", 0)} as written and {dflt.get("proposed", 0)} as proposed. {sw.get("spec", 0)} are '
-           f'switched in the specification at run time, {sw.get("parser", 0)} only in the engine\'s parser, and '
-           f'{sw.get("none", 0)} have one reading.</p>'
-           f'<p>{with_prog} errata have a program that shows them. Each program was run when this site was built, '
-           f'{nruns} runs in all on the native <code>{esc(run_name)}</code>, under its erratum\'s default reading and '
-           f'under its other reading (the literal text, or, where the default is the literal text, the proposed or '
-           f'test262 reading), and printed what the page says. An object\'s number in a result line is written '
-           f'<code>#N</code>.</p></section>')
+           f'<p>Each erratum names the sentences of ECMA-262 it is about, quoted from the pinned <code>spec.html</code> '
+           f'(every step or rule checked by its SHA-256 hash so a change to the text fails the build), and the '
+           f'candidate readings: <em>the literal text</em>, the sentence as written; <em>the test262 reading</em>, '
+           f'what <code>test262</code> requires; <em>the proposed reading</em>, the text proposed in its place. '
+           f'Unlike an overlay with runtime flags, SpecTec bakes one resolved reading directly into '
+           f'<code>spec/spectec/</code> and records the rationale in <code>spec/DECISIONS.md</code>.</p>'
+           f'<p>Across the {len(errata)} entries, SpecTec bakes in {dflt.get("test262", 0)} as <code>test262</code> '
+           f'requires, {dflt.get("literal", 0)} as written (so a program reaching a broken <code>Assert:</code> stops '
+           f'at that step), and {dflt.get("proposed", 0)} as proposed ({sw.get("spec", 0)} in algorithms and early '
+           f'errors, {sw.get("parser", 0)} in the grammars and parser, and {sw.get("none", 0)} in prose relations or '
+           f'unreachable rows).</p>'
+           f'<p>{with_prog} entries have a demonstration program. Each was run when this site was built ({nruns} runs '
+           f'on native <code>{esc(run_name)}</code>) and verified against the baked-in SpecTec outcome; the table '
+           f'beside it also documents what an unchosen alternative reading would produce. An object\'s number in a '
+           f'result line is written <code>#N</code>.</p></section>')
     body = [how,
             section("defects", "Defects of the text", defects,
                     "<p>Places where the text, read as written, gives no answer, an answer that contradicts another "
@@ -854,20 +802,20 @@ def page(runs_file: dict, gallery: dict | None, builds: list[dict], run_name: st
     pin = subprocess.run(["git", "-C", str(ECMA262), "rev-parse", "--short=9", "HEAD"], capture_output=True,
                          text=True).stdout.strip()
     body.append(f'<section class="part" id="removed"><h2 class="part-title"><a class="self" href="#removed">Removed '
-                f'because the editors fixed the text ({nfixed})</a></h2><p>Errata an earlier review of the overlay '
-                f'held, and removed when the text at <code>{esc(pin)}</code> no longer had the defect. Their ids stay '
-                f'retired in <code>spec/formal/erratum-ids.txt</code>.</p><ul class="fixed">{"".join(items)}</ul></section>')
+                f'because the editors fixed the text ({nfixed})</a></h2><p>Errata an earlier review found that '
+                f'upstream commits before <code>{esc(pin)}</code> resolved.</p><ul class="fixed">{"".join(items)}</ul></section>')
     toc = [("reading", "How to read an erratum", 1), ("defects", f"Defects of the text ({len(defects)})", 1)]
     toc += [(e.name, esc(e.name), 2) for e in defects]
     toc += [("proposals", f"Proposed normative changes ({len(proposals)})", 1)]
     toc += [(e.name, esc(e.name), 2) for e in proposals]
     toc += [("removed", f"Removed: fixed upstream ({nfixed})", 1)]
-    lede = (f"<p>The places where the overlay reads the text of ECMA-262 in more than one way: {len(defects)} defects "
-            f"of the text and {len(proposals)} proposed normative change{'s' if len(proposals) != 1 else ''}, from <code>spec/formal/readings.emu</code>. "
-            f"For each, the sentences it is about, what they give read as written, the other readings, which one the "
-            f"machine runs by default, where the choice is made, and a program that shows the difference.</p>")
-    return {"title": "Errata", "eyebrow": "From the overlay: <code>spec/formal/readings.emu</code>, "
-            "<code>spec/formal/errata.txt</code>", "lede": lede, "body": "\n".join(body), "toc": toc,
+    lede = (f"<p>The {len(errata)} specification defects and proposed normative changes recorded when formalizing "
+            f"ECMA-262 in SpecTec ({len(defects)} defects of the text and {len(proposals)} proposed normative "
+            f"change{'s' if len(proposals) != 1 else ''}, from <code>spec/DECISIONS.md</code>): the sentences quoted "
+            f"from <code>spec.html</code>, the reading baked into <code>spec/spectec/</code>, the alternatives, and "
+            f"verified demonstration programs.</p>")
+    return {"title": "Errata", "eyebrow": "Specification decisions · <code>spec/DECISIONS.md</code>, "
+            "<code>site/errata.json</code>", "lede": lede, "body": "\n".join(body), "toc": toc,
             "findings": sorted(set(findings)), "counts": {"errata": len(errata), "defects": len(defects),
                                              "proposals": len(proposals), "runs": nruns, "with_program": with_prog}}
 

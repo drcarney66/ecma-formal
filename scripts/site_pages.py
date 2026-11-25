@@ -58,7 +58,11 @@ RETIRED = [r"\bESL\b", r"\besl\b", r"\bB0'?\b", r"\bB1'?\b", r"\bb1p\b", r"[Tt]h
 
 # Source docstrings that still use a retired name: what the page says in their place. Each must still match its
 # source (the build fails once the source is fixed, so that the entry is removed).
-REWORD: list[tuple[str, str, str]] = []
+REWORD: list[tuple[str, str, str]] = [
+    ("lean/Ecma/Machine/Run.lean",
+     "the program's code, the host and the readings, and nothing else.",
+     "the program's code, the host, and whether Asserts are checked."),
+]
 
 # The pages, in three dropdown menus next to the site's name. Home is the site's name.
 NAV = [
@@ -102,15 +106,35 @@ def gen_lines(d: Path) -> tuple[int, int]:
     return len(fs), sum(f.read_text().count("\n") for f in fs)
 
 
+def spectec_counts() -> dict[str, int]:
+    """Files and lines of `spec/spectec/` (structured SpecTec vs `prose/` modules) and `spec/html/`."""
+    spec_dir = ROOT / "spec/spectec"
+    struct_fs = [f for f in sorted(spec_dir.rglob("*.spectec")) if "prose" not in f.parts]
+    prose_fs = sorted((spec_dir / "prose").glob("*.spectec"))
+    clause_fs = sorted((spec_dir / "clauses").glob("*.spectec"))
+    html_fs = sorted((ROOT / "spec/html").glob("*.txt"))
+    defs = sum(len(re.findall(r"(?m)^def @", f.read_text())) for f in struct_fs)
+    return {
+        "struct_files": len(struct_fs),
+        "struct_lines": sum(f.read_text().count("\n") for f in struct_fs),
+        "prose_files": len(prose_fs),
+        "prose_lines": sum(f.read_text().count("\n") for f in prose_fs),
+        "total_files": len(struct_fs) + len(prose_fs),
+        "total_lines": sum(f.read_text().count("\n") for f in struct_fs + prose_fs),
+        "clause_files": len(clause_fs),
+        "defs": defs,
+        "html_files": len(html_fs),
+        "html_lines": sum(f.read_text().count("\n") for f in html_fs),
+    }
+
+
 def errata() -> dict[str, int]:
-    """spec/formal/errata.txt's errata counted by resolution (`test262`, …), kind (`kind:defect`, …) and where
-    their readings are switched (`switch:spec`, …)."""
+    """`spec/DECISIONS.md`'s 38 errata counted by baked-in reading (`test262`, …), resolution (`res:pending`, …),
+    kind (`kind:defect`, …) and layer (`switch:spec`, …)."""
     out: dict[str, int] = {}
-    for ln in (ROOT / "spec/formal/errata.txt").read_text().split("\n"):
-        if ln.strip() and not ln.startswith("#"):
-            f = ln.split("\t")
-            for k in (f[1], "kind:" + f[2], "switch:" + f[3]):
-                out[k] = out.get(k, 0) + 1
+    for e in errata_page.read_errata():
+        for k in (e.default, "res:" + e.resolution, "kind:" + e.kind, "switch:" + e.switch):
+            out[k] = out.get(k, 0) + 1
     return out
 
 
@@ -501,23 +525,26 @@ class Site:
 
 
 def host_sections() -> list[Section]:
-    topics = re.findall(r"H\.(\w+)", (LEAN / "Ecma/Gen/ProseHostLaws.lean").read_text().split("extends", 1)[1])
+    prose_dir = ROOT / "spec/spectec/prose"
+    wf_src = (prose_dir / "26-host-laws.spectec").read_text()
+    topics = re.findall(r"H\.(\w+)", wf_src.split("extends", 1)[1])
     files = {}
-    for f in sorted((LEAN / "Ecma/Gen").glob("ProseHostLaws_*.lean")):
-        m = re.search(r"structure Host\.(\w+)", f.read_text())
+    for f in sorted(prose_dir.glob("*-host-laws-*.spectec")):
+        m = re.search(r"(?m)^\s*laws\s+Host\.(\w+)", f.read_text())
         if m:
-            files[m.group(1)] = f"lean/Ecma/Gen/{f.name}"
-    secs = [Section("host", "The host", ["lean/Ecma/Gen/ProseHost.lean"]),
-            Section("laws", "The laws of a host", ["lean/Ecma/Gen/ProseHostLaws.lean"])]
+            files[m.group(1)] = f"spec/spectec/prose/{f.name}"
+    secs = [Section("host", "The host", ["spec/spectec/prose/10-host.spectec"]),
+            Section("laws", "The laws of a host", ["spec/spectec/prose/26-host-laws.spectec"])]
     for t in topics:
         if t not in files:
-            raise SystemExit(f"Host.WF extends {t}, which no ProseHostLaws_* file defines")
-        title = re.search(r"/-!\s*#\s*([^\n]+)", (ROOT / files[t]).read_text()).group(1).strip()
+            raise SystemExit(f"Host.WF extends {t}, which no *-host-laws-*.spectec file defines")
+        title = re.search(r"---!\s*#\s*([^\n]+)", (ROOT / files[t]).read_text()).group(1).strip()
         secs.append(Section(t, title[0].upper() + title[1:], [files[t]]))
-    rest = ["lean/Ecma/Gen/ProseHostBasic.lean", "lean/Ecma/Gen/ProseDateFormat.lean"]
-    for f in rest:  # Basic (what the laws are stated over), DateFormat (definitions only)
-        title = re.search(r"/-!\s*#\s*([^\n]+)", (ROOT / f).read_text()).group(1).strip()
-        secs.append(Section(Path(f).stem.removeprefix("ProseHost").removeprefix("Prose").lower(), title[0].upper() + title[1:], [f]))
+    rest = [("basic", "spec/spectec/prose/14-host-laws-basic.spectec"),
+            ("dateformat", "spec/spectec/prose/15-date-format.spectec")]
+    for anchor, f in rest:  # Basic (what the laws are stated over), DateFormat (definitions only)
+        title = re.search(r"---!\s*#\s*([^\n]+)", (ROOT / f).read_text()).group(1).strip()
+        secs.append(Section(anchor, title[0].upper() + title[1:], [f]))
     return secs
 
 
@@ -656,24 +683,6 @@ def ID_TABLES() -> list[Path]:
     return sorted(spec_text.ids_dir().glob("*-ids.txt"))
 
 
-def literal_build_kept() -> str:
-    """The errata the debugger's literal-text build keeps at their default reading (tools/dbg/builds.json)."""
-    b = next(x for x in json.loads((ROOT / "tools/dbg/builds.json").read_text())["builds"] if x["id"] == "literal")
-    a = b["args"]
-    kept = [a[i + 1].split("=")[0] for i in range(len(a) - 1) if a[i] == "--erratum" and not a[i + 1].endswith("=literal")]
-    if not kept:
-        raise SystemExit("tools/dbg/builds.json: the literal build keeps no erratum")
-    return ", ".join(f"<code>{k}</code>" for k in kept[:-1]) + f" and <code>{kept[-1]}</code>" if len(kept) > 1 else f"<code>{kept[0]}</code>"
-
-
-def pending_reading() -> str:
-    """How the machine reads the errata whose resolution is `pending` (the generated data's default)."""
-    rd = {e.default for e in errata_page.read_errata() if e.resolution == "pending"}
-    if len(rd) != 1:
-        raise SystemExit(f"the pending errata have the defaults {sorted(rd)}: say so on How it works")
-    return {"proposed": "as proposed", "test262": "as test262 requires", "literal": "as written"}[rd.pop()]
-
-
 def t262_sentence(tp: dict | None) -> str:
     if not tp:
         return ""
@@ -784,7 +793,7 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
         '<div class="tablebox prop117-box"><table class="prop117-table">'
         '<thead><tr>'
         '<th>Stage</th><th>Proposal (TC39 #117)</th><th class="num"><code>spec.html</code></th>'
-        '<th class="num">Generated Lean</th><th class="num">Model / Host</th>'
+        '<th class="num">Auto-gen spec</th><th class="num">Model / Host</th>'
         '<th class="num">Proofs</th><th></th>'
         '</tr></thead><tbody>'
         + "".join(trows)
@@ -799,42 +808,31 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
 
 
 def worked_example(dbgopt: dict | None) -> dict[str, str]:
-    """How it works' worked example, IsCallable: its text from spec.html, its generated definition from
-    lean/Ecma/Gen, and the numbers in it read from the kept tables."""
+    """How it works' worked example, IsCallable: its text from spec.html, its SpecTec definition from
+    spec/spectec/clauses/S07.spectec, and its kept ClauseId from spec/ids/clause-ids.txt."""
     cid = "sec-iscallable"
     sp = errata_page.Text()
     alg = re.search(r"<emu-alg>(.*?)</emu-alg>", sp.own(cid), re.DOTALL).group(1)
-    gen = LEAN / "Ecma/Gen/S7_2.lean"
-    src = gen.read_text()
-    m = re.search(r"(?ms)^/-- sec-iscallable .*?-/\ndef «IsCallable» : Alg := \{.*?\}\n(?=\n)", src)
+    st_file = ROOT / "spec/spectec/clauses/S07.spectec"
+    src = st_file.read_text()
+    m = re.search(r"(?ms)^def @sec-iscallable\b.*?^\}\n", src)
     if not m:
-        raise SystemExit(f"{gen}: no def «IsCallable»")
-    code = m.group(0)
+        raise SystemExit(f"{st_file}: no def @sec-iscallable")
+    code = m.group(0).rstrip()
     ids_d = spec_text.ids_dir()
     clauses = {ln.split("\t")[1]: int(ln.split("\t")[0]) for ln in (ids_d / "clause-ids.txt").read_text().split("\n")
                if ln and not ln.startswith("#")}
-    aid = re.search(r"id := ⟨(\d+), 0⟩", code).group(1)
-    if int(aid) != clauses[cid]:
-        raise SystemExit(f"IsCallable's id {aid} is not {cid}'s {clauses[cid]} in clause-ids.txt")
-
-    def line(table: str, k: int) -> str:
-        rows = [ln for ln in (ids_d / table).read_text().split("\n") if ln and not ln.startswith("#")]
-        return rows[k]
-
-    body = code[code.index("body :="):]
-    sort = re.search(r'\.isTy true \.or \[\(\.sort "an" \[\] (\d+) ""\)\]', body).group(1)
-    ph = re.search(r"\.phrase (\d+) ", body)
-    fld = re.search(r"\.fieldName (\d+)", body).group(1)
+    if cid not in clauses:
+        raise SystemExit(f"{cid} not in clause-ids.txt")
+    aid = str(clauses[cid])
     tour = bool(dbgopt and dbgopt.get("gallery") and any(e["id"] == "run/iscallable" for e in dbgopt["gallery"]["examples"]))
     num = sp.nums[cid]
     return {
         "ex:num": num,
         "ex:spec": (f'<blockquote class="sentence alg"><cite><a class="clause" href="{rl.CLAUSE_URL.format(cid)}">'
                     f'§{num} IsCallable ( <var>arg</var> )</a></cite>{errata_page.alg_html(alg, sp)}</blockquote>'),
-        "ex:gen": f'<pre class="lean">{rl.highlight("-- " + gen.relative_to(ROOT).as_posix() + ", in namespace Ecma.Gen.S7_2" + chr(10) + code.rstrip(), None, [])}</pre>',
-        "ex:id": aid, "ex:sort": sort, "ex:sort_name": html.escape(line("sort-ids.txt", int(sort))),
-        "ex:phrase": ph.group(1), "ex:phrase_name": html.escape(line("phrase-ids.txt", int(ph.group(1))).split()[-1]),
-        "ex:field": fld, "ex:field_name": html.escape(line("field-ids.txt", int(fld))),
+        "ex:spectec": f'<pre class="lean">{rl.highlight("--- " + st_file.relative_to(ROOT).as_posix() + chr(10) + code, None, [], lang="SpecTec")}</pre>',
+        "ex:id": aid,
         "ex:debugger": ('<a href="debugger/?example=run/iscallable">IsCallable, step by step</a>' if tour
                         else "<code>tests/run/iscallable.js</code>"),
     }
@@ -851,12 +849,13 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     sub = {x.split()[3]: x.split()[2] for x in tree}
     facts = {"rev": rev, "dirty": dirty, "ecma262": sub["external/ecma262"], "test262": sub["external/test262"]}
 
-    model_secs = [Section("model", "The model", ["lean/Ecma/Gen/ProseModel.lean"]),
-                  Section("laws", "The laws of a model", ["lean/Ecma/Gen/ProseModelLaws.lean"])]
+    model_secs = [Section("model", "The model", ["spec/spectec/prose/01-model.spectec"]),
+                  Section("values", "Values, cells and stops", ["spec/spectec/prose/02-value.spectec"]),
+                  Section("laws", "The laws of a model", ["spec/spectec/prose/05-model-laws.spectec"])]
     host_secs = host_sections()
     impl_secs = [Section("implements", "What it is to implement the specification", ["lean/Ecma/Implements.lean"]),
                  Section("runs", "Runs", ["lean/Ecma/Machine/Run.lean"])]
-    parse_secs = [Section("nodes", "Parse Nodes, derivations and their laws", ["lean/Ecma/Gen/ProseNodeRel.lean"])]
+    parse_secs = [Section("nodes", "Parse Nodes, derivations and their laws", ["spec/spectec/prose/06-node-rel.spectec"])]
     for page, secs in (("model.html", model_secs), ("host.html", host_secs), ("implements.html", impl_secs),
                        ("parser-laws.html", parse_secs)):
         site.register(page, secs)
@@ -868,11 +867,13 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     body, toc, r_model = site.render("model.html", model_secs, opts)
     model_laws = [x for x in r_model.laws]
     pages.append(Page("model.html", "The model and its laws",
-                      "Reading page · generated from <code>lean/Ecma/Model.lean</code>, <code>lean/Ecma/Model/Laws.lean</code>",
-                      f"<p>A model gives each sort of the specification (mathematical values, Numbers, BigInts, "
-                      f"Strings, Symbols, Parse Nodes, Lists, Data Blocks, CharSets, Records, the store) a carrier and its operations. "
-                      f"The laws say what the specification assumes of them: {fmt(len(model_laws))} laws, each "
-                      f"quoting the sentence it reads. Laws that quote the same sentence share one quotation.</p>",
+                      "Reading page · generated from <code>spec/spectec/prose/01-model.spectec</code>, <code>02-value.spectec</code>, <code>05-model-laws.spectec</code>",
+                      f"<p>A model (<code>syntax Model record</code>) gives each sort of the specification "
+                      f"(mathematical values, Numbers, BigInts, Strings, Symbols, Parse Nodes, Lists, Data Blocks, "
+                      f"CharSets, Records, the store) a carrier and its operations, over which specification values "
+                      f"(<code>syntax Val</code>) and store cells (<code>syntax Cell</code>) are defined. "
+                      f"The SpecTec <code>laws</code> blocks state what the prose assumes of them: {fmt(len(model_laws))} laws, "
+                      f"each quoting the sentence it reads. Laws that quote the same sentence share one quotation.</p>",
                       body, toc))
 
     # The host.
@@ -880,37 +881,39 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     table, nhost = law_table(r_host, site.spec)
     nosent = sum(1 for d, m, law in r_host.laws if d.full.startswith("Ecma.Host.") and law.no_sentence is not None)
     summary = (f'<section class="part" id="all-laws"><h2 class="part-title"><a class="self" href="#all-laws">All '
-               f'{nhost} laws</a></h2><p>Each law is a field of the structure of its topic, and <a href="#Host.WF">'
-               f'<code>Host.WF</code></a> is all of them. Two read their sentence more strictly than it is written, '
-               f'and are for the list of proposed normative changes; two more weakly:</p>{differs_list()}{table}</section>')
+               f'{nhost} laws</a></h2><p>Each law is a <code>law</code> declaration in the SpecTec <code>laws</code> '
+               f'block of its topic, and <a href="#Host.WF"><code>Host.WF</code></a> extends all of them. Two read '
+               f'their sentence more strictly than it is written, and are for the list of proposed normative changes; '
+               f'two more weakly:</p>{differs_list()}{table}</section>')
     first_part = body.index(f'<section class="part" id="{host_secs[2].anchor}"')
     body = body[:first_part] + summary + body[first_part:]
     toc.insert(2, ("all-laws", f"All {nhost} laws", 1))
     pages.append(Page("host.html", "The host and its laws",
-                      "Reading page · generated from <code>lean/Ecma/Host.lean</code>, <code>lean/Ecma/Host/Laws/</code>",
-                      f"<p>What the specification leaves to the host, and the {nhost} laws it requires of one, "
+                      "Reading page · generated from <code>spec/spectec/prose/10-host.spectec</code> and <code>spec/spectec/prose/*-host-laws*.spectec</code>",
+                      f"<p>What the specification leaves to the host, and the {nhost} SpecTec laws it requires of one, "
                       f"by topic. Each law names its clause, quotes the sentence that governs it, and says how "
-                      f"the Lean reads it ({nosent} law has no single sentence and says why). "
-                      f"<code>scripts/law_quotes.py</code> checks every quotation against the pinned spec.html.</p>",
+                      f"SpecTec reads it ({nosent} have no single sentence and say why). "
+                      f"<code>scripts/law_quotes.py</code> checks every quotation against the pinned <code>spec.html</code>.</p>",
                       body, toc, wide=False))
 
     # Implements and runs.
     body, toc, _ = site.render("implements.html", impl_secs, opts)
     pages.append(Page("implements.html", "What it is to implement the specification",
                       "Reading page · generated from <code>lean/Ecma/Implements.lean</code>, <code>lean/Ecma/Machine/Run.lean</code>",
-                      "<p>The definition the engine's headline theorem is stated against, in full, with the "
-                      "definitions of a run it uses. <a href=\"what-is-proved.html\">What is proved</a> reads it "
-                      "field by field.</p>", body, toc))
+                      "<p>The downstream Lean conformance contract that bridges the compiled SpecTec specification "
+                      "to the concrete engine, in full, with the definitions of a run it uses. "
+                      "<a href=\"what-is-proved.html\">What is proved</a> reads it field by field.</p>", body, toc))
 
     # The parser's laws.
     body, toc, _ = site.render("parser-laws.html", parse_secs, opts)
     pages.append(Page("parser-laws.html", "The parser's laws",
-                      "Reading page · generated from <code>lean/Ecma/Model/NodeRel.lean</code>",
-                      "<p>What a model's parser must give: a Parse Node that is a derivation of the source text "
-                      "under the grammar (<code>Model.ParseLaws</code>), and a covered node that is a parse of "
-                      "its cover's text (<code>Model.CoverLaws</code>). Both are stated and <strong>owed</strong>: "
-                      "no theorem proves them of the engine, and no claim depends on them. The laws of a Parse "
-                      "Node's children and descendants (<code>Model.NodeLaws</code>) are proved.</p>", body, toc))
+                      "Reading page · generated from <code>spec/spectec/prose/06-node-rel.spectec</code>",
+                      "<p>What a model's parser must give, stated in SpecTec: a Parse Node related to a derivation of "
+                      "the source text under the grammar (<code>relation Model.NodeRel</code>, <code>laws Model.ParseLaws</code>), "
+                      "and a covered node that is a parse of its cover's text (<code>laws Model.CoverLaws</code>). Both "
+                      "are stated and <strong>owed</strong>: no theorem proves them of the engine, and no claim depends "
+                      "on them. The laws of a Parse Node's children and descendants (<code>laws Model.NodeLaws</code>) "
+                      "are proved.</p>", body, toc))
 
     # The results page and the errata page, whose numbers the hand-written pages give.
     gallery = dbgopt and dbgopt.get("gallery")
@@ -922,18 +925,19 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
 
     # Numbers for the hand-written pages.
     e = errata()
+    st = spectec_counts()
     ecma = lean_lines(LEAN / "Ecma")
     gen = gen_lines(LEAN / "Ecma/Gen")
     ggen = gen_lines(LEAN / "Ecma/Grammar/Gen")
     eng = lean_lines(LEAN / "Engine", exclude="Proofs")
     proofs = lean_lines(LEAN / "Engine/Proofs")
     dbg = lean_lines(LEAN / "Debugger")
-    overlay = sorted((ROOT / "spec/formal").glob("*.emu"))
     host_laws = r_host.laws
     model_counts = {}
     for d, _m, _l in model_laws:
         model_counts[d.anchor] = model_counts.get(d.anchor, 0) + 1
     impl_rel = ROOT / "lean/Engine/Proofs/Model.lean"
+    total_errata = sum(v for k, v in e.items() if ":" not in k)
 
     def code(s: str) -> str:
         return f'<pre class="lean">{rl.highlight(s, None, [])}</pre>'
@@ -941,25 +945,30 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     values = {
         "SITE_NAME": html.escape(SITE_NAME), "RUN": RUN, "DBG": DBG, "BUNDLE": BUNDLE,
         "rev": rev, "ecma262": facts["ecma262"][:9], "test262": facts["test262"][:9],
+        "spectec_struct_files": fmt(st["struct_files"]), "spectec_struct_lines": fmt(st["struct_lines"]),
+        "spectec_prose_files": fmt(st["prose_files"]), "spectec_prose_lines": fmt(st["prose_lines"]),
+        "spectec_total_files": fmt(st["total_files"]), "spectec_total_lines": fmt(st["total_lines"]),
+        "spectec_clause_files": fmt(st["clause_files"]), "spectec_defs": fmt(st["defs"]),
+        "spectec_html_files": fmt(st["html_files"]), "spectec_html_lines": fmt(st["html_lines"]),
         "gen_modules": fmt(gen[0]), "gen_lines": fmt(gen[1]),
         "grammar_gen_modules": fmt(ggen[0]), "grammar_gen_lines": fmt(ggen[1]),
         "ecma_lines": fmt(ecma[1]), "ecma_files": fmt(ecma[0]),
         "engine_lines": fmt(eng[1]), "proof_lines": fmt(proofs[1]), "debugger_lines": fmt(dbg[1]),
         "engine_files": fmt(eng[0]), "proof_files": fmt(proofs[0]), "debugger_files": fmt(dbg[0]),
-        "overlay_files": fmt(len(overlay)),
-        "overlay_lines": fmt(sum(f.read_text().count("\n") for f in overlay)),
-        "errata": fmt(sum(v for k, v in e.items() if ":" not in k)),
+        "errata": fmt(total_errata),
         "errata_defects": fmt(e.get("kind:defect", 0)), "errata_proposals": fmt(e.get("kind:proposal", 0)),
         "errata_proposals_noun": "change" if e.get("kind:proposal", 0) == 1 else "changes",
         "errata_switch_spec": fmt(e.get("switch:spec", 0)), "errata_switch_parser": fmt(e.get("switch:parser", 0)),
         "errata_switch_none": fmt(e.get("switch:none", 0)),
         "errata_test262": fmt(e.get("test262", 0)), "errata_literal": fmt(e.get("literal", 0)),
-        "errata_proposed": fmt(e.get("proposed", 0)), "errata_pending": fmt(e.get("pending", 0)),
+        "errata_proposed": fmt(e.get("proposed", 0)), "errata_pending": fmt(e.get("res:pending", 0)),
         "host_laws": fmt(len(host_laws)), "host_topics": fmt(len([s for s in host_secs if s.anchor[0].isupper()])),
         "model_laws": fmt(model_counts.get("Model.Laws", 0)), "num_laws": fmt(model_counts.get("Model.NumLaws", 0)),
         "byte_laws": fmt(model_counts.get("Model.ByteLaws", 0)),
         "parent_laws": fmt(model_counts.get("Model.ParentLaws", 0)),
         "unicode_laws": fmt(model_counts.get("Model.UnicodeLaws", 0)),
+        "all_model_laws": fmt(len(model_laws)),
+        "total_laws": fmt(len(model_laws) + len(host_laws)),
         "pins": fmt(pins()),
         "runtime_pins": fmt(runtime_pins()),
         "stmt:implements": code("-- lean/Engine/Proofs/Model.lean, in namespace Engine\n"
@@ -975,25 +984,21 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
                           'branch: ' + fmt(pp["summary"]["hand_lines"]) + ' lines written by hand, '
                           + fmt(pp["summary"]["lean_hand"]) + ' files of hand-written Lean changed.</p></li>') if pp else "",
         "proposal_link": (' (<a href="proposal.html">Applying a proposal</a> shows one applied)') if pp else "",
-        "errata_card": ('<li><h3><a href="errata.html">Errata</a></h3><p>The ' + fmt(ep["counts"]["errata"]) + ' places '
-                        'where the text is read in more than one way: the sentences, the readings, the default, and '
-                        'a program for ' + fmt(ep["counts"]["with_program"]) + ' of them, run when the site was built.'
+        "errata_card": ('<li><h3><a href="errata.html">Errata</a></h3><p>The ' + fmt(ep["counts"]["errata"]) + ' specification '
+                        'defects and proposed changes recorded in <code>spec/DECISIONS.md</code>: the quoted sentences, '
+                        'the reading baked into SpecTec, and ' + fmt(ep["counts"]["with_program"]) + ' verified programs.'
                         '</p></li>') if ep else "",
         "t262_section": t262_section(tp),
-        "errata_link": '<a href="errata.html">errata\'s</a>' if ep else "errata's",
-        "errata_sentence": (' <a href="errata.html">The errata page</a> quotes each erratum\'s sentences and readings, '
-                            'and runs a program for each one that has one.') if ep else "",
+        "errata_sentence": (' <a href="errata.html">The errata page</a> quotes each entry\'s sentences and alternative '
+                            'readings, and verifies a demonstration program for each one that has one.') if ep else "",
         "t262_sentence": t262_sentence(tp),
         "axioms": ", ".join(f"<code>{x}</code>" for x in axioms()), "axiom_count": fmt(len(axioms())),
         "dbg_section": "", "dbg_revision": (" and the step debugger as <code>" + DBG + "</code>"
                                             + ("." if pp else "; the application of a proposal is not on this site yet.")),
         "id_tables": fmt(len(ID_TABLES())),
         "id_tables_list": ", ".join(f"<code>{f.name}</code>" for f in ID_TABLES()),
-        "literal_build_kept": literal_build_kept(),
-        "literal_build_kept_count": fmt(literal_build_kept().count("<code>")),
-        "errata_pending_reading": pending_reading(),
         "slides_errata_link": '<a href="errata.html">Errata</a>' if ep else "Errata",
-        "slides_errata_count_link": f'<a href="errata.html">{fmt(sum(v for k, v in e.items() if ":" not in k))} executable errata</a>' if ep else f'{fmt(sum(v for k, v in e.items() if ":" not in k))} executable errata',
+        "slides_errata_count_link": f'<a href="errata.html">{fmt(total_errata)} documented errata</a>' if ep else f'{fmt(total_errata)} documented errata',
         "slides_examples_link": '<a href="examples.html">All debugger examples</a>' if gallery else "All debugger examples",
         "slides_proposal_link": '<a href="proposal.html">Deep dive: applying <code>import defer</code></a>' if pp else "Applying <code>import defer</code>",
         **worked_example(dbgopt),

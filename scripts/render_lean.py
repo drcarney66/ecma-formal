@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Lean sources as reading pages: each declaration's docstring as prose, then its Lean.
+"""SpecTec and Lean sources as reading pages: each declaration's docstring as prose, then its SpecTec or Lean.
 
-    python3 scripts/render_lean.py [--spec spec.html] FILE.lean… > fragment.html
+    python3 scripts/render_lean.py [--spec spec.html] FILE.{spectec,lean}… > fragment.html
 
 A library for `scripts/site_pages.py`, which lays the pages out; run alone it prints the fragment of the files
-named, for a look. A file is read as Lean commands in source order. Module docstrings (`/-! … -/`) are prose;
-`def`, `structure`, `inductive` (and the other declaration keywords) are entries, each with a stable anchor (its
-name without the root namespace `Ecma.`: `#Host.TimeLaws.timeoutAfter`). A structure's fields and an inductive's
-constructors are entries of their own. A field of a `structure … : Prop` whose docstring keeps the laws'
-convention (`scripts/law_quotes.py`: a clause id, the quoted sentence(s), `Reading:`; or `No sentence:`) is a law
-and is laid out sentence first: the clause, the specification's sentence quoted, the reading, the Lean folded.
+named, for a look. A `.spectec` prose module (`spec/spectec/prose/*.spectec`) or `.lean` file is read in source
+order. Module docstrings (`---! …` in SpecTec, `/-! … -/` in Lean) are prose; `syntax`, `relation`, `laws`, `def`
+(and Lean's `structure`, `inductive`, `theorem`, …) are entries, each with a stable anchor (its name without the
+root namespace `Ecma.`: `#Host.TimeLaws.timeoutAfter`). A record's fields, a variant's cases, a relation's rules,
+and a `laws` block's `law` items are entries of their own. Every `law` whose docstring keeps the laws' convention
+(`scripts/law_quotes.py`: a clause id, the quoted sentence(s), `Reading:`; or `No sentence:`) is laid out sentence
+first: the clause, the specification's sentence quoted, the reading, the SpecTec folded.
 
 Docstrings are read as the sources write them: Markdown paragraphs, lists and headings, `**strong**`, and
 ecmarkdown's emphasis (`_var_`, `*value*`, `~constant~`, `|Nonterminal|`). A backquoted name that is an entry on
@@ -45,6 +46,18 @@ LEAN_KEYWORDS = {
     "with", "if", "then", "else", "let", "do", "return", "by", "have", "show", "from", "deriving", "in", "open",
     "namespace", "end", "section", "variable", "Prop", "Type", "for", "unless", "mut", "pure", "guard",
 }
+SPECTEC_KEYWORDS = {
+    "spec_module", "import", "namespace", "section", "mutual", "open", "var", "syntax", "record", "deriving",
+    "inhabited", "relation", "rule", "laws", "law", "extends", "def", "inline", "where", "fun", "match", "matches",
+    "with", "end", "if", "then", "else", "else_if", "let", "set", "in", "do", "return", "perform", "throw",
+    "assert", "repeat", "repeat_while", "repeat_until", "for_each", "forall", "exists", "not", "mem", "notmem",
+    "times", "sum", "ctor", "Prop", "Type", "kind", "ao", "sdo", "method", "builtin", "concrete", "params", "vars",
+    "is", "ty", "val", "sat", "completion", "clause", "field", "enum", "extern", "grammar", "early_error", "table",
+}
+SPECTEC_ITEM_STARTS = (
+    "---!", "---", "namespace ", "section ", "section {", "mutual {", "open ", "var ",
+    "syntax ", "relation ", "laws ", "def ", "inline def ",
+)
 
 
 class RenderError(Exception):
@@ -128,6 +141,8 @@ def _starts_command(line: str) -> bool:
 
 
 def parse_file(path: Path) -> Module:
+    if path.suffix == ".spectec":
+        return parse_spectec_file(path)
     src = path.read_text()
     lines_at = [0]
     for m in re.finditer("\n", src):
@@ -286,6 +301,208 @@ def _dedent(code: str) -> str:
     ls = code.split("\n")
     ind = min((len(x) - len(x.lstrip()) for x in ls if x.strip()), default=0)
     return "\n".join(x[ind:] for x in ls)
+
+
+def _spectec_starts_item(s: str) -> bool:
+    return s.startswith(SPECTEC_ITEM_STARTS)
+
+
+def _spectec_members(d: Decl, dedented_cmd: str, start: int) -> None:
+    lines = dedented_cmd.split("\n")
+    first = lines[0]
+    if d.kind == "laws":
+        d.is_prop = True
+        em = re.search(r"\bextends\s+\[(.*?)\]", first)
+        if em:
+            d.extends = [x.strip() for x in em.group(1).split(",") if x.strip()]
+        if first.rstrip().endswith("{}"):
+            d.head = first[:-2].rstrip()
+            return
+    if not first.rstrip().endswith("{"):
+        return
+    # Find the closing `}` at column 0 of dedented_cmd (any trailing `deriving` / `inhabited` follows it).
+    close_idx = None
+    for idx in range(1, len(lines)):
+        if lines[idx] == "}":
+            close_idx = idx
+            break
+    if close_idx is None:
+        return
+    tail_lines = [ln for ln in lines[close_idx + 1 :] if ln.strip()]
+    if tail_lines:
+        d.tail = "\n".join(tail_lines) + "\n"
+    # Only `syntax` variants/records, `relation`, and `laws` have member entries (not `def` struct literals).
+    if d.kind not in ("syntax", "syntax record", "relation", "laws"):
+        return
+    d.head = first[:-1].rstrip() + (("\n" + "\n".join(tail_lines)) if tail_lines else "")
+    body = lines[1:close_idx]
+    k, doc, doc_line = 0, None, 0
+    while k < len(body):
+        ln = body[k]
+        if not ln.strip():
+            k += 1
+            continue
+        ind = len(ln) - len(ln.lstrip())
+        s = ln.strip()
+        if s.startswith("---") and not s.startswith("---!"):
+            doc_buf = []
+            doc_line = start + 1 + k
+            while k < len(body):
+                cs = body[k].strip()
+                if cs.startswith("---") and not cs.startswith("---!"):
+                    doc_buf.append(cs[3:].lstrip(" ") if cs.startswith("--- ") else cs[3:])
+                    k += 1
+                else:
+                    break
+            doc = "\n".join(doc_buf)
+            continue
+        if d.kind == "syntax":
+            m = re.match(r"\|\s*([A-Za-z_][\w'!?]*)", s)
+        elif d.kind == "relation":
+            m = re.match(r"rule\s+([A-Za-z_][\w'!?]*)\b", s)
+        elif d.kind == "laws":
+            m = re.match(r"law\s+([A-Za-z_][\w'!?]*)\s*:", s)
+        else:  # syntax record
+            m = re.match(r"([A-Za-z_][\w'!?]*)\s*(?::|\(|\{|\[)", s)
+        if not m:
+            raise RenderError(f"{d.path}:{start + 1 + k}: not a SpecTec member: {s[:80]!r}")
+        name = m.group(1)
+        code = [ln]
+        k += 1
+        while k < len(body) and body[k].strip():
+            bind = len(body[k]) - len(body[k].lstrip())
+            bs = body[k].strip()
+            if bind < ind or (bind == ind and not bs.startswith(("end", "}"))):
+                break
+            code.append(body[k])
+            k += 1
+        mem = Member(name, doc, _dedent("\n".join(code)), start + 1 + k - len(code))
+        mem.anchor = f"{d.anchor}.{name}"
+        d.members.append(mem)
+        doc = None
+    if doc is not None:
+        raise RenderError(f"{d.path}:{doc_line}: a member's docstring with no member")
+
+
+def parse_spectec_file(path: Path) -> Module:
+    lines = path.read_text().split("\n")
+    items: list = []
+    stack: list[tuple[str, int, list[str]]] = []  # (kind, indent, ns_parts)
+    doc: str | None = None
+    doc_line = 0
+    k = 0
+    n = len(lines)
+
+    def cur_ns() -> list[str]:
+        out: list[str] = []
+        for kind, _ind, parts in stack:
+            if kind == "ns":
+                out += parts
+        return out
+
+    def cur_ind() -> int:
+        return stack[-1][1] + 2 if stack else 0
+
+    while k < n:
+        ln = lines[k]
+        s = ln.strip()
+        if not s:
+            k += 1
+            continue
+        ind = len(ln) - len(ln.lstrip(" "))
+        if not stack and (s.startswith("spec_module ") or s.startswith("import ")):
+            k += 1
+            continue
+        if not stack and s.startswith("--") and not s.startswith("---"):
+            k += 1
+            continue
+        if stack and ind == stack[-1][1] and s == "}":
+            if doc is not None:
+                raise RenderError(f"{path}:{doc_line}: a docstring with no declaration before `}}`")
+            stack.pop()
+            k += 1
+            continue
+        if ind != cur_ind():
+            raise RenderError(f"{path}:{k + 1}: unexpected indentation {ind} (expected {cur_ind()}): {s[:80]!r}")
+        if s.startswith("---!"):
+            buf = []
+            start = k + 1
+            while k < n:
+                cs = lines[k].strip()
+                cind = len(lines[k]) - len(lines[k].lstrip(" "))
+                if cind == ind and cs.startswith("---!"):
+                    buf.append(cs[4:].lstrip(" ") if cs.startswith("---! ") else cs[4:])
+                    k += 1
+                else:
+                    break
+            items.append(ModDoc("\n".join(buf), start, cur_ns()))
+            continue
+        if s.startswith("---"):
+            buf = []
+            doc_line = k + 1
+            while k < n:
+                cs = lines[k].strip()
+                cind = len(lines[k]) - len(lines[k].lstrip(" "))
+                if cind == ind and cs.startswith("---") and not cs.startswith("---!"):
+                    buf.append(cs[3:].lstrip(" ") if cs.startswith("--- ") else cs[3:])
+                    k += 1
+                else:
+                    break
+            doc = "\n".join(buf)
+            continue
+        m_ns = re.match(r"namespace\s+([\w.]+)\s*\{\s*$", s)
+        if m_ns:
+            stack.append(("ns", ind, m_ns.group(1).split(".")))
+            k += 1
+            continue
+        m_sec = re.match(r"section(?:\s+([\w.]+))?\s*\{\s*$", s)
+        if m_sec:
+            stack.append(("sec", ind, [m_sec.group(1)] if m_sec.group(1) else []))
+            k += 1
+            continue
+        if re.match(r"mutual\s*\{\s*$", s):
+            stack.append(("mut", ind, []))
+            k += 1
+            continue
+        if s.startswith(("open ", "var ")):
+            k += 1
+            continue
+        m_decl = re.match(r"(inline def|def|syntax|relation|laws)\s+([^\s({\[:=]+)", s)
+        if not m_decl:
+            raise RenderError(f"{path}:{k + 1}: a SpecTec item the renderer does not know: {s[:80]!r}")
+        raw_kind, name = m_decl.group(1), m_decl.group(2)
+        start = k + 1
+        cmd_lines = [ln]
+        k += 1
+        while k < n:
+            nln = lines[k]
+            ns_str = nln.strip()
+            if not ns_str:
+                # Look ahead: a blank line inside a braced/indented body or before `deriving`/`inhabited`/`where`?
+                # In canonical SpecTec (`print.rs`), blank lines only separate sibling items!
+                break
+            nind = len(nln) - len(nln.lstrip(" "))
+            if nind < ind:
+                break
+            if nind == ind and _spectec_starts_item(ns_str):
+                break
+            cmd_lines.append(nln)
+            k += 1
+        dedented = _dedent("\n".join(cmd_lines).rstrip())
+        first_line = dedented.split("\n", 1)[0]
+        kind = "syntax record" if (raw_kind == "syntax" and re.search(r"\brecord\s*\{$", first_line)) else raw_kind
+        full = ".".join(cur_ns() + [name])
+        d = Decl(kind, name, full, anchor_of(full), doc, dedented, dedented, start, path, cur_ns())
+        if kind in ("syntax", "syntax record", "relation", "laws"):
+            _spectec_members(d, dedented, start)
+        items.append(d)
+        doc = None
+
+    if stack:
+        raise RenderError(f"{path}:{n}: unclosed `{stack[-1][0]}` block")
+    if doc is not None:
+        raise RenderError(f"{path}:{doc_line}: a docstring with no declaration")
+    return Module(path, items)
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -527,21 +744,24 @@ class Prose:
 
 
 # ---------------------------------------------------------------------------------------------------------------
-# Lean, lightly highlighted
+# SpecTec & Lean, lightly highlighted
 
 TOKEN = re.compile(
-    r"(?P<com>--[^\n]*|/-.*?-/)"
-    r"|(?P<str>\"(?:\\.|[^\"\\])*\")"
-    r"|(?P<num>\b\d+\b)"
+    r"(?P<com>---[^\n]*|--[^\n]*|/-.*?-/\s*)"
+    r"|(?P<str>#\"(?:\\.|[^\"\\])*\"|\$\"(?:\\.|[^\"\\])*\"|\"(?:\\.|[^\"\\])*\")"
+    r"|(?P<ref>@[A-Za-z0-9_.-]+|\$[A-Za-z0-9_.-]+)"
+    r"|(?P<enum>~[A-Za-z0-9_.+-]+~)"
+    r"|(?P<slot>\[\[[A-Za-z0-9_]+\]\])"
+    r"|(?P<num>\b0x[0-9A-Fa-f]+\b|\b\d+\b)"
     r"|(?P<id>[^\W\d][\w'.!?₀-₉]*)"
-    r"|(?P<sym>[∀∃→←↔∧∨¬≠≤≥λ⟨⟩×⊕∈∉∅]|:=|=>|\|)",
+    r"|(?P<sym>[∀∃→←↔∧∨¬≠≤≥λ⟨⟩×⊕∈∉∅]|:-|<=>|:=|=>|->|<-|/\\|\\/|<>|==|!=|<=|>=|\+\+|::|\|)",
     re.DOTALL,
 )
 
 
-def highlight(code: str, prose: Prose | None, ns: list[str], own: str | None = None) -> str:
-    """The Lean, each source line a block (so a long line wraps under its own indentation). A comment or a
-    docstring may span lines: the text is tokenized whole, then cut into lines."""
+def highlight(code: str, prose: Prose | None, ns: list[str], own: str | None = None, lang: str = "Lean") -> str:
+    """The SpecTec or Lean code, each source line a block (so a long line wraps under its own indentation)."""
+    kws = SPECTEC_KEYWORDS if lang == "SpecTec" else LEAN_KEYWORDS
     pieces: list[tuple[str | None, str]] = []  # (CSS class or "a:<href>", text)
     pos = 0
     for m in TOKEN.finditer(code):
@@ -551,11 +771,19 @@ def highlight(code: str, prose: Prose | None, ns: list[str], own: str | None = N
         cls: str | None = None
         if kind == "com":
             cls = "c"
-        elif kind == "str":
+        elif kind in ("str", "enum"):
             cls = "s"
+        elif kind == "ref":
+            cid = tok[1:] if tok.startswith("@sec-") else None
+            if cid and prose and prose.spec.exists(cid):
+                cls = f"a:{CLAUSE_URL.format(cid)}"
+            else:
+                cls = "d" if own and tok == own else "o"
+        elif kind == "slot":
+            cls = "o"
         elif kind in ("num", "sym"):
             cls = "n" if kind == "num" else "o"
-        elif tok in LEAN_KEYWORDS:
+        elif tok in kws:
             cls = "k"
         elif own and tok == own:
             cls = "d"
@@ -682,9 +910,13 @@ class Renderer:
                 out.append(self.decl(it, rel))
         return "\n".join(out)
 
+    def _lang(self, path: Path) -> str:
+        return "SpecTec" if path.suffix == ".spectec" else "Lean"
+
     def decl(self, d: Decl, rel: Path) -> str:
         self.rendered.add(d.full)
         self.prose.where = f"{rel}:{d.line}"
+        lang = self._lang(d.path)
         src = f'<a class="src" href="#{esc(d.anchor)}" title="{esc(str(rel))} line {d.line}">{esc(rel.name)}:{d.line}</a>'
         head = (f'<header class="entry-head"><span class="kind">{esc(d.kind)}</span> '
                 f'<h4 class="entry-name"><a class="self" href="#{esc(d.anchor)}">{esc(d.anchor)}</a></h4>{src}</header>')
@@ -696,19 +928,19 @@ class Renderer:
         status = f'<p class="status">{status}</p>' if status else ""
         laws = [m for m in d.members if d.is_prop and m.doc and parse_law(m.doc)]
         if d.members:
-            code_html = self._code(d.head, d.ns, d.name, open_=True)
+            code_html = self._code(d.head, d.ns, d.name, lang=lang, open_=True)
             members = self._members(d, rel)
             cls = "entry decl lawset" if laws else "entry decl"
             n = f'<p class="count">{len(laws)} laws</p>' if laws else ""
             return (f'<section class="{cls}" id="{esc(d.anchor)}">{head}{doc}{status}{code_html}{n}'
                     f'{members}</section>')
-        return f'<section class="entry decl" id="{esc(d.anchor)}">{head}{doc}{status}{self._code(d.code, d.ns, d.name)}</section>'
+        return f'<section class="entry decl" id="{esc(d.anchor)}">{head}{doc}{status}{self._code(d.code, d.ns, d.name, lang=lang)}</section>'
 
-    def _code(self, code: str, ns: list[str], own: str, open_: bool = False) -> str:
+    def _code(self, code: str, ns: list[str], own: str, lang: str = "Lean", open_: bool = False) -> str:
         nlines = code.count("\n") + 1
-        pre = f'<pre class="lean">{highlight(code, self.prose, ns, own.split(".")[-1])}</pre>'
+        pre = f'<pre class="lean">{highlight(code, self.prose, ns, own.split(".")[-1], lang=lang)}</pre>'
         if nlines > self.opts.fold_lines and not open_:
-            return f'<details class="lean-fold"><summary>Lean, {nlines} lines</summary>{pre}</details>'
+            return f'<details class="lean-fold"><summary>{lang}, {nlines} lines</summary>{pre}</details>'
         return pre
 
     def _members(self, d: Decl, rel: Path) -> str:
@@ -748,10 +980,11 @@ class Renderer:
         return f'<div class="members">{"".join(out)}</div>'
 
     def _plain_member(self, d: Decl, m: Member) -> str:
+        lang = self._lang(d.path)
         doc = f'<div class="prose">{self.prose.block(m.doc, d.ns)}</div>' if m.doc else ""
         return (f'<article class="member" id="{esc(m.anchor)}"><div class="member-head">'
                 f'<a class="self name" href="#{esc(m.anchor)}"><code>{esc(m.name)}</code></a></div>{doc}'
-                f'<pre class="lean">{highlight(m.code, self.prose, d.ns, m.name)}</pre></article>')
+                f'<pre class="lean">{highlight(m.code, self.prose, d.ns, m.name, lang=lang)}</pre></article>')
 
     def clause_label(self, cid: str) -> str:
         num = self.spec.nums.get(cid)
@@ -787,13 +1020,14 @@ class Renderer:
         return cl + "".join(qs)
 
     def _law(self, d: Decl, m: Member, law: Law, shared: bool) -> str:
+        lang = self._lang(d.path)
         st = self.opts.status.get(f"{d.full}.{m.name}", "")
         st = f'<p class="status">{st}</p>' if st else ""
         return (f'<article class="law{" shared" if shared else ""}" id="{esc(m.anchor)}">'
                 f'<p class="reading">{self.prose.inline(_cap(law.reading), d.ns)}</p>{st}'
                 f'<div class="law-foot"><a class="self name" href="#{esc(m.anchor)}"><code>{esc(m.name)}</code></a>'
-                f'<details class="lean-fold"><summary>Lean</summary>'
-                f'<pre class="lean">{highlight(m.code, self.prose, d.ns, m.name)}</pre></details></div></article>')
+                f'<details class="lean-fold"><summary>{lang}</summary>'
+                f'<pre class="lean">{highlight(m.code, self.prose, d.ns, m.name, lang=lang)}</pre></details></div></article>')
 
     def check_laws(self) -> None:
         """Every law law_quotes reads in a rendered file was laid out as a law."""

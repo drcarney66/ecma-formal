@@ -4,16 +4,9 @@
     {
       "id": "spec",
       "label": "The specification",
-      "description": "The machine with every erratum at its default reading.",
+      "description": "ECMA-262 in SpecTec, with the resolved readings recorded in spec/DECISIONS.md.",
       "wasm": "ecma-dbg-web.wasm",
       "args": []
-    },
-    {
-      "id": "literal",
-      "label": "The literal text",
-      "description": "The same machine with every erratum read as the text is written, so that a run stops where the text gives no answer. Three are kept at their default reading, because read literally they stop almost every program before it runs: CreateIntrinsicsAsyncArgument while the realm is set up, StringValueReservedWord at any identifier and CoveredNodeParent at any call or parenthesised expression.",
-      "wasm": "ecma-dbg-web.wasm",
-      "args": ["--reading", "literal", "--erratum", "CreateIntrinsicsAsyncArgument=test262", "--erratum", "StringValueReservedWord=test262", "--erratum", "CoveredNodeParent=test262"]
     }
   ]
 }

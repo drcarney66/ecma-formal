@@ -17,8 +17,8 @@
   },
   {
    "id": "errata",
-   "title": "Errata: the default reading and the literal text",
-   "intro": "Each of these programs reaches a sentence the formalisation reads in more than one way (an erratum). Under the specification's build it runs with the default reading; under the literal text's build it shows what the sentence says as written. Where the default reading is itself the literal one, the run stops in both builds, at the step where the text gives no answer."
+   "title": "Errata: resolved readings and literal Assert stops",
+   "intro": "Each of these programs reaches a sentence documented on the Errata page (spec/DECISIONS.md). Where SpecTec bakes in the test262 or proposed reading, the program runs as engines and test262 expect; where SpecTec keeps the literal text, the run pauses and stops at the exact Assert or step where the text gives no answer."
   },
   {
    "id": "proposal",
@@ -33,7 +33,7 @@
   {
    "id": "errata-programs",
    "title": "The errata page's programs",
-   "intro": "The programs the errata page runs that show an erratum and are not above, with no breakpoints set: each opens under the specification's build. The errata page links each also with its erratum's other reading."
+   "intro": "Additional programs from the Errata page, opened under the specification build."
   }
  ],
  "examples": [
@@ -762,24 +762,6 @@
       "before",
       "3 after"
      ]
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "AsyncBlockStart",
-       "path": "1",
-       "frames": [
-        "AsyncBlockStart",
-        "ExecuteModule",
-        "ExecuteAsyncModule"
-       ]
-      },
-      {
-       "alg": "AsyncBlockStart",
-       "path": "4"
-      }
-     ],
-     "end": "stop: erratum AsyncBlockStartAwaitResult sec-asyncblockstart#0 4"
     }
    }
   },
@@ -856,22 +838,6 @@
      "printed": [
       "-Infinity,-Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity"
      ]
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "Number::multiply",
-       "path": "6",
-       "frames": [
-        "Number::multiply",
-        "ApplyStringOrNumericBinaryOperator"
-       ]
-      }
-     ],
-     "end": "normal: undefined",
-     "printed": [
-      "Infinity,Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity"
-     ]
     }
    }
   },
@@ -901,19 +867,6 @@
       }
      ],
      "end": "normal: \"1,2,3|3,2,1\""
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "SortIndexedProperties",
-       "path": "1",
-       "frames": [
-        "SortIndexedProperties",
-        "Array.prototype.sort"
-       ]
-      }
-     ],
-     "end": "stop: sortError sec-sortindexedproperties#0 ?"
     }
    }
   },
@@ -939,15 +892,6 @@
       }
      ],
      "end": "throw: SyntaxError"
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "IsLabelledFunction",
-       "path": "1"
-      }
-     ],
-     "end": "stop: sortError sec-islabelledfunction#0 2"
     }
    }
   },
@@ -980,23 +924,6 @@
      "printed": [
       "2"
      ]
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "AsyncBlockStart",
-       "path": "1",
-       "frames": [
-        "AsyncBlockStart",
-        "AsyncFunctionStart"
-       ]
-      },
-      {
-       "alg": "AsyncBlockStart",
-       "path": "4"
-      }
-     ],
-     "end": "stop: erratum AsyncBlockStartAwaitResult sec-asyncblockstart#0 4"
     }
    }
   },
@@ -1029,36 +956,6 @@
      "printed": [
       "timed-out,timed-out,true,true,0 ; not-equal"
      ]
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "DoWait",
-       "path": "1",
-       "frames": [
-        "DoWait",
-        "Atomics.wait"
-       ]
-      },
-      {
-       "alg": "DoWait",
-       "path": "1",
-       "frames": [
-        "DoWait",
-        "Atomics.wait"
-       ]
-      },
-      {
-       "alg": "AddWaiter",
-       "path": "2",
-       "frames": [
-        "AddWaiter",
-        "DoWait",
-        "Atomics.wait"
-       ]
-      }
-     ],
-     "end": "stop: erratum DoWaitSyncTimeout sec-addwaiter#0 2"
     }
    }
   },
@@ -1090,24 +987,6 @@
       "params: SyntaxError",
       "generator body: SyntaxError"
      ]
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "CreateDynamicFunction",
-       "path": "1",
-       "frames": [
-        "CreateDynamicFunction",
-        "Construct"
-       ]
-      }
-     ],
-     "end": "normal: undefined",
-     "printed": [
-      "body: no error",
-      "params: no error",
-      "generator body: no error"
-     ]
     }
    }
   },
@@ -1130,27 +1009,6 @@
       }
      ],
      "end": "normal: \"true|false\""
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "FinalizationRegistry.prototype.unregister",
-       "path": "1"
-      }
-     ],
-     "end": "normal: \"true|true\""
-    }
-   }
-  },
-  {
-   "id": "run/errata_createintrinsics_async_argument_literal",
-   "group": "errata",
-   "title": "CreateIntrinsicsAsyncArgument: the realm itself",
-   "line": "Read literally, CreateIntrinsics passes an argument SetFunctionName does not accept for one async built-in, and the run stops at SetFunctionName step 5.a while the realm is set up, before the program. This is why the literal text's build keeps this erratum at its default reading; this example reads it literally on its own.",
-   "builds": {
-    "spec": {
-     "pauses": [],
-     "end": "stop: erratum CreateIntrinsicsAsyncArgument sec-setfunctionname#0 5.a"
     }
    }
   },
@@ -1158,7 +1016,7 @@
    "id": "run/date_utc_large_local_time",
    "group": "errata",
    "title": "GetUTCEpochNanosecondsNaN: a local time out of range",
-   "line": "setHours(1e21) asks UTC for a local time far out of range: GetUTCEpochNanoseconds finds no time value, and the Assert of its step 4 fails. No reading is chosen for this one, so the run stops in both builds.",
+   "line": "setHours(1e21) asks UTC for a local time far out of range: GetUTCEpochNanoseconds finds no time value, and the Assert of its step 4 fails. SpecTec keeps the literal text here, so the run stops at the failed Assert.",
    "breakpoints": [
     {
      "alg": "sec-getutcepochnanoseconds"
@@ -1184,28 +1042,7 @@
        "path": "4"
       }
      ],
-     "end": "stop: erratum GetUTCEpochNanosecondsNaN sec-getutcepochnanoseconds#0 4",
-     "printed": [
-      "NaN"
-     ]
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "GetUTCEpochNanoseconds",
-       "path": "1",
-       "frames": [
-        "GetUTCEpochNanoseconds",
-        "UTC",
-        "Date.prototype.setHours"
-       ]
-      },
-      {
-       "alg": "GetUTCEpochNanoseconds",
-       "path": "4"
-      }
-     ],
-     "end": "stop: erratum GetUTCEpochNanosecondsNaN sec-getutcepochnanoseconds#0 4",
+     "end": "stop: assertFailed sec-getutcepochnanoseconds#0 4",
      "printed": [
       "NaN"
      ]
@@ -1216,7 +1053,7 @@
    "id": "run/regexp_lastindex_inside_pair",
    "group": "errata",
    "title": "GetMatchStringStartAfterEnd: lastIndex inside a surrogate pair",
-   "line": "With /u and lastIndex on the second half of a surrogate pair, RegExpBuiltinExec starts the empty match at the pair's start, and GetMatchString's Assert (start before end) fails at step 1. No reading is chosen, so the run stops in both builds.",
+   "line": "With /u and lastIndex on the second half of a surrogate pair, RegExpBuiltinExec starts the empty match at the pair's start, and GetMatchString's Assert (start before end) fails at step 1. SpecTec keeps the literal text here, so the run stops at the failed Assert.",
    "breakpoints": [
     {
      "alg": "sec-regexpbuiltinexec"
@@ -1241,24 +1078,7 @@
        ]
       }
      ],
-     "end": "stop: erratum GetMatchStringStartAfterEnd sec-getmatchstring#0 1"
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "RegExpBuiltinExec",
-       "path": "1"
-      },
-      {
-       "alg": "GetMatchString",
-       "path": "1",
-       "frames": [
-        "GetMatchString",
-        "RegExpBuiltinExec"
-       ]
-      }
-     ],
-     "end": "stop: erratum GetMatchStringStartAfterEnd sec-getmatchstring#0 1"
+     "end": "stop: assertFailed sec-getmatchstring#0 1"
     }
    }
   },
@@ -1266,7 +1086,7 @@
    "id": "run/promise_job_abrupt",
    "group": "errata",
    "title": "PromiseJobAbruptCompletion: a reaction job that throws",
-   "line": "A promise reaction job, made by NewPromiseReactionJob, returns a throw completion when the species constructor's resolve function throws, which a job must not do. No reading is chosen, so the run stops in both builds when the job returns.",
+   "line": "A promise reaction job, made by NewPromiseReactionJob, returns a throw completion when the species constructor's resolve function throws, which a job must not do. SpecTec keeps the literal text here, so the run stops when the job returns.",
    "breakpoints": [
     {
      "alg": "sec-newpromisereactionjob"
@@ -1287,20 +1107,7 @@
        ]
       }
      ],
-     "end": "stop: erratum PromiseJobAbruptCompletion sec-jobs -"
-    },
-    "literal": {
-     "pauses": [
-      {
-       "alg": "NewPromiseReactionJob",
-       "path": "1",
-       "frames": [
-        "NewPromiseReactionJob",
-        "PerformPromiseThen"
-       ]
-      }
-     ],
-     "end": "stop: erratum PromiseJobAbruptCompletion sec-jobs -"
+     "end": "stop: assertFailed sec-jobs -"
     }
    }
   },
@@ -2301,18 +2108,6 @@
       "U+61: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError",
       "U+B7: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError"
      ]
-    }
-   }
-  },
-  {
-   "id": "run/errata_lone_property_gc_assert_literal",
-   "group": "errata-programs",
-   "title": "LonePropertyGeneralCategoryAssert: /\\p{ASCII}/u",
-   "line": "A lone \\p{ASCII} is a binary property; under the default reading CompileToCharSet asks UnicodeMatchProperty for it.",
-   "builds": {
-    "spec": {
-     "pauses": [],
-     "end": "stop: erratum LonePropertyGeneralCategoryAssert sec-runtime-semantics-unicodematchpropertyvalue-p-v#0 2"
     }
    }
   },

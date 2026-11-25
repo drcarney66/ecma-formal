@@ -44,7 +44,7 @@ import spec_issues_upstream as upstream  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 DIR = ROOT / "docs/spec-issues"
 EXAMPLES = DIR / "examples"
-ERRATA = ROOT / "spec/formal/errata.txt"
+DECISIONS = ROOT / "spec/DECISIONS.md"
 
 ID_RE = re.compile(r"`#((?:sec|prod|table|figure|eqn|await|step)[A-Za-z0-9_.%@-]*)`")
 SECNUM_RE = re.compile(r"§\s?((?:[A-Z]|\d+)(?:\.\d+)*)")
@@ -99,11 +99,9 @@ def fixed_upstream_names() -> dict[str, list[str]]:
 
 def issues() -> list[Issue]:
     rows: dict[str, list[str]] = {}
-    for ln in ERRATA.read_text().split("\n"):
-        if ln.strip() and not ln.startswith("#"):
-            f = ln.split("\t")
-            for p in f[5].split():
-                rows.setdefault(Path(p).name, []).append(f[0])
+    for e in errata_page.read_errata():
+        for p in e.reports:
+            rows.setdefault(Path(p).name, []).append(e.name)
     fixed = fixed_upstream_names()
     out = []
     for p in sorted(DIR.glob("[0-9][0-9]-*.md")):

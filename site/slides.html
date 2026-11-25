@@ -29,14 +29,14 @@
     </div>
   </section>
 
-  <!-- 2. Pipeline diagram (with backwards bijection arrow) -->
+  <!-- 2. Pipeline diagram (with bidirectional HTML <-> SpecTec bijection) -->
   <section class="slide" id="slide-pipeline" data-slide="2" data-max-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Architecture</span>
       <h2 id="pipeline">The pipeline</h2>
     </div>
     <div class="slide-fill">
-      <svg class="pipe-svg" viewBox="0 0 960 400" role="img" aria-label="spec.html and thin overlay generate lean/Ecma, checked backwards by bijection printer ecma-print; lean/Ecma drives proved lean/Engine and Wasm64 Debugger">
+      <svg class="pipe-svg" viewBox="0 0 960 400" role="img" aria-label="spec.html and SpecTec (spec/spectec/) form a verified 0-diff bijection via spectec-html; downstream, SpecTec compiles to a proved Lean 4 reference engine and a Wasm64 spec debugger">
         <defs>
           <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
             <path class="dg-ah" d="M0,0 L10,5 L0,10 z"/>
@@ -52,39 +52,40 @@
         <text x="122" y="166" text-anchor="middle" class="p-sub-svg">+ proposal changes</text>
         <line x1="50" y1="190" x2="194" y2="190" stroke="var(--quote)" stroke-opacity="0.4"/>
         <text x="122" y="218" text-anchor="middle" class="p-mono-svg">algorithms · grammar</text>
-        <text x="122" y="242" text-anchor="middle" class="p-muted-svg">prose readings checked</text>
+        <text x="122" y="242" text-anchor="middle" class="p-muted-svg">prose laws quoted</text>
 
-        <!-- Forward arrow: generate -->
-        <path class="dg-a" d="M228,136 L396,136" stroke-width="3" marker-end="url(#arr)"/>
-        <text x="312" y="118" text-anchor="middle" class="p-label-svg">generate.py</text>
-        <text x="312" y="158" text-anchor="middle" class="p-muted-svg">AST · types · grammar</text>
+        <!-- Forward arrow: spectec-html -->
+        <path class="dg-a" d="M228,136 L392,136" stroke-width="3" marker-end="url(#arr)"/>
+        <text x="310" y="118" text-anchor="middle" class="p-label-svg">spectec-html</text>
+        <text x="310" y="158" text-anchor="middle" class="p-muted-svg">extracts &amp; types</text>
 
-        <!-- Backwards arrow: bijection check! -->
-        <path d="M400,222 C348,292 278,292 228,226" fill="none" stroke="var(--quote)" stroke-width="3.2" stroke-dasharray="7 4" marker-end="url(#arr-bij)"/>
-        <rect x="224" y="276" width="176" height="46" rx="8" fill="var(--quote-bg)" stroke="var(--quote)" stroke-width="1.8"/>
-        <text x="312" y="295" text-anchor="middle" class="p-bij-svg">bijection check</text>
-        <text x="312" y="313" text-anchor="middle" class="p-muted-svg">ecma-print = spec.html</text>
+        <!-- Backwards arrow: 0-diff HTML bijection! -->
+        <path d="M396,222 C344,292 278,292 228,226" fill="none" stroke="var(--quote)" stroke-width="3.2" stroke-dasharray="7 4" marker-end="url(#arr-bij)"/>
+        <rect x="218" y="276" width="184" height="46" rx="8" fill="var(--quote-bg)" stroke="var(--quote)" stroke-width="1.8"/>
+        <text x="310" y="295" text-anchor="middle" class="p-bij-svg">HTML bijection</text>
+        <text x="310" y="313" text-anchor="middle" class="p-muted-svg">0-diff splice to spec.html</text>
 
-        <!-- lean/Ecma -->
-        <rect class="dg-box lean" x="404" y="56" width="242" height="230" rx="12" stroke-width="2.5"/>
-        <text x="525" y="104" text-anchor="middle" class="p-title-svg">lean/Ecma</text>
-        <text x="525" y="136" text-anchor="middle" class="p-sub-svg">Generated algorithms &amp; tables</text>
-        <text x="525" y="166" text-anchor="middle" class="p-mono-svg">Machine.step</text>
-        <text x="525" y="196" text-anchor="middle" class="p-mono-svg">Model.Laws · Host.WF</text>
-        <text x="525" y="226" text-anchor="middle" class="p-muted-svg">quoted sentences checked</text>
-        <text x="525" y="256" text-anchor="middle" class="p-muted-svg">0 tactics · Gen/ gitignored</text>
+        <!-- SpecTec -->
+        <rect class="dg-box lean" x="400" y="56" width="246" height="230" rx="12" stroke-width="2.5"/>
+        <text x="523" y="102" text-anchor="middle" class="p-title-svg">SpecTec</text>
+        <text x="523" y="132" text-anchor="middle" class="p-sub-svg">spec/spectec/ ({{spectec_total_files}} files)</text>
+        <text x="523" y="162" text-anchor="middle" class="p-mono-svg">def @sec-… · grammar</text>
+        <text x="523" y="192" text-anchor="middle" class="p-mono-svg">syntax · relation · laws</text>
+        <text x="523" y="222" text-anchor="middle" class="p-muted-svg">{{all_model_laws}} model + {{host_laws}} host laws</text>
+        <text x="523" y="252" text-anchor="middle" class="p-muted-svg">roundtrip + Lean bijection</text>
 
         <!-- Arrows to Engine & Debugger -->
         <path class="dg-a" d="M646,118 L724,96" stroke-width="2.8" marker-end="url(#arr)"/>
         <path class="dg-a" d="M646,216 L724,244" stroke-width="2.8" marker-end="url(#arr)"/>
+        <text x="686" y="88" text-anchor="middle" class="p-muted-svg">emit</text>
 
-        <!-- lean/Engine -->
+        <!-- Lean 4 Engine & Proofs -->
         <rect class="dg-box proved" x="730" y="38" width="210" height="122" rx="12" stroke-width="2.5"/>
-        <text x="835" y="78" text-anchor="middle" class="p-title-svg">lean/Engine</text>
+        <text x="835" y="78" text-anchor="middle" class="p-title-svg">Lean 4 Engine</text>
         <text x="835" y="108" text-anchor="middle" class="p-mono-svg">Engine.implements</text>
         <text x="835" y="134" text-anchor="middle" class="p-muted-svg">proved · runs test262</text>
 
-        <!-- lean/Debugger -->
+        <!-- Wasm64 Debugger -->
         <rect class="dg-box lean" x="730" y="190" width="210" height="122" rx="12" stroke-width="2.5"/>
         <text x="835" y="230" text-anchor="middle" class="p-title-svg">Debugger</text>
         <text x="835" y="260" text-anchor="middle" class="p-mono-svg">Wasm64 + Native</text>
@@ -103,34 +104,34 @@
       <div class="meat-cols">
         <div class="meat-card">
           <div class="meat-head">
-            <span class="badge proved">100% auto-generated</span>
+            <span class="badge proved">Bijective with HTML</span>
             <h3>Algorithms, grammar &amp; tables</h3>
           </div>
-          <p class="meat-lead">What champions &amp; editors work on day to day in <code>spec.html</code></p>
+          <p class="meat-lead">Structured SpecTec (<code>spec/spectec/</code>, {{spectec_struct_files}} files) — what editors &amp; champions touch</p>
           <ul>
-            <li>All {{gen_modules}} clauses of <code>&lt;emu-alg&gt;</code> steps, SDOs &amp; early errors</li>
-            <li>Lexical, syntactic &amp; RegExp grammars ({{grammar_gen_modules}} modules)</li>
-            <li>Zero hand-edited Lean — checked byte-for-byte via bijection</li>
+            <li>All {{spectec_defs}} typed <code>def @sec-…</code> algorithms, SDOs, internal methods &amp; early errors</li>
+            <li>All 6 grammars (lexical, syntactic, RegExp, numeric, JSON &amp; Annex B)</li>
+            <li>Splices back into <code>spec.html</code> with zero byte diffs (<code>spectec-html</code>)</li>
           </ul>
         </div>
         <div class="meat-card">
           <div class="meat-head">
-            <span class="badge rd">Formal core</span>
-            <h3>Model, host &amp; step laws</h3>
+            <span class="badge rd">Prose in SpecTec</span>
+            <h3>Model, relations &amp; laws</h3>
           </div>
-          <p class="meat-lead">What JS primitives &amp; embedders mean — quoting <code>spec.html</code></p>
+          <p class="meat-lead">Prose SpecTec (<code>spec/spectec/prose/</code>, {{spectec_prose_files}} modules) — quoting <code>spec.html</code></p>
           <ul>
-            <li><strong>Model (<code>Model.Laws</code>, {{model_laws}} laws):</strong> IEEE-754 Numbers, UTF-16 Strings, Records, Lists, Parse Nodes &amp; Store</li>
-            <li><strong>Host (<code>Host.WF</code>, {{host_laws}} laws):</strong> Job queues, modules, timers &amp; §29 memory model</li>
-            <li><strong>Step machine (<code>Machine.step</code>):</strong> Completions (<code>?</code> / <code>!</code>), scopes &amp; call frames</li>
+            <li><strong>Model (<code>Model.Laws</code>+, {{all_model_laws}} laws):</strong> IEEE-754 Numbers, UTF-16 Strings, Records, Lists, Parse Nodes &amp; Store</li>
+            <li><strong>Host &amp; relations (<code>Host.WF</code>, {{host_laws}} laws):</strong> Job queues, modules, timers, §5.1 derivations &amp; §29 memory</li>
+            <li><strong>Step machine (<code>Machine.step</code>):</strong> Small-step completions (<code>?</code> / <code>!</code>), scopes &amp; call frames</li>
           </ul>
         </div>
       </div>
       <div class="meat-downstream">
         <span class="meat-arrow" aria-hidden="true">↓</span>
         <div>
-          <strong>Everything else is downstream — and ideally auto-generated from these:</strong>
-          <span>Reference JS VM &nbsp;·&nbsp; Wasm64 spec debugger &nbsp;·&nbsp; Mechanical merge &amp; static checks &nbsp;·&nbsp; <code>test262</code> runner</span>
+          <strong>Everything else is downstream — compiled &amp; generated from SpecTec:</strong>
+          <span>Lean 4 proofs &nbsp;·&nbsp; Reference JS VM &nbsp;·&nbsp; Wasm64 spec debugger &nbsp;·&nbsp; Mechanical merge &amp; static checks &nbsp;·&nbsp; <code>test262</code> runner</span>
         </div>
       </div>
     </div>
@@ -143,11 +144,11 @@
       <h2 id="why-now">LLMs!</h2>
     </div>
     <div class="slide-fill why-wrap">
-      <img class="why-img" src="robots-lean.svg?v={{rev}}" alt="Robots at mechanical typewriters typing Lean 4 proofs alongside spec.html">
+      <img class="why-img" src="robots-lean.svg?v={{rev}}" alt="Robots at mechanical typewriters formalizing spec.html in SpecTec and proving it in Lean 4">
     </div>
   </section>
 
-  <!-- 4. Adding a proposal (1): write the algorithms -->
+  <!-- 5. Adding a proposal (1): write the algorithms -->
   <section class="slide" id="slide-step-1" data-slide="5" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 1</span>
@@ -170,45 +171,39 @@
     </div>
   </section>
 
-  <!-- 5. Adding a proposal (2): generate the spec -->
+  <!-- 6. Adding a proposal (2): generate the spec -->
   <section class="slide" id="slide-step-2" data-slide="6" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 2</span>
-      <h2 id="step-2">Generate the spec</h2>
+      <h2 id="step-2">Generate SpecTec &amp; compile</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
         <div class="swap-layer swap-before">
           <div class="code-window">
             <div class="code-bar">
-              <code>lean/Ecma/Gen/S22_1_part2.lean</code>
+              <code>spec/spectec/clauses/S22.spectec</code>
               <span class="badge none">Before (ECMA-262)</span>
             </div>
-            <pre class="spec-code lean-code"><span class="k">def</span> «String.prototype.trim» : Alg := {
-  id     := ⟨1454, 0⟩
-  name   := <span class="s">"String.prototype.trim"</span>
-  header := { kind := .builtin, params := [], ret := none, recv := none, desc := [] }
-  vars   := #[<span class="s">"this value"</span>, <span class="s">"NewTarget"</span>, <span class="s">"thisValue"</span>]
-  body   := [
-    (.mk [] (.let_ 2 (.thisValue false))),
-    (.mk [] (.ret (some (.q (.call (.alg ⟨1455, 0⟩) [(.var 2), (.enum 88)])))))]
+            <pre class="spec-code lean-code"><span class="k">def</span> @sec-string.prototype.trim <span class="s">"String.prototype.trim"</span>
+  (<span class="k">kind</span> <span class="k">builtin</span> <span class="k">params</span> [])
+  <span class="k">vars</span> [<span class="s">#"this value"</span>, NewTarget, thisValue] {
+  <span class="k">let</span> thisValue = this_value
+  <span class="k">return</span> ? @sec-trimstring(thisValue, <span class="s">~start+end~</span>)
 }</pre>
           </div>
         </div>
         <div class="swap-layer swap-after">
           <div class="code-window">
             <div class="code-bar">
-              <code>lean/Ecma/Gen/S22_1_part2.lean</code>
-              <span class="badge proved">After generate.py · 0 proof lines needed</span>
+              <code>spec/spectec/clauses/S22.spectec</code>
+              <span class="badge proved">After spectec-html + generate.py · 0 proof lines needed</span>
             </div>
-            <pre class="spec-code lean-code"><span class="k">def</span> «String.prototype.trim» : Alg := {
-  id     := ⟨1454, 0⟩
-  name   := <span class="s">"String.prototype.trim"</span>
-  header := { kind := .builtin, params := [<span class="hl-ins">{ x := 2, ty := none, optional := true, rest := false }</span>], … }
-  vars   := #[<span class="s">"this value"</span>, <span class="s">"NewTarget"</span>, <span class="hl-ins">"characters"</span>, <span class="s">"thisValue"</span>]
-  body   := [
-    (.mk [] (.let_ <span class="hl-ins">3</span> (.thisValue false))),
-    (.mk [] (.ret (some (.q (.call (.alg ⟨1455, 0⟩) [(.var <span class="hl-ins">3</span>), (.enum 88)<span class="hl-ins">, (.var 2)</span>])))))]
+            <pre class="spec-code lean-code"><span class="k">def</span> @sec-string.prototype.trim <span class="s">"String.prototype.trim"</span>
+  (<span class="k">kind</span> <span class="k">builtin</span> <span class="k">params</span> [<span class="hl-ins">[characters]</span>])
+  <span class="k">vars</span> [<span class="s">#"this value"</span>, NewTarget, <span class="hl-ins">characters</span>, thisValue] {
+  <span class="k">let</span> thisValue = this_value
+  <span class="k">return</span> ? @sec-trimstring(thisValue, <span class="s">~start+end~</span><span class="hl-ins">, characters</span>)
 }</pre>
           </div>
         </div>
@@ -216,7 +211,7 @@
     </div>
   </section>
 
-  <!-- 6. Adding a proposal (3): debug! -->
+  <!-- 7. Adding a proposal (3): debug! -->
   <section class="slide" id="slide-step-3" data-slide="7" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 3</span>
@@ -241,7 +236,7 @@
     </div>
   </section>
 
-  <!-- 7. Adding a proposal (4): table of diffs from current proposals (no stats) -->
+  <!-- 8. Adding a proposal (4): table of diffs from current proposals (no stats) -->
   <section class="slide" id="slide-step-4" data-slide="8" data-max-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 4</span>
@@ -252,7 +247,7 @@
     </div>
   </section>
 
-  <!-- 8. Tools usable right now -->
+  <!-- 9. Tools usable right now -->
   <section class="slide" id="slide-tools" data-slide="9" data-max-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Immediate value</span>
@@ -262,8 +257,8 @@
       <div class="tool-card">
         <div class="tool-head">
           <div class="tool-kicker">Static &amp; Structural</div>
-          <h3>Mechanical merge</h3>
-          <p class="tool-sub">Merges a proposal into <code>spec.html</code> · checks grammar SDOs, slots &amp; types</p>
+          <h3>Mechanical merge &amp; SpecTec check</h3>
+          <p class="tool-sub">Merges a proposal into <code>spec.html</code> · checks grammar SDOs, slots &amp; types in SpecTec</p>
         </div>
         <div class="tool-inset">
           <div class="inset-label"><span class="badge proved">Caught across #117</span></div>
@@ -279,7 +274,7 @@
     </div>
   </section>
 
-  <!-- 9. What this can deliver (right-arrow reveals one bullet at a time) -->
+  <!-- 10. What this can deliver (right-arrow reveals one bullet at a time) -->
   <section class="slide" id="slide-deliver" data-slide="10" data-max-step="4" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Where this goes</span>
@@ -312,7 +307,7 @@
         <li class="reveal-item" data-reveal="4">
           <strong>Generated JS reference VM</strong>
           <ul>
-            <li>Executable engine compiled straight from <code>spec.html</code> (native &amp; Wasm)</li>
+            <li>Executable engine compiled straight from SpecTec &amp; <code>spec.html</code> (native &amp; Wasm)</li>
             <li>Verified shortcuts incrementally replacing slow spec steps (<code>Engine.implements</code>)</li>
           </ul>
         </li>
@@ -320,7 +315,7 @@
     </div>
   </section>
 
-  <!-- 10. Next steps (right-arrow reveals one bullet at a time) -->
+  <!-- 11. Next steps (right-arrow reveals one bullet at a time) -->
   <section class="slide" id="slide-next" data-slide="11" data-max-step="3" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Looking ahead</span>
@@ -331,7 +326,7 @@
         <li class="reveal-item" data-reveal="1">
           <strong>Clean everything up!</strong>
           <ul>
-            <li>Simplify the generator, overlay &amp; proof structure</li>
+            <li>Simplify the SpecTec pipeline, decisions register &amp; downstream proofs</li>
           </ul>
         </li>
         <li class="reveal-item" data-reveal="2">
@@ -341,17 +336,17 @@
           </ul>
         </li>
         <li class="reveal-item" data-reveal="3">
-          <strong>Explore a formal spec language for <code>.emu</code></strong>
+          <strong>Converge <code>.emu</code> authoring and SpecTec</strong>
           <ul>
-            <li>Prover-agnostic surface language for algorithms, types, laws &amp; invariants</li>
-            <li>Drops prose-parsing hacks while compiling downstream to Lean for proofs &amp; VMs</li>
+            <li>Turnkey <code>spectec-html</code> round-tripping for proposal <code>spec.emu</code> drafts</li>
+            <li>State invariants &amp; static checks directly in SpecTec, proved downstream in Lean</li>
           </ul>
         </li>
       </ul>
     </div>
   </section>
 
-  <!-- 11. Questions -->
+  <!-- 12. Questions -->
   <section class="slide slide-center" id="slide-questions" data-slide="12" data-max-step="0">
     <div class="hero-wrap">
       <h2 class="hero-h1" id="questions">Questions?</h2>

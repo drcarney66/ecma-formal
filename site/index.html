@@ -1,40 +1,40 @@
 <!-- title: {{SITE_NAME}} -->
-<!-- eyebrow: ECMA-262, the ECMAScript language specification, as a Lean 4 specification -->
-<!-- lede: <p>The specification's algorithms, tables, early errors and grammars are generated from its own source, spec.html. What the text assumes of its values and leaves to the host is stated as laws, each quoting the sentence it reads. One implementation, the engine, is proved to implement this specification, and runs test262.</p> -->
+<!-- eyebrow: ECMA-262 formalized in SpecTec, with an execution engine proved in Lean 4 -->
+<!-- lede: <p>The specification's algorithms, grammars, early errors and tables are formalized in <strong>SpecTec</strong> (<code>spec/spectec/</code>) in a verified bijection with <code>spec.html</code>. What the prose assumes of its values and leaves to the host is stated as SpecTec <code>syntax</code>, <code>relation</code> and <code>laws</code> declarations, each law quoting the sentence it reads. Downstream, SpecTec compiles to Lean 4, where one concrete engine is proved to implement the specification and runs <code>test262</code>.</p> -->
 
 <ul class="facts" aria-label="The specification in numbers">
-<li><b>{{gen_modules}}</b><span>generated modules of algorithms, tables and early errors ({{gen_lines}} lines)</span></li>
-<li><b>{{host_laws}}</b><span>laws of the host, in {{host_topics}} topics</span></li>
-<li><b>{{model_laws}}</b><span>laws of the model's values (including {{num_laws}} of Numbers and {{byte_laws}} of Data Blocks), {{unicode_laws}} of Unicode, and {{parent_laws}} of Parse Node parents</span></li>
-<li><b>{{errata}}</b><span>errata: {{errata_defects}} defects of the text and {{errata_proposals}} proposed normative {{errata_proposals_noun}}, {{errata_switch_spec}} of them switchable in the specification when a program runs</span></li>
+<li><b>{{spectec_struct_files}}</b><span>SpecTec modules of algorithms, grammars, tables &amp; early errors ({{spectec_struct_lines}} lines, bijective with <code>spec.html</code>)</span></li>
+<li><b>{{host_laws}}</b><span>SpecTec laws of the host, in {{host_topics}} topics</span></li>
+<li><b>{{model_laws}}</b><span>SpecTec laws of the model's values ({{num_laws}} of Numbers and {{byte_laws}} of Data Blocks), {{unicode_laws}} of Unicode, and {{parent_laws}} of Parse Node parents</span></li>
+<li><b>{{errata}}</b><span>documented specification decisions: {{errata_defects}} defects of the text and {{errata_proposals}} proposed normative {{errata_proposals_noun}}</span></li>
 </ul>
 
 <p class="note"><strong>TC39 #117 (November 2026):</strong> <a href="slides.html">Executing <code>spec.html</code></a> — slide deck, diff-size table across all 14 ECMA-262 agenda proposals, and live browser spec-debugger demos.</p>
 
 <h2 id="read">Read first</h2>
 <ul class="cards {{read_cols}}">
-<li><h3><a href="how-it-works.html">How it works</a></h3><p>From spec.html and the overlay of readings to the Lean specification: the data, the machine, the model and the host, the errata, and one clause followed end to end.</p></li>
+<li><h3><a href="how-it-works.html">How it works</a></h3><p>From <code>spec.html</code> to SpecTec and downstream to Lean: structured declarations, prose relations &amp; laws, bidirectional bijections, and one clause followed end to end.</p></li>
 <li><h3><a href="what-is-proved.html">What is proved</a></h3><p>What it is to implement the specification, the engine's theorems verbatim, and what is proved, trusted, owed and outside the claim.</p></li>
 {{errata_card}}
 {{proposal_card}}
 </ul>
 
 <h2 id="pages">The specification, set for reading</h2>
-<p>Generated from the Lean sources: each declaration with its documentation first, each law with its clause and the sentence it reads, the Lean beside.</p>
+<p>Generated directly from the SpecTec prose modules (<code>spec/spectec/prose/</code>): each declaration with its documentation first, each law with its clause and the sentence it reads, the SpecTec folded beside it (plus the downstream <code>Implements</code> contract).</p>
 <ul class="cards two">
-<li><h3><a href="model.html">The model and its laws</a></h3><p>The sorts of the specification as carriers and operations, and the laws a model obeys.</p></li>
-<li><h3><a href="host.html">The host and its laws</a></h3><p>What the specification leaves to the host, and the {{host_laws}} laws it requires, by topic.</p></li>
-<li><h3><a href="implements.html">Implements</a></h3><p>What it is to implement the specification, in full, with the definitions of a run.</p></li>
-<li><h3><a href="parser-laws.html">The parser's laws</a></h3><p>What a parse must be. Stated, and owed: not yet proved of the engine.</p></li>
+<li><h3><a href="model.html">The model and its laws</a></h3><p>The sorts of the specification as SpecTec carriers, values and operations, and the laws a model obeys.</p></li>
+<li><h3><a href="host.html">The host and its laws</a></h3><p>What the specification leaves to the host, and the {{host_laws}} SpecTec laws it requires, by topic.</p></li>
+<li><h3><a href="implements.html">Implements</a></h3><p>What it is for a downstream implementation to conform to the specification, in full, with the definitions of a run.</p></li>
+<li><h3><a href="parser-laws.html">The parser's laws</a></h3><p>Parse Nodes, grammar derivations and cover laws in SpecTec. Stated, and owed: not yet proved of the engine.</p></li>
 </ul>
 
 {{dbg_section}}
 {{t262_section}}
 <h2 id="three">Three things to know first</h2>
 <ol class="steps">
-<li><strong>The Lean is generated where the English is algorithmic.</strong> Every algorithm step, table and early-error rule in <code>lean/Ecma/Gen</code> is produced from spec.html by a generator, never edited by hand. The generator checks that it prints each one back as the HTML's text; the Lean printer (<code>scripts/bijection.py</code>) checks the same from the Lean side.</li>
-<li><strong>Where the English is not algorithmic, the Lean quotes it.</strong> What the text assumes (that mathematical values behave as the reals, that Numbers are IEEE 754 binary64) and what it leaves to the host (time, job scheduling, locale) is a law, and each law's documentation quotes the sentence it reads. A script checks every quotation against the pinned spec.html.</li>
-<li><strong>The claim is precise and has limits.</strong> The engine is proved to implement the specification. The proof relies on Lean's {{axiom_count}} standard axioms alone ({{runtime_pins}} equations on the generated program are checked at run time before shortcuts run); the parser's laws are owed; the debugger is outside the claim. <a href="what-is-proved.html">What is proved</a> lists all of it.</li>
+<li><strong>SpecTec and <code>spec.html</code> form a verified bijection.</strong> Every algorithm, equation, early-error rule, table and grammar production lives in <code>spec/spectec/</code> (<code>def @sec-…</code>, <code>grammar</code>, <code>early_error</code>, <code>syntax</code>, <code>field</code>, <code>enum</code>). <code>crates/spectec-html</code> splices <code>spec/spectec/</code> back into <code>spec.html</code> with zero byte diffs; <code>spectec roundtrip</code> checks SpecTec's own formatting; and <code>scripts/bijection.py</code> prints SpecTec back from downstream Lean byte for byte.</li>
+<li><strong>Where the English is prose, SpecTec states <code>syntax</code>, <code>relation</code> and <code>laws</code> — quoting <code>spec.html</code>.</strong> What the text assumes (that mathematical values form an ordered field, that Numbers are IEEE 754 binary64) and what it leaves to the host (time, job scheduling, locale, §29 memory) is written in <code>spec/spectec/prose/*.spectec</code>, and every law quotes the governing sentence of <code>spec.html</code> (<code>scripts/law_quotes.py</code>).</li>
+<li><strong>The downstream Lean claim is precise and has limits.</strong> <code>crates/spectec</code> compiles SpecTec to Lean 4, where the concrete engine is proved to implement the specification relying on Lean's {{axiom_count}} standard axioms alone (0 <code>native_decide</code> pins; {{runtime_pins}} shortcut equations checked at run time). The parser's laws are owed, and the debugger loop is outside the claim; <a href="what-is-proved.html">What is proved</a> lists all of it.</li>
 </ol>
 
 <h2 id="revisions">Revisions</h2>

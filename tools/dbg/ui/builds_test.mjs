@@ -38,32 +38,30 @@ const file = i > 0 ? process.argv[i + 1] : new URL("../builds.json", import.meta
 const table = readBuilds(JSON.parse(readFileSync(file, "utf8")));
 
 // The table.
-check("builds.json: spec first", table[0].id === "spec" && table[0].args.length === 0, table[0]);
-const lit = table.find((b) => b.id === "literal");
-check("builds.json: the literal text is the same wasm", lit && lit.wasm === table[0].wasm, lit);
-check("builds.json: the literal text reads literally", lit && same(lit.args.slice(0, 2), ["--reading", "literal"]), lit?.args);
-check("builds.json: and keeps CreateIntrinsicsAsyncArgument", lit?.args.includes("CreateIntrinsicsAsyncArgument=test262"), lit?.args);
+check("builds.json: spec first", table.length === 1 && table[0].id === "spec" && table[0].args.length === 0, table);
+const altBuild = { id: "alt", label: "Alt host", description: "a", wasm: table[0].wasm, args: ["--no-annex-b"] };
 const extra = readBuilds({
   builds: [
     ...table,
+    altBuild,
     { id: "defer", label: "Proposal: import defer", description: "d", wasm: "ecma-dbg-web-defer.wasm", args: [] },
     { id: "spec", label: "again", wasm: "x.wasm", args: [] },
     { id: "Bad id", wasm: "x.wasm", args: [] },
     { id: "nowasm", args: [] },
     { id: "path", wasm: "../x.wasm", args: [] },
-    { id: "args", wasm: "x.wasm", args: "--reading literal" },
+    { id: "args", wasm: "x.wasm", args: "--no-annex-b" },
   ],
 });
-check("a build added, the malformed and repeated ones dropped", same(extra.map((b) => b.id), [...table.map((b) => b.id), "defer"]), extra.map((b) => b.id));
+check("a build added, the malformed and repeated ones dropped", same(extra.map((b) => b.id), ["spec", "alt", "defer"]), extra.map((b) => b.id));
 check("no build is an error", throws(() => readBuilds({ builds: [] })) && throws(() => readBuilds(null)), "");
 check("the fallback is the specification", FALLBACK.length === 1 && FALLBACK[0].id === "spec", FALLBACK);
 check("?build= picks its build", chooseBuild(extra, "defer").id === "defer", "");
 check("an unknown ?build= is the first", chooseBuild(extra, "nope").id === "spec" && chooseBuild(extra, null).id === "spec", "");
 
 // The arguments, in order.
-check("the build's arguments first", same(launchArgs(lit, ["--web-browser"]), [...lit.args, "--web-browser"]), launchArgs(lit, ["--web-browser"]));
+check("the build's arguments first", same(launchArgs(altBuild, ["--web-browser"]), ["--no-annex-b", "--web-browser"]), launchArgs(altBuild, ["--web-browser"]));
 check("no arguments", same(launchArgs(table[0], undefined), []), "");
-check("?args=", same(parseArgs("--erratum  SortInfiniteComparator=literal --web-browser"), ["--erratum", "SortInfiniteComparator=literal", "--web-browser"]), "");
+check("?args=", same(parseArgs("--no-annex-b  --web-browser"), ["--no-annex-b", "--web-browser"]), "");
 check("?args= empty or too long", parseArgs("") === null && parseArgs("   ") === null && parseArgs(Array(40).fill("x").join(" ")) === null, "");
 // What the model sends: launch's args are the build's, then the program's.
 const sent = [];
@@ -80,10 +78,10 @@ const fake = {
     };
   },
 };
-const m = new Model(fake, { program: { name: "a.js", source: "1", args: ["--module"] }, buildArgs: lit.args });
+const m = new Model(fake, { program: { name: "a.js", source: "1", args: ["--module"] }, buildArgs: altBuild.args });
 m.start();
 const launch = sent.find((x) => x.command === "launch");
-check("the model's launch: the build's, then the example's", same(launch?.args.args, [...lit.args, "--module"]), launch);
+check("the model's launch: the build's, then the example's", same(launch?.args.args, ["--no-annex-b", "--module"]), launch);
 sent.length = 0;
 new Model(fake, { program: { name: "a.js", source: "1" } }).start();
 check("the model's launch: none, no args", !("args" in (sent.find((x) => x.command === "launch")?.args ?? {})), sent);
@@ -94,16 +92,16 @@ const st = new MemoryStorage();
 saveConfig(st, { breakpoints: [{ alg: "a" }], filters: [], lineBreakpoints: {}, program: null, stopOnEntry: false }, storageKey("spec"));
 saveConfig(st, { breakpoints: [{ alg: "b" }], filters: ["stop"], lineBreakpoints: {}, program: null, stopOnEntry: true }, storageKey("defer"));
 check("each build its own breakpoints", loadConfig(st, storageKey("spec")).breakpoints[0].alg === "a" && loadConfig(st, storageKey("defer")).breakpoints[0].alg === "b", "");
-check("a build with nothing saved", same(loadConfig(st, storageKey("literal")), {}), loadConfig(st, storageKey("literal")));
+check("a build with nothing saved", same(loadConfig(st, storageKey("alt")), {}), loadConfig(st, storageKey("alt")));
 const old = new MemoryStorage();
 old.setItem("esl-dbg-ui", JSON.stringify({ breakpoints: [{ alg: "c" }] }));
-check("the old key moves to the specification's", loadConfig(old, storageKey("literal")).breakpoints === undefined && loadConfig(old, storageKey("spec")).breakpoints[0].alg === "c" && old.getItem("esl-dbg-ui") === null, "");
+check("the old key moves to the specification's", loadConfig(old, storageKey("alt")).breakpoints === undefined && loadConfig(old, storageKey("spec")).breakpoints[0].alg === "c" && old.getItem("esl-dbg-ui") === null, "");
 
 // The page's URL.
-const builds = table;
+const builds = extra;
 const u = (h, c) => new URL(pageURL(h, c, builds));
-check("another build keeps the example", u("https://h/d/?example=demo/get", { build: "literal" }).search === "?example=demo%2Fget&build=literal", u("https://h/d/?example=demo/get", { build: "literal" }).search);
-check("the first build leaves the query", u("https://h/d/?example=demo/get&build=literal", { build: "spec" }).search === "?example=demo%2Fget", "");
+check("another build keeps the example", u("https://h/d/?example=demo/get", { build: "defer" }).search === "?example=demo%2Fget&build=defer", u("https://h/d/?example=demo/get", { build: "defer" }).search);
+check("the first build leaves the query", u("https://h/d/?example=demo/get&build=defer", { build: "spec" }).search === "?example=demo%2Fget", "");
 check("an example picked drops ?args=", u("https://h/d/?example=a&args=x", { example: "run/b", args: null }).search === "?example=run%2Fb", "");
 
 // The examples' matching.
@@ -157,11 +155,11 @@ const popBuild = readBuilds({ builds: [{ id: "popcount", label: "Proposal: popco
 const allBuilds = [...extra, popBuild];
 check("builds.json: preserves optional wasmBytes", popBuild.wasmBytes === 13185591 && !("wasmBytes" in extra[0]), popBuild);
 const popEx = { id: "dbg/proposal_popcount", builds: { popcount: { pauses: [], end: "normal: undefined" }, spec: { pauses: [], end: "throw: TypeError" } } };
-const errataEx = { id: "run/module_top_level_await", builds: { spec: { pauses: [], end: "normal: undefined" }, literal: { pauses: [], end: "stop: ?" } } };
+const errataEx = { id: "run/module_top_level_await", builds: { spec: { pauses: [], end: "normal: undefined" }, alt: { pauses: [], end: "stop: ?" } } };
 const specOnlyEx = { id: "demo/get", builds: { spec: { pauses: [], end: "normal: 8" } } };
 check("picking popcount on spec switches to popcount", exampleBuild(popEx, allBuilds[0], allBuilds).id === "popcount", "");
 check("picking popcount on defer switches to popcount", exampleBuild(popEx, chooseBuild(allBuilds, "defer"), allBuilds).id === "popcount", "");
-check("picking errata example on literal keeps literal", exampleBuild(errataEx, lit, allBuilds).id === "literal", "");
+check("picking shared example on alt keeps alt", exampleBuild(errataEx, altBuild, allBuilds).id === "alt", "");
 check("picking spec-only example on popcount switches back to spec", exampleBuild(specOnlyEx, popBuild, allBuilds).id === "spec", "");
 const states = [];
 const versionedLazy = DbgClient.lazy("https://example.invalid/ecma-dbg-web-popcount.wasm?v=abc", {

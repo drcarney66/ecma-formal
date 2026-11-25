@@ -229,16 +229,6 @@ def program_html(iss: si.Issue, builds: list[dict], errata: dict, unrunnable: di
         first = builds[0]
         q = f"../debugger/?example={esc(ident)}"
         opens = [f'<a class="open" href="{q}">Open in the debugger: {esc(first["label"])}</a>']
-        for e in iss.errata:
-            er = errata[e]
-            if er.switch != "spec":
-                continue
-            for rd in ["literal", *errata_page.other_readings(er)]:
-                if rd == er.default:
-                    continue
-                args = f"--erratum {e}={rd}".replace(" ", "%20").replace("=", "%3D")
-                opens.append(f'<a class="open" href="{q}&amp;args={args}">Open in the debugger: {esc(first["label"])}, '
-                             f'with <code>{esc(e)}</code> read as {esc(errata_page.READING_LABEL[rd].removeprefix("the "))}</a>')
         links.append(f'<p class="opens">{" ".join(opens)}</p>')
     kind = "a Module graph (its <code>main.mjs</code> runs as a Module)" if ex.is_dir() else "a Script"
     return (f'<section id="program"><h2>The program</h2>'
@@ -312,7 +302,7 @@ def facts_html(iss: si.Issue, sp: errata_page.Text, errata: dict, kinds: dict[st
     for e in iss.errata:
         er = errata[e]
         ers.append(f'<a href="../errata.html#{esc(e)}"><code>{esc(e)}</code></a> on the Errata page '
-                   f'({esc(KIND_LABEL[er.kind])}; its default: {esc(errata_page.READING_LABEL[er.default])})')
+                   f'({esc(KIND_LABEL[er.kind])}; SpecTec bakes in {esc(errata_page.READING_LABEL[er.default])})')
     for e in iss.retired:
         ers.append(f'<code>{esc(e)}</code>, retired: <a href="../errata.html#removed">removed because the editors fixed the text</a>')
     if ers:

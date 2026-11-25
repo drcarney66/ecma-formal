@@ -521,7 +521,7 @@ NaN
 stdout:
 
 ```
-stop: erratum GetUTCEpochNanosecondsNaN sec-getutcepochnanoseconds#0 4
+stop: assertFailed sec-getutcepochnanoseconds#0 4
 ```
 
 ## 11-regexp-lastindex-inside-surrogate-pair.js
@@ -569,7 +569,7 @@ indices[0] [1,1]
 stdout:
 
 ```
-stop: erratum GetMatchStringStartAfterEnd sec-getmatchstring#0 1
+stop: assertFailed sec-getmatchstring#0 1
 ```
 
 ## 12-asyncblockstart-await-result.js
@@ -685,7 +685,7 @@ Bun v1.3.13 (macOS arm64)
 stdout:
 
 ```
-stop: erratum PromiseJobAbruptCompletion sec-jobs -
+stop: assertFailed sec-jobs -
 ```
 
 ## 14-nativefunction-initialname.js
