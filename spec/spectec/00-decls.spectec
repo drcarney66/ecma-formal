@@ -356,6 +356,7 @@ clause @sec-%asyncfromsynciteratorprototype%.return op "%AsyncFromSyncIteratorPr
 clause @sec-%asyncfromsynciteratorprototype%.throw op "%AsyncFromSyncIteratorPrototype%.throw"
 clause @sec-%asynciteratorprototype%-%symbol.asyncdispose% op "%AsyncIteratorPrototype% [ %Symbol.asyncDispose% ]"
 clause @sec-%asynciteratorprototype%-%symbol.asynciterator% op "%AsyncIteratorPrototype% [ %Symbol.asyncIterator% ]"
+clause @sec-%asynciteratorprototype%.transfer op "%AsyncIteratorPrototype%.transfer"
 clause @sec-%foriniteratorprototype%-object
 clause @sec-%foriniteratorprototype%.next op "%ForInIteratorPrototype%.next"
 clause @sec-%iterator.prototype%-object
@@ -1431,6 +1432,7 @@ clause @sec-iterator.prototype.reduce op "Iterator.prototype.reduce"
 clause @sec-iterator.prototype.some op "Iterator.prototype.some"
 clause @sec-iterator.prototype.take op "Iterator.prototype.take"
 clause @sec-iterator.prototype.toarray op "Iterator.prototype.toArray"
+clause @sec-iterator.prototype.transfer op "Iterator.prototype.transfer"
 clause @sec-iterator.prototype.windows op "Iterator.prototype.windows"
 clause @sec-iterator.zip op "Iterator.zip"
 clause @sec-iterator.zipkeyed op "Iterator.zipKeyed"

@@ -7,6 +7,7 @@ alg @sec-%asyncfromsynciteratorprototype%.return base=12 close=10
 alg @sec-%asyncfromsynciteratorprototype%.throw base=12 close=10
 alg @sec-%asynciteratorprototype%-%symbol.asyncdispose% base=10 close=8
 alg @sec-%asynciteratorprototype%-%symbol.asynciterator% base=10 close=8
+alg @sec-%asynciteratorprototype%.transfer base=10 close=8
 alg @sec-%foriniteratorprototype%.next base=14 close=12
 alg @sec-%iteratorhelperprototype%.next base=12 close=10
 alg @sec-%iteratorhelperprototype%.return base=12 close=10
@@ -602,6 +603,7 @@ alg @sec-iterator.prototype.reduce base=12 close=10
 alg @sec-iterator.prototype.some base=12 close=10
 alg @sec-iterator.prototype.take base=12 close=10
 alg @sec-iterator.prototype.toarray base=12 close=10
+alg @sec-iterator.prototype.transfer base=12 close=10
 alg @sec-iterator.prototype.windows base=12 close=10
 alg @sec-iterator.zip base=12 close=10
 alg @sec-iterator.zipkeyed base=12 close=10

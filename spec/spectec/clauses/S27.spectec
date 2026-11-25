@@ -2186,3 +2186,87 @@ def @await "Await" (kind ao params [arg : #"ECMAScript language value"] -> compl
   }
 }
 
+def @sec-iterator.prototype.transfer "Iterator.prototype.transfer" (kind builtin params []) vars [#"this value", NewTarget, O, state, proto, transferred, genContext, closedSteps, closedNext, closedIter] {
+  let O = this_value
+  if O is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if O sat $HasSlot([[GeneratorState]]) {
+    let state = O[[GeneratorState]]
+    if state is val {~executing~} -> throw @ph-new-error([[TypeError]])
+    let proto = ? O[[GetPrototypeOf]]()
+    if O sat $HasSlot([[UnderlyingIterators]]) {
+      let transferred = @sec-ordinaryobjectcreate(proto, [[[GeneratorState]], [[GeneratorContext]], [[GeneratorBrand]], [[UnderlyingIterators]]])
+      set field transferred[[UnderlyingIterators]] = O[[UnderlyingIterators]]
+      set field O[[UnderlyingIterators]] = $ListNew()
+    }
+    else {
+      let transferred = @sec-ordinaryobjectcreate(proto, [[[GeneratorState]], [[GeneratorContext]], [[GeneratorBrand]]])
+    }
+    set field transferred[[GeneratorBrand]] = O[[GeneratorBrand]]
+    set field transferred[[GeneratorState]] = state
+    let genContext = O[[GeneratorContext]]
+    set field transferred[[GeneratorContext]] = genContext
+    if state is val {~suspended-start~; ~suspended-yield~} {
+      set field genContext[[Generator]] = transferred
+    }
+    set field O[[GeneratorState]] = ~completed~
+    return transferred
+  }
+  if O sat $HasSlot([[IteratedArrayLike]]) {
+    let proto = ? O[[GetPrototypeOf]]()
+    let transferred = @sec-ordinaryobjectcreate(proto, [[[IteratedArrayLike]], [[ArrayLikeNextIndex]], [[ArrayLikeIterationKind]]])
+    set field transferred[[IteratedArrayLike]] = O[[IteratedArrayLike]]
+    set field transferred[[ArrayLikeNextIndex]] = O[[ArrayLikeNextIndex]]
+    set field transferred[[ArrayLikeIterationKind]] = O[[ArrayLikeIterationKind]]
+    set field O[[IteratedArrayLike]] = undefined
+    return transferred
+  }
+  if O sat $HasSlot([[IteratingRegExp]]) {
+    let proto = ? O[[GetPrototypeOf]]()
+    let transferred = @sec-ordinaryobjectcreate(proto, [[[IteratingRegExp]], [[IteratedString]], [[Global]], [[Unicode]], [[Done]]])
+    set field transferred[[IteratingRegExp]] = O[[IteratingRegExp]]
+    set field transferred[[IteratedString]] = O[[IteratedString]]
+    set field transferred[[Global]] = O[[Global]]
+    set field transferred[[Unicode]] = O[[Unicode]]
+    set field transferred[[Done]] = O[[Done]]
+    set field O[[Done]] = true
+    return transferred
+  }
+  if O sat $HasSlot([[Iterated]]) {
+    let proto = ? O[[GetPrototypeOf]]()
+    let transferred = @sec-ordinaryobjectcreate(proto, [[[Iterated]]])
+    set field transferred[[Iterated]] = O[[Iterated]]
+    let closedSteps = closure 0
+    let closedNext = @sec-createbuiltinfunction(closedSteps, 0, "", [])
+    let closedIter = @sec-ordinaryobjectcreate(null)
+    set field O[[Iterated]] = record #"Iterator Record" { [[Iterator]]: closedIter, [[NextMethod]]: closedNext, [[Done]]: true }
+    return transferred
+  }
+  throw @ph-new-error([[TypeError]])
+  closure abstract params none captures [] {
+    return @sec-createiterresultobject(undefined, true)
+  }
+}
+
+def @sec-%asynciteratorprototype%.transfer "%AsyncIteratorPrototype%.transfer" (kind builtin params []) vars [#"this value", NewTarget, O, state, proto, transferred, genContext] {
+  let O = this_value
+  if O is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if O sat $HasSlot([[AsyncGeneratorState]]) {
+    let state = O[[AsyncGeneratorState]]
+    if state is val {~executing~} or state is val {~draining-queue~} -> throw @ph-new-error([[TypeError]])
+    if O[[AsyncGeneratorQueue]] fails $IsEmpty() -> throw @ph-new-error([[TypeError]])
+    let proto = ? O[[GetPrototypeOf]]()
+    let transferred = @sec-ordinaryobjectcreate(proto, [[[AsyncGeneratorState]], [[AsyncGeneratorContext]], [[AsyncGeneratorQueue]], [[GeneratorBrand]]])
+    set field transferred[[GeneratorBrand]] = O[[GeneratorBrand]]
+    set field transferred[[AsyncGeneratorState]] = state
+    let genContext = O[[AsyncGeneratorContext]]
+    set field transferred[[AsyncGeneratorContext]] = genContext
+    set field transferred[[AsyncGeneratorQueue]] = $ListNew()
+    if state is val {~suspended-start~; ~suspended-yield~} {
+      set field genContext[[Generator]] = transferred
+    }
+    set field O[[AsyncGeneratorState]] = ~completed~
+    return transferred
+  }
+  throw @ph-new-error([[TypeError]])
+}
+

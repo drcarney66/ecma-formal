@@ -1,0 +1,3 @@
+# Draft specification for Stage 0 proposal-iterator-transfer (upstream spec.emu is empty ecmarkup boilerplate).
+parent sec-iterator.prototype.transfer sec-%iterator.prototype%-object
+parent sec-%asynciteratorprototype%.transfer sec-asynciteratorprototype

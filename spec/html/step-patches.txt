@@ -200,6 +200,43 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. IfAbruptRejectPromise(_return_, _promiseCapability_).
 @@end
 
+@@patch alg @sec-%asynciteratorprototype%.transfer root:2..3
+@@spectec
+|   if O sat $HasSlot([[AsyncGeneratorState]]) {
+|     let state = O[[AsyncGeneratorState]]
+|     if state is val {~executing~} or state is val {~draining-queue~} -> throw @ph-new-error([[TypeError]])
+|     if O[[AsyncGeneratorQueue]] fails $IsEmpty() -> throw @ph-new-error([[TypeError]])
+|     let proto = ? O[[GetPrototypeOf]]()
+|     let transferred = @sec-ordinaryobjectcreate(proto, [[[AsyncGeneratorState]], [[AsyncGeneratorContext]], [[AsyncGeneratorQueue]], [[GeneratorBrand]]])
+|     set field transferred[[GeneratorBrand]] = O[[GeneratorBrand]]
+|     set field transferred[[AsyncGeneratorState]] = state
+|     let genContext = O[[AsyncGeneratorContext]]
+|     set field transferred[[AsyncGeneratorContext]] = genContext
+|     set field transferred[[AsyncGeneratorQueue]] = $ListNew()
+|     if state is val {~suspended-start~; ~suspended-yield~} {
+|       set field genContext[[Generator]] = transferred
+|     }
+|     set field O[[AsyncGeneratorState]] = ~completed~
+|     return transferred
+|   }
+@@html
+| 1. If _O_ has an [[AsyncGeneratorState]] internal slot, then
+|   1. Let _state_ be _O_.[[AsyncGeneratorState]].
+|   1. If _state_ is ~executing~ or _state_ is ~draining-queue~, throw a *TypeError* exception.
+|   1. If _O_.[[AsyncGeneratorQueue]] is not empty, throw a *TypeError* exception.
+|   1. Let _proto_ be ? _O_.[[GetPrototypeOf]]().
+|   1. Let _transferred_ be OrdinaryObjectCreate(_proto_, « [[AsyncGeneratorState]], [[AsyncGeneratorContext]], [[AsyncGeneratorQueue]], [[GeneratorBrand]] »).
+|   1. Set _transferred_.[[GeneratorBrand]] to _O_.[[GeneratorBrand]].
+|   1. Set _transferred_.[[AsyncGeneratorState]] to _state_.
+|   1. Let _genContext_ be _O_.[[AsyncGeneratorContext]].
+|   1. Set _transferred_.[[AsyncGeneratorContext]] to _genContext_.
+|   1. Set _transferred_.[[AsyncGeneratorQueue]] to a new empty List.
+|   1. If _state_ is either ~suspended-start~ or ~suspended-yield~, then
+|     1. Set the Generator component of _genContext_ to _transferred_.
+|   1. Set _O_.[[AsyncGeneratorState]] to ~completed~.
+|   1. Return _transferred_.
+@@end
+
 @@patch alg @sec-%foriniteratorprototype%.next root/4:do/0:then:0..1
 @@spectec
 |       let #"keys" = ? #"obj"[[OwnPropertyKeys]]()
@@ -4810,6 +4847,96 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   }
 @@html
 | 1. IfAbruptCloseIterator(_numberLimit_, _iterated_).
+@@end
+
+@@patch alg @sec-iterator.prototype.transfer root/2:then:3..4
+@@spectec
+| if O sat $HasSlot([[UnderlyingIterators]]) {
+|       let transferred = @sec-ordinaryobjectcreate(proto, [[[GeneratorState]], [[GeneratorContext]], [[GeneratorBrand]], [[UnderlyingIterators]]])
+|       set field transferred[[UnderlyingIterators]] = O[[UnderlyingIterators]]
+|       set field O[[UnderlyingIterators]] = $ListNew()
+|     }
+|     else {
+|       let transferred = @sec-ordinaryobjectcreate(proto, [[[GeneratorState]], [[GeneratorContext]], [[GeneratorBrand]]])
+|     }
+@@html
+|   1. If _O_ has an [[UnderlyingIterators]] internal slot, then
+|     1. Let _transferred_ be OrdinaryObjectCreate(_proto_, « [[GeneratorState]], [[GeneratorContext]], [[GeneratorBrand]], [[UnderlyingIterators]] »).
+|     1. Set _transferred_.[[UnderlyingIterators]] to _O_.[[UnderlyingIterators]].
+|     1. Set _O_.[[UnderlyingIterators]] to a new empty List.
+@@end
+
+@@patch alg @sec-iterator.prototype.transfer root/2:then:9..10
+@@spectec
+|     if state is val {~suspended-start~; ~suspended-yield~} {
+|       set field genContext[[Generator]] = transferred
+|     }
+@@html
+|   1. If _state_ is either ~suspended-start~ or ~suspended-yield~, then
+|     1. Set the Generator component of _genContext_ to _transferred_.
+@@end
+
+@@patch alg @sec-iterator.prototype.transfer root:3..6
+@@spectec
+|   if O sat $HasSlot([[IteratedArrayLike]]) {
+|     let proto = ? O[[GetPrototypeOf]]()
+|     let transferred = @sec-ordinaryobjectcreate(proto, [[[IteratedArrayLike]], [[ArrayLikeNextIndex]], [[ArrayLikeIterationKind]]])
+|     set field transferred[[IteratedArrayLike]] = O[[IteratedArrayLike]]
+|     set field transferred[[ArrayLikeNextIndex]] = O[[ArrayLikeNextIndex]]
+|     set field transferred[[ArrayLikeIterationKind]] = O[[ArrayLikeIterationKind]]
+|     set field O[[IteratedArrayLike]] = undefined
+|     return transferred
+|   }
+|   if O sat $HasSlot([[IteratingRegExp]]) {
+|     let proto = ? O[[GetPrototypeOf]]()
+|     let transferred = @sec-ordinaryobjectcreate(proto, [[[IteratingRegExp]], [[IteratedString]], [[Global]], [[Unicode]], [[Done]]])
+|     set field transferred[[IteratingRegExp]] = O[[IteratingRegExp]]
+|     set field transferred[[IteratedString]] = O[[IteratedString]]
+|     set field transferred[[Global]] = O[[Global]]
+|     set field transferred[[Unicode]] = O[[Unicode]]
+|     set field transferred[[Done]] = O[[Done]]
+|     set field O[[Done]] = true
+|     return transferred
+|   }
+|   if O sat $HasSlot([[Iterated]]) {
+|     let proto = ? O[[GetPrototypeOf]]()
+|     let transferred = @sec-ordinaryobjectcreate(proto, [[[Iterated]]])
+|     set field transferred[[Iterated]] = O[[Iterated]]
+|     let closedSteps = closure 0
+|     let closedNext = @sec-createbuiltinfunction(closedSteps, 0, "", [])
+|     let closedIter = @sec-ordinaryobjectcreate(null)
+|     set field O[[Iterated]] = record #"Iterator Record" { [[Iterator]]: closedIter, [[NextMethod]]: closedNext, [[Done]]: true }
+|     return transferred
+|   }
+@@html
+| 1. If _O_ has an [[IteratedArrayLike]] internal slot, then
+|   1. Let _proto_ be ? _O_.[[GetPrototypeOf]]().
+|   1. Let _transferred_ be OrdinaryObjectCreate(_proto_, « [[IteratedArrayLike]], [[ArrayLikeNextIndex]], [[ArrayLikeIterationKind]] »).
+|   1. Set _transferred_.[[IteratedArrayLike]] to _O_.[[IteratedArrayLike]].
+|   1. Set _transferred_.[[ArrayLikeNextIndex]] to _O_.[[ArrayLikeNextIndex]].
+|   1. Set _transferred_.[[ArrayLikeIterationKind]] to _O_.[[ArrayLikeIterationKind]].
+|   1. Set _O_.[[IteratedArrayLike]] to *undefined*.
+|   1. Return _transferred_.
+| 1. If _O_ has an [[IteratingRegExp]] internal slot, then
+|   1. Let _proto_ be ? _O_.[[GetPrototypeOf]]().
+|   1. Let _transferred_ be OrdinaryObjectCreate(_proto_, « [[IteratingRegExp]], [[IteratedString]], [[Global]], [[Unicode]], [[Done]] »).
+|   1. Set _transferred_.[[IteratingRegExp]] to _O_.[[IteratingRegExp]].
+|   1. Set _transferred_.[[IteratedString]] to _O_.[[IteratedString]].
+|   1. Set _transferred_.[[Global]] to _O_.[[Global]].
+|   1. Set _transferred_.[[Unicode]] to _O_.[[Unicode]].
+|   1. Set _transferred_.[[Done]] to _O_.[[Done]].
+|   1. Set _O_.[[Done]] to *true*.
+|   1. Return _transferred_.
+| 1. If _O_ has an [[Iterated]] internal slot, then
+|   1. Let _proto_ be ? _O_.[[GetPrototypeOf]]().
+|   1. Let _transferred_ be OrdinaryObjectCreate(_proto_, « [[Iterated]] »).
+|   1. Set _transferred_.[[Iterated]] to _O_.[[Iterated]].
+|   1. Let _closedSteps_ be a new Abstract Closure with no parameters that captures nothing and performs the following steps when called:
+|     1. Return CreateIteratorResultObject(*undefined*, *true*).
+|   1. Let _closedNext_ be CreateBuiltinFunction(_closedSteps_, 0, *""*, « »).
+|   1. Let _closedIter_ be OrdinaryObjectCreate(*null*).
+|   1. Set _O_.[[Iterated]] to the Iterator Record { [[Iterator]]: _closedIter_, [[NextMethod]]: _closedNext_, [[Done]]: *true* }.
+|   1. Return _transferred_.
 @@end
 
 @@patch alg @sec-iterator.prototype.windows cl0/1:do/1:then:0..1
