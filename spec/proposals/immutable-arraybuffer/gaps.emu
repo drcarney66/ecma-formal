@@ -1,0 +1,55 @@
+<emu-clause id="sec-typedarray-getownproperty" oldids="sec-integer-indexed-exotic-objects-getownproperty-p" type="internal method">
+  <h1>
+    [[GetOwnProperty]] (
+      _P_: a property key,
+    ): a normal completion containing either a Property Descriptor or *undefined*
+  </h1>
+  <dl class="header">
+    <dt>for</dt>
+    <dd>a TypedArray _O_</dd>
+  </dl>
+  <emu-alg>
+    1. If _P_ is a String, then
+      1. Let _numericIndex_ be CanonicalNumericIndexString(_P_).
+      1. If _numericIndex_ is not *undefined*, then
+        1. Let _value_ be TypedArrayGetElement(_O_, _numericIndex_).
+        1. If _value_ is *undefined*, return *undefined*.
+        1. Let _mutable_ be *true*.
+        1. If IsImmutableBuffer(_O_.[[ViewedArrayBuffer]]) is *true*, set _mutable_ to *false*.
+        1. Return the PropertyDescriptor { [[Value]]: _value_, [[Writable]]:<del>  _mutable_</del><ins> _mutable_</ins>, [[Enumerable]]: *true*, [[Configurable]]:<del>  _mutable_</del><ins> _mutable_</ins> }.
+    1. Return OrdinaryGetOwnProperty(_O_, _P_).
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="sec-arraybuffer.prototype.slice" type="built-in function">
+  <h1>ArrayBuffer.prototype.slice ( _start_, _end_ )</h1>
+  <p>This method performs the following steps when called:</p>
+  <emu-alg>
+    1. Let _O_ be the *this* value.
+    1. Perform ? RequireInternalSlot(_O_, [[ArrayBufferData]]).
+    1. If IsSharedArrayBuffer(_O_) is *true*, throw a *TypeError* exception.
+    1. If IsDetachedBuffer(_O_) is *true*, throw a *TypeError* exception.
+    1. Let _len_ be _O_.[[ArrayBufferByteLength]].
+    1. Let _first_ be ? ToClampedIndex(_start_, _len_).
+    1. If _end_ is *undefined*, let _final_ be _len_; else let _final_ be ? ToClampedIndex(_end_, _len_).
+    1. Let _newLen_ be max(_final_ - _first_, 0).
+    1. Let _ctor_ be ? SpeciesConstructor(_O_, %ArrayBuffer%).
+    1. Let _new_ be ? Construct(_ctor_, « 𝔽(_newLen_) »).
+    1. Perform ? RequireInternalSlot(_new_, [[ArrayBufferData]]).
+    1. If IsSharedArrayBuffer(_new_) is *true*, throw a *TypeError* exception.
+    1. If IsDetachedBuffer(_new_) is *true*, throw a *TypeError* exception.
+    1. If IsImmutableBuffer(_new_) is *true*, throw a *TypeError* exception.
+    1. If SameValue(_new_, _O_) is *true*, throw a *TypeError* exception.
+    1. If _new_.[[ArrayBufferByteLength]] &lt; _newLen_, throw a *TypeError* exception.
+    1. NOTE: Side-effects of the above steps may have detached or resized _O_.
+    1. If IsDetachedBuffer(_O_) is *true*, throw a *TypeError* exception.
+    1. Let _fromBuf_ be _O_.[[ArrayBufferData]].
+    1. Let _toBuf_ be _new_.[[ArrayBufferData]].
+    1. Let _currentLen_ be _O_.[[ArrayBufferByteLength]].
+    1. Let _maxCount_ be _currentLen_ - _first_.
+    1. If _maxCount_ <del>&gt;</del><ins>></ins> 0, then
+      1. Let _count_ be min(_newLen_, _maxCount_).
+      1. Perform CopyDataBlockBytes(_toBuf_, 0, _fromBuf_, _first_, _count_).
+    1. Return _new_.
+  </emu-alg>
+</emu-clause>

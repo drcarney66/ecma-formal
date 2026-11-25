@@ -1132,9 +1132,9 @@ def @sec-%typedarray% "%TypedArray%" (kind builtin params []) vars [#"this value
   throw @ph-new-error([[TypeError]])
 }
 
-def @sec-%typedarray%.from "%TypedArray%.from" (kind builtin params [source, mapper opt, thisArg opt]) vars [#"this value", NewTarget, source, mapper, thisArg, ctor, mapping, usingIterator, values, length, targetObj, k, kValue, mappedValue, arrayLike, propertyKey] {
-  let ctor = this_value
-  if @sec-isconstructor(ctor) is val {false} -> throw @ph-new-error([[TypeError]])
+def @sec-%typedarray%.from "%TypedArray%.from" (kind builtin params [source, mapper opt, thisArg opt]) vars [#"this value", NewTarget, source, mapper, thisArg, C, mapping, usingIterator, values, len, targetObj, k, Pk, kValue, mappedValue, arrayLike] {
+  let C = this_value
+  if @sec-isconstructor(C) is val {false} -> throw @ph-new-error([[TypeError]])
   if mapper is val {undefined} {
     let mapping = false
   }
@@ -1145,51 +1145,55 @@ def @sec-%typedarray%.from "%TypedArray%.from" (kind builtin params [source, map
   let usingIterator = ? @sec-getmethod(source, $WellKnownSymbol("Symbol.iterator"))
   if usingIterator is not val {undefined} {
     let values = ? @sec-iteratortolist(? @sec-getiteratorfrommethod(source, usingIterator))
-    let length = $ListLen(?values)
-    let targetObj = ? @sec-typedarraycreatefromconstructor(ctor, [$𝔽(length)])
+    let len = $ListLen(?values)
+    let targetObj = ? @sec-typedarraycreatefromconstructor(C, [$𝔽(len)], ~write~)
     let k = 0
-    repeat_while k < length {
-      let kValue = values[k]
+    repeat_while k < len {
+      let Pk = ! @sec-tostring($𝔽(k))
+      let kValue = $ListElem(data choice 1, ?values)
+      perform $RemoveFirst(?values)
       if mapping is val {true} {
         let mappedValue = ? @sec-call(mapper, thisArg, [kValue, $𝔽(k)])
       }
       else {
         let mappedValue = kValue
       }
-      perform ? @sec-typedarraysetelement(targetObj, $𝔽(k), mappedValue)
+      perform ? @sec-set-o-p-v-throw(targetObj, Pk, mappedValue, true)
       set var k = k + 1
     }
+    assert values sat @ph-is-now($ListNew())
     return targetObj
   }
   note "_source_ is not an iterable object, so assume it is already an array-like object."
   let arrayLike = ! @sec-toobject(source)
-  let length = ? @sec-lengthofarraylike(arrayLike)
-  let targetObj = ? @sec-typedarraycreatefromconstructor(ctor, [$𝔽(length)])
+  let len = ? @sec-lengthofarraylike(arrayLike)
+  let targetObj = ? @sec-typedarraycreatefromconstructor(C, [$𝔽(len)], ~write~)
   let k = 0
-  repeat_while k < length {
-    let propertyKey = ! @sec-tostring($𝔽(k))
-    let kValue = ? @sec-get-o-p(arrayLike, propertyKey)
+  repeat_while k < len {
+    let Pk = ! @sec-tostring($𝔽(k))
+    let kValue = ? @sec-get-o-p(arrayLike, Pk)
     if mapping is val {true} {
       let mappedValue = ? @sec-call(mapper, thisArg, [kValue, $𝔽(k)])
     }
     else {
       let mappedValue = kValue
     }
-    perform ? @sec-typedarraysetelement(targetObj, $𝔽(k), mappedValue)
+    perform ? @sec-set-o-p-v-throw(targetObj, Pk, mappedValue, true)
     set var k = k + 1
   }
   return targetObj
 }
 
-def @sec-%typedarray%.of "%TypedArray%.of" (kind builtin params [items rest]) vars [#"this value", NewTarget, items, length, ctor, newObj, k, kValue] {
-  let length = $ListLen(?items)
-  let ctor = this_value
-  if @sec-isconstructor(ctor) is val {false} -> throw @ph-new-error([[TypeError]])
-  let newObj = ? @sec-typedarraycreatefromconstructor(ctor, [$𝔽(length)])
+def @sec-%typedarray%.of "%TypedArray%.of" (kind builtin params [items rest]) vars [#"this value", NewTarget, items, len, C, newObj, k, kValue, Pk] {
+  let len = $ListLen(?items)
+  let C = this_value
+  if @sec-isconstructor(C) is val {false} -> throw @ph-new-error([[TypeError]])
+  let newObj = ? @sec-typedarraycreatefromconstructor(C, [$𝔽(len)], ~write~)
   let k = 0
-  repeat_while k < length {
+  repeat_while k < len {
     let kValue = items[k]
-    perform ? @sec-typedarraysetelement(newObj, $𝔽(k), kValue)
+    let Pk = ! @sec-tostring($𝔽(k))
+    perform ? @sec-set-o-p-v-throw(newObj, Pk, kValue, true)
     set var k = k + 1
   }
   return newObj
@@ -1236,23 +1240,32 @@ def @sec-get-%typedarray%.prototype.byteoffset "get %TypedArray%.prototype.byteO
   return $𝔽(offset)
 }
 
-def @sec-%typedarray%.prototype.copywithin "%TypedArray%.prototype.copyWithin" (kind builtin params [target, start, end opt]) vars [#"this value", NewTarget, target, start, end, #"obj", taRecord, length, targetIndex, startIndex, endIndex, count, buffer, elementSize, byteOffset, toByteIndex, fromByteIndex, countBytes, direction, value] {
-  let #"obj" = this_value
-  let taRecord = ? @sec-validatetypedarray(#"obj", ~seq-cst~)
-  let length = @sec-typedarraylength(taRecord)
-  let targetIndex = ? @sec-toclampedindex(target, length)
-  let startIndex = ? @sec-toclampedindex(start, length)
-  if_else end is val {undefined} { let endIndex = length } else { let endIndex = ? @sec-toclampedindex(end, length) }
-  let count = $min(endIndex - startIndex, length - targetIndex)
+def @sec-%typedarray%.prototype.copywithin "%TypedArray%.prototype.copyWithin" (kind builtin params [target, start, end opt]) vars [#"this value", NewTarget, target, start, end, O, taRecord, len, relativeTarget, targetIndex, relativeStart, startIndex, relativeEnd, endIndex, count, buffer, elementSize, byteOffset, bufferByteLimit, toByteIndex, fromByteIndex, countBytes, direction, value] {
+  let O = this_value
+  let taRecord = ? @sec-validatetypedarray(O, ~seq-cst~, ~write~)
+  let len = @sec-typedarraylength(taRecord)
+  let relativeTarget = ? @sec-tointegerorinfinity(target)
+  if relativeTarget == math(-∞) -> let targetIndex = 0
+  else_if relativeTarget < 0 -> let targetIndex = $max(len + relativeTarget, 0)
+  else -> let targetIndex = $min(relativeTarget, len)
+  let relativeStart = ? @sec-tointegerorinfinity(start)
+  if relativeStart == math(-∞) -> let startIndex = 0
+  else_if relativeStart < 0 -> let startIndex = $max(len + relativeStart, 0)
+  else -> let startIndex = $min(relativeStart, len)
+  if_else end is val {undefined} { let relativeEnd = len } else { let relativeEnd = ? @sec-tointegerorinfinity(end) }
+  if relativeEnd == math(-∞) -> let endIndex = 0
+  else_if relativeEnd < 0 -> let endIndex = $max(len + relativeEnd, 0)
+  else -> let endIndex = $min(relativeEnd, len)
+  let count = $min(endIndex - startIndex, len - targetIndex)
   if count > 0 {
     note "The copying must be performed in a manner that preserves the bit-level encoding of the source data."
-    let buffer = #"obj"[[ViewedArrayBuffer]]
-    set var taRecord = ? @sec-validatetypedarraybounds(#"obj", ~seq-cst~)
-    set var length = @sec-typedarraylength(taRecord)
-    note "Side-effects of the above steps may have reduced the size of _obj_, in which case copying should proceed with the longest still-applicable prefix."
-    set var count = $min(count, length - startIndex, length - targetIndex)
-    let elementSize = @sec-typedarrayelementsize(#"obj")
-    let byteOffset = #"obj"[[ByteOffset]]
+    let buffer = O[[ViewedArrayBuffer]]
+    set var taRecord = @sec-maketypedarraywithbufferwitnessrecord(O, ~seq-cst~)
+    if @sec-istypedarrayoutofbounds(taRecord) is val {true} -> throw @ph-new-error([[TypeError]])
+    set var len = @sec-typedarraylength(taRecord)
+    let elementSize = @sec-typedarrayelementsize(O)
+    let byteOffset = O[[ByteOffset]]
+    let bufferByteLimit = (len * elementSize) + byteOffset
     let toByteIndex = (targetIndex * elementSize) + byteOffset
     let fromByteIndex = (startIndex * elementSize) + byteOffset
     let countBytes = count * elementSize
@@ -1265,15 +1278,19 @@ def @sec-%typedarray%.prototype.copywithin "%TypedArray%.prototype.copyWithin" (
       let direction = 1
     }
     repeat_while countBytes > 0 {
-      assert fromByteIndex >= 0 and toByteIndex >= 0
-      let value = @sec-getvaluefrombuffer(buffer, fromByteIndex, ~uint8~, true, ~unordered~)
-      perform @sec-setvalueinbuffer(buffer, toByteIndex, ~uint8~, value, true, ~unordered~)
-      set var fromByteIndex = fromByteIndex + direction
-      set var toByteIndex = toByteIndex + direction
-      set var countBytes = countBytes - 1
+      if fromByteIndex < bufferByteLimit and toByteIndex < bufferByteLimit {
+        let value = @sec-getvaluefrombuffer(buffer, fromByteIndex, ~uint8~, true, ~unordered~)
+        perform @sec-setvalueinbuffer(buffer, toByteIndex, ~uint8~, value, true, ~unordered~)
+        set var fromByteIndex = fromByteIndex + direction
+        set var toByteIndex = toByteIndex + direction
+        set var countBytes = countBytes - 1
+      }
+      else {
+        set var countBytes = 0
+      }
     }
   }
-  return #"obj"
+  return O
 }
 
 def @sec-%typedarray%.prototype.entries "%TypedArray%.prototype.entries" (kind builtin params []) vars [#"this value", NewTarget, #"obj"] {
@@ -1299,7 +1316,7 @@ def @sec-%typedarray%.prototype.every "%TypedArray%.prototype.every" (kind built
 
 def @sec-%typedarray%.prototype.fill "%TypedArray%.prototype.fill" (kind builtin params [value, start opt, end opt]) vars [#"this value", NewTarget, value, start, end, #"obj", taRecord, length, startIndex, endIndex, k] {
   let #"obj" = this_value
-  let taRecord = ? @sec-validatetypedarray(#"obj", ~seq-cst~)
+  let taRecord = ? @sec-validatetypedarray(#"obj", ~seq-cst~, ~write~)
   let length = @sec-typedarraylength(taRecord)
   if #"obj"[[ContentType]] is val {~bigint~} -> set var value = ? @sec-tobigint(value)
   else -> set var value = ? @sec-tonumber(value)
@@ -1316,31 +1333,32 @@ def @sec-%typedarray%.prototype.fill "%TypedArray%.prototype.fill" (kind builtin
   return #"obj"
 }
 
-def @sec-%typedarray%.prototype.filter "%TypedArray%.prototype.filter" (kind builtin params [callback, thisArg opt]) vars [#"this value", NewTarget, callback, thisArg, #"obj", taRecord, length, kept, captured, k, kValue, selected, result, n, element] {
-  let #"obj" = this_value
-  let taRecord = ? @sec-validatetypedarray(#"obj", ~seq-cst~)
-  let length = @sec-typedarraylength(taRecord)
+def @sec-%typedarray%.prototype.filter "%TypedArray%.prototype.filter" (kind builtin params [callback, thisArg opt]) vars [#"this value", NewTarget, callback, thisArg, O, taRecord, len, kept, captured, k, Pk, kValue, selected, A, n, e] {
+  let O = this_value
+  let taRecord = ? @sec-validatetypedarray(O, ~seq-cst~)
+  let len = @sec-typedarraylength(taRecord)
   if @sec-iscallable(callback) is val {false} -> throw @ph-new-error([[TypeError]])
   let kept = $ListNew()
   let captured = 0
   let k = 0
-  repeat_while k < length {
-    let kValue = @sec-typedarraygetelement(#"obj", $𝔽(k))
-    let selected = @sec-toboolean(? @sec-call(callback, thisArg, [kValue, $𝔽(k), #"obj"]))
+  repeat_while k < len {
+    let Pk = ! @sec-tostring($𝔽(k))
+    let kValue = ! @sec-get-o-p(O, Pk)
+    let selected = @sec-toboolean(? @sec-call(callback, thisArg, [kValue, $𝔽(k), O]))
     if selected is val {true} {
       perform $Append(?kValue, ?kept)
       set var captured = captured + 1
     }
     set var k = k + 1
   }
-  let result = ? @typedarray-species-create(#"obj", [$𝔽(captured)])
+  let A = ? @typedarray-species-create(O, [$𝔽(captured)], ~write~)
+  assert @sec-isimmutablebuffer(A[[ViewedArrayBuffer]]) is val {false}
   let n = 0
-  for_each element in kept {
-    note "_element_ may be *undefined* if invoking _callback_ detaches or shrinks the buffer backing _obj_."
-    perform ? @sec-typedarraysetelement(result, $𝔽(n), element)
+  for_each e in kept {
+    perform ! @sec-set-o-p-v-throw(A, ! @sec-tostring($𝔽(n)), e, true)
     set var n = n + 1
   }
-  return result
+  return A
 }
 
 def @sec-%typedarray%.prototype.find "%TypedArray%.prototype.find" (kind builtin params [predicate, thisArg opt]) vars [#"this value", NewTarget, predicate, thisArg, #"obj", taRecord, length, findRecord] {
@@ -1463,20 +1481,22 @@ def @sec-get-%typedarray%.prototype.length "get %TypedArray%.prototype.length" (
   return $𝔽(length)
 }
 
-def @sec-%typedarray%.prototype.map "%TypedArray%.prototype.map" (kind builtin params [callback, thisArg opt]) vars [#"this value", NewTarget, callback, thisArg, #"obj", taRecord, length, result, k, kValue, mappedValue] {
-  let #"obj" = this_value
-  let taRecord = ? @sec-validatetypedarray(#"obj", ~seq-cst~)
-  let length = @sec-typedarraylength(taRecord)
+def @sec-%typedarray%.prototype.map "%TypedArray%.prototype.map" (kind builtin params [callback, thisArg opt]) vars [#"this value", NewTarget, callback, thisArg, O, taRecord, len, A, k, Pk, kValue, mappedValue] {
+  let O = this_value
+  let taRecord = ? @sec-validatetypedarray(O, ~seq-cst~)
+  let len = @sec-typedarraylength(taRecord)
   if @sec-iscallable(callback) is val {false} -> throw @ph-new-error([[TypeError]])
-  let result = ? @typedarray-species-create(#"obj", [$𝔽(length)])
+  let A = ? @typedarray-species-create(O, [$𝔽(len)], ~write~)
+  assert @sec-isimmutablebuffer(A[[ViewedArrayBuffer]]) is val {false}
   let k = 0
-  repeat_while k < length {
-    let kValue = @sec-typedarraygetelement(#"obj", $𝔽(k))
-    let mappedValue = ? @sec-call(callback, thisArg, [kValue, $𝔽(k), #"obj"])
-    perform ? @sec-typedarraysetelement(result, $𝔽(k), mappedValue)
+  repeat_while k < len {
+    let Pk = ! @sec-tostring($𝔽(k))
+    let kValue = ! @sec-get-o-p(O, Pk)
+    let mappedValue = ? @sec-call(callback, thisArg, [kValue, $𝔽(k), O])
+    perform ? @sec-set-o-p-v-throw(A, Pk, mappedValue, true)
     set var k = k + 1
   }
-  return result
+  return A
 }
 
 def @sec-%typedarray%.prototype.reduce "%TypedArray%.prototype.reduce" (kind builtin params [callback, initialValue opt]) vars [#"this value", NewTarget, callback, initialValue, #"obj", taRecord, length, k, accumulator, kValue] {
@@ -1525,27 +1545,31 @@ def @sec-%typedarray%.prototype.reduceright "%TypedArray%.prototype.reduceRight"
   return accumulator
 }
 
-def @sec-%typedarray%.prototype.reverse "%TypedArray%.prototype.reverse" (kind builtin params []) vars [#"this value", NewTarget, #"obj", taRecord, length, middle, lower, upper, lowerValue, upperValue] {
-  let #"obj" = this_value
-  let taRecord = ? @sec-validatetypedarray(#"obj", ~seq-cst~)
-  let length = @sec-typedarraylength(taRecord)
-  let middle = $floor(length / 2)
+def @sec-%typedarray%.prototype.reverse "%TypedArray%.prototype.reverse" (kind builtin params []) vars [#"this value", NewTarget, O, taRecord, len, middle, lower, upper, upperP, lowerP, lowerValue, upperValue] {
+  let O = this_value
+  let taRecord = ? @sec-validatetypedarray(O, ~seq-cst~, ~write~)
+  let len = @sec-typedarraylength(taRecord)
+  let middle = $floor(len / 2)
   let lower = 0
   repeat_while lower != middle {
-    let upper = length - lower - 1
-    let lowerValue = @sec-typedarraygetelement(#"obj", $𝔽(lower))
-    let upperValue = @sec-typedarraygetelement(#"obj", $𝔽(upper))
-    perform ! @sec-typedarraysetelement(#"obj", $𝔽(lower), upperValue)
-    perform ! @sec-typedarraysetelement(#"obj", $𝔽(upper), lowerValue)
+    let upper = len - lower - 1
+    let upperP = ! @sec-tostring($𝔽(upper))
+    let lowerP = ! @sec-tostring($𝔽(lower))
+    let lowerValue = ! @sec-get-o-p(O, lowerP)
+    let upperValue = ! @sec-get-o-p(O, upperP)
+    perform ! @sec-set-o-p-v-throw(O, lowerP, upperValue, true)
+    perform ! @sec-set-o-p-v-throw(O, upperP, lowerValue, true)
     set var lower = lower + 1
   }
-  return #"obj"
+  return O
 }
 
 def @sec-%typedarray%.prototype.set "%TypedArray%.prototype.set" (kind builtin params [source, offset opt]) vars [#"this value", NewTarget, source, offset, target, targetOffset] {
   let target = this_value
+  note "The following steps could be simplified by using ? ValidateTypedArray(_target_, ~seq-cst~, ~write~) and refactoring SetTypedArrayFromTypedArray and SetTypedArrayFromArrayLike to accept the result as input, but that would observably change the calls into user code and thrown error when IsTypedArrayOutOfBounds returns *true* and _offset_ is negative. Regardless, such a change is still worth pursuing if possible."
   perform ? @sec-requireinternalslot(target, [[TypedArrayName]])
   assert target sat $HasSlot([[ViewedArrayBuffer]])
+  if @sec-isimmutablebuffer(target[[ViewedArrayBuffer]]) is val {true} -> throw @ph-new-error([[TypeError]])
   let targetOffset = ? @sec-tointegerorinfinity(offset)
   if targetOffset < 0 -> throw @ph-new-error([[RangeError]])
   if source is ty {Object that sat $HasSlot([[TypedArrayName]])} {
@@ -1622,33 +1646,41 @@ def @sec-settypedarrayfromtypedarray "SetTypedArrayFromTypedArray" (kind ao para
   return ~unused~
 }
 
-def @sec-%typedarray%.prototype.slice "%TypedArray%.prototype.slice" (kind builtin params [start, end]) vars [#"this value", NewTarget, start, end, #"obj", taRecord, sourceArrayLength, startIndex, endIndex, countBytes, resultArray, sourceType, targetType, sourceBuffer, targetBuffer, elementSize, sourceByteOffset, sourceByteIndex, targetByteIndex, endByteIndex, value, n, k, kValue] {
-  let #"obj" = this_value
-  let taRecord = ? @sec-validatetypedarray(#"obj", ~seq-cst~)
-  let sourceArrayLength = @sec-typedarraylength(taRecord)
-  let startIndex = ? @sec-toclampedindex(start, sourceArrayLength)
-  if_else end is val {undefined} { let endIndex = sourceArrayLength } else { let endIndex = ? @sec-toclampedindex(end, sourceArrayLength) }
+def @sec-%typedarray%.prototype.slice "%TypedArray%.prototype.slice" (kind builtin params [start, end]) vars [#"this value", NewTarget, start, end, O, taRecord, srcArrayLength, relativeStart, startIndex, relativeEnd, endIndex, countBytes, A, srcType, targetType, srcBuffer, targetBuffer, elementSize, srcByteOffset, srcByteIndex, targetByteIndex, endByteIndex, value, n, k, Pk, kValue] {
+  let O = this_value
+  let taRecord = ? @sec-validatetypedarray(O, ~seq-cst~)
+  let srcArrayLength = @sec-typedarraylength(taRecord)
+  let relativeStart = ? @sec-tointegerorinfinity(start)
+  if relativeStart == math(-∞) -> let startIndex = 0
+  else_if relativeStart < 0 -> let startIndex = $max(srcArrayLength + relativeStart, 0)
+  else -> let startIndex = $min(relativeStart, srcArrayLength)
+  if_else end is val {undefined} { let relativeEnd = srcArrayLength } else { let relativeEnd = ? @sec-tointegerorinfinity(end) }
+  if relativeEnd == math(-∞) -> let endIndex = 0
+  else_if relativeEnd < 0 -> let endIndex = $max(srcArrayLength + relativeEnd, 0)
+  else -> let endIndex = $min(relativeEnd, srcArrayLength)
   let countBytes = $max(endIndex - startIndex, 0)
-  let resultArray = ? @typedarray-species-create(#"obj", [$𝔽(countBytes)])
+  let A = ? @typedarray-species-create(O, [$𝔽(countBytes)], ~write~)
+  assert @sec-isimmutablebuffer(A[[ViewedArrayBuffer]]) is val {false}
   if countBytes > 0 {
-    set var taRecord = ? @sec-validatetypedarraybounds(#"obj", ~seq-cst~)
+    set var taRecord = @sec-maketypedarraywithbufferwitnessrecord(O, ~seq-cst~)
+    if @sec-istypedarrayoutofbounds(taRecord) is val {true} -> throw @ph-new-error([[TypeError]])
     set var endIndex = $min(endIndex, @sec-typedarraylength(taRecord))
     set var countBytes = $max(endIndex - startIndex, 0)
-    let sourceType = @sec-typedarrayelementtype(#"obj")
-    let targetType = @sec-typedarrayelementtype(resultArray)
-    if sourceType is val {targetType} {
+    let srcType = @sec-typedarrayelementtype(O)
+    let targetType = @sec-typedarrayelementtype(A)
+    if srcType is val {targetType} {
       note "The transfer must be performed in a manner that preserves the bit-level encoding of the source data."
-      let sourceBuffer = #"obj"[[ViewedArrayBuffer]]
-      let targetBuffer = resultArray[[ViewedArrayBuffer]]
-      let elementSize = @sec-typedarrayelementsize(#"obj")
-      let sourceByteOffset = #"obj"[[ByteOffset]]
-      let sourceByteIndex = (startIndex * elementSize) + sourceByteOffset
-      let targetByteIndex = resultArray[[ByteOffset]]
+      let srcBuffer = O[[ViewedArrayBuffer]]
+      let targetBuffer = A[[ViewedArrayBuffer]]
+      let elementSize = @sec-typedarrayelementsize(O)
+      let srcByteOffset = O[[ByteOffset]]
+      let srcByteIndex = (startIndex * elementSize) + srcByteOffset
+      let targetByteIndex = A[[ByteOffset]]
       let endByteIndex = targetByteIndex + (countBytes * elementSize)
       repeat_while targetByteIndex < endByteIndex {
-        let value = @sec-getvaluefrombuffer(sourceBuffer, sourceByteIndex, ~uint8~, true, ~unordered~)
+        let value = @sec-getvaluefrombuffer(srcBuffer, srcByteIndex, ~uint8~, true, ~unordered~)
         perform @sec-setvalueinbuffer(targetBuffer, targetByteIndex, ~uint8~, value, true, ~unordered~)
-        set var sourceByteIndex = sourceByteIndex + 1
+        set var srcByteIndex = srcByteIndex + 1
         set var targetByteIndex = targetByteIndex + 1
       }
     }
@@ -1656,14 +1688,15 @@ def @sec-%typedarray%.prototype.slice "%TypedArray%.prototype.slice" (kind built
       let n = 0
       let k = startIndex
       repeat_while k < endIndex {
-        let kValue = @sec-typedarraygetelement(#"obj", $𝔽(k))
-        perform ! @sec-typedarraysetelement(resultArray, $𝔽(n), kValue)
+        let Pk = ! @sec-tostring($𝔽(k))
+        let kValue = ! @sec-get-o-p(O, Pk)
+        perform ! @sec-set-o-p-v-throw(A, ! @sec-tostring($𝔽(n)), kValue, true)
         set var k = k + 1
         set var n = n + 1
       }
     }
   }
-  return resultArray
+  return A
 }
 
 def @sec-%typedarray%.prototype.some "%TypedArray%.prototype.some" (kind builtin params [callback, thisArg opt]) vars [#"this value", NewTarget, callback, thisArg, #"obj", taRecord, length, k, kValue, testResult] {
@@ -1681,17 +1714,17 @@ def @sec-%typedarray%.prototype.some "%TypedArray%.prototype.some" (kind builtin
   return false
 }
 
-def @sec-%typedarray%.prototype.sort "%TypedArray%.prototype.sort" (kind builtin params [comparator]) vars [#"this value", NewTarget, comparator, #"obj", taRecord, length, sortCompare, x, y, sortedList, j] {
+def @sec-%typedarray%.prototype.sort "%TypedArray%.prototype.sort" (kind builtin params [comparator]) vars [#"this value", NewTarget, comparator, #"obj", taRecord, len, SortCompare, x, y, sortedList, j] {
   if comparator is not val {undefined} and @sec-iscallable(comparator) is val {false} -> throw @ph-new-error([[TypeError]])
   let #"obj" = this_value
-  let taRecord = ? @sec-validatetypedarray(#"obj", ~seq-cst~)
-  let length = @sec-typedarraylength(taRecord)
+  let taRecord = ? @sec-validatetypedarray(#"obj", ~seq-cst~, ~write~)
+  let len = @sec-typedarraylength(taRecord)
   note "The following closure performs a numeric comparison rather than the string comparison used in <emu-xref href=\"#sec-array.prototype.sort\"></emu-xref>."
-  let sortCompare = closure 0
-  let sortedList = ? @sec-sortindexedproperties(#"obj", length, sortCompare, ~read-through-holes~)
+  let SortCompare = closure 0
+  let sortedList = ? @sec-sortindexedproperties(#"obj", len, SortCompare, ~read-through-holes~)
   let j = 0
-  repeat_while j < length {
-    perform ! @sec-typedarraysetelement(#"obj", $𝔽(j), sortedList[j])
+  repeat_while j < len {
+    perform ! @sec-set-o-p-v-throw(#"obj", ! @sec-tostring($𝔽(j)), sortedList[j], true)
     set var j = j + 1
   }
   return #"obj"
@@ -1801,9 +1834,10 @@ def @sec-get-%typedarray%.prototype-%symbol.tostringtag% "get %TypedArray%.proto
   return name
 }
 
-def @sec-typedarraycreatefromconstructor "TypedArrayCreateFromConstructor" (kind ao params [ctor : constructor, argList : list<#"ECMAScript language value">] -> completion<TypedArray> | #"throw completion") vars [ctor, argList, ta, taRecord, length] {
+def @sec-typedarraycreatefromconstructor "TypedArrayCreateFromConstructor" (kind ao params [ctor : constructor, argList : list<#"ECMAScript language value">, accessMode : val(~read~) | val(~write~) opt] -> completion<TypedArray> | #"throw completion") vars [ctor, argList, accessMode, ta, taRecord, length] {
+  if accessMode fails $Present() -> set var accessMode = ~read~
   let ta = ? @sec-construct(ctor, argList)
-  let taRecord = ? @sec-validatetypedarray(ta, ~seq-cst~)
+  let taRecord = ? @sec-validatetypedarray(ta, ~seq-cst~, accessMode)
   assert ta sat $HasSlots([[[ViewedArrayBuffer]], [[TypedArrayName]], [[ContentType]], [[ByteLength]], [[ByteOffset]], [[ArrayLength]]])
   if $ListLen(?argList) is val {1} and argList[0] is ty {Number} {
     if @sec-istypedarrayoutofbounds(taRecord) is val {true} -> throw @ph-new-error([[TypeError]])
@@ -1821,18 +1855,23 @@ def @sec-typedarray-create-same-type "TypedArrayCreateSameType" (kind ao params 
   return result
 }
 
-def @typedarray-species-create "TypedArraySpeciesCreate" (kind ao params [exemplar : TypedArray, argList : list<#"ECMAScript language value">] -> completion<TypedArray> | #"throw completion") vars [exemplar, argList, defaultCtor, ctor, result] {
+def @typedarray-species-create "TypedArraySpeciesCreate" (kind ao params [exemplar : TypedArray, argList : list<#"ECMAScript language value">, accessMode : val(~read~) | val(~write~) opt] -> completion<TypedArray> | #"throw completion") vars [exemplar, argList, accessMode, defaultCtor, ctor, result] {
+  if accessMode fails $Present() -> set var accessMode = ~read~
   let defaultCtor = @ph-intrinsic-assoc(exemplar[[TypedArrayName]], table t"table-the-typedarray-constructors")
   let ctor = ? @sec-speciesconstructor(exemplar, defaultCtor)
-  let result = ? @sec-typedarraycreatefromconstructor(ctor, argList)
+  let result = ? @sec-typedarraycreatefromconstructor(ctor, argList, accessMode)
   if result[[ContentType]] is not val {exemplar[[ContentType]]} -> throw @ph-new-error([[TypeError]])
   return result
 }
 
-def @sec-validatetypedarray "ValidateTypedArray" (kind ao params [#"obj" : #"ECMAScript language value", #"order" : val(~seq-cst~) | val(~unordered~)] -> completion<#"TypedArray With Buffer Witness Record"> | #"throw completion") vars [#"obj", #"order"] {
-  perform ? @sec-requireinternalslot(#"obj", [[TypedArrayName]])
-  assert #"obj" sat $HasSlot([[ViewedArrayBuffer]])
-  return ? @sec-validatetypedarraybounds(#"obj", #"order")
+def @sec-validatetypedarray "ValidateTypedArray" (kind ao params [O : #"ECMAScript language value", #"order" : val(~seq-cst~) | val(~unordered~), accessMode : val(~read~) | val(~write~) opt] -> completion<#"TypedArray With Buffer Witness Record"> | #"throw completion") vars [O, #"order", accessMode, taRecord] {
+  if accessMode fails $Present() -> set var accessMode = ~read~
+  perform ? @sec-requireinternalslot(O, [[TypedArrayName]])
+  assert O sat $HasSlot([[ViewedArrayBuffer]])
+  if accessMode is val {~write~} and @sec-isimmutablebuffer(O[[ViewedArrayBuffer]]) is val {true} -> throw @ph-new-error([[TypeError]])
+  let taRecord = @sec-maketypedarraywithbufferwitnessrecord(O, #"order")
+  if @sec-istypedarrayoutofbounds(taRecord) is val {true} -> throw @ph-new-error([[TypeError]])
+  return taRecord
 }
 
 def @sec-validatetypedarraybounds "ValidateTypedArrayBounds" (kind ao params [ta : TypedArray, #"order" : val(~seq-cst~) | val(~unordered~)] -> completion<#"TypedArray With Buffer Witness Record"> | #"throw completion") vars [ta, #"order", taRecord] {
@@ -2022,18 +2061,19 @@ def @sec-uint8array.fromhex "Uint8Array.fromHex" (kind builtin params [string]) 
   return ta
 }
 
-def @sec-uint8array.prototype.setfrombase64 "Uint8Array.prototype.setFromBase64" (kind builtin params [string, options opt]) vars [#"this value", NewTarget, string, options, into, optionsObj, alphabet, lastChunkHandling, taRecord, byteLength, result, bytes, written, resultObj] {
+def @sec-uint8array.prototype.setfrombase64 "Uint8Array.prototype.setFromBase64" (kind builtin params [string, options opt]) vars [#"this value", NewTarget, string, options, into, opts, alphabet, lastChunkHandling, taRecord, byteLength, result, bytes, written, resultObject] {
   let into = this_value
-  perform ? @sec-validateuint8array(into)
+  perform ? @sec-validateuint8array(into, ~write~)
   if string is not ty {String} -> throw @ph-new-error([[TypeError]])
-  let optionsObj = ? @sec-getoptionsobject(options)
-  let alphabet = ? @sec-get-o-p(optionsObj, "alphabet")
+  let opts = ? @sec-getoptionsobject(options)
+  let alphabet = ? @sec-get-o-p(opts, "alphabet")
   if alphabet is val {undefined} -> set var alphabet = "base64"
   if alphabet is neither val {"base64"; "base64url"} -> throw @ph-new-error([[TypeError]])
-  let lastChunkHandling = ? @sec-get-o-p(optionsObj, "lastChunkHandling")
+  let lastChunkHandling = ? @sec-get-o-p(opts, "lastChunkHandling")
   if lastChunkHandling is val {undefined} -> set var lastChunkHandling = "loose"
   if lastChunkHandling is not val {"loose"; "strict"; "stop-before-partial"} -> throw @ph-new-error([[TypeError]])
-  let taRecord = ? @sec-validatetypedarraybounds(into, ~seq-cst~)
+  let taRecord = @sec-maketypedarraywithbufferwitnessrecord(into, ~seq-cst~)
+  if @sec-istypedarrayoutofbounds(taRecord) is val {true} -> throw @ph-new-error([[TypeError]])
   let byteLength = @sec-typedarraylength(taRecord)
   let result = @sec-frombase64(string, alphabet, lastChunkHandling, byteLength)
   let bytes = result[[Bytes]]
@@ -2042,19 +2082,20 @@ def @sec-uint8array.prototype.setfrombase64 "Uint8Array.prototype.setFromBase64"
   assert written <= byteLength
   perform @sec-setuint8arraybytes(into, bytes)
   if result[[Error]] is not val {~none~} {
-    throw result[[Error]]
+    return @sec-throwcompletion(result[[Error]])
   }
-  let resultObj = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
-  perform ! @sec-createdatapropertyorthrow(resultObj, "read", $𝔽(result[[Read]]))
-  perform ! @sec-createdatapropertyorthrow(resultObj, "written", $𝔽(written))
-  return resultObj
+  let resultObject = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  perform ! @sec-createdatapropertyorthrow(resultObject, "read", $𝔽(result[[Read]]))
+  perform ! @sec-createdatapropertyorthrow(resultObject, "written", $𝔽(written))
+  return resultObject
 }
 
-def @sec-uint8array.prototype.setfromhex "Uint8Array.prototype.setFromHex" (kind builtin params [string]) vars [#"this value", NewTarget, string, into, taRecord, byteLength, result, bytes, written, resultObj] {
+def @sec-uint8array.prototype.setfromhex "Uint8Array.prototype.setFromHex" (kind builtin params [string]) vars [#"this value", NewTarget, string, into, taRecord, byteLength, result, bytes, written, resultObject] {
   let into = this_value
-  perform ? @sec-validateuint8array(into)
+  perform ? @sec-validateuint8array(into, ~write~)
   if string is not ty {String} -> throw @ph-new-error([[TypeError]])
-  let taRecord = ? @sec-validatetypedarraybounds(into, ~seq-cst~)
+  let taRecord = @sec-maketypedarraywithbufferwitnessrecord(into, ~seq-cst~)
+  if @sec-istypedarrayoutofbounds(taRecord) is val {true} -> throw @ph-new-error([[TypeError]])
   let byteLength = @sec-typedarraylength(taRecord)
   let result = @sec-fromhex(string, byteLength)
   let bytes = result[[Bytes]]
@@ -2063,12 +2104,12 @@ def @sec-uint8array.prototype.setfromhex "Uint8Array.prototype.setFromHex" (kind
   assert written <= byteLength
   perform @sec-setuint8arraybytes(into, bytes)
   if result[[Error]] is not val {~none~} {
-    throw result[[Error]]
+    return @sec-throwcompletion(result[[Error]])
   }
-  let resultObj = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
-  perform ! @sec-createdatapropertyorthrow(resultObj, "read", $𝔽(result[[Read]]))
-  perform ! @sec-createdatapropertyorthrow(resultObj, "written", $𝔽(written))
-  return resultObj
+  let resultObject = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  perform ! @sec-createdatapropertyorthrow(resultObject, "read", $𝔽(result[[Read]]))
+  perform ! @sec-createdatapropertyorthrow(resultObject, "written", $𝔽(written))
+  return resultObject
 }
 
 def @sec-uint8array.prototype.tobase64 "Uint8Array.prototype.toBase64" (kind builtin params [options opt]) vars [#"this value", NewTarget, options, #"obj", optionsObj, alphabet, omitPadding, toEncode, outAscii] {
@@ -2103,9 +2144,12 @@ def @sec-uint8array.prototype.tohex "Uint8Array.prototype.toHex" (kind builtin p
   return out
 }
 
-def @sec-validateuint8array "ValidateUint8Array" (kind ao params [ta : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [ta] {
+def @sec-validateuint8array "ValidateUint8Array" (kind ao params [ta : #"ECMAScript language value", accessMode : val(~read~) | val(~write~) opt] -> completion<val(~unused~)> | #"throw completion") vars [ta, accessMode] {
+  if accessMode fails $Present() -> set var accessMode = ~read~
   perform ? @sec-requireinternalslot(ta, [[TypedArrayName]])
   if ta[[TypedArrayName]] is not val {"Uint8Array"} -> throw @ph-new-error([[TypeError]])
+  assert ta sat $HasSlot([[ViewedArrayBuffer]])
+  if accessMode is val {~write~} and @sec-isimmutablebuffer(ta[[ViewedArrayBuffer]]) is val {true} -> throw @ph-new-error([[TypeError]])
   return ~unused~
 }
 

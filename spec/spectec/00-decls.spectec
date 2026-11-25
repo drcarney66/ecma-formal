@@ -488,6 +488,7 @@ clause @sec-algorithm-conventions-abstract-operations
 clause @sec-algorithm-conventions-syntax-directed-operations
 clause @sec-allcharacters op "AllCharacters"
 clause @sec-allocatearraybuffer op "AllocateArrayBuffer"
+clause @sec-allocateimmutablearraybuffer op "AllocateImmutableArrayBuffer"
 clause @sec-allocatesharedarraybuffer op "AllocateSharedArrayBuffer"
 clause @sec-allocatetypedarray op "AllocateTypedArray"
 clause @sec-allocatetypedarraybuffer op "AllocateTypedArrayBuffer"
@@ -563,8 +564,10 @@ clause @sec-arraybuffer.prototype-%symbol.tostringtag%
 clause @sec-arraybuffer.prototype.constructor
 clause @sec-arraybuffer.prototype.resize op "ArrayBuffer.prototype.resize"
 clause @sec-arraybuffer.prototype.slice op "ArrayBuffer.prototype.slice"
+clause @sec-arraybuffer.prototype.slicetoimmutable op "ArrayBuffer.prototype.sliceToImmutable"
 clause @sec-arraybuffer.prototype.transfer op "ArrayBuffer.prototype.transfer"
 clause @sec-arraybuffer.prototype.transfertofixedlength op "ArrayBuffer.prototype.transferToFixedLength"
+clause @sec-arraybuffer.prototype.transfertoimmutable op "ArrayBuffer.prototype.transferToImmutable"
 clause @sec-arraybufferbytelength op "ArrayBufferByteLength"
 clause @sec-arraybuffercopyanddetach op "ArrayBufferCopyAndDetach"
 clause @sec-arraycreate op "ArrayCreate"
@@ -1184,6 +1187,7 @@ clause @sec-get-array-%symbol.species% op "get Array [ %Symbol.species% ]"
 clause @sec-get-arraybuffer-%symbol.species% op "get ArrayBuffer [ %Symbol.species% ]"
 clause @sec-get-arraybuffer.prototype.bytelength op "get ArrayBuffer.prototype.byteLength"
 clause @sec-get-arraybuffer.prototype.detached op "get ArrayBuffer.prototype.detached"
+clause @sec-get-arraybuffer.prototype.immutable op "get ArrayBuffer.prototype.immutable"
 clause @sec-get-arraybuffer.prototype.maxbytelength op "get ArrayBuffer.prototype.maxByteLength"
 clause @sec-get-arraybuffer.prototype.resizable op "get ArrayBuffer.prototype.resizable"
 clause @sec-get-asyncdisposablestack.prototype.disposed op "get AsyncDisposableStack.prototype.disposed"
@@ -1375,6 +1379,7 @@ clause @sec-isfinite-number op "isFinite"
 clause @sec-isfixedlengtharraybuffer op "IsFixedLengthArrayBuffer"
 clause @sec-isgenericdescriptor op "IsGenericDescriptor"
 clause @sec-isgrowablesharedarraybuffer op "IsGrowableSharedArrayBuffer"
+clause @sec-isimmutablebuffer op "IsImmutableBuffer"
 clause @sec-isintailposition op "IsInTailPosition"
 clause @sec-islabelledfunction op "IsLabelledFunction"
 clause @sec-isleapyear op "IsLeapYear"
@@ -3112,6 +3117,7 @@ field [[ArrayBufferByteLength]]
 field [[ArrayBufferByteLengthData]]
 field [[ArrayBufferData]]
 field [[ArrayBufferDetachKey]]
+field [[ArrayBufferIsImmutable]]
 field [[ArrayBufferMaxByteLength]]
 field [[ArrayIteratorPrototype]]
 field [[ArrayLength]]
@@ -3581,6 +3587,7 @@ enum ~get-own-property~
 enum ~get-prototype-of~
 enum ~global~
 enum ~handled~
+enum ~immutable~
 enum ~indirect-eval~
 enum ~init~
 enum ~initialized~
@@ -3622,6 +3629,7 @@ enum ~preserve-resizability~
 enum ~property~
 enum ~property-key~
 enum ~raw~
+enum ~read~
 enum ~read-modify-write~
 enum ~read-through-holes~
 enum ~reject~
@@ -3660,6 +3668,7 @@ enum ~unused~
 enum ~value~
 enum ~var-binding~
 enum ~web-compat~
+enum ~write~
 enum ~yield~
 
 method CreateImmutableBinding

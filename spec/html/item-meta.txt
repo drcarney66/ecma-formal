@@ -75,6 +75,7 @@ alg @sec-agentsignifier base=8 close=6
 alg @sec-aggregate-error base=12 close=10
 alg @sec-allcharacters base=12 close=10
 alg @sec-allocatearraybuffer base=10 close=8
+alg @sec-allocateimmutablearraybuffer base=10 close=8
 alg @sec-allocatesharedarraybuffer base=10 close=8
 alg @sec-allocatetypedarray base=12 close=10
 alg @sec-allocatetypedarraybuffer base=12 close=10
@@ -133,8 +134,10 @@ alg @sec-arraybuffer-length base=10 close=8
 alg @sec-arraybuffer.isview base=10 close=8
 alg @sec-arraybuffer.prototype.resize base=10 close=8
 alg @sec-arraybuffer.prototype.slice base=10 close=8
+alg @sec-arraybuffer.prototype.slicetoimmutable base=10 close=8
 alg @sec-arraybuffer.prototype.transfer base=10 close=8
 alg @sec-arraybuffer.prototype.transfertofixedlength base=10 close=8
+alg @sec-arraybuffer.prototype.transfertoimmutable base=10 close=8
 alg @sec-arraybufferbytelength base=10 close=8
 alg @sec-arraybuffercopyanddetach base=10 close=8
 alg @sec-arraycreate base=10 close=8
@@ -425,6 +428,7 @@ alg @sec-get-array-%symbol.species% base=10 close=8
 alg @sec-get-arraybuffer-%symbol.species% base=10 close=8
 alg @sec-get-arraybuffer.prototype.bytelength base=10 close=8
 alg @sec-get-arraybuffer.prototype.detached base=10 close=8
+alg @sec-get-arraybuffer.prototype.immutable base=10 close=8
 alg @sec-get-arraybuffer.prototype.maxbytelength base=10 close=8
 alg @sec-get-arraybuffer.prototype.resizable base=10 close=8
 alg @sec-get-asyncdisposablestack.prototype.disposed base=10 close=8
@@ -558,6 +562,7 @@ alg @sec-isfinite-number base=8 close=6
 alg @sec-isfixedlengtharraybuffer base=10 close=8
 alg @sec-isgenericdescriptor base=10 close=8
 alg @sec-isgrowablesharedarraybuffer base=10 close=8
+alg @sec-isimmutablebuffer base=10 close=8
 alg @sec-isintailposition base=8 close=6
 alg @sec-islabelledfunction base=8 close=6
 alg @sec-isleapyear base=10 close=8

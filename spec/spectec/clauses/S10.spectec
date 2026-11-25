@@ -1042,16 +1042,18 @@ def @sec-typedarray-preventextensions "[[PreventExtensions]]" (kind internal_met
   return @sec-ordinarypreventextensions(#"obj")
 }
 
-def @sec-typedarray-getownproperty "[[GetOwnProperty]].3" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key"] -> completion<#"Property Descriptor" | val(undefined)>) vars [#"obj", propertyKey, numericIndex, value] {
-  if propertyKey is ty {String} {
-    let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+def @sec-typedarray-getownproperty "[[GetOwnProperty]].3" (kind internal_method recv O : TypedArray params [P : #"property key"] -> completion<#"Property Descriptor" | val(undefined)>) vars [O, P, numericIndex, value, mutable] {
+  if P is ty {String} {
+    let numericIndex = @sec-canonicalnumericindexstring(P)
     if numericIndex is not val {undefined} {
-      let value = @sec-typedarraygetelement(#"obj", numericIndex)
+      let value = @sec-typedarraygetelement(O, numericIndex)
       if value is val {undefined} -> return undefined
-      return record PropertyDescriptor { [[Value]]: value, [[Writable]]: true, [[Enumerable]]: true, [[Configurable]]: true }
+      let mutable = true
+      if @sec-isimmutablebuffer(O[[ViewedArrayBuffer]]) is val {true} -> set var mutable = false
+      return record PropertyDescriptor { [[Value]]: value, [[Writable]]: mutable, [[Enumerable]]: true, [[Configurable]]: mutable }
     }
   }
-  return @sec-ordinarygetownproperty(#"obj", propertyKey)
+  return @sec-ordinarygetownproperty(O, P)
 }
 
 def @sec-typedarray-hasproperty "[[HasProperty]]" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, numericIndex] {
@@ -1062,20 +1064,26 @@ def @sec-typedarray-hasproperty "[[HasProperty]]" (kind internal_method recv #"o
   return ? @sec-ordinaryhasproperty(#"obj", propertyKey)
 }
 
-def @sec-typedarray-defineownproperty "[[DefineOwnProperty]].4" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, propertyDesc, numericIndex] {
-  if propertyKey is ty {String} {
-    let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+def @sec-typedarray-defineownproperty "[[DefineOwnProperty]].4" (kind internal_method recv O : TypedArray params [P : #"property key", Desc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [O, P, Desc, numericIndex, current] {
+  if P is ty {String} {
+    let numericIndex = @sec-canonicalnumericindexstring(P)
     if numericIndex is not val {undefined} {
-      if @sec-isvalidintegerindex(#"obj", numericIndex) is val {false} -> return false
-      if propertyDesc sat $HasField([[Configurable]]) and propertyDesc[[Configurable]] is val {false} -> return false
-      if propertyDesc sat $HasField([[Enumerable]]) and propertyDesc[[Enumerable]] is val {false} -> return false
-      if @sec-isaccessordescriptor(propertyDesc) is val {true} -> return false
-      if propertyDesc sat $HasField([[Writable]]) and propertyDesc[[Writable]] is val {false} -> return false
-      if propertyDesc sat $HasField([[Value]]) -> perform ? @sec-typedarraysetelement(#"obj", numericIndex, propertyDesc[[Value]])
+      if @sec-isvalidintegerindex(O, numericIndex) is val {false} -> return false
+      if @sec-isimmutablebuffer(O[[ViewedArrayBuffer]]) is val {true} {
+        let current = ! O[[GetOwnProperty]](P)
+        assert expr @ph-both-are(current[[Configurable]], current[[Writable]], false)
+        note "Attempting to redefine an immutable value always fails, even if the new value would be cast to the current value."
+        return @sec-validateandapplypropertydescriptor(O, P, false, Desc, current)
+      }
+      if Desc sat $HasField([[Configurable]]) and Desc[[Configurable]] is val {false} -> return false
+      if Desc sat $HasField([[Enumerable]]) and Desc[[Enumerable]] is val {false} -> return false
+      if @sec-isaccessordescriptor(Desc) is val {true} -> return false
+      if Desc sat $HasField([[Writable]]) and Desc[[Writable]] is val {false} -> return false
+      if Desc sat $HasField([[Value]]) -> perform ? @sec-typedarraysetelement(O, numericIndex, Desc[[Value]])
       return true
     }
   }
-  return ! @sec-ordinarydefineownproperty(#"obj", propertyKey, propertyDesc)
+  return ! @sec-ordinarydefineownproperty(O, P, Desc)
 }
 
 def @sec-typedarray-get "[[Get]].2" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key", receiver : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", propertyKey, receiver, numericIndex] {
@@ -1088,18 +1096,20 @@ def @sec-typedarray-get "[[Get]].2" (kind internal_method recv #"obj" : TypedArr
   return ? @sec-ordinaryget(#"obj", propertyKey, receiver)
 }
 
-def @sec-typedarray-set "[[Set]].2" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key", value : #"ECMAScript language value", receiver : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, value, receiver, numericIndex] {
-  if propertyKey is ty {String} {
-    let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+def @sec-typedarray-set "[[Set]].2" (kind internal_method recv O : TypedArray params [P : #"property key", V : #"ECMAScript language value", Receiver : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [O, P, V, Receiver, numericIndex] {
+  if P is ty {String} {
+    let numericIndex = @sec-canonicalnumericindexstring(P)
     if numericIndex is not val {undefined} {
-      if @sec-samevalue(#"obj", receiver) is val {true} {
-        perform ? @sec-typedarraysetelement(#"obj", numericIndex, value)
+      note "TypedArray instances restrict own and inherited canonical numeric string properties to integer indices valid for their backing buffers, but assignment failures for canonical numeric string properties are only reported when the buffer is immutable."
+      if @sec-isimmutablebuffer(O[[ViewedArrayBuffer]]) is val {true} -> return false
+      if @sec-samevalue(O, Receiver) is val {true} {
+        perform ? @sec-typedarraysetelement(O, numericIndex, V)
         return true
       }
-      if @sec-isvalidintegerindex(#"obj", numericIndex) is val {false} -> return true
+      if @sec-isvalidintegerindex(O, numericIndex) is val {false} -> return true
     }
   }
-  return ? @sec-ordinaryset(#"obj", propertyKey, value, receiver)
+  return ? @sec-ordinaryset(O, P, V, Receiver)
 }
 
 def @sec-typedarray-delete "[[Delete]].2" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key"] -> completion<Boolean>) vars [#"obj", propertyKey, numericIndex] {
@@ -1230,6 +1240,7 @@ def @sec-typedarraygetelement "TypedArrayGetElement" (kind ao params [#"obj" : T
 }
 
 def @sec-typedarraysetelement "TypedArraySetElement" (kind ao params [#"obj" : TypedArray, index : Number, value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", index, value, number, offset, elementSize, byteIndexInBuffer, elementType] {
+  assert @sec-isimmutablebuffer(#"obj"[[ViewedArrayBuffer]]) is val {false}
   if #"obj"[[ContentType]] is val {~bigint~} -> let number = ? @sec-tobigint(value)
   else -> let number = ? @sec-tonumber(value)
   if @sec-isvalidintegerindex(#"obj", index) is val {true} {

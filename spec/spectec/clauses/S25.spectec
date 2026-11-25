@@ -1,11 +1,14 @@
 -- ECMA-262 SpecTec Clauses: S25
 
-def @sec-allocatearraybuffer "AllocateArrayBuffer" (kind ao params [ctor : constructor, byteLength : sort [#"non-negative"] integer, maxByteLength : sort [#"non-negative"] integer | val(~empty~) opt] -> completion<ArrayBuffer> | #"throw completion") vars [ctor, byteLength, maxByteLength, #"slots", allocatingResizableBuffer, #"obj", #"block"] {
+def @sec-allocatearraybuffer "AllocateArrayBuffer" (kind ao params [ctor : constructor, byteLength : sort [#"non-negative"] integer, maxByteLength : sort [#"non-negative"] integer | val(~empty~) | val(~immutable~) opt] -> completion<ArrayBuffer> | #"throw completion") vars [ctor, byteLength, maxByteLength, #"slots", allocatingResizableBuffer, #"obj", #"block"] {
   let #"slots" = [[[ArrayBufferData]], [[ArrayBufferByteLength]], [[ArrayBufferDetachKey]]]
-  if_else maxByteLength sat $Present() and maxByteLength is not val {~empty~} { let allocatingResizableBuffer = true } else { let allocatingResizableBuffer = false }
+  if_else maxByteLength sat $Present() and maxByteLength is ty {integer} { let allocatingResizableBuffer = true } else { let allocatingResizableBuffer = false }
   if allocatingResizableBuffer is val {true} {
     if byteLength > maxByteLength -> throw @ph-new-error([[RangeError]])
     perform $Append([[ArrayBufferMaxByteLength]], ?#"slots")
+  }
+  else_if maxByteLength is val {~immutable~} {
+    perform $Append([[ArrayBufferIsImmutable]], ?#"slots")
   }
   let #"obj" = ? @sec-ordinarycreatefromconstructor(ctor, "%ArrayBuffer.prototype%", #"slots")
   let #"block" = ? @sec-createbytedatablock(byteLength)
@@ -32,7 +35,7 @@ def @sec-arraybufferbytelength "ArrayBufferByteLength" (kind ao params [arrayBuf
   return arrayBuffer[[ArrayBufferByteLength]]
 }
 
-def @sec-arraybuffercopyanddetach "ArrayBufferCopyAndDetach" (kind ao params [arrayBuffer : #"ECMAScript language value", newLength : #"ECMAScript language value", preserveResizability : val(~preserve-resizability~) | val(~fixed-length~)] -> completion<ArrayBuffer> | #"throw completion") vars [arrayBuffer, newLength, preserveResizability, newByteLength, newMaxByteLength, newBuffer, copyLength, fromBlock, toBlock] {
+def @sec-arraybuffercopyanddetach "ArrayBufferCopyAndDetach" (kind ao params [arrayBuffer : #"ECMAScript language value", newLength : #"ECMAScript language value", preserveResizability : val(~preserve-resizability~) | val(~fixed-length~) | val(~immutable~)] -> completion<ArrayBuffer> | #"throw completion") vars [arrayBuffer, newLength, preserveResizability, newByteLength, copyLength, newBuffer, newMaxByteLength, fromBlock, toBlock] {
   perform ? @sec-requireinternalslot(arrayBuffer, [[ArrayBufferData]])
   if @sec-issharedarraybuffer(arrayBuffer) is val {true} -> throw @ph-new-error([[TypeError]])
   if newLength is val {undefined} {
@@ -42,19 +45,25 @@ def @sec-arraybuffercopyanddetach "ArrayBufferCopyAndDetach" (kind ao params [ar
     let newByteLength = ? @sec-toindex(newLength)
   }
   if @sec-isdetachedbuffer(arrayBuffer) is val {true} -> throw @ph-new-error([[TypeError]])
-  if preserveResizability is val {~preserve-resizability~} and @sec-isfixedlengtharraybuffer(arrayBuffer) is val {false} {
-    let newMaxByteLength = arrayBuffer[[ArrayBufferMaxByteLength]]
+  if @sec-isimmutablebuffer(arrayBuffer) is val {true} -> throw @ph-new-error([[TypeError]])
+  if arrayBuffer[[ArrayBufferDetachKey]] is not val {~empty~} -> throw @ph-new-error([[TypeError]])
+  let copyLength = $min(newByteLength, arrayBuffer[[ArrayBufferByteLength]])
+  if preserveResizability is val {~immutable~} {
+    let newBuffer = ? @sec-allocateimmutablearraybuffer(intrinsic [[ArrayBuffer]], newByteLength, arrayBuffer[[ArrayBufferData]], 0, copyLength)
   }
   else {
-    let newMaxByteLength = ~empty~
+    if preserveResizability is val {~preserve-resizability~} and @sec-isfixedlengtharraybuffer(arrayBuffer) is val {false} {
+      let newMaxByteLength = arrayBuffer[[ArrayBufferMaxByteLength]]
+    }
+    else {
+      let newMaxByteLength = ~empty~
+    }
+    let newBuffer = ? @sec-allocatearraybuffer(intrinsic [[ArrayBuffer]], newByteLength, newMaxByteLength)
+    let fromBlock = arrayBuffer[[ArrayBufferData]]
+    let toBlock = newBuffer[[ArrayBufferData]]
+    perform @sec-copydatablockbytes(toBlock, 0, fromBlock, 0, copyLength)
+    note "Neither creation of the new Data Block nor copying from the old Data Block are observable. Implementations may implement this method as a zero-copy move or a `realloc`."
   }
-  if arrayBuffer[[ArrayBufferDetachKey]] is not val {~empty~} -> throw @ph-new-error([[TypeError]])
-  let newBuffer = ? @sec-allocatearraybuffer(intrinsic [[ArrayBuffer]], newByteLength, newMaxByteLength)
-  let copyLength = $min(newByteLength, arrayBuffer[[ArrayBufferByteLength]])
-  let fromBlock = arrayBuffer[[ArrayBufferData]]
-  let toBlock = newBuffer[[ArrayBufferData]]
-  perform @sec-copydatablockbytes(toBlock, 0, fromBlock, 0, copyLength)
-  note "Neither creation of the new Data Block nor copying from the old Data Block are observable. Implementations may implement this method as a zero-copy move or a `realloc`."
   perform ! @sec-detacharraybuffer(arrayBuffer)
   return newBuffer
 }
@@ -66,6 +75,7 @@ def @sec-isdetachedbuffer "IsDetachedBuffer" (kind ao params [arrayBuffer : Arra
 
 def @sec-detacharraybuffer "DetachArrayBuffer" (kind ao params [arrayBuffer : ArrayBuffer, key : #"ECMAScript language value" opt] -> completion<val(~unused~)> | #"throw completion") vars [arrayBuffer, key, expectedKey] {
   assert @sec-issharedarraybuffer(arrayBuffer) is val {false}
+  if @sec-isimmutablebuffer(arrayBuffer) is val {true} -> throw @ph-new-error([[TypeError]])
   let expectedKey = arrayBuffer[[ArrayBufferDetachKey]]
   if key sat $Present() {
     if expectedKey is val {~empty~} or @sec-samevalue(key, expectedKey) is val {false} -> throw @ph-new-error([[TypeError]])
@@ -215,6 +225,7 @@ def @sec-numerictorawbytes "NumericToRawBytes" (kind ao params [type : #"TypedAr
 
 def @sec-setvalueinbuffer "SetValueInBuffer" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer, byteIndex : sort [#"non-negative"] integer, type : #"TypedArray element type", value : Number | BigInt, isTypedArray : Boolean, #"order" : val(~seq-cst~) | val(~unordered~) | val(~init~), isLittleEndian : Boolean opt] -> val(~unused~)) vars [arrayBuffer, byteIndex, type, value, isTypedArray, #"order", isLittleEndian, #"block", elementSize, agentRecord, rawBytes, execution, eventsRecord, noTear] {
   assert @sec-isdetachedbuffer(arrayBuffer) is val {false}
+  assert @sec-isimmutablebuffer(arrayBuffer) is val {false}
   assert expr @ph-sufficient-bytes(?arrayBuffer, ?byteIndex, ?type)
   if @sec-isbigintelementtype(type) is val {true} {
     assert value is ty {BigInt}
@@ -243,6 +254,7 @@ def @sec-setvalueinbuffer "SetValueInBuffer" (kind ao params [arrayBuffer : Arra
 
 def @sec-getmodifysetvalueinbuffer "GetModifySetValueInBuffer" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer, byteIndex : sort [#"non-negative"] integer, type : #"TypedArray element type", value : Number | BigInt, #"op" : #"read-modify-write modification function"] -> Number | BigInt) vars [arrayBuffer, byteIndex, type, value, #"op", #"block", elementSize, agentRecord, isLittleEndian, rawBytes, execution, eventsRecord, rawBytesRead, rmwEvent, rawBytesModified] {
   assert @sec-isdetachedbuffer(arrayBuffer) is val {false}
+  assert @sec-isimmutablebuffer(arrayBuffer) is val {false}
   assert expr @ph-sufficient-bytes(?arrayBuffer, ?byteIndex, ?type)
   if @sec-isbigintelementtype(type) is val {true} {
     assert value is ty {BigInt}
@@ -333,50 +345,52 @@ def @sec-get-arraybuffer.prototype.resizable "get ArrayBuffer.prototype.resizabl
   return false
 }
 
-def @sec-arraybuffer.prototype.resize "ArrayBuffer.prototype.resize" (kind builtin params [newLength]) vars [#"this value", NewTarget, newLength, #"obj", newByteLength, hostHandled, oldBlock, newBlock, copyLength] {
-  let #"obj" = this_value
-  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferMaxByteLength]])
-  if @sec-issharedarraybuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+def @sec-arraybuffer.prototype.resize "ArrayBuffer.prototype.resize" (kind builtin params [newLength]) vars [#"this value", NewTarget, newLength, O, newByteLength, hostHandled, oldBlock, newBlock, copyLength] {
+  let O = this_value
+  perform ? @sec-requireinternalslot(O, [[ArrayBufferMaxByteLength]])
+  if @sec-issharedarraybuffer(O) is val {true} -> throw @ph-new-error([[TypeError]])
   let newByteLength = ? @sec-toindex(newLength)
-  if @sec-isdetachedbuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
-  if newByteLength > #"obj"[[ArrayBufferMaxByteLength]] -> throw @ph-new-error([[RangeError]])
-  let hostHandled = ? @sec-hostresizearraybuffer(#"obj", newByteLength)
+  if @sec-isdetachedbuffer(O) is val {true} -> throw @ph-new-error([[TypeError]])
+  assert @sec-isimmutablebuffer(O) is val {false}
+  if newByteLength > O[[ArrayBufferMaxByteLength]] -> throw @ph-new-error([[RangeError]])
+  let hostHandled = ? @sec-hostresizearraybuffer(O, newByteLength)
   if hostHandled is val {~handled~} -> return undefined
-  let oldBlock = #"obj"[[ArrayBufferData]]
+  let oldBlock = O[[ArrayBufferData]]
   let newBlock = ? @sec-createbytedatablock(newByteLength)
-  let copyLength = $min(newByteLength, #"obj"[[ArrayBufferByteLength]])
+  let copyLength = $min(newByteLength, O[[ArrayBufferByteLength]])
   perform @sec-copydatablockbytes(newBlock, 0, oldBlock, 0, copyLength)
   note "Neither creation of the new Data Block nor copying from the old Data Block are observable. Implementations may implement this method as in-place growth or shrinkage."
-  set field #"obj"[[ArrayBufferData]] = newBlock
-  set field #"obj"[[ArrayBufferByteLength]] = newByteLength
+  set field O[[ArrayBufferData]] = newBlock
+  set field O[[ArrayBufferByteLength]] = newByteLength
   return undefined
 }
 
-def @sec-arraybuffer.prototype.slice "ArrayBuffer.prototype.slice" (kind builtin params [start, end]) vars [#"this value", NewTarget, start, end, #"obj", length, first, final, newLength, ctor, #"new", fromBlock, toBlock, currentLength, maxCount, count] {
-  let #"obj" = this_value
-  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
-  if @sec-issharedarraybuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
-  if @sec-isdetachedbuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
-  let length = #"obj"[[ArrayBufferByteLength]]
-  let first = ? @sec-toclampedindex(start, length)
-  if_else end is val {undefined} { let final = length } else { let final = ? @sec-toclampedindex(end, length) }
-  let newLength = $max(final - first, 0)
-  let ctor = ? @sec-speciesconstructor(#"obj", intrinsic [[ArrayBuffer]])
-  let #"new" = ? @sec-construct(ctor, [$𝔽(newLength)])
+def @sec-arraybuffer.prototype.slice "ArrayBuffer.prototype.slice" (kind builtin params [start, end]) vars [#"this value", NewTarget, start, end, O, len, first, final, newLen, ctor, #"new", fromBuf, toBuf, currentLen, maxCount, count] {
+  let O = this_value
+  perform ? @sec-requireinternalslot(O, [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(O) is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-isdetachedbuffer(O) is val {true} -> throw @ph-new-error([[TypeError]])
+  let len = O[[ArrayBufferByteLength]]
+  let first = ? @sec-toclampedindex(start, len)
+  if_else end is val {undefined} { let final = len } else { let final = ? @sec-toclampedindex(end, len) }
+  let newLen = $max(final - first, 0)
+  let ctor = ? @sec-speciesconstructor(O, intrinsic [[ArrayBuffer]])
+  let #"new" = ? @sec-construct(ctor, [$𝔽(newLen)])
   perform ? @sec-requireinternalslot(#"new", [[ArrayBufferData]])
   if @sec-issharedarraybuffer(#"new") is val {true} -> throw @ph-new-error([[TypeError]])
   if @sec-isdetachedbuffer(#"new") is val {true} -> throw @ph-new-error([[TypeError]])
-  if @sec-samevalue(#"new", #"obj") is val {true} -> throw @ph-new-error([[TypeError]])
-  if #"new"[[ArrayBufferByteLength]] < newLength -> throw @ph-new-error([[TypeError]])
-  note "Side-effects of the above steps may have detached or resized _obj_."
-  if @sec-isdetachedbuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
-  let fromBlock = #"obj"[[ArrayBufferData]]
-  let toBlock = #"new"[[ArrayBufferData]]
-  let currentLength = #"obj"[[ArrayBufferByteLength]]
-  let maxCount = currentLength - first
+  if @sec-isimmutablebuffer(#"new") is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-samevalue(#"new", O) is val {true} -> throw @ph-new-error([[TypeError]])
+  if #"new"[[ArrayBufferByteLength]] < newLen -> throw @ph-new-error([[TypeError]])
+  note "Side-effects of the above steps may have detached or resized _O_."
+  if @sec-isdetachedbuffer(O) is val {true} -> throw @ph-new-error([[TypeError]])
+  let fromBuf = O[[ArrayBufferData]]
+  let toBuf = #"new"[[ArrayBufferData]]
+  let currentLen = O[[ArrayBufferByteLength]]
+  let maxCount = currentLen - first
   if maxCount > 0 {
-    let count = $min(newLength, maxCount)
-    perform @sec-copydatablockbytes(toBlock, 0, fromBlock, first, count)
+    let count = $min(newLen, maxCount)
+    perform @sec-copydatablockbytes(toBuf, 0, fromBuf, first, count)
   }
   return #"new"
 }
@@ -579,6 +593,7 @@ def @sec-getviewvalue "GetViewValue" (kind ao params [view : #"ECMAScript langua
 def @sec-setviewvalue "SetViewValue" (kind ao params [view : #"ECMAScript language value", requestIndex : #"ECMAScript language value", isLittleEndian : #"ECMAScript language value", type : #"TypedArray element type", value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [view, requestIndex, isLittleEndian, type, value, getIndex, number, viewOffset, viewRecord, viewSize, elementSize, bufferIndex] {
   perform ? @sec-requireinternalslot(view, [[DataView]])
   assert view sat $HasSlot([[ViewedArrayBuffer]])
+  if @sec-isimmutablebuffer(view[[ViewedArrayBuffer]]) is val {true} -> throw @ph-new-error([[TypeError]])
   let getIndex = ? @sec-toindex(requestIndex)
   if @sec-isbigintelementtype(type) is val {true} -> let number = ? @sec-tobigint(value)
   else -> let number = ? @sec-tonumber(value)
@@ -791,12 +806,17 @@ def @sec-dataview.prototype.setuint32 "DataView.prototype.setUint32" (kind built
   return undefined
 }
 
-def @sec-validateintegertypedarray "ValidateIntegerTypedArray" (kind ao params [ta : #"ECMAScript language value", waitable : Boolean] -> completion<#"TypedArray With Buffer Witness Record"> | #"throw completion") vars [ta, waitable, taRecord, elementType] {
-  note "Bounds checking is not a synchronizing operation when _ta_'s backing buffer is a growable SharedArrayBuffer."
-  let taRecord = ? @sec-validatetypedarray(ta, ~unordered~)
-  let elementType = @sec-typedarrayelementtype(ta)
-  if @sec-isnotearconfiguration(elementType, ~seq-cst~) is val {false} -> throw @ph-new-error([[TypeError]])
-  if waitable is val {true} and elementType is neither val {~int32~; ~bigint64~} -> throw @ph-new-error([[TypeError]])
+def @sec-validateintegertypedarray "ValidateIntegerTypedArray" (kind ao params [typedArray : #"ECMAScript language value", waitable : Boolean, accessMode : val(~read~) | val(~write~) opt] -> completion<#"TypedArray With Buffer Witness Record"> | #"throw completion") vars [typedArray, waitable, accessMode, taRecord, type] {
+  if accessMode fails $Present() -> set var accessMode = ~read~
+  let taRecord = ? @sec-validatetypedarray(typedArray, ~unordered~, accessMode)
+  note "Bounds checking is not a synchronizing operation when _typedArray_'s backing buffer is a growable SharedArrayBuffer."
+  if waitable is val {true} {
+    if typedArray[[TypedArrayName]] is neither val {"Int32Array"; "BigInt64Array"} -> throw @ph-new-error([[TypeError]])
+  }
+  else {
+    let type = @sec-typedarrayelementtype(typedArray)
+    if @sec-isunclampedintegerelementtype(type) is val {false} and @sec-isbigintelementtype(type) is val {false} -> throw @ph-new-error([[TypeError]])
+  }
   return taRecord
 }
 
@@ -811,8 +831,10 @@ def @sec-validateatomicaccess "ValidateAtomicAccess" (kind ao params [taRecord :
   return (accessIndex * elementSize) + offset
 }
 
-def @sec-validateatomicaccessonintegertypedarray "ValidateAtomicAccessOnIntegerTypedArray" (kind ao params [ta : #"ECMAScript language value", requestIndex : #"ECMAScript language value"] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [ta, requestIndex, taRecord] {
-  let taRecord = ? @sec-validateintegertypedarray(ta, false)
+def @sec-validateatomicaccessonintegertypedarray "ValidateAtomicAccessOnIntegerTypedArray" (kind ao params [typedArray : #"ECMAScript language value", requestIndex : #"ECMAScript language value", waitable : Boolean opt, accessMode : val(~read~) | val(~write~) opt] -> completion<integer> | #"throw completion") vars [typedArray, requestIndex, waitable, accessMode, taRecord] {
+  if waitable fails $Present() -> set var waitable = false
+  if accessMode fails $Present() -> set var accessMode = ~read~
+  let taRecord = ? @sec-validateintegertypedarray(typedArray, waitable, accessMode)
   return ? @sec-validateatomicaccess(taRecord, requestIndex)
 }
 
@@ -1038,7 +1060,7 @@ def @sec-atomiccompareexchangeinsharedblock "AtomicCompareExchangeInSharedBlock"
 }
 
 def @sec-atomicreadmodifywrite "AtomicReadModifyWrite" (kind ao params [ta : #"ECMAScript language value", index : #"ECMAScript language value", value : #"ECMAScript language value", #"op" : #"read-modify-write modification function"] -> completion<Number | BigInt> | #"throw completion") vars [ta, index, value, #"op", byteIndexInBuffer, coerced, buffer, elementType] {
-  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index)
+  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index, false, ~write~)
   if ta[[ContentType]] is val {~bigint~} -> let coerced = ? @sec-tobigint(value)
   else -> let coerced = $𝔽(? @sec-tointegerorinfinity(value))
   perform ? @sec-revalidateatomicaccess(ta, byteIndexInBuffer)
@@ -1111,7 +1133,7 @@ def @sec-atomics.and "Atomics.and" (kind builtin params [ta, index, value]) vars
 }
 
 def @sec-atomics.compareexchange "Atomics.compareExchange" (kind builtin params [ta, index, expectedValue, replacementValue]) vars [#"this value", NewTarget, ta, index, expectedValue, replacementValue, byteIndexInBuffer, buffer, #"block", expected, replacement, elementType, elementSize, agentRecord, isLittleEndian, expectedBytes, replacementBytes, rawBytesRead] {
-  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index)
+  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index, false, ~write~)
   let buffer = ta[[ViewedArrayBuffer]]
   let #"block" = buffer[[ArrayBufferData]]
   if ta[[ContentType]] is val {~bigint~} {
@@ -1205,7 +1227,7 @@ def @sec-atomics.pause "Atomics.pause" (kind builtin params []) vars [#"this val
 }
 
 def @sec-atomics.store "Atomics.store" (kind builtin params [ta, index, value]) vars [#"this value", NewTarget, ta, index, value, byteIndexInBuffer, coerced, buffer, elementType] {
-  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index)
+  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index, false, ~write~)
   if ta[[ContentType]] is val {~bigint~} -> let coerced = ? @sec-tobigint(value)
   else -> let coerced = $𝔽(? @sec-tointegerorinfinity(value))
   perform ? @sec-revalidateatomicaccess(ta, byteIndexInBuffer)
@@ -1676,6 +1698,51 @@ def @sec-serializejsonarray "SerializeJSONArray" (kind ao params [state : #"JSON
   perform $RemoveLast(state[[Stack]])
   set field state[[Indent]] = stepBack
   return final
+}
+
+def @sec-allocateimmutablearraybuffer "AllocateImmutableArrayBuffer" (kind ao params [constructor : constructor, byteLength : sort [#"non-negative"] integer, fromBlock : #"Data Block", fromIndex : sort [#"non-negative"] integer, count : sort [#"non-negative"] integer] -> completion<ArrayBuffer> | #"throw completion") vars [constructor, byteLength, fromBlock, fromIndex, count, newBuffer, toBlock] {
+  assert constructor is val {intrinsic [[ArrayBuffer]]}
+  assert count <= byteLength
+  let newBuffer = ? @sec-allocatearraybuffer(constructor, byteLength, ~immutable~)
+  let toBlock = newBuffer[[ArrayBufferData]]
+  note "This is the only step that can write into the Data Block of an immutable ArrayBuffer."
+  perform @sec-copydatablockbytes(toBlock, 0, fromBlock, fromIndex, count)
+  return newBuffer
+}
+
+def @sec-isimmutablebuffer "IsImmutableBuffer" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer] -> Boolean) vars [arrayBuffer] {
+  if arrayBuffer sat $HasSlot([[ArrayBufferIsImmutable]]) -> return true
+  return false
+}
+
+def @sec-get-arraybuffer.prototype.immutable "get ArrayBuffer.prototype.immutable" (kind builtin params []) vars [#"this value", NewTarget, O] {
+  let O = this_value
+  perform ? @sec-requireinternalslot(O, [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(O) is val {true} -> throw @ph-new-error([[TypeError]])
+  return @sec-isimmutablebuffer(O)
+}
+
+def @sec-arraybuffer.prototype.slicetoimmutable "ArrayBuffer.prototype.sliceToImmutable" (kind builtin params [start, end]) vars [#"this value", NewTarget, start, end, O, len, first, final, newLen, fromBuf, currentLen, newBuffer] {
+  let O = this_value
+  perform ? @sec-requireinternalslot(O, [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(O) is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-isdetachedbuffer(O) is val {true} -> throw @ph-new-error([[TypeError]])
+  let len = O[[ArrayBufferByteLength]]
+  let first = ? @sec-toclampedindex(start, len)
+  if_else end is val {undefined} { let final = len } else { let final = ? @sec-toclampedindex(end, len) }
+  let newLen = $max(final - first, 0)
+  note "Side-effects of the above steps may have detached or resized _O_."
+  if @sec-isdetachedbuffer(O) is val {true} -> throw @ph-new-error([[TypeError]])
+  let fromBuf = O[[ArrayBufferData]]
+  let currentLen = O[[ArrayBufferByteLength]]
+  if currentLen < final -> throw @ph-new-error([[RangeError]])
+  let newBuffer = ? @sec-allocateimmutablearraybuffer(intrinsic [[ArrayBuffer]], newLen, fromBuf, first, newLen)
+  return newBuffer
+}
+
+def @sec-arraybuffer.prototype.transfertoimmutable "ArrayBuffer.prototype.transferToImmutable" (kind builtin params [newLength opt]) vars [#"this value", NewTarget, newLength, O] {
+  let O = this_value
+  return ? @sec-arraybuffercopyanddetach(O, newLength, ~immutable~)
 }
 
 sdo_row @sec-static-semantics-jsonarrayliteralcontentnodes JSONArrayLiteralContentNodes form alg {

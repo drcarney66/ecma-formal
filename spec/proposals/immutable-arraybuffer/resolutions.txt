@@ -1,0 +1,75 @@
+# Merge resolutions for tc39/proposal-immutable-arraybuffer onto ECMA-262.
+
+# Missing type="built-in function" attributes on the 3 new ArrayBuffer.prototype properties.
+attr sec-get-arraybuffer.prototype.immutable type "built-in function"
+attr sec-arraybuffer.prototype.slicetoimmutable type "built-in function"
+attr sec-arraybuffer.prototype.transfertoimmutable type "built-in function"
+
+# Context prose / abbreviated headers where ECMA-262 is newer.
+ignore sec-%typedarray%.prototype.sort 1
+ignore sec-properties-of-the-arraybuffer-instances 3
+ignore sec-validateintegertypedarray 1
+ignore sec-detacharraybuffer 0
+ignore sec-setviewvalue 0
+
+# TypedArray & Atomics clauses using older variable names (_O_, _P_, _Desc_, _C_, _len_, _typedArray_).
+use-new sec-typedarray-getownproperty 0
+use-new sec-typedarray-getownproperty 1
+use-new sec-typedarray-getownproperty 2
+use-new sec-typedarray-defineownproperty 0
+use-new sec-typedarray-defineownproperty 1
+use-new sec-typedarray-defineownproperty 2
+use-new sec-typedarray-set 0
+use-new sec-typedarray-set 1
+use-new sec-typedarray-set 2
+ignore sec-typedarraysetelement 0
+patch sec-typedarraysetelement 2 "1. If _obj_.[[ContentType]] is ~bigint~" ==> "1. Assert: IsImmutableBuffer(_obj_.[[ViewedArrayBuffer]]) is *false*.\n          1. If _obj_.[[ContentType]] is ~bigint~"
+use-new sec-%typedarray%.from 2
+use-new sec-%typedarray%.of 2
+use-new sec-%typedarray%.prototype.copywithin 3
+patch sec-%typedarray%.prototype.fill 3 "ValidateTypedArray(_obj_, ~seq-cst~)" ==> "ValidateTypedArray(_obj_, ~seq-cst~, ~write~)"
+use-new sec-%typedarray%.prototype.filter 3
+use-new sec-%typedarray%.prototype.map 3
+use-new sec-%typedarray%.prototype.reverse 3
+use-new sec-%typedarray%.prototype.slice 3
+use-new sec-%typedarray%.prototype.sort 4
+use-new sec-validatetypedarray 0
+use-new sec-validatetypedarray 2
+use-new sec-uint8array.prototype.setfrombase64 1
+use-new sec-uint8array.prototype.setfromhex 1
+use-new sec-arraybuffer.prototype.resize 2
+use-new sec-arraybuffer.prototype.slice 2
+use-new sec-validateintegertypedarray 0
+use-new sec-validateintegertypedarray 2
+use-new sec-validateatomicaccessonintegertypedarray 0
+use-new sec-validateatomicaccessonintegertypedarray 2
+ignore sec-atomicreadmodifywrite 0
+patch sec-atomicreadmodifywrite 2 "ValidateAtomicAccessOnIntegerTypedArray(_ta_, _index_)" ==> "ValidateAtomicAccessOnIntegerTypedArray(_ta_, _index_, *false*, ~write~)"
+ignore sec-atomics.compareexchange 0
+patch sec-atomics.compareexchange 2 "ValidateAtomicAccessOnIntegerTypedArray(_ta_, _index_)" ==> "ValidateAtomicAccessOnIntegerTypedArray(_ta_, _index_, *false*, ~write~)"
+ignore sec-atomics.store 0
+patch sec-atomics.store 2 "ValidateAtomicAccessOnIntegerTypedArray(_ta_, _index_)" ==> "ValidateAtomicAccessOnIntegerTypedArray(_ta_, _index_, *false*, ~write~)"
+
+# Patch base ECMA-262 where base has newer ~empty~ [[ArrayBufferDetachKey]], ~unused~ return types, or anchored readings.
+patch typedarray-species-create 0 "_argList_: a List of ECMAScript language values," ==> "_argList_: a List of ECMAScript language values,\n            optional _accessMode_: ~read~ or ~write~,"
+patch typedarray-species-create 2 "1. Let _defaultCtor_ be" ==> "1. If _accessMode_ is not present, set _accessMode_ to ~read~.\n          1. Let _defaultCtor_ be"
+patch typedarray-species-create 2 "TypedArrayCreateFromConstructor(_ctor_, _argList_)" ==> "TypedArrayCreateFromConstructor(_ctor_, _argList_, _accessMode_)"
+
+patch sec-typedarraycreatefromconstructor 0 "_argList_: a List of ECMAScript language values," ==> "_argList_: a List of ECMAScript language values,\n            optional _accessMode_: ~read~ or ~write~,"
+patch sec-typedarraycreatefromconstructor 2 "1. Let _ta_ be ? Construct(_ctor_, _argList_)." ==> "1. If _accessMode_ is not present, set _accessMode_ to ~read~.\n          1. Let _ta_ be ? Construct(_ctor_, _argList_)."
+patch sec-typedarraycreatefromconstructor 2 "ValidateTypedArray(_ta_, ~seq-cst~)" ==> "ValidateTypedArray(_ta_, ~seq-cst~, _accessMode_)"
+
+patch sec-allocatearraybuffer 0 "optional _maxByteLength_: a non-negative integer or ~empty~," ==> "optional _maxByteLength_: a non-negative integer, ~empty~, or ~immutable~,"
+patch sec-allocatearraybuffer 3 "_maxByteLength_ is not ~empty~" ==> "_maxByteLength_ is an integer"
+patch sec-allocatearraybuffer 3 "1. Append [[ArrayBufferMaxByteLength]] to _slots_." ==> "1. Append [[ArrayBufferMaxByteLength]] to _slots_.\n          1. Else if _maxByteLength_ is ~immutable~, then\n            1. Append [[ArrayBufferIsImmutable]] to _slots_."
+
+patch sec-arraybuffercopyanddetach 0 "_preserveResizability_: ~preserve-resizability~ or ~fixed-length~," ==> "_preserveResizability_: ~preserve-resizability~, ~fixed-length~, or ~immutable~,"
+patch sec-arraybuffercopyanddetach 3 "1. If _preserveResizability_ is ~preserve-resizability~ and IsFixedLengthArrayBuffer(_arrayBuffer_) is *false*, then\n            1. Let _newMaxByteLength_ be _arrayBuffer_.[[ArrayBufferMaxByteLength]].\n          1. Else,\n            1. Let _newMaxByteLength_ be ~empty~.\n          1. If _arrayBuffer_.[[ArrayBufferDetachKey]] is not ~empty~, throw a *TypeError* exception.\n          1. Let _newBuffer_ be ? <emu-meta suppress-effects=\"user-code\">AllocateArrayBuffer(%ArrayBuffer%, _newByteLength_, _newMaxByteLength_)</emu-meta>.\n          1. Let _copyLength_ be min(_newByteLength_, _arrayBuffer_.[[ArrayBufferByteLength]]).\n          1. Let _fromBlock_ be _arrayBuffer_.[[ArrayBufferData]].\n          1. Let _toBlock_ be _newBuffer_.[[ArrayBufferData]].\n          1. Perform CopyDataBlockBytes(_toBlock_, 0, _fromBlock_, 0, _copyLength_).\n          1. NOTE: Neither creation of the new Data Block nor copying from the old Data Block are observable. Implementations may implement this method as a zero-copy move or a `realloc`." ==> "1. If IsImmutableBuffer(_arrayBuffer_) is *true*, throw a *TypeError* exception.\n          1. If _arrayBuffer_.[[ArrayBufferDetachKey]] is not ~empty~, throw a *TypeError* exception.\n          1. Let _copyLength_ be min(_newByteLength_, _arrayBuffer_.[[ArrayBufferByteLength]]).\n          1. If _preserveResizability_ is ~immutable~, then\n            1. Let _newBuffer_ be ? <emu-meta suppress-effects=\"user-code\">AllocateImmutableArrayBuffer(%ArrayBuffer%, _newByteLength_, _arrayBuffer_.[[ArrayBufferData]], 0, _copyLength_)</emu-meta>.\n          1. Else,\n            1. If _preserveResizability_ is ~preserve-resizability~ and IsFixedLengthArrayBuffer(_arrayBuffer_) is *false*, then\n              1. Let _newMaxByteLength_ be _arrayBuffer_.[[ArrayBufferMaxByteLength]].\n            1. Else,\n              1. Let _newMaxByteLength_ be ~empty~.\n            1. Let _newBuffer_ be ? <emu-meta suppress-effects=\"user-code\">AllocateArrayBuffer(%ArrayBuffer%, _newByteLength_, _newMaxByteLength_)</emu-meta>.\n            1. Let _fromBlock_ be _arrayBuffer_.[[ArrayBufferData]].\n            1. Let _toBlock_ be _newBuffer_.[[ArrayBufferData]].\n            1. Perform CopyDataBlockBytes(_toBlock_, 0, _fromBlock_, 0, _copyLength_).\n            1. NOTE: Neither creation of the new Data Block nor copying from the old Data Block are observable. Implementations may implement this method as a zero-copy move or a `realloc`."
+
+patch sec-detacharraybuffer 2 "1. Assert: IsSharedArrayBuffer(_arrayBuffer_) is *false*." ==> "1. Assert: IsSharedArrayBuffer(_arrayBuffer_) is *false*.\n          1. If IsImmutableBuffer(_arrayBuffer_) is *true*, throw a *TypeError* exception."
+
+patch sec-setvalueinbuffer 2 "1. Assert: IsDetachedBuffer(_arrayBuffer_) is *false*." ==> "1. Assert: IsDetachedBuffer(_arrayBuffer_) is *false*.\n          1. Assert: IsImmutableBuffer(_arrayBuffer_) is *false*."
+
+patch sec-getmodifysetvalueinbuffer 2 "1. Assert: IsDetachedBuffer(_arrayBuffer_) is *false*." ==> "1. Assert: IsDetachedBuffer(_arrayBuffer_) is *false*.\n          1. Assert: IsImmutableBuffer(_arrayBuffer_) is *false*."
+
+patch sec-setviewvalue 2 "1. Assert: _view_ has a [[ViewedArrayBuffer]] internal slot." ==> "1. Assert: _view_ has a [[ViewedArrayBuffer]] internal slot.\n          1. If IsImmutableBuffer(_view_.[[ViewedArrayBuffer]]) is *true*, throw a *TypeError* exception."
