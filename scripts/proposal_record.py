@@ -12,8 +12,8 @@ way `site/errata.json` is, so that the site's build needs only that file and not
 Lean build (none of which a CI machine has). It records:
 
 - the proposal's repository and pinned commit, ECMA-262's pinned commit, the branch's commit and its merge base;
-- the branch's diff against the merge base, every file in one group (the pin, the answers, the readings, the list
-  files, the tests, hand-written Lean, the regenerated files and id tables, and what the site does not publish),
+- the branch's diff against the merge base, every file in one group (the pin, the answers, the SpecTec definitions,
+  list files, the tests, hand-written Lean, any regenerated modules, and what the site does not publish),
   with its lines from `git diff --numstat`; a file in no group stops the command;
 - the answers file, line by line, each with the README's reason and the question the merge asked;
 - the readings: each `emu-reading` the branch adds or changes, with its clause, its step, the proposal's sentence as
@@ -21,8 +21,7 @@ Lean build (none of which a CI machine has). It records:
   file, and the report's (`docs/spec-issues/{name}/README.md` on the branch) "why the generator could not read it unaided";
 - the errata of the proposal's text, with the overlay's notes (the page shows them among the readings, without
   their notes: the site does not present the proposal's errata);
-- the regenerated modules by directory, and each id table's new, retired and renamed lines (and whether any id's
-  number moved);
+- the regenerated modules by directory;
 - the merge tool (this tree's `scripts/apply_proposal.py`) run on the proposal with no answers, and with them,
   each output written to a temporary directory: the refusals and warnings, and what the merge did;
 - the results: the proposal's test262 feature from a runner's results file (`--test262`), and the axioms the
@@ -62,12 +61,11 @@ REGEN_LISTS = {"spec/formal/residue.txt", "spec/formal/asserts-open.txt", "spec/
 GROUPS = [
     ("pin", "The pin"),
     ("answers", "The merge's answers"),
-    ("readings", "Readings (the overlay)"),
+    ("readings", "SpecTec definitions & HTML metadata"),
     ("lists", "List files, by hand"),
     ("tests", "Tests"),
     ("lean-hand", "Hand-written Lean"),
     ("regenerated", "Regenerated: Lean modules"),
-    ("ids", "Regenerated: id tables"),
     ("lists-regen", "Regenerated: list files"),
     ("unpublished", "Not on the site: files under docs/, counted only"),
 ]
@@ -113,14 +111,12 @@ def group_of(path: str) -> str:
         return "pin"
     if path.startswith("spec/proposals/"):
         return "answers"
-    if path.startswith("spec/formal/") and path.endswith(".emu"):
+    if path.startswith("spec/spectec/") or path.startswith("spec/html/") or (path.startswith("spec/formal/") and path.endswith(".emu")):
         return "readings"
     if path in HAND_LISTS:
         return "lists"
     if path in REGEN_LISTS:
         return "lists-regen"
-    if path.startswith("spec/formal/") and path.endswith("-ids.txt"):
-        return "ids"
     if path.startswith("lean/"):
         return "regenerated" if "/Gen/" in path else "lean-hand"
     if path.startswith("tests/"):
@@ -344,25 +340,6 @@ def record(tree: Path, branch: str, base: str, t262: Path, t262_cmd: str | None,
                 if rem or add:
                     other.append({"file": f["path"], "removed": rem, "added": add})
 
-    # The id tables.
-    ids = []
-    for f in files:
-        if f["group"] != "ids":
-            continue
-        d = git("diff", "-U0", mb, head, "--", f["path"])
-        rem = {l[1:].split("\t")[0]: l[1:] for l in d.split("\n") if l.startswith("-") and not l.startswith("---") and "\t" in l}
-        add = {l[1:].split("\t")[0]: l[1:] for l in d.split("\n") if l.startswith("+") and not l.startswith("+++") and "\t" in l}
-        moved = sorted(set(rem) - set(add))
-        # A table of names alone (a name's number is its line): an added line is a new name; a removed one moves numbers.
-        plain_add = [l[1:] for l in d.split("\n") if l.startswith("+") and not l.startswith("+++") and "\t" not in l]
-        plain_rem = [l[1:] for l in d.split("\n") if l.startswith("-") and not l.startswith("---") and "\t" not in l]
-        moved += plain_rem
-        ids.append({"table": Path(f["path"]).name,
-                    "new": [v for k, v in add.items() if k not in rem] + plain_add,
-                    "retired": [v for k, v in add.items() if k in rem and v.endswith("\tretired")],
-                    "renamed": [v for k, v in add.items() if k in rem and not v.endswith("\tretired")],
-                    "moved": moved})
-
     # test262.
     rows: dict[str, str] = {}
     details: dict[str, str] = {}
@@ -401,7 +378,6 @@ def record(tree: Path, branch: str, base: str, t262: Path, t262_cmd: str | None,
                    for g, t in GROUPS],
         "answers": alist, "answers_file": answers,
         "readings": readings, "errata": errata, "other_overlay": other,
-        "ids": ids,
         "merge": {"no_answers": {"refusals": none["refusals"], "warnings": none["warnings"]},
                   "with_answers": {"changed": len(dict(ans["log"]).get("replaced", [])),
                                    "inserted": len(dict(ans["log"]).get("inserted", [])),
@@ -426,7 +402,7 @@ def record(tree: Path, branch: str, base: str, t262: Path, t262_cmd: str | None,
 # Reading the record
 
 
-NEED = ["format", "name", "proposal", "ecma262", "branch", "groups", "answers", "readings", "errata", "ids", "merge",
+NEED = ["format", "name", "proposal", "ecma262", "branch", "groups", "answers", "readings", "errata", "merge",
         "test262", "axioms"]
 
 
@@ -596,21 +572,20 @@ def page(rec: dict, gallery: dict | None, builds: list[dict]) -> dict:
                   f'<td class="num">+{sum(f["added"] for f in fs):,}</td><td class="num">−{sum(f["removed"] for f in fs):,}</td>'
                   f'<td>{", ".join(esc(Path(f["path"]).stem) + (" (new)" if f["new"] else "") for f in fs)}</td></tr>'
                   for d, fs in sorted(bydir.items()))
-    itr = "".join(f'<tr><td><code>{esc(i["table"])}</code></td><td class="num">{len(i["new"])}</td>'
-                  f'<td class="num">{len(i["retired"])}</td><td class="num">{len(i["renamed"])}</td></tr>' for i in rec["ids"])
-    moved = sum(len(i["moved"]) for i in rec["ids"])
-    body.append(
-        f'<h2 id="regenerated">What regenerating changed</h2><p>{len(regen)} generated modules, '
-        f'+{s["regen_added"]:,} −{s["regen_removed"]:,} lines, nobody edited:</p>'
+    regen_tbl = (
+        f'<p>{len(regen)} generated modules, +{s["regen_added"]:,} −{s["regen_removed"]:,} lines, nobody edited:</p>'
         f'<div class="tablebox"><table class="t262"><thead><tr><th>Directory</th><th class="num">Modules</th>'
         f'<th class="num">Added</th><th class="num">Removed</th><th>Modules</th></tr></thead><tbody>{rtr}</tbody></table></div>'
-        f'<p>The id tables only gained lines, retired lines, or gave a kept number a new name; '
-        f'{"no number moved" if not moved else f"{moved} numbers moved"}:</p>'
-        f'<div class="tablebox"><table class="t262"><thead><tr><th>Table</th><th class="num">New</th>'
-        f'<th class="num">Retired</th><th class="num">Renamed</th></tr></thead><tbody>{itr}</tbody></table></div>'
-        '<p>Because every number the generated data uses is kept (<a href="how-it-works.html#ids">How it works</a>), the '
-        'regenerated modules differ only where the proposal changes the text, and every proof that names an algorithm '
-        'by its number still names the same algorithm.</p>')
+        if regen else
+        '<p>Generated Lean modules (<code>lean/Ecma/Gen</code> and <code>lean/Ecma/Grammar/Gen</code>) are gitignored '
+        'and emitted directly from <code>spec/spectec/</code> by <code>scripts/generate.py</code>.</p>'
+    )
+    body.append(
+        f'<h2 id="regenerated">What regenerating changed</h2>{regen_tbl}'
+        '<p>Every identifier in SpecTec is symbolic (<a href="how-it-works.html#ids">How it works</a>); '
+        '<code>crates/spectec</code> derives sorted numeric indices and <code>Ecma.Known</code> constants automatically '
+        'when emitting Lean, so diffs stay confined to the changed SpecTec definitions and downstream proofs continue to '
+        'name the same declarations.</p>')
 
     # 5. What the merge found.
     kinds = Counter()

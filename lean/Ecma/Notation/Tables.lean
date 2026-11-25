@@ -117,7 +117,7 @@ structure Table where
   vars : Array String
   rows : List TableRow
 
-/-- The entry at a retired table id (`spec/ids/table-ids.txt`): a table with no rows, which
+/-- An empty placeholder table entry (`clause := 0`, `rows := []`), which
 `Src.clauseTables` excludes. -/
 def Table.retired : Table :=
   { clause := 0, idx := 0, kind := .data, thead := false, schema := none, vars := #[], rows := [] }

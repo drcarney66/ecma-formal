@@ -22,7 +22,7 @@
 <text class="dg-t" x="20" y="173">DECISIONS.md</text>
 <text class="dg-s" x="20" y="191">{{errata}} resolved</text>
 <text class="dg-s" x="20" y="207">errata &amp; choices</text>
-<text class="dg-s" x="20" y="223">sorted name maps</text>
+<text class="dg-s" x="20" y="223">no runtime switches</text>
 <path class="dg-a dg-dash" d="M144,192 L236,192" marker-end="url(#ah)"/>
 <rect class="dg-box lean" x="240" y="22" width="242" height="102" rx="5"/>
 <text class="dg-t" x="252" y="45">Structured SpecTec</text>
@@ -86,8 +86,8 @@
 <li><strong>SpecTec ↔ Lean (<code>spectec emit</code> &amp; <code>ecma-print</code>, <code>scripts/bijection.py</code>):</strong> <code>crates/spectec</code> compiles <code>spec/spectec/</code> into gitignored Lean modules, and the Lean printer <code>ecma-print</code> prints all {{spectec_struct_files}} structured <code>.spectec</code> files back from those compiled definitions byte for byte.</li>
 </ol>
 
-<h3 id="ids">Deterministic numeric IDs from sorted names</h3>
-<p>In SpecTec, everything is written by name (<code>@sec-iscallable</code>, <code>[[Call]]</code>, <code>~start+end~</code>, <code>|IdentifierName|</code>). When <code>crates/spectec</code> emits Lean code for the machine and proofs, it collects all declared and referenced names across each namespace in <code>spec/spectec/</code>, sorts them lexicographically (<code>0..N-1</code>), and generates symbolic constants in <code>Ecma.Known</code>. Because the Lean code references symbols rather than raw numbers, editing a clause or applying a proposal never requires maintaining ID tables or breaks downstream proofs.</p>
+<h3 id="ids">Symbolic names and sorted declarations</h3>
+<p>In SpecTec, everything is written by name (<code>@sec-iscallable</code>, <code>[[Call]]</code>, <code>~start+end~</code>, <code>|IdentifierName|</code>). When <code>crates/spectec</code> emits Lean code for the machine and proofs, it collects all declared and referenced names across each namespace in <code>spec/spectec/</code>, sorts them lexicographically (<code>0..N-1</code>), and generates symbolic constants in <code>Ecma.Known</code>. Because downstream Lean code references symbolic names rather than raw numbers, editing a clause or applying a proposal stays local to the changed SpecTec definitions.</p>
 
 <h2 id="prose">Prose concepts in SpecTec: <code>syntax</code>, <code>relation</code> and <code>laws</code></h2>
 

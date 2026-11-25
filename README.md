@@ -107,7 +107,7 @@ merge did. `--spec` still reads another.
 When `spectec emit` compiles `spec/spectec/` to Lean, every id namespace — clauses (`ClauseId`, an `AlgId`'s first
 component), SDOs, concrete methods, fields, enums, primitives, sorts, tables, productions (`ProdId`), nonterminals
 (`NtId`, `NT`'s constructor index), and parameters (`ParamId`) — is sorted alphabetically (`0..N-1`) and exposed as
-symbolic constants in `lean/Ecma/Gen/Known.lean`, keeping diffs localized without separate id tables.
+symbolic constants in `lean/Ecma/Gen/Known.lean`, keeping diffs localized to the changed declarations.
 
 ## The bijection
 
@@ -131,7 +131,7 @@ byte for byte via the name-keyed sidecar tables under `spec/html/` (`spectec-htm
 
 runs `tests/quick/*.js` on `ecma-run`, each within 5 s and 1 GiB, and compares its result and the steps it
 entered with `tests/quick/*.expected` (`--update` rewrites them), then checks that `lean/Ecma` is plain, that the
-generated id tables are alphabetically sorted and unique, that regenerating writes the data as it is and `spectec roundtrip` passes (with
+generated name arrays are alphabetically sorted and unique, that regenerating writes the data as it is and `spectec roundtrip` passes (with
 `target/release/spectec` built and current), the bijection (`scripts/bijection.py`: it fails if `ecma-print` is not built),
 the laws' quotations, and last runs the cases of `tests/run` that use the driver's options (a `// module:` or
 `// args:` header) against their own expectations. Run it after every change; with `--all-run-tests` it runs all of

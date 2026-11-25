@@ -7,7 +7,7 @@
   `flake.nix`, then the profile is made again (README.md).
 - Lean builds with Lake (`lake build`, `lake build <exe>`), Rust with Cargo.
 - Every `Gen/` directory under `lean/` is generated (`lean/Ecma/Gen` and `lean/Ecma/Grammar/Gen`:
-  `scripts/generate.py` via `crates/spectec` from `spec/spectec/` and `spec/ids/`; `lean/Unicode/Gen`:
+  `scripts/generate.py` via `crates/spectec` from `spec/spectec/`; `lean/Unicode/Gen`:
   `scripts/unicode_*.py`; `lean/Ecma/Unicode/Gen`: `scripts/ecma_unicode_properties.py`): regenerate
   (README.md), do not edit.
 - Four libraries: `Unicode`, `Ecma` (the specification, no concrete model), `Engine` (the one concrete

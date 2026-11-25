@@ -38,7 +38,7 @@ The grammars are split by colons and clause, as §5.1 has them: the **numeric st
 
 ## Production ids
 
-GL numbers the right-hand sides of all five grammars once (`ProdId`, a `Nat`; `Grammar.prods`, and `Gl::prods` in the crate): grammar by grammar (numeric string, lexical, syntactic, RegExp, Annex B), then by written production in each `Production` type's constructor order, then over the presences of its optional symbols. An alternative with `k` optional symbols "actually specifies" `2^k` right-hand sides (§5.1.6, spec.html:724), one id each, in mask order: absent before present, the first optional symbol the most significant. A `one of` terminal is one right-hand side. A right-hand side's id is not its place in this order but the number `spec/formal/prod-ids.txt` gives it (`Gen.prodIds`, `GL.ids`; `Grammar.prods` is by id): it keeps its number when the text adds or removes others, a new one takes the next number and a removed one's is not reused. `NtId` is `NT`'s constructor order, the numbers of `spec/formal/nt-ids.txt` (a retired nonterminal keeps its constructor, `retired_Name`). A Parse Node's production is its expanded id.
+GL numbers the right-hand sides of all grammars (`ProdId`, a `Nat`; `Grammar.prods`): grammar by grammar (numeric string, lexical, syntactic, RegExp, Annex B, JSON), then by written production in each `Production` type's constructor order, then over the presences of its optional symbols. An alternative with `k` optional symbols "actually specifies" `2^k` right-hand sides (§5.1.6, spec.html:724), one id each, in mask order: absent before present, the first optional symbol the most significant. A `one of` terminal is one right-hand side. A right-hand side's `ProdId` is its alphabetical index among all expanded right-hand side names (`Gen.prodIds`, `GL.ids`; `Grammar.prods` is by id), and `NtId` is `NT`'s constructor order (alphabetically sorted nonterminal names). A Parse Node's production is its expanded id.
 
 The ids are frozen as the index's `prod ID GRAMMAR MASK NAME` lines (`MASK` one `0`/`1` per optional symbol, `-` for none): the round trip compares Lean's numbering with them, and `//:jsgrammar_regen_test` the generator's. A renumbering is a reviewed diff of those lines.
 
@@ -115,7 +115,7 @@ Not run today: the report that also held the key blocks' resolutions, the citati
 
 ## Verbatim
 
-`scripts/jsgrammar.py --check-regen` regenerates into a temporary directory and compares with the checked-in files, byte for byte, and checks the docstrings: each definition of each spec.html block (its line at the block's indentation and the lines below it) must be a docstring's text exactly (with its character references, less its indentation, blank lines and formatter comments), each as often as spec.html has it, and the number of docstrings must be the number of definitions spec.html has; it also checks that the kept id tables (prod-, nt-, param-ids.txt) are what regenerating writes.
+`scripts/quick_check.py` regenerates into a temporary directory via `crates/spectec` (`01..07-grammar-*.spectec`), compares with the generated files byte for byte, and checks `spectec roundtrip`, `bijection.py`, and `html_bijection.py` against `spec.html`.
 
 ## Lints
 

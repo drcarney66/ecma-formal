@@ -65,7 +65,7 @@
   },
   {
    "id": "readings",
-   "title": "Readings (the overlay)",
+   "title": "SpecTec definitions & HTML metadata",
    "files": [
     {
      "path": "spec/formal/defer-import.emu",
@@ -319,68 +319,6 @@
      "added": 5,
      "removed": 2,
      "group": "regenerated",
-     "new": false
-    }
-   ]
-  },
-  {
-   "id": "ids",
-   "title": "Regenerated: id tables",
-   "files": [
-    {
-     "path": "spec/formal/clause-ids.txt",
-     "added": 14,
-     "removed": 3,
-     "group": "ids",
-     "new": false
-    },
-    {
-     "path": "spec/formal/enum-ids.txt",
-     "added": 3,
-     "removed": 0,
-     "group": "ids",
-     "new": false
-    },
-    {
-     "path": "spec/formal/erratum-ids.txt",
-     "added": 16,
-     "removed": 3,
-     "group": "ids",
-     "new": false
-    },
-    {
-     "path": "spec/formal/field-ids.txt",
-     "added": 3,
-     "removed": 0,
-     "group": "ids",
-     "new": false
-    },
-    {
-     "path": "spec/formal/nt-ids.txt",
-     "added": 1,
-     "removed": 0,
-     "group": "ids",
-     "new": false
-    },
-    {
-     "path": "spec/formal/prod-ids.txt",
-     "added": 12,
-     "removed": 4,
-     "group": "ids",
-     "new": false
-    },
-    {
-     "path": "spec/formal/sdo-ids.txt",
-     "added": 2,
-     "removed": 0,
-     "group": "ids",
-     "new": false
-    },
-    {
-     "path": "spec/formal/table-ids.txt",
-     "added": 5,
-     "removed": 0,
-     "group": "ids",
      "new": false
     }
    ]
@@ -978,132 +916,6 @@
     "<emu-permanent clause=\"sec-moduleevaluation\" step=\"1\" class=\"assert-provenance\">About the surrounding agent's other calls to Evaluate, which the state at the step does not record.</emu-permanent>"
    ],
    "added": []
-  }
- ],
- "ids": [
-  {
-   "table": "clause-ids.txt",
-   "new": [
-    "2932\tsec-IsSymbolLikeNamespaceKey",
-    "2933\tsec-GetModuleExportsList",
-    "2934\tsec-import-call-runtime-semantics-EvaluateImportCallSpecifier",
-    "2935\tsec-import-call-runtime-semantics-EvaluateImportCallOptions",
-    "2936\tsec-IsModuleSCCEvaluated",
-    "2937\tsec-ReadyForSyncExecution",
-    "2938\tsec-GatherAsynchronousTransitiveDependencies",
-    "2939\tsec-example-cyclic-module-record-graphs-deferred-imports",
-    "2940\tsec-create-promise-all-resolve-element",
-    "2941\tsec-safe-perform-promise-all",
-    "2942\trow-boundnames-import-defer"
-   ],
-   "retired": [
-    "2236\tsec-module-namespace-objects\tretired",
-    "2237\tsec-%symbol.tostringtag%\tretired"
-   ],
-   "renamed": [
-    "922\tsec-ModuleRequestsKeyEqual\twas sec-ModuleRequestsEqual"
-   ],
-   "moved": []
-  },
-  {
-   "table": "enum-ids.txt",
-   "new": [
-    "evaluation",
-    "deferred-namespace",
-    "defer"
-   ],
-   "retired": [],
-   "renamed": [],
-   "moved": []
-  },
-  {
-   "table": "erratum-ids.txt",
-   "new": [
-    "287\tBoundNamesImportDefer",
-    "288\tSyntheticModuleDeferredNamespace",
-    "289\tdefinition-sec-module-namespace-exotic-objects-defineownproperty-p-desc-1",
-    "290\tdefinition-sec-module-namespace-exotic-objects-hasproperty-p-1",
-    "291\tdefinition-sec-module-namespace-exotic-objects-get-p-receiver-1",
-    "292\tdefinition-sec-module-namespace-exotic-objects-delete-p-1",
-    "293\tdefinition-sec-ReadyForSyncExecution-5",
-    "294\tdefinition-sec-getmodulenamespace-2",
-    "295\tdefinition-sec-ContinueDynamicImport-6.d.iv",
-    "296\tdefinition-sec-moduleevaluation-1",
-    "297\tdefinition-sec-evaluate-import-call-9.f",
-    "298\tdefinition-sec-innermoduleevaluation-18.b.iv",
-    "299\tdefinition-sec-modulenamespacecreate-9"
-   ],
-   "retired": [
-    "156\tdefinition-sec-evaluate-import-call-11.f\tretired",
-    "162\tdefinition-sec-innermoduleevaluation-16.b.iv\tretired",
-    "237\tdefinition-sec-modulenamespacecreate-8\tretired"
-   ],
-   "renamed": [],
-   "moved": []
-  },
-  {
-   "table": "field-ids.txt",
-   "new": [
-    "DeferredNamespace",
-    "Deferred",
-    "Phase"
-   ],
-   "retired": [],
-   "renamed": [],
-   "moved": []
-  },
-  {
-   "table": "nt-ids.txt",
-   "new": [
-    "426\tImportCallArguments"
-   ],
-   "retired": [],
-   "renamed": [],
-   "moved": []
-  },
-  {
-   "table": "prod-ids.txt",
-   "new": [
-    "1537\tSyntactic - ImportCall : `import` ImportCallArguments[?Yield, ?Await]",
-    "1538\tSyntactic - ImportCall : `import` `.` `defer` ImportCallArguments[?Yield, ?Await]",
-    "1539\tSyntactic 0 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`",
-    "1540\tSyntactic 1 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`",
-    "1541\tSyntactic 0 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`",
-    "1542\tSyntactic 1 ImportCallArguments : `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`",
-    "1543\tSyntactic 0 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`",
-    "1544\tSyntactic 1 ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`"
-   ],
-   "retired": [
-    "631\tSyntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`\tretired",
-    "632\tSyntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`\tretired",
-    "633\tSyntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`\tretired",
-    "634\tSyntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`\tretired"
-   ],
-   "renamed": [],
-   "moved": []
-  },
-  {
-   "table": "sdo-ids.txt",
-   "new": [
-    "145\tEvaluateImportCallSpecifier",
-    "146\tEvaluateImportCallOptions"
-   ],
-   "retired": [],
-   "renamed": [],
-   "moved": []
-  },
-  {
-   "table": "table-ids.txt",
-   "new": [
-    "106\ttable-module-graph-deferred-async-fields-1",
-    "107\ttable-module-graph-deferred-async-fields-2",
-    "108\ttable-module-graph-deferred-async-fields-3",
-    "109\ttable-module-graph-deferred-async-cycle-root-fields-1",
-    "110\ttable-module-graph-deferred-async-cycle-root-fields-2"
-   ],
-   "retired": [],
-   "renamed": [],
-   "moved": []
   }
  ],
  "merge": {

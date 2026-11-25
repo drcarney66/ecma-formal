@@ -221,9 +221,8 @@ The order of right-hand sides (§5.1.6, "Optional Symbols": an alternative with
 then by written production (a rule's alternatives, or its `one of` terminals,
 in spec order), then over the presences of its optional symbols, absent
 before present, the first the most significant. A right-hand side's
-production id is not its place in this order but the number
-spec/formal/prod-ids.txt gives it (`prodsById`): a right-hand side keeps its
-number when others are added or removed. -/
+production id (`ProdId`) is its alphabetical index among all expanded
+right-hand sides (`prodsById`), exposed symbolically in `Ecma.Known`. -/
 
 /-- One right-hand side: a written production of a grammar and the presence of
 each of its optional symbols. -/

@@ -29,16 +29,15 @@ grammar (written production, position). -/
 structure GL where
   grammars : List (GrammarId × List Rule)
   /-- The production id of each right-hand side of `grammars`, in `prodsOf`'s order, as runs
-  (`idsOfRuns`): the number spec/formal/prod-ids.txt gives it. A right-hand side keeps its number when
-  the text adds or removes others; a new one takes the next number, and a removed one's is not reused. -/
+  (`idsOfRuns`): its alphabetical index among all expanded right-hand sides. -/
   ids : List (Nat × Nat)
-  /-- The number past every production id, a retired one's included. -/
+  /-- The count of production ids. -/
   next : Nat
   blocks : List Block
   semis : List (Nat × Nat × Semi)
 
 /-- GL's right-hand sides by production id (`prodsById`): entry `n` is the right-hand side `ids`
-numbers `n`, none at a retired number. -/
+numbers `n`. -/
 def GL.byId (gl : GL) : Array (Option Prod) := prodsById gl.grammars gl.ids gl.next
 
 /-- The grammar an Annex B section overlays. -/
