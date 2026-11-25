@@ -23,8 +23,8 @@ theorem prim_at {k q : PrimId} {xs : List (Val F)} {x : Run F (Val F)}
   · cases h
 
 /-- The table's rows at a primitive are the List updates in place. -/
-theorem fastTable_prim {Fc : Facts} {rd : ErratumId → Reading} {q : PrimId}
-    {xs : List (Val F)} {x : Run F (Val F)} (h : (fastTable Fc rd).prim q xs = some x) :
+theorem fastTable_prim {Fc : Facts} {q : PrimId}
+    {xs : List (Val F)} {x : Run F (Val F)} (h : (fastTable Fc).prim q xs = some x) :
     ListUpdate.prim q xs = some x := by
   simp only [Table.prim, fastTable, exactRows, sdoRows, primRows, loopRow, algRow,
     List.findSome?_cons, List.findSome?_nil, List.map, Row.prim, List.cons_append, List.nil_append] at h
@@ -34,11 +34,11 @@ theorem fastTable_prim {Fc : Facts} {rd : ErratumId → Reading} {q : PrimId}
     | cases h
 
 /-- The primitives' obligation at the engine's set-up, at every configuration. -/
-theorem ctx_prim (Q : Prog') (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (c : Cfg F)
+theorem ctx_prim (Q : Prog') (H : Host F) (chk : Bool) (c : Cfg F)
     (q : PrimId) (xs : List (Val F)) (r : Run F (Val F)) (hc : c.ctl = .invoke (.prim q xs))
-    (h : (ctx Q H rd chk).A.prim q xs = some r) :
-    Sim (ctx Q H rd chk).X c (leafV c r) := by
-  rw [listUpdate_step _ c q xs r hc (fastTable_prim (Fc := facts Q.P) (rd := rd) h)]
+    (h : (ctx Q H chk).A.prim q xs = some r) :
+    Sim (ctx Q H chk).X c (leafV c r) := by
+  rw [listUpdate_step _ c q xs r hc (fastTable_prim (Fc := facts Q.P) h)]
   exact Sim.step _ _
 
 /-! ## The algorithms' rows -/
@@ -86,15 +86,5 @@ theorem alg_of_rows {tab : Table F} {X : Ctx F} (hok : ∀ row ∈ tab, RowAlgOk
   obtain ⟨e, ⟨g, hg, hrow⟩, he⟩ := Table.alg_some hok h
   refine hrow c vs r none he ?_
   simp only [step, hc, invoke, algEnter, hg]
-
-theorem phrase_of_rows {tab : Table F} {X : Ctx F} (hok : ∀ row ∈ tab, RowAlgOk X row) (c : Cfg F) (p : PhraseId)
-    (n : F.Node) (a : AlgId) (vs : List (Val F)) (r : Run F (Option (Val F)))
-    (hc : c.ctl = .invoke (.phrase p (some n) vs)) (hp : X.P.phrase p = .alg a) (h : tab.alg a vs = some r) :
-    Sim X c (bindR c r fun o c => match o with
-      | some v => c.to (.val v)
-      | none => step X c) := by
-  obtain ⟨e, ⟨g, hg, hrow⟩, he⟩ := Table.alg_some hok h
-  refine hrow c vs r (some n) he ?_
-  simp only [step, hc, invoke, hp, hg]
 
 end Engine.Machine

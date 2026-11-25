@@ -1,0 +1,615 @@
+-- Grammar parameters, nonterminals, blocks, goals, covers, and ASI semicolons
+
+param Sep
+param Yield
+param Await
+param In
+param Tagged
+param Return
+param Default
+param Pattern
+param Using
+param Extended
+param UnicodeMode
+param UnicodeSetsMode
+param NamedCaptureGroups
+
+nt StringNumericLiteral
+nt StrWhiteSpace
+nt StrWhiteSpaceChar
+nt StrNumericLiteral
+nt StrDecimalLiteral
+nt StrUnsignedDecimalLiteral
+nt StringIntegerLiteral
+nt StrIntegerLiteral
+nt SourceCharacter
+nt InputElementDiv
+nt InputElementRegExp
+nt InputElementRegExpOrTemplateTail
+nt InputElementTemplateTail
+nt InputElementHashbangOrRegExp
+nt WhiteSpace
+nt LineTerminator
+nt LineTerminatorSequence
+nt Comment
+nt MultiLineComment
+nt MultiLineCommentChars
+nt PostAsteriskCommentChars
+nt MultiLineNotAsteriskChar
+nt MultiLineNotForwardSlashOrAsteriskChar
+nt SingleLineComment
+nt SingleLineCommentChars
+nt SingleLineCommentChar
+nt HashbangComment
+nt CommonToken
+nt PrivateIdentifier
+nt IdentifierName
+nt IdentifierStart
+nt IdentifierPart
+nt IdentifierStartChar
+nt IdentifierPartChar
+nt AsciiLetter
+nt UnicodeIDStart
+nt UnicodeIDContinue
+nt ReservedWord
+nt Punctuator
+nt OptionalChainingPunctuator
+nt OtherPunctuator
+nt DivPunctuator
+nt RightBracePunctuator
+nt NullLiteral
+nt BooleanLiteral
+nt NumericLiteralSeparator
+nt NumericLiteral
+nt DecimalBigIntegerLiteral
+nt NonDecimalIntegerLiteral
+nt BigIntLiteralSuffix
+nt DecimalLiteral
+nt DecimalIntegerLiteral
+nt DecimalDigits
+nt DecimalDigit
+nt NonZeroDigit
+nt ExponentPart
+nt ExponentIndicator
+nt SignedInteger
+nt BinaryIntegerLiteral
+nt BinaryDigits
+nt BinaryDigit
+nt OctalIntegerLiteral
+nt OctalDigits
+nt LegacyOctalIntegerLiteral
+nt NonOctalDecimalIntegerLiteral
+nt LegacyOctalLikeDecimalDigits
+nt OctalDigit
+nt NonOctalDigit
+nt HexIntegerLiteral
+nt HexDigits
+nt HexDigit
+nt StringLiteral
+nt DoubleStringCharacters
+nt SingleStringCharacters
+nt DoubleStringCharacter
+nt SingleStringCharacter
+nt LineContinuation
+nt EscapeSequence
+nt CharacterEscapeSequence
+nt SingleEscapeCharacter
+nt NonEscapeCharacter
+nt EscapeCharacter
+nt LegacyOctalEscapeSequence
+nt NonZeroOctalDigit
+nt ZeroToThree
+nt FourToSeven
+nt NonOctalDecimalEscapeSequence
+nt HexEscapeSequence
+nt UnicodeEscapeSequence
+nt Hex4Digits
+nt RegularExpressionLiteral
+nt RegularExpressionBody
+nt RegularExpressionChars
+nt RegularExpressionFirstChar
+nt RegularExpressionChar
+nt RegularExpressionBackslashSequence
+nt RegularExpressionNonTerminator
+nt RegularExpressionClass
+nt RegularExpressionClassChars
+nt RegularExpressionClassChar
+nt RegularExpressionFlags
+nt Template
+nt NoSubstitutionTemplate
+nt TemplateHead
+nt TemplateSubstitutionTail
+nt TemplateMiddle
+nt TemplateTail
+nt TemplateCharacters
+nt TemplateCharacter
+nt TemplateEscapeSequence
+nt NotEscapeSequence
+nt NotCodePoint
+nt CodePoint
+nt IdentifierReference
+nt BindingIdentifier
+nt LabelIdentifier
+nt Identifier
+nt PrimaryExpression
+nt CoverParenthesizedExpressionAndArrowParameterList
+nt ParenthesizedExpression
+nt Literal
+nt ArrayLiteral
+nt ElementList
+nt Elision
+nt SpreadElement
+nt ObjectLiteral
+nt PropertyDefinitionList
+nt PropertyDefinition
+nt PropertyName
+nt LiteralPropertyName
+nt ComputedPropertyName
+nt CoverInitializedName
+nt Initializer
+nt TemplateLiteral
+nt SubstitutionTemplate
+nt TemplateSpans
+nt TemplateMiddleList
+nt MemberExpression
+nt SuperProperty
+nt MetaProperty
+nt NewTarget
+nt ImportMeta
+nt NewExpression
+nt CallExpression
+nt SuperCall
+nt ImportCall
+nt Arguments
+nt ArgumentList
+nt OptionalExpression
+nt OptionalChain
+nt LeftHandSideExpression
+nt CallMemberExpression
+nt UpdateExpression
+nt UnaryExpression
+nt CoverAwaitExpressionAndAwaitUsingDeclarationHead
+nt ExponentiationExpression
+nt MultiplicativeExpression
+nt MultiplicativeOperator
+nt AdditiveExpression
+nt ShiftExpression
+nt RelationalExpression
+nt EqualityExpression
+nt BitwiseANDExpression
+nt BitwiseXORExpression
+nt BitwiseORExpression
+nt LogicalANDExpression
+nt LogicalORExpression
+nt CoalesceExpression
+nt CoalesceExpressionHead
+nt ShortCircuitExpression
+nt ConditionalExpression
+nt AssignmentExpression
+nt AssignmentOperator
+nt AssignmentPattern
+nt ObjectAssignmentPattern
+nt ArrayAssignmentPattern
+nt AssignmentRestProperty
+nt AssignmentPropertyList
+nt AssignmentElementList
+nt AssignmentElisionElement
+nt AssignmentProperty
+nt AssignmentElement
+nt AssignmentRestElement
+nt DestructuringAssignmentTarget
+nt Expression
+nt Statement
+nt Declaration
+nt HoistableDeclaration
+nt BreakableStatement
+nt BlockStatement
+nt Block
+nt StatementList
+nt StatementListItem
+nt LexicalDeclaration
+nt LetOrConst
+nt UsingDeclaration
+nt AwaitUsingDeclaration
+nt BindingList
+nt LexicalBinding
+nt AwaitUsingDeclarationHead
+nt VariableStatement
+nt VariableDeclarationList
+nt VariableDeclaration
+nt BindingPattern
+nt ObjectBindingPattern
+nt ArrayBindingPattern
+nt BindingRestProperty
+nt BindingPropertyList
+nt BindingElementList
+nt BindingElisionElement
+nt BindingProperty
+nt BindingElement
+nt SingleNameBinding
+nt BindingRestElement
+nt EmptyStatement
+nt ExpressionStatement
+nt IfStatement
+nt IterationStatement
+nt DoWhileStatement
+nt WhileStatement
+nt ForStatement
+nt ForInOfStatement
+nt ForDeclaration
+nt ForBinding
+nt ContinueStatement
+nt BreakStatement
+nt ReturnStatement
+nt WithStatement
+nt SwitchStatement
+nt CaseBlock
+nt CaseClauses
+nt CaseClause
+nt DefaultClause
+nt LabelledStatement
+nt LabelledItem
+nt ThrowStatement
+nt TryStatement
+nt Catch
+nt Finally
+nt CatchParameter
+nt DebuggerStatement
+nt UniqueFormalParameters
+nt FormalParameters
+nt FormalParameterList
+nt FunctionRestParameter
+nt FormalParameter
+nt FunctionDeclaration
+nt FunctionExpression
+nt FunctionBody
+nt FunctionStatementList
+nt ArrowFunction
+nt ArrowParameters
+nt ConciseBody
+nt ExpressionBody
+nt ArrowFormalParameters
+nt MethodDefinition
+nt PropertySetParameterList
+nt GeneratorDeclaration
+nt GeneratorExpression
+nt GeneratorMethod
+nt GeneratorBody
+nt YieldExpression
+nt AsyncGeneratorDeclaration
+nt AsyncGeneratorExpression
+nt AsyncGeneratorMethod
+nt AsyncGeneratorBody
+nt ClassDeclaration
+nt ClassExpression
+nt ClassTail
+nt ClassHeritage
+nt ClassBody
+nt ClassElementList
+nt ClassElement
+nt FieldDefinition
+nt ClassElementName
+nt ClassStaticBlock
+nt ClassStaticBlockBody
+nt ClassStaticBlockStatementList
+nt AsyncFunctionDeclaration
+nt AsyncFunctionExpression
+nt AsyncMethod
+nt AsyncFunctionBody
+nt AwaitExpression
+nt AsyncArrowFunction
+nt AsyncConciseBody
+nt AsyncArrowBindingIdentifier
+nt CoverCallExpressionAndAsyncArrowHead
+nt AsyncArrowHead
+nt Script
+nt ScriptBody
+nt Module
+nt ModuleBody
+nt ModuleItemList
+nt ModuleItem
+nt ModuleExportName
+nt ImportDeclaration
+nt ImportClause
+nt ImportedDefaultBinding
+nt NameSpaceImport
+nt NamedImports
+nt FromClause
+nt ImportsList
+nt ImportSpecifier
+nt ModuleSpecifier
+nt ImportedBinding
+nt WithClause
+nt WithEntries
+nt AttributeKey
+nt ExportDeclaration
+nt ExportFromClause
+nt NamedExports
+nt ExportsList
+nt ExportSpecifier
+nt NativeFunction
+nt NativeFunctionAccessor
+nt UTCOffset
+nt ASCIISign
+nt Hour
+nt HourSubcomponents
+nt TimeSeparator
+nt MinuteSecond
+nt TemporalDecimalFraction
+nt TemporalDecimalSeparator
+nt Pattern
+nt Disjunction
+nt Alternative
+nt Term
+nt Assertion
+nt Quantifier
+nt QuantifierPrefix
+nt Atom
+nt RegularExpressionModifiers
+nt RegularExpressionModifier
+nt SyntaxCharacter
+nt PatternCharacter
+nt AtomEscape
+nt CharacterEscape
+nt ControlEscape
+nt GroupSpecifier
+nt GroupName
+nt RegExpIdentifierName
+nt RegExpIdentifierStart
+nt RegExpIdentifierPart
+nt RegExpUnicodeEscapeSequence
+nt UnicodeLeadSurrogate
+nt UnicodeTrailSurrogate
+nt HexLeadSurrogate
+nt HexTrailSurrogate
+nt HexNonSurrogate
+nt IdentityEscape
+nt DecimalEscape
+nt CharacterClassEscape
+nt UnicodePropertyValueExpression
+nt UnicodePropertyName
+nt UnicodePropertyNameCharacters
+nt UnicodePropertyValue
+nt LoneUnicodePropertyNameOrValue
+nt UnicodePropertyValueCharacters
+nt UnicodePropertyValueCharacter
+nt UnicodePropertyNameCharacter
+nt CharacterClass
+nt ClassContents
+nt NonemptyClassRanges
+nt NonemptyClassRangesNoDash
+nt ClassAtom
+nt ClassAtomNoDash
+nt ClassEscape
+nt ClassSetExpression
+nt ClassUnion
+nt ClassIntersection
+nt ClassSubtraction
+nt ClassSetRange
+nt ClassSetOperand
+nt NestedClass
+nt ClassStringDisjunction
+nt ClassStringDisjunctionContents
+nt ClassString
+nt NonEmptyClassString
+nt ClassSetCharacter
+nt ClassSetReservedDoublePunctuator
+nt ClassSetSyntaxCharacter
+nt ClassSetReservedPunctuator
+nt FirstCommentLine
+nt SingleLineHTMLOpenComment
+nt SingleLineHTMLCloseComment
+nt SingleLineDelimitedComment
+nt HTMLCloseComment
+nt SingleLineDelimitedCommentChars
+nt SingleLineNotAsteriskChar
+nt SingleLinePostAsteriskCommentChars
+nt SingleLineNotForwardSlashOrAsteriskChar
+nt WhiteSpaceSequence
+nt SingleLineDelimitedCommentSequence
+nt QuantifiableAssertion
+nt ExtendedAtom
+nt InvalidBracedQuantifier
+nt ExtendedPatternCharacter
+nt SourceCharacterIdentityEscape
+nt ClassControlLetter
+nt JSONText
+nt JSONElement
+nt JSONWhiteSpace
+nt JSONWhiteSpaceCharacter
+nt JSONValue
+nt JSONObject
+nt JSONMembers
+nt JSONMember
+nt JSONArray
+nt JSONElements
+nt JSONNumber
+nt JSONInteger
+nt JSONDigits
+nt JSONDigit
+nt JSONNonZeroDigit
+nt JSONFraction
+nt JSONExponent
+nt JSONExponentIndicator
+nt JSONSign
+nt JSONString
+nt JSONStringCharacters
+nt JSONStringCharacter
+nt JSONEscape
+nt JSONSingleEscapeCharacter
+nt JSONHexDigit
+nt JSONControlCharacter
+nt JSONCodePoint
+
+block numericString @sec-tonumber-applied-to-the-string-type main [|StringNumericLiteral|, |StrWhiteSpace|, |StrWhiteSpaceChar|, |StrNumericLiteral|, |StrDecimalLiteral|, |StrUnsignedDecimalLiteral|]
+block numericString @sec-stringintegerliteral-grammar main [|StringIntegerLiteral|, |StrIntegerLiteral|]
+block lexical @sec-source-text main [|SourceCharacter|]
+block lexical @sec-ecmascript-language-lexical-grammar main [|InputElementDiv|, |InputElementRegExp|, |InputElementRegExpOrTemplateTail|, |InputElementTemplateTail|, |InputElementHashbangOrRegExp|]
+block lexical @sec-white-space main [|WhiteSpace|]
+block lexical @sec-line-terminators main [|LineTerminator|, |LineTerminatorSequence|]
+block lexical @sec-comments main [|Comment|, |MultiLineComment|, |MultiLineCommentChars|, |PostAsteriskCommentChars|, |MultiLineNotAsteriskChar|, |MultiLineNotForwardSlashOrAsteriskChar|, |SingleLineComment|, |SingleLineCommentChars|, |SingleLineCommentChar|]
+block lexical @sec-hashbang main [|HashbangComment|]
+block lexical @sec-tokens main [|CommonToken|]
+block lexical @sec-names-and-keywords main [|PrivateIdentifier|, |IdentifierName|, |IdentifierStart|, |IdentifierPart|, |IdentifierStartChar|, |IdentifierPartChar|, |AsciiLetter|, |UnicodeIDStart|, |UnicodeIDContinue|]
+block lexical @sec-keywords-and-reserved-words main [|ReservedWord|]
+block lexical @sec-punctuators main [|Punctuator|, |OptionalChainingPunctuator|, |OtherPunctuator|, |DivPunctuator|, |RightBracePunctuator|]
+block lexical @sec-null-literals main [|NullLiteral|]
+block lexical @sec-boolean-literals main [|BooleanLiteral|]
+block lexical @sec-literals-numeric-literals main [|NumericLiteralSeparator|, |NumericLiteral|, |DecimalBigIntegerLiteral|, |NonDecimalIntegerLiteral|, |BigIntLiteralSuffix|, |DecimalLiteral|, |DecimalIntegerLiteral|, |DecimalDigits|, |DecimalDigit|, |NonZeroDigit|, |ExponentPart|, |ExponentIndicator|, |SignedInteger|, |BinaryIntegerLiteral|, |BinaryDigits|, |BinaryDigit|, |OctalIntegerLiteral|, |OctalDigits|, |LegacyOctalIntegerLiteral|, |NonOctalDecimalIntegerLiteral|, |LegacyOctalLikeDecimalDigits|, |OctalDigit|, |NonOctalDigit|, |HexIntegerLiteral|, |HexDigits|, |HexDigit|]
+block lexical @sec-literals-string-literals main [|StringLiteral|, |DoubleStringCharacters|, |SingleStringCharacters|, |DoubleStringCharacter|, |SingleStringCharacter|, |LineContinuation|, |EscapeSequence|, |CharacterEscapeSequence|, |SingleEscapeCharacter|, |NonEscapeCharacter|, |EscapeCharacter|, |LegacyOctalEscapeSequence|, |NonZeroOctalDigit|, |ZeroToThree|, |FourToSeven|, |NonOctalDecimalEscapeSequence|, |HexEscapeSequence|, |UnicodeEscapeSequence|, |Hex4Digits|]
+block lexical @sec-literals-regular-expression-literals main [|RegularExpressionLiteral|, |RegularExpressionBody|, |RegularExpressionChars|, |RegularExpressionFirstChar|, |RegularExpressionChar|, |RegularExpressionBackslashSequence|, |RegularExpressionNonTerminator|, |RegularExpressionClass|, |RegularExpressionClassChars|, |RegularExpressionClassChar|, |RegularExpressionFlags|]
+block lexical @sec-template-literal-lexical-components main [|Template|, |NoSubstitutionTemplate|, |TemplateHead|, |TemplateSubstitutionTail|, |TemplateMiddle|, |TemplateTail|, |TemplateCharacters|, |TemplateCharacter|, |TemplateEscapeSequence|, |NotEscapeSequence|, |NotCodePoint|, |CodePoint|]
+block syntactic @sec-identifiers main [|IdentifierReference|, |BindingIdentifier|, |LabelIdentifier|, |Identifier|]
+block syntactic @sec-primary-expression main [|PrimaryExpression|, |CoverParenthesizedExpressionAndArrowParameterList|]
+block syntactic @sec-primary-expression supplemental |CoverParenthesizedExpressionAndArrowParameterList| [|ParenthesizedExpression|]
+block syntactic @sec-primary-expression-literals main [|Literal|]
+block syntactic @sec-array-initializer main [|ArrayLiteral|, |ElementList|, |Elision|, |SpreadElement|]
+block syntactic @sec-object-initializer main [|ObjectLiteral|, |PropertyDefinitionList|, |PropertyDefinition|, |PropertyName|, |LiteralPropertyName|, |ComputedPropertyName|, |CoverInitializedName|, |Initializer|]
+block syntactic @sec-template-literals main [|TemplateLiteral|, |SubstitutionTemplate|, |TemplateSpans|, |TemplateMiddleList|]
+block syntactic @sec-left-hand-side-expressions main [|MemberExpression|, |SuperProperty|, |MetaProperty|, |NewTarget|, |ImportMeta|, |NewExpression|, |CallExpression|, |SuperCall|, |ImportCall|, |Arguments|, |ArgumentList|, |OptionalExpression|, |OptionalChain|, |LeftHandSideExpression|]
+block syntactic @sec-left-hand-side-expressions supplemental |CoverCallExpressionAndAsyncArrowHead| [|CallMemberExpression|]
+block syntactic @sec-update-expressions main [|UpdateExpression|]
+block syntactic @sec-unary-operators main [|UnaryExpression|, |CoverAwaitExpressionAndAwaitUsingDeclarationHead|]
+block syntactic @sec-exp-operator main [|ExponentiationExpression|]
+block syntactic @sec-multiplicative-operators main [|MultiplicativeExpression|, |MultiplicativeOperator|]
+block syntactic @sec-additive-operators main [|AdditiveExpression|]
+block syntactic @sec-bitwise-shift-operators main [|ShiftExpression|]
+block syntactic @sec-relational-operators main [|RelationalExpression|]
+block syntactic @sec-equality-operators main [|EqualityExpression|]
+block syntactic @sec-binary-bitwise-operators main [|BitwiseANDExpression|, |BitwiseXORExpression|, |BitwiseORExpression|]
+block syntactic @sec-binary-logical-operators main [|LogicalANDExpression|, |LogicalORExpression|, |CoalesceExpression|, |CoalesceExpressionHead|, |ShortCircuitExpression|]
+block syntactic @sec-conditional-operator main [|ConditionalExpression|]
+block syntactic @sec-assignment-operators main [|AssignmentExpression|, |AssignmentOperator|]
+block syntactic @sec-destructuring-assignment supplemental |LeftHandSideExpression| [|AssignmentPattern|, |ObjectAssignmentPattern|, |ArrayAssignmentPattern|, |AssignmentRestProperty|, |AssignmentPropertyList|, |AssignmentElementList|, |AssignmentElisionElement|, |AssignmentProperty|, |AssignmentElement|, |AssignmentRestElement|, |DestructuringAssignmentTarget|]
+block syntactic @sec-comma-operator main [|Expression|]
+block syntactic @sec-ecmascript-language-statements-and-declarations main [|Statement|, |Declaration|, |HoistableDeclaration|, |BreakableStatement|]
+block syntactic @sec-block main [|BlockStatement|, |Block|, |StatementList|, |StatementListItem|]
+block syntactic @sec-let-and-const-declarations main [|LexicalDeclaration|, |LetOrConst|, |UsingDeclaration|, |AwaitUsingDeclaration|, |BindingList|, |LexicalBinding|]
+block syntactic @sec-let-and-const-declarations supplemental |CoverAwaitExpressionAndAwaitUsingDeclarationHead| [|AwaitUsingDeclarationHead|]
+block syntactic @sec-variable-statement main [|VariableStatement|, |VariableDeclarationList|, |VariableDeclaration|]
+block syntactic @sec-destructuring-binding-patterns main [|BindingPattern|, |ObjectBindingPattern|, |ArrayBindingPattern|, |BindingRestProperty|, |BindingPropertyList|, |BindingElementList|, |BindingElisionElement|, |BindingProperty|, |BindingElement|, |SingleNameBinding|, |BindingRestElement|]
+block syntactic @sec-empty-statement main [|EmptyStatement|]
+block syntactic @sec-expression-statement main [|ExpressionStatement|]
+block syntactic @sec-if-statement main [|IfStatement|]
+block syntactic @sec-iteration-statements main [|IterationStatement|]
+block syntactic @sec-do-while-statement main [|DoWhileStatement|]
+block syntactic @sec-while-statement main [|WhileStatement|]
+block syntactic @sec-for-statement main [|ForStatement|]
+block syntactic @sec-for-in-and-for-of-statements main [|ForInOfStatement|, |ForDeclaration|, |ForBinding|]
+block syntactic @sec-continue-statement main [|ContinueStatement|]
+block syntactic @sec-break-statement main [|BreakStatement|]
+block syntactic @sec-return-statement main [|ReturnStatement|]
+block syntactic @sec-with-statement main [|WithStatement|]
+block syntactic @sec-switch-statement main [|SwitchStatement|, |CaseBlock|, |CaseClauses|, |CaseClause|, |DefaultClause|]
+block syntactic @sec-labelled-statements main [|LabelledStatement|, |LabelledItem|]
+block syntactic @sec-throw-statement main [|ThrowStatement|]
+block syntactic @sec-try-statement main [|TryStatement|, |Catch|, |Finally|, |CatchParameter|]
+block syntactic @sec-debugger-statement main [|DebuggerStatement|]
+block syntactic @sec-parameter-lists main [|UniqueFormalParameters|, |FormalParameters|, |FormalParameterList|, |FunctionRestParameter|, |FormalParameter|]
+block syntactic @sec-function-definitions main [|FunctionDeclaration|, |FunctionExpression|, |FunctionBody|, |FunctionStatementList|]
+block syntactic @sec-arrow-function-definitions main [|ArrowFunction|, |ArrowParameters|, |ConciseBody|, |ExpressionBody|]
+block syntactic @sec-arrow-function-definitions supplemental |CoverParenthesizedExpressionAndArrowParameterList| [|ArrowFormalParameters|]
+block syntactic @sec-method-definitions main [|MethodDefinition|, |PropertySetParameterList|]
+block syntactic @sec-generator-function-definitions main [|GeneratorDeclaration|, |GeneratorExpression|, |GeneratorMethod|, |GeneratorBody|, |YieldExpression|]
+block syntactic @sec-async-generator-function-definitions main [|AsyncGeneratorDeclaration|, |AsyncGeneratorExpression|, |AsyncGeneratorMethod|, |AsyncGeneratorBody|]
+block syntactic @sec-class-definitions main [|ClassDeclaration|, |ClassExpression|, |ClassTail|, |ClassHeritage|, |ClassBody|, |ClassElementList|, |ClassElement|, |FieldDefinition|, |ClassElementName|, |ClassStaticBlock|, |ClassStaticBlockBody|, |ClassStaticBlockStatementList|]
+block syntactic @sec-async-function-definitions main [|AsyncFunctionDeclaration|, |AsyncFunctionExpression|, |AsyncMethod|, |AsyncFunctionBody|, |AwaitExpression|]
+block syntactic @sec-async-arrow-function-definitions main [|AsyncArrowFunction|, |AsyncConciseBody|, |AsyncArrowBindingIdentifier|, |CoverCallExpressionAndAsyncArrowHead|]
+block syntactic @sec-async-arrow-function-definitions supplemental |CoverCallExpressionAndAsyncArrowHead| [|AsyncArrowHead|]
+block syntactic @sec-scripts main [|Script|, |ScriptBody|]
+block syntactic @sec-modules main [|Module|, |ModuleBody|, |ModuleItemList|, |ModuleItem|, |ModuleExportName|]
+block syntactic @sec-imports main [|ImportDeclaration|, |ImportClause|, |ImportedDefaultBinding|, |NameSpaceImport|, |NamedImports|, |FromClause|, |ImportsList|, |ImportSpecifier|, |ModuleSpecifier|, |ImportedBinding|, |WithClause|, |WithEntries|, |AttributeKey|]
+block syntactic @sec-exports main [|ExportDeclaration|, |ExportFromClause|, |NamedExports|, |ExportsList|, |ExportSpecifier|]
+block syntactic @sec-function.prototype.tostring main [|NativeFunction|, |NativeFunctionAccessor|]
+block numericString @sec-time-zone-offset-strings main [|UTCOffset|, |ASCIISign|, |Hour|, |HourSubcomponents|, |TimeSeparator|, |MinuteSecond|, |TemporalDecimalFraction|, |TemporalDecimalSeparator|]
+block regExp @sec-patterns main [|Pattern|, |Disjunction|, |Alternative|, |Term|, |Assertion|, |Quantifier|, |QuantifierPrefix|, |Atom|, |RegularExpressionModifiers|, |RegularExpressionModifier|, |SyntaxCharacter|, |PatternCharacter|, |AtomEscape|, |CharacterEscape|, |ControlEscape|, |GroupSpecifier|, |GroupName|, |RegExpIdentifierName|, |RegExpIdentifierStart|, |RegExpIdentifierPart|, |RegExpUnicodeEscapeSequence|, |UnicodeLeadSurrogate|, |UnicodeTrailSurrogate|]
+block regExp @sec-patterns main [|HexLeadSurrogate|, |HexTrailSurrogate|, |HexNonSurrogate|, |IdentityEscape|, |DecimalEscape|, |CharacterClassEscape|, |UnicodePropertyValueExpression|, |UnicodePropertyName|, |UnicodePropertyNameCharacters|, |UnicodePropertyValue|, |LoneUnicodePropertyNameOrValue|, |UnicodePropertyValueCharacters|, |UnicodePropertyValueCharacter|, |UnicodePropertyNameCharacter|, |CharacterClass|, |ClassContents|, |NonemptyClassRanges|, |NonemptyClassRangesNoDash|, |ClassAtom|, |ClassAtomNoDash|, |ClassEscape|, |ClassSetExpression|, |ClassUnion|, |ClassIntersection|, |ClassSubtraction|, |ClassSetRange|, |ClassSetOperand|, |NestedClass|]
+block regExp @sec-patterns main [|ClassStringDisjunction|, |ClassStringDisjunctionContents|, |ClassString|, |NonEmptyClassString|, |ClassSetCharacter|, |ClassSetReservedDoublePunctuator|]
+block regExp @sec-patterns main [|ClassSetSyntaxCharacter|]
+block regExp @sec-patterns main [|ClassSetReservedPunctuator|]
+block annexB @sec-html-like-comments overlay htmlLikeComments extend notModule [|InputElementHashbangOrRegExp|, |Comment|, |MultiLineComment|, |FirstCommentLine|, |SingleLineHTMLOpenComment|, |SingleLineHTMLCloseComment|, |SingleLineDelimitedComment|, |HTMLCloseComment|, |SingleLineDelimitedCommentChars|, |SingleLineNotAsteriskChar|, |SingleLinePostAsteriskCommentChars|, |SingleLineNotForwardSlashOrAsteriskChar|, |WhiteSpaceSequence|, |SingleLineDelimitedCommentSequence|]
+block annexB @sec-regular-expressions-patterns overlay regExpPatterns replace always [|Term|, |Assertion|, |QuantifiableAssertion|, |ExtendedAtom|, |InvalidBracedQuantifier|, |ExtendedPatternCharacter|, |AtomEscape|, |CharacterEscape|, |IdentityEscape|, |SourceCharacterIdentityEscape|, |ClassAtomNoDash|, |ClassEscape|, |ClassControlLetter|]
+block annexB @sec-functiondeclarations-in-ifstatement-statement-clauses overlay functionDeclarationsInIfStatement extend nonStrict [|IfStatement|]
+block annexB @sec-initializers-in-forin-statement-heads overlay initializersInForIn extend nonStrict [|ForInOfStatement|]
+block json @formal-json main [|JSONText|, |JSONElement|, |JSONWhiteSpace|, |JSONWhiteSpaceCharacter|]
+block json @formal-json main [|JSONValue|]
+block json @formal-json main [|JSONObject|, |JSONMembers|, |JSONMember|]
+block json @formal-json main [|JSONArray|, |JSONElements|]
+block json @formal-json main [|JSONNumber|, |JSONInteger|, |JSONDigits|, |JSONDigit|, |JSONNonZeroDigit|, |JSONFraction|, |JSONExponent|, |JSONExponentIndicator|, |JSONSign|]
+block json @formal-json main [|JSONString|, |JSONStringCharacters|, |JSONStringCharacter|, |JSONEscape|, |JSONSingleEscapeCharacter|, |JSONHexDigit|, |JSONControlCharacter|, |JSONCodePoint|]
+
+goal |InputElementDiv|  src grammar
+goal |InputElementTemplateTail|  src grammar
+goal |InputElementRegExp|  src grammar
+goal |InputElementRegExpOrTemplateTail|  src grammar
+goal |InputElementHashbangOrRegExp|  src grammar
+goal |Pattern|  src grammar
+goal |StringNumericLiteral|  src grammar
+goal |StrDecimalLiteral|  src grammar
+goal |StringIntegerLiteral|  src grammar
+goal |UTCOffset|  src grammar
+goal |Script|  src grammar
+goal |Module|  src grammar
+goal |HexDigits| [~Sep] src parseText
+goal |FunctionExpression|  src grammarSymbol
+goal |FunctionBody| [~Yield, ~Await] src grammarSymbol
+goal |FormalParameters| [~Yield, ~Await] src grammarSymbol
+goal |GeneratorExpression|  src grammarSymbol
+goal |GeneratorBody|  src grammarSymbol
+goal |FormalParameters| [+Yield, ~Await] src grammarSymbol
+goal |AsyncFunctionExpression|  src grammarSymbol
+goal |AsyncFunctionBody|  src grammarSymbol
+goal |FormalParameters| [~Yield, +Await] src grammarSymbol
+goal |AsyncGeneratorExpression|  src grammarSymbol
+goal |AsyncGeneratorBody|  src grammarSymbol
+goal |FormalParameters| [+Yield, +Await] src grammarSymbol
+goal |NativeFunction|  src syntaxOf
+goal |Pattern| [+UnicodeMode, +UnicodeSetsMode, +NamedCaptureGroups] src parseText
+goal |Pattern| [+UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups] src parseText
+goal |Pattern| [~UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups] src parseText
+goal |Pattern| [~UnicodeMode, ~UnicodeSetsMode, ~NamedCaptureGroups] src parseText
+goal |AssignmentPattern|  src mustCover
+goal |ParenthesizedExpression|  src mustCover
+goal |AwaitUsingDeclarationHead|  src mustCover
+goal |ArrowFormalParameters|  src mustCover
+goal |AsyncArrowHead|  src mustCover
+goal |CallMemberExpression|  src supplemental
+goal |AwaitExpression|  src copy
+goal |JSONText|  src json
+
+cover p"Syntactic - PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]" cover |CoverParenthesizedExpressionAndArrowParameterList| refined |ParenthesizedExpression|
+cover p"Syntactic - CallExpression : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]" cover |CoverCallExpressionAndAsyncArrowHead| refined |CallMemberExpression|
+cover p"Syntactic - UnaryExpression : [+Await] CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield]" cover |CoverAwaitExpressionAndAwaitUsingDeclarationHead| refined |AwaitExpression|
+cover p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `=` AssignmentExpression[?In, ?Yield, ?Await]" cover |LeftHandSideExpression| refined |AssignmentPattern|
+cover p"Syntactic - AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield] [no LineTerminator here] BindingList[?In, ?Yield, +Await, ~Pattern] `;`" cover |CoverAwaitExpressionAndAwaitUsingDeclarationHead| refined |AwaitUsingDeclarationHead|
+cover p"Syntactic - ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]" cover |CoverParenthesizedExpressionAndArrowParameterList| refined |ArrowFormalParameters|
+cover p"Syntactic - AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]" cover |CoverCallExpressionAndAsyncArrowHead| refined |AsyncArrowHead|
+
+semi p"Syntactic - LexicalDeclaration : LetOrConst BindingList[?In, ?Yield, ?Await, +Pattern] `;`" pos 2 forHeaderIfDeclaration
+semi p"Syntactic - UsingDeclaration : `using` [no LineTerminator here] BindingList[?In, ?Yield, ?Await, ~Pattern] `;`" pos 3 forHeaderIfDeclaration
+semi p"Syntactic - AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield] [no LineTerminator here] BindingList[?In, ?Yield, +Await, ~Pattern] `;`" pos 3 forHeaderIfDeclaration
+semi p"Syntactic - VariableStatement : `var` VariableDeclarationList[+In, ?Yield, ?Await] `;`" pos 2 insertable
+semi p"Syntactic - EmptyStatement : `;`" pos 0 emptyStatement
+semi p"Syntactic - ExpressionStatement : [lookahead ∉ { `{`, `function`, `async` [no LineTerminator here] `function`, `class`, `let` `[` }] Expression[+In, ?Yield, ?Await] `;`" pos 2 insertable
+semi p"Syntactic - DoWhileStatement : `do` Statement[?Yield, ?Await, ?Return] `while` `(` Expression[+In, ?Yield, ?Await] `)` `;`" pos 6 doWhile
+semi p"Syntactic 000 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]" pos 4 forHeader
+semi p"Syntactic 000 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]" pos 6 forHeader
+semi p"Syntactic 00 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]" pos 4 forHeader
+semi p"Syntactic 00 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]" pos 6 forHeader
+semi p"Syntactic 00 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]" pos 4 forHeader
+semi p"Syntactic - ContinueStatement : `continue` `;`" pos 1 insertable
+semi p"Syntactic - ContinueStatement : `continue` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`" pos 3 insertable
+semi p"Syntactic - BreakStatement : `break` `;`" pos 1 insertable
+semi p"Syntactic - BreakStatement : `break` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`" pos 3 insertable
+semi p"Syntactic - ReturnStatement : `return` `;`" pos 1 insertable
+semi p"Syntactic - ReturnStatement : `return` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`" pos 3 insertable
+semi p"Syntactic - ThrowStatement : `throw` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`" pos 3 insertable
+semi p"Syntactic - DebuggerStatement : `debugger` `;`" pos 1 insertable
+semi p"Syntactic - ClassElement : FieldDefinition[?Yield, ?Await] `;`" pos 1 insertable
+semi p"Syntactic - ClassElement : `static` FieldDefinition[?Yield, ?Await] `;`" pos 2 insertable
+semi p"Syntactic - ClassElement : `;`" pos 0 insertable
+semi p"Syntactic 0 ImportDeclaration : `import` ImportClause FromClause WithClause? `;`" pos 4 insertable
+semi p"Syntactic 0 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`" pos 3 insertable
+semi p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`" pos 4 insertable
+semi p"Syntactic - ExportDeclaration : `export` NamedExports `;`" pos 2 insertable
+semi p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`" pos 4 insertable

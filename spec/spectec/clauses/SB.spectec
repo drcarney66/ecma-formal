@@ -1,0 +1,396 @@
+-- ECMA-262 SpecTec Clauses: SB
+
+def @sec-runtime-semantics-characterrangeorunion-abstract-operation "CharacterRangeOrUnion" (kind ao params [regexpRecord : #"RegExp Record", charSet : CharSet, otherSet : CharSet] -> CharSet) vars [regexpRecord, charSet, otherSet, remainingSet] {
+  if @sec-runtime-semantics-haseitherunicodeflag-abstract-operation(regexpRecord) is val {false} {
+    if charSet sat @ph-not-exactly-one-character() or otherSet sat @ph-not-exactly-one-character() {
+      let remainingSet = $CharSetOne(@ph-code-and-name(code "-", cp(45, "002D", "HYPHEN-MINUS")))
+      return $CharSetUnionAll([charSet, otherSet, remainingSet])
+    }
+  }
+  return @sec-runtime-semantics-characterrange-abstract-operation(charSet, otherSet)
+}
+
+def @sec-parsepattern-annexb "sec-parsepattern-annexb" (kind untyped params [patternText, u, v]) vars [patternText, u, v, parseResult] {
+  if v is val {true} and u is val {true} {
+    let parseResult = @ph-syntax-errors()
+  }
+  else_if v is val {true} {
+    let parseResult = @sec-parsetext(patternText, |Pattern[+UnicodeMode, +UnicodeSetsMode, +NamedCaptureGroups]|)
+  }
+  else_if u is val {true} {
+    let parseResult = @sec-parsetext(patternText, |Pattern[+UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups]|)
+  }
+  else {
+    let parseResult = @sec-parsetext(patternText, |Pattern[~UnicodeMode, ~UnicodeSetsMode, ~NamedCaptureGroups]|)
+    if parseResult is ty {#"Parse Node"} and expr @ph-contains-cond(?parseResult, |GroupName|) {
+      set var parseResult = @sec-parsetext(patternText, |Pattern[~UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups]|)
+    }
+  }
+  return parseResult
+}
+
+def @sec-escape-string "escape" (kind builtin params [string]) vars [#"this value", NewTarget, string, length, result, unescapedSet, k, codeUnit, nextPart, codeUnitNumber, #"hex"] {
+  set var string = ? @sec-tostring(string)
+  let length = $StrLen(?string)
+  let result = $"the empty String"()
+  let unescapedSet = $"string-concatenation"(@ph-ascii-word-characters(), "@*+-./")
+  let k = 0
+  repeat_while k < length {
+    let codeUnit = $UnitAt(?k, ?string)
+    if unescapedSet sat $Contains(?codeUnit) {
+      let nextPart = codeUnit
+    }
+    else {
+      let codeUnitNumber = $NumericValue(?codeUnit)
+      if codeUnitNumber < 256 {
+        let #"hex" = @ph-upper-hex(?codeUnitNumber)
+        let nextPart = $"string-concatenation"("%", @sec-stringpad(#"hex", 2, "0", ~start~))
+      }
+      else {
+        let #"hex" = @ph-upper-hex(?codeUnitNumber)
+        let nextPart = $"string-concatenation"("%u", @sec-stringpad(#"hex", 4, "0", ~start~))
+      }
+    }
+    set var result = $"string-concatenation"(result, nextPart)
+    set var k = k + 1
+  }
+  return result
+}
+
+def @sec-unescape-string "unescape" (kind builtin params [string]) vars [#"this value", NewTarget, string, length, result, k, codeUnit, hexDigits, optionalAdvance, parseResult, codeUnitNumber] {
+  set var string = ? @sec-tostring(string)
+  let length = $StrLen(?string)
+  let result = $"the empty String"()
+  let k = 0
+  repeat_while k < length {
+    let codeUnit = $UnitAt(?k, ?string)
+    if codeUnit is val {$CodeUnit(cu(37, "0025", "PERCENT SIGN"))} {
+      let hexDigits = $"the empty String"()
+      let optionalAdvance = 0
+      if k + 5 < length and $UnitAt(k + 1, ?string) is val {$CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U"))} {
+        set var hexDigits = $Substring(?string, k + 2, k + 6)
+        set var optionalAdvance = 5
+      }
+      else_if k + 3 <= length {
+        set var hexDigits = $Substring(?string, k + 1, k + 3)
+        set var optionalAdvance = 2
+      }
+      let parseResult = @sec-parsetext(hexDigits, |HexDigits[~Sep]|)
+      if parseResult is ty {#"Parse Node"} {
+        let codeUnitNumber = sdo MV(parseResult)
+        set var codeUnit = $UnitOrPointOf(data choice 1, ?codeUnitNumber)
+        set var k = k + optionalAdvance
+      }
+    }
+    set var result = $"string-concatenation"(result, codeUnit)
+    set var k = k + 1
+  }
+  return result
+}
+
+def @sec-string.prototype.substr "String.prototype.substr" (kind builtin params [start, length]) vars [#"this value", NewTarget, start, length, #"obj", string, size, intStart, intLength, intEnd] {
+  let #"obj" = this_value
+  perform ? @sec-requireobjectcoercible(#"obj")
+  let string = ? @sec-tostring(#"obj")
+  let size = $StrLen(?string)
+  let intStart = ? @sec-toclampedindex(start, size)
+  if_else length is val {undefined} { let intLength = size } else { let intLength = $clamping(? @sec-tointegerorinfinity(length), 0, ?size) }
+  let intEnd = $min(intStart + intLength, size)
+  return $Substring(?string, ?intStart, ?intEnd)
+}
+
+def @sec-string.prototype.anchor "String.prototype.anchor" (kind builtin params [name]) vars [#"this value", NewTarget, name, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "a", "name", name)
+}
+
+def @sec-createhtml "CreateHTML" (kind ao params [contents : #"ECMAScript language value", tag : String, attr : String, attrValue : #"ECMAScript language value"] -> completion<String> | #"throw completion") vars [contents, tag, attr, attrValue, contentsString, part1, attrValueString, escapedAttrValue, part2, part3, part4] {
+  perform ? @sec-requireobjectcoercible(contents)
+  let contentsString = ? @sec-tostring(contents)
+  let part1 = $"string-concatenation"("<", tag)
+  if attr is not val {$"the empty String"()} {
+    let attrValueString = ? @sec-tostring(attrValue)
+    let escapedAttrValue = @ph-code-unit-replaced(?attrValueString, $CodeUnit(cu(34, "0022", "QUOTATION MARK")), ?attrValueString, "&quot;")
+    set var part1 = $"string-concatenation"(part1, $CodeUnit(cu(32, "0020", "SPACE")), attr, $CodeUnit(cu(61, "003D", "EQUALS SIGN")), $CodeUnit(cu(34, "0022", "QUOTATION MARK")), escapedAttrValue, $CodeUnit(cu(34, "0022", "QUOTATION MARK")))
+  }
+  let part2 = $"string-concatenation"(part1, ">")
+  let part3 = $"string-concatenation"(part2, contentsString)
+  let part4 = $"string-concatenation"(part3, "</", tag, ">")
+  return part4
+}
+
+def @sec-string.prototype.big "String.prototype.big" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "big", "", "")
+}
+
+def @sec-string.prototype.blink "String.prototype.blink" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "blink", "", "")
+}
+
+def @sec-string.prototype.bold "String.prototype.bold" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "b", "", "")
+}
+
+def @sec-string.prototype.fixed "String.prototype.fixed" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "tt", "", "")
+}
+
+def @sec-string.prototype.fontcolor "String.prototype.fontcolor" (kind builtin params [colour]) vars [#"this value", NewTarget, colour, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "font", "color", colour)
+}
+
+def @sec-string.prototype.fontsize "String.prototype.fontsize" (kind builtin params [size]) vars [#"this value", NewTarget, size, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "font", "size", size)
+}
+
+def @sec-string.prototype.italics "String.prototype.italics" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "i", "", "")
+}
+
+def @sec-string.prototype.link "String.prototype.link" (kind builtin params [url]) vars [#"this value", NewTarget, url, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "a", "href", url)
+}
+
+def @sec-string.prototype.small "String.prototype.small" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "small", "", "")
+}
+
+def @sec-string.prototype.strike "String.prototype.strike" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "strike", "", "")
+}
+
+def @sec-string.prototype.sub "String.prototype.sub" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "sub", "", "")
+}
+
+def @sec-string.prototype.sup "String.prototype.sup" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-createhtml(string, "sup", "", "")
+}
+
+def @sec-date.prototype.getyear "Date.prototype.getYear" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-yearfromtime(@sec-localtime(tv))) - num_f(1900)
+}
+
+def @sec-date.prototype.setyear "Date.prototype.setYear" (kind builtin params [year]) vars [#"this value", NewTarget, year, dateObj, time, fullYear, day, date, utcTimestamp] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let time = dateObj[[DateValue]]
+  if_else time is val {nan} { set var time = num_f(+0) } else { set var time = @sec-localtime(time) }
+  let fullYear = @sec-makefullyear(? @sec-tonumber(year))
+  let day = @sec-makeday(fullYear, $𝔽(@sec-monthfromtime(time)), $𝔽(@sec-datefromtime(time)))
+  let date = @sec-makedate(day, $𝔽(@sec-timewithinday(time)))
+  let utcTimestamp = @sec-timeclip(@sec-utc-t(date))
+  set field dateObj[[DateValue]] = utcTimestamp
+  return utcTimestamp
+}
+
+def @sec-regexp.prototype.compile "RegExp.prototype.compile" (kind builtin params [pattern, flags]) vars [#"this value", NewTarget, pattern, flags, #"obj"] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[RegExpMatcher]])
+  if pattern is ty {Object} and pattern sat $HasSlot([[RegExpMatcher]]) {
+    if flags is not val {undefined} -> throw @ph-new-error([[TypeError]])
+    set var flags = pattern[[OriginalFlags]]
+    set var pattern = pattern[[OriginalSource]]
+  }
+  return ? @sec-regexpinitialize(#"obj", pattern, flags)
+}
+
+sdo_row @sec-patterns-static-semantics-is-character-class-annexb IsCharacterClass form alg annex {
+  prods [p"AnnexB - ClassAtomNoDash :: `\\` [lookahead == `c`]"]
+  keys ["\n          ClassAtomNoDash :: `\\` [lookahead == `c`]\n        "]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value-annexb CharacterValue form alg annex {
+  prods [p"AnnexB - ClassAtomNoDash :: `\\` [lookahead == `c`]"]
+  keys ["\n          ClassAtomNoDash :: `\\` [lookahead == `c`]\n        "]
+  vars []
+  steps {
+    return $NumericValue(cp(92, "005C", "REVERSE SOLIDUS"))
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value-annexb#1 CharacterValue form alg annex {
+  prods [p"AnnexB - ClassEscape :: [~UnicodeMode] `c` ClassControlLetter"]
+  keys ["ClassEscape :: `c` ClassControlLetter"]
+  vars [codePoint, i]
+  steps {
+    let codePoint = $CodePointMatched(child 5 |ClassControlLetter|)
+    let i = $NumericValue(?codePoint)
+    return $Remainder(?i, 32)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value-annexb#2 CharacterValue form alg annex {
+  prods [p"AnnexB - CharacterEscape :: [~UnicodeMode] LegacyOctalEscapeSequence"]
+  keys ["CharacterEscape :: LegacyOctalEscapeSequence"]
+  vars []
+  steps {
+    return sdo MV(child 5 |LegacyOctalEscapeSequence|)
+  }
+}
+
+sdo_row @sec-compileatom-annexb CompileAtom form alg annex {
+  prods [p"AnnexB - ExtendedAtom :: `\\` [lookahead == `c`]"]
+  keys ["ExtendedAtom :: `\\` [lookahead == `c`]"]
+  vars [regexpRecord, direction, charSet]
+  steps {
+    let charSet = $CharSetOne(@ph-code-and-name(code "\\", cp(92, "005C", "REVERSE SOLIDUS")))
+    return @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, charSet, false, direction)
+  }
+}
+
+sdo_row @sec-compileatom-annexb#1 CompileAtom form alg annex {
+  prods [p"AnnexB - ExtendedAtom :: ExtendedPatternCharacter"]
+  keys ["ExtendedAtom :: ExtendedPatternCharacter"]
+  vars [regexpRecord, direction, char, charSet]
+  steps {
+    let char = @ph-character-of-node(data choice 1, child 5 |ExtendedPatternCharacter|)
+    let charSet = $CharSetOne(?char)
+    return @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, charSet, false, direction)
+  }
+}
+
+sdo_row @sec-compiletocharset-annexb CompileToCharSet form alg annex {
+  prods [p"RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRanges :: ClassAtom `-` ClassAtom ClassContents"]
+  vars [regexpRecord, charSet, otherSet, remainingSet, rangeSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 0 |ClassAtom|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 1 |ClassAtom|; regexpRecord)
+    let remainingSet = sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+    let rangeSet = @sec-runtime-semantics-characterrangeorunion-abstract-operation(regexpRecord, charSet, otherSet)
+    return $CharSetUnionAll([rangeSet, remainingSet])
+  }
+}
+
+sdo_row @sec-compiletocharset-annexb#1 CompileToCharSet form alg annex {
+  prods [p"RegExp - NonemptyClassRangesNoDash :: ClassAtomNoDash[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRangesNoDash :: ClassAtomNoDash `-` ClassAtom ClassContents"]
+  vars [regexpRecord, charSet, otherSet, remainingSet, rangeSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassAtomNoDash|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 5 |ClassAtom|; regexpRecord)
+    let remainingSet = sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+    let rangeSet = @sec-runtime-semantics-characterrangeorunion-abstract-operation(regexpRecord, charSet, otherSet)
+    return $CharSetUnionAll([rangeSet, remainingSet])
+  }
+}
+
+sdo_row @sec-compiletocharset-annexb#2 CompileToCharSet form alg annex {
+  prods [p"AnnexB - ClassEscape :: [~UnicodeMode] `c` ClassControlLetter"]
+  keys ["ClassEscape :: `c` ClassControlLetter"]
+  vars [regexpRecord, charValue, char]
+  steps {
+    let charValue = sdo CharacterValue(call_at @ph-this-nt(|ClassEscape|))
+    let char = $Char(?charValue)
+    return $CharSetOne(?char)
+  }
+}
+
+sdo_row @sec-compiletocharset-annexb#3 CompileToCharSet form alg annex {
+  prods [p"AnnexB - ClassAtomNoDash :: `\\` [lookahead == `c`]"]
+  keys ["ClassAtomNoDash :: `\\` [lookahead == `c`]"]
+  vars [regexpRecord]
+  steps {
+    return $CharSetOne(@ph-code-and-name(code "\\", cp(92, "005C", "REVERSE SOLIDUS")))
+  }
+}
+
+sdo_row @sec-initializers-in-forin-statement-heads ContainsDuplicateLabels form alg annex {
+  prods [p"AnnexB - ForInOfStatement : `for` `(` `var` BindingIdentifier[?Yield, ?Await] Initializer[~In, ?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` `var` BindingIdentifier Initializer `in` Expression `)` Statement"]
+  vars [labelSet]
+  steps {
+    return sdo ContainsDuplicateLabels(child 5 |Statement|; labelSet)
+  }
+}
+
+sdo_row @sec-initializers-in-forin-statement-heads#1 ContainsUndefinedBreakTarget form alg annex {
+  prods [p"AnnexB - ForInOfStatement : `for` `(` `var` BindingIdentifier[?Yield, ?Await] Initializer[~In, ?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` `var` BindingIdentifier Initializer `in` Expression `)` Statement"]
+  vars [labelSet]
+  steps {
+    return sdo ContainsUndefinedBreakTarget(child 5 |Statement|; labelSet)
+  }
+}
+
+sdo_row @sec-initializers-in-forin-statement-heads#2 ContainsUndefinedContinueTarget form alg annex {
+  prods [p"AnnexB - ForInOfStatement : `for` `(` `var` BindingIdentifier[?Yield, ?Await] Initializer[~In, ?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` `var` BindingIdentifier Initializer `in` Expression `)` Statement"]
+  vars [iterationSet, labelSet]
+  steps {
+    return sdo ContainsUndefinedContinueTarget(child 5 |Statement|; iterationSet, [])
+  }
+}
+
+sdo_row @sec-initializers-in-forin-statement-heads#3 IsDestructuring form alg annex {
+  prods [p"Syntactic - BindingIdentifier : Identifier", p"Syntactic - BindingIdentifier : `yield`", p"Syntactic - BindingIdentifier : `await`"]
+  keys ["\n        BindingIdentifier :\n          Identifier\n          `yield`\n          `await`\n      "]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-initializers-in-forin-statement-heads#4 VarDeclaredNames form alg annex {
+  prods [p"AnnexB - ForInOfStatement : `for` `(` `var` BindingIdentifier[?Yield, ?Await] Initializer[~In, ?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` `var` BindingIdentifier Initializer `in` Expression `)` Statement"]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo BoundNames(child 5 |BindingIdentifier|)
+    let names2 = sdo VarDeclaredNames(child 5 |Statement|)
+    return $ListConcat([names1, names2])
+  }
+}
+
+sdo_row @sec-initializers-in-forin-statement-heads#5 VarScopedDeclarations form alg annex {
+  prods [p"AnnexB - ForInOfStatement : `for` `(` `var` BindingIdentifier[?Yield, ?Await] Initializer[~In, ?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` `var` BindingIdentifier Initializer `in` Expression `)` Statement"]
+  vars [decls1, decls2]
+  steps {
+    let decls1 = [child 5 |BindingIdentifier|]
+    let decls2 = sdo VarScopedDeclarations(child 5 |Statement|)
+    return $ListConcat([decls1, decls2])
+  }
+}
+
+sdo_row @sec-initializers-in-forin-statement-heads#6 ForInOfLoopEvaluation form alg annex {
+  prods [p"AnnexB - ForInOfStatement : `for` `(` `var` BindingIdentifier[?Yield, ?Await] Initializer[~In, ?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` `var` BindingIdentifier Initializer `in` Expression `)` Statement"]
+  vars [labelSet, name, lhs, value, rhs, keyResult]
+  steps {
+    let name = sdo StringValue(child 5 |BindingIdentifier|)
+    let lhs = ? @sec-resolvebinding(name)
+    if @sec-isanonymousfunctiondefinition(child 5 |Initializer|) is val {true} {
+      let value = ? sdo NamedEvaluation(child 5 |Initializer|; name)
+    }
+    else {
+      let rhs = ? sdo Evaluation(child 5 |Initializer|)
+      let value = ? @sec-getvalue(rhs)
+    }
+    perform ? @sec-putvalue(lhs, value)
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation([], child 5 |Expression|, ~enumerate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |BindingIdentifier|, child 5 |Statement|, keyResult, ~enumerate~, ~var-binding~, labelSet)
+  }
+}
+

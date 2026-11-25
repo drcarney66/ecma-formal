@@ -63,24 +63,14 @@ def Grammar.tokenText (src : List Nat) (els : List Grammar.Element) (toks : List
     List Nat :=
   Grammar.slice src (Grammar.tokenSpan els toks i j).1 (Grammar.tokenSpan els toks i j).2
 
-/-- What a model's parse is stated against: the grammar data, the overlay's readings and context, the code
+/-- What a model's parse is stated against: the grammar data, the context, the code
 point grammars' primitives, and whether its source text is strict mode code from outside (§11.2.2: eval
 code of a direct eval contained in strict mode code). -/
 structure GrammarCtx where
   gl : Grammar.GL
-  rd : List Grammar.RuleReading
   cx : Grammar.Ctx
   P : Grammar.CodePrims
   strict : Bool
-
-/-- The overlay's grammar readings in effect when the errata read as `sel`: the interpreting ones, and
-an erratum's when it does not read literally. -/
-def rulesUnder (rs : List Grammar.RuleReading) (sel : ErratumId → Reading) : List Grammar.RuleReading :=
-  rs.filter fun x => x.erratum.all (sel · != .literal)
-
-/-- The context with the grammar readings in effect when the errata read as `sel`. -/
-def GrammarCtx.under (G : GrammarCtx) (sel : ErratumId → Reading) : GrammarCtx :=
-  { G with rd := rulesUnder G.rd sel }
 
 /-- The context of a parser invocation under `pc`: Annex B's grammar, the |Module| goal (B.1.1) and strict
 mode code from outside as `pc` says. -/
@@ -127,69 +117,69 @@ B.1's productions modify those grammars (`GL.overlays`) and are no grammar a goa
 def GrammarCtx.ParseIs (G : GrammarCtx) (M : Model) (st : Nat) (goal : Grammar.NT)
     (ps : List Grammar.Param) (src : List Nat) (n : M.Node) (t : Grammar.Tree) : Prop :=
   if (G.gl.rulesOf .syntactic).any (·.lhs == goal) then
-    ∃ els toks, Grammar.Scans G.gl G.rd G.cx G.P src els ∧
-      Grammar.GoalsAt G.gl G.rd G.cx G.P goal ps src els toks t ∧
+    ∃ els toks, Grammar.Scans G.gl G.cx G.P src els ∧
+      Grammar.GoalsAt G.gl G.cx G.P goal ps src els toks t ∧
       toks.filter (·.virt.isNone) = Grammar.tokensOf src els ∧ (toks.all fun k => k.virt.isNone || !k.lt) = true ∧
-      Grammar.ASIOk G.gl G.rd G.cx G.P goal ps toks ∧
-      Grammar.Sentence G.gl G.rd G.cx G.P goal ps toks t ∧ Grammar.ForHeadersExplicit toks t ∧
+      Grammar.ASIOk G.gl G.cx G.P goal ps toks ∧
+      Grammar.Sentence G.gl G.cx G.P goal ps toks t ∧ Grammar.ForHeadersExplicit toks t ∧
       Grammar.NonStrictOk G.gl (G.StrictIn src els toks) [] t ∧
       Model.NodeRel M st src (Grammar.tokenSpan els toks) n t
   else
     ∃ g ∈ Grammar.codeGrammars, (G.gl.rulesOf g).any (·.lhs == goal) ∧
-      Grammar.ParsesCode G.gl G.rd G.cx G.P g goal ps src t ∧ Model.NodeRel M st src (fun i j => (i, j)) n t
+      Grammar.ParsesCode G.gl G.cx G.P g goal ps src t ∧ Model.NodeRel M st src (fun i j => (i, j)) n t
 
 /-- §5.1.2, §11.1.6: `t` is a parse of the code points `src` with goal `goal`: `ParseIs` without the model's
 Parse Node. -/
 def GrammarCtx.Parses (G : GrammarCtx) (goal : Grammar.NT) (ps : List Grammar.Param) (src : List Nat)
     (t : Grammar.Tree) : Prop :=
   if (G.gl.rulesOf .syntactic).any (·.lhs == goal) then
-    ∃ els toks, Grammar.Scans G.gl G.rd G.cx G.P src els ∧
-      Grammar.GoalsAt G.gl G.rd G.cx G.P goal ps src els toks t ∧
+    ∃ els toks, Grammar.Scans G.gl G.cx G.P src els ∧
+      Grammar.GoalsAt G.gl G.cx G.P goal ps src els toks t ∧
       toks.filter (·.virt.isNone) = Grammar.tokensOf src els ∧ (toks.all fun k => k.virt.isNone || !k.lt) = true ∧
-      Grammar.ASIOk G.gl G.rd G.cx G.P goal ps toks ∧
-      Grammar.Sentence G.gl G.rd G.cx G.P goal ps toks t ∧ Grammar.ForHeadersExplicit toks t ∧
+      Grammar.ASIOk G.gl G.cx G.P goal ps toks ∧
+      Grammar.Sentence G.gl G.cx G.P goal ps toks t ∧ Grammar.ForHeadersExplicit toks t ∧
       Grammar.NonStrictOk G.gl (G.StrictIn src els toks) [] t
   else
     ∃ g ∈ Grammar.codeGrammars, (G.gl.rulesOf g).any (·.lhs == goal) ∧
-      Grammar.ParsesCode G.gl G.rd G.cx G.P g goal ps src t
+      Grammar.ParsesCode G.gl G.cx G.P g goal ps src t
 
 /-- The code points of a List as the model's sequence. -/
 def Model.seqOfNats (M : Model) (src : List Nat) : M.Seq M.Math :=
   src.foldl (fun s c => M.seqPush s (M.ofNat c)) M.seqNil
 
-/-- `Model.parse`'s laws, stated and never assumed, per reading of the errata and invocation
-context: a Parse Node it gives is a parse under that reading's grammar in that context, its nodes
-carrying the invocation's stamp, and where it gives none no tree is a parse (`GrammarCtx.Parses`). -/
+/-- `Model.parse`'s laws, stated and never assumed, per invocation context: a Parse Node it gives is a
+parse under the grammar in that context, its nodes carrying the invocation's stamp, and where it gives none
+no tree is a parse (`GrammarCtx.Parses`). -/
 structure Model.ParseLaws (M : Model) (G : GrammarCtx) : Prop where
   /-- sec-parsetext:
   "If the parse succeeded and no early errors were found, return the Parse Node (an instance of goalSymbol) at the root of the parse tree resulting from the parse."
   sec-parsing: "When a parse is successful, it constructs a parse tree, a rooted tree structure in which each node is a Parse Node."
   Reading: a Parse Node the model's parse gives is the root of a parse of the code points with the goal, under the
-  errata's grammar and the invocation's context, its nodes carrying the invocation's stamp (`GrammarCtx.ParseIs`). -/
-  sound : ∀ sel pc st src (goal : Grammar.NT) args ps n, ParamsOf args ps →
-    M.parse sel pc st (M.seqOfNats src) goal.ctorIdx args = some (some n) →
-      ∃ t, ((G.under sel).at pc).ParseIs M st goal ps src n t
+  grammar and the invocation's context, its nodes carrying the invocation's stamp (`GrammarCtx.ParseIs`). -/
+  sound : ∀ pc st src (goal : Grammar.NT) args ps n, ParamsOf args ps →
+    M.parse pc st (M.seqOfNats src) goal.ctorIdx args = some (some n) →
+      ∃ t, (G.at pc).ParseIs M st goal ps src n t
   /-- sec-parsing:
   "An input stream of terminal symbols can be parsed using a goal symbol when it is matched by that goal symbol with no terminal symbols left over."
   Reading: where the model's parse gives no Parse Node, no tree is a parse of the code points with the goal under
-  the errata's grammar and the invocation's context (`GrammarCtx.Parses`). -/
-  complete : ∀ sel pc st src (goal : Grammar.NT) args ps, ParamsOf args ps →
-    M.parse sel pc st (M.seqOfNats src) goal.ctorIdx args = some none →
-      ∀ t, ¬ ((G.under sel).at pc).Parses goal ps src t
+  the grammar and the invocation's context (`GrammarCtx.Parses`). -/
+  complete : ∀ pc st src (goal : Grammar.NT) args ps, ParamsOf args ps →
+    M.parse pc st (M.seqOfNats src) goal.ctorIdx args = some none →
+      ∀ t, ¬ (G.at pc).Parses goal ps src t
 
-/-- The Parse Nodes of parser invocations under the errata read as `sel` in context `pc`: a parse's result,
+/-- The Parse Nodes of parser invocations in context `pc`: a parse's result,
 the covered node the model gives from such a node (`Model.cover`), and their descendants. -/
-inductive Model.Parsed (M : Model) (sel : ErratumId → Reading) (pc : ParseCx) : M.Node → Prop
+inductive Model.Parsed (M : Model) (pc : ParseCx) : M.Node → Prop
   | parse {st : Nat} {src : M.Seq M.Math} {goal : NtId} {args : List (ParamId × Bool)} {n : M.Node} :
-      M.parse sel pc st src goal args = some (some n) → Model.Parsed M sel pc n
+      M.parse pc st src goal args = some (some n) → Model.Parsed M pc n
   | cover {st : Nat} {n : M.Node} {k : NtId} {args : List (ParamId × Bool)} {r : M.Node} :
-      Model.Parsed M sel pc n → M.cover sel pc st n k args = some r → Model.Parsed M sel pc r
-  | desc {n d : M.Node} : Model.Parsed M sel pc n → d ∈ seqList (M.nodeDescendants n) → Model.Parsed M sel pc d
+      Model.Parsed M pc n → M.cover pc st n k args = some r → Model.Parsed M pc r
+  | desc {n d : M.Node} : Model.Parsed M pc n → d ∈ seqList (M.nodeDescendants n) → Model.Parsed M pc d
 
-/-- `Model.cover`'s law (§5.1.5 "P must cover K"), stated and never assumed, per reading of the errata and
-invocation context: the node it gives from a Parse Node `n` of parser invocations in that context, with a goal
-and arguments, is a parse of `n`'s source text with that goal under that reading's grammar in that context, its
-nodes carrying the new invocation's stamp: what `ParseLaws.sound` says of `Model.parse`'s node for that text.
+/-- `Model.cover`'s law (§5.1.5 "P must cover K"), stated and never assumed, per invocation context:
+the node it gives from a Parse Node `n` of parser invocations in that context, with a goal and arguments,
+is a parse of `n`'s source text with that goal under the grammar in that context, its nodes carrying the new
+invocation's stamp: what `ParseLaws.sound` says of `Model.parse`'s node for that text.
 Nothing is said of a node no parser invocation made, nor of one made in another context. -/
 structure Model.CoverLaws (M : Model) (G : GrammarCtx) : Prop where
   /-- sec-syntactic-grammar:
@@ -197,9 +187,9 @@ structure Model.CoverLaws (M : Model) (G : GrammarCtx) : Prop where
   Reading: the covered node the model gives from a Parse Node `n` of a parse in this context is a parse of `n`'s
   source text with the goal and the arguments, its nodes carrying the new invocation's stamp
   (`GrammarCtx.ParseIs`). -/
-  sound : ∀ sel pc st n (goal : Grammar.NT) args ps src r, Model.Parsed M sel pc n → ParamsOf args ps →
-    M.nodeSource n = M.seqOfNats src → M.cover sel pc st n goal.ctorIdx args = some r →
-      ∃ t, ((G.under sel).at pc).ParseIs M st goal ps src r t
+  sound : ∀ pc st n (goal : Grammar.NT) args ps src r, Model.Parsed M pc n → ParamsOf args ps →
+    M.nodeSource n = M.seqOfNats src → M.cover pc st n goal.ctorIdx args = some r →
+      ∃ t, (G.at pc).ParseIs M st goal ps src r t
 
 namespace Grammar
 
@@ -213,14 +203,13 @@ def occsOf : List Item → List Bool → List (NT × Bool)
   | .butNot (.nt n _) _ :: is, bs => (n, true) :: occsOf is bs
   | _ :: is, bs => occsOf is bs
 
-/-- The right-hand side with production id `id` (`GL.prodId`): GL's (`GL.byId`), then past GL's numbers
-the readings'. -/
-def prodAt (gl : GL) (rd : List RuleReading) (id : Nat) : Option Prod :=
-  (gl.byId.toList ++ (prodsOf (rd.map fun x => (x.grammar, [x.rule]))).map some)[id]?.join
+/-- The right-hand side with production id `id` (`GL.byId`). -/
+def prodAt (gl : GL) (id : Nat) : Option Prod :=
+  (gl.byId.toList)[id]?.join
 
 /-- The nonterminal occurrences of production `id`'s right-hand side, with their presences. -/
-def occsAt (gl : GL) (rd : List RuleReading) (id : Nat) : List (NT × Bool) :=
-  ((prodAt gl rd id).bind fun p => p.altOf.map fun a => occsOf a.rhs p.mask).getD []
+def occsAt (gl : GL) (id : Nat) : List (NT × Bool) :=
+  ((prodAt gl id).bind fun p => p.altOf.map fun a => occsOf a.rhs p.mask).getD []
 
 /-- The written occurrences, each with its child: a present one takes the next of `kids`. -/
 def fillOccs {N : Type} : List (NT × Bool) → List N → List (Nat × Option N)
@@ -243,20 +232,20 @@ structure Model.NodeLaws (M : Model) (G : GrammarCtx) : Prop where
     os.filterMap id = (seqList (M.nodeKids n)).filter (M.nodeNt · == nt)
   /-- sec-parsing:
   "Moreover, it has zero or more children, one for each symbol on the production's right-hand side: each child is a Parse Node that is an instance of the corresponding symbol."
-  Reading: "the |X| of" a node of a parse under the errata read as `sel` is the child of the `k`-th written
+  Reading: "the |X| of" a node of a parse is the child of the `k`-th written
   occurrence of `nt` in its production, none where that occurrence is an absent optional symbol. -/
-  child_parse : ∀ sel pc st src goal args n d nt k,
-    M.parse sel pc st (M.seqOfNats src) goal args = some (some n) →
+  child_parse : ∀ pc st src goal args n d nt k,
+    M.parse pc st (M.seqOfNats src) goal args = some (some n) →
     (d = n ∨ d ∈ seqList (M.nodeDescendants n)) →
-    M.nodeChild d nt k = (((Grammar.fillOccs (Grammar.occsAt G.gl (rulesUnder G.rd sel) (M.nodeProd d))
+    M.nodeChild d nt k = (((Grammar.fillOccs (Grammar.occsAt G.gl (M.nodeProd d))
       (seqList (M.nodeKids d))).filter (·.1 == nt)).map (·.2))[k]?
   /-- sec-parsing:
   "Moreover, it has zero or more children, one for each symbol on the production's right-hand side: each child is a Parse Node that is an instance of the corresponding symbol."
   Reading: the same in a covered node the model gives (`Model.cover`) and its descendants, whatever the cover. -/
-  child_cover : ∀ sel pc st c goal args n d nt k,
-    M.cover sel pc st c goal args = some n →
+  child_cover : ∀ pc st c goal args n d nt k,
+    M.cover pc st c goal args = some n →
     (d = n ∨ d ∈ seqList (M.nodeDescendants n)) →
-    M.nodeChild d nt k = (((Grammar.fillOccs (Grammar.occsAt G.gl (rulesUnder G.rd sel) (M.nodeProd d))
+    M.nodeChild d nt k = (((Grammar.fillOccs (Grammar.occsAt G.gl (M.nodeProd d))
       (seqList (M.nodeKids d))).filter (·.1 == nt)).map (·.2))[k]?
   /-- sec-syntactic-grammar:
   "No early error rules are applied to p or any of its descendants."

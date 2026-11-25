@@ -10,7 +10,7 @@ namespace Engine.Machine
 
 open Ecma Ecma.Machine Engine.Accel
 
-variable (H : Host F) (rd : ErratumId → Reading) (chk : Bool)
+variable (H : Host F) (chk : Bool)
 
 /-! ## Sorts of a Number -/
 
@@ -27,17 +27,17 @@ theorem ls_sortDef_4 : Engine.P.sortDef 4 = none := by
   rw [sortDef_eq]; rfl
 
 theorem ls_sort1 (s : State F) (fr : List (Frame F)) (x : F.Num) :
-    step (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.sort 1 (.num x))⟩ = .inl ⟨s, fr, .val (.bool true)⟩ := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 1 (.num x))⟩ = .inl ⟨s, fr, .val (.bool true)⟩ := by
   simp only [step, invoke, spec_P, ls_sortDef_1, sortTest]
   rfl
 
 theorem ls_sort2 (s : State F) (fr : List (Frame F)) (x : F.Num) :
-    step (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.sort 2 (.num x))⟩ = .inl ⟨s, fr, .val (.bool false)⟩ := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 2 (.num x))⟩ = .inl ⟨s, fr, .val (.bool false)⟩ := by
   simp only [step, invoke, spec_P, ls_sortDef_2, sortTest]
   rfl
 
 theorem ls_sort4 (s : State F) (fr : List (Frame F)) (x : F.Num) :
-    step (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.sort 4 (.num x))⟩ = .inl ⟨s, fr, .val (.bool false)⟩ := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 4 (.num x))⟩ = .inl ⟨s, fr, .val (.bool false)⟩ := by
   simp only [step, invoke, spec_P, ls_sortDef_4, sortTest]
   rfl
 
@@ -67,19 +67,19 @@ set_option maxRecDepth 8000 in
 theorem ls_toString [PinsHold] (hkeys : LsIntKeys) (i : Int) (hi0 : 0 ≤ i) (hi53 : i < 2 ^ 53)
     (t : F.Str) (h : numberToStr (F.ofNat 10) (lsNum i) = some t) (s : State F)
     (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.alg ⟨208, 0⟩ [.num (lsNum i)])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨208, 0⟩ [.num (lsNum i)])⟩
       ⟨s, fr, .val (.comp Known.eNormal (.str t) (.enum Known.eEmpty))⟩ := by
   ts_enter_alg lsToStringAlg_pin lsToStringCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.num (lsNum i), .unbound], .steps true true true, [], [], none⟩ :: _,
     .code lsToStringCode⟩ _
   gsteps
-  refine Steps.next (ls_sort2 H rd chk _ _ _) ?_
+  refine Steps.next (ls_sort2 H chk _ _ _) ?_
   gsteps
-  refine Steps.next (ls_sort4 H rd chk _ _ _) ?_
+  refine Steps.next (ls_sort4 H chk _ _ _) ?_
   gsteps
-  refine Steps.next (ls_sort1 H rd chk _ _ _) ?_
+  refine Steps.next (ls_sort1 H chk _ _ _) ?_
   gsteps
-  refine Steps.next (step_alg H rd chk _ _ _ _ _ _ toStringAlg_pin toStringCode_pin) ?_
+  refine Steps.next (step_alg H chk _ _ _ _ _ _ toStringAlg_pin toStringCode_pin) ?_
   by_cases hi : i = 0
   · subst hi
     have e0 : lsNum 0 = F.numZero false := rfl
@@ -88,7 +88,7 @@ theorem ls_toString [PinsHold] (hkeys : LsIntKeys) (i : Int) (hi0 : 0 ≤ i) (hi
     rw [e0] at h ⊢
     rw [h0] at h
     cases Option.some.inj h
-    refine Steps.trans (numIdx_zero H rd chk (F.ofNat 10) s _ toStringAlg.id none) ?_
+    refine Steps.trans (numIdx_zero H chk (F.ofNat 10) s _ toStringAlg.id none) ?_
     gsteps; exact .refl _
   · have hv0 : 0 < i.toNat := by omega
     have hv53 : i.toNat < 2 ^ 53 := by omega
@@ -103,7 +103,7 @@ theorem ls_toString [PinsHold] (hkeys : LsIntKeys) (i : Int) (hi0 : 0 ≤ i) (hi
     have hm0 : F.lt (F.ofNat 0) (.int i.toNat) = true := by
       show decide ((0 : Int) < i.toNat) = true
       exact decide_eq_true (by omega)
-    refine Steps.trans (numIdx_step H rd chk (F.numOf (.int i.toNat)) (.int i.toNat) hv hlt hm0 n k s0 h5 hn21 hkn
+    refine Steps.trans (numIdx_step H chk (F.numOf (.int i.toNat)) (.int i.toNat) hv hlt hm0 n k s0 h5 hn21 hkn
       (F.strLit (toString i.toNat)) hkd hcat s _ toStringAlg.id none) ?_
     gsteps; exact .refl _
 
@@ -142,7 +142,7 @@ theorem ls_step_imethod (X : Ctx F) (s : State F) (a : AlgId) (nd : Option F.Nod
 /-- OrdinaryGetOwnProperty(O, P) of an object without the key: undefined, the state as it was. -/
 theorem ls_ogop [PinsHold] (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val F)) (ps : F.Props (Val F))
     (ha : s.heap[a]? = some (.object sl ps)) (hk : F.propsGet ps (.inl t) = none) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.alg ⟨447, 0⟩ [.obj a, .str t])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨447, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val .undefined⟩ := by
   ts_enter_alg lsOgopAlg_pin lsOgopCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.obj a, .str t, .unbound, .unbound], .steps false true true, [], [], none⟩ :: _,
@@ -156,12 +156,12 @@ theorem ls_ogop [PinsHold] (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val 
 /-- O.[[GetOwnProperty]](P) of an ordinary object without the key. -/
 theorem ls_ordGop [PinsHold] (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val F)) (ps : F.Props (Val F))
     (ha : s.heap[a]? = some (.object sl ps)) (hk : F.propsGet ps (.inl t) = none) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.alg ⟨446, 0⟩ [.obj a, .str t])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨446, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val (.comp Known.eNormal .undefined (.enum Known.eEmpty))⟩ := by
   ts_enter_alg lsOrdGopAlg_pin lsOrdGopCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.obj a, .str t], .steps true true true, [], [], none⟩ :: _, .code lsOrdGopCode⟩ _
   gsteps
-  refine Steps.trans (ls_ogop H rd chk s a t sl ps ha hk _) ?_
+  refine Steps.trans (ls_ogop H chk s a t sl ps ha hk _) ?_
   gsteps
   exact .refl _
 
@@ -171,7 +171,7 @@ def lsProto (v : Val F) : Prop := v = .null ∨ ∃ p : Nat, v = .obj p
 /-- OrdinaryGetPrototypeOf(O). -/
 theorem ls_ogpo [PinsHold] (s : State F) (a : Nat) (sl : F.Rec (Val F)) (ps : F.Props (Val F)) (v : Val F)
     (ha : s.heap[a]? = some (.object sl ps)) (hp : F.recGet sl 53 = some v) (hv : lsProto v) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.alg ⟨439, 0⟩ [.obj a])⟩ ⟨s, fr, .val v⟩ := by
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨439, 0⟩ [.obj a])⟩ ⟨s, fr, .val v⟩ := by
   ts_enter_alg lsOgpoAlg_pin lsOgpoCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.obj a], .steps false true true, [], [], none⟩ :: _, .code lsOgpoCode⟩ _
   gsteps
@@ -181,12 +181,12 @@ theorem ls_ogpo [PinsHold] (s : State F) (a : Nat) (sl : F.Rec (Val F)) (ps : F.
 /-- O.[[GetPrototypeOf]]() of an ordinary object. -/
 theorem ls_ordGpo [PinsHold] (s : State F) (a : Nat) (sl : F.Rec (Val F)) (ps : F.Props (Val F)) (v : Val F)
     (ha : s.heap[a]? = some (.object sl ps)) (hp : F.recGet sl 53 = some v) (hv : lsProto v) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.alg ⟨438, 0⟩ [.obj a])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨438, 0⟩ [.obj a])⟩
       ⟨s, fr, .val (.comp Known.eNormal v (.enum Known.eEmpty))⟩ := by
   ts_enter_alg lsOrdGpoAlg_pin lsOrdGpoCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.obj a], .steps true true true, [], [], none⟩ :: _, .code lsOrdGpoCode⟩ _
   gsteps
-  refine Steps.trans (ls_ogpo H rd chk s a sl ps v ha hp hv _) ?_
+  refine Steps.trans (ls_ogpo H chk s a sl ps v ha hp hv _) ?_
   rcases hv with rfl | ⟨p, rfl⟩ <;> (gsteps; exact .refl _)
 
 /-! ## The ordinary chain: [[HasProperty]], OrdinaryHasProperty, HasProperty -/
@@ -241,7 +241,7 @@ set_option maxRecDepth 8000 in
 was. -/
 theorem ls_ordHas [PinsHold] (s : State F) (t : F.Str) : ∀ (n : Nat) (a : Nat) (ch : List (F.Props (Val F))),
     ordChain s n a = some ch → lsNone ch t → ∀ fr : List (Frame F),
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.alg ⟨452, 0⟩ [.obj a, .str t])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨452, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val (.comp Known.eNormal (.bool false) (.enum Known.eEmpty))⟩ := by
   intro n
   induction n with
@@ -260,14 +260,14 @@ theorem ls_ordHas [PinsHold] (s : State F) (t : F.Str) : ∀ (n : Nat) (a : Nat)
     gsteps
     refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ 58 _ _ _ (ls_readSlot s a sl ps 58 _ ha h58)) ?_
     gsteps
-    refine Steps.trans (ls_ordGop H rd chk s a t sl ps ha hk _) ?_
+    refine Steps.trans (ls_ordGop H chk s a t sl ps ha hk _) ?_
     gsteps
     refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ 62 _ _ _ (ls_readSlot s a sl ps 62 _ ha h62)) ?_
     rcases hp with ⟨h53, rfl⟩ | ⟨p, ch', h53, hch, rfl⟩
-    · refine Steps.trans (ls_ordGpo H rd chk s a sl ps .null ha h53 (.inl rfl) _) ?_
+    · refine Steps.trans (ls_ordGpo H chk s a sl ps .null ha h53 (.inl rfl) _) ?_
       gsteps
       exact .refl _
-    · refine Steps.trans (ls_ordGpo H rd chk s a sl ps (.obj p) ha h53 (.inr ⟨p, rfl⟩) _) ?_
+    · refine Steps.trans (ls_ordGpo H chk s a sl ps (.obj p) ha h53 (.inr ⟨p, rfl⟩) _) ?_
       gsteps
       cases n with
       | zero => cases hch
@@ -283,7 +283,7 @@ set_option maxRecDepth 8000 in
 /-- HasProperty(O, P) of an ordinary object whose chain has no property with the key: false, the state as it was. -/
 theorem ls_hasProperty [PinsHold] (s : State F) (t : F.Str) (n : Nat) (a : Nat) (ch : List (F.Props (Val F)))
     (h : ordChain s n a = some ch) (hn : lsNone ch t) (fr : List (Frame F)) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.alg ⟨242, 0⟩ [.obj a, .str t])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨242, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val (.comp Known.eNormal (.bool false) (.enum Known.eEmpty))⟩ := by
   cases n with
   | zero => cases h
@@ -295,7 +295,7 @@ theorem ls_hasProperty [PinsHold] (s : State F) (t : F.Str) (n : Nat) (a : Nat) 
     gsteps
     refine Steps.next (ls_step_imethod _ _ _ _ _ _ _ _ _ _ 57 _ _ _ (ls_readSlot s a sl ps 57 _ ha h57)) ?_
     gsteps
-    refine Steps.trans (ls_ordHas H rd chk s t (n + 1) a ch h hn _) ?_
+    refine Steps.trans (ls_ordHas H chk s t (n + 1) a ch h hn _) ?_
     gsteps
     exact .refl _
 
@@ -320,13 +320,13 @@ theorem ls_round [PinsHold] (s : State F) (x : Option Slot) (t : Op)
     (ch : List (F.Props (Val F))) (k' : Int)
     (hk : sl[k]? = some (.math (.int i))) (ho : sl[o]? = some (.obj ad)) (hpk : pk < sl.size) (hkp : kp < sl.size)
     (hopk : o ≠ pk)
-    (ht : TsEv (Ctx.spec Engine.P' H rd chk) sl t (.bool true))
+    (ht : TsEv (Ctx.spec Engine.P' H chk) sl t (.bool true))
     (hkeys : LsIntKeys) (hi0 : 0 ≤ i) (hi53 : i < 2 ^ 53)
     (hkey : numberToStr (F.ofNat 10) (lsNum i) = some key)
     (hch : ordChain s n ad = some ch) (hnone : lsNone ch key)
-    (he : TsEv (Ctx.spec Engine.P' H rd chk) ((sl.setIfInBounds pk (.str key)).setIfInBounds kp (.bool false)) e
+    (he : TsEv (Ctx.spec Engine.P' H chk) ((sl.setIfInBounds pk (.str key)).setIfInBounds kp (.bool false)) e
       (.math (.int k'))) :
-    Steps (Ctx.spec Engine.P' H rd chk)
+    Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, nd, sl, kd, p', K, ci⟩ :: fs,
         .loop (.spend back) ⟨x, .while_ t, p, lsBody p k o pk kp tb e, st, r⟩⟩
       ⟨s, ⟨a, nd, ((sl.setIfInBounds pk (.str key)).setIfInBounds kp (.bool false)).setIfInBounds k
@@ -334,7 +334,7 @@ theorem ls_round [PinsHold] (s : State F) (x : Option Slot) (t : Op)
         .loop (.spend true) ⟨x, .while_ t, p, lsBody p k o pk kp tb e, st, r + 1⟩⟩ := by
   have hk' : sl.getD k .unbound = .math (.int i) := by simp [Array.getD_eq_getD_getElem?, hk]
   mstep
-  have hround : Steps (Ctx.spec Engine.P' H rd chk)
+  have hround : Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, nd, sl, kd, p', K, ci⟩ :: fs,
         .loop .round ⟨x, .while_ t, p, lsBody p k o pk kp tb e, st, r + 1⟩⟩
       ⟨s, ⟨a, nd, ((sl.setIfInBounds pk (.str key)).setIfInBounds kp (.bool false)).setIfInBounds k
@@ -345,7 +345,7 @@ theorem ls_round [PinsHold] (s : State F) (x : Option Slot) (t : Op)
     iterate 5 mstep
     ts_ev TsEv.prim1 (TsEv.var hk' (by simp)) rfl rfl (ls_primF i)
     mstep
-    refine Steps.trans (ls_toString H rd chk hkeys i hi0 hi53 key hkey _ _) ?_
+    refine Steps.trans (ls_toString H chk hkeys i hi0 hi53 key hkey _ _) ?_
     have ho1 : (sl.setIfInBounds pk (.str key)).getD o .unbound = .obj ad := by
       simp [Array.getD_eq_getD_getElem?, Ne.symm hopk, ho]
     have hpk1 : (sl.setIfInBounds pk (.str key)).getD pk .unbound = .str key := by
@@ -357,7 +357,7 @@ theorem ls_round [PinsHold] (s : State F) (x : Option Slot) (t : Op)
     mstep
     refine Steps.next (step_var _ _ _ _ pk (.str key) hpk1 (by simp)) ?_
     mstep
-    refine Steps.trans (ls_hasProperty H rd chk s key n ad ch hch hnone _) ?_
+    refine Steps.trans (ls_hasProperty H chk s key n ad ch hch hnone _) ?_
     gsteps
     refine Steps.next (step_var _ _ _ _ kp (.bool false) hkp2 (by simp)) ?_
     gsteps
@@ -539,7 +539,7 @@ theorem ls_rounds [PinsHold] (hkeys : LsIntKeys) (x : Option Slot)
     ∀ (g : Nat) (i : Int) (s : State F) (sl : Array (Val F)) (p' : List Nat) (back : Bool) (r : Nat),
       sl[k]? = some (.math (.int i)) → LsSlots k o pk kp bound sl ad → 0 ≤ i → lsCond bound sl i g →
       ordChain s n ad = some ch → (∀ j ≤ g, lsNone ch (lsKeyStr (lsStep bound i j))) →
-      Steps (Ctx.spec Engine.P' H rd chk)
+      Steps (Ctx.spec Engine.P' H chk)
         ⟨s, ⟨a, nd, sl, kd, p', K, ci⟩ :: fs, .loop (.spend back) (lsLoop x p k o pk kp bound tb st r)⟩
         ⟨s,
           ⟨a, nd, lsPost k pk kp sl (lsKeyStr (lsStep bound i g)) (lsStep bound i (g + 1)), kd, 4 :: p, K, ci⟩ :: fs,
@@ -553,7 +553,7 @@ theorem ls_rounds [PinsHold] (hkeys : LsIntKeys) (x : Option Slot)
     have hsl2 : ((sl.setIfInBounds pk (.str (lsKeyStr i))).setIfInBounds kp (.bool false))[k]? =
         some (.math (.int i)) := by
       simp [Ne.symm hs.kpk, Ne.symm hs.kkp, hk]
-    have h1 := ls_round H rd chk s x (lsTest k bound) p k o pk kp tb (lsUpd k bound) st a nd sl kd p' K ci
+    have h1 := ls_round H chk s x (lsTest k bound) p k o pk kp tb (lsUpd k bound) st a nd sl kd p' K ci
       fs back r i ad (lsKeyStr i) n ch (lsStep bound i 1) hk hs.ho hs.hpk hs.hkp hs.opk
       (ls_test _ hk h0 hc) hkeys hr.1 hr.2 (ls_key hkeys i hr.1 hr.2) hch
       (by simpa [ls_step_zero] using hno 0 (Nat.le_refl 0))
@@ -573,7 +573,7 @@ theorem ls_rounds [PinsHold] (hkeys : LsIntKeys) (x : Option Slot)
       | some len =>
         obtain ⟨n', hn, h1, h2⟩ := hc
         exact ⟨n', hn, by omega, by omega⟩
-    have h1 := ls_round H rd chk s x (lsTest k bound) p k o pk kp tb (lsUpd k bound) st a nd sl kd p' K ci
+    have h1 := ls_round H chk s x (lsTest k bound) p k o pk kp tb (lsUpd k bound) st a nd sl kd p' K ci
       fs back r i ad (lsKeyStr i) n ch (lsStep bound i 1) hk hs.ho hs.hpk hs.hkp hs.opk
       (ls_test _ hk h0 hc0) hkeys hr.1 hr.2 (ls_key hkeys i hr.1 hr.2) hch
       (by simpa [ls_step_zero] using hno 0 (Nat.zero_le _))

@@ -31,7 +31,7 @@ this repository.
 namespace Engine
 
 open Engine.Model Ecma.Grammar
-open Ecma (ProdId NtId ParamId ErratumId Reading ParseCx)
+open Ecma (ProdId NtId ParamId ParseCx)
 
 /-- Bare's Parse Nodes as Parse's, with Bare's code point classes. -/
 def builder : Engine.Parse.Builder Node where
@@ -46,9 +46,6 @@ def builder : Engine.Parse.Builder Node where
   usp := usp
   idStart := some idStart
   idContinue := some idContinue
-
-/-- The overlay's grammar readings. -/
-def readings : List RuleReading := Gen.Reading.readings
 
 /-- The code points of a parse's input; none if one is not a code point. -/
 def codePointsOf (src : Array MathVal) : Option (Array Nat) :=
@@ -87,25 +84,25 @@ def shapeOk (occs : Nat → List (NT × Bool)) : Node → Bool
       have := Array.sizeOf_lt_of_mem h
       shapeOk occs x
 
-/-- The check of a parse under the readings `rd`: every node's children are its production's occurrences. -/
-def shaped (rd : List RuleReading) : Node → Bool := shapeOk (Engine.Parse.occsBy (Engine.Parse.readingOccs rd))
+/-- The check of a parse: every node's children are its production's occurrences. -/
+def shaped : Node → Bool := shapeOk Engine.Parse.occsBy
 
 /-- An outcome whose Parse Node passes `ok`; a stop where it does not. -/
 @[reducible] def checked (ok : Node → Bool) : Engine.Parse.Outcome Node → Engine.Parse.Outcome Node
   | .ok n => if ok n then .ok n else .stop (.check "a Parse Node whose children are not its production's")
   | o => o
 
-/-- Parse's outcome for a goal at Bare, under the grammar readings `rd` in context `cx`, `strict` its
-source text being strict mode code from outside, `lit` LookaheadSourceTokens read literally; "no parse" at a
-first code point outside the goal's `firstSet`, and at |JSONText| on an input that is not a JSON text; a stop
-where a node's children are not its production's occurrences (`shaped`). -/
+/-- Parse's outcome for a goal at Bare, in context `cx`, `strict` its source text being strict mode
+code from outside; "no parse" at a first code point outside the goal's `firstSet`, and at |JSONText|
+on an input that is not a JSON text; a stop where a node's children are not its production's
+occurrences (`shaped`). -/
 def outcome (stamp : Nat) (src : Array MathVal) (goal : NtId) (args : List (ParamId × Bool))
-    (rd : List RuleReading := readings) (cx : Ctx := ⟨false, {}⟩) (strict : Bool := false) (lit : Bool := false) :
+    (cx : Ctx := ⟨false, {}⟩) (strict : Bool := false) :
     Engine.Parse.Outcome Node :=
   if noFirst goal src then .noParse else
   match codePointsOf src with
   | some cs => if noJSON goal cs then .noParse else
-      checked (shaped rd) (Engine.Parse.parse builder rd cx strict stamp cs goal args lit)
+      checked shaped (Engine.Parse.parse builder cx strict stamp cs goal args)
   | none => .stop (.check "an input that is not code points")
 
 /-- The grammar context of a parse context: the |Module| goal (B.1.1) and Annex B. -/
@@ -119,62 +116,26 @@ def restamp (k : Nat) : Node → Node
       have := Array.sizeOf_lt_of_mem h
       restamp k x)) t
 
-/-- LookaheadSourceTokens is read literally under `sel`. -/
-def litLook (sel : ErratumId → Reading) : Bool := sel Ecma.Known.erLookaheadSourceTokens == .literal
-
-/-- A `\` then a nonzero digit in `cs`: a |DecimalEscape|, whose group-number condition B.1.2 adds, may start there. -/
-def hasDecimalEscape (cs : Array Nat) : Bool :=
-  (List.range cs.size).any fun i => cs[i]? == some 0x5C && (cs[i + 1]?.any fun c => 0x31 ≤ c && c ≤ 0x39)
-
-/-- The nonterminals a cover's reparse (§5.1.5) has as goal: those the spec's covers cover. -/
-def coveredGoals : List NtId :=
-  [NT.ParenthesizedExpression.ctorIdx, NT.ArrowFormalParameters.ctorIdx, NT.AssignmentPattern.ctorIdx,
-   NT.AsyncArrowHead.ctorIdx, NT.CallMemberExpression.ctorIdx, NT.AwaitExpression.ctorIdx,
-   NT.AwaitUsingDeclarationHead.ctorIdx]
-
-/-- CoveredNodeParent is read literally under `sel`. -/
-def litCover (sel : ErratumId → Reading) : Bool := sel Ecma.Known.erCoveredNodeParent == .literal
-
-/-- The errata read literally under `sel` that leave a parse undecided at Impl: a |Script| on a B.1.1 host
-whose first input element is an HTMLCloseComment (HTMLCloseCommentToken); a B.1.2 |Pattern| without the
-u or v flag (AnnexBRegExpOrder), or one with a |DecimalEscape| (AnnexBGroupCount); a cover's reparse
-(CoveredNodeParent). -/
-def litStop (sel : ErratumId → Reading) (cx : ParseCx) (src : Array MathVal) (goal : NtId)
-    (args : List (ParamId × Bool)) : Bool :=
-  if goal == NT.Script.ctorIdx then
-    sel Ecma.Known.erHTMLCloseCommentToken == .literal && cx.annexB.has .htmlLikeComments && !cx.module &&
-      (codePointsOf src).any fun cs => (Engine.Parse.Lex.htmlClose builder cs 0).isSome
-  else if goal == NT.Pattern.ctorIdx then
-    cx.annexB.has .regExpPatterns &&
-      !args.contains (Param.UnicodeMode.ctorIdx, true) && !args.contains (Param.UnicodeSetsMode.ctorIdx, true) &&
-      (sel Ecma.Known.erAnnexBRegExpOrder == .literal ||
-        (sel Ecma.Known.erAnnexBGroupCount == .literal && (codePointsOf src).any hasDecimalEscape))
-  else if coveredGoals.contains goal then litCover sel
-  else false
-
-/-- `Model.parse` at Impl, the errata read as `sel`, in context `cx`: `some (some n)` the Parse Node,
-`some none` no parse, `none` undecided (also where `litStop`, and where a node's children are not its
-production's occurrences: `shaped`, in `outcome` and here for a numeric string's). Strictness from outside only bears on Annex B's productions,
-and json on no parse. Parse runs as invocation 0, its tree restamped and its root indexed
-(`indexed`). -/
-def parse (sel : ErratumId → Reading) (cx : ParseCx) (stamp : Nat) (src : Array MathVal) (goal : NtId)
+/-- `Model.parse` at Impl, in context `cx`: `some (some n)` the Parse Node, `some none` no parse, `none`
+undecided (where a node's children are not its production's occurrences: `shaped`, in `outcome` and here
+for a numeric string's). Strictness from outside only bears on Annex B's productions, and json on no parse.
+Parse runs as invocation 0, its tree restamped and its root indexed (`indexed`). -/
+def parse (cx : ParseCx) (stamp : Nat) (src : Array MathVal) (goal : NtId)
     (args : List (ParamId × Bool)) : Option (Option Node) :=
   if goal == NT.StringNumericLiteral.ctorIdx || goal == NT.StringIntegerLiteral.ctorIdx then
     match parseNumeric stamp src goal args with
-    | some (some n) => if shaped (Ecma.rulesUnder readings sel) n then some (some n) else none
+    | some (some n) => if shaped n then some (some n) else none
     | o => o
-  else if litStop sel cx src goal args then none
-  else match outcome 0 src goal args (Ecma.rulesUnder readings sel) (grammarCx cx) cx.strict (litLook sel) with
+  else match outcome 0 src goal args (grammarCx cx) cx.strict with
     | .ok n => some (some (restamp stamp n))
     | .noParse => some none
     | .stop _ => none
 
 /-- Whether `outcome` on `(src, goal, args)` stops at the parser's fuel or depth ceiling. -/
-def isParseExhausted (sel : ErratumId → Reading) (cx : ParseCx) (src : Array MathVal) (goal : NtId)
+def isParseExhausted (cx : ParseCx) (src : Array MathVal) (goal : NtId)
     (args : List (ParamId × Bool)) : Bool :=
   if goal == NT.StringNumericLiteral.ctorIdx || goal == NT.StringIntegerLiteral.ctorIdx then false
-  else if litStop sel cx src goal args then false
-  else match outcome 0 src goal args (Ecma.rulesUnder readings sel) (grammarCx cx) cx.strict (litLook sel) with
+  else match outcome 0 src goal args (grammarCx cx) cx.strict with
     | .stop .fuel | .stop .depth => true
     | _ => false
 

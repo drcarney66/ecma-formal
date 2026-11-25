@@ -1,0 +1,114 @@
+-- ECMA-262 SpecTec Clauses: S28
+
+def @sec-reflect.apply "Reflect.apply" (kind builtin params [target, thisArg, args]) vars [#"this value", NewTarget, target, thisArg, args, argList] {
+  if @sec-iscallable(target) is val {false} -> throw @ph-new-error([[TypeError]])
+  let argList = ? @sec-createlistfromarraylike(args)
+  perform @sec-preparefortailcall()
+  return ? @sec-call(target, thisArg, argList)
+}
+
+def @sec-reflect.construct "Reflect.construct" (kind builtin params [target, args, newTarget opt]) vars [#"this value", NewTarget, target, args, newTarget, argList] {
+  if @sec-isconstructor(target) is val {false} -> throw @ph-new-error([[TypeError]])
+  if newTarget fails $Present() -> set var newTarget = target
+  else_if @sec-isconstructor(newTarget) is val {false} -> throw @ph-new-error([[TypeError]])
+  let argList = ? @sec-createlistfromarraylike(args)
+  return ? @sec-construct(target, argList, newTarget)
+}
+
+def @sec-reflect.defineproperty "Reflect.defineProperty" (kind builtin params [target, key, attrs]) vars [#"this value", NewTarget, target, key, attrs, propertyKey, propertyDesc] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let propertyKey = ? @sec-topropertykey(key)
+  let propertyDesc = ? @sec-topropertydescriptor(attrs)
+  return ? target[[DefineOwnProperty]](propertyKey, propertyDesc)
+}
+
+def @sec-reflect.deleteproperty "Reflect.deleteProperty" (kind builtin params [target, key]) vars [#"this value", NewTarget, target, key, propertyKey] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let propertyKey = ? @sec-topropertykey(key)
+  return ? target[[Delete]](propertyKey)
+}
+
+def @sec-reflect.get "Reflect.get" (kind builtin params [target, key, receiver opt]) vars [#"this value", NewTarget, target, key, receiver, propertyKey] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let propertyKey = ? @sec-topropertykey(key)
+  if receiver fails $Present() {
+    set var receiver = target
+  }
+  return ? target[[Get]](propertyKey, receiver)
+}
+
+def @sec-reflect.getownpropertydescriptor "Reflect.getOwnPropertyDescriptor" (kind builtin params [target, key]) vars [#"this value", NewTarget, target, key, propertyKey, propertyDesc] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let propertyKey = ? @sec-topropertykey(key)
+  let propertyDesc = ? target[[GetOwnProperty]](propertyKey)
+  return @sec-frompropertydescriptor(propertyDesc)
+}
+
+def @sec-reflect.getprototypeof "Reflect.getPrototypeOf" (kind builtin params [target]) vars [#"this value", NewTarget, target] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return ? target[[GetPrototypeOf]]()
+}
+
+def @sec-reflect.has "Reflect.has" (kind builtin params [target, key]) vars [#"this value", NewTarget, target, key, propertyKey] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let propertyKey = ? @sec-topropertykey(key)
+  return ? target[[HasProperty]](propertyKey)
+}
+
+def @sec-reflect.isextensible "Reflect.isExtensible" (kind builtin params [target]) vars [#"this value", NewTarget, target] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return ? target[[IsExtensible]]()
+}
+
+def @sec-reflect.ownkeys "Reflect.ownKeys" (kind builtin params [target]) vars [#"this value", NewTarget, target, #"keys"] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let #"keys" = ? target[[OwnPropertyKeys]]()
+  return @sec-createarrayfromlist(#"keys")
+}
+
+def @sec-reflect.preventextensions "Reflect.preventExtensions" (kind builtin params [target]) vars [#"this value", NewTarget, target] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return ? target[[PreventExtensions]]()
+}
+
+def @sec-reflect.set "Reflect.set" (kind builtin params [target, key, value, receiver opt]) vars [#"this value", NewTarget, target, key, value, receiver, propertyKey] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let propertyKey = ? @sec-topropertykey(key)
+  if receiver fails $Present() {
+    set var receiver = target
+  }
+  return ? target[[Set]](propertyKey, value, receiver)
+}
+
+def @sec-reflect.setprototypeof "Reflect.setPrototypeOf" (kind builtin params [target, proto]) vars [#"this value", NewTarget, target, proto] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if proto is not ty {Object} and proto is not val {null} -> throw @ph-new-error([[TypeError]])
+  return ? target[[SetPrototypeOf]](proto)
+}
+
+def @sec-proxy-target-handler "Proxy" (kind builtin params [target, handler]) vars [#"this value", NewTarget, target, handler] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-proxycreate(target, handler)
+}
+
+def @sec-proxy.revocable "Proxy.revocable" (kind builtin params [target, handler]) vars [#"this value", NewTarget, target, handler, proxy, revokerClosure, activeFunc, revocableProxy, revoker, result] {
+  let proxy = ? @sec-proxycreate(target, handler)
+  let revokerClosure = closure 0
+  let revoker = @sec-createbuiltinfunction(revokerClosure, 0, "", [[[RevocableProxy]]])
+  set field revoker[[RevocableProxy]] = proxy
+  let result = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  perform ! @sec-createdatapropertyorthrow(result, "proxy", proxy)
+  perform ! @sec-createdatapropertyorthrow(result, "revoke", revoker)
+  return result
+  closure abstract params none captures [] {
+    let activeFunc = $ActiveFunction()
+    let revocableProxy = activeFunc[[RevocableProxy]]
+    if revocableProxy is val {null} -> return @sec-normalcompletion(undefined)
+    set field activeFunc[[RevocableProxy]] = null
+    assert revocableProxy is ty {#"Proxy exotic object"}
+    set field revocableProxy[[ProxyTarget]] = null
+    set field revocableProxy[[ProxyHandler]] = null
+    return @sec-normalcompletion(undefined)
+  }
+}
+

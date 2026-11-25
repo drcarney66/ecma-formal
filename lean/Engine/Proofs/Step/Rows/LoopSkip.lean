@@ -24,7 +24,7 @@ namespace Engine.Machine
 
 open Ecma Ecma.Machine Engine.Accel
 
-variable (H : Host F) (rd : ErratumId → Reading) (chk : Bool)
+variable (H : Host F) (chk : Bool)
 
 set_option maxRecDepth 8000 in
 /-- The skip's answer in the rounds' terms. -/
@@ -171,7 +171,7 @@ theorem ls_sim [PinsHold] (hkeys : LsIntKeys) (c : Cfg F) (back : Bool) (l : Loo
     (h1 : m.k ≠ m.pk) (h2 : m.k ≠ m.kp) (h3 : m.o ≠ m.k) (h4 : m.o ≠ m.pk) (h5 : m.o ≠ m.kp) (h6 : m.pk ≠ m.kp)
     (h7 : ∀ len, m.bound = some len → len ≠ m.k ∧ len ≠ m.pk ∧ len ≠ m.kp)
     (hrun : skipRun m none c.top.slots c.s = some run) :
-    Sim (Ctx.spec Engine.P' H rd chk) c (bindR c run fun (g, ws) c =>
+    Sim (Ctx.spec Engine.P' H chk) c (bindR c run fun (g, ws) c =>
       loopTest (c.mapTop fun f => { f with slots := writeSlots ws f.slots }) { l with r := l.r + g + 1 } t) := by
   obtain ⟨s, frames, ctl⟩ := c
   obtain ⟨x, it, p, body, st, r⟩ := l
@@ -225,7 +225,7 @@ theorem ls_sim [PinsHold] (hkeys : LsIntKeys) (c : Cfg F) (back : Bool) (l : Loo
           omega
       rw [e] at this
       exact this
-    have hsteps := ls_rounds H rd chk hkeys x p m.k m.o m.pk m.kp m.bound tb st a nd kd K ci fs ad chainLimit
+    have hsteps := ls_rounds H chk hkeys x p m.k m.o m.pk m.kp m.bound tb st a nd kd K ci fs ad chainLimit
       ch g i s sl p' back r hk hslots i0 hcond hch hno
     show Steps _ _ _
     refine Steps.trans hsteps ?_
@@ -242,12 +242,12 @@ theorem loopSkip_row [PinsHold] (hkeys : LsIntKeys) (c : Cfg F) (back : Bool) (l
     (t : Op) (run : Run F (Nat × List (Slot × Val F)))
     (hc : c.ctl = .loop (.spend back) l) (hit : l.it = .while_ t)
     (hrun : loopRow.loop l.p t l.body none c.top.slots c.s = some run) :
-    Sim (Ctx.spec Engine.P' H rd chk) c (bindR c run fun (g, ws) c =>
+    Sim (Ctx.spec Engine.P' H chk) c (bindR c run fun (g, ws) c =>
       loopTest (c.mapTop fun f => { f with slots := writeSlots ws f.slots }) { l with r := l.r + g + 1 } t) := by
   have hrun' : (hasPropLoop l.p t l.body).bind (fun m => skipRun m none c.top.slots c.s) = some run := hrun
   obtain ⟨m, hm, hs⟩ := Option.bind_eq_some_iff.mp hrun'
   obtain ⟨e1, ⟨tb, e2⟩, h1, h2, h3, h4, h5, h6, h7⟩ := ls_match l.p t l.body m hm
-  exact ls_sim H rd chk hkeys c back l t m tb run hc hit e1 e2 h1 h2 h3 h4 h5 h6 h7 hs
+  exact ls_sim H chk hkeys c back l t m tb run hc hit e1 e2 h1 h2 h3 h4 h5 h6 h7 hs
 
 
 end Engine.Machine

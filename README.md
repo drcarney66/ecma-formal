@@ -16,7 +16,7 @@ Four Lean libraries under `lean/`, each depending only on those above it:
 | `Debugger` | the spec-step debugger over the engine |
 
 Outside them, `lean/SpecPrint.lean` is `ecma-print`: it imports only `Ecma`, and prints the specification's data
-back as its text (`scripts/bijection.py` compares it with spec.html and the overlay).
+back as its SpecTec source (`scripts/bijection.py` compares it byte for byte with `spec/spectec/**/*.spectec`).
 
 Every generated file is in a `Gen/` directory and is never edited by hand. `Ecma` holds definitions and stated
 laws only: no theorems, tactics, or `partial` or `unsafe` definitions (`scripts/quick_check.py` checks).
@@ -25,9 +25,9 @@ laws only: no theorems, tactics, or `partial` or `unsafe` definitions (`scripts/
 
 | Where | What |
 |---|---|
-| `Ecma/Grammar` | the grammar notation (§5.1.6) as data, its reading, and what it derives (`Derives`, `StrictCode`); `Grammar/Gen`: spec.html's grammars |
-| `Ecma/Notation` | the algorithm notation (§5.2) as data: steps, expressions, conditions, tables, early-error rules, the realm table; `Print` prints it back as spec.html's text |
-| `Ecma/Gen` | spec.html's algorithms, tables, early errors and realm in that notation, one module per clause |
+| `Ecma/Grammar` | the grammar notation (§5.1.6) as data (`SpecTec` printer included), and what it derives (`Derives`, `StrictCode`); `Grammar/Gen`: `spec/spectec/`'s grammars |
+| `Ecma/Notation` | the algorithm notation (§5.2) as data: steps, expressions, conditions, tables, early-error rules, the realm table; `Print.SpecTec` prints it back as SpecTec DSL |
+| `Ecma/Gen` | `spec/spectec/`'s declarations, algorithms, tables, early errors and realm in that notation |
 | `Ecma/Model.lean`, `Ecma/Model` | the abstract model: a carrier and operations for each sort of the specification, and the laws a model must satisfy |
 | `Ecma/State.lean` | values, the store, the state, and a leaf operation's result |
 | `Ecma/Prims`, `Ecma/Ops` | the notation's primitives; parsing, leaf operations, early errors, table lookups |
@@ -56,8 +56,8 @@ Outside `lean/`:
 | Where | What |
 |---|---|
 | `external/ecma262`, `external/test262` | the pinned specification and its tests (submodules) |
-| `spec/formal` | the formal reading's overlay (`*.emu`) and its reviewed records |
-| `crates/spec-gen`, `crates/jsgrammar` | the generators of `lean/Ecma/Gen` and `lean/Ecma/Grammar/Gen` from spec.html |
+| `spec/spectec`, `spec/ids` | the formal ECMA SpecTec specification (`*.spectec`) and its kept id tables (`*-ids.txt`) |
+| `crates/spectec` | the SpecTec parser, roundtripper, prose renderer, and Lean generator (`lean/Ecma/Gen`, `lean/Ecma/Grammar/Gen`) |
 | `crates/test262-runner` | test262 on `ecma-run` (`scripts/test262.py` drives it) |
 | `scripts` | the generators' drivers, the wasm and site builds, tests |
 | `tools/dbg` | the debugger's page, Worker host and UI |
@@ -84,57 +84,39 @@ After cloning: `git submodule update --init --depth 1 external/ecma262 external/
 
 ## Generating
 
-Every `Gen/` directory under `lean/` and the derived formal report files are gitignored and generated in one step:
+Every `Gen/` directory under `lean/` and `tests/parser/grammar_index.txt` are gitignored and generated in one step:
 
     nix develop $D -c python3 scripts/generate.py
 
 Under the hood this runs (skipping unchanged outputs so `lake build` stays incremental):
 
-    nix develop $D -c cargo build --release
+    nix develop $D -c cargo build --release --bin spectec
     nix develop $D -c python3 scripts/unicode_properties.py
     nix develop $D -c python3 scripts/unicode_data.py
     nix develop $D -c python3 scripts/ecma_unicode_properties.py
-    nix develop $D -c python3 scripts/jsgrammar.py --write --gen target/release/jsgrammar --ids build/ids \
-        --readings spec/formal/readings.emu --readings spec/formal/syntax.emu --json spec/formal/json.emu
-    nix develop $D -c python3 scripts/gen_spec.py --write --gen target/release/spec-gen --ids build/ids
+    nix develop $D -c ./target/release/spectec --spec-dir=spec/spectec --ids-dir=spec/ids \
+        emit --lean-dir=lean --grammar-index=tests/parser/grammar_index.txt
 
-Both generators, the quick check, the laws' quotations and the site read *the text* (`scripts/spec_text.py`):
+The Unicode extractor, the quick check, the laws' quotations and the site read *the text* (`scripts/spec_text.py`):
 ECMA-262 as pinned, with the proposals `spec/proposals.txt` names applied in order by `scripts/apply_proposal.py`,
 each with its answers file under `spec/proposals/`. With no proposal named it is `external/ecma262` itself; with one,
 it is made into `build/text/` (git-ignored) whenever its inputs change, and `spec_text.py --report` says what each
 merge did. `--spec` still reads another.
 
-The ids the data numbers by name are kept in `spec/formal/*-ids.txt`: the phrase, primitive, sort, field and enum
-ids, the clause (`ClauseId`, an `AlgId`'s first component), SDO, concrete-method, erratum, residue and table ids
-(`gen_spec.py --write` writes these), and the production (`ProdId`, keyed `GRAMMAR MASK Lhs : rhs`), nonterminal
-(`NtId`, `NT`'s constructor index) and parameter ids (`jsgrammar.py --write` writes these; spec-gen reads them). The
-generators give each name met its number there and a new one the next unused number, and write the files back; a
-name the text no longer has keeps its number (`retired`: a nonterminal or parameter keeps its constructor, as
-`retired_Name`; a table's entry is `Table.retired`), and a clause whose `oldids` names an entry takes its number
-(`was`). An edited right-hand side is a new production. So a change to spec.html renumbers nothing it does not
-change, and the generated docstrings cite clauses, not spec.html's lines. Not kept, on purpose: the realm's object
-numbers (allocation order, which outputs print as `#N`), the index within a clause of an algorithm, row or table,
-the written production index (`Production`'s constructors), and the blocks' lines (`Gen.blockNNNN`, `Block.line`),
-which only the index modules hold.
+The ids the data numbers by name are kept in `spec/ids/*-ids.txt`: the phrase, primitive, sort, field and enum
+ids, the clause (`ClauseId`, an `AlgId`'s first component), SDO, concrete-method and table ids, and the production
+(`ProdId`), nonterminal (`NtId`, `NT`'s constructor index) and parameter ids (`ParamId`). Keeping these tables ensures
+stable numbering across edits to `spec/spectec/`.
 
 ## The bijection
 
     nix develop $D -c python3 scripts/bijection.py [--json FILE]
 
 runs `ecma-print` (`lean/SpecPrint.lean`), which prints every value of `lean/Ecma/Gen` and `lean/Ecma/Grammar/Gen`
-that holds the specification's text, and finds each item again in the text and in `spec/formal` by the markup alone
-(an algorithm as the `idx`th `emu-alg` of its clause, a reading by the SHA-256 of the step it reads), independently
-of the generators. Every algorithm step, SDO equation, early-error rule, table and grammar production of spec.html
-is a Lean value that prints back to its text, byte for byte, each exactly once, and so is each SDO row's grammar key,
-which the data holds verbatim; every other such value prints back to one element of the overlay, each exactly once,
-and every element of the overlay is printed or in a class that is not data, which the check names with its reason
-(the notes, the host laws' dispositions, the permanent Asserts, the type check's fields and guards, the prose).
-Headers, prose, notes, examples and the realm table are outside it: the check prints the characters of spec.html in
-each class, and `--json FILE` writes them with the counts. A difference fails with what differs, where, and the two
-lines. The other half, that the data is what the generators make of the text, is `gen_spec.py --roundtrip --gen
-target/release/spec-gen --overlay spec/formal` (every step prints back from its parse and from its data, the data
-regenerates byte for byte, the residue, Asserts, errata and type findings are their records) and `jsgrammar.py
---check-regen`. The quick check runs both halves' fast parts.
+back into SpecTec DSL and compares every file in `spec/spectec/**/*.spectec` byte for byte. The other half —
+confirming that `spec/spectec/` parses and prints back cleanly without loss — is `./target/release/spectec
+--spec-dir=spec/spectec roundtrip`, and rendering back to prose is `spectec prose --clause=<secId>`. The quick check
+runs both halves.
 
 ## Tests
 
@@ -142,11 +124,11 @@ regenerates byte for byte, the residue, Asserts, errata and type findings are th
 
 runs `tests/quick/*.js` on `ecma-run`, each within 5 s and 1 GiB, and compares its result and the steps it
 entered with `tests/quick/*.expected` (`--update` rewrites them), then checks that `lean/Ecma` is plain, that the
-kept ids number what the data has, that regenerating writes the data as it is and `spec-gen roundtrip` passes (with
-the generators built and current), the bijection (`scripts/bijection.py`: it fails if `ecma-print` is not built),
+kept ids number what the data has, that regenerating writes the data as it is and `spectec roundtrip` passes (with
+`target/release/spectec` built and current), the bijection (`scripts/bijection.py`: it fails if `ecma-print` is not built),
 the laws' quotations, and last runs the cases of `tests/run` that use the driver's options (a `// module:` or
-`// args:` header) against their own expectations (about 55 s in all). Run it after every change; with `--all-run-tests` it runs all of
-`tests/run` (about a minute more), which is due before a commit that changes the engine, the host or a case:
+`// args:` header) against their own expectations. Run it after every change; with `--all-run-tests` it runs all of
+`tests/run`, which is due before a commit that changes the engine, the host or a case:
 
     nix develop $D -c python3 scripts/js_run_test.py --run .lake/build/bin/ecma-run --jobs 3
 

@@ -1,5 +1,0 @@
-# The register's known failures (scripts/spec_decisions.py): `<check>\t<row id or draft path>`, check one of
-# quote (the row has no `quote`), covers (its `covers` is empty), draft (it covers an erratum and reports no
-# draft), erratum (the draft's header has no `Model erratum:` line, nor
-# `Model reading: no erratum`). A listed failure is not reported; a listed
-# one that no longer fails is. The file only shrinks.

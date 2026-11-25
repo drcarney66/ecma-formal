@@ -4,7 +4,6 @@ public import Engine.Run
 public import Ecma.Lower.Expand
 public import Engine.Machine
 public import Engine.Pins
-public import Engine.Cli.Errata
 public import Engine.Host.Jobs
 public import Lean.CompactedRegion
 
@@ -14,14 +13,14 @@ public import Lean.CompactedRegion
 # `ecma-run`: a whole JS program through the specification
 
 ```
-ecma-run [--no-accel] [--checked] [--max-heap MB] [--stats] [--snapshot DIR] [--reading literal|test262|proposed]
-        [--literal NAME]... [--erratum NAME=literal|test262|proposed]... [--no-blame] [--sites] [--cover] [--host-seed N] [--resize-in-place]
+ecma-run [--no-accel] [--checked] [--max-heap MB] [--stats] [--snapshot DIR]
+        [--no-blame] [--sites] [--cover] [--host-seed N] [--resize-in-place]
         [--web-browser] [--can-block] [--annex-b SEC]... [--jobs-after-throw] [--prelude FILE]... [--module-dir DIR] [--module] [--bundle] [--parse-only] (FILE | --serve)
 ```
 
 `FILE`'s code points run as ParseScript and ScriptEvaluation, then the queued jobs (`Engine.SpecRun`),
-by the machine at `Impl` (accelerated but with `--no-accel`, checked only with `--checked` but at the errata's
-stop sites), from InitializeHostDefinedRealm's realm, over the expanded program (`P`, `Src.expanded`). It prints the result
+by the machine at `Impl` (accelerated; `--no-accel` disables shortcuts, `--checked` checks types and sorts),
+from InitializeHostDefinedRealm's realm, over the expanded program (`P`, `Src.expanded`). It prints the result
 line (`normal: v`, exit 0; `throw: e`, exit 1), then the lines `print` wrote. A stop prints
 `stop: <reason> <site> <step>`, exit 3: the site is the algorithm (`sec-id#index`) and the step whose
 transition stopped, the machine's own record (`Machine.Site`); `--no-blame` leaves the site out
@@ -29,17 +28,9 @@ transition stopped, the machine's own record (`Machine.Site`); `--no-blame` leav
 
 `--sites` adds the records `site<TAB>sec-id#idx path` (`site<TAB>-` for a run that does not stop
 or a stop with no site) and `caller<TAB>sec-id` for at most 3 callers, innermost first. The
-job loop's stop (a job returned an abrupt completion, §9.5: checked, or at its clause's erratum) has the site `sec-jobs -`
-and the job's algorithm as its caller.
+job loop's stop (a job returned an abrupt completion, §9.5: checked, or at a clause in `checkedJobs`)
+has the site `sec-jobs -` and the job's clause as its caller when unique.
 
-`--literal NAME` reads the erratum `NAME` (readings.emu's `name=`) literally, the others as before.
-
-A stop (a failed Assert or `!`, a sort error, no result) at a site where the literal text of an
-erratum stops (`Ecma.Gen.erratumStops`, readings.emu's `stops=`: the clause and step path, and the
-innermost caller when named) prints `stop: erratum <Name> <site>`, exit 3, and with `--sites` the
-record `erratum<TAB>Name` after the site's.
-`--erratum NAME=READING` (repeated) runs the erratum `NAME` at that reading over `--reading`'s, the
-data's by default: one erratum's literal text where another's stops realm setup under `--reading literal`.
 `--cover` adds `cover<TAB>sec-id#idx path A|S` for each step the run entered, `A` an Assert.
 
 Each `--prelude FILE` runs as a Script (its jobs after it) in the realm before `FILE`, in order, as
@@ -79,13 +70,13 @@ A run has no other bound of its own: the run loop is the engine's (`Engine.Machi
 engine's transitions: `Engine.run_sound`), and a limit on time or memory is its caller's.
 
 `--serve` reads requests `PATH<TAB>OPTIONS` from stdin, OPTIONS among `--host-seed N`,
-`--resize-in-place`, `--web-browser`, `--can-block`, `--annex-b SEC`, `--jobs-after-throw`, `--literal NAME`, `--reading MODE`, `--erratum NAME=MODE` over the command line's, `--prelude FILE`
+`--resize-in-place`, `--web-browser`, `--can-block`, `--annex-b SEC`, `--jobs-after-throw`, `--prelude FILE`
 (the request's own, in place of the command line's), `--module-dir DIR`, `--module` `--bundle` and `--parse-only` (the
 request's own), and answers each with the records `outcome<TAB>line`,
-`print<TAB>text` per printed line, the `site`, `caller` and `erratum` records of `--sites`, the `cover`
+`print<TAB>text` per printed line, the `site` and `caller` records of `--sites`, the `cover`
 records with `--cover`, and `cpu<TAB>ms`, then a line `.`; a
 backslash, tab or newline in a record's text is written `\\`, `\t` or `\n`. The realm is set up once
-per host options and reading options, its state and the machine's records after it reused, and so is the
+per host options, its state and the machine's records after it reused, and so is the
 state after each prefix of the preludes (by their text; the last `preludeCacheSize`).
 
 With `JS_TRACE_STEPS=1` in the environment, the machine prints each step it enters on stderr
@@ -120,15 +111,6 @@ structure Opts where
   /-- `--snapshot DIR` (else the environment's `ECMA_SNAPSHOT`): where the states after set-up and the preludes are
   kept. -/
   snapshot : Option String := none
-  /-- The program's units under `reading`, for the step records (`unitsFor`): made once, as the readings are settled. -/
-  units : Thunk Engine.Machine.Units := Thunk.pure {}
-  reading : ErratumId → Reading := readingOf
-  /-- The errata `--literal` names, read literally over `reading`. -/
-  literals : List ErratumId := []
-  /-- `--erratum`'s readings, over `reading`. -/
-  erratumReadings : List (String × Reading) := []
-  /-- A `--serve` request's `--reading` and `--erratum` options, as given. -/
-  readingArgs : List String := []
   file : Option String := none
   trace : Bool := false
   blame : Bool := true
@@ -157,22 +139,17 @@ def traceMark : String := "ecma-run: trace"
 /-- What the machine's runs keep beside them for `o`. -/
 def obsOf (o : Opts) : Machine.Obs := { trace := o.trace, sites := o.blame || o.sites || o.serve, cover := o.cover }
 
-/-- The program's units under the readings `rd`, found on first use. -/
-def unitsFor (rd : ErratumId → Reading) : Thunk Engine.Machine.Units :=
+/-- The program's units, found on first use. -/
+def specUnits : Thunk Engine.Machine.Units :=
   Thunk.mk fun _ =>
     let keys := Engine.Machine.specKeys
-    Engine.Machine.unitsMemo P rd Engine.Machine.specRows (keys.1 ++ keys.2.1 ++ hostIds)
-
-/-- `o` with its readings settled: `--erratum`'s over `--reading`'s, and the units under them. -/
-def Opts.settle (o : Opts) : Opts :=
-  let rd := readingsOver Ecma.Gen.errata o.erratumReadings o.reading
-  { o with reading := rd, units := unitsFor rd }
+    Engine.Machine.unitsMemo P Engine.Machine.specRows (keys.1 ++ keys.2.1 ++ hostIds)
 
 /-- The runner of `o` over the host `H`: the engine's set-up (`Engine.setupAt`, the one `Engine.implementation`
 is). -/
 def dispatchOf (o : Opts) (H : Host F) : Engine.Host.Runner :=
   let mc := if o.maxHeap == 0 then none else some (cellsFor o.maxHeap)
-  Engine.Machine.dispatch (Engine.setupAt H mc (!o.noAccel) o.reading o.checked) o.units (obsOf o)
+  Engine.Machine.dispatch (Engine.setupAt H mc (!o.noAccel) o.checked) specUnits (obsOf o)
 
 /-- `src`'s run (as `sr` has it) from the state `s` over the cells `c` (`runFrom`). -/
 def runNoted (o : Opts) (c : Cells) (s : State F) (src : Array Nat) (sr : Source := .script) : Res F (Val F) :=
@@ -208,7 +185,7 @@ def runAfter (o : Opts) (set : Res F Cells) (after : Cells → State F → After
     | .ended _ _ r => (c, r)
   | r => ({ out := (0 : Nat), realm := (0 : Nat) }, setupFailed r)
 
-/-! Sites, errata and cover records. -/
+/-! Sites and cover records. -/
 
 /-- The site of a run that ended in `r`, if it stopped, and its callers: the machine's record (at most 3
 callers, innermost first); a stop without one that follows a job's abrupt completion is the job loop's
@@ -217,43 +194,17 @@ def stopSiteOf (r : Res F (Val F)) : IO (Option (String × List String)) := do
   if !(r matches .stop _) then return none
   return some <| match ← Machine.stopSite 3 with
     | some ((a, p), cs) => (Machine.siteText Ecma.Gen.clauses a p, cs.map (clauseName ·.clause))
-    | none => jobSite clauseName Ecma.Gen.jobErrata.toList r
+    | none => jobSite clauseName Ecma.Gen.checkedJobs.toList r
 
 /-- The `site` and `caller` records of a run whose stop's site is `site` (`--sites`, `--serve`). -/
 def siteRecords : Option (String × List String) → List String
   | none => ["site\t-"]
   | some (b, cs) => (if b == "? ?" then "site\t-" else s!"site\t{b}") :: cs.map (s!"caller\t{·}")
 
-/-- The erratum of the stop `r`, cross-checked (`Ecma.erratumText`) against the rows of
-`Ecma.Gen.erratumStops` at its site `site` (`sec-id#idx path`, with its callers). -/
-def erratumOf (r : Res F (Val F)) : Option (String × List String) → Option String
-  | some (b, cs) => match r with
-    | .stop x => erratumText Ecma.Gen.erratumStops id (fun e => Ecma.Gen.errata.getD e s!"{e}") x b cs
-    | _ => none
-  | none => none
-
 /-- The `cover` records of the machine's run (`--cover`). -/
 def coverRecords : IO (List String) := Machine.coverRecords Ecma.Gen.clauses
 
 /-! The command line. -/
-
-/-- The readings of the errata `--reading` names (a definition reading is no choice, and none is asked of it). -/
-def readingNamed : String → Option (ErratumId → Reading)
-  | "literal" => some fun _ => .literal
-  | "test262" => some readingOf
-  | "proposed" => some fun _ => .proposed
-  | _ => none
-
-/-- `o` with the erratum `name` read literally. -/
-def literalNamed (o : Opts) (name : String) : Option Opts :=
-  (Ecma.Gen.errataIds.idxOf? s!"erratum-{name}").map fun e =>
-    { o with reading := fun e' => if e' == e then .literal else o.reading e', literals := e :: o.literals }
-
-/-- Whether `r` is a valid reading for erratum `name`. -/
-def validErratumReading (name : String) (r : Reading) : Bool :=
-  match Ecma.Gen.errataIds.idxOf? s!"erratum-{name}" with
-  | some e => (Ecma.Gen.erratumReadings.getD e []).contains r
-  | none => false
 
 /-- The options a `--serve` request may give. -/
 partial def parseRequest (o : Opts) : List String → Except String Opts
@@ -273,24 +224,10 @@ partial def parseRequest (o : Opts) : List String → Except String Opts
   | "--module" :: r => parseRequest { o with asModule := true } r
   | "--bundle" :: r => parseRequest { o with bundle := true } r
   | "--parse-only" :: r => parseRequest { o with parseOnly := true } r
-  | "--literal" :: n :: r => match literalNamed o n with
-    | some o => parseRequest o r
-    | none => .error s!"--literal {n}"
-  | "--reading" :: m :: r => match readingNamed m with
-    | some rd =>
-      parseRequest { o with reading := (fun e => if o.literals.contains e then .literal else rd e),
-                            readingArgs := o.readingArgs ++ ["--reading", m] } r
-    | none => .error s!"--reading {m}"
-  | "--erratum" :: a :: r => match erratumReading a with
-    | some (n, m) =>
-      if validErratumReading n m then
-        parseRequest { o with erratumReadings := o.erratumReadings ++ [(n, m)], readingArgs := o.readingArgs ++ ["--erratum", a] } r
-      else .error s!"--erratum {a}"
-    | none => .error s!"--erratum {a}"
   | a :: _ => .error s!"unsupported {a}"
 
 partial def parse (o : Opts) : List String → Except String Opts
-  | [] => .ok o.settle
+  | [] => .ok o
   | "--checked" :: r => parse { o with checked := true } r
   | "--no-accel" :: r => parse { o with noAccel := true } r
   | "--check-pins" :: r => parse { o with checkPins := true } r
@@ -303,20 +240,11 @@ partial def parse (o : Opts) : List String → Except String Opts
   | "--sites" :: r => parse { o with sites := true } r
   | "--cover" :: r => parse { o with cover := true } r
   | "--serve" :: r => parse { o with serve := true } r
-  | "--reading" :: m :: r => match readingNamed m with
-    | some rd => parse { o with reading := fun e => if o.literals.contains e then .literal else rd e } r
-    | none => .error s!"--reading {m}"
-  | "--erratum" :: a :: r => match erratumReading a with
-    | some (n, m) =>
-      if validErratumReading n m then parse { o with erratumReadings := o.erratumReadings ++ [(n, m)] } r
-      else .error s!"--erratum {a}"
-    | none => .error s!"--erratum {a}"
   | a :: r =>
     if a == "--resize-in-place" || a == "--web-browser" || a == "--can-block" || a == "--jobs-after-throw" ||
         a == "--module" || a == "--bundle" || a == "--parse-only" then
       parseRequest o [a] >>= (parse · r)
-    else if a == "--host-seed" || a == "--annex-b" || a == "--prelude" || a == "--module-dir" ||
-        a == "--literal" then match r with
+    else if a == "--host-seed" || a == "--annex-b" || a == "--prelude" || a == "--module-dir" then match r with
       | n :: r => parseRequest o [a, n] >>= (parse · r)
       | [] => .error s!"{a}"
     else if a.startsWith "--" then .error s!"unsupported {a}" else parse { o with file := some a } r
@@ -325,22 +253,15 @@ partial def parse (o : Opts) : List String → Except String Opts
 def withLoaded (o : Opts) (l : Loaded) : Opts :=
   { o with modules := l.modules, resolve := l.resolve, source := l.source }
 
-/-- The result line (with the site of a stop; `stop: erratum <Name> <site>` at a registered erratum's),
-exit status, printed lines, stop's site and erratum of a run `(cells, result)`. -/
+/-- The result line (with the site of a stop), exit status, printed lines, and stop's site of a run `(cells, result)`. -/
 def report (o : Opts) (cr : Cells × Res F (Val F)) :
-    IO (String × UInt32 × List String × Option (String × List String) × Option String) := do
+    IO (String × UInt32 × List String × Option (String × List String)) := do
   let (line, code, out) := SpecRun.outcome cr.1 cr.2
   let site ← if o.blame || o.sites || o.serve then stopSiteOf cr.2 else pure none
-  let err := erratumOf cr.2 site
-  let line := match err, o.blame, site with
-    | some e, _, some (b, _) => s!"stop: erratum {e} {b}"
-    | _, true, some (b, _) => line ++ " " ++ b
-    | _, _, _ => line
-  return (line, code, out, site, err)
-
-/-- The records of a stop's site and erratum (`--sites`, `--serve`). -/
-def stopRecords (site : Option (String × List String)) (err : Option String) : List String :=
-  siteRecords site ++ (err.map (s!"erratum\t{·}")).toList
+  let line := match o.blame, site with
+    | true, some (b, _) => line ++ " " ++ b
+    | _, _ => line
+  return (line, code, out, site)
 
 /-! `--serve`. -/
 
@@ -352,13 +273,13 @@ def escapeRecord (t : String) : String :=
     | '\n' => "\\n"
     | ch => ch.toString) ""
 
-/-- Set-up realms by host options and reading options, each with the machine's records after it. -/
-abbrev SetupCache := List ((HostOpts × List ErratumId × List String) × Res F Cells × Machine.ObsRecords)
+/-- Set-up realms by host options, each with the machine's records after it. -/
+abbrev SetupCache := List (HostOpts × Res F Cells × Machine.ObsRecords)
 
-/-- The set-up realm for `o`'s host options and reading options and the machine's records after it (a failed set-up's
+/-- The set-up realm for `o`'s host options and the machine's records after it (a failed set-up's
 site), from the cache or new. -/
 def setupFor (o : Opts) (cache : SetupCache) : IO (Res F Cells × Machine.ObsRecords × SetupCache) := do
-  match cache.find? (·.1 == (o.host, o.literals, o.readingArgs)) with
+  match cache.find? (·.1 == o.host) with
   | some (_, r, k) => return (r, k, cache)
   | none =>
     Machine.resetObs
@@ -366,12 +287,12 @@ def setupFor (o : Opts) (cache : SetupCache) : IO (Res F Cells × Machine.ObsRec
     let k : Machine.ObsRecords ← match r with
       | .ok .. => do pure { cover := (← Machine.getObs).cover }
       | _ => Machine.getObs
-    return (r, k, ((o.host, o.literals, o.readingArgs), r, k) :: cache)
+    return (r, k, (o.host, r, k) :: cache)
 
 /-- The cached states after prelude prefixes, each with the machine's records after it: their host options,
-reading options, a bundle's modules and texts. -/
+a bundle's modules and texts. -/
 abbrev PreludeCache :=
-  List ((HostOpts × List ErratumId × List String × List (String × String) × List String) ×
+  List ((HostOpts × List (String × String) × List String) ×
     AfterPreludes × Machine.ObsRecords)
 
 def preludeCacheSize : Nat := 64
@@ -380,7 +301,7 @@ def preludeCacheSize : Nat := 64
 `cache` holds (its machine records restored); each new prefix's state and records cached. -/
 def preludesCached (o : Opts) (c : Cells) (s : State F) (texts : List String) (srcs : List (Array Nat))
     (cache : PreludeCache) : IO (AfterPreludes × PreludeCache) := do
-  let key := fun n => (o.host, o.literals, o.readingArgs, (if o.resolve then o.modules else []), texts.take n)
+  let key := fun n => (o.host, (if o.resolve then o.modules else []), texts.take n)
   let hit := (List.range (texts.length + 1)).reverse.findSome? fun n =>
     (cache.find? (·.1 == key n)).map (n, ·.2)
   let (n, start) ← match hit with
@@ -417,7 +338,6 @@ partial def serveLoop (o : Opts) (stdin stdout : IO.FS.Stream) (cache : SetupCac
     serveLoop o stdin stdout cache pcache
   | .ok o' =>
     let o' := if o'.preludes.isEmpty then { o' with preludes := o.preludes } else o'
-    let o' := o'.settle
     let t0 ← IO.monoMsNow
     let fail := fun (e : String) => do
       emit s!"outcome\t{escapeRecord s!"stop: {e}"}"
@@ -449,10 +369,10 @@ partial def serveLoop (o : Opts) (stdin stdout : IO.FS.Stream) (cache : SetupCac
           pure (some a, pc)
         | _ => pure (none, pcache)
       let after : Cells → State F → AfterPreludes := fun _ s => pre.getD (.ok s)
-      let (res, _, out, site, err) ← report o' (runAfter o' set after src)
+      let (res, _, out, site) ← report o' (runAfter o' set after src)
       emit s!"outcome\t{escapeRecord res}"
       for l in out do emit s!"print\t{escapeRecord l}"
-      for l in stopRecords site err do emit l
+      for l in siteRecords site do emit l
       if o'.cover then for l in ← coverRecords do emit l
       let t1 ← IO.monoMsNow
       emit s!"cpu\t{t1 - t0}"
@@ -571,13 +491,13 @@ def main (base : Opts) (args : List String) : IO UInt32 := do
     let o := withLoaded o l
     if o.trace then IO.eprintln traceMark
     let cr ← runSnap o args file texts pres src
-    let (line, code, out, site, err) ← report o cr
+    let (line, code, out, site) ← report o cr
     IO.println line
     for l in out do IO.println l
     if o.stats then match cr.2 with
       | .ok _ s | .esc _ s => IO.eprintln s!"cells\t{s.heap.size}"
       | .stop _ => IO.eprintln "cells\t-"
-    if o.sites then for l in stopRecords site err do IO.println l
+    if o.sites then for l in siteRecords site do IO.println l
     if o.cover then for l in ← coverRecords do IO.println l
     return code
 

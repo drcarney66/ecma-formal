@@ -1,6 +1,6 @@
 // module: yes
 // args: --module-dir tests/run/modules
-// expect: stop: erratum GatherAvailableAncestorsEmptyCycleRoot sec-gather-available-ancestors#0 1.a
+// expect: stop: sortError sec-gather-available-ancestors#0 1.a
 // A module whose synchronous evaluation threw has no [[CycleRoot]] (Evaluate
 // step 9.a). When its async dependency b finishes, GatherAvailableAncestors
 // step 1.a reads a.[[CycleRoot]].[[EvaluationError]], a field of ~empty~: the

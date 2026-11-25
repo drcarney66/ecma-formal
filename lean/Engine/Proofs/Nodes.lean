@@ -306,15 +306,15 @@ theorem descendants_eq : ∀ n : Impl.Node, seqList (M := Impl) (Impl.nodeDescen
 node's occurrences are its production's (`child_parse`), and a covered node's (`child_cover`; of the engine's
 grammar context, `Engine.Impl.child_parse` and `Engine.Impl.child_cover` in `Proofs/Parse/Shape.lean`). -/
 theorem nodeLaws_of (G : GrammarCtx)
-    (child_parse : ∀ sel pc st src goal args n d nt k,
-      Impl.parse sel pc st (Impl.seqOfNats src) goal args = some (some n) →
+    (child_parse : ∀ pc st src goal args n d nt k,
+      Impl.parse pc st (Impl.seqOfNats src) goal args = some (some n) →
       (d = n ∨ d ∈ seqList (M := Impl) (Impl.nodeDescendants n)) →
-      Impl.nodeChild d nt k = (((Grammar.fillOccs (Grammar.occsAt G.gl (rulesUnder G.rd sel) (Impl.nodeProd d))
+      Impl.nodeChild d nt k = (((Grammar.fillOccs (Grammar.occsAt G.gl (Impl.nodeProd d))
         (seqList (M := Impl) (Impl.nodeKids d))).filter (·.1 == nt)).map (·.2))[k]?)
-    (child_cover : ∀ sel pc st c goal args n d nt k,
-      Impl.cover sel pc st c goal args = some n →
+    (child_cover : ∀ pc st c goal args n d nt k,
+      Impl.cover pc st c goal args = some n →
       (d = n ∨ d ∈ seqList (M := Impl) (Impl.nodeDescendants n)) →
-      Impl.nodeChild d nt k = (((Grammar.fillOccs (Grammar.occsAt G.gl (rulesUnder G.rd sel) (Impl.nodeProd d))
+      Impl.nodeChild d nt k = (((Grammar.fillOccs (Grammar.occsAt G.gl (Impl.nodeProd d))
         (seqList (M := Impl) (Impl.nodeKids d))).filter (·.1 == nt)).map (·.2))[k]?) :
     Model.NodeLaws Impl G where
   child_kids := child_kids

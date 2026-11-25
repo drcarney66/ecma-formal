@@ -35,7 +35,7 @@ def names : Engine.Host.Names where
   enumName e := Ecma.Gen.enums[e]?
   sort? n := Ecma.Gen.sorts.idxOf? n
   sortSuper k := ((Gen.sortDefs[k]?).join.map (·.super)).getD []
-  jobErrata := Gen.jobErrata.toList
+  checkedJobs := Gen.checkedJobs.toList
 
 export Engine.Host (Cells elems readList writeElems setRealm unused normal Hook printClause printAlg
   clearKeptSec printLine loadedClause storeClause sourceClause keyClause empty loadedIn keyIn referrerKey loadedModule moduleLoaded

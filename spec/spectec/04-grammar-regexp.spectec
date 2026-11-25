@@ -1,0 +1,328 @@
+grammar regExp
+
+rule regExp |Pattern| [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] :: {
+  | |Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]|
+}
+
+rule regExp |Disjunction| [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] :: {
+  | |Alternative[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]|
+  | |Alternative[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| "|" |Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]|
+}
+
+rule regExp |Alternative| [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] :: {
+  | [empty]
+  | |Alternative[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| |Term[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]|
+}
+
+rule regExp |Term| [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] :: {
+  | |Assertion[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]|
+  | |Atom[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]|
+  | |Atom[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| |Quantifier|
+}
+
+rule regExp |Assertion| [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] :: {
+  | "^"
+  | "$"
+  | "\\b"
+  | "\\B"
+  | "(?=" |Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| ")"
+  | "(?!" |Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| ")"
+  | "(?<=" |Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| ")"
+  | "(?<!" |Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| ")"
+}
+
+rule regExp |Quantifier| [] :: {
+  | |QuantifierPrefix|
+  | |QuantifierPrefix| "?"
+}
+
+rule regExp |QuantifierPrefix| [] :: {
+  | "*"
+  | "+"
+  | "?"
+  | "{" |DecimalDigits[~Sep]| "}"
+  | "{" |DecimalDigits[~Sep]| ",}"
+  | "{" |DecimalDigits[~Sep]| "," |DecimalDigits[~Sep]| "}"
+}
+
+rule regExp |Atom| [UnicodeMode, UnicodeSetsMode, NamedCaptureGroups] :: {
+  | |PatternCharacter|
+  | "."
+  | "\\" |AtomEscape[?UnicodeMode, ?NamedCaptureGroups]|
+  | |CharacterClass[?UnicodeMode, ?UnicodeSetsMode]|
+  | "(" |GroupSpecifier[?UnicodeMode]|? |Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| ")"
+  | "(?" |RegularExpressionModifiers| ":" |Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| ")"
+  | "(?" |RegularExpressionModifiers| "-" |RegularExpressionModifiers| ":" |Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]| ")"
+}
+
+rule regExp |RegularExpressionModifiers| [] :: {
+  | [empty]
+  | |RegularExpressionModifiers| |RegularExpressionModifier|
+}
+
+rule regExp |RegularExpressionModifier| [] :: one_of {
+  row ["i", "m", "s"]
+}
+
+rule regExp |SyntaxCharacter| [] :: one_of {
+  row ["^", "$", "\\", ".", "*", "+", "?", "(", ")", "[", "]", "{", "}", "|"]
+}
+
+rule regExp |PatternCharacter| [] :: {
+  | |SourceCharacter| butnot |SyntaxCharacter|
+}
+
+rule regExp |AtomEscape| [UnicodeMode, NamedCaptureGroups] :: {
+  | |DecimalEscape|
+  | |CharacterClassEscape[?UnicodeMode]|
+  | |CharacterEscape[?UnicodeMode]|
+  | [+NamedCaptureGroups] "k" |GroupName[?UnicodeMode]|
+}
+
+rule regExp |CharacterEscape| [UnicodeMode] :: {
+  | |ControlEscape|
+  | "c" |AsciiLetter|
+  | "0" [lookahead not_in |DecimalDigit|]
+  | |HexEscapeSequence|
+  | |RegExpUnicodeEscapeSequence[?UnicodeMode]|
+  | |IdentityEscape[?UnicodeMode]|
+}
+
+rule regExp |ControlEscape| [] :: one_of {
+  row ["f", "n", "r", "t", "v"]
+}
+
+rule regExp |GroupSpecifier| [UnicodeMode] :: {
+  | "?" |GroupName[?UnicodeMode]|
+}
+
+rule regExp |GroupName| [UnicodeMode] :: {
+  | "<" |RegExpIdentifierName[?UnicodeMode]| ">"
+}
+
+rule regExp |RegExpIdentifierName| [UnicodeMode] :: {
+  | |RegExpIdentifierStart[?UnicodeMode]|
+  | |RegExpIdentifierName[?UnicodeMode]| |RegExpIdentifierPart[?UnicodeMode]|
+}
+
+rule regExp |RegExpIdentifierStart| [UnicodeMode] :: {
+  | |IdentifierStartChar|
+  | "\\" |RegExpUnicodeEscapeSequence[+UnicodeMode]|
+  | [~UnicodeMode] |UnicodeLeadSurrogate| |UnicodeTrailSurrogate|
+}
+
+rule regExp |RegExpIdentifierPart| [UnicodeMode] :: {
+  | |IdentifierPartChar|
+  | "\\" |RegExpUnicodeEscapeSequence[+UnicodeMode]|
+  | [~UnicodeMode] |UnicodeLeadSurrogate| |UnicodeTrailSurrogate|
+}
+
+rule regExp |RegExpUnicodeEscapeSequence| [UnicodeMode] :: {
+  | [+UnicodeMode] "u" |HexLeadSurrogate| "\\u" |HexTrailSurrogate|
+  | [+UnicodeMode] "u" |HexLeadSurrogate| [lookahead not_in { "\\uDC", "\\uDc", "\\udC", "\\udc", "\\uDD", "\\uDd", "\\udD", "\\udd", "\\uDE", "\\uDe", "\\udE", "\\ude", "\\uDF", "\\uDf", "\\udF", "\\udf" }]
+  | [+UnicodeMode] "u" |HexTrailSurrogate|
+  | [+UnicodeMode] "u" |HexNonSurrogate|
+  | [~UnicodeMode] "u" |Hex4Digits|
+  | [+UnicodeMode] "u{" |CodePoint| "}"
+}
+
+rule regExp |UnicodeLeadSurrogate| [] :: {
+  | > leadSurrogate
+}
+
+rule regExp |UnicodeTrailSurrogate| [] :: {
+  | > trailSurrogate
+}
+
+rule regExp |HexLeadSurrogate| [] :: {
+  | |Hex4Digits| [onlyIf mvLead]
+}
+
+rule regExp |HexTrailSurrogate| [] :: {
+  | |Hex4Digits| [onlyIf mvTrail]
+}
+
+rule regExp |HexNonSurrogate| [] :: {
+  | |Hex4Digits| [onlyIf mvNonSurrogate]
+}
+
+rule regExp |IdentityEscape| [UnicodeMode] :: {
+  | [+UnicodeMode] |SyntaxCharacter|
+  | [+UnicodeMode] "/"
+  | [~UnicodeMode] |SourceCharacter| butnot |UnicodeIDContinue|
+  | [~UnicodeMode] "‌"
+  | [~UnicodeMode] "‍"
+}
+
+rule regExp |DecimalEscape| [] :: {
+  | |NonZeroDigit| |DecimalDigits[~Sep]|? [lookahead not_in |DecimalDigit|]
+}
+
+rule regExp |CharacterClassEscape| [UnicodeMode] :: {
+  | "d"
+  | "D"
+  | "s"
+  | "S"
+  | "w"
+  | "W"
+  | [+UnicodeMode] "p{" |UnicodePropertyValueExpression| "}"
+  | [+UnicodeMode] "P{" |UnicodePropertyValueExpression| "}"
+}
+
+rule regExp |UnicodePropertyValueExpression| [] :: {
+  | |UnicodePropertyName| "=" |UnicodePropertyValue|
+  | |LoneUnicodePropertyNameOrValue|
+}
+
+rule regExp |UnicodePropertyName| [] :: {
+  | |UnicodePropertyNameCharacters|
+}
+
+rule regExp |UnicodePropertyNameCharacters| [] :: {
+  | |UnicodePropertyNameCharacter| |UnicodePropertyNameCharacters|?
+}
+
+rule regExp |UnicodePropertyValue| [] :: {
+  | |UnicodePropertyValueCharacters|
+}
+
+rule regExp |LoneUnicodePropertyNameOrValue| [] :: {
+  | |UnicodePropertyValueCharacters|
+}
+
+rule regExp |UnicodePropertyValueCharacters| [] :: {
+  | |UnicodePropertyValueCharacter| |UnicodePropertyValueCharacters|?
+}
+
+rule regExp |UnicodePropertyValueCharacter| [] :: {
+  | |UnicodePropertyNameCharacter|
+  | |DecimalDigit|
+}
+
+rule regExp |UnicodePropertyNameCharacter| [] :: {
+  | |AsciiLetter|
+  | "_"
+}
+
+rule regExp |CharacterClass| [UnicodeMode, UnicodeSetsMode] :: {
+  | "[" [lookahead != "^"] |ClassContents[?UnicodeMode, ?UnicodeSetsMode]| "]"
+  | "[^" |ClassContents[?UnicodeMode, ?UnicodeSetsMode]| "]"
+}
+
+rule regExp |ClassContents| [UnicodeMode, UnicodeSetsMode] :: {
+  | [empty]
+  | [~UnicodeSetsMode] |NonemptyClassRanges[?UnicodeMode]|
+  | [+UnicodeSetsMode] |ClassSetExpression|
+}
+
+rule regExp |NonemptyClassRanges| [UnicodeMode] :: {
+  | |ClassAtom[?UnicodeMode]|
+  | |ClassAtom[?UnicodeMode]| |NonemptyClassRangesNoDash[?UnicodeMode]|
+  | |ClassAtom[?UnicodeMode]| "-" |ClassAtom[?UnicodeMode]| |ClassContents[?UnicodeMode, ~UnicodeSetsMode]|
+}
+
+rule regExp |NonemptyClassRangesNoDash| [UnicodeMode] :: {
+  | |ClassAtom[?UnicodeMode]|
+  | |ClassAtomNoDash[?UnicodeMode]| |NonemptyClassRangesNoDash[?UnicodeMode]|
+  | |ClassAtomNoDash[?UnicodeMode]| "-" |ClassAtom[?UnicodeMode]| |ClassContents[?UnicodeMode, ~UnicodeSetsMode]|
+}
+
+rule regExp |ClassAtom| [UnicodeMode] :: {
+  | "-"
+  | |ClassAtomNoDash[?UnicodeMode]|
+}
+
+rule regExp |ClassAtomNoDash| [UnicodeMode] :: {
+  | |SourceCharacter| butnot one_of or ["\\", "]", "-"]
+  | "\\" |ClassEscape[?UnicodeMode]|
+}
+
+rule regExp |ClassEscape| [UnicodeMode] :: {
+  | "b"
+  | [+UnicodeMode] "-"
+  | |CharacterClassEscape[?UnicodeMode]|
+  | |CharacterEscape[?UnicodeMode]|
+}
+
+rule regExp |ClassSetExpression| [] :: {
+  | |ClassUnion|
+  | |ClassIntersection|
+  | |ClassSubtraction|
+}
+
+rule regExp |ClassUnion| [] :: {
+  | |ClassSetRange| |ClassUnion|?
+  | |ClassSetOperand| |ClassUnion|?
+}
+
+rule regExp |ClassIntersection| [] :: {
+  | |ClassSetOperand| "&&" [lookahead != "&"] |ClassSetOperand|
+  | |ClassIntersection| "&&" [lookahead != "&"] |ClassSetOperand|
+}
+
+rule regExp |ClassSubtraction| [] :: {
+  | |ClassSetOperand| "--" |ClassSetOperand|
+  | |ClassSubtraction| "--" |ClassSetOperand|
+}
+
+rule regExp |ClassSetRange| [] :: {
+  | |ClassSetCharacter| "-" |ClassSetCharacter|
+}
+
+rule regExp |ClassSetOperand| [] :: {
+  | |NestedClass|
+  | |ClassStringDisjunction|
+  | |ClassSetCharacter|
+}
+
+rule regExp |NestedClass| [] :: {
+  | "[" [lookahead != "^"] |ClassContents[+UnicodeMode, +UnicodeSetsMode]| "]"
+  | "[^" |ClassContents[+UnicodeMode, +UnicodeSetsMode]| "]"
+  | "\\" |CharacterClassEscape[+UnicodeMode]|
+}
+
+rule regExp |ClassStringDisjunction| [] :: {
+  | "\\q{" |ClassStringDisjunctionContents| "}"
+}
+
+rule regExp |ClassStringDisjunctionContents| [] :: {
+  | |ClassString|
+  | |ClassString| "|" |ClassStringDisjunctionContents|
+}
+
+rule regExp |ClassString| [] :: {
+  | [empty]
+  | |NonEmptyClassString|
+}
+
+rule regExp |NonEmptyClassString| [] :: {
+  | |ClassSetCharacter| |NonEmptyClassString|?
+}
+
+rule regExp |ClassSetCharacter| [] :: {
+  | [lookahead not_in |ClassSetReservedDoublePunctuator|] |SourceCharacter| butnot |ClassSetSyntaxCharacter|
+  | "\\" |CharacterEscape[+UnicodeMode]|
+  | "\\" |ClassSetReservedPunctuator|
+  | "\\b"
+}
+
+rule regExp |ClassSetReservedDoublePunctuator| [] :: one_of {
+  row ["&&", "!!", "##"]
+  row ["$$", "%%", "**"]
+  row ["++", ",,", ".."]
+  row ["::", ";;", "<<"]
+  row ["==", ">>", "??"]
+  row ["@@", "^^", "``"]
+  row ["~~"]
+}
+
+rule regExp |ClassSetSyntaxCharacter| [] :: one_of {
+  row ["(", ")", "[", "]", "{", "}", "/", "-", "\\", "|"]
+}
+
+rule regExp |ClassSetReservedPunctuator| [] :: one_of {
+  row ["&", "-", "!", "#", "%", ","]
+  row [":", ";", "<", "=", ">", "@"]
+  row [alt "`", "~"]
+}
+

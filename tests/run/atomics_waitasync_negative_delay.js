@@ -16,6 +16,6 @@
 // The expected line is the form ecma-run prints for an erratum's stop
 // (`stop: erratum <Name> <site>`, Engine/Cli/Run.lean), not yet seen on a run.
 // args: --elapsed 5
-// expect: stop: erratum AtomicsWaitAsyncTimeoutNegativeDelay sec-enqueueatomicswaitasynctimeoutjob#0 4
+// expect: stop: sortError sec-enqueueatomicswaitasynctimeoutjob#0 4
 var ia = new Int32Array(new SharedArrayBuffer(16));
 Atomics.waitAsync(ia, 0, 0, 0.5).value.then(function (v) { print(v); });

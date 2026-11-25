@@ -33,7 +33,7 @@ def view (d : Nat) : NodeView N where
 
 /-- Production `p` is an overlay's that applies only to non-strict code (`GL.sloppyIds`). -/
 def sloppy (p : Nat) : Bool :=
-  match prodOf [] p with
+  match prodOf p with
   | some P => P.grammar == .annexB && Gen.blocks.any fun b => b.kind matches .overlay _ _ .nonStrict && b.rules.contains P.rule
   | none => false
 

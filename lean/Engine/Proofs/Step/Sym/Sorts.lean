@@ -25,21 +25,21 @@ namespace Engine.Machine
 open Ecma Ecma.Machine
 
 /-- The specification's context's program is the engine's. -/
-theorem spec_P (H : Host F) (rd : ErratumId → Reading) (chk : Bool) : (Ctx.spec Engine.P' H rd chk).P = Engine.P := rfl
+theorem spec_P (H : Host F) (chk : Bool) : (Ctx.spec Engine.P' H chk).P = Engine.P := rfl
 
 /-- A pinned algorithm's code in the specification's context. -/
-theorem algCode_pin (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (a : AlgId) (code : Code)
-    (hc : Engine.P'.alg a = some code) : (Ctx.spec Engine.P' H rd chk).algCode a = code := by
+theorem algCode_pin (H : Host F) (chk : Bool) (a : AlgId) (code : Code)
+    (hc : Engine.P'.alg a = some code) : (Ctx.spec Engine.P' H chk).algCode a = code := by
   show (Engine.P'.alg a).getD _ = _
   rw [hc]; rfl
 
 /-- The machine's transition at a call of an algorithm of the program: its frame, at its code. -/
-theorem step_alg (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (s : State F) (fr : List (Frame F))
+theorem step_alg (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (a : AlgId) (vs : List (Val F)) (g : Alg) (code : Code) (hg : Engine.P.alg a = some g)
     (hc : Engine.P'.alg g.id = some code) :
-    step (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.alg a vs)⟩ =
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg a vs)⟩ =
       .inl ⟨s, algFrame g none (g.args vs) g.header.rc true true :: fr, .code code⟩ := by
-  have hcode : (Ctx.spec Engine.P' H rd chk).algCode g.id = code := algCode_pin H rd chk g.id code hc
+  have hcode : (Ctx.spec Engine.P' H chk).algCode g.id = code := algCode_pin H chk g.id code hc
   simp only [step, invoke, algEnter, spec_P, hg, enterAlg, hcode]
   rfl
 
@@ -48,15 +48,14 @@ theorem step_alg (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (s : Sta
 /-- The engine's program's sort definitions are the generated declarations'. -/
 theorem sortDef_eq (k : SortId) : Engine.P.sortDef k = (Gen.sortDefs[k]?).join := by
   unfold Engine.P
-  dsimp only [Prog.memo, Spec.Plan.expandProg, Prog.expandSuch, Prog.calls, Spec.Tables.rewrite, Src.expanded,
-    Spec.Decl.declare, Prog.expandChoice, Prog.expandChoiceDate, Prog.mapBodies, Src.prog, Src.index]
+  dsimp only [Prog.memo, Src.expanded, Src.prog, Src.index]
   rfl
 
 /-- The machine's transition at the test of a sort whose test is an algorithm, of a mathematical value. -/
-theorem step_sort_alg (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (s : State F) (fr : List (Frame F))
+theorem step_sort_alg (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (k : SortId) (m : Model.MathVal) (d : SortDef) (a : AlgId)
     (hd : Engine.P.sortDef k = some d) (ht : d.test = .alg a) (hr : d.record = false) :
-    step (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.sort k (.math m))⟩ =
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort k (.math m))⟩ =
       .inl ⟨s, ((⟨s, fr, .invoke (.sort k (.math m))⟩ : Cfg F).push (.args (.leaf .toBool) [] [])).frames,
         .invoke (.alg a [.math m])⟩ := by
   simp only [step, invoke, spec_P, hd, ht, hr, Bool.false_eq_true, ↓reduceIte]
@@ -68,9 +67,9 @@ theorem sortDef_9 : Engine.P.sortDef 9 = none := by
   rw [sortDef_eq]; rfl
 
 /-- The machine's transition at the test of the sort of the integers, of one. -/
-theorem step_sort_int (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (s : State F) (fr : List (Frame F))
+theorem step_sort_int (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (u : Int) :
-    step (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.sort 9 (.math (.int u)))⟩ = .inl ⟨s, fr, .val (.bool true)⟩ := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 9 (.math (.int u)))⟩ = .inl ⟨s, fr, .val (.bool true)⟩ := by
   simp only [step, invoke, spec_P, sortDef_9, sortTest]
   rfl
 

@@ -164,16 +164,16 @@ structure Model where
   nodeSource : Node → Seq Math
   /-- the grammatical parameters it was parsed with (§5.1.6) -/
   nodeArgs : Node → List Grammar.Param
-  /-- §5.1.2 parser invocation `k`, the errata read as `rd`: a parse of code points with a goal
+  /-- §5.1.2 parser invocation `k`: a parse of code points with a goal
   symbol and its parameters, `some (some n)` the Parse Node, `some none` no parse, `none` where the
   model does not decide (`Model.ParseLaws`) -/
-  parse : (ErratumId → Reading) → ParseCx → Nat → Seq Math → NtId → List (ParamId × Bool) → Option (Option Node)
-  /-- §5.1.5 "P must cover K": the covered Parse Node of parser invocation `k`, the errata read as `rd`:
+  parse : ParseCx → Nat → Seq Math → NtId → List (ParamId × Bool) → Option (Option Node)
+  /-- §5.1.5 "P must cover K": the covered Parse Node of parser invocation `k`:
   the Parse Node the cover's source text parses to with the goal symbol and its parameters, given from
   the cover itself; `none` where the model gives none from the cover, and its source text is parsed
   (`Model.CoverLaws`) -/
-  cover : (ErratumId → Reading) → ParseCx → Nat → Node → NtId → List (ParamId × Bool) → Option Node :=
-    fun _ _ _ _ _ _ => none
+  cover : ParseCx → Nat → Node → NtId → List (ParamId × Bool) → Option Node :=
+    fun _ _ _ _ _ => none
   /-- the parser invocation a Parse Node resulted from (§5.1.2: never reused across invocations) -/
   nodeStamp : Node → Nat
   /-- the span of source text it matched, in code points -/

@@ -1,4 +1,4 @@
-// expect: stop: erratum PromiseJobAbruptCompletion sec-jobs -
+// expect: stop: assertFailed sec-jobs -
 // NewPromiseReactionJob 1.i returns `? Call(promiseCapability.[[Resolve]], …)`;
 // with a species constructor whose resolve throws, the Job returns a throw
 // completion, which §9.5 says a Job must not. No test262 test makes a

@@ -39,10 +39,10 @@ def exactRows : Table F :=
     algRow stcpId stcpEntry .exact,
     algRow gsiId gsiEntry .exact]
 
-/-- The SDOs' rows: Contains and ComputedPropertyContains under `rd`. -/
-def sdoRows (Fc : Facts) (rd : ErratumId → Reading) : Table F :=
-  [⟨.sdo Contains.sdoC, Contains.accelSdo Fc.tab rd Contains.sdoC, .exact⟩,
-    ⟨.sdo Contains.sdoCPC, Contains.accelSdo Fc.tab rd Contains.sdoCPC, .exact⟩]
+/-- The SDOs' rows: Contains and ComputedPropertyContains. -/
+def sdoRows (Fc : Facts) : Table F :=
+  [⟨.sdo Contains.sdoC, Contains.accelSdo Fc.tab Contains.sdoC, .exact⟩,
+    ⟨.sdo Contains.sdoCPC, Contains.accelSdo Fc.tab Contains.sdoCPC, .exact⟩]
 
 /-- The primitives' rows: the List updates in place. -/
 def primRows : Table F :=
@@ -54,7 +54,7 @@ def loopRow : Row F :=
   ⟨.loop, fun p t body l sl s => (hasPropLoop p t body).bind fun m => skipRun m l sl s, .exact⟩
 
 /-- The Bare tiers' accelerators: `exactRows`, `sdoRows`, `primRows` and `loopRow`. -/
-def fastTable (Fc : Facts) (rd : ErratumId → Reading) : Table F :=
-  exactRows ++ sdoRows Fc rd ++ primRows ++ [loopRow]
+def fastTable (Fc : Facts) : Table F :=
+  exactRows ++ sdoRows Fc ++ primRows ++ [loopRow]
 
 end Engine.Accel.Table

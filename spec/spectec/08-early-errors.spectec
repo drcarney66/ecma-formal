@@ -1,0 +1,2022 @@
+-- ECMA-262 Static Semantics: Early Errors
+
+early @sec-identifier-names-static-semantics-early-errors #"Early Errors" {
+  prods [p"Lexical - IdentifierStart :: `\\` UnicodeEscapeSequence"]
+  keys ["IdentifierStart :: `\\` UnicodeEscapeSequence"]
+  vars []
+  sentences {
+    syntax_error sdo IdentifierCodePoint(child 5 |UnicodeEscapeSequence|) sat @ph-not-some-cp-matched(data choice 0, data choice 0, $GrammarSymbol(|IdentifierStartChar|))
+  }
+}
+
+early @sec-identifier-names-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Lexical - IdentifierPart :: `\\` UnicodeEscapeSequence"]
+  keys ["IdentifierPart :: `\\` UnicodeEscapeSequence"]
+  vars []
+  sentences {
+    syntax_error sdo IdentifierCodePoint(child 5 |UnicodeEscapeSequence|) sat @ph-not-some-cp-matched(data choice 0, data choice 0, $GrammarSymbol(|IdentifierPartChar|))
+  }
+}
+
+early @sec-numeric-literals-early-errors #"Early Errors" {
+  prods [p"Lexical - NumericLiteral :: LegacyOctalIntegerLiteral", p"Lexical - DecimalIntegerLiteral :: NonOctalDecimalIntegerLiteral"]
+  keys ["\n          NumericLiteral :: LegacyOctalIntegerLiteral\n\n          DecimalIntegerLiteral :: NonOctalDecimalIntegerLiteral\n        "]
+  vars []
+  sentences {
+    syntax_error @sec-isstrict(call_at @ph-this-production(data choice 0)) is val {true}
+  }
+}
+
+early @sec-string-literals-early-errors #"Early Errors" {
+  prods [p"Lexical - EscapeSequence :: LegacyOctalEscapeSequence", p"Lexical - EscapeSequence :: NonOctalDecimalEscapeSequence"]
+  keys ["\n          EscapeSequence ::\n            LegacyOctalEscapeSequence\n            NonOctalDecimalEscapeSequence\n        "]
+  vars []
+  sentences {
+    syntax_error @sec-isstrict(call_at @ph-this-production(data choice 0)) is val {true}
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - BindingIdentifier : Identifier"]
+  keys ["BindingIdentifier : Identifier"]
+  vars []
+  sentences {
+    syntax_error @sec-isstrict(call_at @ph-this-production(data choice 0)) is val {true} and sdo StringValue(child 5 |Identifier|) is val {"arguments"; "eval"}
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - IdentifierReference : [~Yield] `yield`", p"Syntactic - BindingIdentifier : `yield`", p"Syntactic - LabelIdentifier : [~Yield] `yield`"]
+  keys ["\n        IdentifierReference : `yield`\n\n        BindingIdentifier : `yield`\n\n        LabelIdentifier : `yield`\n      "]
+  vars []
+  sentences {
+    syntax_error @sec-isstrict(call_at @ph-this-production(data choice 0)) is val {true}
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - IdentifierReference : [~Await] `await`", p"Syntactic - BindingIdentifier : `await`", p"Syntactic - LabelIdentifier : [~Await] `await`"]
+  keys ["\n        IdentifierReference : `await`\n\n        BindingIdentifier : `await`\n\n        LabelIdentifier : `await`\n      "]
+  vars []
+  sentences {
+    syntax_error $GoalSymbolOf(this_node) is val {|Module|}
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - BindingIdentifier : `yield`"]
+  keys ["\n        BindingIdentifier[Yield, Await] : `yield`\n      "]
+  vars []
+  sentences {
+    syntax_error expr $HasParam(call_at @ph-this-production(data choice 0), param Yield)
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - BindingIdentifier : `await`"]
+  keys ["\n        BindingIdentifier[Yield, Await] : `await`\n      "]
+  vars []
+  sentences {
+    syntax_error expr $HasParam(call_at @ph-this-production(data choice 0), param Await)
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - IdentifierReference : Identifier", p"Syntactic - BindingIdentifier : Identifier", p"Syntactic - LabelIdentifier : Identifier"]
+  keys ["\n        IdentifierReference[Yield, Await] : Identifier\n\n        BindingIdentifier[Yield, Await] : Identifier\n\n        LabelIdentifier[Yield, Await] : Identifier\n      "]
+  vars []
+  sentences {
+    syntax_error expr $HasParam(call_at @ph-this-production(data choice 0), param Yield) and sdo StringValue(child 5 |Identifier|) is val {"yield"}
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"Syntactic - IdentifierReference : Identifier", p"Syntactic - BindingIdentifier : Identifier", p"Syntactic - LabelIdentifier : Identifier"]
+  keys ["\n        IdentifierReference[Yield, Await] : Identifier\n\n        BindingIdentifier[Yield, Await] : Identifier\n\n        LabelIdentifier[Yield, Await] : Identifier\n      "]
+  vars []
+  sentences {
+    syntax_error expr $HasParam(call_at @ph-this-production(data choice 0), param Await) and sdo StringValue(child 5 |Identifier|) is val {"await"}
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"Syntactic - Identifier : IdentifierName but not ReservedWord"]
+  keys ["Identifier : IdentifierName but not ReservedWord"]
+  vars []
+  sentences {
+    syntax_error @sec-isstrict(call_at @ph-this-production(data choice 1)) is val {true} and sdo StringValue(child 5 |IdentifierName|) is val {"implements"; "interface"; "let"; "package"; "private"; "protected"; "public"; "static"; "yield"}
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors#8 #"Early Errors" {
+  prods [p"Syntactic - Identifier : IdentifierName but not ReservedWord"]
+  keys ["Identifier : IdentifierName but not ReservedWord"]
+  vars []
+  sentences {
+    syntax_error $GoalSymbolOf(this_node) is val {|Module|} and sdo StringValue(child 5 |IdentifierName|) is val {"await"}
+  }
+}
+
+early @sec-identifiers-static-semantics-early-errors#9 #"Early Errors" {
+  prods [p"Syntactic - Identifier : IdentifierName but not ReservedWord"]
+  keys ["Identifier : IdentifierName but not ReservedWord"]
+  vars []
+  sentences {
+    syntax_error sdo StringValue(child 5 |IdentifierName|) sat @ph-stringvalue-terminal-except(|ReservedWord|, [code "yield", code "await"])
+  }
+}
+
+early @sec-object-initializer-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic 0 ObjectLiteral : `{` PropertyDefinitionList[?Yield, ?Await] `,`? `}`", p"Syntactic 1 ObjectLiteral : `{` PropertyDefinitionList[?Yield, ?Await] `,`? `}`"]
+  keys ["ObjectLiteral : `{` PropertyDefinitionList `,`? `}`"]
+  vars []
+  sentences {
+    syntax_error @formal-protopropertycount(child 5 |PropertyDefinitionList|) >= 2
+    not_applied call_at @ph-this-nt(|ObjectLiteral|) sat @spec-copy-3(data choice 0) { perform $""(bool(call_at @ph-this-nt(|ObjectLiteral|) sat @spec-copy-3(data choice 0)), data choice 0, clause @sec-json.parse, code "ParseJSON") }
+  }
+}
+
+early @sec-object-initializer-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - PropertyDefinition : MethodDefinition[?Yield, ?Await]"]
+  keys ["PropertyDefinition : MethodDefinition"]
+  vars []
+  sentences {
+    syntax_error sdo HasDirectSuper(child 5 |MethodDefinition|) is val {true}
+  }
+}
+
+early @sec-object-initializer-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - PropertyDefinition : MethodDefinition[?Yield, ?Await]"]
+  keys ["PropertyDefinition : MethodDefinition"]
+  vars []
+  sentences {
+    syntax_error sdo PrivateBoundIdentifiers(child 5 |MethodDefinition|) fails $IsEmpty()
+  }
+}
+
+early @sec-object-initializer-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - PropertyDefinition : CoverInitializedName[?Yield, ?Await]"]
+  keys ["PropertyDefinition : CoverInitializedName"]
+  vars []
+  sentences {
+    syntax_error expr @ph-source-matched(call_at @ph-this-production(data choice 0))
+  }
+}
+
+early @sec-primary-expression-regular-expression-literals-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - PrimaryExpression : RegularExpressionLiteral"]
+  keys ["PrimaryExpression : RegularExpressionLiteral"]
+  vars []
+  sentences {
+    syntax_error @sec-isvalidregularexpressionliteral(child 5 |RegularExpressionLiteral|) is val {false}
+  }
+}
+
+early @sec-static-semantics-template-early-errors #"Early Errors" {
+  prods [p"Syntactic - TemplateLiteral : NoSubstitutionTemplate"]
+  keys ["\n          TemplateLiteral[Yield, Await, Tagged] : NoSubstitutionTemplate\n        "]
+  vars []
+  sentences {
+    syntax_error expr not $HasParam(this_node, param Tagged) and sdo TemplateStrings(child 6 |TemplateLiteral|; ~cooked~) sat $Contains(undefined)
+  }
+}
+
+early @sec-static-semantics-template-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - TemplateLiteral : SubstitutionTemplate[?Yield, ?Await]"]
+  keys ["\n          TemplateLiteral[Yield, Await, Tagged] : SubstitutionTemplate[?Yield, ?Await]\n        "]
+  vars []
+  sentences {
+    syntax_error expr not $HasParam(this_node, param Tagged) and sdo TemplateStrings(child 6 |TemplateLiteral|; ~cooked~) sat $Contains(undefined)
+  }
+}
+
+early @sec-static-semantics-template-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - TemplateLiteral : SubstitutionTemplate[?Yield, ?Await]"]
+  keys ["\n          TemplateLiteral[Yield, Await, Tagged] : SubstitutionTemplate[?Yield, ?Await]\n        "]
+  vars []
+  sentences {
+    syntax_error $ListLen(sdo TemplateStrings(child 6 |TemplateLiteral|; ~cooked~)) sat @ph-ge(2 ^ 32)
+  }
+}
+
+early @sec-grouping-operator-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]"]
+  keys ["PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList"]
+  vars []
+  sentences {
+    must_cover child 5 |CoverParenthesizedExpressionAndArrowParameterList| : |ParenthesizedExpression|
+  }
+}
+
+early @sec-left-hand-side-expressions-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - OptionalChain : `?.` TemplateLiteral[?Yield, ?Await, +Tagged]", p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]"]
+  keys ["\n          OptionalChain :\n            `?.` TemplateLiteral\n            OptionalChain TemplateLiteral\n        "]
+  vars []
+  sentences {
+    syntax_error expr @ph-source-matched(call_at @ph-this-production(data choice 0))
+  }
+}
+
+early @sec-left-hand-side-expressions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - ImportMeta : `import` `.` `meta`"]
+  keys ["\n          ImportMeta :\n            `import` `.` `meta`\n        "]
+  vars []
+  sentences {
+    syntax_error $GoalSymbolOf(this_node) is not val {|Module|}
+  }
+}
+
+early @sec-update-expressions-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - UpdateExpression : LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `++`", p"Syntactic - UpdateExpression : LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `--`"]
+  keys ["\n        UpdateExpression :\n          LeftHandSideExpression `++`\n          LeftHandSideExpression `--`\n      "]
+  vars []
+  sentences {
+    early_syntax_error sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is val {~invalid~}
+  }
+}
+
+early @sec-update-expressions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - UpdateExpression : `++` UnaryExpression[?Yield, ?Await]", p"Syntactic - UpdateExpression : `--` UnaryExpression[?Yield, ?Await]"]
+  keys ["\n        UpdateExpression :\n          `++` UnaryExpression\n          `--` UnaryExpression\n      "]
+  vars []
+  sentences {
+    early_syntax_error sdo AssignmentTargetType(child 5 |UnaryExpression|) is val {~invalid~}
+  }
+}
+
+early @sec-delete-operator-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - UnaryExpression : `delete` UnaryExpression[?Yield, ?Await]"]
+  keys ["UnaryExpression : `delete` UnaryExpression"]
+  vars []
+  sentences {
+    syntax_error @sec-isstrict(child 4 |UnaryExpression|) is val {true} and child 3 |UnaryExpression| is val {prods [p"Syntactic - PrimaryExpression : IdentifierReference[?Yield, ?Await]"]; prods [p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` PrivateIdentifier"]; prods [p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] `.` PrivateIdentifier"]; prods [p"Syntactic - OptionalChain : `?.` PrivateIdentifier"]; prods [p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `.` PrivateIdentifier"]}
+  }
+}
+
+early @sec-delete-operator-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - UnaryExpression : `delete` UnaryExpression[?Yield, ?Await]"]
+  keys ["UnaryExpression : `delete` UnaryExpression"]
+  vars []
+  sentences {
+    syntax_error child 3 |UnaryExpression| is val {prods [p"Syntactic - PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]"]} and expr call_at @ph-derives-error(|CoverParenthesizedExpressionAndArrowParameterList|, |UnaryExpression|)
+    info { perform $""() }
+  }
+}
+
+early @sec-assignment-operators-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `=` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["AssignmentExpression : LeftHandSideExpression `=` AssignmentExpression"]
+  vars []
+  sentences {
+    if_inline child 5 |LeftHandSideExpression| is ty {|ObjectLiteral|; |ArrayLiteral|} -> must_cover child 5 |LeftHandSideExpression| : |AssignmentPattern|
+  }
+}
+
+early @sec-assignment-operators-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `=` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["AssignmentExpression : LeftHandSideExpression `=` AssignmentExpression"]
+  vars []
+  sentences {
+    if_inline child 5 |LeftHandSideExpression| is neither ty {|ObjectLiteral|; |ArrayLiteral|} -> syntax_error sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is val {~invalid~}
+  }
+}
+
+early @sec-assignment-operators-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] AssignmentOperator AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["\n        AssignmentExpression :\n          LeftHandSideExpression AssignmentOperator AssignmentExpression\n      "]
+  vars []
+  sentences {
+    syntax_error sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is val {~invalid~}
+  }
+}
+
+early @sec-assignment-operators-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `&&=` AssignmentExpression[?In, ?Yield, ?Await]", p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `||=` AssignmentExpression[?In, ?Yield, ?Await]", p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `??=` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["\n        AssignmentExpression :\n          LeftHandSideExpression `&amp;&amp;=` AssignmentExpression\n          LeftHandSideExpression `||=` AssignmentExpression\n          LeftHandSideExpression `??=` AssignmentExpression\n      "]
+  vars []
+  sentences {
+    syntax_error sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is not val {~simple~}
+  }
+}
+
+early @sec-destructuring-assignment-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic 0 AssignmentProperty : IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 AssignmentProperty : IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["AssignmentProperty : IdentifierReference Initializer?"]
+  vars []
+  sentences {
+    syntax_error sdo AssignmentTargetType(child 5 |IdentifierReference|) is not val {~simple~}
+  }
+}
+
+early @sec-destructuring-assignment-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - AssignmentRestProperty : `...` DestructuringAssignmentTarget[?Yield, ?Await]"]
+  keys ["AssignmentRestProperty : `...` DestructuringAssignmentTarget"]
+  vars []
+  sentences {
+    syntax_error child 5 |DestructuringAssignmentTarget| is ty {|ArrayLiteral|; |ObjectLiteral|}
+  }
+}
+
+early @sec-destructuring-assignment-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - DestructuringAssignmentTarget : LeftHandSideExpression[?Yield, ?Await]"]
+  keys ["DestructuringAssignmentTarget : LeftHandSideExpression"]
+  vars []
+  sentences {
+    if_inline child 5 |LeftHandSideExpression| is ty {|ObjectLiteral|; |ArrayLiteral|} -> must_cover child 5 |LeftHandSideExpression| : |AssignmentPattern|
+  }
+}
+
+early @sec-destructuring-assignment-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - DestructuringAssignmentTarget : LeftHandSideExpression[?Yield, ?Await]"]
+  keys ["DestructuringAssignmentTarget : LeftHandSideExpression"]
+  vars []
+  sentences {
+    if_inline child 5 |LeftHandSideExpression| is neither ty {|ObjectLiteral|; |ArrayLiteral|} -> syntax_error sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is not val {~simple~}
+  }
+}
+
+early @sec-block-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic 1 Block : `{` StatementList[?Yield, ?Await, ?Return]? `}`"]
+  keys ["Block : `{` StatementList `}`"]
+  vars []
+  sentences {
+    syntax_error sdo LexicallyDeclaredNames(child 5 |StatementList|) sat @ph-duplicate-entries(data choice 0) unless opt expr $"the host is a web browser"(data choice 0, clause @sec-block-level-function-declarations-web-legacy-compatibility-semantics) and {@sec-isstrict(call_at @ph-this-production(data choice 0)) is val {false} and @formal-duplicatesonlyfunctiondeclarations(child 5 |StatementList|) is val {true}}
+  }
+}
+
+early @sec-block-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic 1 Block : `{` StatementList[?Yield, ?Await, ?Return]? `}`"]
+  keys ["Block : `{` StatementList `}`"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo LexicallyDeclaredNames(child 5 |StatementList|), sdo VarDeclaredNames(child 5 |StatementList|))
+  }
+}
+
+early @sec-let-and-const-declarations-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - LexicalDeclaration : LetOrConst BindingList[?In, ?Yield, ?Await, +Pattern] `;`"]
+  keys ["LexicalDeclaration : LetOrConst BindingList `;`"]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |BindingList|) sat $Contains("let")
+  }
+}
+
+early @sec-let-and-const-declarations-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - LexicalDeclaration : LetOrConst BindingList[?In, ?Yield, ?Await, +Pattern] `;`"]
+  keys ["LexicalDeclaration : LetOrConst BindingList `;`"]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |BindingList|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-let-and-const-declarations-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - UsingDeclaration : `using` [no LineTerminator here] BindingList[?In, ?Yield, ?Await, ~Pattern] `;`"]
+  keys ["\n          UsingDeclaration :\n            `using` BindingList `;`\n        "]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |BindingList|) sat $Contains("let")
+  }
+}
+
+early @sec-let-and-const-declarations-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - UsingDeclaration : `using` [no LineTerminator here] BindingList[?In, ?Yield, ?Await, ~Pattern] `;`"]
+  keys ["\n          UsingDeclaration :\n            `using` BindingList `;`\n        "]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |BindingList|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-let-and-const-declarations-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield] [no LineTerminator here] BindingList[?In, ?Yield, +Await, ~Pattern] `;`"]
+  keys ["\n          AwaitUsingDeclaration :\n            CoverAwaitExpressionAndAwaitUsingDeclarationHead BindingList `;`\n        "]
+  vars []
+  sentences {
+    must_cover child 5 |CoverAwaitExpressionAndAwaitUsingDeclarationHead| : |AwaitUsingDeclarationHead|
+  }
+}
+
+early @sec-let-and-const-declarations-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield] [no LineTerminator here] BindingList[?In, ?Yield, +Await, ~Pattern] `;`"]
+  keys ["\n          AwaitUsingDeclaration :\n            CoverAwaitExpressionAndAwaitUsingDeclarationHead BindingList `;`\n        "]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |BindingList|) sat $Contains("let")
+  }
+}
+
+early @sec-let-and-const-declarations-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"Syntactic - AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield] [no LineTerminator here] BindingList[?In, ?Yield, +Await, ~Pattern] `;`"]
+  keys ["\n          AwaitUsingDeclaration :\n            CoverAwaitExpressionAndAwaitUsingDeclarationHead BindingList `;`\n        "]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |BindingList|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-let-and-const-declarations-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"Syntactic 0 LexicalBinding : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?", p"Syntactic 1 LexicalBinding : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?"]
+  keys ["LexicalBinding : BindingIdentifier Initializer?"]
+  vars []
+  sentences {
+    syntax_error child 5 |Initializer| fails $Present() and sdo IsConstantDeclaration(@ph-nt-containing(|LexicalDeclaration|, call_at @ph-this-nt(|LexicalBinding|))) is val {true}
+  }
+}
+
+early @sec-if-statement-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` Statement[?Yield, ?Await, ?Return]"]
+  keys ["IfStatement : `if` `(` Expression `)` Statement `else` Statement"]
+  vars []
+  sentences {
+    syntax_error @sec-islabelledfunction(child 0 |Statement|) is val {true}
+  }
+}
+
+early @sec-if-statement-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` Statement[?Yield, ?Await, ?Return]"]
+  keys ["IfStatement : `if` `(` Expression `)` Statement `else` Statement"]
+  vars []
+  sentences {
+    syntax_error @sec-islabelledfunction(child 1 |Statement|) is val {true}
+  }
+}
+
+early @sec-if-statement-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] [lookahead != `else`]"]
+  keys ["IfStatement : `if` `(` Expression `)` Statement"]
+  vars []
+  sentences {
+    syntax_error @sec-islabelledfunction(child 5 |Statement|) is val {true}
+  }
+}
+
+early @sec-do-while-statement-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - DoWhileStatement : `do` Statement[?Yield, ?Await, ?Return] `while` `(` Expression[+In, ?Yield, ?Await] `)` `;`"]
+  keys ["DoWhileStatement : `do` Statement `while` `(` Expression `)` `;`"]
+  vars []
+  sentences {
+    syntax_error @sec-islabelledfunction(child 5 |Statement|) is val {true}
+  }
+}
+
+early @sec-while-statement-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - WhileStatement : `while` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["WhileStatement : `while` `(` Expression `)` Statement"]
+  vars []
+  sentences {
+    syntax_error @sec-islabelledfunction(child 5 |Statement|) is val {true}
+  }
+}
+
+early @sec-for-statement-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic 000 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 001 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 010 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 011 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 100 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 101 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 110 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 111 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 00 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 01 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 10 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 11 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 00 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 01 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 10 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 11 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForStatement :\n            `for` `(` Expression? `;` Expression? `;` Expression? `)` Statement\n            `for` `(` `var` VariableDeclarationList `;` Expression? `;` Expression? `)` Statement\n            `for` `(` LexicalDeclaration Expression? `;` Expression? `)` Statement\n        "]
+  vars []
+  sentences {
+    syntax_error @sec-islabelledfunction(child 5 |Statement|) is val {true}
+  }
+}
+
+early @sec-for-statement-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic 00 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 01 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 10 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 11 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForStatement : `for` `(` LexicalDeclaration Expression? `;` Expression? `)` Statement"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |LexicalDeclaration|), sdo VarDeclaredNames(child 5 |Statement|))
+  }
+}
+
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `let` `[`] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` ForDeclaration[?Yield, ?Await, ~Using] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead ∉ { `let`, `async` `of` }] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `let`] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForInOfStatement :\n            `for` `(` LeftHandSideExpression `in` Expression `)` Statement\n            `for` `(` `var` ForBinding `in` Expression `)` Statement\n            `for` `(` ForDeclaration `in` Expression `)` Statement\n            `for` `(` LeftHandSideExpression `of` AssignmentExpression `)` Statement\n            `for` `(` `var` ForBinding `of` AssignmentExpression `)` Statement\n            `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n            `for` `await` `(` LeftHandSideExpression `of` AssignmentExpression `)` Statement\n            `for` `await` `(` `var` ForBinding `of` AssignmentExpression `)` Statement\n            `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n        "]
+  vars []
+  sentences {
+    syntax_error @sec-islabelledfunction(child 5 |Statement|) is val {true}
+  }
+}
+
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `let` `[`] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead ∉ { `let`, `async` `of` }] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `let`] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForInOfStatement :\n            `for` `(` LeftHandSideExpression `in` Expression `)` Statement\n            `for` `(` LeftHandSideExpression `of` AssignmentExpression `)` Statement\n            `for` `await` `(` LeftHandSideExpression `of` AssignmentExpression `)` Statement\n        "]
+  vars []
+  sentences {
+    if_inline child 5 |LeftHandSideExpression| is ty {|ObjectLiteral|; |ArrayLiteral|} -> must_cover child 5 |LeftHandSideExpression| : |AssignmentPattern|
+  }
+}
+
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `let` `[`] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead ∉ { `let`, `async` `of` }] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `let`] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForInOfStatement :\n            `for` `(` LeftHandSideExpression `in` Expression `)` Statement\n            `for` `(` LeftHandSideExpression `of` AssignmentExpression `)` Statement\n            `for` `await` `(` LeftHandSideExpression `of` AssignmentExpression `)` Statement\n        "]
+  vars []
+  sentences {
+    if_inline child 5 |LeftHandSideExpression| is neither ty {|ObjectLiteral|; |ArrayLiteral|} -> syntax_error sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is val {~invalid~}
+  }
+}
+
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` ForDeclaration[?Yield, ?Await, ~Using] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForInOfStatement :\n            `for` `(` ForDeclaration `in` Expression `)` Statement\n            `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n            `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n        "]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |ForDeclaration|) sat $Contains("let")
+  }
+}
+
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` ForDeclaration[?Yield, ?Await, ~Using] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForInOfStatement :\n            `for` `(` ForDeclaration `in` Expression `)` Statement\n            `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n            `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n        "]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |ForDeclaration|), sdo VarDeclaredNames(child 5 |Statement|))
+  }
+}
+
+early @sec-for-in-and-for-of-statements-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` ForDeclaration[?Yield, ?Await, ~Using] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForInOfStatement :\n            `for` `(` ForDeclaration `in` Expression `)` Statement\n            `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n            `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n        "]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |ForDeclaration|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-continue-statement-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - ContinueStatement : `continue` `;`", p"Syntactic - ContinueStatement : `continue` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`"]
+  keys ["\n        ContinueStatement :\n          `continue` `;`\n          `continue` LabelIdentifier `;`\n      "]
+  vars []
+  sentences {
+    syntax_error call_at @ph-this-nt(|ContinueStatement|) sat @spec-copy-4(term "static", data choice 0)
+  }
+}
+
+early @sec-break-statement-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - BreakStatement : `break` `;`"]
+  keys ["BreakStatement : `break` `;`"]
+  vars []
+  sentences {
+    syntax_error call_at @ph-this-nt(|BreakStatement|) sat @spec-copy-5(term "static", data choice 0)
+  }
+}
+
+early @sec-with-statement-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - WithStatement : `with` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["WithStatement : `with` `(` Expression `)` Statement"]
+  vars []
+  sentences {
+    syntax_error @sec-isstrict(call_at @ph-this-production(data choice 0)) is val {true}
+  }
+}
+
+early @sec-with-statement-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - WithStatement : `with` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["WithStatement : `with` `(` Expression `)` Statement"]
+  vars []
+  sentences {
+    syntax_error @sec-islabelledfunction(child 5 |Statement|) is val {true}
+  }
+}
+
+early @sec-switch-statement-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - SwitchStatement : `switch` `(` Expression[+In, ?Yield, ?Await] `)` CaseBlock[?Yield, ?Await, ?Return]"]
+  keys ["SwitchStatement : `switch` `(` Expression `)` CaseBlock"]
+  vars []
+  sentences {
+    syntax_error sdo LexicallyDeclaredNames(child 5 |CaseBlock|) sat @ph-duplicate-entries(data choice 0) unless opt expr $"the host is a web browser"(data choice 0, clause @sec-block-level-function-declarations-web-legacy-compatibility-semantics) and {@sec-isstrict(call_at @ph-this-production(data choice 0)) is val {false} and @formal-duplicatesonlyfunctiondeclarations(child 5 |CaseBlock|) is val {true}}
+  }
+}
+
+early @sec-switch-statement-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - SwitchStatement : `switch` `(` Expression[+In, ?Yield, ?Await] `)` CaseBlock[?Yield, ?Await, ?Return]"]
+  keys ["SwitchStatement : `switch` `(` Expression `)` CaseBlock"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo LexicallyDeclaredNames(child 5 |CaseBlock|), sdo VarDeclaredNames(child 5 |CaseBlock|))
+  }
+}
+
+early @sec-switch-statement-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic 1 CaseClause : `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?"]
+  keys ["CaseClause : `case` Expression `:` StatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUsing(child 5 |StatementList|) is val {true}
+  }
+}
+
+early @sec-switch-statement-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic 1 DefaultClause : `default` `:` StatementList[?Yield, ?Await, ?Return]?"]
+  keys ["DefaultClause : `default` `:` StatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUsing(child 5 |StatementList|) is val {true}
+  }
+}
+
+early @sec-labelled-statements-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - LabelledItem : FunctionDeclaration[?Yield, ?Await, ~Default]"]
+  keys ["LabelledItem : FunctionDeclaration"]
+  vars []
+  sentences {
+    syntax_error expr @ph-source-matched(call_at @ph-this-production(data choice 0)) unless opt expr call_at @ph-that-non-strict() and expr $"the host is a web browser"(data choice 0, clause @sec-labelled-function-declarations)
+  }
+}
+
+early @sec-try-statement-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - Catch : `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]"]
+  keys ["Catch : `catch` `(` CatchParameter `)` Block"]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |CatchParameter|) sat @ph-duplicate-entries(data choice 1)
+  }
+}
+
+early @sec-try-statement-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - Catch : `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]"]
+  keys ["Catch : `catch` `(` CatchParameter `)` Block"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |CatchParameter|), sdo LexicallyDeclaredNames(child 5 |Block|))
+  }
+}
+
+early @sec-try-statement-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - Catch : `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]"]
+  keys ["Catch : `catch` `(` CatchParameter `)` Block"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |CatchParameter|), sdo VarDeclaredNames(child 5 |Block|)) unless opt child 5 |CatchParameter| is val {prods [p"Syntactic - CatchParameter : BindingIdentifier[?Yield, ?Await]"]} and expr $"the host is a web browser"(data choice 0, clause @sec-variablestatements-in-catch-blocks)
+  }
+}
+
+early @sec-parameter-lists-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - UniqueFormalParameters : FormalParameters[?Yield, ?Await]"]
+  keys ["UniqueFormalParameters : FormalParameters"]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |FormalParameters|) sat @ph-duplicate-entries(data choice 1)
+  }
+}
+
+early @sec-parameter-lists-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - FormalParameters : FormalParameterList[?Yield, ?Await]"]
+  keys ["FormalParameters : FormalParameterList"]
+  vars []
+  sentences {
+    syntax_error sdo IsSimpleParameterList(child 5 |FormalParameterList|) is val {false} and sdo BoundNames(child 5 |FormalParameterList|) sat @ph-duplicate-entries(data choice 1)
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        FunctionDeclaration :\n          `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`\n          `function` `(` FormalParameters `)` `{` FunctionBody `}`\n\n        FunctionExpression :\n          `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n      "]
+  vars []
+  sentences {
+    if_inline @sec-isstrict(child 5 |FormalParameters|) is val {true} -> rules_applied [p"Syntactic - UniqueFormalParameters : FormalParameters[?Yield, ?Await]"] "<emu-grammar>UniqueFormalParameters : FormalParameters</emu-grammar>"
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        FunctionDeclaration :\n          `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`\n          `function` `(` FormalParameters `)` `{` FunctionBody `}`\n\n        FunctionExpression :\n          `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n      "]
+  vars []
+  sentences {
+    if_inline child 5 |BindingIdentifier| sat $Present() and @sec-isstrict(child 5 |BindingIdentifier|) is val {true} -> syntax_error sdo StringValue(child 5 |BindingIdentifier|) is val {"eval"; "arguments"}
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        FunctionDeclaration :\n          `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`\n          `function` `(` FormalParameters `)` `{` FunctionBody `}`\n\n        FunctionExpression :\n          `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error sdo FunctionBodyContainsUseStrict(child 5 |FunctionBody|) is val {true} and sdo IsSimpleParameterList(child 5 |FormalParameters|) is val {false}
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        FunctionDeclaration :\n          `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`\n          `function` `(` FormalParameters `)` `{` FunctionBody `}`\n\n        FunctionExpression :\n          `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |FormalParameters|), sdo LexicallyDeclaredNames(child 5 |FunctionBody|))
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        FunctionDeclaration :\n          `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`\n          `function` `(` FormalParameters `)` `{` FunctionBody `}`\n\n        FunctionExpression :\n          `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |SuperProperty|) is val {true}
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        FunctionDeclaration :\n          `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`\n          `function` `(` FormalParameters `)` `{` FunctionBody `}`\n\n        FunctionExpression :\n          `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FunctionBody|, |SuperProperty|) is val {true}
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        FunctionDeclaration :\n          `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`\n          `function` `(` FormalParameters `)` `{` FunctionBody `}`\n\n        FunctionExpression :\n          `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        FunctionDeclaration :\n          `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`\n          `function` `(` FormalParameters `)` `{` FunctionBody `}`\n\n        FunctionExpression :\n          `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FunctionBody|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#8 #"Early Errors" {
+  prods [p"Syntactic - FunctionBody : FunctionStatementList[?Yield, ?Await]"]
+  keys ["FunctionBody : FunctionStatementList"]
+  vars []
+  sentences {
+    syntax_error sdo LexicallyDeclaredNames(child 5 |FunctionStatementList|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#9 #"Early Errors" {
+  prods [p"Syntactic - FunctionBody : FunctionStatementList[?Yield, ?Await]"]
+  keys ["FunctionBody : FunctionStatementList"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo LexicallyDeclaredNames(child 5 |FunctionStatementList|), sdo VarDeclaredNames(child 5 |FunctionStatementList|))
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#10 #"Early Errors" {
+  prods [p"Syntactic - FunctionBody : FunctionStatementList[?Yield, ?Await]"]
+  keys ["FunctionBody : FunctionStatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsDuplicateLabels(child 5 |FunctionStatementList|; []) is val {true}
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#11 #"Early Errors" {
+  prods [p"Syntactic - FunctionBody : FunctionStatementList[?Yield, ?Await]"]
+  keys ["FunctionBody : FunctionStatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUndefinedBreakTarget(child 5 |FunctionStatementList|; []) is val {true}
+  }
+}
+
+early @sec-function-definitions-static-semantics-early-errors#12 #"Early Errors" {
+  prods [p"Syntactic - FunctionBody : FunctionStatementList[?Yield, ?Await]"]
+  keys ["FunctionBody : FunctionStatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUndefinedContinueTarget(child 5 |FunctionStatementList|; [], []) is val {true}
+  }
+}
+
+early @sec-arrow-function-definitions-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - ArrowFunction : ArrowParameters[?Yield, ?Await] [no LineTerminator here] `=>` ConciseBody[?In]"]
+  keys ["ArrowFunction : ArrowParameters `=>` ConciseBody"]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |ArrowParameters|, |YieldExpression|) is val {true}
+  }
+}
+
+early @sec-arrow-function-definitions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - ArrowFunction : ArrowParameters[?Yield, ?Await] [no LineTerminator here] `=>` ConciseBody[?In]"]
+  keys ["ArrowFunction : ArrowParameters `=>` ConciseBody"]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |ArrowParameters|, |AwaitExpression|) is val {true}
+  }
+}
+
+early @sec-arrow-function-definitions-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - ArrowFunction : ArrowParameters[?Yield, ?Await] [no LineTerminator here] `=>` ConciseBody[?In]"]
+  keys ["ArrowFunction : ArrowParameters `=>` ConciseBody"]
+  vars []
+  sentences {
+    syntax_error sdo ConciseBodyContainsUseStrict(child 5 |ConciseBody|) is val {true} and sdo IsSimpleParameterList(child 5 |ArrowParameters|) is val {false}
+  }
+}
+
+early @sec-arrow-function-definitions-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - ArrowFunction : ArrowParameters[?Yield, ?Await] [no LineTerminator here] `=>` ConciseBody[?In]"]
+  keys ["ArrowFunction : ArrowParameters `=>` ConciseBody"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |ArrowParameters|), sdo LexicallyDeclaredNames(child 5 |ConciseBody|))
+  }
+}
+
+early @sec-arrow-function-definitions-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]"]
+  keys ["ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList"]
+  vars []
+  sentences {
+    must_cover child 5 |CoverParenthesizedExpressionAndArrowParameterList| : |ArrowFormalParameters|
+  }
+}
+
+early @sec-method-definitions-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - MethodDefinition : ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : ClassElementName `(` UniqueFormalParameters `)` `{` FunctionBody `}`"]
+  vars []
+  sentences {
+    syntax_error sdo FunctionBodyContainsUseStrict(child 5 |FunctionBody|) is val {true} and sdo IsSimpleParameterList(child 5 |UniqueFormalParameters|) is val {false}
+  }
+}
+
+early @sec-method-definitions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - MethodDefinition : ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : ClassElementName `(` UniqueFormalParameters `)` `{` FunctionBody `}`"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |UniqueFormalParameters|), sdo LexicallyDeclaredNames(child 5 |FunctionBody|))
+  }
+}
+
+early @sec-method-definitions-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : `set` ClassElementName `(` PropertySetParameterList `)` `{` FunctionBody `}`"]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |PropertySetParameterList|) sat @ph-duplicate-entries(data choice 1)
+  }
+}
+
+early @sec-method-definitions-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : `set` ClassElementName `(` PropertySetParameterList `)` `{` FunctionBody `}`"]
+  vars []
+  sentences {
+    syntax_error sdo FunctionBodyContainsUseStrict(child 5 |FunctionBody|) is val {true} and sdo IsSimpleParameterList(child 5 |PropertySetParameterList|) is val {false}
+  }
+}
+
+early @sec-method-definitions-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : `set` ClassElementName `(` PropertySetParameterList `)` `{` FunctionBody `}`"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |PropertySetParameterList|), sdo LexicallyDeclaredNames(child 5 |FunctionBody|))
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - GeneratorMethod : `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorMethod : `*` ClassElementName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`"]
+  vars []
+  sentences {
+    syntax_error sdo HasDirectSuper(child 6 |GeneratorMethod|) is val {true}
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - GeneratorMethod : `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorMethod : `*` ClassElementName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`"]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |UniqueFormalParameters|, |YieldExpression|) is val {true}
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - GeneratorMethod : `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorMethod : `*` ClassElementName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`"]
+  vars []
+  sentences {
+    syntax_error sdo FunctionBodyContainsUseStrict(child 5 |GeneratorBody|) is val {true} and sdo IsSimpleParameterList(child 5 |UniqueFormalParameters|) is val {false}
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - GeneratorMethod : `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorMethod : `*` ClassElementName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |UniqueFormalParameters|), sdo LexicallyDeclaredNames(child 5 |GeneratorBody|))
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    if_inline @sec-isstrict(child 5 |FormalParameters|) is val {true} -> rules_applied [p"Syntactic - UniqueFormalParameters : FormalParameters[?Yield, ?Await]"] "<emu-grammar>UniqueFormalParameters : FormalParameters</emu-grammar>"
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    if_inline child 5 |BindingIdentifier| sat $Present() and @sec-isstrict(child 5 |BindingIdentifier|) is val {true} -> syntax_error sdo StringValue(child 5 |BindingIdentifier|) is val {"eval"; "arguments"}
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error sdo FunctionBodyContainsUseStrict(child 5 |GeneratorBody|) is val {true} and sdo IsSimpleParameterList(child 5 |FormalParameters|) is val {false}
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |FormalParameters|), sdo LexicallyDeclaredNames(child 5 |GeneratorBody|))
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#8 #"Early Errors" {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |YieldExpression|) is val {true}
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#9 #"Early Errors" {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |SuperProperty|) is val {true}
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#10 #"Early Errors" {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |GeneratorBody|, |SuperProperty|) is val {true}
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#11 #"Early Errors" {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-generator-function-definitions-static-semantics-early-errors#12 #"Early Errors" {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |GeneratorBody|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["AsyncGeneratorMethod : `async` `*` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`"]
+  vars []
+  sentences {
+    syntax_error sdo HasDirectSuper(child 6 |AsyncGeneratorMethod|) is val {true}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["AsyncGeneratorMethod : `async` `*` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`"]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |UniqueFormalParameters|, |YieldExpression|) is val {true}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["AsyncGeneratorMethod : `async` `*` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`"]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |UniqueFormalParameters|, |AwaitExpression|) is val {true}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["AsyncGeneratorMethod : `async` `*` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`"]
+  vars []
+  sentences {
+    syntax_error sdo FunctionBodyContainsUseStrict(child 5 |AsyncGeneratorBody|) is val {true} and sdo IsSimpleParameterList(child 5 |UniqueFormalParameters|) is val {false}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["AsyncGeneratorMethod : `async` `*` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |UniqueFormalParameters|), sdo LexicallyDeclaredNames(child 5 |AsyncGeneratorBody|))
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    if_inline @sec-isstrict(child 5 |FormalParameters|) is val {true} -> rules_applied [p"Syntactic - UniqueFormalParameters : FormalParameters[?Yield, ?Await]"] "<emu-grammar>UniqueFormalParameters : FormalParameters</emu-grammar>"
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    if_inline child 5 |BindingIdentifier| sat $Present() and @sec-isstrict(child 5 |BindingIdentifier|) is val {true} -> syntax_error sdo StringValue(child 5 |BindingIdentifier|) is val {"eval"; "arguments"}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error sdo FunctionBodyContainsUseStrict(child 5 |AsyncGeneratorBody|) is val {true} and sdo IsSimpleParameterList(child 5 |FormalParameters|) is val {false}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#8 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |FormalParameters|), sdo LexicallyDeclaredNames(child 5 |AsyncGeneratorBody|))
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#9 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |YieldExpression|) is val {true}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#10 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |AwaitExpression|) is val {true}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#11 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |SuperProperty|) is val {true}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#12 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |AsyncGeneratorBody|, |SuperProperty|) is val {true}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#13 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-async-generator-function-definitions-static-semantics-early-errors#14 #"Early Errors" {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |AsyncGeneratorBody|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic 01 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`", p"Syntactic 11 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`"]
+  keys ["ClassTail : ClassHeritage? `{` ClassBody `}`"]
+  vars []
+  sentences {
+    syntax_error child 5 |ClassHeritage| fails $Present() and alg @sec-class-definitions-static-semantics-early-errors
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - ClassBody : ClassElementList[?Yield, ?Await]"]
+  keys ["ClassBody : ClassElementList"]
+  vars []
+  sentences {
+    syntax_error sdo PrototypePropertyNameList(child 5 |ClassElementList|) sat @ph-more-than-one-occurrence("constructor")
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - ClassBody : ClassElementList[?Yield, ?Await]"]
+  keys ["ClassBody : ClassElementList"]
+  vars []
+  sentences {
+    syntax_error sdo PrivateBoundIdentifiers(child 5 |ClassElementList|) sat @ph-duplicate-entries(data choice 0) unless comma @formal-privateduplicatesareaccessorpairs(child 5 |ClassElementList|) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - ClassElement : MethodDefinition[?Yield, ?Await]"]
+  keys ["ClassElement : MethodDefinition"]
+  vars []
+  sentences {
+    syntax_error sdo PropName(child 5 |MethodDefinition|) is not val {"constructor"} and sdo HasDirectSuper(child 5 |MethodDefinition|) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - ClassElement : MethodDefinition[?Yield, ?Await]"]
+  keys ["ClassElement : MethodDefinition"]
+  vars []
+  sentences {
+    syntax_error sdo PropName(child 5 |MethodDefinition|) is val {"constructor"} and sdo SpecialMethod(child 5 |MethodDefinition|) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"Syntactic - ClassElement : `static` MethodDefinition[?Yield, ?Await]"]
+  keys ["ClassElement : `static` MethodDefinition"]
+  vars []
+  sentences {
+    syntax_error sdo HasDirectSuper(child 5 |MethodDefinition|) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"Syntactic - ClassElement : `static` MethodDefinition[?Yield, ?Await]"]
+  keys ["ClassElement : `static` MethodDefinition"]
+  vars []
+  sentences {
+    syntax_error sdo PropName(child 5 |MethodDefinition|) is val {"prototype"}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#8 #"Early Errors" {
+  prods [p"Syntactic - ClassElement : FieldDefinition[?Yield, ?Await] `;`"]
+  keys ["ClassElement : FieldDefinition `;`"]
+  vars []
+  sentences {
+    syntax_error sdo PropName(child 5 |FieldDefinition|) is val {"constructor"}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#9 #"Early Errors" {
+  prods [p"Syntactic - ClassElement : `static` FieldDefinition[?Yield, ?Await] `;`"]
+  keys ["ClassElement : `static` FieldDefinition `;`"]
+  vars []
+  sentences {
+    syntax_error sdo PropName(child 5 |FieldDefinition|) is val {"prototype"; "constructor"}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#10 #"Early Errors" {
+  prods [p"Syntactic 0 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["\n        FieldDefinition :\n          ClassElementName Initializer?\n      "]
+  vars []
+  sentences {
+    syntax_error child 5 |Initializer| sat $Present() and sdo ContainsArguments(child 5 |Initializer|) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#11 #"Early Errors" {
+  prods [p"Syntactic 0 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["\n        FieldDefinition :\n          ClassElementName Initializer?\n      "]
+  vars []
+  sentences {
+    syntax_error child 5 |Initializer| sat $Present() and @ph-contains(child 5 |Initializer|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#12 #"Early Errors" {
+  prods [p"Syntactic - ClassElementName : PrivateIdentifier"]
+  keys ["ClassElementName : PrivateIdentifier"]
+  vars []
+  sentences {
+    syntax_error sdo StringValue(child 5 |PrivateIdentifier|) is val {"#constructor"}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#13 #"Early Errors" {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  vars []
+  sentences {
+    syntax_error sdo LexicallyDeclaredNames(child 5 |ClassStaticBlockStatementList|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#14 #"Early Errors" {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo LexicallyDeclaredNames(child 5 |ClassStaticBlockStatementList|), sdo VarDeclaredNames(child 5 |ClassStaticBlockStatementList|))
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#15 #"Early Errors" {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsDuplicateLabels(child 5 |ClassStaticBlockStatementList|; []) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#16 #"Early Errors" {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUndefinedBreakTarget(child 5 |ClassStaticBlockStatementList|; []) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#17 #"Early Errors" {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUndefinedContinueTarget(child 5 |ClassStaticBlockStatementList|; [], []) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#18 #"Early Errors" {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsArguments(child 5 |ClassStaticBlockStatementList|) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#19 #"Early Errors" {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |ClassStaticBlockStatementList|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-class-definitions-static-semantics-early-errors#20 #"Early Errors" {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |ClassStaticBlockStatementList|, term "await") is val {true}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - AsyncMethod : `async` [no LineTerminator here] ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncMethod : `async` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error sdo FunctionBodyContainsUseStrict(child 5 |AsyncFunctionBody|) is val {true} and sdo IsSimpleParameterList(child 5 |UniqueFormalParameters|) is val {false}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - AsyncMethod : `async` [no LineTerminator here] ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncMethod : `async` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error sdo HasDirectSuper(child 6 |AsyncMethod|) is val {true}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - AsyncMethod : `async` [no LineTerminator here] ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncMethod : `async` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |UniqueFormalParameters|, |AwaitExpression|) is val {true}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - AsyncMethod : `async` [no LineTerminator here] ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncMethod : `async` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |UniqueFormalParameters|), sdo LexicallyDeclaredNames(child 5 |AsyncFunctionBody|))
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error sdo FunctionBodyContainsUseStrict(child 5 |AsyncFunctionBody|) is val {true} and sdo IsSimpleParameterList(child 5 |FormalParameters|) is val {false}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |AwaitExpression|) is val {true}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    if_inline @sec-isstrict(child 5 |FormalParameters|) is val {true} -> rules_applied [p"Syntactic - UniqueFormalParameters : FormalParameters[?Yield, ?Await]"] "<emu-grammar>UniqueFormalParameters : FormalParameters</emu-grammar>"
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    if_inline child 5 |BindingIdentifier| sat $Present() and @sec-isstrict(child 5 |BindingIdentifier|) is val {true} -> syntax_error sdo StringValue(child 5 |BindingIdentifier|) is val {"eval"; "arguments"}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#8 #"Early Errors" {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |FormalParameters|), sdo LexicallyDeclaredNames(child 5 |AsyncFunctionBody|))
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#9 #"Early Errors" {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |SuperProperty|) is val {true}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#10 #"Early Errors" {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |AsyncFunctionBody|, |SuperProperty|) is val {true}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#11 #"Early Errors" {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |FormalParameters|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-async-function-definitions-static-semantics-early-errors#12 #"Early Errors" {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |AsyncFunctionBody|, |SuperCall|) is val {true}
+  }
+}
+
+early @sec-async-arrow-function-definitions-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - AsyncArrowFunction : `async` [no LineTerminator here] AsyncArrowBindingIdentifier[?Yield] [no LineTerminator here] `=>` AsyncConciseBody[?In]"]
+  keys ["\n        AsyncArrowFunction : `async` AsyncArrowBindingIdentifier `=>` AsyncConciseBody\n      "]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |AsyncArrowBindingIdentifier|), sdo LexicallyDeclaredNames(child 5 |AsyncConciseBody|))
+  }
+}
+
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]"]
+  keys ["\n        AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody\n      "]
+  vars []
+  sentences {
+    must_cover child 5 |CoverCallExpressionAndAsyncArrowHead| : |AsyncArrowHead|
+  }
+}
+
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]"]
+  keys ["\n        AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |CoverCallExpressionAndAsyncArrowHead|, |YieldExpression|) is val {true}
+  }
+}
+
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]"]
+  keys ["\n        AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody\n      "]
+  vars []
+  sentences {
+    syntax_error @ph-contains(child 5 |CoverCallExpressionAndAsyncArrowHead|, |AwaitExpression|) is val {true}
+  }
+}
+
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]"]
+  keys ["\n        AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody\n      "]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo BoundNames(child 5 |CoverCallExpressionAndAsyncArrowHead|), sdo LexicallyDeclaredNames(child 5 |AsyncConciseBody|))
+  }
+}
+
+early @sec-async-arrow-function-definitions-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]"]
+  keys ["\n        AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody\n      "]
+  vars []
+  sentences {
+    syntax_error sdo AsyncConciseBodyContainsUseStrict(child 5 |AsyncConciseBody|) is val {true} and sdo IsSimpleParameterList(child 5 |CoverCallExpressionAndAsyncArrowHead|) is val {false}
+  }
+}
+
+early @sec-scripts-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic 1 Script : ScriptBody?"]
+  keys ["Script : ScriptBody"]
+  vars []
+  sentences {
+    syntax_error sdo LexicallyDeclaredNames(child 5 |ScriptBody|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-scripts-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic 1 Script : ScriptBody?"]
+  keys ["Script : ScriptBody"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo LexicallyDeclaredNames(child 5 |ScriptBody|), sdo VarDeclaredNames(child 5 |ScriptBody|))
+  }
+}
+
+early @sec-scripts-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - ScriptBody : StatementList[~Yield, ~Await, ~Return]"]
+  keys ["ScriptBody : StatementList"]
+  vars []
+  sentences {
+    syntax_error expr @ph-contains-cond(child 5 |StatementList|, term "super") unless plain expr $InDirectEval(this_node)
+    info { perform $""(code "super", data choice 1, clause @sec-performeval) }
+  }
+}
+
+early @sec-scripts-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - ScriptBody : StatementList[~Yield, ~Await, ~Return]"]
+  keys ["ScriptBody : StatementList"]
+  vars []
+  sentences {
+    syntax_error expr @ph-contains-cond(child 5 |StatementList|, |NewTarget|) unless plain expr $InDirectEval(this_node)
+    info { perform $""(|NewTarget|, data choice 0, clause @sec-performeval) }
+  }
+}
+
+early @sec-scripts-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - ScriptBody : StatementList[~Yield, ~Await, ~Return]"]
+  keys ["ScriptBody : StatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsDuplicateLabels(child 5 |StatementList|; []) is val {true}
+  }
+}
+
+early @sec-scripts-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - ScriptBody : StatementList[~Yield, ~Await, ~Return]"]
+  keys ["ScriptBody : StatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUndefinedBreakTarget(child 5 |StatementList|; []) is val {true}
+  }
+}
+
+early @sec-scripts-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"Syntactic - ScriptBody : StatementList[~Yield, ~Await, ~Return]"]
+  keys ["ScriptBody : StatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUndefinedContinueTarget(child 5 |StatementList|; [], []) is val {true}
+  }
+}
+
+early @sec-scripts-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"Syntactic - ScriptBody : StatementList[~Yield, ~Await, ~Return]"]
+  keys ["ScriptBody : StatementList"]
+  vars []
+  sentences {
+    syntax_error sdo AllPrivateIdentifiersValid(child 5 |StatementList|; []) is val {false} unless plain expr $InDirectEval(this_node)
+  }
+}
+
+early @sec-scripts-static-semantics-early-errors#8 #"Early Errors" {
+  prods [p"Syntactic - ScriptBody : StatementList[~Yield, ~Await, ~Return]"]
+  keys ["ScriptBody : StatementList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUsing(child 5 |StatementList|) is val {true}
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error sdo LexicallyDeclaredNames(child 5 |ModuleItemList|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-also-occurs(sdo LexicallyDeclaredNames(child 5 |ModuleItemList|), sdo VarDeclaredNames(child 5 |ModuleItemList|))
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error sdo ExportedNames(child 5 |ModuleItemList|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error expr @ph-element-not-in-either(sdo ExportedBindings(child 5 |ModuleItemList|), sdo VarDeclaredNames(child 5 |ModuleItemList|), sdo LexicallyDeclaredNames(child 5 |ModuleItemList|))
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error expr @ph-contains-cond(child 5 |ModuleItemList|, term "super")
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error expr @ph-contains-cond(child 5 |ModuleItemList|, |NewTarget|)
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsDuplicateLabels(child 5 |ModuleItemList|; []) is val {true}
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUndefinedBreakTarget(child 5 |ModuleItemList|; []) is val {true}
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#8 #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error sdo ContainsUndefinedContinueTarget(child 5 |ModuleItemList|; [], []) is val {true}
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#9 #"Early Errors" {
+  prods [p"Syntactic - ModuleBody : ModuleItemList"]
+  keys ["ModuleBody : ModuleItemList"]
+  vars []
+  sentences {
+    syntax_error sdo AllPrivateIdentifiersValid(child 5 |ModuleItemList|; []) is val {false}
+  }
+}
+
+early @sec-module-semantics-static-semantics-early-errors#10 #"Early Errors" {
+  prods [p"Syntactic - ModuleExportName : StringLiteral"]
+  keys ["ModuleExportName : StringLiteral"]
+  vars []
+  sentences {
+    syntax_error @sec-isstringwellformedunicode(sdo SV(child 5 |StringLiteral|)) is val {false}
+  }
+}
+
+early @sec-imports-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - ModuleItem : ImportDeclaration"]
+  keys ["ModuleItem : ImportDeclaration"]
+  vars []
+  sentences {
+    syntax_error sdo BoundNames(child 5 |ImportDeclaration|) sat @ph-duplicate-entries(data choice 0)
+  }
+}
+
+early @sec-imports-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic 0 WithClause : `with` `{` WithEntries `,`? `}`", p"Syntactic 1 WithClause : `with` `{` WithEntries `,`? `}`"]
+  keys ["WithClause : `with` `{` WithEntries `,`? `}`"]
+  vars [a, b]
+  sentences {
+    syntax_error sdo WithClauseToAttributes(child 6 |WithClause|) sat @ph-two-entries(?a, ?b, ref @spec-cond-0)
+  }
+}
+
+early @sec-exports-static-semantics-early-errors #"Early Errors" {
+  prods [p"Syntactic - ExportDeclaration : `export` NamedExports `;`"]
+  keys ["ExportDeclaration : `export` NamedExports `;`"]
+  vars []
+  sentences {
+    syntax_error sdo ReferencedBindings(child 5 |NamedExports|) sat @ph-contains-any-nts(|StringLiteral|)
+  }
+}
+
+early @sec-exports-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"Syntactic - ExportDeclaration : `export` NamedExports `;`"]
+  keys ["ExportDeclaration : `export` NamedExports `;`"]
+  vars [n]
+  sentences {
+    for_each_in n : |IdentifierName| in sdo ReferencedBindings(child 5 |NamedExports|) where sdo StringValue(n) is ty {|ReservedWord|} or sdo StringValue(n) is val {"implements"; "interface"; "let"; "package"; "private"; "protected"; "public"; "static"} { perform $""(|IdentifierName|, ?n, sdo ReferencedBindings(child 5 |NamedExports|)) }
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors #"Early Errors" {
+  prods [p"RegExp - Pattern :: Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]"]
+  keys ["Pattern :: Disjunction"]
+  vars []
+  sentences {
+    syntax_error @sec-countleftcapturingparenswithin(child 6 |Pattern|) >= 2 ^ 32 - 1
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#1 #"Early Errors" {
+  prods [p"RegExp - Pattern :: Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]"]
+  keys ["Pattern :: Disjunction"]
+  vars [x, y]
+  sentences {
+    syntax_error expr @ph-two-distinct(child 6 |Pattern|, |GroupSpecifier|, ?x, ?y, ref @spec-cond-1, ref @spec-cond-2)
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#2 #"Early Errors" {
+  prods [p"RegExp - QuantifierPrefix :: `{` DecimalDigits[~Sep] `,` DecimalDigits[~Sep] `}`"]
+  keys ["QuantifierPrefix :: `{` DecimalDigits `,` DecimalDigits `}`"]
+  vars []
+  sentences {
+    syntax_error sdo MV(child 0 |DecimalDigits|) sat @ph-gt(sdo MV(child 1 |DecimalDigits|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#3 #"Early Errors" {
+  prods [p"RegExp - Atom :: `(?` RegularExpressionModifiers `:` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Atom :: `(?` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error $SourceText(child 5 |RegularExpressionModifiers|) sat @ph-same-code-point-twice()
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#4 #"Early Errors" {
+  prods [p"RegExp - Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error expr @ph-both-empty([$SourceText(child 0 |RegularExpressionModifiers|), $SourceText(child 1 |RegularExpressionModifiers|)])
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#5 #"Early Errors" {
+  prods [p"RegExp - Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error $SourceText(child 0 |RegularExpressionModifiers|) sat @ph-same-code-point-twice()
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#6 #"Early Errors" {
+  prods [p"RegExp - Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error $SourceText(child 1 |RegularExpressionModifiers|) sat @ph-same-code-point-twice()
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#7 #"Early Errors" {
+  prods [p"RegExp - Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error expr @ph-code-point-also-in($SourceText(child 0 |RegularExpressionModifiers|), $SourceText(child 1 |RegularExpressionModifiers|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#8 #"Early Errors" {
+  prods [p"RegExp - AtomEscape :: [+NamedCaptureGroups] `k` GroupName[?UnicodeMode]", p"AnnexB - AtomEscape :: [+NamedCaptureGroups] `k` GroupName[?UnicodeMode]"]
+  keys ["AtomEscape :: `k` GroupName"]
+  vars []
+  sentences {
+    syntax_error @sec-groupspecifiersthatmatch(child 5 |GroupName|) sat $IsEmpty()
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#9 #"Early Errors" {
+  prods [p"RegExp - AtomEscape :: DecimalEscape", p"AnnexB - AtomEscape :: [+UnicodeMode] DecimalEscape", p"AnnexB - AtomEscape :: [~UnicodeMode] DecimalEscape [> but only if the CapturingGroupNumber of |DecimalEscape| is ≤ CountLeftCapturingParensWithin(the |Pattern| containing |DecimalEscape|)]"]
+  keys ["AtomEscape :: DecimalEscape"]
+  vars []
+  sentences {
+    syntax_error sdo CapturingGroupNumber(child 5 |DecimalEscape|) sat @ph-gt(@sec-countleftcapturingparenswithin(@ph-nt-containing(|Pattern|, child 6 |AtomEscape|)))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#10 #"Early Errors" {
+  prods [p"RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRanges :: ClassAtom `-` ClassAtom ClassContents"]
+  vars []
+  sentences {
+    syntax_error sdo IsCharacterClass(child 0 |ClassAtom|) is val {true} or sdo IsCharacterClass(child 1 |ClassAtom|) is val {true}
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#11 #"Early Errors" {
+  prods [p"RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRanges :: ClassAtom `-` ClassAtom ClassContents"]
+  vars []
+  sentences {
+    syntax_error sdo IsCharacterClass(child 0 |ClassAtom|) is val {false} and sdo IsCharacterClass(child 1 |ClassAtom|) is val {false} and sdo CharacterValue(child 0 |ClassAtom|) sat @ph-gt(sdo CharacterValue(child 1 |ClassAtom|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#12 #"Early Errors" {
+  prods [p"RegExp - NonemptyClassRangesNoDash :: ClassAtomNoDash[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRangesNoDash :: ClassAtomNoDash `-` ClassAtom ClassContents"]
+  vars []
+  sentences {
+    syntax_error sdo IsCharacterClass(child 5 |ClassAtomNoDash|) is val {true} or sdo IsCharacterClass(child 5 |ClassAtom|) is val {true}
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#13 #"Early Errors" {
+  prods [p"RegExp - NonemptyClassRangesNoDash :: ClassAtomNoDash[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRangesNoDash :: ClassAtomNoDash `-` ClassAtom ClassContents"]
+  vars []
+  sentences {
+    syntax_error sdo IsCharacterClass(child 5 |ClassAtomNoDash|) is val {false} and sdo IsCharacterClass(child 5 |ClassAtom|) is val {false} and sdo CharacterValue(child 5 |ClassAtomNoDash|) sat @ph-gt(sdo CharacterValue(child 5 |ClassAtom|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#14 #"Early Errors" {
+  prods [p"RegExp - RegExpIdentifierStart :: `\\` RegExpUnicodeEscapeSequence[+UnicodeMode]"]
+  keys ["RegExpIdentifierStart :: `\\` RegExpUnicodeEscapeSequence"]
+  vars []
+  sentences {
+    syntax_error sdo CharacterValue(child 5 |RegExpUnicodeEscapeSequence|) sat @ph-not-some-cp-matched(data choice 1, data choice 1, $GrammarSymbol(|IdentifierStartChar|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#15 #"Early Errors" {
+  prods [p"RegExp - RegExpIdentifierStart :: [~UnicodeMode] UnicodeLeadSurrogate UnicodeTrailSurrogate"]
+  keys ["RegExpIdentifierStart :: UnicodeLeadSurrogate UnicodeTrailSurrogate"]
+  vars []
+  sentences {
+    syntax_error sdo RegExpIdentifierCodePoint(child 6 |RegExpIdentifierStart|) sat @ph-not-matched-by($GrammarSymbol(|UnicodeIDStart|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#16 #"Early Errors" {
+  prods [p"RegExp - RegExpIdentifierPart :: `\\` RegExpUnicodeEscapeSequence[+UnicodeMode]"]
+  keys ["RegExpIdentifierPart :: `\\` RegExpUnicodeEscapeSequence"]
+  vars []
+  sentences {
+    syntax_error sdo CharacterValue(child 5 |RegExpUnicodeEscapeSequence|) sat @ph-not-some-cp-matched(data choice 1, data choice 1, $GrammarSymbol(|IdentifierPartChar|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#17 #"Early Errors" {
+  prods [p"RegExp - RegExpIdentifierPart :: [~UnicodeMode] UnicodeLeadSurrogate UnicodeTrailSurrogate"]
+  keys ["RegExpIdentifierPart :: UnicodeLeadSurrogate UnicodeTrailSurrogate"]
+  vars []
+  sentences {
+    syntax_error sdo RegExpIdentifierCodePoint(child 6 |RegExpIdentifierPart|) sat @ph-not-matched-by($GrammarSymbol(|UnicodeIDContinue|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#18 #"Early Errors" {
+  prods [p"RegExp - UnicodePropertyValueExpression :: UnicodePropertyName `=` UnicodePropertyValue"]
+  keys ["UnicodePropertyValueExpression :: UnicodePropertyName `=` UnicodePropertyValue"]
+  vars []
+  sentences {
+    syntax_error $SourceText(child 5 |UnicodePropertyName|) sat @ph-not-listed-property-name-or-alias(table t"table-nonbinary-unicode-properties")
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#19 #"Early Errors" {
+  prods [p"RegExp - UnicodePropertyValueExpression :: UnicodePropertyName `=` UnicodePropertyValue"]
+  keys ["UnicodePropertyValueExpression :: UnicodePropertyName `=` UnicodePropertyValue"]
+  vars []
+  sentences {
+    syntax_error $SourceText(child 5 |UnicodePropertyValue|) sat @ph-not-property-value-alias-given-by($SourceText(child 5 |UnicodePropertyName|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#20 #"Early Errors" {
+  prods [p"RegExp - UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue"]
+  keys ["UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue"]
+  vars []
+  sentences {
+    syntax_error $SourceText(child 5 |LoneUnicodePropertyNameOrValue|) sat @ph-not-lone-property(table t"table-binary-unicode-properties", table t"table-binary-unicode-properties-of-strings")
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#21 #"Early Errors" {
+  prods [p"RegExp - UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue"]
+  keys ["UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue"]
+  vars []
+  sentences {
+    syntax_error expr not $HasParam(call_at @ph-enclosing-nt(|Pattern|), param UnicodeSetsMode) and $SourceText(child 5 |LoneUnicodePropertyNameOrValue|) sat @ph-listed-binary-property-of-strings(table t"table-binary-unicode-properties-of-strings")
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#22 #"Early Errors" {
+  prods [p"RegExp - CharacterClassEscape :: [+UnicodeMode] `P{` UnicodePropertyValueExpression `}`"]
+  keys ["CharacterClassEscape :: `P{` UnicodePropertyValueExpression `}`"]
+  vars []
+  sentences {
+    syntax_error sdo MayContainStrings(child 4 |UnicodePropertyValueExpression|) is val {true}
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#23 #"Early Errors" {
+  prods [p"RegExp - CharacterClass :: `[^` ClassContents[?UnicodeMode, ?UnicodeSetsMode] `]`"]
+  keys ["CharacterClass :: `[^` ClassContents `]`"]
+  vars []
+  sentences {
+    syntax_error sdo MayContainStrings(child 4 |ClassContents|) is val {true}
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#24 #"Early Errors" {
+  prods [p"RegExp - NestedClass :: `[^` ClassContents[+UnicodeMode, +UnicodeSetsMode] `]`"]
+  keys ["NestedClass :: `[^` ClassContents `]`"]
+  vars []
+  sentences {
+    syntax_error sdo MayContainStrings(child 4 |ClassContents|) is val {true}
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#25 #"Early Errors" {
+  prods [p"RegExp - ClassSetRange :: ClassSetCharacter `-` ClassSetCharacter"]
+  keys ["ClassSetRange :: ClassSetCharacter `-` ClassSetCharacter"]
+  vars []
+  sentences {
+    syntax_error sdo CharacterValue(child 0 |ClassSetCharacter|) sat @ph-gt(sdo CharacterValue(child 1 |ClassSetCharacter|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors-annexb #"Early Errors" {
+  prods [p"AnnexB - ExtendedAtom :: InvalidBracedQuantifier"]
+  keys ["ExtendedAtom :: InvalidBracedQuantifier"]
+  vars []
+  sentences {
+    syntax_error expr @ph-source-matched(call_at @ph-this-production(data choice 0))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors-annexb#1 #"Early Errors" modifies {
+  prods [p"RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRanges :: ClassAtom `-` ClassAtom ClassContents"]
+  vars []
+  sentences {
+    syntax_error_ins sdo IsCharacterClass(child 0 |ClassAtom|) is val {true} or sdo IsCharacterClass(child 1 |ClassAtom|) is val {true} & expr $HasParam(call_at @ph-this-production(data choice 0), param UnicodeMode)
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors-annexb#2 #"Early Errors" modifies {
+  prods [p"RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRanges :: ClassAtom `-` ClassAtom ClassContents"]
+  vars []
+  sentences {
+    syntax_error sdo IsCharacterClass(child 0 |ClassAtom|) is val {false} and sdo IsCharacterClass(child 1 |ClassAtom|) is val {false} and sdo CharacterValue(child 0 |ClassAtom|) sat @ph-gt(sdo CharacterValue(child 1 |ClassAtom|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors-annexb#3 #"Early Errors" modifies {
+  prods [p"RegExp - NonemptyClassRangesNoDash :: ClassAtomNoDash[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRangesNoDash :: ClassAtomNoDash `-` ClassAtom ClassContents"]
+  vars []
+  sentences {
+    syntax_error_ins sdo IsCharacterClass(child 5 |ClassAtomNoDash|) is val {true} or sdo IsCharacterClass(child 5 |ClassAtom|) is val {true} & expr $HasParam(call_at @ph-this-production(data choice 0), param UnicodeMode)
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors-annexb#4 #"Early Errors" modifies {
+  prods [p"RegExp - NonemptyClassRangesNoDash :: ClassAtomNoDash[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRangesNoDash :: ClassAtomNoDash `-` ClassAtom ClassContents"]
+  vars []
+  sentences {
+    syntax_error sdo IsCharacterClass(child 5 |ClassAtomNoDash|) is val {false} and sdo IsCharacterClass(child 5 |ClassAtom|) is val {false} and sdo CharacterValue(child 5 |ClassAtomNoDash|) sat @ph-gt(sdo CharacterValue(child 5 |ClassAtom|))
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#1003 #"Early Errors" {
+  prods [p"AnnexB - ExtendedAtom :: `(?` RegularExpressionModifiers `:` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["ExtendedAtom :: `(?` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error $SourceText(child 5 |RegularExpressionModifiers|) sat @ph-same-code-point-twice()
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#1004 #"Early Errors" {
+  prods [p"AnnexB - ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error expr @ph-both-empty([$SourceText(child 0 |RegularExpressionModifiers|), $SourceText(child 1 |RegularExpressionModifiers|)])
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#1005 #"Early Errors" {
+  prods [p"AnnexB - ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error $SourceText(child 0 |RegularExpressionModifiers|) sat @ph-same-code-point-twice()
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#1006 #"Early Errors" {
+  prods [p"AnnexB - ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error $SourceText(child 1 |RegularExpressionModifiers|) sat @ph-same-code-point-twice()
+  }
+}
+
+early @sec-patterns-static-semantics-early-errors#1007 #"Early Errors" {
+  prods [p"AnnexB - ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars []
+  sentences {
+    syntax_error expr @ph-code-point-also-in($SourceText(child 0 |RegularExpressionModifiers|), $SourceText(child 1 |RegularExpressionModifiers|))
+  }
+}
+

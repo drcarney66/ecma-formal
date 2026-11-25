@@ -1,0 +1,1480 @@
+-- ECMA-262 SpecTec Clauses: S21
+
+def @sec-number-constructor-number-value "Number" (kind builtin params [value]) vars [#"this value", NewTarget, value, primitive, n, #"obj"] {
+  if value sat $Present() {
+    let primitive = ? @sec-tonumeric(value)
+    if primitive is ty {BigInt} -> let n = $𝔽($ℝ(primitive))
+    else -> let n = primitive
+  }
+  else {
+    let n = num_f(+0)
+  }
+  if new_target is val {undefined} -> return n
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(new_target, "%Number.prototype%", [[[NumberData]]])
+  set field #"obj"[[NumberData]] = n
+  return #"obj"
+}
+
+def @sec-number.isfinite "Number.isFinite" (kind builtin params [number]) vars [#"this value", NewTarget, number] {
+  if number is ty {sort [finite] Number} -> return true
+  return false
+}
+
+def @sec-number.isinteger "Number.isInteger" (kind builtin params [number]) vars [#"this value", NewTarget, number] {
+  if number is ty {#"integral Number"} -> return true
+  return false
+}
+
+def @sec-number.isnan "Number.isNaN" (kind builtin params [number]) vars [#"this value", NewTarget, number] {
+  if number is not ty {Number} -> return false
+  if number is val {nan} -> return true
+  return false
+}
+
+def @sec-number.issafeinteger "Number.isSafeInteger" (kind builtin params [number]) vars [#"this value", NewTarget, number] {
+  if number is ty {#"integral Number"} {
+    if $abs($ℝ(number)) <= 2 ^ 53 - 1 -> return true
+  }
+  return false
+}
+
+def @sec-number.prototype.toexponential "Number.prototype.toExponential" (kind builtin params [fractionDigits]) vars [#"this value", NewTarget, fractionDigits, number, fractionCount, sign, significand, exponent, intSignificand, ff, intPart, fractionalPart, exponentSign, exponentDigits] {
+  let number = ? @sec-thisnumbervalue(this_value)
+  let fractionCount = ? @sec-tointegerorinfinity(fractionDigits)
+  assert_if fractionDigits is val {undefined} then fractionCount is val {0}
+  if number is not ty {sort [finite] Number} -> return @sec-numeric-types-number-tostring(number, 10)
+  if fractionCount is not ty {integer} -> throw @ph-new-error([[RangeError]])
+  if fractionCount < 0 or fractionCount > 100 -> throw @ph-new-error([[RangeError]])
+  set var number = $ℝ(number)
+  let sign = $"the empty String"()
+  if number < 0 {
+    set var sign = "-"
+    set var number = neg number
+  }
+  if number == 0 {
+    let significand = $StrOfUnits(@ph-occurrences-of(fractionCount + 1, $CodeUnit(cu(48, "0030", "DIGIT ZERO"))))
+    let exponent = 0
+  }
+  else {
+    if fractionDigits is not val {undefined} {
+      let exponent = 0
+      repeat_while 10 ^ exponent > number {
+        set var exponent = exponent - 1
+      }
+      repeat_while 10 ^ {exponent + 1} <= number {
+        set var exponent = exponent + 1
+      }
+      let intSignificand = $floor(number / 10 ^ {exponent - fractionCount} + math(frac(0, 5, 1)))
+      if intSignificand == 10 ^ {fractionCount + 1} {
+        set var intSignificand = intSignificand / 10
+        set var exponent = exponent + 1
+      }
+    }
+    else {
+      let exponent = $NumberDigitsExponent($𝔽(number), 10) - 1
+      let ff = $NumberDigitsCount($𝔽(number), 10) - 1
+      let intSignificand = $NumberDigitsSignificand($𝔽(number), 10)
+      set var fractionCount = ff
+    }
+    let significand = @ph-decimal-digits(?intSignificand)
+  }
+  if fractionCount != 0 {
+    let intPart = $FirstUnit(?significand)
+    let fractionalPart = @ph-other-code-units(data choice 0, ?fractionCount, ?significand)
+    set var significand = $"string-concatenation"(intPart, ".", fractionalPart)
+  }
+  if exponent == 0 {
+    let exponentSign = "+"
+    let exponentDigits = "0"
+  }
+  else {
+    if exponent > 0 {
+      let exponentSign = "+"
+    }
+    else {
+      assert exponent < 0
+      let exponentSign = "-"
+      set var exponent = neg exponent
+    }
+    let exponentDigits = @ph-decimal-digits(?exponent)
+  }
+  set var significand = $"string-concatenation"(significand, "e", exponentSign, exponentDigits)
+  return $"string-concatenation"(sign, significand)
+}
+
+def @sec-number.prototype.toexponential#1 "Number.prototype.toExponential.2" (kind builtin params [fractionDigits]) vars [#"this value", NewTarget, fractionDigits, exponent, intSignificand, ff, number] {
+  perform $""()
+}
+
+def @sec-number.prototype.tofixed "Number.prototype.toFixed" (kind builtin params [fractionDigits]) vars [#"this value", NewTarget, fractionDigits, number, fractionCount, sign, digitString, intValue, digitCount, zeroPad, intPart, fractionalPart] {
+  let number = ? @sec-thisnumbervalue(this_value)
+  let fractionCount = ? @sec-tointegerorinfinity(fractionDigits)
+  assert_if fractionDigits is val {undefined} then fractionCount is val {0}
+  if fractionCount is not ty {integer} -> throw @ph-new-error([[RangeError]])
+  if fractionCount < 0 or fractionCount > 100 -> throw @ph-new-error([[RangeError]])
+  if number is not ty {sort [finite] Number} -> return @sec-numeric-types-number-tostring(number, 10)
+  set var number = $ℝ(number)
+  let sign = $"the empty String"()
+  if number < 0 {
+    set var sign = "-"
+    set var number = neg number
+  }
+  if number >= 10 ^ 21 {
+    let digitString = ! @sec-tostring($𝔽(number))
+  }
+  else {
+    let intValue = $floor(number * 10 ^ fractionCount + math(frac(0, 5, 1)))
+    if_else intValue == 0 { let digitString = "0" } else { let digitString = @ph-decimal-digits(?intValue) }
+    if fractionCount != 0 {
+      let digitCount = $StrLen(?digitString)
+      if digitCount <= fractionCount {
+        let zeroPad = $StrOfUnits(@ph-occurrences-of(fractionCount + 1 - digitCount, $CodeUnit(cu(48, "0030", "DIGIT ZERO"))))
+        set var digitString = $"string-concatenation"(zeroPad, digitString)
+        set var digitCount = fractionCount + 1
+      }
+      let intPart = @ph-first-code-units(digitCount - fractionCount, ?digitString)
+      let fractionalPart = @ph-other-code-units(data choice 0, ?fractionCount, ?digitString)
+      set var digitString = $"string-concatenation"(intPart, ".", fractionalPart)
+    }
+  }
+  return $"string-concatenation"(sign, digitString)
+}
+
+def @sec-number.prototype.toprecision "Number.prototype.toPrecision" (kind builtin params [precision]) vars [#"this value", NewTarget, precision, number, precisionCount, sign, significand, exponent, intSignificand, intPart, fractionalPart, exponentSign, exponentDigits] {
+  let number = ? @sec-thisnumbervalue(this_value)
+  if precision is val {undefined} -> return ! @sec-tostring(number)
+  let precisionCount = ? @sec-tointegerorinfinity(precision)
+  if number is not ty {sort [finite] Number} -> return @sec-numeric-types-number-tostring(number, 10)
+  if precisionCount is not ty {integer} -> throw @ph-new-error([[RangeError]])
+  if precisionCount < 1 or precisionCount > 100 -> throw @ph-new-error([[RangeError]])
+  set var number = $ℝ(number)
+  let sign = $"the empty String"()
+  if number < 0 {
+    set var sign = $CodeUnit(cu(45, "002D", "HYPHEN-MINUS"))
+    set var number = neg number
+  }
+  if number == 0 {
+    let significand = $StrOfUnits(@ph-occurrences-of(?precisionCount, $CodeUnit(cu(48, "0030", "DIGIT ZERO"))))
+    let exponent = 0
+  }
+  else {
+    let exponent = 0
+    repeat_while 10 ^ exponent > number {
+      set var exponent = exponent - 1
+    }
+    repeat_while 10 ^ {exponent + 1} <= number {
+      set var exponent = exponent + 1
+    }
+    let intSignificand = $floor(number / 10 ^ {exponent - precisionCount + 1} + math(frac(0, 5, 1)))
+    if intSignificand == 10 ^ precisionCount {
+      set var intSignificand = intSignificand / 10
+      set var exponent = exponent + 1
+    }
+    let significand = @ph-decimal-digits(?intSignificand)
+    if exponent < math(-6) or exponent >= precisionCount {
+      assert exponent != 0
+      if precisionCount != 1 {
+        let intPart = $FirstUnit(?significand)
+        let fractionalPart = @ph-other-code-units(data choice 0, precisionCount - 1, ?significand)
+        set var significand = $"string-concatenation"(intPart, ".", fractionalPart)
+      }
+      if exponent > 0 {
+        let exponentSign = $CodeUnit(cu(43, "002B", "PLUS SIGN"))
+      }
+      else {
+        assert exponent < 0
+        let exponentSign = $CodeUnit(cu(45, "002D", "HYPHEN-MINUS"))
+        set var exponent = neg exponent
+      }
+      let exponentDigits = @ph-decimal-digits(?exponent)
+      return $"string-concatenation"(sign, significand, $CodeUnit(cu(101, "0065", "LATIN SMALL LETTER E")), exponentSign, exponentDigits)
+    }
+  }
+  if exponent == precisionCount - 1 -> return $"string-concatenation"(sign, significand)
+  if exponent >= 0 {
+    set var significand = $"string-concatenation"(@ph-first-code-units(exponent + 1, ?significand), $CodeUnit(cu(46, "002E", "FULL STOP")), @ph-other-code-units(data choice 1, precisionCount - (exponent + 1), ?significand))
+  }
+  else {
+    set var significand = $"string-concatenation"($CodeUnit(cu(48, "0030", "DIGIT ZERO")), $CodeUnit(cu(46, "002E", "FULL STOP")), @ph-occurrences-of(neg (exponent + 1), $CodeUnit(cu(48, "0030", "DIGIT ZERO"))), @ph-the-string(data choice 1, ?significand))
+  }
+  return $"string-concatenation"(sign, significand)
+}
+
+def @sec-number.prototype.tostring "Number.prototype.toString" (kind builtin params [radix opt]) vars [#"this value", NewTarget, radix, x, radixMV] {
+  let x = ? @sec-thisnumbervalue(this_value)
+  if radix is val {undefined} -> let radixMV = 10
+  else -> let radixMV = ? @sec-snaptointeger(radix, ~truncate~, 2, 36)
+  return @sec-numeric-types-number-tostring(x, radixMV)
+}
+
+def @sec-number.prototype.valueof "Number.prototype.valueOf" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-thisnumbervalue(this_value)
+}
+
+def @sec-thisnumbervalue "ThisNumberValue" (kind ao params [arg : #"ECMAScript language value"] -> completion<Number> | #"throw completion") vars [arg, number] {
+  if arg is ty {Number} -> return arg
+  if arg is ty {Object} and arg sat $HasSlot([[NumberData]]) {
+    let number = arg[[NumberData]]
+    assert number is ty {Number}
+    return number
+  }
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-bigint-constructor-number-value "BigInt" (kind builtin params [value]) vars [#"this value", NewTarget, value, primitive] {
+  if new_target is not val {undefined} -> throw @ph-new-error([[TypeError]])
+  let primitive = ? @sec-toprimitive(value, ~number~)
+  if primitive is ty {Number} -> return ? @sec-numbertobigint(primitive)
+  return ? @sec-tobigint(primitive)
+}
+
+def @sec-numbertobigint "NumberToBigInt" (kind ao params [number : Number] -> completion<BigInt> | #"throw completion") vars [number] {
+  if number is not ty {#"integral Number"} -> throw @ph-new-error([[RangeError]])
+  return $ℤ($ℝ(number))
+}
+
+def @sec-bigint.asintn "BigInt.asIntN" (kind builtin params [bits, bigint]) vars [#"this value", NewTarget, bits, bigint, remainder, bound, mod] {
+  set var bits = ? @sec-toindex(bits)
+  set var bigint = ? @sec-tobigint(bigint)
+  if bits == 0 or bigint is val {num_z(0)} -> return num_z(0)
+  let bound = 4 * ($DecimalExponent($abs($ℝ(bigint))) + 1)
+  if bits - 1 >= bound -> return bigint
+  let mod = $ℝ(bigint) modulo 2 ^ bits
+  if mod >= 2 ^ {bits - 1} -> return $ℤ(mod - 2 ^ bits)
+  return $ℤ(mod)
+}
+
+def @sec-bigint.asuintn "BigInt.asUintN" (kind builtin params [bits, bigint]) vars [#"this value", NewTarget, bits, bigint] {
+  set var bits = ? @sec-toindex(bits)
+  set var bigint = ? @sec-tobigint(bigint)
+  if bits == 0 or bigint is val {num_z(0)} -> return num_z(0)
+  if bigint > num_z(0) and bits >= 4 * ($DecimalExponent($ℝ(bigint)) + 1) -> return bigint
+  if $BigIntTooLarge("asUintN", bigint, $ℤ(bits)) is val {true} -> throw @ph-new-error([[RangeError]])
+  return $ℤ($ℝ(bigint) modulo 2 ^ bits)
+}
+
+def @sec-bigint.prototype.tostring "BigInt.prototype.toString" (kind builtin params [radix opt]) vars [#"this value", NewTarget, radix, x, radixMV] {
+  let x = ? @sec-thisbigintvalue(this_value)
+  if radix is val {undefined} -> let radixMV = 10
+  else -> let radixMV = ? @sec-snaptointeger(radix, ~truncate~, 2, 36)
+  return @sec-numeric-types-bigint-tostring(x, radixMV)
+}
+
+def @sec-bigint.prototype.valueof "BigInt.prototype.valueOf" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-thisbigintvalue(this_value)
+}
+
+def @sec-thisbigintvalue "ThisBigIntValue" (kind ao params [arg : #"ECMAScript language value"] -> completion<BigInt> | #"throw completion") vars [arg] {
+  if arg is ty {BigInt} -> return arg
+  if arg is ty {Object} and arg sat $HasSlot([[BigIntData]]) {
+    assert arg[[BigIntData]] is ty {BigInt}
+    return arg[[BigIntData]]
+  }
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-math.abs "Math.abs" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan} -> return nan
+  if n is val {num_f(-0)} -> return num_f(+0)
+  if n is val {num_f(-∞)} -> return num_f(+∞)
+  if n < num_f(-0) -> return neg n
+  return n
+}
+
+def @sec-math.acos "Math.acos" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan} or n > num_f(1) or n < num_f(-1) -> return nan
+  if n is val {num_f(1)} -> return num_f(+0)
+  return $"implementation-approximated"($MathFn(data choice 9, $ℝ(n)))
+}
+
+def @sec-math.acosh "Math.acosh" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+∞)} -> return n
+  if n is val {num_f(1)} -> return num_f(+0)
+  if n < num_f(1) -> return nan
+  return $"implementation-approximated"($MathFn(data choice 12, $ℝ(n)))
+}
+
+def @sec-math.asin "Math.asin" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0)} -> return n
+  if n > num_f(1) or n < num_f(-1) -> return nan
+  return $"implementation-approximated"($MathFn(data choice 10, $ℝ(n)))
+}
+
+def @sec-math.asinh "Math.asinh" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is not ty {sort [#"non-zero", finite] Number} -> return n
+  return $"implementation-approximated"($MathFn(data choice 13, $ℝ(n)))
+}
+
+def @sec-math.atan "Math.atan" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0)} -> return n
+  if n is val {num_f(+∞)} -> return $"implementation-approximated"($Pi() / 2)
+  if n is val {num_f(-∞)} -> return $"implementation-approximated"(neg $Pi() / 2)
+  return $"implementation-approximated"($MathFn(data choice 11, $ℝ(n)))
+}
+
+def @sec-math.atanh "Math.atanh" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0)} -> return n
+  if n > num_f(1) or n < num_f(-1) -> return nan
+  if n is val {num_f(1)} -> return num_f(+∞)
+  if n is val {num_f(-1)} -> return num_f(-∞)
+  return $"implementation-approximated"($MathFn(data choice 14, $ℝ(n)))
+}
+
+def @sec-math.atan2 "Math.atan2" (kind builtin params [y, x]) vars [#"this value", NewTarget, y, x, ny, nx, result] {
+  let ny = ? @sec-tonumber(y)
+  let nx = ? @sec-tonumber(x)
+  if ny is val {nan} or nx is val {nan} -> return nan
+  if ny is val {num_f(+∞)} {
+    if nx is val {num_f(+∞)} -> return $"implementation-approximated"($Pi() / 4)
+    if nx is val {num_f(-∞)} -> return $"implementation-approximated"(@ph-num-pi(3) / 4)
+    return $"implementation-approximated"($Pi() / 2)
+  }
+  if ny is val {num_f(-∞)} {
+    if nx is val {num_f(+∞)} -> return $"implementation-approximated"(neg $Pi() / 4)
+    if nx is val {num_f(-∞)} -> return $"implementation-approximated"(neg @ph-num-pi(3) / 4)
+    return $"implementation-approximated"(neg $Pi() / 2)
+  }
+  if ny is val {num_f(+0)} {
+    if nx > num_f(+0) or nx is val {num_f(+0)} -> return num_f(+0)
+    return $"implementation-approximated"($Pi())
+  }
+  if ny is val {num_f(-0)} {
+    if nx > num_f(+0) or nx is val {num_f(+0)} -> return num_f(-0)
+    return $"implementation-approximated"(neg $Pi())
+  }
+  assert ny is ty {sort [#"non-zero", finite] Number}
+  if ny > num_f(+0) {
+    if nx is val {num_f(+∞)} -> return num_f(+0)
+    if nx is val {num_f(-∞)} -> return $"implementation-approximated"($Pi())
+    if nx is val {num_f(+0); num_f(-0)} -> return $"implementation-approximated"($Pi() / 2)
+  }
+  if ny < num_f(-0) {
+    if nx is val {num_f(+∞)} -> return num_f(-0)
+    if nx is val {num_f(-∞)} -> return $"implementation-approximated"(neg $Pi())
+    if nx is val {num_f(+0); num_f(-0)} -> return $"implementation-approximated"(neg $Pi() / 2)
+  }
+  assert nx is ty {sort [#"non-zero", finite] Number}
+  let result = $MathFn(data choice 11, $abs($ℝ(ny) / $ℝ(nx)))
+  if nx < num_f(-0) {
+    if ny > num_f(+0) -> set var result = $Pi() - result
+    else -> set var result = neg $Pi() + result
+  }
+  else {
+    if ny < num_f(-0) -> set var result = neg result
+  }
+  return $"implementation-approximated"(?result)
+}
+
+def @sec-math.cbrt "Math.cbrt" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is not ty {sort [#"non-zero", finite] Number} -> return n
+  return $"implementation-approximated"($MathFn(data choice 3, $ℝ(n)))
+}
+
+def @sec-math.ceil "Math.ceil" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is not ty {sort [#"non-zero", finite] Number} -> return n
+  if n < num_f(-0) and n > num_f(-1) -> return num_f(-0)
+  if n is ty {#"integral Number"} -> return n
+  return @ph-number-ceil(?n)
+}
+
+def @sec-math.clz32 "Math.clz32" (kind builtin params [x]) vars [#"this value", NewTarget, x, n, p] {
+  let n = ? @sec-touint32(x)
+  let p = @ph-leading-zero-bits-32(?n)
+  return $𝔽(p)
+}
+
+def @sec-math.cos "Math.cos" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is not ty {sort [finite] Number} -> return nan
+  if n is val {num_f(+0); num_f(-0)} -> return num_f(1)
+  return $"implementation-approximated"($MathFn(data choice 0, $ℝ(n)))
+}
+
+def @sec-math.cosh "Math.cosh" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan} -> return nan
+  if n is val {num_f(+∞); num_f(-∞)} -> return num_f(+∞)
+  if n is val {num_f(+0); num_f(-0)} -> return num_f(1)
+  return $"implementation-approximated"($MathFn(data choice 6, $ℝ(n)))
+}
+
+def @sec-math.exp "Math.exp" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+∞)} -> return n
+  if n is val {num_f(+0); num_f(-0)} -> return num_f(1)
+  if n is val {num_f(-∞)} -> return num_f(+0)
+  return $"implementation-approximated"($MathFn(data choice 5, $ℝ(n)))
+}
+
+def @sec-math.expm1 "Math.expm1" (kind builtin params [x]) vars [#"this value", NewTarget, x, n, exp] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0); num_f(+∞)} -> return n
+  if n is val {num_f(-∞)} -> return num_f(-1)
+  let exp = $MathFn(data choice 5, $ℝ(n))
+  return $"implementation-approximated"(exp - 1)
+}
+
+def @sec-math.floor "Math.floor" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is not ty {sort [#"non-zero", finite] Number} -> return n
+  if n < num_f(1) and n > num_f(+0) -> return num_f(+0)
+  if n is ty {#"integral Number"} -> return n
+  return @ph-number-floor(?n)
+}
+
+def @sec-math.fround "Math.fround" (kind builtin params [x]) vars [#"this value", NewTarget, x, n, n32, n64] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan} -> return nan
+  if n is val {num_f(+0); num_f(-0); num_f(+∞); num_f(-∞)} -> return n
+  let n32 = @ph-to-binary32(?n, data choice 0)
+  let n64 = @ph-to-binary64(?n32, data choice 1)
+  return @ph-number-corresponding(?n64)
+}
+
+def @sec-math.f16round "Math.f16round" (kind builtin params [x]) vars [#"this value", NewTarget, x, n, n16, n64] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan} -> return nan
+  if n is val {num_f(+0); num_f(-0); num_f(+∞); num_f(-∞)} -> return n
+  let n16 = @ph-to-binary16(?n, data choice 0)
+  let n64 = @ph-to-binary64(?n16, data choice 1)
+  return @ph-number-corresponding(?n64)
+}
+
+def @sec-math.hypot "Math.hypot" (kind builtin params [args rest]) vars [#"this value", NewTarget, args, coerced, arg, n, number, onlyZero, sum] {
+  let coerced = $ListNew()
+  for_each arg in args {
+    let n = ? @sec-tonumber(arg)
+    perform $Append(?n, ?coerced)
+  }
+  for_each number in coerced {
+    if number is val {num_f(+∞); num_f(-∞)} -> return num_f(+∞)
+  }
+  let onlyZero = true
+  for_each number in coerced {
+    if number is val {nan} -> return nan
+    if number is neither val {num_f(+0); num_f(-0)} -> set var onlyZero = false
+  }
+  if onlyZero is val {true} -> return num_f(+0)
+  let sum = 0
+  for_each number in coerced {
+    set var sum = sum + $ℝ(number) * $ℝ(number)
+  }
+  return $"implementation-approximated"($MathFn(data choice 4, ?sum))
+}
+
+def @sec-math.imul "Math.imul" (kind builtin params [x, y]) vars [#"this value", NewTarget, x, y, a, b, product] {
+  let a = $ℝ(? @sec-touint32(x))
+  let b = $ℝ(? @sec-touint32(y))
+  let product = (a * b) modulo 2 ^ 32
+  if product >= 2 ^ 31 -> return $𝔽(product - 2 ^ 32)
+  return $𝔽(product)
+}
+
+def @sec-math.log "Math.log" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+∞)} -> return n
+  if n is val {num_f(1)} -> return num_f(+0)
+  if n is val {num_f(+0); num_f(-0)} -> return num_f(-∞)
+  if n < num_f(-0) -> return nan
+  return $"implementation-approximated"($ln($ℝ(n)))
+}
+
+def @sec-math.log1p "Math.log1p" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0); num_f(+∞)} -> return n
+  if n is val {num_f(-1)} -> return num_f(-∞)
+  if n < num_f(-1) -> return nan
+  return $"implementation-approximated"($ln(1 + $ℝ(n)))
+}
+
+def @sec-math.log10 "Math.log10" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+∞)} -> return n
+  if n is val {num_f(1)} -> return num_f(+0)
+  if n is val {num_f(+0); num_f(-0)} -> return num_f(-∞)
+  if n < num_f(-0) -> return nan
+  return $"implementation-approximated"($log10($ℝ(n)))
+}
+
+def @sec-math.log2 "Math.log2" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+∞)} -> return n
+  if n is val {num_f(1)} -> return num_f(+0)
+  if n is val {num_f(+0); num_f(-0)} -> return num_f(-∞)
+  if n < num_f(-0) -> return nan
+  return $"implementation-approximated"($log2($ℝ(n)))
+}
+
+def @sec-math.max "Math.max" (kind builtin params [args rest]) vars [#"this value", NewTarget, args, coerced, arg, n, highest, number] {
+  let coerced = $ListNew()
+  for_each arg in args {
+    let n = ? @sec-tonumber(arg)
+    perform $Append(?n, ?coerced)
+  }
+  let highest = num_f(-∞)
+  for_each number in coerced {
+    if number is val {nan} -> return nan
+    if number is val {num_f(+0)} and highest is val {num_f(-0)} -> set var highest = num_f(+0)
+    if number > highest -> set var highest = number
+  }
+  return highest
+}
+
+def @sec-math.min "Math.min" (kind builtin params [args rest]) vars [#"this value", NewTarget, args, coerced, arg, n, lowest, number] {
+  let coerced = $ListNew()
+  for_each arg in args {
+    let n = ? @sec-tonumber(arg)
+    perform $Append(?n, ?coerced)
+  }
+  let lowest = num_f(+∞)
+  for_each number in coerced {
+    if number is val {nan} -> return nan
+    if number is val {num_f(-0)} and lowest is val {num_f(+0)} -> set var lowest = num_f(-0)
+    if number < lowest -> set var lowest = number
+  }
+  return lowest
+}
+
+def @sec-math.pow "Math.pow" (kind builtin params [base, exponent]) vars [#"this value", NewTarget, base, exponent] {
+  set var base = ? @sec-tonumber(base)
+  set var exponent = ? @sec-tonumber(exponent)
+  return @sec-numeric-types-number-exponentiate(base, exponent)
+}
+
+def @sec-math.round "Math.round" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is not ty {sort [finite] Number} or n is ty {#"integral Number"} -> return n
+  if n < num_f(frac(0, 5, 1)) and n > num_f(+0) -> return num_f(+0)
+  if n < num_f(-0) and n >= num_f(-frac(0, 5, 1)) -> return num_f(-0)
+  return @ph-number-round(?n)
+}
+
+def @sec-math.sign "Math.sign" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0)} -> return n
+  if n < num_f(-0) -> return num_f(-1)
+  return num_f(1)
+}
+
+def @sec-math.sin "Math.sin" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0)} -> return n
+  if n is val {num_f(+∞); num_f(-∞)} -> return nan
+  return $"implementation-approximated"($MathFn(data choice 1, $ℝ(n)))
+}
+
+def @sec-math.sinh "Math.sinh" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is not ty {sort [#"non-zero", finite] Number} -> return n
+  return $"implementation-approximated"($MathFn(data choice 7, $ℝ(n)))
+}
+
+def @sec-math.sqrt "Math.sqrt" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0); num_f(+∞)} -> return n
+  if n < num_f(-0) -> return nan
+  return $𝔽($MathFn(data choice 4, $ℝ(n)))
+}
+
+def @sec-math.sumprecise "Math.sumPrecise" (kind builtin params [items]) vars [#"this value", NewTarget, items, iteratorRecord, state, sum, count, next, error, n] {
+  perform ? @sec-requireobjectcoercible(items)
+  let iteratorRecord = ? @sec-getiterator(items, ~sync~)
+  let state = ~minus-zero~
+  let sum = 0
+  let count = 0
+  let next = ~not-started~
+  repeat_while next is not val {~done~} {
+    set var next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is not val {~done~} {
+      if count >= 2 ^ 53 - 1 {
+        note "This step is not expected to be reached in practice and is included only so that implementations may rely on inputs being “reasonably sized” without violating this specification."
+        let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+        return ? @sec-iteratorclose(iteratorRecord, error)
+      }
+      if next is not ty {Number} {
+        let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+        return ? @sec-iteratorclose(iteratorRecord, error)
+      }
+      let n = next
+      if state is not val {~not-a-number~} {
+        if n is val {nan} {
+          set var state = ~not-a-number~
+        }
+        else_if n is val {num_f(+∞)} {
+          if state is val {~minus-infinity~} -> set var state = ~not-a-number~
+          else -> set var state = ~plus-infinity~
+        }
+        else_if n is val {num_f(-∞)} {
+          if state is val {~plus-infinity~} -> set var state = ~not-a-number~
+          else -> set var state = ~minus-infinity~
+        }
+        else_if n is not val {num_f(-0)} and state is val {~minus-zero~; ~finite~} {
+          set var state = ~finite~
+          set var sum = sum + $ℝ(n)
+        }
+      }
+      set var count = count + 1
+    }
+  }
+  if state is val {~not-a-number~} -> return nan
+  if state is val {~plus-infinity~} -> return num_f(+∞)
+  if state is val {~minus-infinity~} -> return num_f(-∞)
+  if state is val {~minus-zero~} -> return num_f(-0)
+  return $𝔽(sum)
+}
+
+def @sec-math.tan "Math.tan" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0)} -> return n
+  if n is val {num_f(+∞); num_f(-∞)} -> return nan
+  return $"implementation-approximated"($MathFn(data choice 2, $ℝ(n)))
+}
+
+def @sec-math.tanh "Math.tanh" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is val {nan; num_f(+0); num_f(-0)} -> return n
+  if n is val {num_f(+∞)} -> return num_f(1)
+  if n is val {num_f(-∞)} -> return num_f(-1)
+  return $"implementation-approximated"($MathFn(data choice 8, $ℝ(n)))
+}
+
+def @sec-math.trunc "Math.trunc" (kind builtin params [x]) vars [#"this value", NewTarget, x, n] {
+  let n = ? @sec-tonumber(x)
+  if n is not ty {sort [#"non-zero", finite] Number} -> return n
+  if n < num_f(1) and n > num_f(+0) -> return num_f(+0)
+  if n < num_f(-0) and n > num_f(-1) -> return num_f(-0)
+  return @ph-number-trunc(?n)
+}
+
+def @sec-day "Day" (kind ao params [tv : sort [finite] #"time value"] -> integer) vars [tv] {
+  return $floor($ℝ(tv) / $TimeConst(data choice 6))
+}
+
+def @sec-timewithinday "TimeWithinDay" (kind ao params [tv : sort [finite] #"time value"] -> doc "an integer in the interval from 0 (inclusive) to MillisecondsPerDay (exclusive)") vars [tv] {
+  return $ℝ(tv) modulo $TimeConst(data choice 6)
+}
+
+def @sec-dayfromyear "DayFromYear" (kind ao params [y : integer] -> integer) vars [y, numberYears1, numberYears4, numberYears100, numberYears400] {
+  note "In the following steps, _numberYears1_, _numberYears4_, _numberYears100_, and _numberYears400_ represent the number of years divisible by 1, 4, 100, and 400, respectively, that occur between the epoch and the start of year _y_. The number is negative if _y_ is before the epoch."
+  let numberYears1 = (y - 1970)
+  let numberYears4 = $floor((y - 1969) / 4)
+  let numberYears100 = $floor((y - 1901) / 100)
+  let numberYears400 = $floor((y - 1601) / 400)
+  return 365 * numberYears1 + numberYears4 - numberYears100 + numberYears400
+}
+
+def @sec-timefromyear "TimeFromYear" (kind ao params [y : integer] -> #"time value") vars [y] {
+  return $𝔽($TimeConst(data choice 6) * @sec-dayfromyear(y))
+}
+
+def @sec-yearfromtime "YearFromTime" (kind ao params [tv : sort [finite] #"time value"] -> integer) vars [tv, y] {
+  return $YearFromTimeOf(tv)
+}
+
+def @sec-daywithinyear "DayWithinYear" (kind ao params [tv : sort [finite] #"time value"] -> interval integer [0, 365]) vars [tv] {
+  return @sec-day(tv) - @sec-dayfromyear(@sec-yearfromtime(tv))
+}
+
+def @sec-isleapyear "IsLeapYear" (kind ao params [y : integer] -> Boolean) vars [y] {
+  if (y modulo 400) == 0 -> return true
+  if (y modulo 100) == 0 -> return false
+  if (y modulo 4) == 0 -> return true
+  return false
+}
+
+def @sec-monthfromtime "MonthFromTime" (kind ao params [tv : sort [finite] #"time value"] -> interval integer [0, 11]) vars [tv, y, leapYearOffset, dayWithinYear] {
+  let y = @sec-yearfromtime(tv)
+  if_else @sec-isleapyear(y) is val {true} { let leapYearOffset = 1 } else { let leapYearOffset = 0 }
+  let dayWithinYear = @sec-daywithinyear(tv)
+  if dayWithinYear < 31 -> return 0
+  if dayWithinYear < 59 + leapYearOffset -> return 1
+  if dayWithinYear < 90 + leapYearOffset -> return 2
+  if dayWithinYear < 120 + leapYearOffset -> return 3
+  if dayWithinYear < 151 + leapYearOffset -> return 4
+  if dayWithinYear < 181 + leapYearOffset -> return 5
+  if dayWithinYear < 212 + leapYearOffset -> return 6
+  if dayWithinYear < 243 + leapYearOffset -> return 7
+  if dayWithinYear < 273 + leapYearOffset -> return 8
+  if dayWithinYear < 304 + leapYearOffset -> return 9
+  if dayWithinYear < 334 + leapYearOffset -> return 10
+  assert dayWithinYear < 365 + leapYearOffset
+  return 11
+}
+
+def @sec-datefromtime "DateFromTime" (kind ao params [tv : sort [finite] #"time value"] -> interval integer [1, 31]) vars [tv, y, leapYearOffset, dayWithinYear, month] {
+  let y = @sec-yearfromtime(tv)
+  if_else @sec-isleapyear(y) is val {true} { let leapYearOffset = 1 } else { let leapYearOffset = 0 }
+  let dayWithinYear = @sec-daywithinyear(tv)
+  let month = @sec-monthfromtime(tv)
+  if month == 0 -> return dayWithinYear + 1
+  if month == 1 -> return dayWithinYear - 30
+  if month == 2 -> return dayWithinYear - 58 - leapYearOffset
+  if month == 3 -> return dayWithinYear - 89 - leapYearOffset
+  if month == 4 -> return dayWithinYear - 119 - leapYearOffset
+  if month == 5 -> return dayWithinYear - 150 - leapYearOffset
+  if month == 6 -> return dayWithinYear - 180 - leapYearOffset
+  if month == 7 -> return dayWithinYear - 211 - leapYearOffset
+  if month == 8 -> return dayWithinYear - 242 - leapYearOffset
+  if month == 9 -> return dayWithinYear - 272 - leapYearOffset
+  if month == 10 -> return dayWithinYear - 303 - leapYearOffset
+  assert month == 11
+  return dayWithinYear - 333 - leapYearOffset
+}
+
+def @sec-weekday "WeekDay" (kind ao params [tv : sort [finite] #"time value"] -> interval integer [0, 6]) vars [tv] {
+  return (@sec-day(tv) + 4) modulo 7
+}
+
+def @sec-hourfromtime "HourFromTime" (kind ao params [tv : sort [finite] #"time value"] -> interval integer [0, 23]) vars [tv] {
+  return $floor($ℝ(tv) / $TimeConst(data choice 5)) modulo $TimeConst(data choice 0)
+}
+
+def @sec-minutefromtime "MinuteFromTime" (kind ao params [tv : sort [finite] #"time value"] -> interval integer [0, 59]) vars [tv] {
+  return $floor($ℝ(tv) / $TimeConst(data choice 4)) modulo $TimeConst(data choice 1)
+}
+
+def @sec-secondfromtime "SecondFromTime" (kind ao params [tv : sort [finite] #"time value"] -> interval integer [0, 59]) vars [tv] {
+  return $floor($ℝ(tv) / $TimeConst(data choice 3)) modulo $TimeConst(data choice 2)
+}
+
+def @sec-millisecondfromtime "MillisecondFromTime" (kind ao params [tv : sort [finite] #"time value"] -> interval integer [0, 999]) vars [tv] {
+  return $ℝ(tv) modulo $TimeConst(data choice 3)
+}
+
+def @sec-getutcepochnanoseconds "GetUTCEpochNanoseconds" (kind ao params [year : integer, month : interval integer [1, 12], day : interval integer [1, 31], hour : interval integer [0, 23], minute : interval integer [0, 59], second : interval integer [0, 59], millisecond : interval integer [0, 999], microsecond : interval integer [0, 999], nanosecond : interval integer [0, 999]] -> #"epoch nanoseconds count") vars [year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, date, time, epochMilliseconds] {
+  let date = @sec-makeday($𝔽(year), $𝔽(month - 1), $𝔽(day))
+  let time = @sec-maketime($𝔽(hour), $𝔽(minute), $𝔽(second), $𝔽(millisecond))
+  let epochMilliseconds = @sec-makedate(date, time)
+  assert! epochMilliseconds is ty {#"integral Number"}
+  return $ℝ(epochMilliseconds) * $TimeConst(data choice 9) + microsecond * $TimeConst(data choice 10) + nanosecond
+}
+
+def @sec-getnamedtimezoneepochnanoseconds "GetNamedTimeZoneEpochNanoseconds" (kind impl_defined params [timeZoneIdentifier : String, year : integer, month : interval integer [1, 12], day : interval integer [1, 31], hour : interval integer [0, 23], minute : interval integer [0, 59], second : interval integer [0, 59], millisecond : interval integer [0, 999], microsecond : interval integer [0, 999], nanosecond : interval integer [0, 999]] -> list<#"epoch nanoseconds count">) vars [timeZoneIdentifier, year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, epochNanoseconds] {
+  assert timeZoneIdentifier is val {"UTC"}
+  let epochNanoseconds = @sec-getutcepochnanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond)
+  return [epochNanoseconds]
+}
+
+def @sec-getnamedtimezoneoffsetnanoseconds "GetNamedTimeZoneOffsetNanoseconds" (kind impl_defined params [timeZoneIdentifier : String, epochNanoseconds : #"epoch nanoseconds count"] -> integer) vars [timeZoneIdentifier, epochNanoseconds] {
+  assert timeZoneIdentifier is val {"UTC"}
+  return 0
+}
+
+def @sec-availablenamedtimezoneidentifiers "AvailableNamedTimeZoneIdentifiers" (kind impl_defined params [] -> list<#"Time Zone Identifier Record">) vars [identifiers, result, identifier, primary, #"record"] {
+  if $HasTimeZoneRules() is val {false} {
+    return [record #"Time Zone Identifier Record" { [[Identifier]]: "UTC", [[PrimaryIdentifier]]: "UTC" }]
+  }
+  let identifiers = $AvailableNamedTimeZoneIds()
+  let result = $ListNew()
+  for_each identifier in identifiers {
+    let primary = identifier
+    if $IsNonPrimaryTimeZoneId(identifier) is val {true} and identifier is not val {"UTC"} {
+      set var primary = $PrimaryTimeZoneId(identifier)
+      note "An implementation may need to resolve _identifier_ iteratively to obtain the primary time zone identifier."
+    }
+    let #"record" = record #"Time Zone Identifier Record" { [[Identifier]]: identifier, [[PrimaryIdentifier]]: primary }
+    perform $Append(?#"record", ?result)
+  }
+  assert result sat @ph-contains-such(data choice 0, data sort #"Time Zone Identifier Record", ?#"record", closure 0)
+  return result
+  closure abstract params [#"record"] captures [] {
+    return bool(#"record"[[Identifier]] is val {"UTC"} and #"record"[[PrimaryIdentifier]] is val {"UTC"})
+  }
+}
+
+def @sec-systemtimezoneidentifier "SystemTimeZoneIdentifier" (kind impl_defined params [] -> String) vars [systemTimeZoneString] {
+  if $SupportsOnlyUTC() is val {true} -> return "UTC"
+  let systemTimeZoneString = $SystemTimeZoneString()
+  return systemTimeZoneString
+}
+
+def @sec-localtime "LocalTime" (kind ao params [tv : sort [finite] #"time value"] -> #"integral Number") vars [tv, systemTimeZoneIdentifier, offsetNanoseconds, offsetMilliseconds] {
+  let systemTimeZoneIdentifier = @sec-systemtimezoneidentifier()
+  if @sec-istimezoneoffsetstring(systemTimeZoneIdentifier) is val {true} {
+    let offsetNanoseconds = @sec-parsetimezoneoffsetstring(systemTimeZoneIdentifier)
+  }
+  else {
+    let offsetNanoseconds = @sec-getnamedtimezoneoffsetnanoseconds(systemTimeZoneIdentifier, $ℝ(tv) * $TimeConst(data choice 9))
+  }
+  let offsetMilliseconds = $truncate(offsetNanoseconds / $TimeConst(data choice 9))
+  return tv + $𝔽(offsetMilliseconds)
+}
+
+def @sec-utc-t "UTC" (kind ao params [t : Number] -> #"time value") vars [t, systemTimeZoneIdentifier, offsetNanoseconds, possibleInstants, disambiguatedInstant, possibleInstantsBefore, tBefore, offsetMilliseconds] {
+  if t is not ty {sort [finite] Number} -> return nan
+  let systemTimeZoneIdentifier = @sec-systemtimezoneidentifier()
+  if @sec-istimezoneoffsetstring(systemTimeZoneIdentifier) is val {true} {
+    let offsetNanoseconds = @sec-parsetimezoneoffsetstring(systemTimeZoneIdentifier)
+  }
+  else {
+    let possibleInstants = @sec-getnamedtimezoneepochnanoseconds(systemTimeZoneIdentifier, @sec-yearfromtime(t), @sec-monthfromtime(t) + 1, @sec-datefromtime(t), @sec-hourfromtime(t), @sec-minutefromtime(t), @sec-secondfromtime(t), @sec-millisecondfromtime(t), 0, 0)
+    note "The following steps ensure that when _t_ represents local time repeating multiple times at a negative time zone transition (e.g. when the daylight saving time ends or the time zone offset is decreased due to a time zone rule change) or skipped local time at a positive time zone transition (e.g. when the daylight saving time starts or the time zone offset is increased due to a time zone rule change), _t_ is interpreted using the time zone offset before the transition."
+    if possibleInstants fails $IsEmpty() {
+      let disambiguatedInstant = possibleInstants[0]
+    }
+    else {
+      note "_t_ represents a local time skipped at a positive time zone transition (e.g. due to daylight saving time starting or a time zone rule change increasing the UTC offset)."
+      let tBefore = $LastTransitionBefore(systemTimeZoneIdentifier, t)
+      let possibleInstantsBefore = @sec-getnamedtimezoneepochnanoseconds(systemTimeZoneIdentifier, @sec-yearfromtime(tBefore), @sec-monthfromtime(tBefore) + 1, @sec-datefromtime(tBefore), @sec-hourfromtime(tBefore), @sec-minutefromtime(tBefore), @sec-secondfromtime(tBefore), @sec-millisecondfromtime(tBefore), 0, 0)
+      let disambiguatedInstant = $ListElem(data choice 2, ?possibleInstantsBefore)
+    }
+    let offsetNanoseconds = @sec-getnamedtimezoneoffsetnanoseconds(systemTimeZoneIdentifier, disambiguatedInstant)
+  }
+  let offsetMilliseconds = $truncate(offsetNanoseconds / $TimeConst(data choice 9))
+  return t - $𝔽(offsetMilliseconds)
+}
+
+def @sec-maketime "MakeTime" (kind ao params [hour : Number, minute : Number, second : Number, millisecond : Number] -> Number) vars [hour, minute, second, millisecond, hourMV, minuteMV, secondMV, millisecondMV] {
+  if hour is not ty {sort [finite] Number} or minute is not ty {sort [finite] Number} or second is not ty {sort [finite] Number} or millisecond is not ty {sort [finite] Number} -> return nan
+  let hourMV = ! @sec-tointegerorinfinity(hour)
+  let minuteMV = ! @sec-tointegerorinfinity(minute)
+  let secondMV = ! @sec-tointegerorinfinity(second)
+  let millisecondMV = ! @sec-tointegerorinfinity(millisecond)
+  return (($𝔽(hourMV) * $𝔽($TimeConst(data choice 5)) + $𝔽(minuteMV) * $𝔽($TimeConst(data choice 4))) + $𝔽(secondMV) * $𝔽($TimeConst(data choice 3))) + $𝔽(millisecondMV)
+}
+
+def @sec-makeday "MakeDay" (kind ao params [year : Number, month : Number, day : Number] -> sort [finite] Number | val(nan)) vars [year, month, day, yearMV, monthMV, dayMV, balancedYear, balancedMonthMV, tv, inLeapYear, dayWithinYear, firstDay] {
+  if year is not ty {sort [finite] Number} or month is not ty {sort [finite] Number} or day is not ty {sort [finite] Number} -> return nan
+  let yearMV = ! @sec-tointegerorinfinity(year)
+  let monthMV = ! @sec-tointegerorinfinity(month)
+  let dayMV = ! @sec-tointegerorinfinity(day)
+  let balancedYear = $𝔽(yearMV) + $𝔽($floor(monthMV / 12))
+  if balancedYear is not ty {sort [finite] Number} -> return nan
+  let balancedMonthMV = monthMV modulo 12
+  let inLeapYear = @sec-dayfromyear($ℝ(balancedYear) + 1) - @sec-dayfromyear($ℝ(balancedYear)) - 365
+  if balancedMonthMV == 0 -> let dayWithinYear = 0
+  else_if balancedMonthMV == 1 -> let dayWithinYear = 31
+  else_if balancedMonthMV == 2 -> let dayWithinYear = 59 + inLeapYear
+  else_if balancedMonthMV == 3 -> let dayWithinYear = 90 + inLeapYear
+  else_if balancedMonthMV == 4 -> let dayWithinYear = 120 + inLeapYear
+  else_if balancedMonthMV == 5 -> let dayWithinYear = 151 + inLeapYear
+  else_if balancedMonthMV == 6 -> let dayWithinYear = 181 + inLeapYear
+  else_if balancedMonthMV == 7 -> let dayWithinYear = 212 + inLeapYear
+  else_if balancedMonthMV == 8 -> let dayWithinYear = 243 + inLeapYear
+  else_if balancedMonthMV == 9 -> let dayWithinYear = 273 + inLeapYear
+  else_if balancedMonthMV == 10 -> let dayWithinYear = 304 + inLeapYear
+  else -> let dayWithinYear = 334 + inLeapYear
+  let firstDay = @sec-dayfromyear($ℝ(balancedYear)) + dayWithinYear
+  note "The Number nearest the middle of the day _firstDay_ lies in that day whenever some finite integral Number does."
+  let tv = $𝔽($TimeConst(data choice 6) * firstDay + $TimeConst(data choice 6) / 2)
+  if tv fails $IsFinite() -> return nan
+  if @sec-yearfromtime(tv) != $ℝ(balancedYear) -> return nan
+  if @sec-monthfromtime(tv) != balancedMonthMV -> return nan
+  if @sec-datefromtime(tv) != 1 -> return nan
+  return $𝔽(@sec-day(tv)) + $𝔽(dayMV) - num_f(1)
+}
+
+def @sec-makedate "MakeDate" (kind ao params [day : Number, time : Number] -> sort [finite] Number | val(nan)) vars [day, time, tv] {
+  if day is not ty {sort [finite] Number} or time is not ty {sort [finite] Number} -> return nan
+  let tv = day * $𝔽($TimeConst(data choice 6)) + time
+  if tv is not ty {sort [finite] Number} -> return nan
+  return tv
+}
+
+def @sec-makefullyear "MakeFullYear" (kind ao params [year : Number] -> #"integral Number" | val(nan)) vars [year, truncated] {
+  if year is val {nan; num_f(+∞); num_f(-∞)} -> return nan
+  let truncated = ! @sec-tointegerorinfinity(year)
+  if truncated sat $InInterval(0, 99) -> return num_f(1900) + $𝔽(truncated)
+  return $𝔽(truncated)
+}
+
+def @sec-timeclip "TimeClip" (kind ao params [time : Number] -> #"time value") vars [time] {
+  if time is not ty {sort [finite] Number} -> return nan
+  if $abs($ℝ(time)) > math(frac(8, 64, 2)) * 10 ^ 15 -> return nan
+  return $𝔽(! @sec-tointegerorinfinity(time))
+}
+
+def @sec-istimezoneoffsetstring "IsTimeZoneOffsetString" (kind ao params [offsetString : String] -> Boolean) vars [offsetString, parseResult] {
+  let parseResult = @sec-parsetext(offsetString, |UTCOffset|)
+  if parseResult is ty {list<error>} -> return false
+  return true
+}
+
+def @sec-parsetimezoneoffsetstring "ParseTimeZoneOffsetString" (kind ao params [offsetString : String] -> integer) vars [offsetString, parseResult, parsedSign, sign, parsedHours, hours, minutes, parsedMinutes, seconds, parsedSeconds, nanoseconds, parsedFraction, fraction, nanosecondsString] {
+  let parseResult = @sec-parsetext(offsetString, |UTCOffset|)
+  assert parseResult is not ty {list<error>}
+  assert parseResult sat @ph-contains-node(data choice 0, |ASCIISign|)
+  let parsedSign = $SourceText(@ph-node-within(|ASCIISign|, ?parseResult))
+  if parsedSign sat @ph-is-single-code-point(cp(45, "002D", "HYPHEN-MINUS")) {
+    let sign = math(-1)
+  }
+  else {
+    let sign = 1
+  }
+  note "Applications of StringToNumber below do not lose precision, since each of the parsed values is guaranteed to be a sufficiently short string of decimal digits."
+  assert parseResult sat @ph-contains-node(data choice 1, |Hour|)
+  let parsedHours = $SourceText(@ph-node-within(|Hour|, ?parseResult))
+  let hours = $ℝ(@sec-stringtonumber(@sec-codepointstostring(parsedHours)))
+  if parseResult sat @ph-not-contains-node(data choice 0, |MinuteSecond|) {
+    let minutes = 0
+  }
+  else {
+    let parsedMinutes = $SourceText(@ph-first-node-within(|MinuteSecond|, ?parseResult))
+    let minutes = $ℝ(@sec-stringtonumber(@sec-codepointstostring(parsedMinutes)))
+  }
+  if parseResult sat @ph-not-contains-two-nodes(|MinuteSecond|) {
+    let seconds = 0
+  }
+  else {
+    let parsedSeconds = $SourceText(@ph-second-node-within(|MinuteSecond|, ?parseResult))
+    let seconds = $ℝ(@sec-stringtonumber(@sec-codepointstostring(parsedSeconds)))
+  }
+  if parseResult sat @ph-not-contains-node(data choice 0, |TemporalDecimalFraction|) {
+    let nanoseconds = 0
+  }
+  else {
+    let parsedFraction = $SourceText(@ph-node-within(|TemporalDecimalFraction|, ?parseResult))
+    let fraction = $"string-concatenation"(@sec-codepointstostring(parsedFraction), "000000000")
+    let nanosecondsString = $Substring(?fraction, 1, 10)
+    let nanoseconds = $ℝ(@sec-stringtonumber(nanosecondsString))
+  }
+  return sign * (((hours * $TimeConst(data choice 1) + minutes) * $TimeConst(data choice 2) + seconds) * $TimeConst(data choice 8) + nanoseconds)
+}
+
+def @sec-date "Date" (kind builtin params [values rest]) vars [#"this value", NewTarget, values, now, numberOfArgs, dv, value, tv, primitive, yearNumber, monthNumber, dayNumber, hourNumber, minuteNumber, secondNumber, millisecondNumber, finalDate, #"obj"] {
+  if new_target is val {undefined} {
+    let now = $TimeNow()
+    return @sec-todatestring(now)
+  }
+  let numberOfArgs = $ListLen(?values)
+  if numberOfArgs == 0 {
+    let dv = $TimeNow()
+  }
+  else_if numberOfArgs == 1 {
+    let value = values[0]
+    if value is ty {Object} and value sat $HasSlot([[DateValue]]) {
+      let tv = value[[DateValue]]
+    }
+    else {
+      let primitive = ? @sec-toprimitive(value)
+      if primitive is ty {String} {
+        assert pass "The next step never returns an abrupt completion because _ is a String"
+        let tv = $ParseDateString(primitive)
+      }
+      else {
+        let tv = ? @sec-tonumber(primitive)
+      }
+    }
+    let dv = @sec-timeclip(tv)
+  }
+  else {
+    assert numberOfArgs >= 2
+    let yearNumber = ? @sec-tonumber(values[0])
+    let monthNumber = ? @sec-tonumber(values[1])
+    if_else numberOfArgs > 2 { let dayNumber = ? @sec-tonumber(values[2]) } else { let dayNumber = num_f(1) }
+    if_else numberOfArgs > 3 { let hourNumber = ? @sec-tonumber(values[3]) } else { let hourNumber = num_f(+0) }
+    if_else numberOfArgs > 4 { let minuteNumber = ? @sec-tonumber(values[4]) } else { let minuteNumber = num_f(+0) }
+    if_else numberOfArgs > 5 { let secondNumber = ? @sec-tonumber(values[5]) } else { let secondNumber = num_f(+0) }
+    if_else numberOfArgs > 6 { let millisecondNumber = ? @sec-tonumber(values[6]) } else { let millisecondNumber = num_f(+0) }
+    set var yearNumber = @sec-makefullyear(yearNumber)
+    let finalDate = @sec-makedate(@sec-makeday(yearNumber, monthNumber, dayNumber), @sec-maketime(hourNumber, minuteNumber, secondNumber, millisecondNumber))
+    let dv = @sec-timeclip(@sec-utc-t(finalDate))
+  }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(new_target, "%Date.prototype%", [[[DateValue]]])
+  set field #"obj"[[DateValue]] = dv
+  return #"obj"
+}
+
+def @sec-date.utc "Date.UTC" (kind builtin params [year, month opt, day opt, hour opt, minute opt, second opt, millisecond opt]) vars [#"this value", NewTarget, year, month, day, hour, minute, second, millisecond, yearNumber, monthNumber, dayNumber, hourNumber, minuteNumber, secondNumber, millisecondNumber] {
+  let yearNumber = ? @sec-tonumber(year)
+  if_else month sat $Present() { let monthNumber = ? @sec-tonumber(month) } else { let monthNumber = num_f(+0) }
+  if_else day sat $Present() { let dayNumber = ? @sec-tonumber(day) } else { let dayNumber = num_f(1) }
+  if_else hour sat $Present() { let hourNumber = ? @sec-tonumber(hour) } else { let hourNumber = num_f(+0) }
+  if_else minute sat $Present() { let minuteNumber = ? @sec-tonumber(minute) } else { let minuteNumber = num_f(+0) }
+  if_else second sat $Present() { let secondNumber = ? @sec-tonumber(second) } else { let secondNumber = num_f(+0) }
+  if_else millisecond sat $Present() { let millisecondNumber = ? @sec-tonumber(millisecond) } else { let millisecondNumber = num_f(+0) }
+  set var yearNumber = @sec-makefullyear(yearNumber)
+  return @sec-timeclip(@sec-makedate(@sec-makeday(yearNumber, monthNumber, dayNumber), @sec-maketime(hourNumber, minuteNumber, secondNumber, millisecondNumber)))
+}
+
+def @sec-date.prototype.getdate "Date.prototype.getDate" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-datefromtime(@sec-localtime(tv)))
+}
+
+def @sec-date.prototype.getday "Date.prototype.getDay" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-weekday(@sec-localtime(tv)))
+}
+
+def @sec-date.prototype.getfullyear "Date.prototype.getFullYear" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-yearfromtime(@sec-localtime(tv)))
+}
+
+def @sec-date.prototype.gethours "Date.prototype.getHours" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-hourfromtime(@sec-localtime(tv)))
+}
+
+def @sec-date.prototype.getmilliseconds "Date.prototype.getMilliseconds" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-millisecondfromtime(@sec-localtime(tv)))
+}
+
+def @sec-date.prototype.getminutes "Date.prototype.getMinutes" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-minutefromtime(@sec-localtime(tv)))
+}
+
+def @sec-date.prototype.getmonth "Date.prototype.getMonth" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-monthfromtime(@sec-localtime(tv)))
+}
+
+def @sec-date.prototype.getseconds "Date.prototype.getSeconds" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-secondfromtime(@sec-localtime(tv)))
+}
+
+def @sec-date.prototype.gettime "Date.prototype.getTime" (kind builtin params []) vars [#"this value", NewTarget, dateObj] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  return dateObj[[DateValue]]
+}
+
+def @sec-date.prototype.gettimezoneoffset "Date.prototype.getTimezoneOffset" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return (tv - @sec-localtime(tv)) / $𝔽($TimeConst(data choice 4))
+}
+
+def @sec-date.prototype.getutcdate "Date.prototype.getUTCDate" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-datefromtime(tv))
+}
+
+def @sec-date.prototype.getutcday "Date.prototype.getUTCDay" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-weekday(tv))
+}
+
+def @sec-date.prototype.getutcfullyear "Date.prototype.getUTCFullYear" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-yearfromtime(tv))
+}
+
+def @sec-date.prototype.getutchours "Date.prototype.getUTCHours" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-hourfromtime(tv))
+}
+
+def @sec-date.prototype.getutcmilliseconds "Date.prototype.getUTCMilliseconds" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-millisecondfromtime(tv))
+}
+
+def @sec-date.prototype.getutcminutes "Date.prototype.getUTCMinutes" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-minutefromtime(tv))
+}
+
+def @sec-date.prototype.getutcmonth "Date.prototype.getUTCMonth" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-monthfromtime(tv))
+}
+
+def @sec-date.prototype.getutcseconds "Date.prototype.getUTCSeconds" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return nan
+  return $𝔽(@sec-secondfromtime(tv))
+}
+
+def @sec-date.prototype.setdate "Date.prototype.setDate" (kind builtin params [day]) vars [#"this value", NewTarget, day, dateObj, tv, dayNumber, newDate, u] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let dayNumber = ? @sec-tonumber(day)
+  if tv is val {nan} -> return nan
+  set var tv = @sec-localtime(tv)
+  let newDate = @sec-makedate(@sec-makeday($𝔽(@sec-yearfromtime(tv)), $𝔽(@sec-monthfromtime(tv)), dayNumber), $𝔽(@sec-timewithinday(tv)))
+  let u = @sec-timeclip(@sec-utc-t(newDate))
+  set field dateObj[[DateValue]] = u
+  return u
+}
+
+def @sec-date.prototype.setfullyear "Date.prototype.setFullYear" (kind builtin params [year, month opt, day opt]) vars [#"this value", NewTarget, year, month, day, dateObj, tv, yearNumber, monthNumber, dayNumber, newDate, u] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let yearNumber = ? @sec-tonumber(year)
+  if_else tv is val {nan} { set var tv = num_f(+0) } else { set var tv = @sec-localtime(tv) }
+  if_else month sat $Present() { let monthNumber = ? @sec-tonumber(month) } else { let monthNumber = $𝔽(@sec-monthfromtime(tv)) }
+  if_else day sat $Present() { let dayNumber = ? @sec-tonumber(day) } else { let dayNumber = $𝔽(@sec-datefromtime(tv)) }
+  let newDate = @sec-makedate(@sec-makeday(yearNumber, monthNumber, dayNumber), $𝔽(@sec-timewithinday(tv)))
+  let u = @sec-timeclip(@sec-utc-t(newDate))
+  set field dateObj[[DateValue]] = u
+  return u
+}
+
+def @sec-date.prototype.sethours "Date.prototype.setHours" (kind builtin params [hour, minute opt, second opt, millisecond opt]) vars [#"this value", NewTarget, hour, minute, second, millisecond, dateObj, tv, hourNumber, minuteNumber, secondNumber, millisecondNumber, date, u] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let hourNumber = ? @sec-tonumber(hour)
+  if minute sat $Present() -> let minuteNumber = ? @sec-tonumber(minute)
+  if second sat $Present() -> let secondNumber = ? @sec-tonumber(second)
+  if millisecond sat $Present() -> let millisecondNumber = ? @sec-tonumber(millisecond)
+  if tv is val {nan} -> return nan
+  set var tv = @sec-localtime(tv)
+  if minute fails $Present() -> let minuteNumber = $𝔽(@sec-minutefromtime(tv))
+  if second fails $Present() -> let secondNumber = $𝔽(@sec-secondfromtime(tv))
+  if millisecond fails $Present() -> let millisecondNumber = $𝔽(@sec-millisecondfromtime(tv))
+  let date = @sec-makedate($𝔽(@sec-day(tv)), @sec-maketime(hourNumber, minuteNumber, secondNumber, millisecondNumber))
+  let u = @sec-timeclip(@sec-utc-t(date))
+  set field dateObj[[DateValue]] = u
+  return u
+}
+
+def @sec-date.prototype.setmilliseconds "Date.prototype.setMilliseconds" (kind builtin params [millisecond]) vars [#"this value", NewTarget, millisecond, dateObj, tv, millisecondNumber, time, u] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let millisecondNumber = ? @sec-tonumber(millisecond)
+  if tv is val {nan} -> return nan
+  set var tv = @sec-localtime(tv)
+  let time = @sec-maketime($𝔽(@sec-hourfromtime(tv)), $𝔽(@sec-minutefromtime(tv)), $𝔽(@sec-secondfromtime(tv)), millisecondNumber)
+  let u = @sec-timeclip(@sec-utc-t(@sec-makedate($𝔽(@sec-day(tv)), time)))
+  set field dateObj[[DateValue]] = u
+  return u
+}
+
+def @sec-date.prototype.setminutes "Date.prototype.setMinutes" (kind builtin params [minute, second opt, millisecond opt]) vars [#"this value", NewTarget, minute, second, millisecond, dateObj, tv, minuteNumber, secondNumber, millisecondNumber, date, u] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let minuteNumber = ? @sec-tonumber(minute)
+  if second sat $Present() -> let secondNumber = ? @sec-tonumber(second)
+  if millisecond sat $Present() -> let millisecondNumber = ? @sec-tonumber(millisecond)
+  if tv is val {nan} -> return nan
+  set var tv = @sec-localtime(tv)
+  if second fails $Present() -> let secondNumber = $𝔽(@sec-secondfromtime(tv))
+  if millisecond fails $Present() -> let millisecondNumber = $𝔽(@sec-millisecondfromtime(tv))
+  let date = @sec-makedate($𝔽(@sec-day(tv)), @sec-maketime($𝔽(@sec-hourfromtime(tv)), minuteNumber, secondNumber, millisecondNumber))
+  let u = @sec-timeclip(@sec-utc-t(date))
+  set field dateObj[[DateValue]] = u
+  return u
+}
+
+def @sec-date.prototype.setmonth "Date.prototype.setMonth" (kind builtin params [month, day opt]) vars [#"this value", NewTarget, month, day, dateObj, tv, monthNumber, dayNumber, newDate, u] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let monthNumber = ? @sec-tonumber(month)
+  if day sat $Present() -> let dayNumber = ? @sec-tonumber(day)
+  if tv is val {nan} -> return nan
+  set var tv = @sec-localtime(tv)
+  if day fails $Present() -> let dayNumber = $𝔽(@sec-datefromtime(tv))
+  let newDate = @sec-makedate(@sec-makeday($𝔽(@sec-yearfromtime(tv)), monthNumber, dayNumber), $𝔽(@sec-timewithinday(tv)))
+  let u = @sec-timeclip(@sec-utc-t(newDate))
+  set field dateObj[[DateValue]] = u
+  return u
+}
+
+def @sec-date.prototype.setseconds "Date.prototype.setSeconds" (kind builtin params [second, millisecond opt]) vars [#"this value", NewTarget, second, millisecond, dateObj, tv, secondNumber, millisecondNumber, date, u] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let secondNumber = ? @sec-tonumber(second)
+  if millisecond sat $Present() -> let millisecondNumber = ? @sec-tonumber(millisecond)
+  if tv is val {nan} -> return nan
+  set var tv = @sec-localtime(tv)
+  if millisecond fails $Present() -> let millisecondNumber = $𝔽(@sec-millisecondfromtime(tv))
+  let date = @sec-makedate($𝔽(@sec-day(tv)), @sec-maketime($𝔽(@sec-hourfromtime(tv)), $𝔽(@sec-minutefromtime(tv)), secondNumber, millisecondNumber))
+  let u = @sec-timeclip(@sec-utc-t(date))
+  set field dateObj[[DateValue]] = u
+  return u
+}
+
+def @sec-date.prototype.settime "Date.prototype.setTime" (kind builtin params [time]) vars [#"this value", NewTarget, time, dateObj, t, v] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let t = ? @sec-tonumber(time)
+  let v = @sec-timeclip(t)
+  set field dateObj[[DateValue]] = v
+  return v
+}
+
+def @sec-date.prototype.setutcdate "Date.prototype.setUTCDate" (kind builtin params [day]) vars [#"this value", NewTarget, day, dateObj, tv, dayNumber, newDate, v] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let dayNumber = ? @sec-tonumber(day)
+  if tv is val {nan} -> return nan
+  let newDate = @sec-makedate(@sec-makeday($𝔽(@sec-yearfromtime(tv)), $𝔽(@sec-monthfromtime(tv)), dayNumber), $𝔽(@sec-timewithinday(tv)))
+  let v = @sec-timeclip(newDate)
+  set field dateObj[[DateValue]] = v
+  return v
+}
+
+def @sec-date.prototype.setutcfullyear "Date.prototype.setUTCFullYear" (kind builtin params [year, month opt, day opt]) vars [#"this value", NewTarget, year, month, day, dateObj, tv, yearNumber, monthNumber, dayNumber, newDate, v] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> set var tv = num_f(+0)
+  let yearNumber = ? @sec-tonumber(year)
+  if_else month sat $Present() { let monthNumber = ? @sec-tonumber(month) } else { let monthNumber = $𝔽(@sec-monthfromtime(tv)) }
+  if_else day sat $Present() { let dayNumber = ? @sec-tonumber(day) } else { let dayNumber = $𝔽(@sec-datefromtime(tv)) }
+  let newDate = @sec-makedate(@sec-makeday(yearNumber, monthNumber, dayNumber), $𝔽(@sec-timewithinday(tv)))
+  let v = @sec-timeclip(newDate)
+  set field dateObj[[DateValue]] = v
+  return v
+}
+
+def @sec-date.prototype.setutchours "Date.prototype.setUTCHours" (kind builtin params [hour, minute opt, second opt, millisecond opt]) vars [#"this value", NewTarget, hour, minute, second, millisecond, dateObj, tv, hourNumber, minuteNumber, secondNumber, millisecondNumber, date, v] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let hourNumber = ? @sec-tonumber(hour)
+  if minute sat $Present() -> let minuteNumber = ? @sec-tonumber(minute)
+  if second sat $Present() -> let secondNumber = ? @sec-tonumber(second)
+  if millisecond sat $Present() -> let millisecondNumber = ? @sec-tonumber(millisecond)
+  if tv is val {nan} -> return nan
+  if minute fails $Present() -> let minuteNumber = $𝔽(@sec-minutefromtime(tv))
+  if second fails $Present() -> let secondNumber = $𝔽(@sec-secondfromtime(tv))
+  if millisecond fails $Present() -> let millisecondNumber = $𝔽(@sec-millisecondfromtime(tv))
+  let date = @sec-makedate($𝔽(@sec-day(tv)), @sec-maketime(hourNumber, minuteNumber, secondNumber, millisecondNumber))
+  let v = @sec-timeclip(date)
+  set field dateObj[[DateValue]] = v
+  return v
+}
+
+def @sec-date.prototype.setutcmilliseconds "Date.prototype.setUTCMilliseconds" (kind builtin params [millisecond]) vars [#"this value", NewTarget, millisecond, dateObj, tv, millisecondNumber, time, v] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let millisecondNumber = ? @sec-tonumber(millisecond)
+  if tv is val {nan} -> return nan
+  let time = @sec-maketime($𝔽(@sec-hourfromtime(tv)), $𝔽(@sec-minutefromtime(tv)), $𝔽(@sec-secondfromtime(tv)), millisecondNumber)
+  let v = @sec-timeclip(@sec-makedate($𝔽(@sec-day(tv)), time))
+  set field dateObj[[DateValue]] = v
+  return v
+}
+
+def @sec-date.prototype.setutcminutes "Date.prototype.setUTCMinutes" (kind builtin params [minute, second opt, millisecond opt]) vars [#"this value", NewTarget, minute, second, millisecond, dateObj, tv, minuteNumber, secondNumber, millisecondNumber, date, v] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let minuteNumber = ? @sec-tonumber(minute)
+  if second sat $Present() -> let secondNumber = ? @sec-tonumber(second)
+  if millisecond sat $Present() -> let millisecondNumber = ? @sec-tonumber(millisecond)
+  if tv is val {nan} -> return nan
+  if second fails $Present() -> let secondNumber = $𝔽(@sec-secondfromtime(tv))
+  if millisecond fails $Present() -> let millisecondNumber = $𝔽(@sec-millisecondfromtime(tv))
+  let date = @sec-makedate($𝔽(@sec-day(tv)), @sec-maketime($𝔽(@sec-hourfromtime(tv)), minuteNumber, secondNumber, millisecondNumber))
+  let v = @sec-timeclip(date)
+  set field dateObj[[DateValue]] = v
+  return v
+}
+
+def @sec-date.prototype.setutcmonth "Date.prototype.setUTCMonth" (kind builtin params [month, day opt]) vars [#"this value", NewTarget, month, day, dateObj, tv, monthNumber, dayNumber, newDate, v] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let monthNumber = ? @sec-tonumber(month)
+  if day sat $Present() -> let dayNumber = ? @sec-tonumber(day)
+  if tv is val {nan} -> return nan
+  if day fails $Present() -> let dayNumber = $𝔽(@sec-datefromtime(tv))
+  let newDate = @sec-makedate(@sec-makeday($𝔽(@sec-yearfromtime(tv)), monthNumber, dayNumber), $𝔽(@sec-timewithinday(tv)))
+  let v = @sec-timeclip(newDate)
+  set field dateObj[[DateValue]] = v
+  return v
+}
+
+def @sec-date.prototype.setutcseconds "Date.prototype.setUTCSeconds" (kind builtin params [second, millisecond opt]) vars [#"this value", NewTarget, second, millisecond, dateObj, tv, secondNumber, millisecondNumber, date, v] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  let secondNumber = ? @sec-tonumber(second)
+  if millisecond sat $Present() -> let millisecondNumber = ? @sec-tonumber(millisecond)
+  if tv is val {nan} -> return nan
+  if millisecond fails $Present() -> let millisecondNumber = $𝔽(@sec-millisecondfromtime(tv))
+  let date = @sec-makedate($𝔽(@sec-day(tv)), @sec-maketime($𝔽(@sec-hourfromtime(tv)), $𝔽(@sec-minutefromtime(tv)), secondNumber, millisecondNumber))
+  let v = @sec-timeclip(date)
+  set field dateObj[[DateValue]] = v
+  return v
+}
+
+def @sec-date.prototype.todatestring "Date.prototype.toDateString" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv, t] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return "Invalid Date"
+  let t = @sec-localtime(tv)
+  return @sec-datestring(t)
+}
+
+def @sec-date.prototype.toisostring "Date.prototype.toISOString" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv, expanded] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> throw @ph-new-error([[RangeError]])
+  assert tv is ty {#"integral Number"}
+  if @formal-isdatetimerepresentable(tv) is val {false} -> throw @ph-new-error([[RangeError]])
+  let expanded = true
+  if @sec-yearfromtime(tv) sat $InInterval(0, 9999) -> set var expanded = $ExpandedYearForm(tv)
+  return @formal-datetimestring(tv, expanded)
+}
+
+def @sec-date.prototype.tojson "Date.prototype.toJSON" (kind builtin params [key]) vars [#"this value", NewTarget, key, #"obj", tv] {
+  let #"obj" = ? @sec-toobject(this_value)
+  let tv = ? @sec-toprimitive(#"obj", ~number~)
+  if tv is ty {Number} and tv is not ty {sort [finite] Number} -> return null
+  return ? @sec-invoke(#"obj", "toISOString")
+}
+
+def @sec-date.prototype.tostring "Date.prototype.toString" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  return @sec-todatestring(tv)
+}
+
+def @sec-timestring "TimeString" (kind ao params [tv : butnot(Number, val(nan))] -> String) vars [tv, hour, minute, second] {
+  let hour = @sec-tozeropaddeddecimalstring(@sec-hourfromtime(tv), 2)
+  let minute = @sec-tozeropaddeddecimalstring(@sec-minutefromtime(tv), 2)
+  let second = @sec-tozeropaddeddecimalstring(@sec-secondfromtime(tv), 2)
+  return $"string-concatenation"(hour, ":", minute, ":", second, $CodeUnit(cu(32, "0020", "SPACE")), "GMT")
+}
+
+def @sec-datestring "DateString" (kind ao params [tv : butnot(Number, val(nan))] -> String) vars [tv, weekday, month, day, yv, yearSign, paddedYear] {
+  let weekday = @ph-name-of-entry(table t"sec-todatestring-day-names", code "WeekDay Index", @sec-weekday(tv))
+  let month = @ph-name-of-entry(table t"sec-todatestring-month-names", code "Month Index", @sec-monthfromtime(tv))
+  let day = @sec-tozeropaddeddecimalstring(@sec-datefromtime(tv), 2)
+  let yv = @sec-yearfromtime(tv)
+  if_else yv >= 0 { let yearSign = $"the empty String"() } else { let yearSign = "-" }
+  let paddedYear = @sec-tozeropaddeddecimalstring($abs(yv), 4)
+  return $"string-concatenation"(weekday, $CodeUnit(cu(32, "0020", "SPACE")), month, $CodeUnit(cu(32, "0020", "SPACE")), day, $CodeUnit(cu(32, "0020", "SPACE")), yearSign, paddedYear)
+}
+
+def @sec-timezoneestring "TimeZoneString" (kind ao params [tv : #"integral Number"] -> String) vars [tv, systemTimeZoneIdentifier, offsetNanoseconds, offsetMilliseconds, offsetSign, absOffsetMilliseconds, offsetMinute, offsetHour, timeZoneName] {
+  let systemTimeZoneIdentifier = @sec-systemtimezoneidentifier()
+  if @sec-istimezoneoffsetstring(systemTimeZoneIdentifier) is val {true} {
+    let offsetNanoseconds = @sec-parsetimezoneoffsetstring(systemTimeZoneIdentifier)
+  }
+  else {
+    let offsetNanoseconds = @sec-getnamedtimezoneoffsetnanoseconds(systemTimeZoneIdentifier, $ℝ(tv) * $TimeConst(data choice 9))
+  }
+  let offsetMilliseconds = $truncate(offsetNanoseconds / $TimeConst(data choice 9))
+  if offsetMilliseconds >= 0 {
+    let offsetSign = "+"
+    let absOffsetMilliseconds = offsetMilliseconds
+  }
+  else {
+    let offsetSign = "-"
+    let absOffsetMilliseconds = neg offsetMilliseconds
+  }
+  let offsetMinute = @sec-tozeropaddeddecimalstring(@sec-minutefromtime($𝔽(absOffsetMilliseconds)), 2)
+  let offsetHour = @sec-tozeropaddeddecimalstring(@sec-hourfromtime($𝔽(absOffsetMilliseconds)), 2)
+  let timeZoneName = $TimeZoneNameSuffix(tv)
+  return $"string-concatenation"(offsetSign, offsetHour, offsetMinute, timeZoneName)
+}
+
+def @sec-todatestring "ToDateString" (kind ao params [tv : #"integral Number" | val(nan)] -> String) vars [tv, localTime] {
+  if tv is val {nan} -> return "Invalid Date"
+  let localTime = @sec-localtime(tv)
+  return $"string-concatenation"(@sec-datestring(localTime), $CodeUnit(cu(32, "0020", "SPACE")), @sec-timestring(localTime), @sec-timezoneestring(tv))
+}
+
+def @sec-date.prototype.totimestring "Date.prototype.toTimeString" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv, localTime] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return "Invalid Date"
+  let localTime = @sec-localtime(tv)
+  return $"string-concatenation"(@sec-timestring(localTime), @sec-timezoneestring(tv))
+}
+
+def @sec-date.prototype.toutcstring "Date.prototype.toUTCString" (kind builtin params []) vars [#"this value", NewTarget, dateObj, tv, weekday, month, day, yv, yearSign, paddedYear] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  let tv = dateObj[[DateValue]]
+  if tv is val {nan} -> return "Invalid Date"
+  let weekday = @ph-name-of-entry(table t"sec-todatestring-day-names", code "WeekDay Index", @sec-weekday(tv))
+  let month = @ph-name-of-entry(table t"sec-todatestring-month-names", code "Month Index", @sec-monthfromtime(tv))
+  let day = @sec-tozeropaddeddecimalstring(@sec-datefromtime(tv), 2)
+  let yv = @sec-yearfromtime(tv)
+  if_else yv >= 0 { let yearSign = $"the empty String"() } else { let yearSign = "-" }
+  let paddedYear = @sec-tozeropaddeddecimalstring($abs(yv), 4)
+  return $"string-concatenation"(weekday, ",", $CodeUnit(cu(32, "0020", "SPACE")), day, $CodeUnit(cu(32, "0020", "SPACE")), month, $CodeUnit(cu(32, "0020", "SPACE")), yearSign, paddedYear, $CodeUnit(cu(32, "0020", "SPACE")), @sec-timestring(tv))
+}
+
+def @sec-date.prototype.valueof "Date.prototype.valueOf" (kind builtin params []) vars [#"this value", NewTarget, dateObj] {
+  let dateObj = this_value
+  perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+  return dateObj[[DateValue]]
+}
+
+def @sec-date.prototype-%symbol.toprimitive% "Date.prototype [ %Symbol.toPrimitive% ]" (kind builtin params [hint]) vars [#"this value", NewTarget, hint, #"obj", tryFirst] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if hint is val {"string"; "default"} {
+    let tryFirst = ~string~
+  }
+  else_if hint is val {"number"} {
+    let tryFirst = ~number~
+  }
+  else {
+    throw @ph-new-error([[TypeError]])
+  }
+  return ? @sec-ordinarytoprimitive(#"obj", tryFirst)
+}
+

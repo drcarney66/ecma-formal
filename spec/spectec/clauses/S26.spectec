@@ -1,0 +1,66 @@
+-- ECMA-262 SpecTec Clauses: S26
+
+def @sec-weak-ref-target "WeakRef" (kind builtin params [target]) vars [#"this value", NewTarget, target, weakRef] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  if @sec-canbeheldweakly(target) is val {false} -> throw @ph-new-error([[TypeError]])
+  let weakRef = ? @sec-ordinarycreatefromconstructor(new_target, "%WeakRef.prototype%", [[[WeakRefTarget]]])
+  perform @sec-addtokeptobjects(target)
+  set field weakRef[[WeakRefTarget]] = target
+  return weakRef
+}
+
+def @sec-weak-ref.prototype.deref "WeakRef.prototype.deref" (kind builtin params []) vars [#"this value", NewTarget, weakRef] {
+  let weakRef = this_value
+  perform ? @sec-requireinternalslot(weakRef, [[WeakRefTarget]])
+  return @sec-weakrefderef(weakRef)
+}
+
+def @sec-weakrefderef "WeakRefDeref" (kind ao params [weakRef : WeakRef] -> #"ECMAScript language value") vars [weakRef, target] {
+  let target = weakRef[[WeakRefTarget]]
+  if target is not val {~empty~} {
+    perform @sec-addtokeptobjects(target)
+    return target
+  }
+  return undefined
+}
+
+def @sec-finalization-registry-cleanup-callback "FinalizationRegistry" (kind builtin params [cleanupCallback]) vars [#"this value", NewTarget, cleanupCallback, finalizationRegistry, activeFunc] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  if @sec-iscallable(cleanupCallback) is val {false} -> throw @ph-new-error([[TypeError]])
+  let finalizationRegistry = ? @sec-ordinarycreatefromconstructor(new_target, "%FinalizationRegistry.prototype%", [[[Realm]], [[CleanupCallback]], [[Cells]]])
+  let activeFunc = $ActiveFunction()
+  set field finalizationRegistry[[Realm]] = activeFunc[[Realm]]
+  set field finalizationRegistry[[CleanupCallback]] = @sec-hostmakejobcallback(cleanupCallback)
+  set field finalizationRegistry[[Cells]] = $ListNew()
+  return finalizationRegistry
+}
+
+def @sec-finalization-registry.prototype.register "FinalizationRegistry.prototype.register" (kind builtin params [target, heldValue, unregisterToken opt]) vars [#"this value", NewTarget, target, heldValue, unregisterToken, finalizationRegistry, cell] {
+  let finalizationRegistry = this_value
+  perform ? @sec-requireinternalslot(finalizationRegistry, [[Cells]])
+  if @sec-canbeheldweakly(target) is val {false} -> throw @ph-new-error([[TypeError]])
+  if @sec-samevalue(target, heldValue) is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-canbeheldweakly(unregisterToken) is val {false} {
+    if unregisterToken is not val {undefined} -> throw @ph-new-error([[TypeError]])
+    set var unregisterToken = ~empty~
+  }
+  let cell = record Record { [[WeakRefTarget]]: target, [[HeldValue]]: heldValue, [[UnregisterToken]]: unregisterToken }
+  perform $Append(?cell, finalizationRegistry[[Cells]])
+  return undefined
+}
+
+def @sec-finalization-registry.prototype.unregister "FinalizationRegistry.prototype.unregister" (kind builtin params [unregisterToken]) vars [#"this value", NewTarget, unregisterToken, finalizationRegistry, removed, cell, cells] {
+  let finalizationRegistry = this_value
+  perform ? @sec-requireinternalslot(finalizationRegistry, [[Cells]])
+  if @sec-canbeheldweakly(unregisterToken) is val {false} -> throw @ph-new-error([[TypeError]])
+  let removed = false
+  let cells = $Copy(finalizationRegistry[[Cells]])
+  for_each_rec [[[WeakRefTarget]], [[HeldValue]], [[UnregisterToken]]] cell in cells {
+    if cell[[UnregisterToken]] is not val {~empty~} and @sec-samevalue(cell[[UnregisterToken]], unregisterToken) is val {true} {
+      perform $RemoveElem(?cell, finalizationRegistry[[Cells]])
+      set var removed = true
+    }
+  }
+  return removed
+}
+

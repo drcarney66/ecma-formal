@@ -1,0 +1,127 @@
+-- ECMA-262 SpecTec Clauses: S29
+
+def @sec-event-set "EventSet" (kind ao params [execution : #"candidate execution"] -> doc "a Set of Memory events") vars [execution, events, eventsRecord, event] {
+  let events = $ListNew()
+  for_each eventsRecord : #"Agent Events Record" in execution[[EventsRecords]] {
+    for_each event : #"Memory event" in eventsRecord[[EventList]] {
+      perform $SetAdd(?event, ?events)
+    }
+  }
+  return events
+}
+
+def @sec-sharedatablockeventset "SharedDataBlockEventSet" (kind ao params [execution : #"candidate execution"] -> doc "a Set of Shared Data Block events") vars [execution, events, event] {
+  let events = $ListNew()
+  for_each event : #"Memory event" in @sec-event-set(execution) {
+    if event is ty {#"Shared Data Block event"} -> perform $SetAdd(?event, ?events)
+  }
+  return events
+}
+
+def @sec-hosteventset "HostEventSet" (kind ao params [execution : #"candidate execution"] -> doc "a Set of Memory events") vars [execution] {
+  return @ph-set-difference(@sec-event-set(execution), @sec-sharedatablockeventset(execution))
+}
+
+def @sec-composewriteeventbytes "ComposeWriteEventBytes" (kind ao params [execution : #"candidate execution", byteIndex : sort [#"non-negative"] integer, writes : list<WriteSharedMemory | ReadModifyWriteSharedMemory>] -> list<#"byte value">) vars [execution, byteIndex, writes, byteLocation, bytesRead, writeEvent, payloadIndex, byte, bytes, bytesModified] {
+  let byteLocation = byteIndex
+  let bytesRead = $ListNew()
+  for_each writeEvent in writes {
+    assert expr $Chain(writeEvent[[ByteIndex]], data choice 1, ?byteLocation, data choice 0, writeEvent[[ByteIndex]] + writeEvent[[ElementSize]])
+    let payloadIndex = byteLocation - writeEvent[[ByteIndex]]
+    if writeEvent is ty {#"WriteSharedMemory event"} {
+      let byte = writeEvent[[Payload]][payloadIndex]
+    }
+    else {
+      assert writeEvent is ty {ReadModifyWriteSharedMemory}
+      let bytes = @sec-valueofreadevent(execution, writeEvent)
+      let bytesModified = writeEvent[[ModifyOp]](bytes, writeEvent[[Payload]])
+      let byte = bytesModified[payloadIndex]
+    }
+    perform $Append(?byte, ?bytesRead)
+    set var byteLocation = byteLocation + 1
+  }
+  return bytesRead
+}
+
+def @sec-valueofreadevent "ValueOfReadEvent" (kind ao params [execution : #"candidate execution", readEvent : ReadSharedMemory | ReadModifyWriteSharedMemory] -> list<#"byte value">) vars [execution, readEvent, writes] {
+  let writes = $""([readEvent], ?execution)
+  assert writes sat @ph-list-of-write-events(readEvent[[ElementSize]])
+  return @sec-composewriteeventbytes(execution, readEvent[[ByteIndex]], writes)
+}
+
+def @sec-valid-chosen-reads "sec-valid-chosen-reads" (kind untyped params []) vars [readEvent, execution, chosenValueRecord, chosenValue, readValue, chosenLength, readLength, i, someDiffers] {
+  for_each readEvent : ReadSharedMemory | ReadModifyWriteSharedMemory in @sec-sharedatablockeventset(execution) {
+    let chosenValueRecord = @ph-elem-whose(execution[[ChosenValues]], [[Event]], data choice 0, ?readEvent)
+    let chosenValue = chosenValueRecord[[ChosenValue]]
+    let readValue = @sec-valueofreadevent(execution, readEvent)
+    let chosenLength = $ListLen(?chosenValue)
+    let readLength = $ListLen(?readValue)
+    if chosenLength != readLength {
+      return false
+    }
+    let someDiffers = false
+    for_range i incl 0 .. excl chosenLength {
+      if chosenValue[i] != readValue[i] -> set var someDiffers = true
+    }
+    if someDiffers is val {true} {
+      return false
+    }
+  }
+  return true
+}
+
+def @sec-coherent-reads "sec-coherent-reads" (kind untyped params []) vars [readEvent, execution, writes, byteLocation, writeEvent, value] {
+  for_each readEvent : ReadSharedMemory | ReadModifyWriteSharedMemory in @sec-sharedatablockeventset(execution) {
+    let writes = $""([readEvent], ?execution)
+    let byteLocation = readEvent[[ByteIndex]]
+    for_each writeEvent in writes {
+      if expr $""(?readEvent, data choice 0, ?writeEvent, ?execution) {
+        return false
+      }
+      if pass "there exists a WriteSharedMemory or ReadModifyWriteSharedMemory event _ that has _ in its memory range such that _ happens-before _ in _ and _ happens-before _ in _" {
+        return false
+      }
+      set var byteLocation = byteLocation + 1
+    }
+  }
+  return true
+}
+
+def @sec-tear-free-aligned-reads "sec-tear-free-aligned-reads" (kind untyped params []) vars [readEvent, execution, writeEvent, value] {
+  for_each readEvent : ReadSharedMemory | ReadModifyWriteSharedMemory in @sec-sharedatablockeventset(execution) {
+    if readEvent[[NoTear]] is val {true} {
+      assert $Remainder(readEvent[[ByteIndex]], readEvent[[ElementSize]]) is val {0}
+      perform $""()
+    }
+  }
+  return true
+}
+
+def @sec-races "sec-races" (kind untyped params []) vars [eventA, eventB, execution] {
+  if expr @ph-not-same-tn(?eventA, ?eventB, data sort #"Shared Data Block event") {
+    if expr @ph-not-the-case(data choice 0, bool(expr $""(?eventA, data choice 0, ?eventB, ?execution) and expr $""(?eventB, data choice 0, ?eventA, ?execution))) {
+      if eventA is ty {#"WriteSharedMemory event"} or eventA is ty {ReadModifyWriteSharedMemory} {
+        if eventB is ty {#"WriteSharedMemory event"} or eventB is ty {ReadModifyWriteSharedMemory} {
+          if expr @ph-not-disjoint-memory-ranges(?eventA, ?eventB) -> return true
+        }
+      }
+      if expr $""(?eventA, data choice 1, ?eventB, ?execution) or expr $""(?eventB, data choice 1, ?eventA, ?execution) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+def @sec-data-races "sec-data-races" (kind untyped params []) vars [eventA, eventB, execution] {
+  if expr $""() {
+    if eventA[[Order]] is not val {~seq-cst~} or eventB[[Order]] is not val {~seq-cst~} {
+      return true
+    }
+    if expr @ph-overlapping-memory-ranges(?eventA, ?eventB) {
+      return true
+    }
+  }
+  return false
+}
+

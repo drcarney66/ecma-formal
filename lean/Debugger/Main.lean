@@ -35,7 +35,7 @@ open Engine.Host (Loaded loadProgram)
 /-- The watched dispatcher for `o` over the host `H`. -/
 def dispatchW (o : Opts) (H : Host Impl) : Engine.Host.Runner :=
   Debugger.Machine.dispatchW
-    { Engine.Machine.ctx P' H o.reading o.checked with
+    { Engine.Machine.ctx P' H o.checked with
       maxCells := if o.maxHeap == 0 then none else some (cellsFor o.maxHeap) } (obsOf o).sites
 
 /-- The program's text: `source`, else the file `program`. -/

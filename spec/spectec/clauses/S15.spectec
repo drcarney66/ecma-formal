@@ -1,0 +1,2235 @@
+-- ECMA-262 SpecTec Clauses: S15
+
+def @sec-class-definitions-static-semantics-early-errors "sec-class-definitions-static-semantics-early-errors" (kind untyped params []) vars [ctor] {
+  let ctor = sdo ConstructorMethod(child 5 |ClassBody|)
+  if ctor is val {~empty~} -> return false
+  return sdo HasDirectSuper(ctor)
+}
+
+def @sec-static-semantics-allprivateidentifiersvalid "AllPrivateIdentifiersValid" (kind sdo params [names : list<String>] -> Boolean) vars [names, #"child"] {
+  for_children #"child" {
+    if expr $InstanceOf(#"child", data sort nonterminal) {
+      if sdo AllPrivateIdentifiersValid(#"child"; names) is val {false} -> return false
+    }
+  }
+  return true
+}
+
+def @sec-static-semantics-containsarguments "ContainsArguments" (kind sdo params [] -> Boolean) vars [#"child"] {
+  for_children #"child" {
+    if expr $InstanceOf(#"child", data sort nonterminal) {
+      if sdo ContainsArguments(#"child") is val {true} -> return true
+    }
+  }
+  return false
+}
+
+def @sec-isintailposition "IsInTailPosition" (kind ao params [call : |CallExpression| | |MemberExpression| | |OptionalChain|] -> Boolean) vars [call, body] {
+  if @sec-isstrict(call) is val {false} -> return false
+  if $NearestEnclosing(call, [|FunctionBody|, |ConciseBody|, |AsyncConciseBody|]) is val {~empty~} -> return false
+  let body = $NearestEnclosing(call, [|FunctionBody|, |ConciseBody|, |AsyncConciseBody|])
+  if body sat @ph-nt-of-a(|FunctionBody|, data choice 0, |GeneratorBody|) -> return false
+  if body sat @ph-nt-of-a(|FunctionBody|, data choice 1, |AsyncFunctionBody|) -> return false
+  if body sat @ph-nt-of-a(|FunctionBody|, data choice 1, |AsyncGeneratorBody|) -> return false
+  if body is ty {|AsyncConciseBody|} -> return false
+  return @ph-result-of(sdo HasCallInTailPosition(body; call))
+}
+
+def @sec-preparefortailcall "PrepareForTailCall" (kind ao params [] -> val(~unused~)) vars [] {
+  assert pass "The current execution context will not subsequently be used for the evaluation of any ECMAScript code or built-in functions. The invocation of Call subsequent to the invocation of this abstract operation will create and push a new execution context before performing any such evaluation"
+  perform $DiscardContextResources($Running())
+  return ~unused~
+}
+
+sdo_row @sec-static-semantics-containsexpression ContainsExpression form alg {
+  prods [p"Syntactic - ObjectBindingPattern : `{` `}`", p"Syntactic - ObjectBindingPattern : `{` BindingRestProperty[?Yield, ?Await] `}`"]
+  keys ["\n        ObjectBindingPattern :\n          `{` `}`\n          `{` BindingRestProperty `}`\n      "]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#1 ContainsExpression form alg {
+  prods [p"Syntactic - ObjectBindingPattern : `{` BindingPropertyList[?Yield, ?Await] `,` BindingRestProperty[?Yield, ?Await] `}`"]
+  keys ["ObjectBindingPattern : `{` BindingPropertyList `,` BindingRestProperty `}`"]
+  vars []
+  steps {
+    return sdo ContainsExpression(child 5 |BindingPropertyList|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#2 ContainsExpression form alg {
+  prods [p"Syntactic 00 ArrayBindingPattern : `[` Elision? BindingRestElement[?Yield, ?Await]? `]`", p"Syntactic 10 ArrayBindingPattern : `[` Elision? BindingRestElement[?Yield, ?Await]? `]`"]
+  keys ["ArrayBindingPattern : `[` Elision? `]`"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#3 ContainsExpression form alg {
+  prods [p"Syntactic 01 ArrayBindingPattern : `[` Elision? BindingRestElement[?Yield, ?Await]? `]`", p"Syntactic 11 ArrayBindingPattern : `[` Elision? BindingRestElement[?Yield, ?Await]? `]`"]
+  keys ["ArrayBindingPattern : `[` Elision? BindingRestElement `]`"]
+  vars []
+  steps {
+    return sdo ContainsExpression(child 5 |BindingRestElement|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#4 ContainsExpression form alg {
+  prods [p"Syntactic 00 ArrayBindingPattern : `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`", p"Syntactic 10 ArrayBindingPattern : `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`"]
+  keys ["ArrayBindingPattern : `[` BindingElementList `,` Elision? `]`"]
+  vars []
+  steps {
+    return sdo ContainsExpression(child 5 |BindingElementList|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#5 ContainsExpression form alg {
+  prods [p"Syntactic 01 ArrayBindingPattern : `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`", p"Syntactic 11 ArrayBindingPattern : `[` BindingElementList[?Yield, ?Await] `,` Elision? BindingRestElement[?Yield, ?Await]? `]`"]
+  keys ["ArrayBindingPattern : `[` BindingElementList `,` Elision? BindingRestElement `]`"]
+  vars [has]
+  steps {
+    let has = sdo ContainsExpression(child 5 |BindingElementList|)
+    if has is val {true} -> return true
+    return sdo ContainsExpression(child 5 |BindingRestElement|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#6 ContainsExpression form alg {
+  prods [p"Syntactic - BindingPropertyList : BindingPropertyList[?Yield, ?Await] `,` BindingProperty[?Yield, ?Await]"]
+  keys ["BindingPropertyList : BindingPropertyList `,` BindingProperty"]
+  vars [has]
+  steps {
+    let has = sdo ContainsExpression(child 5 |BindingPropertyList|)
+    if has is val {true} -> return true
+    return sdo ContainsExpression(child 5 |BindingProperty|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#7 ContainsExpression form alg {
+  prods [p"Syntactic - BindingElementList : BindingElementList[?Yield, ?Await] `,` BindingElisionElement[?Yield, ?Await]"]
+  keys ["BindingElementList : BindingElementList `,` BindingElisionElement"]
+  vars [has]
+  steps {
+    let has = sdo ContainsExpression(child 5 |BindingElementList|)
+    if has is val {true} -> return true
+    return sdo ContainsExpression(child 5 |BindingElisionElement|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#8 ContainsExpression form alg {
+  prods [p"Syntactic 0 BindingElisionElement : Elision? BindingElement[?Yield, ?Await]", p"Syntactic 1 BindingElisionElement : Elision? BindingElement[?Yield, ?Await]"]
+  keys ["BindingElisionElement : Elision? BindingElement"]
+  vars []
+  steps {
+    return sdo ContainsExpression(child 5 |BindingElement|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#9 ContainsExpression form alg {
+  prods [p"Syntactic - BindingProperty : PropertyName[?Yield, ?Await] `:` BindingElement[?Yield, ?Await]"]
+  keys ["BindingProperty : PropertyName `:` BindingElement"]
+  vars [has]
+  steps {
+    let has = sdo IsComputedPropertyKey(child 5 |PropertyName|)
+    if has is val {true} -> return true
+    return sdo ContainsExpression(child 5 |BindingElement|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#10 ContainsExpression form alg {
+  prods [p"Syntactic 1 BindingElement : BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["BindingElement : BindingPattern Initializer"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#11 ContainsExpression form alg {
+  prods [p"Syntactic 0 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["SingleNameBinding : BindingIdentifier"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#12 ContainsExpression form alg {
+  prods [p"Syntactic 1 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["SingleNameBinding : BindingIdentifier Initializer"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#13 ContainsExpression form alg {
+  prods [p"Syntactic - BindingRestElement : `...` BindingIdentifier[?Yield, ?Await]"]
+  keys ["BindingRestElement : `...` BindingIdentifier"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#14 ContainsExpression form alg {
+  prods [p"Syntactic - BindingRestElement : `...` BindingPattern[?Yield, ?Await]"]
+  keys ["BindingRestElement : `...` BindingPattern"]
+  vars []
+  steps {
+    return sdo ContainsExpression(child 5 |BindingPattern|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#15 ContainsExpression form alg {
+  prods [p"Syntactic - FormalParameters : [empty]"]
+  keys ["FormalParameters : [empty]"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#16 ContainsExpression form alg {
+  prods [p"Syntactic - FormalParameters : FormalParameterList[?Yield, ?Await] `,` FunctionRestParameter[?Yield, ?Await]"]
+  keys ["FormalParameters : FormalParameterList `,` FunctionRestParameter"]
+  vars []
+  steps {
+    if sdo ContainsExpression(child 5 |FormalParameterList|) is val {true} -> return true
+    return sdo ContainsExpression(child 5 |FunctionRestParameter|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#17 ContainsExpression form alg {
+  prods [p"Syntactic - FormalParameterList : FormalParameterList[?Yield, ?Await] `,` FormalParameter[?Yield, ?Await]"]
+  keys ["FormalParameterList : FormalParameterList `,` FormalParameter"]
+  vars []
+  steps {
+    if sdo ContainsExpression(child 5 |FormalParameterList|) is val {true} -> return true
+    return sdo ContainsExpression(child 5 |FormalParameter|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#18 ContainsExpression form alg {
+  prods [p"Syntactic - ArrowParameters : BindingIdentifier[?Yield, ?Await]"]
+  keys ["ArrowParameters : BindingIdentifier"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#19 ContainsExpression form alg {
+  prods [p"Syntactic - ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]"]
+  keys ["ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList"]
+  vars [formals]
+  steps {
+    let formals = $CoveredBy(|ArrowFormalParameters|, child 5 |CoverParenthesizedExpressionAndArrowParameterList|)
+    return sdo ContainsExpression(formals)
+  }
+}
+
+sdo_row @sec-static-semantics-containsexpression#20 ContainsExpression form alg {
+  prods [p"Syntactic - AsyncArrowBindingIdentifier : BindingIdentifier[?Yield, +Await]"]
+  keys ["\n        AsyncArrowBindingIdentifier : BindingIdentifier\n      "]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist IsSimpleParameterList form alg {
+  prods [p"Syntactic 0 BindingElement : BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["BindingElement : BindingPattern"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#1 IsSimpleParameterList form alg {
+  prods [p"Syntactic 1 BindingElement : BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["BindingElement : BindingPattern Initializer"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#2 IsSimpleParameterList form alg {
+  prods [p"Syntactic 0 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["SingleNameBinding : BindingIdentifier"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#3 IsSimpleParameterList form alg {
+  prods [p"Syntactic 1 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["SingleNameBinding : BindingIdentifier Initializer"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#4 IsSimpleParameterList form alg {
+  prods [p"Syntactic - FormalParameters : [empty]"]
+  keys ["FormalParameters : [empty]"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#5 IsSimpleParameterList form alg {
+  prods [p"Syntactic - FormalParameters : FunctionRestParameter[?Yield, ?Await]"]
+  keys ["FormalParameters : FunctionRestParameter"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#6 IsSimpleParameterList form alg {
+  prods [p"Syntactic - FormalParameters : FormalParameterList[?Yield, ?Await] `,` FunctionRestParameter[?Yield, ?Await]"]
+  keys ["FormalParameters : FormalParameterList `,` FunctionRestParameter"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#7 IsSimpleParameterList form alg {
+  prods [p"Syntactic - FormalParameterList : FormalParameterList[?Yield, ?Await] `,` FormalParameter[?Yield, ?Await]"]
+  keys ["FormalParameterList : FormalParameterList `,` FormalParameter"]
+  vars []
+  steps {
+    if sdo IsSimpleParameterList(child 5 |FormalParameterList|) is val {false} -> return false
+    return sdo IsSimpleParameterList(child 5 |FormalParameter|)
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#8 IsSimpleParameterList form alg {
+  prods [p"Syntactic - FormalParameter : BindingElement[?Yield, ?Await]"]
+  keys ["FormalParameter : BindingElement"]
+  vars []
+  steps {
+    return sdo IsSimpleParameterList(child 5 |BindingElement|)
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#9 IsSimpleParameterList form alg {
+  prods [p"Syntactic - ArrowParameters : BindingIdentifier[?Yield, ?Await]"]
+  keys ["ArrowParameters : BindingIdentifier"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#10 IsSimpleParameterList form alg {
+  prods [p"Syntactic - ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]"]
+  keys ["ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList"]
+  vars [formals]
+  steps {
+    let formals = $CoveredBy(|ArrowFormalParameters|, child 5 |CoverParenthesizedExpressionAndArrowParameterList|)
+    return sdo IsSimpleParameterList(formals)
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#11 IsSimpleParameterList form alg {
+  prods [p"Syntactic - AsyncArrowBindingIdentifier : BindingIdentifier[?Yield, +Await]"]
+  keys ["\n        AsyncArrowBindingIdentifier : BindingIdentifier\n      "]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-issimpleparameterlist#12 IsSimpleParameterList form alg {
+  prods [p"Syntactic - CoverCallExpressionAndAsyncArrowHead : MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]"]
+  keys ["\n        CoverCallExpressionAndAsyncArrowHead : MemberExpression Arguments\n      "]
+  vars [head]
+  steps {
+    let head = $CoveredBy(|AsyncArrowHead|, child 6 |CoverCallExpressionAndAsyncArrowHead|)
+    return sdo IsSimpleParameterList(head)
+  }
+}
+
+sdo_row @sec-static-semantics-hasinitializer HasInitializer form alg {
+  prods [p"Syntactic 0 BindingElement : BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["BindingElement : BindingPattern"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-hasinitializer#1 HasInitializer form alg {
+  prods [p"Syntactic 1 BindingElement : BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["BindingElement : BindingPattern Initializer"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-hasinitializer#2 HasInitializer form alg {
+  prods [p"Syntactic 0 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["SingleNameBinding : BindingIdentifier"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-hasinitializer#3 HasInitializer form alg {
+  prods [p"Syntactic 1 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["SingleNameBinding : BindingIdentifier Initializer"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-hasinitializer#4 HasInitializer form alg {
+  prods [p"Syntactic - FormalParameterList : FormalParameterList[?Yield, ?Await] `,` FormalParameter[?Yield, ?Await]"]
+  keys ["FormalParameterList : FormalParameterList `,` FormalParameter"]
+  vars []
+  steps {
+    if sdo HasInitializer(child 5 |FormalParameterList|) is val {true} -> return true
+    return sdo HasInitializer(child 5 |FormalParameter|)
+  }
+}
+
+sdo_row @sec-static-semantics-expectedargumentcount ExpectedArgumentCount form alg {
+  prods [p"Syntactic - FormalParameters : [empty]", p"Syntactic - FormalParameters : FunctionRestParameter[?Yield, ?Await]"]
+  keys ["\n        FormalParameters :\n          [empty]\n          FunctionRestParameter\n      "]
+  vars []
+  steps {
+    return 0
+  }
+}
+
+sdo_row @sec-static-semantics-expectedargumentcount#1 ExpectedArgumentCount form alg {
+  prods [p"Syntactic - FormalParameters : FormalParameterList[?Yield, ?Await] `,` FunctionRestParameter[?Yield, ?Await]"]
+  keys ["FormalParameters : FormalParameterList `,` FunctionRestParameter"]
+  vars []
+  steps {
+    return sdo ExpectedArgumentCount(child 5 |FormalParameterList|)
+  }
+}
+
+sdo_row @sec-static-semantics-expectedargumentcount#2 ExpectedArgumentCount form alg {
+  prods [p"Syntactic - FormalParameterList : FormalParameter[?Yield, ?Await]"]
+  keys ["FormalParameterList : FormalParameter"]
+  vars []
+  steps {
+    if sdo HasInitializer(child 5 |FormalParameter|) is val {true} -> return 0
+    return 1
+  }
+}
+
+sdo_row @sec-static-semantics-expectedargumentcount#3 ExpectedArgumentCount form alg {
+  prods [p"Syntactic - FormalParameterList : FormalParameterList[?Yield, ?Await] `,` FormalParameter[?Yield, ?Await]"]
+  keys ["FormalParameterList : FormalParameterList `,` FormalParameter"]
+  vars [count]
+  steps {
+    let count = sdo ExpectedArgumentCount(child 5 |FormalParameterList|)
+    if sdo HasInitializer(child 5 |FormalParameterList|) is val {true} or sdo HasInitializer(child 5 |FormalParameter|) is val {true} -> return count
+    return count + 1
+  }
+}
+
+sdo_row @sec-static-semantics-expectedargumentcount#4 ExpectedArgumentCount form alg {
+  prods [p"Syntactic - ArrowParameters : BindingIdentifier[?Yield, ?Await]"]
+  keys ["ArrowParameters : BindingIdentifier"]
+  vars []
+  steps {
+    return 1
+  }
+}
+
+sdo_row @sec-static-semantics-expectedargumentcount#5 ExpectedArgumentCount form alg {
+  prods [p"Syntactic - ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]"]
+  keys ["ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList"]
+  vars [formals]
+  steps {
+    let formals = $CoveredBy(|ArrowFormalParameters|, child 5 |CoverParenthesizedExpressionAndArrowParameterList|)
+    return sdo ExpectedArgumentCount(formals)
+  }
+}
+
+sdo_row @sec-static-semantics-expectedargumentcount#6 ExpectedArgumentCount form alg {
+  prods [p"Syntactic - PropertySetParameterList : FormalParameter[~Yield, ~Await]"]
+  keys ["PropertySetParameterList : FormalParameter"]
+  vars []
+  steps {
+    if sdo HasInitializer(child 5 |FormalParameter|) is val {true} -> return 0
+    return 1
+  }
+}
+
+sdo_row @sec-static-semantics-expectedargumentcount#7 ExpectedArgumentCount form alg {
+  prods [p"Syntactic - AsyncArrowBindingIdentifier : BindingIdentifier[?Yield, +Await]"]
+  keys ["\n        AsyncArrowBindingIdentifier : BindingIdentifier\n      "]
+  vars []
+  steps {
+    return 1
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition HasCallInTailPosition form alg {
+  prods [p"Syntactic - StatementList : StatementList[?Yield, ?Await, ?Return] StatementListItem[?Yield, ?Await, ?Return]"]
+  keys ["StatementList : StatementList StatementListItem"]
+  vars [call, has]
+  steps {
+    let has = sdo HasCallInTailPosition(child 3 |StatementList|; call)
+    if has is val {true} -> return true
+    if sdo ContainsUsing(child 3 |StatementList|) is val {true} -> return false
+    return sdo HasCallInTailPosition(child 5 |StatementListItem|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#1 HasCallInTailPosition form alg {
+  prods [p"Syntactic 0 FunctionStatementList : StatementList[?Yield, ?Await, +Return]?", p"Syntactic - StatementListItem : Declaration[?Yield, ?Await]", p"Syntactic - Statement : VariableStatement[?Yield, ?Await]", p"Syntactic - Statement : EmptyStatement", p"Syntactic - Statement : ExpressionStatement[?Yield, ?Await]", p"Syntactic - Statement : ContinueStatement[?Yield, ?Await]", p"Syntactic - Statement : BreakStatement[?Yield, ?Await]", p"Syntactic - Statement : ThrowStatement[?Yield, ?Await]", p"Syntactic - Statement : DebuggerStatement", p"Syntactic 0 Block : `{` StatementList[?Yield, ?Await, ?Return]? `}`", p"Syntactic - ReturnStatement : `return` `;`", p"Syntactic - LabelledItem : FunctionDeclaration[?Yield, ?Await, ~Default]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead ∉ { `let`, `async` `of` }] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 0 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? `}`"]
+  keys ["\n        FunctionStatementList :\n          [empty]\n\n        StatementListItem :\n          Declaration\n\n        Statement :\n          VariableStatement\n          EmptyStatement\n          ExpressionStatement\n          ContinueStatement\n          BreakStatement\n          ThrowStatement\n          DebuggerStatement\n\n        Block :\n          `{` `}`\n\n        ReturnStatement :\n          `return` `;`\n\n        LabelledItem :\n          FunctionDeclaration\n\n        ForInOfStatement :\n          `for` `(` LeftHandSideExpression `of` AssignmentExpression `)` Statement\n          `for` `(` `var` ForBinding `of` AssignmentExpression `)` Statement\n          `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n\n        CaseBlock :\n          `{` `}`\n      "]
+  vars [call]
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#2 HasCallInTailPosition form alg {
+  prods [p"Syntactic - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` Statement[?Yield, ?Await, ?Return]"]
+  keys ["IfStatement : `if` `(` Expression `)` Statement `else` Statement"]
+  vars [call, has]
+  steps {
+    let has = sdo HasCallInTailPosition(child 0 |Statement|; call)
+    if has is val {true} -> return true
+    return sdo HasCallInTailPosition(child 1 |Statement|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#3 HasCallInTailPosition form alg {
+  prods [p"Syntactic - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] [lookahead != `else`]", p"Syntactic - DoWhileStatement : `do` Statement[?Yield, ?Await, ?Return] `while` `(` Expression[+In, ?Yield, ?Await] `)` `;`", p"Syntactic - WhileStatement : `while` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 000 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 001 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 010 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 011 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 100 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 101 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 110 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 111 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 00 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 01 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 10 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 11 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 00 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 01 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 10 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 11 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `let` `[`] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - ForInOfStatement : `for` `(` ForDeclaration[?Yield, ?Await, ~Using] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic - WithStatement : `with` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n        IfStatement :\n          `if` `(` Expression `)` Statement\n\n        DoWhileStatement :\n          `do` Statement `while` `(` Expression `)` `;`\n\n        WhileStatement :\n          `while` `(` Expression `)` Statement\n\n        ForStatement :\n          `for` `(` Expression? `;` Expression? `;` Expression? `)` Statement\n          `for` `(` `var` VariableDeclarationList `;` Expression? `;` Expression? `)` Statement\n          `for` `(` LexicalDeclaration Expression? `;` Expression? `)` Statement\n\n        ForInOfStatement :\n          `for` `(` LeftHandSideExpression `in` Expression `)` Statement\n          `for` `(` `var` ForBinding `in` Expression `)` Statement\n          `for` `(` ForDeclaration `in` Expression `)` Statement\n\n        WithStatement :\n          `with` `(` Expression `)` Statement\n      "]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |Statement|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#4 HasCallInTailPosition form alg {
+  prods [p"Syntactic - LabelledStatement : LabelIdentifier[?Yield, ?Await] `:` LabelledItem[?Yield, ?Await, ?Return]"]
+  keys ["\n        LabelledStatement :\n          LabelIdentifier `:` LabelledItem\n      "]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |LabelledItem|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#5 HasCallInTailPosition form alg {
+  prods [p"Syntactic - ReturnStatement : `return` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`"]
+  keys ["ReturnStatement : `return` Expression `;`"]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |Expression|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#6 HasCallInTailPosition form alg {
+  prods [p"Syntactic - SwitchStatement : `switch` `(` Expression[+In, ?Yield, ?Await] `)` CaseBlock[?Yield, ?Await, ?Return]"]
+  keys ["SwitchStatement : `switch` `(` Expression `)` CaseBlock"]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |CaseBlock|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#7 HasCallInTailPosition form alg {
+  prods [p"Syntactic 00 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`", p"Syntactic 01 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`", p"Syntactic 10 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`", p"Syntactic 11 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`"]
+  keys ["CaseBlock : `{` CaseClauses? DefaultClause CaseClauses? `}`"]
+  vars [call, has]
+  steps {
+    let has = false
+    if child 0 |CaseClauses| sat $Present() -> set var has = sdo HasCallInTailPosition(child 0 |CaseClauses|; call)
+    if has is val {true} -> return true
+    set var has = sdo HasCallInTailPosition(child 5 |DefaultClause|; call)
+    if has is val {true} -> return true
+    if child 1 |CaseClauses| sat $Present() -> set var has = sdo HasCallInTailPosition(child 1 |CaseClauses|; call)
+    return has
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#8 HasCallInTailPosition form alg {
+  prods [p"Syntactic - CaseClauses : CaseClauses[?Yield, ?Await, ?Return] CaseClause[?Yield, ?Await, ?Return]"]
+  keys ["CaseClauses : CaseClauses CaseClause"]
+  vars [call, has]
+  steps {
+    let has = sdo HasCallInTailPosition(child 5 |CaseClauses|; call)
+    if has is val {true} -> return true
+    return sdo HasCallInTailPosition(child 5 |CaseClause|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#9 HasCallInTailPosition form alg {
+  prods [p"Syntactic 0 CaseClause : `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?", p"Syntactic 1 CaseClause : `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?", p"Syntactic 0 DefaultClause : `default` `:` StatementList[?Yield, ?Await, ?Return]?", p"Syntactic 1 DefaultClause : `default` `:` StatementList[?Yield, ?Await, ?Return]?"]
+  keys ["\n        CaseClause : `case` Expression `:` StatementList?\n\n        DefaultClause : `default` `:` StatementList?\n      "]
+  vars [call]
+  steps {
+    if child 5 |StatementList| sat $Present() -> return sdo HasCallInTailPosition(child 5 |StatementList|; call)
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#10 HasCallInTailPosition form alg {
+  prods [p"Syntactic - TryStatement : `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return]"]
+  keys ["TryStatement : `try` Block Catch"]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |Catch|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#11 HasCallInTailPosition form alg {
+  prods [p"Syntactic - TryStatement : `try` Block[?Yield, ?Await, ?Return] Finally[?Yield, ?Await, ?Return]", p"Syntactic - TryStatement : `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return] Finally[?Yield, ?Await, ?Return]"]
+  keys ["\n        TryStatement :\n          `try` Block Finally\n          `try` Block Catch Finally\n      "]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |Finally|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#12 HasCallInTailPosition form alg {
+  prods [p"Syntactic - Catch : `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]"]
+  keys ["Catch : `catch` `(` CatchParameter `)` Block"]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |Block|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#13 HasCallInTailPosition form alg {
+  prods [p"Syntactic - AssignmentExpression : [+Yield] YieldExpression[?In, ?Await]", p"Syntactic - AssignmentExpression : ArrowFunction[?In, ?Yield, ?Await]", p"Syntactic - AssignmentExpression : AsyncArrowFunction[?In, ?Yield, ?Await]", p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `=` AssignmentExpression[?In, ?Yield, ?Await]", p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] AssignmentOperator AssignmentExpression[?In, ?Yield, ?Await]", p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `&&=` AssignmentExpression[?In, ?Yield, ?Await]", p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `||=` AssignmentExpression[?In, ?Yield, ?Await]", p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `??=` AssignmentExpression[?In, ?Yield, ?Await]", p"Syntactic - BitwiseANDExpression : BitwiseANDExpression[?In, ?Yield, ?Await] `&` EqualityExpression[?In, ?Yield, ?Await]", p"Syntactic - BitwiseXORExpression : BitwiseXORExpression[?In, ?Yield, ?Await] `^` BitwiseANDExpression[?In, ?Yield, ?Await]", p"Syntactic - BitwiseORExpression : BitwiseORExpression[?In, ?Yield, ?Await] `|` BitwiseXORExpression[?In, ?Yield, ?Await]", p"Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `==` RelationalExpression[?In, ?Yield, ?Await]", p"Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `!=` RelationalExpression[?In, ?Yield, ?Await]", p"Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `===` RelationalExpression[?In, ?Yield, ?Await]", p"Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `!==` RelationalExpression[?In, ?Yield, ?Await]", p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `<` ShiftExpression[?Yield, ?Await]", p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `>` ShiftExpression[?Yield, ?Await]", p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `<=` ShiftExpression[?Yield, ?Await]", p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `>=` ShiftExpression[?Yield, ?Await]", p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `instanceof` ShiftExpression[?Yield, ?Await]", p"Syntactic - RelationalExpression : [+In] RelationalExpression[+In, ?Yield, ?Await] `in` ShiftExpression[?Yield, ?Await]", p"Syntactic - RelationalExpression : [+In] PrivateIdentifier `in` ShiftExpression[?Yield, ?Await]", p"Syntactic - ShiftExpression : ShiftExpression[?Yield, ?Await] `<<` AdditiveExpression[?Yield, ?Await]", p"Syntactic - ShiftExpression : ShiftExpression[?Yield, ?Await] `>>` AdditiveExpression[?Yield, ?Await]", p"Syntactic - ShiftExpression : ShiftExpression[?Yield, ?Await] `>>>` AdditiveExpression[?Yield, ?Await]", p"Syntactic - AdditiveExpression : AdditiveExpression[?Yield, ?Await] `+` MultiplicativeExpression[?Yield, ?Await]", p"Syntactic - AdditiveExpression : AdditiveExpression[?Yield, ?Await] `-` MultiplicativeExpression[?Yield, ?Await]", p"Syntactic - MultiplicativeExpression : MultiplicativeExpression[?Yield, ?Await] MultiplicativeOperator ExponentiationExpression[?Yield, ?Await]", p"Syntactic - ExponentiationExpression : UpdateExpression[?Yield, ?Await] `**` ExponentiationExpression[?Yield, ?Await]", p"Syntactic - UpdateExpression : LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `++`", p"Syntactic - UpdateExpression : LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `--`", p"Syntactic - UpdateExpression : `++` UnaryExpression[?Yield, ?Await]", p"Syntactic - UpdateExpression : `--` UnaryExpression[?Yield, ?Await]", p"Syntactic - UnaryExpression : `delete` UnaryExpression[?Yield, ?Await]", p"Syntactic - UnaryExpression : `void` UnaryExpression[?Yield, ?Await]", p"Syntactic - UnaryExpression : `typeof` UnaryExpression[?Yield, ?Await]", p"Syntactic - UnaryExpression : `+` UnaryExpression[?Yield, ?Await]", p"Syntactic - UnaryExpression : `-` UnaryExpression[?Yield, ?Await]", p"Syntactic - UnaryExpression : `~` UnaryExpression[?Yield, ?Await]", p"Syntactic - UnaryExpression : `!` UnaryExpression[?Yield, ?Await]", p"Syntactic - UnaryExpression : [+Await] CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield]", p"Syntactic - CallExpression : SuperCall[?Yield, ?Await]", p"Syntactic - CallExpression : ImportCall[?Yield, ?Await]", p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`", p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] `.` IdentifierName", p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] `.` PrivateIdentifier", p"Syntactic - NewExpression : `new` NewExpression[?Yield, ?Await]", p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`", p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` IdentifierName", p"Syntactic - MemberExpression : SuperProperty[?Yield, ?Await]", p"Syntactic - MemberExpression : MetaProperty", p"Syntactic - MemberExpression : `new` MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]", p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` PrivateIdentifier", p"Syntactic - PrimaryExpression : `this`", p"Syntactic - PrimaryExpression : IdentifierReference[?Yield, ?Await]", p"Syntactic - PrimaryExpression : Literal", p"Syntactic - PrimaryExpression : ArrayLiteral[?Yield, ?Await]", p"Syntactic - PrimaryExpression : ObjectLiteral[?Yield, ?Await]", p"Syntactic - PrimaryExpression : FunctionExpression", p"Syntactic - PrimaryExpression : ClassExpression[?Yield, ?Await]", p"Syntactic - PrimaryExpression : GeneratorExpression", p"Syntactic - PrimaryExpression : AsyncFunctionExpression", p"Syntactic - PrimaryExpression : AsyncGeneratorExpression", p"Syntactic - PrimaryExpression : RegularExpressionLiteral", p"Syntactic - PrimaryExpression : TemplateLiteral[?Yield, ?Await, ~Tagged]"]
+  keys ["\n        AssignmentExpression :\n          YieldExpression\n          ArrowFunction\n          AsyncArrowFunction\n          LeftHandSideExpression `=` AssignmentExpression\n          LeftHandSideExpression AssignmentOperator AssignmentExpression\n          LeftHandSideExpression `&amp;&amp;=` AssignmentExpression\n          LeftHandSideExpression `||=` AssignmentExpression\n          LeftHandSideExpression `??=` AssignmentExpression\n\n        BitwiseANDExpression :\n          BitwiseANDExpression `&amp;` EqualityExpression\n\n        BitwiseXORExpression :\n          BitwiseXORExpression `^` BitwiseANDExpression\n\n        BitwiseORExpression :\n          BitwiseORExpression `|` BitwiseXORExpression\n\n        EqualityExpression :\n          EqualityExpression `==` RelationalExpression\n          EqualityExpression `!=` RelationalExpression\n          EqualityExpression `===` RelationalExpression\n          EqualityExpression `!==` RelationalExpression\n\n        RelationalExpression :\n          RelationalExpression `&lt;` ShiftExpression\n          RelationalExpression `&gt;` ShiftExpression\n          RelationalExpression `&lt;=` ShiftExpression\n          RelationalExpression `&gt;=` ShiftExpression\n          RelationalExpression `instanceof` ShiftExpression\n          RelationalExpression `in` ShiftExpression\n          PrivateIdentifier `in` ShiftExpression\n\n        ShiftExpression :\n          ShiftExpression `&lt;&lt;` AdditiveExpression\n          ShiftExpression `&gt;&gt;` AdditiveExpression\n          ShiftExpression `&gt;&gt;&gt;` AdditiveExpression\n\n        AdditiveExpression :\n          AdditiveExpression `+` MultiplicativeExpression\n          AdditiveExpression `-` MultiplicativeExpression\n\n        MultiplicativeExpression :\n          MultiplicativeExpression MultiplicativeOperator ExponentiationExpression\n\n        ExponentiationExpression :\n          UpdateExpression `**` ExponentiationExpression\n\n        UpdateExpression :\n          LeftHandSideExpression `++`\n          LeftHandSideExpression `--`\n          `++` UnaryExpression\n          `--` UnaryExpression\n\n        UnaryExpression :\n          `delete` UnaryExpression\n          `void` UnaryExpression\n          `typeof` UnaryExpression\n          `+` UnaryExpression\n          `-` UnaryExpression\n          `~` UnaryExpression\n          `!` UnaryExpression\n          CoverAwaitExpressionAndAwaitUsingDeclarationHead\n\n        CallExpression :\n          SuperCall\n          ImportCall\n          CallExpression `[` Expression `]`\n          CallExpression `.` IdentifierName\n          CallExpression `.` PrivateIdentifier\n\n        NewExpression :\n          `new` NewExpression\n\n        MemberExpression :\n          MemberExpression `[` Expression `]`\n          MemberExpression `.` IdentifierName\n          SuperProperty\n          MetaProperty\n          `new` MemberExpression Arguments\n          MemberExpression `.` PrivateIdentifier\n\n        PrimaryExpression :\n          `this`\n          IdentifierReference\n          Literal\n          ArrayLiteral\n          ObjectLiteral\n          FunctionExpression\n          ClassExpression\n          GeneratorExpression\n          AsyncFunctionExpression\n          AsyncGeneratorExpression\n          RegularExpressionLiteral\n          TemplateLiteral\n      "]
+  vars [call]
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#14 HasCallInTailPosition form alg {
+  prods [p"Syntactic - Expression : AssignmentExpression[?In, ?Yield, ?Await]", p"Syntactic - Expression : Expression[?In, ?Yield, ?Await] `,` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["\n        Expression :\n          AssignmentExpression\n          Expression `,` AssignmentExpression\n      "]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |AssignmentExpression|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#15 HasCallInTailPosition form alg {
+  prods [p"Syntactic - ConditionalExpression : ShortCircuitExpression[?In, ?Yield, ?Await] `?` AssignmentExpression[+In, ?Yield, ?Await] `:` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["ConditionalExpression : ShortCircuitExpression `?` AssignmentExpression `:` AssignmentExpression"]
+  vars [call, has]
+  steps {
+    let has = sdo HasCallInTailPosition(child 0 |AssignmentExpression|; call)
+    if has is val {true} -> return true
+    return sdo HasCallInTailPosition(child 1 |AssignmentExpression|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#16 HasCallInTailPosition form alg {
+  prods [p"Syntactic - LogicalANDExpression : LogicalANDExpression[?In, ?Yield, ?Await] `&&` BitwiseORExpression[?In, ?Yield, ?Await]"]
+  keys ["LogicalANDExpression : LogicalANDExpression `&amp;&amp;` BitwiseORExpression"]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |BitwiseORExpression|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#17 HasCallInTailPosition form alg {
+  prods [p"Syntactic - LogicalORExpression : LogicalORExpression[?In, ?Yield, ?Await] `||` LogicalANDExpression[?In, ?Yield, ?Await]"]
+  keys ["LogicalORExpression : LogicalORExpression `||` LogicalANDExpression"]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |LogicalANDExpression|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#18 HasCallInTailPosition form alg {
+  prods [p"Syntactic - CoalesceExpression : CoalesceExpressionHead[?In, ?Yield, ?Await] `??` BitwiseORExpression[?In, ?Yield, ?Await]"]
+  keys ["CoalesceExpression : CoalesceExpressionHead `??` BitwiseORExpression"]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |BitwiseORExpression|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#19 HasCallInTailPosition form alg {
+  prods [p"Syntactic - CallExpression : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]", p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] Arguments[?Yield, ?Await]", p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]"]
+  keys ["\n        CallExpression :\n          CoverCallExpressionAndAsyncArrowHead\n          CallExpression Arguments\n          CallExpression TemplateLiteral\n      "]
+  vars [call]
+  steps {
+    if call_at @ph-this-nt(|CallExpression|) is val {call} -> return true
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#20 HasCallInTailPosition form alg {
+  prods [p"Syntactic - OptionalExpression : MemberExpression[?Yield, ?Await] OptionalChain[?Yield, ?Await]", p"Syntactic - OptionalExpression : CallExpression[?Yield, ?Await] OptionalChain[?Yield, ?Await]", p"Syntactic - OptionalExpression : OptionalExpression[?Yield, ?Await] OptionalChain[?Yield, ?Await]"]
+  keys ["\n        OptionalExpression :\n          MemberExpression OptionalChain\n          CallExpression OptionalChain\n          OptionalExpression OptionalChain\n      "]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |OptionalChain|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#21 HasCallInTailPosition form alg {
+  prods [p"Syntactic - OptionalChain : `?.` `[` Expression[+In, ?Yield, ?Await] `]`", p"Syntactic - OptionalChain : `?.` IdentifierName", p"Syntactic - OptionalChain : `?.` PrivateIdentifier", p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`", p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `.` IdentifierName", p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `.` PrivateIdentifier"]
+  keys ["\n        OptionalChain :\n          `?.` `[` Expression `]`\n          `?.` IdentifierName\n          `?.` PrivateIdentifier\n          OptionalChain `[` Expression `]`\n          OptionalChain `.` IdentifierName\n          OptionalChain `.` PrivateIdentifier\n      "]
+  vars [call]
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#22 HasCallInTailPosition form alg {
+  prods [p"Syntactic - OptionalChain : `?.` Arguments[?Yield, ?Await]", p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] Arguments[?Yield, ?Await]"]
+  keys ["\n        OptionalChain :\n          `?.` Arguments\n          OptionalChain Arguments\n      "]
+  vars [call]
+  steps {
+    if call_at @ph-this-nt(|OptionalChain|) is val {call} -> return true
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#23 HasCallInTailPosition form alg {
+  prods [p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]"]
+  keys ["\n        MemberExpression :\n          MemberExpression TemplateLiteral\n      "]
+  vars [call]
+  steps {
+    if call_at @ph-this-nt(|MemberExpression|) is val {call} -> return true
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#24 HasCallInTailPosition form alg {
+  prods [p"Syntactic - PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]"]
+  keys ["PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList"]
+  vars [call, expr]
+  steps {
+    let expr = $CoveredBy(|ParenthesizedExpression|, child 5 |CoverParenthesizedExpressionAndArrowParameterList|)
+    return sdo HasCallInTailPosition(expr; call)
+  }
+}
+
+sdo_row @sec-static-semantics-hascallintailposition#25 HasCallInTailPosition form alg {
+  prods [p"Syntactic - ParenthesizedExpression : `(` Expression[+In, ?Yield, ?Await] `)`"]
+  keys ["\n        ParenthesizedExpression :\n          `(` Expression `)`\n      "]
+  vars [call]
+  steps {
+    return sdo HasCallInTailPosition(child 5 |Expression|; call)
+  }
+}
+
+sdo_row @sec-static-semantics-functionbodycontainsusestrict FunctionBodyContainsUseStrict form alg {
+  prods [p"Syntactic - FunctionBody : FunctionStatementList[?Yield, ?Await]"]
+  keys ["FunctionBody : FunctionStatementList"]
+  vars []
+  steps {
+    if expr @ph-use-strict(child 6 |FunctionBody|) -> return true
+    return false
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluatefunctionbody EvaluateFunctionBody form alg {
+  prods [p"Syntactic - FunctionBody : FunctionStatementList[?Yield, ?Await]"]
+  keys ["FunctionBody : FunctionStatementList"]
+  vars [funcObj, argList]
+  steps {
+    perform ? @sec-functiondeclarationinstantiation(funcObj, argList)
+    perform ? sdo Evaluation(child 5 |FunctionStatementList|)
+    note "If the previous step resulted in a normal completion, then evaluation finished by proceeding past the end of the |FunctionStatementList|."
+    return @sec-returncompletion(undefined)
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateordinaryfunctiondeclaration InstantiateOrdinaryFunctionDeclaration form alg {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["FunctionDeclaration : `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`"]
+  vars [envRecord, privateEnv, name, sourceText, #"closure"]
+  steps {
+    let name = sdo StringValue(child 5 |BindingIdentifier|)
+    let sourceText = $SourceText(child 6 |FunctionDeclaration|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[Function.prototype]], sourceText, child 5 |FormalParameters|, child 5 |FunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    perform @sec-makeconstructor(#"closure")
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateordinaryfunctiondeclaration#1 InstantiateOrdinaryFunctionDeclaration form alg {
+  prods [p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["FunctionDeclaration : `function` `(` FormalParameters `)` `{` FunctionBody `}`"]
+  vars [envRecord, privateEnv, sourceText, #"closure"]
+  steps {
+    let sourceText = $SourceText(child 6 |FunctionDeclaration|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[Function.prototype]], sourceText, child 5 |FormalParameters|, child 5 |FunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", "default")
+    perform @sec-makeconstructor(#"closure")
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateordinaryfunctionexpression InstantiateOrdinaryFunctionExpression form alg {
+  prods [p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["FunctionExpression : `function` `(` FormalParameters `)` `{` FunctionBody `}`"]
+  vars [name, envRecord, privateEnv, sourceText, #"closure"]
+  steps {
+    if name fails $Present() -> set var name = $"the empty String"()
+    let envRecord = component [[LexicalEnvironment]] of $Running()
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |FunctionExpression|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[Function.prototype]], sourceText, child 5 |FormalParameters|, child 5 |FunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    perform @sec-makeconstructor(#"closure")
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateordinaryfunctionexpression#1 InstantiateOrdinaryFunctionExpression form alg {
+  prods [p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["FunctionExpression : `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`"]
+  vars [name, outerEnv, funcEnv, privateEnv, sourceText, #"closure"]
+  steps {
+    assert name fails $Present()
+    set var name = sdo StringValue(child 5 |BindingIdentifier|)
+    let outerEnv = $Component($Running(), [[LexicalEnvironment]])
+    let funcEnv = @sec-newdeclarativeenvironment(outerEnv)
+    perform ! funcEnv.CreateImmutableBinding(name, false)
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |FunctionExpression|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[Function.prototype]], sourceText, child 5 |FormalParameters|, child 5 |FunctionBody|, ~non-lexical-this~, funcEnv, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    perform @sec-makeconstructor(#"closure")
+    perform ! funcEnv.InitializeBinding(name, #"closure")
+    return #"closure"
+  }
+}
+
+sdo_row @sec-function-definitions-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["FunctionDeclaration : `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`"]
+  vars [#"steps", result]
+  steps {
+    let #"steps" = $EvaluationStepsOf(this_node)
+    if #"steps" is not val {~empty~} {
+      let result = #"steps"()
+      if result is ty {#"abrupt completion"} -> return result
+    }
+    return ~empty~
+  }
+}
+
+sdo_row @sec-function-definitions-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["FunctionDeclaration : `function` `(` FormalParameters `)` `{` FunctionBody `}`"]
+  vars []
+  steps {
+    return ~empty~
+  }
+}
+
+sdo_row @sec-function-definitions-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        FunctionExpression : `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n      "]
+  vars []
+  steps {
+    return sdo InstantiateOrdinaryFunctionExpression(child 6 |FunctionExpression|)
+  }
+}
+
+sdo_row @sec-function-definitions-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic 0 FunctionStatementList : StatementList[?Yield, ?Await, +Return]?"]
+  keys ["FunctionStatementList : [empty]"]
+  vars []
+  steps {
+    return undefined
+  }
+}
+
+sdo_row @sec-function-definitions-runtime-semantics-evaluation#4 Evaluation form alg {
+  prods [p"Syntactic 1 FunctionStatementList : StatementList[?Yield, ?Await, +Return]?"]
+  keys ["FunctionStatementList : StatementList"]
+  vars [result, env]
+  steps {
+    let result = @sec-completion-ao(sdo Evaluation(child 5 |StatementList|))
+    let env = $Component($Running(), [[LexicalEnvironment]])
+    assert env is ty {#"Declarative Environment Record"}
+    return ? @sec-disposeresources(env[[DisposableResourceStack]], result)
+  }
+}
+
+sdo_row @sec-static-semantics-concisebodycontainsusestrict ConciseBodyContainsUseStrict form alg {
+  prods [p"Syntactic - ConciseBody : [lookahead != `{`] ExpressionBody[?In, ~Await]"]
+  keys ["ConciseBody : ExpressionBody"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-concisebodycontainsusestrict#1 ConciseBodyContainsUseStrict form alg {
+  prods [p"Syntactic - ConciseBody : `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["ConciseBody : `{` FunctionBody `}`"]
+  vars []
+  steps {
+    return sdo FunctionBodyContainsUseStrict(child 5 |FunctionBody|)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluateconcisebody EvaluateConciseBody form alg {
+  prods [p"Syntactic - ConciseBody : [lookahead != `{`] ExpressionBody[?In, ~Await]"]
+  keys ["ConciseBody : ExpressionBody"]
+  vars [funcObj, argList]
+  steps {
+    perform ? @sec-functiondeclarationinstantiation(funcObj, argList)
+    return ? sdo Evaluation(child 5 |ExpressionBody|)
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiatearrowfunctionexpression InstantiateArrowFunctionExpression form alg {
+  prods [p"Syntactic - ArrowFunction : ArrowParameters[?Yield, ?Await] [no LineTerminator here] `=>` ConciseBody[?In]"]
+  keys ["ArrowFunction : ArrowParameters `=>` ConciseBody"]
+  vars [name, envRecord, privateEnv, sourceText, #"closure"]
+  steps {
+    if name fails $Present() -> set var name = $"the empty String"()
+    let envRecord = component [[LexicalEnvironment]] of $Running()
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |ArrowFunction|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[Function.prototype]], sourceText, child 5 |ArrowParameters|, child 5 |ConciseBody|, ~lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    return #"closure"
+  }
+}
+
+sdo_row @sec-arrow-function-definitions-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ArrowFunction : ArrowParameters[?Yield, ?Await] [no LineTerminator here] `=>` ConciseBody[?In]"]
+  keys ["ArrowFunction : ArrowParameters `=>` ConciseBody"]
+  vars []
+  steps {
+    return sdo InstantiateArrowFunctionExpression(child 6 |ArrowFunction|)
+  }
+}
+
+sdo_row @sec-arrow-function-definitions-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - ExpressionBody : AssignmentExpression[?In, ~Yield, ?Await]"]
+  keys ["ExpressionBody : AssignmentExpression"]
+  vars [exprRef, exprValue]
+  steps {
+    let exprRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let exprValue = ? @sec-getvalue(exprRef)
+    return @sec-returncompletion(exprValue)
+  }
+}
+
+sdo_row @sec-static-semantics-hasdirectsuper HasDirectSuper form alg {
+  prods [p"Syntactic - MethodDefinition : ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : ClassElementName `(` UniqueFormalParameters `)` `{` FunctionBody `}`"]
+  vars []
+  steps {
+    if @ph-contains(child 5 |UniqueFormalParameters|, |SuperCall|) is val {true} -> return true
+    return @ph-contains(child 5 |FunctionBody|, |SuperCall|)
+  }
+}
+
+sdo_row @sec-static-semantics-hasdirectsuper#1 HasDirectSuper form alg {
+  prods [p"Syntactic - MethodDefinition : `get` ClassElementName[?Yield, ?Await] `(` `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : `get` ClassElementName `(` `)` `{` FunctionBody `}`"]
+  vars []
+  steps {
+    return @ph-contains(child 5 |FunctionBody|, |SuperCall|)
+  }
+}
+
+sdo_row @sec-static-semantics-hasdirectsuper#2 HasDirectSuper form alg {
+  prods [p"Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : `set` ClassElementName `(` PropertySetParameterList `)` `{` FunctionBody `}`"]
+  vars []
+  steps {
+    if @ph-contains(child 5 |PropertySetParameterList|, |SuperCall|) is val {true} -> return true
+    return @ph-contains(child 5 |FunctionBody|, |SuperCall|)
+  }
+}
+
+sdo_row @sec-static-semantics-hasdirectsuper#3 HasDirectSuper form alg {
+  prods [p"Syntactic - GeneratorMethod : `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorMethod : `*` ClassElementName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`"]
+  vars []
+  steps {
+    if @ph-contains(child 5 |UniqueFormalParameters|, |SuperCall|) is val {true} -> return true
+    return @ph-contains(child 5 |GeneratorBody|, |SuperCall|)
+  }
+}
+
+sdo_row @sec-static-semantics-hasdirectsuper#4 HasDirectSuper form alg {
+  prods [p"Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["AsyncGeneratorMethod : `async` `*` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`"]
+  vars []
+  steps {
+    if @ph-contains(child 5 |UniqueFormalParameters|, |SuperCall|) is val {true} -> return true
+    return @ph-contains(child 5 |AsyncGeneratorBody|, |SuperCall|)
+  }
+}
+
+sdo_row @sec-static-semantics-hasdirectsuper#5 HasDirectSuper form alg {
+  prods [p"Syntactic - AsyncMethod : `async` [no LineTerminator here] ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncMethod : `async` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  steps {
+    if @ph-contains(child 5 |UniqueFormalParameters|, |SuperCall|) is val {true} -> return true
+    return @ph-contains(child 5 |AsyncFunctionBody|, |SuperCall|)
+  }
+}
+
+sdo_row @sec-static-semantics-specialmethod SpecialMethod form alg {
+  prods [p"Syntactic - MethodDefinition : ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : ClassElementName `(` UniqueFormalParameters `)` `{` FunctionBody `}`"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-specialmethod#1 SpecialMethod form alg {
+  prods [p"Syntactic - MethodDefinition : GeneratorMethod[?Yield, ?Await]", p"Syntactic - MethodDefinition : AsyncMethod[?Yield, ?Await]", p"Syntactic - MethodDefinition : AsyncGeneratorMethod[?Yield, ?Await]", p"Syntactic - MethodDefinition : `get` ClassElementName[?Yield, ?Await] `(` `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["\n        MethodDefinition :\n          GeneratorMethod\n          AsyncMethod\n          AsyncGeneratorMethod\n          `get` ClassElementName `(` `)` `{` FunctionBody `}`\n          `set` ClassElementName `(` PropertySetParameterList `)` `{` FunctionBody `}`\n      "]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-runtime-semantics-definemethod DefineMethod form alg {
+  prods [p"Syntactic - MethodDefinition : ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : ClassElementName `(` UniqueFormalParameters `)` `{` FunctionBody `}`"]
+  vars [#"obj", proto, propertyKey, envRecord, privateEnv, sourceText, #"closure"]
+  steps {
+    let propertyKey = ? sdo Evaluation(child 5 |ClassElementName|)
+    let envRecord = $Component($Running(), [[LexicalEnvironment]])
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    if proto fails $Present() -> set var proto = intrinsic [[Function.prototype]]
+    let sourceText = $SourceText(child 6 |MethodDefinition|)
+    let #"closure" = @sec-ordinaryfunctioncreate(proto, sourceText, child 5 |UniqueFormalParameters|, child 5 |FunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-makemethod(#"closure", #"obj")
+    return record Record { [[Key]]: propertyKey, [[Closure]]: #"closure" }
+  }
+}
+
+sdo_row @sec-runtime-semantics-methoddefinitionevaluation MethodDefinitionEvaluation form alg {
+  prods [p"Syntactic - MethodDefinition : ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : ClassElementName `(` UniqueFormalParameters `)` `{` FunctionBody `}`"]
+  vars [#"obj", enumerable, methodDef]
+  steps {
+    let methodDef = ? sdo DefineMethod(child 6 |MethodDefinition|; #"obj")
+    perform @sec-setfunctionname(methodDef[[Closure]], methodDef[[Key]])
+    return ? @sec-definemethodproperty(#"obj", methodDef[[Key]], methodDef[[Closure]], enumerable)
+  }
+}
+
+sdo_row @sec-runtime-semantics-methoddefinitionevaluation#1 MethodDefinitionEvaluation form alg {
+  prods [p"Syntactic - MethodDefinition : `get` ClassElementName[?Yield, ?Await] `(` `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : `get` ClassElementName `(` `)` `{` FunctionBody `}`"]
+  vars [#"obj", enumerable, propertyKey, envRecord, privateEnv, sourceText, formalParamList, #"closure", propertyDesc]
+  steps {
+    let propertyKey = ? sdo Evaluation(child 5 |ClassElementName|)
+    let envRecord = $Component($Running(), [[LexicalEnvironment]])
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |MethodDefinition|)
+    let formalParamList = $ParseGoal([], |FormalParameters|, false, false, false)
+    assert expr $InstanceOf(formalParamList, prods [p"Syntactic - FormalParameters : [empty]"])
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[Function.prototype]], sourceText, formalParamList, child 5 |FunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-makemethod(#"closure", #"obj")
+    perform @sec-setfunctionname(#"closure", propertyKey, "get")
+    if propertyKey is ty {#"Private Name"} {
+      return record PrivateElement { [[Key]]: propertyKey, [[Kind]]: ~accessor~, [[Getter]]: #"closure", [[Setter]]: undefined }
+    }
+    let propertyDesc = record PropertyDescriptor { [[Getter]]: #"closure", [[Enumerable]]: enumerable, [[Configurable]]: true }
+    perform ? @sec-definepropertyorthrow(#"obj", propertyKey, propertyDesc)
+    return ~empty~
+  }
+}
+
+sdo_row @sec-runtime-semantics-methoddefinitionevaluation#2 MethodDefinitionEvaluation form alg {
+  prods [p"Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`"]
+  keys ["MethodDefinition : `set` ClassElementName `(` PropertySetParameterList `)` `{` FunctionBody `}`"]
+  vars [#"obj", enumerable, propertyKey, envRecord, privateEnv, sourceText, #"closure", propertyDesc]
+  steps {
+    let propertyKey = ? sdo Evaluation(child 5 |ClassElementName|)
+    let envRecord = $Component($Running(), [[LexicalEnvironment]])
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |MethodDefinition|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[Function.prototype]], sourceText, child 5 |PropertySetParameterList|, child 5 |FunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-makemethod(#"closure", #"obj")
+    perform @sec-setfunctionname(#"closure", propertyKey, "set")
+    if propertyKey is ty {#"Private Name"} {
+      return record PrivateElement { [[Key]]: propertyKey, [[Kind]]: ~accessor~, [[Getter]]: undefined, [[Setter]]: #"closure" }
+    }
+    let propertyDesc = record PropertyDescriptor { [[Setter]]: #"closure", [[Enumerable]]: enumerable, [[Configurable]]: true }
+    perform ? @sec-definepropertyorthrow(#"obj", propertyKey, propertyDesc)
+    return ~empty~
+  }
+}
+
+sdo_row @sec-runtime-semantics-methoddefinitionevaluation#3 MethodDefinitionEvaluation form alg {
+  prods [p"Syntactic - GeneratorMethod : `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorMethod : `*` ClassElementName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`"]
+  vars [#"obj", enumerable, propertyKey, envRecord, privateEnv, sourceText, #"closure", proto]
+  steps {
+    let propertyKey = ? sdo Evaluation(child 5 |ClassElementName|)
+    let envRecord = $Component($Running(), [[LexicalEnvironment]])
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |GeneratorMethod|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[GeneratorFunction.prototype]], sourceText, child 5 |UniqueFormalParameters|, child 5 |GeneratorBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-makemethod(#"closure", #"obj")
+    perform @sec-setfunctionname(#"closure", propertyKey)
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[GeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    return ? @sec-definemethodproperty(#"obj", propertyKey, #"closure", enumerable)
+  }
+}
+
+sdo_row @sec-runtime-semantics-methoddefinitionevaluation#4 MethodDefinitionEvaluation form alg {
+  prods [p"Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorMethod : `async` `*` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars [#"obj", enumerable, propertyKey, envRecord, privateEnv, sourceText, #"closure", proto]
+  steps {
+    let propertyKey = ? sdo Evaluation(child 5 |ClassElementName|)
+    let envRecord = $Component($Running(), [[LexicalEnvironment]])
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |AsyncGeneratorMethod|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncGeneratorFunction.prototype]], sourceText, child 5 |UniqueFormalParameters|, child 5 |AsyncGeneratorBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-makemethod(#"closure", #"obj")
+    perform @sec-setfunctionname(#"closure", propertyKey)
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[AsyncGeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    return ? @sec-definemethodproperty(#"obj", propertyKey, #"closure", enumerable)
+  }
+}
+
+sdo_row @sec-runtime-semantics-methoddefinitionevaluation#5 MethodDefinitionEvaluation form alg {
+  prods [p"Syntactic - AsyncMethod : `async` [no LineTerminator here] ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncMethod : `async` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars [#"obj", enumerable, propertyKey, envRecord, privateEnv, sourceText, #"closure"]
+  steps {
+    let propertyKey = ? sdo Evaluation(child 5 |ClassElementName|)
+    let envRecord = component [[LexicalEnvironment]] of $Running()
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |AsyncMethod|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncFunction.prototype]], sourceText, child 5 |UniqueFormalParameters|, child 5 |AsyncFunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-makemethod(#"closure", #"obj")
+    perform @sec-setfunctionname(#"closure", propertyKey)
+    return ? @sec-definemethodproperty(#"obj", propertyKey, #"closure", enumerable)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluategeneratorbody EvaluateGeneratorBody form alg {
+  prods [p"Syntactic - GeneratorBody : FunctionBody[+Yield, ~Await]"]
+  keys ["GeneratorBody : FunctionBody"]
+  vars [funcObj, argList, gen]
+  steps {
+    perform ? @sec-functiondeclarationinstantiation(funcObj, argList)
+    let gen = ? @sec-ordinarycreatefromconstructor(funcObj, "%GeneratorPrototype%", [[[GeneratorState]], [[GeneratorContext]], [[GeneratorBrand]]])
+    set field gen[[GeneratorBrand]] = ~empty~
+    set field gen[[GeneratorState]] = ~suspended-start~
+    perform @sec-generatorstart(gen, child 5 |FunctionBody|)
+    return @sec-returncompletion(gen)
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiategeneratordeclaration InstantiateGeneratorDeclaration form alg {
+  prods [p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorDeclaration : `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`"]
+  vars [envRecord, privateEnv, name, sourceText, #"closure", proto]
+  steps {
+    let name = sdo StringValue(child 5 |BindingIdentifier|)
+    let sourceText = $SourceText(child 6 |GeneratorDeclaration|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[GeneratorFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |GeneratorBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[GeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiategeneratordeclaration#1 InstantiateGeneratorDeclaration form alg {
+  prods [p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorDeclaration : `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`"]
+  vars [envRecord, privateEnv, sourceText, #"closure", proto]
+  steps {
+    let sourceText = $SourceText(child 6 |GeneratorDeclaration|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[GeneratorFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |GeneratorBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", "default")
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[GeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiategeneratorfunctionexpression InstantiateGeneratorFunctionExpression form alg {
+  prods [p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorExpression : `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`"]
+  vars [name, envRecord, privateEnv, sourceText, #"closure", proto]
+  steps {
+    if name fails $Present() -> set var name = $"the empty String"()
+    let envRecord = component [[LexicalEnvironment]] of $Running()
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |GeneratorExpression|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[GeneratorFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |GeneratorBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[GeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiategeneratorfunctionexpression#1 InstantiateGeneratorFunctionExpression form alg {
+  prods [p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["GeneratorExpression : `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`"]
+  vars [name, outerEnv, funcEnv, privateEnv, sourceText, #"closure", proto]
+  steps {
+    assert name fails $Present()
+    set var name = sdo StringValue(child 5 |BindingIdentifier|)
+    let outerEnv = $Component($Running(), [[LexicalEnvironment]])
+    let funcEnv = @sec-newdeclarativeenvironment(outerEnv)
+    perform ! funcEnv.CreateImmutableBinding(name, false)
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |GeneratorExpression|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[GeneratorFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |GeneratorBody|, ~non-lexical-this~, funcEnv, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[GeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    perform ! funcEnv.InitializeBinding(name, #"closure")
+    return #"closure"
+  }
+}
+
+sdo_row @sec-generator-function-definitions-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`"]
+  keys ["\n        GeneratorExpression : `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n      "]
+  vars []
+  steps {
+    return sdo InstantiateGeneratorFunctionExpression(child 6 |GeneratorExpression|)
+  }
+}
+
+sdo_row @sec-generator-function-definitions-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - YieldExpression : `yield`"]
+  keys ["YieldExpression : `yield`"]
+  vars []
+  steps {
+    return ? @sec-yield(undefined)
+  }
+}
+
+sdo_row @sec-generator-function-definitions-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - YieldExpression : `yield` [no LineTerminator here] AssignmentExpression[?In, +Yield, ?Await]"]
+  keys ["YieldExpression : `yield` AssignmentExpression"]
+  vars [exprRef, value]
+  steps {
+    let exprRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let value = ? @sec-getvalue(exprRef)
+    return ? @sec-yield(value)
+  }
+}
+
+sdo_row @sec-generator-function-definitions-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic - YieldExpression : `yield` [no LineTerminator here] `*` AssignmentExpression[?In, +Yield, ?Await]"]
+  keys ["YieldExpression : `yield` `*` AssignmentExpression"]
+  vars [genKind, exprRef, value, iteratorRecord, iterator, received, innerResult, done, #"throw", closeCompletion, #"return", receivedValue, innerReturnResult, returnedValue]
+  steps {
+    let genKind = @sec-getgeneratorkind()
+    assert genKind is val {~sync~; ~async~}
+    let exprRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let value = ? @sec-getvalue(exprRef)
+    let iteratorRecord = ? @sec-getiterator(value, genKind)
+    let iterator = iteratorRecord[[Iterator]]
+    let received = @sec-normalcompletion(undefined)
+    repeat {
+      if received is ty {#"normal completion"} {
+        let innerResult = ? @sec-call(iteratorRecord[[NextMethod]], iteratorRecord[[Iterator]], [received[[Value]]])
+        if genKind is val {~async~} -> set var innerResult = ? @await(innerResult)
+        if innerResult is not ty {Object} -> throw @ph-new-error([[TypeError]])
+        let done = ? @sec-iteratorcomplete(innerResult)
+        if done is val {true} {
+          return ? @sec-iteratorvalue(innerResult)
+        }
+        if genKind is val {~async~} -> set var received = @sec-completion-ao(@sec-asyncgeneratoryield(? @sec-iteratorvalue(innerResult)))
+        else -> set var received = @sec-completion-ao(@sec-generatoryield(innerResult))
+      }
+      else_if received is ty {#"throw completion"} {
+        let #"throw" = ? @sec-getmethod(iterator, "throw")
+        if #"throw" is not val {undefined} {
+          let innerResult = ? @sec-call(#"throw", iterator, [received[[Value]]])
+          if genKind is val {~async~} -> set var innerResult = ? @await(innerResult)
+          note "Exceptions from the inner iterator `throw` method are propagated. Normal completions from an inner `throw` method are processed similarly to an inner `next`."
+          if innerResult is not ty {Object} -> throw @ph-new-error([[TypeError]])
+          let done = ? @sec-iteratorcomplete(innerResult)
+          if done is val {true} {
+            return ? @sec-iteratorvalue(innerResult)
+          }
+          if genKind is val {~async~} -> set var received = @sec-completion-ao(@sec-asyncgeneratoryield(? @sec-iteratorvalue(innerResult)))
+          else -> set var received = @sec-completion-ao(@sec-generatoryield(innerResult))
+        }
+        else {
+          note "If _iterator_ does not have a `throw` method, this throw is going to terminate the `yield*` loop. But first we need to give _iterator_ a chance to clean up."
+          let closeCompletion = @sec-normalcompletion(~empty~)
+          if genKind is val {~async~} -> perform ? @sec-asynciteratorclose(iteratorRecord, closeCompletion)
+          else -> perform ? @sec-iteratorclose(iteratorRecord, closeCompletion)
+          note "The next step throws a *TypeError* to indicate that there was a `yield*` protocol violation: _iterator_ does not have a `throw` method."
+          throw @ph-new-error([[TypeError]])
+        }
+      }
+      else {
+        assert received is ty {#"return completion"}
+        let #"return" = ? @sec-getmethod(iterator, "return")
+        if #"return" is val {undefined} {
+          let receivedValue = received[[Value]]
+          if genKind is val {~async~} {
+            set var receivedValue = ? @await(receivedValue)
+          }
+          return @sec-returncompletion(receivedValue)
+        }
+        let innerReturnResult = ? @sec-call(#"return", iterator, [received[[Value]]])
+        if genKind is val {~async~} -> set var innerReturnResult = ? @await(innerReturnResult)
+        if innerReturnResult is not ty {Object} -> throw @ph-new-error([[TypeError]])
+        let done = ? @sec-iteratorcomplete(innerReturnResult)
+        if done is val {true} {
+          let returnedValue = ? @sec-iteratorvalue(innerReturnResult)
+          return @sec-returncompletion(returnedValue)
+        }
+        if genKind is val {~async~} -> set var received = @sec-completion-ao(@sec-asyncgeneratoryield(? @sec-iteratorvalue(innerReturnResult)))
+        else -> set var received = @sec-completion-ao(@sec-generatoryield(innerReturnResult))
+      }
+    }
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluateasyncgeneratorbody EvaluateAsyncGeneratorBody form alg {
+  prods [p"Syntactic - AsyncGeneratorBody : FunctionBody[+Yield, +Await]"]
+  keys ["\n        AsyncGeneratorBody : FunctionBody\n      "]
+  vars [funcObj, argList, gen]
+  steps {
+    perform ? @sec-functiondeclarationinstantiation(funcObj, argList)
+    let gen = ? @sec-ordinarycreatefromconstructor(funcObj, "%AsyncGeneratorPrototype%", [[[AsyncGeneratorState]], [[AsyncGeneratorContext]], [[AsyncGeneratorQueue]], [[GeneratorBrand]]])
+    set field gen[[GeneratorBrand]] = ~empty~
+    set field gen[[AsyncGeneratorState]] = ~suspended-start~
+    perform @sec-asyncgeneratorstart(gen, child 5 |FunctionBody|)
+    return @sec-returncompletion(gen)
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncgeneratordeclaration InstantiateAsyncGeneratorDeclaration form alg {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration : `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars [envRecord, privateEnv, name, sourceText, #"closure", proto]
+  steps {
+    let name = sdo StringValue(child 5 |BindingIdentifier|)
+    let sourceText = $SourceText(child 6 |AsyncGeneratorDeclaration|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncGeneratorFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |AsyncGeneratorBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[AsyncGeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncgeneratordeclaration#1 InstantiateAsyncGeneratorDeclaration form alg {
+  prods [p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorDeclaration : `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars [envRecord, privateEnv, sourceText, #"closure", proto]
+  steps {
+    let sourceText = $SourceText(child 6 |AsyncGeneratorDeclaration|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncGeneratorFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |AsyncGeneratorBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", "default")
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[AsyncGeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncgeneratorfunctionexpression InstantiateAsyncGeneratorFunctionExpression form alg {
+  prods [p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorExpression : `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars [name, envRecord, privateEnv, sourceText, #"closure", proto]
+  steps {
+    if name fails $Present() -> set var name = $"the empty String"()
+    let envRecord = component [[LexicalEnvironment]] of $Running()
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |AsyncGeneratorExpression|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncGeneratorFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |AsyncGeneratorBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[AsyncGeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncgeneratorfunctionexpression#1 InstantiateAsyncGeneratorFunctionExpression form alg {
+  prods [p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorExpression : `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars [name, outerEnv, funcEnv, privateEnv, sourceText, #"closure", proto]
+  steps {
+    assert name fails $Present()
+    set var name = sdo StringValue(child 5 |BindingIdentifier|)
+    let outerEnv = $Component($Running(), [[LexicalEnvironment]])
+    let funcEnv = @sec-newdeclarativeenvironment(outerEnv)
+    perform ! funcEnv.CreateImmutableBinding(name, false)
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |AsyncGeneratorExpression|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncGeneratorFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |AsyncGeneratorBody|, ~non-lexical-this~, funcEnv, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    let proto = @sec-ordinaryobjectcreate(intrinsic [[AsyncGeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(#"closure", "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+    perform ! funcEnv.InitializeBinding(name, #"closure")
+    return #"closure"
+  }
+}
+
+sdo_row @sec-asyncgenerator-definitions-evaluation Evaluation form alg {
+  prods [p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        AsyncGeneratorExpression : `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  steps {
+    return sdo InstantiateAsyncGeneratorFunctionExpression(child 6 |AsyncGeneratorExpression|)
+  }
+}
+
+sdo_row @sec-static-semantics-classelementkind ClassElementKind form alg {
+  prods [p"Syntactic - ClassElement : MethodDefinition[?Yield, ?Await]"]
+  keys ["ClassElement : MethodDefinition"]
+  vars []
+  steps {
+    if sdo PropName(child 5 |MethodDefinition|) is val {"constructor"} -> return ~constructor-method~
+    return ~non-constructor-method~
+  }
+}
+
+sdo_row @sec-static-semantics-classelementkind#1 ClassElementKind form alg {
+  prods [p"Syntactic - ClassElement : `static` MethodDefinition[?Yield, ?Await]", p"Syntactic - ClassElement : FieldDefinition[?Yield, ?Await] `;`", p"Syntactic - ClassElement : `static` FieldDefinition[?Yield, ?Await] `;`"]
+  keys ["\n        ClassElement :\n          `static` MethodDefinition\n          FieldDefinition `;`\n          `static` FieldDefinition `;`\n      "]
+  vars []
+  steps {
+    return ~non-constructor-method~
+  }
+}
+
+sdo_row @sec-static-semantics-classelementkind#2 ClassElementKind form alg {
+  prods [p"Syntactic - ClassElement : ClassStaticBlock"]
+  keys ["ClassElement : ClassStaticBlock"]
+  vars []
+  steps {
+    return ~non-constructor-method~
+  }
+}
+
+sdo_row @sec-static-semantics-classelementkind#3 ClassElementKind form alg {
+  prods [p"Syntactic - ClassElement : `;`"]
+  keys ["ClassElement : `;`"]
+  vars []
+  steps {
+    return ~empty~
+  }
+}
+
+sdo_row @sec-static-semantics-constructormethod ConstructorMethod form alg {
+  prods [p"Syntactic - ClassElementList : ClassElement[?Yield, ?Await]"]
+  keys ["ClassElementList : ClassElement"]
+  vars []
+  steps {
+    if sdo ClassElementKind(child 5 |ClassElement|) is val {~constructor-method~} -> return child 5 |ClassElement|
+    return ~empty~
+  }
+}
+
+sdo_row @sec-static-semantics-constructormethod#1 ConstructorMethod form alg {
+  prods [p"Syntactic - ClassElementList : ClassElementList[?Yield, ?Await] ClassElement[?Yield, ?Await]"]
+  keys ["ClassElementList : ClassElementList ClassElement"]
+  vars [head]
+  steps {
+    let head = sdo ConstructorMethod(child 5 |ClassElementList|)
+    if head is not val {~empty~} -> return head
+    if sdo ClassElementKind(child 5 |ClassElement|) is val {~constructor-method~} -> return child 5 |ClassElement|
+    return ~empty~
+  }
+}
+
+sdo_row @sec-static-semantics-isstatic IsStatic form alg {
+  prods [p"Syntactic - ClassElement : MethodDefinition[?Yield, ?Await]"]
+  keys ["ClassElement : MethodDefinition"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-isstatic#1 IsStatic form alg {
+  prods [p"Syntactic - ClassElement : `static` MethodDefinition[?Yield, ?Await]"]
+  keys ["ClassElement : `static` MethodDefinition"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-isstatic#2 IsStatic form alg {
+  prods [p"Syntactic - ClassElement : FieldDefinition[?Yield, ?Await] `;`"]
+  keys ["ClassElement : FieldDefinition `;`"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-isstatic#3 IsStatic form alg {
+  prods [p"Syntactic - ClassElement : `static` FieldDefinition[?Yield, ?Await] `;`"]
+  keys ["ClassElement : `static` FieldDefinition `;`"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-isstatic#4 IsStatic form alg {
+  prods [p"Syntactic - ClassElement : ClassStaticBlock"]
+  keys ["ClassElement : ClassStaticBlock"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-isstatic#5 IsStatic form alg {
+  prods [p"Syntactic - ClassElement : `;`"]
+  keys ["ClassElement : `;`"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-nonconstructorelements NonConstructorElements form alg {
+  prods [p"Syntactic - ClassElementList : ClassElement[?Yield, ?Await]"]
+  keys ["ClassElementList : ClassElement"]
+  vars []
+  steps {
+    if sdo ClassElementKind(child 5 |ClassElement|) is val {~non-constructor-method~} {
+      return [child 5 |ClassElement|]
+    }
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-nonconstructorelements#1 NonConstructorElements form alg {
+  prods [p"Syntactic - ClassElementList : ClassElementList[?Yield, ?Await] ClassElement[?Yield, ?Await]"]
+  keys ["ClassElementList : ClassElementList ClassElement"]
+  vars [#"list"]
+  steps {
+    let #"list" = sdo NonConstructorElements(child 5 |ClassElementList|)
+    if sdo ClassElementKind(child 5 |ClassElement|) is val {~non-constructor-method~} {
+      perform $Append(child 5 |ClassElement|, ?#"list")
+    }
+    return #"list"
+  }
+}
+
+sdo_row @sec-static-semantics-prototypepropertynamelist PrototypePropertyNameList form alg {
+  prods [p"Syntactic - ClassElementList : ClassElement[?Yield, ?Await]"]
+  keys ["ClassElementList : ClassElement"]
+  vars [propertyName]
+  steps {
+    let propertyName = sdo PropName(child 5 |ClassElement|)
+    if propertyName is val {~empty~} -> return $ListNew()
+    if sdo IsStatic(child 5 |ClassElement|) is val {true} -> return $ListNew()
+    return [propertyName]
+  }
+}
+
+sdo_row @sec-static-semantics-prototypepropertynamelist#1 PrototypePropertyNameList form alg {
+  prods [p"Syntactic - ClassElementList : ClassElementList[?Yield, ?Await] ClassElement[?Yield, ?Await]"]
+  keys ["ClassElementList : ClassElementList ClassElement"]
+  vars [#"list", propertyName]
+  steps {
+    let #"list" = sdo PrototypePropertyNameList(child 5 |ClassElementList|)
+    let propertyName = sdo PropName(child 5 |ClassElement|)
+    if propertyName is val {~empty~} -> return #"list"
+    if sdo IsStatic(child 5 |ClassElement|) is val {true} -> return #"list"
+    return $ListConcat([#"list", [propertyName]])
+  }
+}
+
+sdo_row @sec-static-semantics-allprivateidentifiersvalid#1 AllPrivateIdentifiersValid form alg {
+  prods [p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` PrivateIdentifier"]
+  keys ["MemberExpression : MemberExpression `.` PrivateIdentifier"]
+  vars [names]
+  steps {
+    if names sat $Contains(sdo StringValue(child 5 |PrivateIdentifier|)) {
+      return sdo AllPrivateIdentifiersValid(child 5 |MemberExpression|; names)
+    }
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-allprivateidentifiersvalid#2 AllPrivateIdentifiersValid form alg {
+  prods [p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] `.` PrivateIdentifier"]
+  keys ["CallExpression : CallExpression `.` PrivateIdentifier"]
+  vars [names]
+  steps {
+    if names sat $Contains(sdo StringValue(child 5 |PrivateIdentifier|)) {
+      return sdo AllPrivateIdentifiersValid(child 5 |CallExpression|; names)
+    }
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-allprivateidentifiersvalid#3 AllPrivateIdentifiersValid form alg {
+  prods [p"Syntactic - OptionalChain : `?.` PrivateIdentifier"]
+  keys ["OptionalChain : `?.` PrivateIdentifier"]
+  vars [names]
+  steps {
+    if names sat $Contains(sdo StringValue(child 5 |PrivateIdentifier|)) -> return true
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-allprivateidentifiersvalid#4 AllPrivateIdentifiersValid form alg {
+  prods [p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `.` PrivateIdentifier"]
+  keys ["OptionalChain : OptionalChain `.` PrivateIdentifier"]
+  vars [names]
+  steps {
+    if names sat $Contains(sdo StringValue(child 5 |PrivateIdentifier|)) {
+      return sdo AllPrivateIdentifiersValid(child 5 |OptionalChain|; names)
+    }
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-allprivateidentifiersvalid#5 AllPrivateIdentifiersValid form alg {
+  prods [p"Syntactic - ClassBody : ClassElementList[?Yield, ?Await]"]
+  keys ["ClassBody : ClassElementList"]
+  vars [names, newNames]
+  steps {
+    let newNames = $ListConcat([names, sdo PrivateBoundIdentifiers(child 6 |ClassBody|)])
+    return sdo AllPrivateIdentifiersValid(child 5 |ClassElementList|; newNames)
+  }
+}
+
+sdo_row @sec-static-semantics-allprivateidentifiersvalid#6 AllPrivateIdentifiersValid form alg {
+  prods [p"Syntactic - RelationalExpression : [+In] PrivateIdentifier `in` ShiftExpression[?Yield, ?Await]"]
+  keys ["RelationalExpression : PrivateIdentifier `in` ShiftExpression"]
+  vars [names]
+  steps {
+    if names sat $Contains(sdo StringValue(child 5 |PrivateIdentifier|)) {
+      return sdo AllPrivateIdentifiersValid(child 5 |ShiftExpression|; names)
+    }
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-privateboundidentifiers PrivateBoundIdentifiers form alg {
+  prods [p"Syntactic 0 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["\n        FieldDefinition : ClassElementName Initializer?\n      "]
+  vars []
+  steps {
+    return sdo PrivateBoundIdentifiers(child 5 |ClassElementName|)
+  }
+}
+
+sdo_row @sec-static-semantics-privateboundidentifiers#1 PrivateBoundIdentifiers form alg {
+  prods [p"Syntactic - ClassElementName : PrivateIdentifier"]
+  keys ["\n        ClassElementName : PrivateIdentifier\n      "]
+  vars []
+  steps {
+    return $ListOf1(sdo StringValue(child 5 |PrivateIdentifier|))
+  }
+}
+
+sdo_row @sec-static-semantics-privateboundidentifiers#2 PrivateBoundIdentifiers form alg {
+  prods [p"Syntactic - ClassElementName : PropertyName[?Yield, ?Await]", p"Syntactic - ClassElement : ClassStaticBlock", p"Syntactic - ClassElement : `;`"]
+  keys ["\n        ClassElementName :\n          PropertyName\n\n        ClassElement :\n          ClassStaticBlock\n          `;`\n      "]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-privateboundidentifiers#3 PrivateBoundIdentifiers form alg {
+  prods [p"Syntactic - ClassElementList : ClassElementList[?Yield, ?Await] ClassElement[?Yield, ?Await]"]
+  keys ["\n        ClassElementList : ClassElementList ClassElement\n      "]
+  vars [names1, names2]
+  steps {
+    let names1 = sdo PrivateBoundIdentifiers(child 5 |ClassElementList|)
+    let names2 = sdo PrivateBoundIdentifiers(child 5 |ClassElement|)
+    return $ListConcat([names1, names2])
+  }
+}
+
+sdo_row @sec-static-semantics-privateboundidentifiers#4 PrivateBoundIdentifiers form alg {
+  prods [p"Syntactic - MethodDefinition : ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - MethodDefinition : `get` ClassElementName[?Yield, ?Await] `(` `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - GeneratorMethod : `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - AsyncMethod : `async` [no LineTerminator here] ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`"]
+  keys ["\n        MethodDefinition :\n          ClassElementName `(` UniqueFormalParameters `)` `{` FunctionBody `}`\n          `get` ClassElementName `(` `)` `{` FunctionBody `}`\n          `set` ClassElementName `(` PropertySetParameterList `)` `{` FunctionBody `}`\n\n        GeneratorMethod :\n          `*` ClassElementName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`\n\n        AsyncMethod :\n          `async` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncGeneratorMethod :\n          `async` `*` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`\n      "]
+  vars []
+  steps {
+    return sdo PrivateBoundIdentifiers(child 5 |ClassElementName|)
+  }
+}
+
+sdo_row @sec-static-semantics-containsarguments#1 ContainsArguments form alg {
+  prods [p"Syntactic - IdentifierReference : Identifier"]
+  keys ["\n        IdentifierReference : Identifier\n      "]
+  vars []
+  steps {
+    if sdo StringValue(child 5 |Identifier|) is val {"arguments"} -> return true
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-containsarguments#2 ContainsArguments form alg {
+  prods [p"Syntactic - FunctionDeclaration : `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - FunctionDeclaration : [+Default] `function` `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 0 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic 1 FunctionExpression : `function` BindingIdentifier[~Yield, ~Await]? `(` FormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - GeneratorDeclaration : `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - GeneratorDeclaration : [+Default] `function` `*` `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 0 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic 1 GeneratorExpression : `function` `*` BindingIdentifier[+Yield, ~Await]? `(` FormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : `async` [no LineTerminator here] `function` `*` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncGeneratorDeclaration : [+Default] `async` [no LineTerminator here] `function` `*` `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 0 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic 1 AsyncGeneratorExpression : `async` [no LineTerminator here] `function` `*` BindingIdentifier[+Yield, +Await]? `(` FormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        FunctionDeclaration :\n          `function` BindingIdentifier `(` FormalParameters `)` `{` FunctionBody `}`\n          `function` `(` FormalParameters `)` `{` FunctionBody `}`\n\n        FunctionExpression :\n          `function` BindingIdentifier? `(` FormalParameters `)` `{` FunctionBody `}`\n\n        GeneratorDeclaration :\n          `function` `*` BindingIdentifier `(` FormalParameters `)` `{` GeneratorBody `}`\n          `function` `*` `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        GeneratorExpression :\n          `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` GeneratorBody `}`\n\n        AsyncGeneratorDeclaration :\n          `async` `function` `*` BindingIdentifier `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n          `async` `function` `*` `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncGeneratorExpression :\n          `async` `function` `*` BindingIdentifier? `(` FormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncFunctionDeclaration :\n          `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n          `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-containsarguments#3 ContainsArguments form alg {
+  prods [p"Syntactic - MethodDefinition : ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, ~Await] `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - MethodDefinition : `get` ClassElementName[?Yield, ?Await] `(` `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`", p"Syntactic - GeneratorMethod : `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, ~Await] `)` `{` GeneratorBody `}`", p"Syntactic - AsyncGeneratorMethod : `async` [no LineTerminator here] `*` ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[+Yield, +Await] `)` `{` AsyncGeneratorBody `}`", p"Syntactic - AsyncMethod : `async` [no LineTerminator here] ClassElementName[?Yield, ?Await] `(` UniqueFormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        MethodDefinition :\n          ClassElementName `(` UniqueFormalParameters `)` `{` FunctionBody `}`\n          `get` ClassElementName `(` `)` `{` FunctionBody `}`\n          `set` ClassElementName `(` PropertySetParameterList `)` `{` FunctionBody `}`\n\n        GeneratorMethod :\n          `*` ClassElementName `(` UniqueFormalParameters `)` `{` GeneratorBody `}`\n\n        AsyncGeneratorMethod :\n          `async` `*` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncGeneratorBody `}`\n\n        AsyncMethod :\n          `async` ClassElementName `(` UniqueFormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  steps {
+    return sdo ContainsArguments(child 5 |ClassElementName|)
+  }
+}
+
+sdo_row @sec-runtime-semantics-classfielddefinitionevaluation ClassFieldDefinitionEvaluation form alg {
+  prods [p"Syntactic 0 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 FieldDefinition : ClassElementName[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["\n        FieldDefinition : ClassElementName Initializer?\n      "]
+  vars [homeObj, name, formalParamList, envRecord, privateEnv, sourceText, initializer]
+  steps {
+    let name = ? sdo Evaluation(child 5 |ClassElementName|)
+    if child 5 |Initializer| sat $Present() {
+      let formalParamList = $ParseGoal([], |FormalParameters|, false, false, false)
+      assert expr $InstanceOf(formalParamList, prods [p"Syntactic - FormalParameters : [empty]"])
+      let envRecord = component [[LexicalEnvironment]] of $Running()
+      let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+      let sourceText = $EmptyCodePoints()
+      let initializer = @sec-ordinaryfunctioncreate(intrinsic [[Function.prototype]], sourceText, formalParamList, child 5 |Initializer|, ~non-lexical-this~, envRecord, privateEnv)
+      perform @sec-makemethod(initializer, homeObj)
+      set field initializer[[ClassFieldInitializerName]] = name
+    }
+    else {
+      let initializer = ~empty~
+    }
+    return record #"ClassFieldDefinition Record" { [[Name]]: name, [[Initializer]]: initializer }
+  }
+}
+
+sdo_row @sec-runtime-semantics-classstaticblockdefinitionevaluation ClassStaticBlockDefinitionEvaluation form alg {
+  prods [p"Syntactic - ClassStaticBlock : `static` `{` ClassStaticBlockBody `}`"]
+  keys ["ClassStaticBlock : `static` `{` ClassStaticBlockBody `}`"]
+  vars [homeObj, lexicalEnv, privateEnv, sourceText, formalParams, bodyFunc]
+  steps {
+    let lexicalEnv = $Component($Running(), [[LexicalEnvironment]])
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $EmptyCodePoints()
+    let formalParams = $ParseGoal([], |FormalParameters|, false, false, false)
+    assert expr $InstanceOf(formalParams, prods [p"Syntactic - FormalParameters : [empty]"])
+    let bodyFunc = @sec-ordinaryfunctioncreate(intrinsic [[Function.prototype]], sourceText, formalParams, child 5 |ClassStaticBlockBody|, ~non-lexical-this~, lexicalEnv, privateEnv)
+    perform @sec-makemethod(bodyFunc, homeObj)
+    return record #"ClassStaticBlockDefinition Record" { [[BodyFunction]]: bodyFunc }
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluateclassstaticblockbody EvaluateClassStaticBlockBody form alg {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  vars [funcObj, result, envRecord]
+  steps {
+    assert pass "_ is a synthetic function created by ClassStaticBlockDefinitionEvaluation step <emu-xref href=\"#step-synthetic-class-static-block-fn\"></emu-xref>"
+    perform ! @sec-functiondeclarationinstantiation(funcObj, [])
+    let result = @sec-completion-ao(sdo Evaluation(child 5 |ClassStaticBlockStatementList|))
+    let envRecord = $Component($Running(), [[LexicalEnvironment]])
+    assert envRecord is ty {#"Declarative Environment Record"}
+    perform ? @sec-disposeresources(envRecord[[DisposableResourceStack]], result)
+    return @sec-returncompletion(undefined)
+  }
+}
+
+sdo_row @sec-static-semantics-classelementevaluation ClassElementEvaluation form alg {
+  prods [p"Syntactic - ClassElement : FieldDefinition[?Yield, ?Await] `;`", p"Syntactic - ClassElement : `static` FieldDefinition[?Yield, ?Await] `;`"]
+  keys ["\n        ClassElement :\n          FieldDefinition `;`\n          `static` FieldDefinition `;`\n      "]
+  vars [#"obj"]
+  steps {
+    return ? sdo ClassFieldDefinitionEvaluation(child 5 |FieldDefinition|; #"obj")
+  }
+}
+
+sdo_row @sec-static-semantics-classelementevaluation#1 ClassElementEvaluation form alg {
+  prods [p"Syntactic - ClassElement : MethodDefinition[?Yield, ?Await]", p"Syntactic - ClassElement : `static` MethodDefinition[?Yield, ?Await]"]
+  keys ["\n        ClassElement :\n          MethodDefinition\n          `static` MethodDefinition\n      "]
+  vars [#"obj"]
+  steps {
+    return ? sdo MethodDefinitionEvaluation(child 5 |MethodDefinition|; #"obj", false)
+  }
+}
+
+sdo_row @sec-static-semantics-classelementevaluation#2 ClassElementEvaluation form alg {
+  prods [p"Syntactic - ClassElement : ClassStaticBlock"]
+  keys ["ClassElement : ClassStaticBlock"]
+  vars [#"obj"]
+  steps {
+    return sdo ClassStaticBlockDefinitionEvaluation(child 5 |ClassStaticBlock|; #"obj")
+  }
+}
+
+sdo_row @sec-static-semantics-classelementevaluation#3 ClassElementEvaluation form alg {
+  prods [p"Syntactic - ClassElement : `;`"]
+  keys ["\n        ClassElement : `;`\n      "]
+  vars [#"obj"]
+  steps {
+    return ~empty~
+  }
+}
+
+sdo_row @sec-runtime-semantics-classdefinitionevaluation ClassDefinitionEvaluation form alg {
+  prods [p"Syntactic 00 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`", p"Syntactic 01 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`", p"Syntactic 10 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`", p"Syntactic 11 ClassTail : ClassHeritage[?Yield, ?Await]? `{` ClassBody[?Yield, ?Await]? `}`"]
+  keys ["ClassTail : ClassHeritage? `{` ClassBody? `}`"]
+  vars [classBinding, className, sourceText, envRecord, classEnv, outerPrivateEnv, classPrivateEnv, description, privateName, name, protoParent, ctorParent, superclassRef, superclass, proto, ctor, defaultCtor, args, #"#the *this* value", #"#NewTarget", #"#the List of arguments that was passed to this function by [[Call]] or [[Construct]]", ctorFunc, func, result, ctorInfo, classElements, instancePrivateMethods, staticPrivateMethods, instanceFields, staticElements, classElement, element, container, existingElement, combined, #"method", elementRecord, values]
+  steps {
+    let envRecord = component [[LexicalEnvironment]] of $Running()
+    let classEnv = @sec-newdeclarativeenvironment(envRecord)
+    if classBinding is not val {undefined} {
+      perform ! classEnv.CreateImmutableBinding(classBinding, true)
+    }
+    let outerPrivateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let classPrivateEnv = @sec-newprivateenvironment(outerPrivateEnv)
+    if child 5 |ClassBody| sat $Present() {
+      for_each description : String in sdo PrivateBoundIdentifiers(child 5 |ClassBody|) {
+        if classPrivateEnv[[Names]] sat @ph-contains-such(data choice 0, data sort #"Private Name", ?privateName, closure 1) {
+          assert pass "This is only possible for getter/setter pairs"
+        }
+        else {
+          let name = @ph-new-private-name-whose-description(?description)
+          perform $Append(?name, classPrivateEnv[[Names]])
+        }
+      }
+    }
+    if child 5 |ClassHeritage| fails $Present() {
+      let protoParent = intrinsic [[Object.prototype]]
+      let ctorParent = intrinsic [[Function.prototype]]
+    }
+    else {
+      set field $Running()[[LexicalEnvironment]] = classEnv
+      note "The running execution context's PrivateEnvironment is _outerPrivateEnv_ when evaluating |ClassHeritage|."
+      let superclassRef = @sec-completion-ao(sdo Evaluation(child 5 |ClassHeritage|))
+      set field $Running()[[LexicalEnvironment]] = envRecord
+      let superclass = ? @sec-getvalue(? superclassRef)
+      if superclass is val {null} {
+        let protoParent = null
+        let ctorParent = intrinsic [[Function.prototype]]
+      }
+      else_if @sec-isconstructor(superclass) is val {false} {
+        throw @ph-new-error([[TypeError]])
+      }
+      else {
+        let protoParent = ? @sec-get-o-p(superclass, "prototype")
+        if protoParent is not ty {Object} and protoParent is not val {null} -> throw @ph-new-error([[TypeError]])
+        let ctorParent = superclass
+      }
+    }
+    let proto = @sec-ordinaryobjectcreate(protoParent)
+    if child 5 |ClassBody| fails $Present() -> let ctor = ~empty~
+    else -> let ctor = sdo ConstructorMethod(child 5 |ClassBody|)
+    set field $Running()[[LexicalEnvironment]] = classEnv
+    set field $Running()[[PrivateEnvironment]] = classPrivateEnv
+    if ctor is val {~empty~} {
+      let defaultCtor = closure 0
+      let ctorFunc = @sec-createbuiltinfunction(defaultCtor, 0, className, [[[ConstructorKind]], [[SourceText]], [[PrivateMethods]], [[Fields]]], $CurrentRealm(), ctorParent)
+    }
+    else {
+      let ctorInfo = ! sdo DefineMethod(ctor; proto, ctorParent)
+      let ctorFunc = ctorInfo[[Closure]]
+      perform @sec-makeclassconstructor(ctorFunc)
+      perform @sec-setfunctionname(ctorFunc, className)
+    }
+    set field ctorFunc[[SourceText]] = sourceText
+    perform @sec-makeconstructor(ctorFunc, false, proto)
+    if child 5 |ClassHeritage| sat $Present() -> set field ctorFunc[[ConstructorKind]] = ~derived~
+    perform ! @sec-definemethodproperty(proto, "constructor", ctorFunc, false)
+    if child 5 |ClassBody| fails $Present() -> let classElements = $ListNew()
+    else -> let classElements = sdo NonConstructorElements(child 5 |ClassBody|)
+    let instancePrivateMethods = $ListNew()
+    let staticPrivateMethods = $ListNew()
+    let instanceFields = $ListNew()
+    let staticElements = $ListNew()
+    for_each classElement : |ClassElement| in classElements {
+      if sdo IsStatic(classElement) is val {false} {
+        let element = @sec-completion-ao(sdo ClassElementEvaluation(classElement; proto))
+      }
+      else {
+        let element = @sec-completion-ao(sdo ClassElementEvaluation(classElement; ctorFunc))
+      }
+      if element is ty {#"abrupt completion"} {
+        set field $Running()[[LexicalEnvironment]] = envRecord
+        set field $Running()[[PrivateEnvironment]] = outerPrivateEnv
+        return ? element
+      }
+      set var element = ! element
+      if element is ty {PrivateElement} {
+        assert element[[Kind]] is val {~method~; ~accessor~}
+        if sdo IsStatic(classElement) is val {false} -> let container = instancePrivateMethods
+        else -> let container = staticPrivateMethods
+        let values = @ph-contains-such-binds(data choice 0, data sort PrivateElement, ?existingElement, closure 2, container)
+        if $ListLen(values) == 1 or $ListLen(values) != 0 and expr $""() {
+          let existingElement = values[0]
+          assert expr @ph-both-are(element[[Kind]], existingElement[[Kind]], ~accessor~)
+          if element[[Getter]] is val {undefined} {
+            let combined = record PrivateElement { [[Key]]: element[[Key]], [[Kind]]: ~accessor~, [[Getter]]: existingElement[[Getter]], [[Setter]]: element[[Setter]] }
+          }
+          else {
+            let combined = record PrivateElement { [[Key]]: element[[Key]], [[Kind]]: ~accessor~, [[Getter]]: element[[Getter]], [[Setter]]: existingElement[[Setter]] }
+          }
+          perform @ph-replace-in(?existingElement, ?container, ?combined)
+        }
+        else {
+          perform $Append(?element, ?container)
+        }
+      }
+      else_if element is ty {#"ClassFieldDefinition Record"} {
+        if sdo IsStatic(classElement) is val {false} -> perform $Append(?element, ?instanceFields)
+        else -> perform $Append(?element, ?staticElements)
+      }
+      else_if element is ty {#"ClassStaticBlockDefinition Record"} {
+        perform $Append(?element, ?staticElements)
+      }
+      else {
+        assert element is val {~empty~}
+      }
+    }
+    set field $Running()[[LexicalEnvironment]] = envRecord
+    if classBinding is not val {undefined} {
+      perform ! classEnv.InitializeBinding(classBinding, ctorFunc)
+    }
+    set field ctorFunc[[PrivateMethods]] = instancePrivateMethods
+    set field ctorFunc[[Fields]] = instanceFields
+    for_each #"method" : PrivateElement in staticPrivateMethods {
+      perform ! @sec-privatemethodoraccessoradd(ctorFunc, #"method")
+    }
+    for_each elementRecord in staticElements {
+      if elementRecord is ty {#"ClassFieldDefinition Record"} {
+        let result = @sec-completion-ao(@sec-definefield(ctorFunc, elementRecord))
+      }
+      else {
+        assert elementRecord is ty {#"ClassStaticBlockDefinition Record"}
+        let result = @sec-completion-ao(@sec-call(elementRecord[[BodyFunction]], ctorFunc))
+      }
+      if result is ty {#"abrupt completion"} {
+        set field $Running()[[PrivateEnvironment]] = outerPrivateEnv
+        return ? result
+      }
+    }
+    set field $Running()[[PrivateEnvironment]] = outerPrivateEnv
+    return ctorFunc
+  }
+  closure abstract params none captures [] frame (#"#the *this* value", #"#NewTarget", #"#the List of arguments that was passed to this function by [[Call]] or [[Construct]]") {
+    let args = #"#the List of arguments that was passed to this function by [[Call]] or [[Construct]]"
+    if #"#NewTarget" is val {undefined} -> throw @ph-new-error([[TypeError]])
+    let ctorFunc = $ActiveFunction()
+    if ctorFunc[[ConstructorKind]] is val {~derived~} {
+      note "This branch behaves similarly to `constructor(...args) { super(...args); }`. The most notable distinction is that while the aforementioned ECMAScript source text observably calls the %Symbol.iterator% method on `%Array.prototype%`, this function does not."
+      let func = ! ctorFunc[[GetPrototypeOf]]()
+      if @sec-isconstructor(func) is val {false} -> throw @ph-new-error([[TypeError]])
+      let result = ? @sec-construct(func, args, #"#NewTarget")
+    }
+    else {
+      note "This branch behaves similarly to `constructor() {}`."
+      let result = ? @sec-ordinarycreatefromconstructor(#"#NewTarget", "%Object.prototype%")
+    }
+    perform ? @sec-initializeinstanceelements(result, ctorFunc)
+    return @sec-normalcompletion(result)
+  }
+  closure abstract params [privateName] captures [description] {
+    return bool(privateName[[Description]] is val {description})
+  }
+  closure abstract params [existingElement] captures [element] {
+    return bool(existingElement[[Key]] is val {element[[Key]]})
+  }
+}
+
+sdo_row @sec-runtime-semantics-bindingclassdeclarationevaluation BindingClassDeclarationEvaluation form alg {
+  prods [p"Syntactic - ClassDeclaration : `class` BindingIdentifier[?Yield, ?Await] ClassTail[?Yield, ?Await]"]
+  keys ["ClassDeclaration : `class` BindingIdentifier ClassTail"]
+  vars [className, sourceText, value, envRecord]
+  steps {
+    let className = sdo StringValue(child 5 |BindingIdentifier|)
+    let sourceText = $SourceText(child 6 |ClassDeclaration|)
+    let value = ? sdo ClassDefinitionEvaluation(child 5 |ClassTail|; className, className, sourceText)
+    let envRecord = $Component($Running(), [[LexicalEnvironment]])
+    perform ? @sec-initializeboundname(className, value, envRecord)
+    return value
+  }
+}
+
+sdo_row @sec-runtime-semantics-bindingclassdeclarationevaluation#1 BindingClassDeclarationEvaluation form alg {
+  prods [p"Syntactic - ClassDeclaration : [+Default] `class` ClassTail[?Yield, ?Await]"]
+  keys ["ClassDeclaration : `class` ClassTail"]
+  vars [sourceText]
+  steps {
+    let sourceText = $SourceText(child 6 |ClassDeclaration|)
+    return ? sdo ClassDefinitionEvaluation(child 5 |ClassTail|; undefined, "default", sourceText)
+  }
+}
+
+sdo_row @sec-class-definitions-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ClassDeclaration : `class` BindingIdentifier[?Yield, ?Await] ClassTail[?Yield, ?Await]"]
+  keys ["ClassDeclaration : `class` BindingIdentifier ClassTail"]
+  vars []
+  steps {
+    perform ? sdo BindingClassDeclarationEvaluation(call_at @ph-this-nt(|ClassDeclaration|))
+    return ~empty~
+  }
+}
+
+sdo_row @sec-class-definitions-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic 0 ClassExpression : `class` BindingIdentifier[?Yield, ?Await]? ClassTail[?Yield, ?Await]"]
+  keys ["ClassExpression : `class` ClassTail"]
+  vars [sourceText]
+  steps {
+    let sourceText = $SourceText(child 6 |ClassExpression|)
+    return ? sdo ClassDefinitionEvaluation(child 5 |ClassTail|; undefined, $"the empty String"(), sourceText)
+  }
+}
+
+sdo_row @sec-class-definitions-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic 1 ClassExpression : `class` BindingIdentifier[?Yield, ?Await]? ClassTail[?Yield, ?Await]"]
+  keys ["ClassExpression : `class` BindingIdentifier ClassTail"]
+  vars [className, sourceText]
+  steps {
+    let className = sdo StringValue(child 5 |BindingIdentifier|)
+    let sourceText = $SourceText(child 6 |ClassExpression|)
+    return ? sdo ClassDefinitionEvaluation(child 5 |ClassTail|; className, className, sourceText)
+  }
+}
+
+sdo_row @sec-class-definitions-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic - ClassElementName : PrivateIdentifier"]
+  keys ["ClassElementName : PrivateIdentifier"]
+  vars [privateIdentifier, privateEnvRecord, names, privateName]
+  steps {
+    let privateIdentifier = sdo StringValue(child 5 |PrivateIdentifier|)
+    let privateEnvRecord = $Component($Running(), [[PrivateEnvironment]])
+    let names = privateEnvRecord[[Names]]
+    assert expr @ph-exactly-one-private-name(?names, ?privateIdentifier)
+    let privateName = @ph-elem-whose-tn(data sort #"Private Name", ?names, [[Description]], data choice 1, ?privateIdentifier)
+    return privateName
+  }
+}
+
+sdo_row @sec-class-definitions-runtime-semantics-evaluation#4 Evaluation form alg {
+  prods [p"Syntactic 0 ClassStaticBlockStatementList : StatementList[~Yield, +Await, ~Return]?"]
+  keys ["ClassStaticBlockStatementList : [empty]"]
+  vars []
+  steps {
+    return undefined
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncfunctiondeclaration InstantiateAsyncFunctionDeclaration form alg {
+  prods [p"Syntactic - AsyncFunctionDeclaration : `async` [no LineTerminator here] `function` BindingIdentifier[?Yield, ?Await] `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration : `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars [envRecord, privateEnv, name, sourceText, #"closure"]
+  steps {
+    let name = sdo StringValue(child 5 |BindingIdentifier|)
+    let sourceText = $SourceText(child 6 |AsyncFunctionDeclaration|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |AsyncFunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncfunctiondeclaration#1 InstantiateAsyncFunctionDeclaration form alg {
+  prods [p"Syntactic - AsyncFunctionDeclaration : [+Default] `async` [no LineTerminator here] `function` `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionDeclaration : `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars [envRecord, privateEnv, sourceText, #"closure"]
+  steps {
+    let sourceText = $SourceText(child 6 |AsyncFunctionDeclaration|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |AsyncFunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", "default")
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncfunctionexpression InstantiateAsyncFunctionExpression form alg {
+  prods [p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionExpression : `async` `function` `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars [name, envRecord, privateEnv, sourceText, #"closure"]
+  steps {
+    if name fails $Present() -> set var name = $"the empty String"()
+    let envRecord = component [[LexicalEnvironment]] of $Running()
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |AsyncFunctionExpression|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |AsyncFunctionBody|, ~non-lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncfunctionexpression#1 InstantiateAsyncFunctionExpression form alg {
+  prods [p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionExpression : `async` `function` BindingIdentifier `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars [name, outerEnv, funcEnv, privateEnv, sourceText, #"closure"]
+  steps {
+    assert name fails $Present()
+    set var name = sdo StringValue(child 5 |BindingIdentifier|)
+    let outerEnv = component [[LexicalEnvironment]] of $Running()
+    let funcEnv = @sec-newdeclarativeenvironment(outerEnv)
+    perform ! funcEnv.CreateImmutableBinding(name, false)
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |AsyncFunctionExpression|)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncFunction.prototype]], sourceText, child 5 |FormalParameters|, child 5 |AsyncFunctionBody|, ~non-lexical-this~, funcEnv, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    perform ! funcEnv.InitializeBinding(name, #"closure")
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluateasyncfunctionbody EvaluateAsyncFunctionBody form alg {
+  prods [p"Syntactic - AsyncFunctionBody : FunctionBody[~Yield, +Await]"]
+  keys ["\n        AsyncFunctionBody : FunctionBody\n      "]
+  vars [funcObj, argList, promiseCapability, #"completion"]
+  steps {
+    let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+    let #"completion" = @sec-completion-ao(@sec-functiondeclarationinstantiation(funcObj, argList))
+    if #"completion" is ty {#"abrupt completion"} {
+      perform ! @sec-call(promiseCapability[[Reject]], undefined, [#"completion"[[Value]]])
+    }
+    else {
+      perform @sec-async-functions-abstract-operations-async-function-start(promiseCapability, child 5 |FunctionBody|)
+    }
+    return @sec-returncompletion(promiseCapability[[Promise]])
+  }
+}
+
+sdo_row @sec-async-function-definitions-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic 0 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`", p"Syntactic 1 AsyncFunctionExpression : `async` [no LineTerminator here] `function` BindingIdentifier[~Yield, +Await]? `(` FormalParameters[~Yield, +Await] `)` `{` AsyncFunctionBody `}`"]
+  keys ["\n        AsyncFunctionExpression :\n          `async` `function` BindingIdentifier? `(` FormalParameters `)` `{` AsyncFunctionBody `}`\n      "]
+  vars []
+  steps {
+    return sdo InstantiateAsyncFunctionExpression(child 6 |AsyncFunctionExpression|)
+  }
+}
+
+sdo_row @sec-async-function-definitions-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - UnaryExpression : [+Await] CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield]"]
+  keys ["\n        UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead\n      "]
+  vars [expr]
+  steps {
+    let expr = $CoveredBy(|AwaitExpression|, child 5 |CoverAwaitExpressionAndAwaitUsingDeclarationHead|)
+    return ? sdo Evaluation(expr)
+  }
+}
+
+sdo_row @sec-async-function-definitions-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - AwaitExpression : `await` UnaryExpression[?Yield, +Await]"]
+  keys ["\n        AwaitExpression : `await` UnaryExpression\n      "]
+  vars [exprRef, value]
+  steps {
+    let exprRef = ? sdo Evaluation(child 5 |UnaryExpression|)
+    let value = ? @sec-getvalue(exprRef)
+    return ? @await(value)
+  }
+}
+
+sdo_row @sec-static-semantics-asyncconcisebodycontainsusestrict AsyncConciseBodyContainsUseStrict form alg {
+  prods [p"Syntactic - AsyncConciseBody : [lookahead != `{`] ExpressionBody[?In, +Await]"]
+  keys ["AsyncConciseBody : ExpressionBody"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-asyncconcisebodycontainsusestrict#1 AsyncConciseBodyContainsUseStrict form alg {
+  prods [p"Syntactic - AsyncConciseBody : `{` AsyncFunctionBody `}`"]
+  keys ["AsyncConciseBody : `{` AsyncFunctionBody `}`"]
+  vars []
+  steps {
+    return sdo FunctionBodyContainsUseStrict(child 5 |AsyncFunctionBody|)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluateasyncconcisebody EvaluateAsyncConciseBody form alg {
+  prods [p"Syntactic - AsyncConciseBody : [lookahead != `{`] ExpressionBody[?In, +Await]"]
+  keys ["\n        AsyncConciseBody : ExpressionBody\n      "]
+  vars [funcObj, argList, promiseCapability, #"completion"]
+  steps {
+    let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+    let #"completion" = @sec-completion-ao(@sec-functiondeclarationinstantiation(funcObj, argList))
+    if #"completion" is ty {#"abrupt completion"} {
+      perform ! @sec-call(promiseCapability[[Reject]], undefined, [#"completion"[[Value]]])
+    }
+    else {
+      perform @sec-async-functions-abstract-operations-async-function-start(promiseCapability, child 5 |ExpressionBody|)
+    }
+    return @sec-returncompletion(promiseCapability[[Promise]])
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncarrowfunctionexpression InstantiateAsyncArrowFunctionExpression form alg {
+  prods [p"Syntactic - AsyncArrowFunction : `async` [no LineTerminator here] AsyncArrowBindingIdentifier[?Yield] [no LineTerminator here] `=>` AsyncConciseBody[?In]"]
+  keys ["\n        AsyncArrowFunction : `async` AsyncArrowBindingIdentifier `=>` AsyncConciseBody\n      "]
+  vars [name, envRecord, privateEnv, sourceText, #"params", #"closure"]
+  steps {
+    if name fails $Present() -> set var name = $"the empty String"()
+    let envRecord = component [[LexicalEnvironment]] of $Running()
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |AsyncArrowFunction|)
+    let #"params" = child 5 |AsyncArrowBindingIdentifier|
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncFunction.prototype]], sourceText, #"params", child 5 |AsyncConciseBody|, ~lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    return #"closure"
+  }
+}
+
+sdo_row @sec-runtime-semantics-instantiateasyncarrowfunctionexpression#1 InstantiateAsyncArrowFunctionExpression form alg {
+  prods [p"Syntactic - AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]"]
+  keys ["\n        AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody\n      "]
+  vars [name, envRecord, privateEnv, sourceText, head, #"params", #"closure"]
+  steps {
+    if name fails $Present() -> set var name = $"the empty String"()
+    let envRecord = component [[LexicalEnvironment]] of $Running()
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    let sourceText = $SourceText(child 6 |AsyncArrowFunction|)
+    let head = $CoveredBy(|AsyncArrowHead|, child 5 |CoverCallExpressionAndAsyncArrowHead|)
+    let #"params" = $ChildOf(|ArrowFormalParameters|, ?head)
+    let #"closure" = @sec-ordinaryfunctioncreate(intrinsic [[AsyncFunction.prototype]], sourceText, #"params", child 5 |AsyncConciseBody|, ~lexical-this~, envRecord, privateEnv)
+    perform @sec-setfunctionname(#"closure", name)
+    return #"closure"
+  }
+}
+
+sdo_row @sec-async-arrow-function-definitions-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - AsyncArrowFunction : `async` [no LineTerminator here] AsyncArrowBindingIdentifier[?Yield] [no LineTerminator here] `=>` AsyncConciseBody[?In]", p"Syntactic - AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await] [no LineTerminator here] `=>` AsyncConciseBody[?In]"]
+  keys ["\n        AsyncArrowFunction :\n          `async` AsyncArrowBindingIdentifier `=>` AsyncConciseBody\n          CoverCallExpressionAndAsyncArrowHead `=>` AsyncConciseBody\n      "]
+  vars []
+  steps {
+    return sdo InstantiateAsyncArrowFunctionExpression(child 6 |AsyncArrowFunction|)
+  }
+}
+

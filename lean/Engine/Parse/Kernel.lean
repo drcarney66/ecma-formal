@@ -54,7 +54,7 @@ structure St (T : Type) where
   toks : Std.HashMap (Nat × Nat) T := {}
   leaves : Std.HashMap (Nat × Nat) T := {}
   far : Nat := 0
-  fwd : Std.HashMap (Key × Nat × Nat × Bool) (Array Ends × Array (Std.HashMap Nat (Array Nat))) := {}
+  fwd : Std.HashMap (Key × Nat × Nat) (Array Ends × Array (Std.HashMap Nat (Array Nat))) := {}
   first : Std.HashMap Key (Option Eff) := {}
   spans : Bool := false
   hzn : Nat := 0
@@ -80,8 +80,6 @@ def St.valid {T : Type} (s : St T) (i : Nat) (e : Entry) : Bool :=
 /-- What a search reads besides GL: its grammar, and its alphabet over positions. -/
 structure Alpha (N T : Type) where
   g : GrammarId
-  /-- the erratum readings in effect -/
-  rd : List RuleReading
   /-- the parse context: the |Module| goal, Annex B -/
   cx : Ctx
   /-- terminal `x` at item `k` of written alternative `alt` of `lhs`'s rule, from `p`: its end -/
@@ -208,10 +206,10 @@ where
 /-- The checked Parse Node of production `p` with parameters `ps` over positions `lo` to `hi`. -/
 def mk (B : Builder N) (A : Alpha N T) (stamp p : Nat)
     (ps : List Param) (lo hi : Nat) (pieces : List (Piece N)) : SM T N := do
-  let some P := prodOf A.rd p | throw (.check "no such production")
-  let some es := effAlts A.g A.rd A.cx P.rule.lhs.ctorIdx | throw (.check "no rule in effect")
-  let some ef := es.find? (fun e => e.wg == P.grammar && e.idx == P.alt && e.rule == P.rule &&
-      e.fresh == isFresh p) | throw (.check "not an alternative in effect")
+  let some P := prodOf p | throw (.check "no such production")
+  let some es := effAlts A.g A.cx P.rule.lhs.ctorIdx | throw (.check "no rule in effect")
+  let some ef := es.find? (fun e => e.wg == P.grammar && e.idx == P.alt && e.rule == P.rule) |
+    throw (.check "not an alternative in effect")
   let a := ef.alt
   unless a.guard.all (Guard.holds ps) do throw (.check "a guard")
   let (e, kids) ← walk B A P.rule.lhs P.alt ps 0 a.rhs P.mask pieces lo #[]

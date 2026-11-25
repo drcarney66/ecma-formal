@@ -150,11 +150,11 @@ def furthest (found : List (NT × Nat)) (k : Nat) : Nat := found.foldl (fun m e 
 /-- Each class of `goal` from `k`, with its furthest end (`k` when it has none). -/
 def lexFound (goal : NT) (k : Nat) : SM T (List (NT × Nat)) :=
   (classes goal).mapM fun c => do
-    return (c, (← finalEnds (Code.alpha B cs .lexical [] cx) cs.size (Code.depth cs.size) c [] k).maxFrom k)
+    return (c, (← finalEnds (Code.alpha B cs .lexical cx) cs.size (Code.depth cs.size) c [] k).maxFrom k)
 
 /-- `lexAt first goal i`: the next token from `i` under lexical goal `goal`. -/
 def lexAt (goal : NT) (i : Nat) : SM T Lexed := do
-  let A : Alpha N T := Code.alpha B cs .lexical [] cx
+  let A : Alpha N T := Code.alpha B cs .lexical cx
   let (k, lt) := skip B cs first cx i
   if k ≥ cs.size then return .eof lt
   let found ← lexFound (T := T) B cs cx (if first && k == 0 then .InputElementHashbangOrRegExp else goal) k
@@ -167,7 +167,7 @@ def lexAt (goal : NT) (i : Nat) : SM T Lexed := do
   unless B.nt nd == cls.ctorIdx do throw (.check "a token's node of another nonterminal")
   if cls == .NumericLiteral then
     if let some c := cs[j]? then
-      if (0x30 ≤ c && c ≤ 0x39) || (← liftE (Code.dec B cs .lexical [] cx 64 .IdentifierStart [] j (j + 1))) then
+      if (0x30 ≤ c && c ≤ 0x39) || (← liftE (Code.dec B cs .lexical cx 64 .IdentifierStart [] j (j + 1))) then
         return .follow j
   return .tok ⟨k, j, cls, lt⟩
 

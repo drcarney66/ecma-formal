@@ -1,0 +1,1289 @@
+-- ECMA-262 SpecTec Clauses: S07
+
+def @sec-toprimitive "ToPrimitive" (kind ao params [input : #"ECMAScript language value", preferredType : val(~string~) | val(~number~) opt] -> completion<#"ECMAScript language value"> | #"throw completion") vars [input, preferredType, exoticToPrimitive, hint, result] {
+  if input is ty {Object} {
+    let exoticToPrimitive = ? @sec-getmethod(input, $WellKnownSymbol("Symbol.toPrimitive"))
+    if exoticToPrimitive is not val {undefined} {
+      if preferredType fails $Present() {
+        let hint = "default"
+      }
+      else_if preferredType is val {~string~} {
+        let hint = "string"
+      }
+      else {
+        assert preferredType is val {~number~}
+        let hint = "number"
+      }
+      let result = ? @sec-call(exoticToPrimitive, input, [hint])
+      if result is not ty {Object} -> return result
+      throw @ph-new-error([[TypeError]])
+    }
+    if preferredType fails $Present() -> set var preferredType = ~number~
+    return ? @sec-ordinarytoprimitive(input, preferredType)
+  }
+  return input
+}
+
+def @sec-ordinarytoprimitive "OrdinaryToPrimitive" (kind ao params [#"obj" : Object, hint : val(~string~) | val(~number~)] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", hint, methodNames, name, #"method", result] {
+  if hint is val {~string~} {
+    let methodNames = ["toString", "valueOf"]
+  }
+  else {
+    let methodNames = ["valueOf", "toString"]
+  }
+  for_each name in methodNames {
+    let #"method" = ? @sec-get-o-p(#"obj", name)
+    if @sec-iscallable(#"method") is val {true} {
+      let result = ? @sec-call(#"method", #"obj")
+      if result is not ty {Object} -> return result
+    }
+  }
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-toboolean "ToBoolean" (kind ao params [arg : #"ECMAScript language value"] -> Boolean) vars [arg] {
+  if arg is ty {Boolean} -> return arg
+  if arg is val {undefined; null; num_f(+0); num_f(-0); nan; num_z(0); $"the empty String"()} -> return false
+  if expr $"the host is a web browser"(data choice 0, clause @sec-IsHTMLDDA-internal-slot) {
+    if arg is ty {Object} and arg sat $HasSlot([[IsHTMLDDA]]) -> return false
+  }
+  return true
+}
+
+def @sec-tonumeric "ToNumeric" (kind ao params [arg : #"ECMAScript language value"] -> completion<Number | BigInt> | #"throw completion") vars [arg, primitiveValue] {
+  let primitiveValue = ? @sec-toprimitive(arg, ~number~)
+  if primitiveValue is ty {BigInt} -> return primitiveValue
+  return ? @sec-tonumber(primitiveValue)
+}
+
+def @sec-tonumber "ToNumber" (kind ao params [arg : #"ECMAScript language value"] -> completion<Number> | #"throw completion") vars [arg, primitiveValue] {
+  if arg is ty {Number} -> return arg
+  if arg is ty {Symbol; BigInt} -> throw @ph-new-error([[TypeError]])
+  if arg is val {undefined} -> return nan
+  if arg is val {null; false} -> return num_f(+0)
+  if arg is val {true} -> return num_f(1)
+  if arg is ty {String} -> return @sec-stringtonumber(arg)
+  assert arg is ty {Object}
+  let primitiveValue = ? @sec-toprimitive(arg, ~number~)
+  assert primitiveValue is not ty {Object}
+  return ? @sec-tonumber(primitiveValue)
+}
+
+def @sec-stringtonumber "StringToNumber" (kind ao params [string : String] -> Number) vars [string, literal] {
+  let literal = @sec-parsetext(string, |StringNumericLiteral|)
+  if literal is ty {list<error>} -> return nan
+  return sdo StringNumericValue(literal)
+}
+
+def @sec-roundmvresult "RoundMVResult" (kind ao params [n : #"mathematical value"] -> Number) vars [n, option1, option2, chosen] {
+  if expr @ph-twenty-significant-digits(?n) -> return $𝔽(n)
+  let option1 = @ph-zero-after-twentieth(?n)
+  let option2 = @ph-zero-after-twentieth-incremented(?n)
+  let chosen = $"implementation-defined choice"(?option1, ?option2)
+  return $𝔽(chosen)
+}
+
+def @sec-tointegerorinfinity "ToIntegerOrInfinity" (kind ao params [arg : #"ECMAScript language value"] -> completion<integer | val(math(+∞)) | val(math(-∞))> | #"throw completion") vars [arg, number] {
+  let number = ? @sec-tonumber(arg)
+  if number is val {nan; num_f(+0); num_f(-0)} -> return 0
+  if number is val {num_f(+∞)} -> return math(+∞)
+  if number is val {num_f(-∞)} -> return math(-∞)
+  return $truncate($ℝ(number))
+}
+
+def @sec-snaptointeger "SnapToInteger" (kind ao params [arg : #"ECMAScript language value", nonIntHandling : val(~reject~) | val(~truncate~), minimum : integer opt, maximum : integer opt] -> completion<integer> | #"throw completion") vars [arg, nonIntHandling, minimum, maximum, number, mv] {
+  let number = ? @sec-tonumber(arg)
+  if number is val {nan; num_f(+∞); num_f(-∞)} -> throw @ph-new-error([[RangeError]])
+  let mv = $ℝ(number)
+  if nonIntHandling is val {~truncate~} -> set var mv = $truncate(mv)
+  if mv is not ty {integer} -> throw @ph-new-error([[RangeError]])
+  if minimum sat $Present() and mv < minimum -> throw @ph-new-error([[RangeError]])
+  if maximum sat $Present() and mv > maximum -> throw @ph-new-error([[RangeError]])
+  return mv
+}
+
+def @sec-tofixedsizeinteger "ToFixedSizeInteger" (kind ao params [int : integer | val(math(+∞)) | val(math(-∞)), signed : val(~unsigned~) | val(~signed~), bitWidth : sort [positive] integer] -> integer) vars [int, signed, bitWidth, fixedInt] {
+  if int == math(+∞) or int == math(-∞) -> return 0
+  let fixedInt = int modulo 2 ^ bitWidth
+  note "The following step does not change the two's complement representation of _fixedInt_."
+  if signed is val {~signed~} and fixedInt >= 2 ^ {bitWidth - 1} -> set var fixedInt = fixedInt - 2 ^ bitWidth
+  return fixedInt
+}
+
+def @sec-toint32 "ToInt32" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"integral Number"> | #"throw completion") vars [arg, int] {
+  let int = ? @sec-tointegerorinfinity(arg)
+  return $𝔽(@sec-tofixedsizeinteger(int, ~signed~, 32))
+}
+
+def @sec-touint32 "ToUint32" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"integral Number"> | #"throw completion") vars [arg, int] {
+  let int = ? @sec-tointegerorinfinity(arg)
+  return $𝔽(@sec-tofixedsizeinteger(int, ~unsigned~, 32))
+}
+
+def @sec-toint16 "ToInt16" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"integral Number"> | #"throw completion") vars [arg, int] {
+  let int = ? @sec-tointegerorinfinity(arg)
+  return $𝔽(@sec-tofixedsizeinteger(int, ~signed~, 16))
+}
+
+def @sec-touint16 "ToUint16" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"integral Number"> | #"throw completion") vars [arg, int] {
+  let int = ? @sec-tointegerorinfinity(arg)
+  return $𝔽(@sec-tofixedsizeinteger(int, ~unsigned~, 16))
+}
+
+def @sec-toint8 "ToInt8" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"integral Number"> | #"throw completion") vars [arg, int] {
+  let int = ? @sec-tointegerorinfinity(arg)
+  return $𝔽(@sec-tofixedsizeinteger(int, ~signed~, 8))
+}
+
+def @sec-touint8 "ToUint8" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"integral Number"> | #"throw completion") vars [arg, int] {
+  let int = ? @sec-tointegerorinfinity(arg)
+  return $𝔽(@sec-tofixedsizeinteger(int, ~unsigned~, 8))
+}
+
+def @sec-touint8clamp "ToUint8Clamp" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"integral Number"> | #"throw completion") vars [arg, number, mv, clamped, f] {
+  let number = ? @sec-tonumber(arg)
+  if number is val {nan} -> return num_f(+0)
+  let mv = $XMath(?number)
+  let clamped = $clamping(?mv, 0, 255)
+  let f = $floor(clamped)
+  if clamped < f + math(frac(0, 5, 1)) -> return $𝔽(f)
+  if clamped > f + math(frac(0, 5, 1)) -> return $𝔽(f + 1)
+  if f sat $Parity(data choice 0) -> return $𝔽(f)
+  return $𝔽(f + 1)
+}
+
+def @sec-tobigint "ToBigInt" (kind ao params [arg : #"ECMAScript language value"] -> completion<BigInt> | #"throw completion") vars [arg, primitive] {
+  let primitive = ? @sec-toprimitive(arg, ~number~)
+  return table_step(t"table-tobigint", primitive)
+}
+
+def @sec-tobigint#1 "ToBigInt.2" (kind ao params [arg : #"ECMAScript language value"] -> completion<BigInt> | #"throw completion") vars [arg, primitive, n] {
+  let n = @sec-stringtobigint(primitive)
+  if n is val {undefined} -> throw @ph-new-error([[SyntaxError]])
+  return n
+}
+
+def @sec-stringtobigint "StringToBigInt" (kind ao params [string : String] -> BigInt | val(undefined)) vars [string, literal, mv] {
+  let literal = @sec-parsetext(string, |StringIntegerLiteral|)
+  if literal is ty {list<error>} -> return undefined
+  let mv = sdo MV(literal)
+  assert mv is ty {integer}
+  return $ℤ(mv)
+}
+
+def @sec-tobigint64 "ToBigInt64" (kind ao params [arg : #"ECMAScript language value"] -> completion<BigInt> | #"throw completion") vars [arg, int] {
+  let int = $ℝ(? @sec-tobigint(arg))
+  return $ℤ(@sec-tofixedsizeinteger(int, ~signed~, 64))
+}
+
+def @sec-tobiguint64 "ToBigUint64" (kind ao params [arg : #"ECMAScript language value"] -> completion<BigInt> | #"throw completion") vars [arg, int] {
+  let int = $ℝ(? @sec-tobigint(arg))
+  return $ℤ(@sec-tofixedsizeinteger(int, ~unsigned~, 64))
+}
+
+def @sec-tostring "ToString" (kind ao params [arg : #"ECMAScript language value"] -> completion<String> | #"throw completion") vars [arg, primitiveValue] {
+  if arg is ty {String} -> return arg
+  if arg is ty {Symbol} -> throw @ph-new-error([[TypeError]])
+  if arg is val {undefined} -> return "undefined"
+  if arg is val {null} -> return "null"
+  if arg is val {true} -> return "true"
+  if arg is val {false} -> return "false"
+  if arg is ty {Number} -> return @sec-numeric-types-number-tostring(arg, 10)
+  if arg is ty {BigInt} -> return @sec-numeric-types-bigint-tostring(arg, 10)
+  assert arg is ty {Object}
+  let primitiveValue = ? @sec-toprimitive(arg, ~string~)
+  assert primitiveValue is not ty {Object}
+  return ? @sec-tostring(primitiveValue)
+}
+
+def @sec-toobject "ToObject" (kind ao params [arg : #"ECMAScript language value"] -> completion<Object> | #"throw completion") vars [arg, #"obj"] {
+  if arg is val {undefined; null} -> throw @ph-new-error([[TypeError]])
+  if arg is ty {Boolean} {
+    let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Boolean.prototype]], [[[BooleanData]]])
+    set field #"obj"[[BooleanData]] = arg
+    return #"obj"
+  }
+  if arg is ty {Number} {
+    let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Number.prototype]], [[[NumberData]]])
+    set field #"obj"[[NumberData]] = arg
+    return #"obj"
+  }
+  if arg is ty {String} -> return @sec-stringcreate(arg, intrinsic [[String.prototype]])
+  if arg is ty {Symbol} {
+    let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Symbol.prototype]], [[[SymbolData]]])
+    set field #"obj"[[SymbolData]] = arg
+    return #"obj"
+  }
+  if arg is ty {BigInt} {
+    let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[BigInt.prototype]], [[[BigIntData]]])
+    set field #"obj"[[BigIntData]] = arg
+    return #"obj"
+  }
+  assert arg is ty {Object}
+  return arg
+}
+
+def @sec-topropertykey "ToPropertyKey" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"property key"> | #"throw completion") vars [arg, key] {
+  let key = ? @sec-toprimitive(arg, ~string~)
+  if key is ty {Symbol} {
+    return key
+  }
+  return ! @sec-tostring(key)
+}
+
+def @sec-tolength "ToLength" (kind ao params [arg : #"ECMAScript language value"] -> completion<sort [#"non-negative"] #"integral Number"> | #"throw completion") vars [arg, length, clampedLength] {
+  let length = ? @sec-tointegerorinfinity(arg)
+  let clampedLength = $clamping(?length, 0, 2 ^ 53 - 1)
+  return $𝔽(clampedLength)
+}
+
+def @sec-canonicalnumericindexstring "CanonicalNumericIndexString" (kind ao params [arg : String] -> Number | val(undefined)) vars [arg, n] {
+  if arg is val {"-0"} -> return num_f(-0)
+  let n = ! @sec-tonumber(arg)
+  if ! @sec-tostring(n) is val {arg} -> return n
+  return undefined
+}
+
+def @sec-toindex "ToIndex" (kind ao params [arg : #"ECMAScript language value"] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [arg, int] {
+  let int = ? @sec-tointegerorinfinity(arg)
+  if int fails $InInterval(0, 2 ^ 53 - 1) -> throw @ph-new-error([[RangeError]])
+  return int
+}
+
+def @sec-toabsoluteindex "ToAbsoluteIndex" (kind ao params [value : #"ECMAScript language value", length : sort [#"non-negative"] integer] -> completion<integer | val(math(+∞)) | val(math(-∞))> | #"throw completion") vars [value, length, int] {
+  let int = ? @sec-tointegerorinfinity(value)
+  if int sat $IsFinite() and int < 0 -> set var int = length + int
+  return int
+}
+
+def @sec-toclampedindex "ToClampedIndex" (kind ao params [value : #"ECMAScript language value", length : sort [#"non-negative"] integer] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [value, length, index] {
+  let index = ? @sec-toabsoluteindex(value, length)
+  return $clamping(?index, 0, ?length)
+}
+
+def @sec-requireobjectcoercible "RequireObjectCoercible" (kind ao params [arg : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [arg] {
+  if arg is val {undefined; null} -> throw @ph-new-error([[TypeError]])
+  return ~unused~
+}
+
+def @sec-isarray "IsArray" (kind ao params [arg : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [arg, proxyTarget] {
+  if arg is not ty {Object} -> return false
+  if arg is ty {#"Array exotic object"} -> return true
+  if arg is ty {#"Proxy exotic object"} {
+    perform ? @sec-validatenonrevokedproxy(arg)
+    let proxyTarget = arg[[ProxyTarget]]
+    return ? @sec-isarray(proxyTarget)
+  }
+  return false
+}
+
+def @sec-iscallable "IsCallable" (kind ao params [arg : #"ECMAScript language value"] -> Boolean) vars [arg] {
+  if arg is not ty {Object} -> return false
+  if arg sat $HasMethod([[Call]]) -> return true
+  return false
+}
+
+def @sec-isconstructor "IsConstructor" (kind ao params [arg : #"ECMAScript language value"] -> Boolean) vars [arg] {
+  if arg is not ty {Object} -> return false
+  if arg sat $HasMethod([[Construct]]) -> return true
+  return false
+}
+
+def @sec-isextensible-o "IsExtensible" (kind ao params [#"obj" : Object] -> completion<Boolean> | #"throw completion") vars [#"obj"] {
+  return ? #"obj"[[IsExtensible]]()
+}
+
+def @sec-isregexp "IsRegExp" (kind ao params [arg : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [arg, matcher] {
+  if arg is not ty {Object} -> return false
+  let matcher = ? @sec-get-o-p(arg, $WellKnownSymbol("Symbol.match"))
+  if matcher is not val {undefined} -> return @sec-toboolean(matcher)
+  if arg sat $HasSlot([[RegExpMatcher]]) -> return true
+  return false
+}
+
+def @sec-isstringwellformedunicode "IsStringWellFormedUnicode" (kind ao params [string : String] -> Boolean) vars [string, length, k, codePoint] {
+  let length = $StrLen(?string)
+  let k = 0
+  repeat_while k < length {
+    let codePoint = @sec-codepointat(string, k)
+    if codePoint[[IsUnpairedSurrogate]] is val {true} -> return false
+    set var k = k + codePoint[[CodeUnitCount]]
+  }
+  return true
+}
+
+def @sec-sametype "SameType" (kind ao params [x : #"ECMAScript language value", y : #"ECMAScript language value"] -> Boolean) vars [x, y] {
+  if x is val {undefined} and y is val {undefined} -> return true
+  if x is val {null} and y is val {null} -> return true
+  if x is ty {Boolean} and y is ty {Boolean} -> return true
+  if x is ty {Number} and y is ty {Number} -> return true
+  if x is ty {BigInt} and y is ty {BigInt} -> return true
+  if x is ty {Symbol} and y is ty {Symbol} -> return true
+  if x is ty {String} and y is ty {String} -> return true
+  if x is ty {Object} and y is ty {Object} -> return true
+  return false
+}
+
+def @sec-samevalue "SameValue" (kind ao params [x : #"ECMAScript language value", y : #"ECMAScript language value"] -> Boolean) vars [x, y] {
+  if @sec-sametype(x, y) is val {false} -> return false
+  if x is ty {Number} {
+    return @sec-numeric-types-number-sameValue(x, y)
+  }
+  return @sec-samevaluenonnumber(x, y)
+}
+
+def @sec-samevaluezero "SameValueZero" (kind ao params [x : #"ECMAScript language value", y : #"ECMAScript language value"] -> Boolean) vars [x, y] {
+  if @sec-sametype(x, y) is val {false} -> return false
+  if x is ty {Number} {
+    return @sec-numeric-types-number-sameValueZero(x, y)
+  }
+  return @sec-samevaluenonnumber(x, y)
+}
+
+def @sec-samevaluenonnumber "SameValueNonNumber" (kind ao params [x : butnot(#"ECMAScript language value", Number), y : butnot(#"ECMAScript language value", Number)] -> Boolean) vars [x, y] {
+  assert @sec-sametype(x, y) is val {true}
+  if x is val {undefined; null} -> return true
+  if x is ty {BigInt} {
+    return @sec-numeric-types-bigint-equal(x, y)
+  }
+  if x is ty {String} {
+    if expr @ph-same-code-units(?x, ?y) -> return true
+    return false
+  }
+  if x is ty {Boolean} {
+    if x is val {true} and y is val {true} -> return true
+    if x is val {false} and y is val {false} -> return true
+    return false
+  }
+  note "All other ECMAScript language values are compared by identity."
+  if x is val {y} -> return true
+  return false
+}
+
+def @sec-islessthan "IsLessThan" (kind ao params [x : #"ECMAScript language value", y : #"ECMAScript language value", leftFirst : Boolean] -> completion<Boolean | val(undefined)> | #"throw completion") vars [x, y, leftFirst, px, py, lx, ly, i, cx, cy, ny, nx] {
+  if leftFirst is val {true} {
+    let px = ? @sec-toprimitive(x, ~number~)
+    let py = ? @sec-toprimitive(y, ~number~)
+  }
+  else {
+    note "The order of evaluation needs to be reversed to preserve left to right evaluation."
+    let py = ? @sec-toprimitive(y, ~number~)
+    let px = ? @sec-toprimitive(x, ~number~)
+  }
+  if px is ty {String} and py is ty {String} {
+    let lx = $StrLen(?px)
+    let ly = $StrLen(?py)
+    for_range i incl 0 .. excl $min(lx, ly) {
+      let cx = $NumericValue($UnitAt(?i, ?px))
+      let cy = $NumericValue($UnitAt(?i, ?py))
+      if cx < cy -> return true
+      if cx > cy -> return false
+    }
+    if lx < ly -> return true
+    return false
+  }
+  if px is ty {BigInt} and py is ty {String} {
+    let ny = @sec-stringtobigint(py)
+    if ny is val {undefined} -> return undefined
+    return @sec-numeric-types-bigint-lessThan(px, ny)
+  }
+  if px is ty {String} and py is ty {BigInt} {
+    let nx = @sec-stringtobigint(px)
+    if nx is val {undefined} -> return undefined
+    return @sec-numeric-types-bigint-lessThan(nx, py)
+  }
+  note "Because _px_ and _py_ are primitive values, evaluation order is not important."
+  let nx = ? @sec-tonumeric(px)
+  let ny = ? @sec-tonumeric(py)
+  if @sec-sametype(nx, ny) is val {true} {
+    if nx is ty {Number} -> return @sec-numeric-types-number-lessThan(nx, ny)
+    assert nx is ty {BigInt}
+    return @sec-numeric-types-bigint-lessThan(nx, ny)
+  }
+  assert nx is ty {BigInt} and ny is ty {Number} or nx is ty {Number} and ny is ty {BigInt}
+  if nx is val {nan} or ny is val {nan} -> return undefined
+  if nx is val {num_f(-∞)} or ny is val {num_f(+∞)} -> return true
+  if nx is val {num_f(+∞)} or ny is val {num_f(-∞)} -> return false
+  if $ℝ(nx) < $ℝ(ny) -> return true
+  return false
+}
+
+def @sec-islooselyequal "IsLooselyEqual" (kind ao params [x : #"ECMAScript language value", y : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [x, y, n] {
+  if @sec-sametype(x, y) is val {true} {
+    return @sec-isstrictlyequal(x, y)
+  }
+  if x is val {null} and y is val {undefined} -> return true
+  if x is val {undefined} and y is val {null} -> return true
+  if expr $"the host is a web browser"(data choice 0, clause @sec-IsHTMLDDA-internal-slot) {
+    if x is ty {Object} and x sat $HasSlot([[IsHTMLDDA]]) and y is val {undefined; null} -> return true
+    if x is val {undefined; null} and y is ty {Object} and y sat $HasSlot([[IsHTMLDDA]]) -> return true
+  }
+  if x is ty {Number} and y is ty {String} -> return ! @sec-islooselyequal(x, ! @sec-tonumber(y))
+  if x is ty {String} and y is ty {Number} -> return ! @sec-islooselyequal(! @sec-tonumber(x), y)
+  if x is ty {BigInt} and y is ty {String} {
+    let n = @sec-stringtobigint(y)
+    if n is val {undefined} -> return false
+    return ! @sec-islooselyequal(x, n)
+  }
+  if x is ty {String} and y is ty {BigInt} -> return ! @sec-islooselyequal(y, x)
+  if x is ty {Boolean} -> return ? @sec-islooselyequal(! @sec-tonumber(x), y)
+  if y is ty {Boolean} -> return ? @sec-islooselyequal(x, ! @sec-tonumber(y))
+  if x is ty {String; Number; BigInt; Symbol} and y is ty {Object} -> return ! @sec-islooselyequal(x, ? @sec-toprimitive(y))
+  if x is ty {Object} and y is ty {String; Number; BigInt; Symbol} -> return ! @sec-islooselyequal(? @sec-toprimitive(x), y)
+  if x is ty {BigInt} and y is ty {sort [finite] Number} or x is ty {sort [finite] Number} and y is ty {BigInt} {
+    if $ℝ(x) == $ℝ(y) -> return true
+    return false
+  }
+  return false
+}
+
+def @sec-isstrictlyequal "IsStrictlyEqual" (kind ao params [x : #"ECMAScript language value", y : #"ECMAScript language value"] -> Boolean) vars [x, y] {
+  if @sec-sametype(x, y) is val {false} -> return false
+  if x is ty {Number} {
+    return @sec-numeric-types-number-equal(x, y)
+  }
+  return @sec-samevaluenonnumber(x, y)
+}
+
+def @sec-makebasicobject "MakeBasicObject" (kind ao params [internalSlotsList : list<#"internal slot name">] -> Object) vars [internalSlotsList, #"obj"] {
+  set var internalSlotsList = $ListConcat([internalSlotsList, [[[PrivateElements]]]])
+  let #"obj" = $MakeObject(internalSlotsList)
+  note "As described in <emu-xref href=\"#sec-object-internal-methods-and-internal-slots\" title></emu-xref>, the initial value of each such internal slot is *undefined* unless specified otherwise."
+  set field #"obj"[[PrivateElements]] = $ListNew()
+  perform @ph-set-methods(?#"obj", data choice 1, data choice 0, clause @sec-ordinary-object-internal-methods-and-internal-slots)
+  assert_if pass "the caller will not be overriding both _'s [[GetPrototypeOf]] and [[SetPrototypeOf]] essential internal methods" then internalSlotsList sat $Contains([[Prototype]])
+  assert_if pass "the caller will not be overriding all of _'s [[SetPrototypeOf]], [[IsExtensible]], and [[PreventExtensions]] essential internal methods" then internalSlotsList sat $Contains([[Extensible]])
+  if internalSlotsList sat $Contains([[Extensible]]) -> set field #"obj"[[Extensible]] = true
+  return #"obj"
+}
+
+def @sec-get-o-p "Get" (kind ao params [#"obj" : Object, propertyKey : #"property key"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", propertyKey] {
+  return ? #"obj"[[Get]](propertyKey, #"obj")
+}
+
+def @sec-getv "GetV" (kind ao params [value : #"ECMAScript language value", propertyKey : #"property key"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [value, propertyKey, #"obj"] {
+  let #"obj" = ? @sec-toobject(value)
+  return ? #"obj"[[Get]](propertyKey, value)
+}
+
+def @sec-set-o-p-v-throw "Set" (kind ao params [#"obj" : Object, propertyKey : #"property key", value : #"ECMAScript language value", #"throw" : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", propertyKey, value, #"throw", success] {
+  let success = ? #"obj"[[Set]](propertyKey, value, #"obj")
+  if success is val {false} and #"throw" is val {true} -> throw @ph-new-error([[TypeError]])
+  return ~unused~
+}
+
+def @sec-createdataproperty "CreateDataProperty" (kind ao params [#"obj" : Object, propertyKey : #"property key", value : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, value, newDesc] {
+  let newDesc = record PropertyDescriptor { [[Value]]: value, [[Writable]]: true, [[Enumerable]]: true, [[Configurable]]: true }
+  return ? #"obj"[[DefineOwnProperty]](propertyKey, newDesc)
+}
+
+def @sec-createdatapropertyorthrow "CreateDataPropertyOrThrow" (kind ao params [#"obj" : Object, propertyKey : #"property key", value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", propertyKey, value, success] {
+  let success = ? @sec-createdataproperty(#"obj", propertyKey, value)
+  if success is val {false} -> throw @ph-new-error([[TypeError]])
+  return ~unused~
+}
+
+def @sec-createnonenumerabledatapropertyorthrow "CreateNonEnumerableDataPropertyOrThrow" (kind ao params [#"obj" : Object, propertyKey : #"property key", value : #"ECMAScript language value"] -> val(~unused~)) vars [#"obj", propertyKey, value, newDesc] {
+  assert #"obj" is ty {pred(sat @spec-copy-2(data choice 1, data choice 0))}
+  let newDesc = record PropertyDescriptor { [[Value]]: value, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: true }
+  perform ! @sec-definepropertyorthrow(#"obj", propertyKey, newDesc)
+  return ~unused~
+}
+
+def @sec-definepropertyorthrow "DefinePropertyOrThrow" (kind ao params [#"obj" : Object, propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", propertyKey, propertyDesc, success] {
+  let success = ? #"obj"[[DefineOwnProperty]](propertyKey, propertyDesc)
+  if success is val {false} -> throw @ph-new-error([[TypeError]])
+  return ~unused~
+}
+
+def @sec-deletepropertyorthrow "DeletePropertyOrThrow" (kind ao params [#"obj" : Object, propertyKey : #"property key"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", propertyKey, success] {
+  let success = ? #"obj"[[Delete]](propertyKey)
+  if success is val {false} -> throw @ph-new-error([[TypeError]])
+  return ~unused~
+}
+
+def @sec-getmethod "GetMethod" (kind ao params [value : #"ECMAScript language value", propertyKey : #"property key"] -> completion<#"function object" | val(undefined)> | #"throw completion") vars [value, propertyKey, func] {
+  let func = ? @sec-getv(value, propertyKey)
+  if func is val {undefined; null} -> return undefined
+  if @sec-iscallable(func) is val {false} -> throw @ph-new-error([[TypeError]])
+  return func
+}
+
+def @sec-hasproperty "HasProperty" (kind ao params [#"obj" : Object, propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey] {
+  return ? #"obj"[[HasProperty]](propertyKey)
+}
+
+def @sec-hasownproperty "HasOwnProperty" (kind ao params [#"obj" : Object, propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, propertyDesc] {
+  let propertyDesc = ? #"obj"[[GetOwnProperty]](propertyKey)
+  if propertyDesc is val {undefined} -> return false
+  return true
+}
+
+def @sec-call "Call" (kind ao params [func : #"ECMAScript language value", thisValue : #"ECMAScript language value", argList : list<#"ECMAScript language value"> opt] -> completion<#"ECMAScript language value"> | #"throw completion") vars [func, thisValue, argList] {
+  if argList fails $Present() -> set var argList = $ListNew()
+  if @sec-iscallable(func) is val {false} -> throw @ph-new-error([[TypeError]])
+  return ? func[[Call]](thisValue, argList)
+}
+
+def @sec-construct "Construct" (kind ao params [ctor : constructor, argList : list<#"ECMAScript language value"> opt, newTarget : constructor opt] -> completion<Object> | #"throw completion") vars [ctor, argList, newTarget] {
+  if newTarget fails $Present() -> set var newTarget = ctor
+  if argList fails $Present() -> set var argList = $ListNew()
+  return ? ctor[[Construct]](argList, newTarget)
+}
+
+def @sec-setintegritylevel "SetIntegrityLevel" (kind ao params [#"obj" : Object, level : val(~sealed~) | val(~frozen~)] -> completion<Boolean> | #"throw completion") vars [#"obj", level, status, #"keys", key, currentDesc, propertyDesc] {
+  let status = ? #"obj"[[PreventExtensions]]()
+  if status is val {false} -> return false
+  let #"keys" = ? #"obj"[[OwnPropertyKeys]]()
+  if level is val {~sealed~} {
+    for_each key in #"keys" {
+      perform ? @sec-definepropertyorthrow(#"obj", key, record PropertyDescriptor { [[Configurable]]: false })
+    }
+  }
+  else {
+    assert level is val {~frozen~}
+    for_each key in #"keys" {
+      let currentDesc = ? #"obj"[[GetOwnProperty]](key)
+      if currentDesc is not val {undefined} {
+        if @sec-isaccessordescriptor(currentDesc) is val {true} {
+          let propertyDesc = record PropertyDescriptor { [[Configurable]]: false }
+        }
+        else {
+          let propertyDesc = record PropertyDescriptor { [[Configurable]]: false, [[Writable]]: false }
+        }
+        perform ? @sec-definepropertyorthrow(#"obj", key, propertyDesc)
+      }
+    }
+  }
+  return true
+}
+
+def @sec-testintegritylevel "TestIntegrityLevel" (kind ao params [#"obj" : Object, level : val(~sealed~) | val(~frozen~)] -> completion<Boolean> | #"throw completion") vars [#"obj", level, extensible, #"keys", key, currentDesc] {
+  let extensible = ? @sec-isextensible-o(#"obj")
+  if extensible is val {true} -> return false
+  note "If the object is extensible, none of its properties are examined."
+  let #"keys" = ? #"obj"[[OwnPropertyKeys]]()
+  for_each key in #"keys" {
+    let currentDesc = ? #"obj"[[GetOwnProperty]](key)
+    if currentDesc is not val {undefined} {
+      if currentDesc[[Configurable]] is val {true} -> return false
+      if level is val {~frozen~} and @sec-isdatadescriptor(currentDesc) is val {true} {
+        if currentDesc[[Writable]] is val {true} -> return false
+      }
+    }
+  }
+  return true
+}
+
+def @sec-createarrayfromlist "CreateArrayFromList" (kind ao params [elements : list<#"ECMAScript language value">] -> Array) vars [elements, array, n, element] {
+  let array = ! @sec-arraycreate(0)
+  let n = 0
+  for_each element in elements {
+    perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(n)), element)
+    set var n = n + 1
+  }
+  return array
+}
+
+def @sec-lengthofarraylike "LengthOfArrayLike" (kind ao params [#"obj" : Object] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [#"obj"] {
+  return $ℝ(? @sec-tolength(? @sec-get-o-p(#"obj", "length")))
+}
+
+def @sec-createlistfromarraylike "CreateListFromArrayLike" (kind ao params [#"obj" : #"ECMAScript language value", validElementTypes : val(~any~) | val(~property-key~) opt] -> completion<list<#"ECMAScript language value">> | #"throw completion") vars [#"obj", validElementTypes, length, #"list", index, indexName, next] {
+  if validElementTypes fails $Present() -> set var validElementTypes = ~any~
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let length = ? @sec-lengthofarraylike(#"obj")
+  let #"list" = $ListNew()
+  let index = 0
+  repeat_while index < length {
+    let indexName = ! @sec-tostring($𝔽(index))
+    let next = ? @sec-get-o-p(#"obj", indexName)
+    if validElementTypes is val {~property-key~} and next is not ty {#"property key"} -> throw @ph-new-error([[TypeError]])
+    perform $Append(?next, ?#"list")
+    set var index = index + 1
+  }
+  return #"list"
+}
+
+def @sec-invoke "Invoke" (kind ao params [value : #"ECMAScript language value", propertyKey : #"property key", argList : list<#"ECMAScript language value"> opt] -> completion<#"ECMAScript language value"> | #"throw completion") vars [value, propertyKey, argList, func] {
+  if argList fails $Present() -> set var argList = $ListNew()
+  let func = ? @sec-getv(value, propertyKey)
+  return ? @sec-call(func, value, argList)
+}
+
+def @sec-ordinaryhasinstance "OrdinaryHasInstance" (kind ao params [ctor : #"ECMAScript language value", instance : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [ctor, instance, boundCtor, proto] {
+  if @sec-iscallable(ctor) is val {false} -> return false
+  if ctor sat $HasSlot([[BoundTargetFunction]]) {
+    let boundCtor = ctor[[BoundTargetFunction]]
+    return ? @sec-instanceofoperator(instance, boundCtor)
+  }
+  if instance is not ty {Object} -> return false
+  let proto = ? @sec-get-o-p(ctor, "prototype")
+  if proto is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  repeat {
+    set var instance = ? instance[[GetPrototypeOf]]()
+    if instance is val {null} -> return false
+    if @sec-samevalue(proto, instance) is val {true} -> return true
+  }
+}
+
+def @sec-speciesconstructor "SpeciesConstructor" (kind ao params [#"obj" : Object, defaultCtor : constructor] -> completion<constructor> | #"throw completion") vars [#"obj", defaultCtor, ctor, species] {
+  let ctor = ? @sec-get-o-p(#"obj", "constructor")
+  if ctor is val {undefined} -> return defaultCtor
+  if ctor is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let species = ? @sec-get-o-p(ctor, $WellKnownSymbol("Symbol.species"))
+  if species is val {undefined; null} -> return defaultCtor
+  if @sec-isconstructor(species) is val {true} -> return species
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-enumerableownproperties "EnumerableOwnProperties" (kind ao params [#"obj" : Object, #"kind" : val(~key~) | val(~value~) | val(~key+value~)] -> completion<list<#"ECMAScript language value">> | #"throw completion") vars [#"obj", #"kind", ownKeys, results, key, propertyDesc, value, entry] {
+  let ownKeys = ? #"obj"[[OwnPropertyKeys]]()
+  let results = $ListNew()
+  for_each key in ownKeys {
+    if key is ty {String} {
+      let propertyDesc = ? #"obj"[[GetOwnProperty]](key)
+      if propertyDesc is not val {undefined} and propertyDesc[[Enumerable]] is val {true} {
+        if #"kind" is val {~key~} {
+          perform $Append(?key, ?results)
+        }
+        else {
+          let value = ? @sec-get-o-p(#"obj", key)
+          if #"kind" is val {~value~} {
+            perform $Append(?value, ?results)
+          }
+          else {
+            assert #"kind" is val {~key+value~}
+            let entry = @sec-createarrayfromlist([key, value])
+            perform $Append(?entry, ?results)
+          }
+        }
+      }
+    }
+  }
+  return results
+}
+
+def @sec-getfunctionrealm "GetFunctionRealm" (kind ao params [func : #"function object"] -> completion<#"Realm Record"> | #"throw completion") vars [func, boundTargetFunc, proxyTarget] {
+  if func sat $HasSlot([[Realm]]) {
+    return func[[Realm]]
+  }
+  if func is ty {#"bound function exotic object"} {
+    let boundTargetFunc = func[[BoundTargetFunction]]
+    return ? @sec-getfunctionrealm(boundTargetFunc)
+  }
+  if func is ty {#"Proxy exotic object"} {
+    perform ? @sec-validatenonrevokedproxy(func)
+    let proxyTarget = func[[ProxyTarget]]
+    assert proxyTarget is ty {#"function object"}
+    return ? @sec-getfunctionrealm(proxyTarget)
+  }
+  return $CurrentRealm()
+}
+
+def @sec-copydataproperties "CopyDataProperties" (kind ao params [target : Object, source : #"ECMAScript language value", excludedItems : list<#"property key">] -> completion<val(~unused~)> | #"throw completion") vars [target, source, excludedItems, #"from", #"keys", nextKey, excluded, element, propertyDesc, propertyValue] {
+  if source is val {undefined; null} -> return ~unused~
+  let #"from" = ! @sec-toobject(source)
+  let #"keys" = ? #"from"[[OwnPropertyKeys]]()
+  for_each nextKey in #"keys" {
+    let excluded = false
+    for_each element in excludedItems {
+      if @sec-samevalue(element, nextKey) is val {true} {
+        set var excluded = true
+      }
+    }
+    if excluded is val {false} {
+      let propertyDesc = ? #"from"[[GetOwnProperty]](nextKey)
+      if propertyDesc is not val {undefined} and propertyDesc[[Enumerable]] is val {true} {
+        let propertyValue = ? @sec-get-o-p(#"from", nextKey)
+        perform ! @sec-createdatapropertyorthrow(target, nextKey, propertyValue)
+      }
+    }
+  }
+  return ~unused~
+}
+
+def @sec-privateelementfind "PrivateElementFind" (kind ao params [#"obj" : Object, privateName : #"Private Name"] -> PrivateElement | val(~empty~)) vars [#"obj", privateName, entry, values] {
+  let values = @ph-contains-such-binds(data choice 0, data sort PrivateElement, ?entry, closure 0, #"obj"[[PrivateElements]])
+  if $ListLen(values) == 1 or $ListLen(values) != 0 and expr $""() {
+    let entry = values[0]
+    return entry
+  }
+  return ~empty~
+  closure abstract params [entry] captures [privateName] {
+    return bool(entry[[Key]] is val {privateName})
+  }
+}
+
+def @sec-privatefieldadd "PrivateFieldAdd" (kind ao params [#"obj" : Object, privateName : #"Private Name", value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", privateName, value, entry] {
+  if expr $"the host is a web browser"(data choice 1, data absent) {
+    perform ? @sec-hostensurecanaddprivateelement(#"obj")
+  }
+  let entry = @sec-privateelementfind(#"obj", privateName)
+  if entry is not val {~empty~} -> throw @ph-new-error([[TypeError]])
+  perform $Append(record PrivateElement { [[Key]]: privateName, [[Kind]]: ~field~, [[Value]]: value }, #"obj"[[PrivateElements]])
+  return ~unused~
+}
+
+def @sec-privatemethodoraccessoradd "PrivateMethodOrAccessorAdd" (kind ao params [#"obj" : Object, #"method" : PrivateElement] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", #"method", entry] {
+  assert #"method"[[Kind]] is val {~method~; ~accessor~}
+  if expr $"the host is a web browser"(data choice 1, data absent) {
+    perform ? @sec-hostensurecanaddprivateelement(#"obj")
+  }
+  let entry = @sec-privateelementfind(#"obj", #"method"[[Key]])
+  if entry is not val {~empty~} -> throw @ph-new-error([[TypeError]])
+  perform $Append(?#"method", #"obj"[[PrivateElements]])
+  return ~unused~
+}
+
+def @sec-privateget "PrivateGet" (kind ao params [#"obj" : Object, privateName : #"Private Name"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", privateName, entry, getter] {
+  let entry = @sec-privateelementfind(#"obj", privateName)
+  if entry is val {~empty~} -> throw @ph-new-error([[TypeError]])
+  if entry[[Kind]] is val {~field~; ~method~} {
+    return entry[[Value]]
+  }
+  assert entry[[Kind]] is val {~accessor~}
+  if entry[[Getter]] is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let getter = entry[[Getter]]
+  return ? @sec-call(getter, #"obj")
+}
+
+def @sec-privateset "PrivateSet" (kind ao params [#"obj" : Object, privateName : #"Private Name", value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", privateName, value, entry, setter] {
+  let entry = @sec-privateelementfind(#"obj", privateName)
+  if entry is val {~empty~} -> throw @ph-new-error([[TypeError]])
+  if entry[[Kind]] is val {~method~} -> throw @ph-new-error([[TypeError]])
+  if entry[[Kind]] is val {~field~} {
+    set field entry[[Value]] = value
+  }
+  else {
+    assert entry[[Kind]] is val {~accessor~}
+    if entry[[Setter]] is val {undefined} -> throw @ph-new-error([[TypeError]])
+    let setter = entry[[Setter]]
+    perform ? @sec-call(setter, #"obj", [value])
+  }
+  return ~unused~
+}
+
+def @sec-definefield "DefineField" (kind ao params [receiver : Object, fieldRecord : #"ClassFieldDefinition Record"] -> completion<val(~unused~)> | #"throw completion") vars [receiver, fieldRecord, fieldName, initializer, initValue] {
+  let fieldName = fieldRecord[[Name]]
+  let initializer = fieldRecord[[Initializer]]
+  if initializer is not val {~empty~} {
+    let initValue = ? @sec-call(initializer, receiver)
+  }
+  else {
+    let initValue = undefined
+  }
+  if fieldName is ty {#"Private Name"} {
+    perform ? @sec-privatefieldadd(receiver, fieldName, initValue)
+  }
+  else {
+    assert fieldName is ty {#"property key"}
+    perform ? @sec-createdatapropertyorthrow(receiver, fieldName, initValue)
+  }
+  return ~unused~
+}
+
+def @sec-initializeinstanceelements "InitializeInstanceElements" (kind ao params [#"obj" : Object, ctor : #"ECMAScript function object" | sort [#"built-in"] #"function object"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", ctor, methods, #"method", #"fields", fieldRecord] {
+  let methods = ctor[[PrivateMethods]]
+  for_each #"method" : PrivateElement in methods {
+    perform ? @sec-privatemethodoraccessoradd(#"obj", #"method")
+  }
+  let #"fields" = ctor[[Fields]]
+  for_each fieldRecord in #"fields" {
+    perform ? @sec-definefield(#"obj", fieldRecord)
+  }
+  return ~unused~
+}
+
+def @sec-add-value-to-keyed-group "AddValueToKeyedGroup" (kind ao params [groups : list<record { [[Key]]: #"ECMAScript language value", [[Elements]]: list<#"ECMAScript language value"> }>, key : #"ECMAScript language value", value : #"ECMAScript language value"] -> val(~unused~)) vars [groups, key, value, group, g] {
+  for_each_rec [[[Key]], [[Elements]]] group in groups {
+    if @sec-samevalue(group[[Key]], key) is val {true} {
+      assert groups sat @ph-contains-one-such(data sort Record, ?g, closure 0)
+      perform $Append(?value, group[[Elements]])
+      return ~unused~
+    }
+  }
+  let group = record Record { [[Key]]: key, [[Elements]]: [value] }
+  perform $Append(?group, ?groups)
+  return ~unused~
+  closure abstract params [g] captures [key] {
+    return bool(@sec-samevalue(g[[Key]], key) is val {true})
+  }
+}
+
+def @sec-groupby "GroupBy" (kind ao params [items : #"ECMAScript language value", callback : #"ECMAScript language value", keyCoercion : val(~property~) | val(~collection~)] -> completion<list<record { [[Key]]: #"ECMAScript language value", [[Elements]]: list<#"ECMAScript language value"> }>> | #"throw completion") vars [items, callback, keyCoercion, groups, iteratorRecord, k, error, next, value, key] {
+  perform ? @sec-requireobjectcoercible(items)
+  if @sec-iscallable(callback) is val {false} -> throw @ph-new-error([[TypeError]])
+  let groups = $ListNew()
+  let iteratorRecord = ? @sec-getiterator(items, ~sync~)
+  let k = 0
+  repeat {
+    if k >= 2 ^ 53 - 1 {
+      let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+      return ? @sec-iteratorclose(iteratorRecord, error)
+    }
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} {
+      return groups
+    }
+    let value = next
+    let key = @sec-completion-ao(@sec-call(callback, undefined, [value, $𝔽(k)]))
+    block {
+      assert key is ty {#"Completion Record"}
+      if key is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iteratorRecord, key)
+      set var key = ! key
+    }
+    if keyCoercion is val {~property~} {
+      set var key = @sec-completion-ao(@sec-topropertykey(key))
+      block {
+        assert key is ty {#"Completion Record"}
+        if key is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iteratorRecord, key)
+        set var key = ! key
+      }
+    }
+    else {
+      assert keyCoercion is val {~collection~}
+      set var key = @sec-canonicalizekeyedcollectionkey(key)
+    }
+    perform @sec-add-value-to-keyed-group(groups, key, value)
+    set var k = k + 1
+  }
+}
+
+def @sec-getoptionsobject "GetOptionsObject" (kind ao params [options : #"ECMAScript language value"] -> completion<Object> | #"throw completion") vars [options] {
+  if options is val {undefined} {
+    return @sec-ordinaryobjectcreate(null)
+  }
+  if options is ty {Object} {
+    return options
+  }
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-SetterThatIgnoresPrototypeProperties "SetterThatIgnoresPrototypeProperties" (kind ao params [thisValue : #"ECMAScript language value", home : Object, propertyKey : #"property key", value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [thisValue, home, propertyKey, value, propertyDesc] {
+  if thisValue is not ty {Object} {
+    throw @ph-new-error([[TypeError]])
+  }
+  if @sec-samevalue(thisValue, home) is val {true} {
+    note "Throwing here emulates assignment to a non-writable data property on the _home_ object in strict mode code."
+    throw @ph-new-error([[TypeError]])
+  }
+  let propertyDesc = ? thisValue[[GetOwnProperty]](propertyKey)
+  if propertyDesc is val {undefined} {
+    perform ? @sec-createdatapropertyorthrow(thisValue, propertyKey, value)
+  }
+  else {
+    perform ? @sec-set-o-p-v-throw(thisValue, propertyKey, value, true)
+  }
+  return ~unused~
+}
+
+def @sec-getiteratordirect "GetIteratorDirect" (kind ao params [#"obj" : Object] -> completion<#"Iterator Record"> | #"throw completion") vars [#"obj", nextMethod, iteratorRecord] {
+  let nextMethod = ? @sec-get-o-p(#"obj", "next")
+  let iteratorRecord = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: nextMethod, [[Done]]: false }
+  return iteratorRecord
+}
+
+def @sec-getiteratorfrommethod "GetIteratorFromMethod" (kind ao params [#"obj" : #"ECMAScript language value", #"method" : #"function object"] -> completion<#"Iterator Record"> | #"throw completion") vars [#"obj", #"method", iterator] {
+  let iterator = ? @sec-call(#"method", #"obj")
+  if iterator is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-getiteratordirect(iterator)
+}
+
+def @sec-getiterator "GetIterator" (kind ao params [#"obj" : #"ECMAScript language value", #"kind" : val(~sync~) | val(~async~)] -> completion<#"Iterator Record"> | #"throw completion") vars [#"obj", #"kind", #"method", syncMethod, syncIteratorRecord] {
+  if #"kind" is val {~async~} {
+    let #"method" = ? @sec-getmethod(#"obj", $WellKnownSymbol("Symbol.asyncIterator"))
+    if #"method" is val {undefined} {
+      let syncMethod = ? @sec-getmethod(#"obj", $WellKnownSymbol("Symbol.iterator"))
+      if syncMethod is val {undefined} -> throw @ph-new-error([[TypeError]])
+      let syncIteratorRecord = ? @sec-getiteratorfrommethod(#"obj", syncMethod)
+      return @sec-createasyncfromsynciterator(syncIteratorRecord)
+    }
+  }
+  else {
+    let #"method" = ? @sec-getmethod(#"obj", $WellKnownSymbol("Symbol.iterator"))
+  }
+  if #"method" is val {undefined} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-getiteratorfrommethod(#"obj", #"method")
+}
+
+def @sec-getiteratorflattenable "GetIteratorFlattenable" (kind ao params [#"obj" : #"ECMAScript language value", primitiveHandling : val(~iterate-string-primitives~) | val(~reject-primitives~)] -> completion<#"Iterator Record"> | #"throw completion") vars [#"obj", primitiveHandling, #"method", iterator] {
+  if #"obj" is not ty {Object} {
+    if primitiveHandling is val {~reject-primitives~} -> throw @ph-new-error([[TypeError]])
+    assert primitiveHandling is val {~iterate-string-primitives~}
+    if #"obj" is not ty {String} -> throw @ph-new-error([[TypeError]])
+  }
+  let #"method" = ? @sec-getmethod(#"obj", $WellKnownSymbol("Symbol.iterator"))
+  if #"method" is val {undefined} {
+    let iterator = #"obj"
+  }
+  else {
+    let iterator = ? @sec-call(#"method", #"obj")
+  }
+  if iterator is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-getiteratordirect(iterator)
+}
+
+def @sec-iteratornext "IteratorNext" (kind ao params [iteratorRecord : #"Iterator Record", value : #"ECMAScript language value" opt] -> completion<Object> | #"throw completion") vars [iteratorRecord, value, result] {
+  if value fails $Present() {
+    let result = @sec-completion-ao(@sec-call(iteratorRecord[[NextMethod]], iteratorRecord[[Iterator]]))
+  }
+  else {
+    let result = @sec-completion-ao(@sec-call(iteratorRecord[[NextMethod]], iteratorRecord[[Iterator]], [value]))
+  }
+  if result is ty {#"throw completion"} {
+    set field iteratorRecord[[Done]] = true
+    return ? result
+  }
+  set var result = ! result
+  if result is not ty {Object} {
+    set field iteratorRecord[[Done]] = true
+    throw @ph-new-error([[TypeError]])
+  }
+  return result
+}
+
+def @sec-iteratorcomplete "IteratorComplete" (kind ao params [iteratorResult : Object] -> completion<Boolean> | #"throw completion") vars [iteratorResult] {
+  return @sec-toboolean(? @sec-get-o-p(iteratorResult, "done"))
+}
+
+def @sec-iteratorvalue "IteratorValue" (kind ao params [iteratorResult : Object] -> completion<#"ECMAScript language value"> | #"throw completion") vars [iteratorResult] {
+  return ? @sec-get-o-p(iteratorResult, "value")
+}
+
+def @sec-iteratorstep "IteratorStep" (kind ao params [iteratorRecord : #"Iterator Record"] -> completion<Object | val(~done~)> | #"throw completion") vars [iteratorRecord, result, done] {
+  let result = ? @sec-iteratornext(iteratorRecord)
+  let done = @sec-completion-ao(@sec-iteratorcomplete(result))
+  if done is ty {#"throw completion"} {
+    set field iteratorRecord[[Done]] = true
+    return ? done
+  }
+  set var done = ! done
+  if done is val {true} {
+    set field iteratorRecord[[Done]] = true
+    return ~done~
+  }
+  return result
+}
+
+def @sec-iteratorstepvalue "IteratorStepValue" (kind ao params [iteratorRecord : #"Iterator Record"] -> completion<#"ECMAScript language value" | val(~done~)> | #"throw completion") vars [iteratorRecord, result, value] {
+  let result = ? @sec-iteratorstep(iteratorRecord)
+  if result is val {~done~} {
+    return ~done~
+  }
+  let value = @sec-completion-ao(@sec-iteratorvalue(result))
+  if value is ty {#"throw completion"} {
+    set field iteratorRecord[[Done]] = true
+  }
+  return ? value
+}
+
+def @sec-iteratorclose "IteratorClose" (kind ao params [iteratorRecord : #"Iterator Record", #"completion" : #"Completion Record"] -> #"Completion Record") vars [iteratorRecord, #"completion", iterator, innerResult, #"return"] {
+  assert iteratorRecord[[Iterator]] is ty {Object}
+  let iterator = iteratorRecord[[Iterator]]
+  let innerResult = @sec-completion-ao(@sec-getmethod(iterator, "return"))
+  if innerResult is ty {#"normal completion"} {
+    let #"return" = innerResult[[Value]]
+    if #"return" is val {undefined} -> return ? #"completion"
+    set var innerResult = @sec-completion-ao(@sec-call(#"return", iterator))
+  }
+  if #"completion" is ty {#"throw completion"} -> return ? #"completion"
+  if innerResult is ty {#"throw completion"} -> return ? innerResult
+  if innerResult[[Value]] is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return ? #"completion"
+}
+
+def @sec-iteratorcloseall "IteratorCloseAll" (kind ao params [iterators : list<#"Iterator Record">, #"completion" : #"Completion Record"] -> #"Completion Record") vars [iterators, #"completion", iterator] {
+  for_each iterator rev in iterators {
+    set var #"completion" = @sec-completion-ao(@sec-iteratorclose(iterator, #"completion"))
+  }
+  return ? #"completion"
+}
+
+def @sec-ifabruptcloseiterator "IfAbruptCloseIterator" (kind untyped params [value, iteratorRecord]) vars [value, iteratorRecord] {
+  block {
+    assert value is ty {#"Completion Record"}
+    if value is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iteratorRecord, value)
+    set var value = ! value
+  }
+}
+
+def @sec-ifabruptcloseiterator#1 "IfAbruptCloseIterator.2" (kind untyped params [value, iteratorRecord]) vars [value, iteratorRecord] {
+  assert value is ty {#"Completion Record"}
+  if value is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iteratorRecord, value)
+  set var value = ! value
+}
+
+def @sec-ifabruptcloseiterators "IfAbruptCloseIterators" (kind untyped params [value, iteratorRecords]) vars [value, iteratorRecords] {
+  block {
+    assert value is ty {#"Completion Record"}
+    if value is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iteratorRecords, value)
+    set var value = ! value
+  }
+}
+
+def @sec-ifabruptcloseiterators#1 "IfAbruptCloseIterators.2" (kind untyped params [value, iteratorRecords]) vars [value, iteratorRecords] {
+  assert value is ty {#"Completion Record"}
+  if value is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iteratorRecords, value)
+  set var value = ! value
+}
+
+def @sec-asynciteratorclose "AsyncIteratorClose" (kind ao params [iteratorRecord : #"Iterator Record", #"completion" : #"Completion Record"] -> #"Completion Record") vars [iteratorRecord, #"completion", iterator, innerResult, #"return"] {
+  assert iteratorRecord[[Iterator]] is ty {Object}
+  let iterator = iteratorRecord[[Iterator]]
+  let innerResult = @sec-completion-ao(@sec-getmethod(iterator, "return"))
+  if innerResult is ty {#"normal completion"} {
+    let #"return" = innerResult[[Value]]
+    if #"return" is val {undefined} -> return ? #"completion"
+    set var innerResult = @sec-completion-ao(@sec-call(#"return", iterator))
+    if innerResult is ty {#"normal completion"} -> set var innerResult = @sec-completion-ao(@await(innerResult[[Value]]))
+  }
+  if #"completion" is ty {#"throw completion"} -> return ? #"completion"
+  if innerResult is ty {#"throw completion"} -> return ? innerResult
+  if innerResult[[Value]] is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return ? #"completion"
+}
+
+def @sec-ifabruptcloseasynciterator "IfAbruptCloseAsyncIterator" (kind untyped params [value, iteratorRecord]) vars [value, iteratorRecord] {
+  block {
+    assert value is ty {#"Completion Record"}
+    if value is ty {#"abrupt completion"} -> return ? @sec-asynciteratorclose(iteratorRecord, value)
+    set var value = ! value
+  }
+}
+
+def @sec-ifabruptcloseasynciterator#1 "IfAbruptCloseAsyncIterator.2" (kind untyped params [value, iteratorRecord]) vars [value, iteratorRecord] {
+  assert value is ty {#"Completion Record"}
+  if value is ty {#"abrupt completion"} -> return ? @sec-asynciteratorclose(iteratorRecord, value)
+  set var value = ! value
+}
+
+def @sec-createiterresultobject "CreateIteratorResultObject" (kind ao params [value : #"ECMAScript language value", done : Boolean] -> Object that sat @ph-type-conforms-iterator-result()) vars [value, done, #"obj"] {
+  let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  perform ! @sec-createdatapropertyorthrow(#"obj", "value", value)
+  perform ! @sec-createdatapropertyorthrow(#"obj", "done", done)
+  return #"obj"
+}
+
+def @sec-createlistiteratorRecord "CreateListIteratorRecord" (kind ao params [#"list" : list<#"ECMAScript language value">] -> #"Iterator Record") vars [#"list", #"closure", value, iterator] {
+  let #"closure" = closure 0
+  let iterator = @sec-createiteratorfromclosure(#"closure", ~empty~, intrinsic [[Iterator.prototype]])
+  return record #"Iterator Record" { [[Iterator]]: iterator, [[NextMethod]]: intrinsic [[GeneratorPrototype.next]], [[Done]]: false }
+  closure abstract params none captures [#"list"] {
+    for_each value in #"list" {
+      perform ? @sec-generatoryield(@sec-createiterresultobject(value, false))
+    }
+    return @sec-normalcompletion(undefined)
+  }
+}
+
+def @sec-iteratortolist "IteratorToList" (kind ao params [iteratorRecord : #"Iterator Record"] -> completion<list<#"ECMAScript language value">> | #"throw completion") vars [iteratorRecord, values, next] {
+  let values = $ListNew()
+  repeat {
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} {
+      return values
+    }
+    perform $Append(?next, ?values)
+  }
+}
+
+def @sec-adddisposableresource "AddDisposableResource" (kind ao params [disposableResourceStack : list<#"DisposableResource Record">, value : #"ECMAScript language value", #"kind" : val(~sync-dispose~) | val(~async-dispose~), #"method" : #"function object" opt] -> completion<val(~unused~)> | #"throw completion") vars [disposableResourceStack, value, #"kind", #"method", resource] {
+  if #"method" sat $Present() {
+    assert value is val {undefined}
+    let resource = record #"DisposableResource Record" { [[ResourceValue]]: undefined, [[Kind]]: #"kind", [[DisposeMethod]]: #"method" }
+  }
+  else_if value is val {null; undefined} {
+    if #"kind" is val {~sync-dispose~} -> return ~unused~
+    note "When _value_ is either *null* or *undefined* and _kind_ is ~async-dispose~, we record that the resource was evaluated to ensure we will still perform an Await when resources are later disposed."
+    let resource = record #"DisposableResource Record" { [[ResourceValue]]: undefined, [[Kind]]: ~async-dispose~, [[DisposeMethod]]: undefined }
+  }
+  else {
+    set var #"method" = ? @sec-getdisposemethod(value, #"kind")
+    if #"method" is val {undefined} -> throw @ph-new-error([[TypeError]])
+    let resource = record #"DisposableResource Record" { [[ResourceValue]]: value, [[Kind]]: #"kind", [[DisposeMethod]]: #"method" }
+  }
+  perform $Append(?resource, ?disposableResourceStack)
+  return ~unused~
+}
+
+def @sec-getdisposemethod "GetDisposeMethod" (kind ao params [value : #"ECMAScript language value", #"kind" : val(~sync-dispose~) | val(~async-dispose~)] -> completion<#"function object" | val(undefined)> | #"throw completion") vars [value, #"kind", asyncMethod, syncMethod, #"closure", #"obj", #"#the *this* value", #"#NewTarget", #"#the List of arguments that was passed to this function by [[Call]] or [[Construct]]", promiseCapability, result] {
+  if value is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if #"kind" is val {~sync-dispose~} -> return ? @sec-getmethod(value, $WellKnownSymbol("Symbol.dispose"))
+  assert #"kind" is val {~async-dispose~}
+  let asyncMethod = ? @sec-getmethod(value, $WellKnownSymbol("Symbol.asyncDispose"))
+  if asyncMethod is not val {undefined} -> return asyncMethod
+  let syncMethod = ? @sec-getmethod(value, $WellKnownSymbol("Symbol.dispose"))
+  if syncMethod is val {undefined} -> return undefined
+  let #"closure" = closure 0
+  note "This function is not observable to user code. It is used to ensure that a Promise returned from a synchronous `%Symbol.dispose%` method will not be awaited and that a synchronous exception will be translated to a rejected Promise."
+  return @sec-createbuiltinfunction(#"closure", 0, "", [])
+  closure abstract params none captures [syncMethod] frame (#"#the *this* value", #"#NewTarget", #"#the List of arguments that was passed to this function by [[Call]] or [[Construct]]") {
+    let #"obj" = #"#the *this* value"
+    let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+    let result = @sec-completion-ao(@sec-call(syncMethod, #"obj"))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+        return promiseCapability[[Promise]]
+      }
+      set var result = ! result
+    }
+    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [undefined])
+    return promiseCapability[[Promise]]
+  }
+}
+
+def @sec-disposeresources "DisposeResources" (kind ao params [disposableResourceStack : list<#"DisposableResource Record">, #"completion" : completion<#"ECMAScript language value" | val(~empty~)> | #"abrupt completion"] -> completion<#"ECMAScript language value" | val(~empty~)> | #"abrupt completion") vars [disposableResourceStack, #"completion", needsAwait, hasAwaited, outputCompletion, resource, value, #"kind", #"method", result, suppressed, error] {
+  let needsAwait = false
+  let hasAwaited = false
+  let outputCompletion = #"completion"
+  for_each resource rev in disposableResourceStack {
+    let value = resource[[ResourceValue]]
+    let #"kind" = resource[[Kind]]
+    let #"method" = resource[[DisposeMethod]]
+    if #"kind" is val {~sync-dispose~} and needsAwait is val {true} and hasAwaited is val {false} {
+      perform ! @await(undefined)
+      set var needsAwait = false
+    }
+    if #"method" is not val {undefined} {
+      let result = @sec-completion-ao(@sec-call(#"method", value))
+      if result is ty {#"normal completion"} and #"kind" is val {~async-dispose~} {
+        set var result = @sec-completion-ao(@await(result[[Value]]))
+        set var hasAwaited = true
+      }
+      if result is ty {#"throw completion"} {
+        if outputCompletion is ty {#"throw completion"} {
+          set var result = result[[Value]]
+          let suppressed = outputCompletion[[Value]]
+          let error = @ph-new-error(err [[SuppressedError]])
+          perform @sec-createnonenumerabledatapropertyorthrow(error, "error", result)
+          perform @sec-createnonenumerabledatapropertyorthrow(error, "suppressed", suppressed)
+          set var outputCompletion = @sec-throwcompletion(error)
+        }
+        else {
+          set var outputCompletion = result
+        }
+      }
+    }
+    else {
+      assert #"kind" is val {~async-dispose~}
+      set var needsAwait = true
+      note "This can only indicate a case where either *null* or *undefined* was the initialized value of an `await using` declaration."
+    }
+  }
+  if needsAwait is val {true} and hasAwaited is val {false} {
+    perform ! @await(undefined)
+  }
+  note "At this point _disposableResourceStack_ will never be used again. The contents of _disposableResourceStack_ can be discarded in implementations, such as by garbage collection."
+  return ? outputCompletion
+}
+
+sdo_row @sec-runtime-semantics-stringnumericvalue StringNumericValue form alg {
+  prods [p"NumericString 0 StringNumericLiteral ::: StrWhiteSpace?", p"NumericString 1 StringNumericLiteral ::: StrWhiteSpace?"]
+  keys ["StringNumericLiteral ::: StrWhiteSpace?"]
+  vars []
+  steps {
+    return num_f(+0)
+  }
+}
+
+sdo_row @sec-runtime-semantics-stringnumericvalue#1 StringNumericValue form alg {
+  prods [p"NumericString 00 StringNumericLiteral ::: StrWhiteSpace? StrNumericLiteral StrWhiteSpace?", p"NumericString 01 StringNumericLiteral ::: StrWhiteSpace? StrNumericLiteral StrWhiteSpace?", p"NumericString 10 StringNumericLiteral ::: StrWhiteSpace? StrNumericLiteral StrWhiteSpace?", p"NumericString 11 StringNumericLiteral ::: StrWhiteSpace? StrNumericLiteral StrWhiteSpace?"]
+  keys ["StringNumericLiteral ::: StrWhiteSpace? StrNumericLiteral StrWhiteSpace?"]
+  vars []
+  steps {
+    return sdo StringNumericValue(child 5 |StrNumericLiteral|)
+  }
+}
+
+sdo_row @sec-runtime-semantics-stringnumericvalue#2 StringNumericValue form alg {
+  prods [p"NumericString - StrNumericLiteral ::: NonDecimalIntegerLiteral[~Sep]"]
+  keys ["StrNumericLiteral ::: NonDecimalIntegerLiteral"]
+  vars []
+  steps {
+    return $𝔽(sdo MV(child 5 |NonDecimalIntegerLiteral|))
+  }
+}
+
+sdo_row @sec-runtime-semantics-stringnumericvalue#3 StringNumericValue form alg {
+  prods [p"NumericString - StrDecimalLiteral ::: `-` StrUnsignedDecimalLiteral"]
+  keys ["StrDecimalLiteral ::: `-` StrUnsignedDecimalLiteral"]
+  vars [a]
+  steps {
+    let a = sdo StringNumericValue(child 5 |StrUnsignedDecimalLiteral|)
+    if a is val {num_f(+0)} -> return num_f(-0)
+    return neg a
+  }
+}
+
+sdo_row @sec-runtime-semantics-stringnumericvalue#4 StringNumericValue form alg {
+  prods [p"NumericString - StrUnsignedDecimalLiteral ::: `Infinity`"]
+  keys ["StrUnsignedDecimalLiteral ::: `Infinity`"]
+  vars []
+  steps {
+    return num_f(+∞)
+  }
+}
+
+sdo_row @sec-runtime-semantics-stringnumericvalue#5 StringNumericValue form alg {
+  prods [p"NumericString 00 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] `.` DecimalDigits[~Sep]? ExponentPart[~Sep]?", p"NumericString 01 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] `.` DecimalDigits[~Sep]? ExponentPart[~Sep]?", p"NumericString 10 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] `.` DecimalDigits[~Sep]? ExponentPart[~Sep]?", p"NumericString 11 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] `.` DecimalDigits[~Sep]? ExponentPart[~Sep]?"]
+  keys ["StrUnsignedDecimalLiteral ::: DecimalDigits `.` DecimalDigits? ExponentPart?"]
+  vars [a, b, n, e]
+  steps {
+    let a = sdo MV(child 0 |DecimalDigits|)
+    if child 1 |DecimalDigits| sat $Present() {
+      let b = sdo MV(child 1 |DecimalDigits|)
+      let n = $Count(data choice 2, child 1 |DecimalDigits|)
+    }
+    else {
+      let b = 0
+      let n = 0
+    }
+    if_else child 5 |ExponentPart| sat $Present() { let e = sdo MV(child 5 |ExponentPart|) } else { let e = 0 }
+    return @formal-rounddecimalmv(a * 10 ^ n + b, e - n)
+  }
+}
+
+sdo_row @sec-runtime-semantics-stringnumericvalue#6 StringNumericValue form alg {
+  prods [p"NumericString 0 StrUnsignedDecimalLiteral ::: `.` DecimalDigits[~Sep] ExponentPart[~Sep]?", p"NumericString 1 StrUnsignedDecimalLiteral ::: `.` DecimalDigits[~Sep] ExponentPart[~Sep]?"]
+  keys ["StrUnsignedDecimalLiteral ::: `.` DecimalDigits ExponentPart?"]
+  vars [b, e, n]
+  steps {
+    let b = sdo MV(child 5 |DecimalDigits|)
+    if_else child 5 |ExponentPart| sat $Present() { let e = sdo MV(child 5 |ExponentPart|) } else { let e = 0 }
+    let n = $Count(data choice 2, child 5 |DecimalDigits|)
+    return @formal-rounddecimalmv(b, e - n)
+  }
+}
+
+sdo_row @sec-runtime-semantics-stringnumericvalue#7 StringNumericValue form alg {
+  prods [p"NumericString 0 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] ExponentPart[~Sep]?", p"NumericString 1 StrUnsignedDecimalLiteral ::: DecimalDigits[~Sep] ExponentPart[~Sep]?"]
+  keys ["StrUnsignedDecimalLiteral ::: DecimalDigits ExponentPart?"]
+  vars [a, e]
+  steps {
+    let a = sdo MV(child 5 |DecimalDigits|)
+    if_else child 5 |ExponentPart| sat $Present() { let e = sdo MV(child 5 |ExponentPart|) } else { let e = 0 }
+    return @formal-rounddecimalmv(a, e)
+  }
+}
+
+sdo_row @sec-runtime-semantics-mv-for-stringintegerliteral MV form equation {
+  prods [p"NumericString 0 StringIntegerLiteral ::: StrWhiteSpace?", p"NumericString 1 StringIntegerLiteral ::: StrWhiteSpace?"]
+  keys ["StringIntegerLiteral ::: StrWhiteSpace?"]
+  vars []
+  steps {
+    return 0
+  }
+}
+
+sdo_row @sec-runtime-semantics-mv-for-stringintegerliteral#1 MV form equation {
+  prods [p"NumericString 00 StringIntegerLiteral ::: StrWhiteSpace? StrIntegerLiteral StrWhiteSpace?", p"NumericString 01 StringIntegerLiteral ::: StrWhiteSpace? StrIntegerLiteral StrWhiteSpace?", p"NumericString 10 StringIntegerLiteral ::: StrWhiteSpace? StrIntegerLiteral StrWhiteSpace?", p"NumericString 11 StringIntegerLiteral ::: StrWhiteSpace? StrIntegerLiteral StrWhiteSpace?"]
+  keys ["StringIntegerLiteral ::: StrWhiteSpace? StrIntegerLiteral StrWhiteSpace?"]
+  vars []
+  steps {
+    return sdo MV(child 5 |StrIntegerLiteral|)
+  }
+}
+

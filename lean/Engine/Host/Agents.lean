@@ -154,9 +154,6 @@ def agentHook (k : ClauseId) (vs : List (Val Impl)) : Run Impl (Val Impl) :=
 
 section Algs
 
-/-- A step. -/
-def st (s : Stmt) : Node := .mk [] s
-
 /-- The algorithm of the clause with that sec-id. -/
 def secCallee (sec : String) : Callee := .alg ⟨(N.clauseOf? sec).getD 0, 0⟩
 
@@ -167,23 +164,23 @@ def ownCall (k : ClauseId) (args : List Expr) : Expr := .call (.alg ⟨k, 0⟩) 
 def primCall (p : PrimId) (args : List Expr) : Expr := .call (.prim p) args
 
 /-- `e` is ~empty~ (`neg`: is not). -/
-def emptyC (neg : Bool) (e : Expr) : Cond := .preds e (.isVal neg .or [.enum Known.eEmpty]) []
+def emptyC (neg : Bool) (e : Expr) : Cond := .preds e (.isVal neg false [.enum Known.eEmpty]) []
 
 /-- `Perform AgentInterleave().` -/
-def interleaveStep : Node := st (.perform (.call (secCallee N "formal-agent-interleave") []))
+def interleaveStep : Stmt := .perform (.call (secCallee N "formal-agent-interleave") [])
 
 /-- `Repeat, while AgentWoken() is false: Perform AgentInterleave().` -/
-def wokenWait : Node :=
-  st (.repeatWhile (.preds (primCall Known.pAgentWoken []) (.isVal false .or [.val .false]) []) [interleaveStep N])
+def wokenWait : Stmt :=
+  .repeatWhile (.preds (primCall Known.pAgentWoken []) (.isVal false false [.val .false]) []) [interleaveStep N]
 
 /-- A built-in function's header with `n` parameters (slots 2 on). -/
 def builtinHeader (n : Nat) : Header :=
   { kind := .builtin, params := (List.range n).map fun i => { x := 2 + i, ty := none, optional := false, rest := false },
-    ret := none, recv := none, desc := [] }
+    ret := none, recv := none }
 
 /-- A built-in function's algorithm. -/
-def builtinAlg (id : AlgId) (name : String) (n : Nat) (vars : Array String) (body : List Node) : Alg :=
-  { id, name, header := builtinHeader n, vars := #["this value", "NewTarget"] ++ vars, attrs := [], indent := 0, body,
+def builtinAlg (id : AlgId) (name : String) (n : Nat) (vars : Array String) (body : List Stmt) : Alg :=
+  { id, name, header := builtinHeader n, vars := #["this value", "NewTarget"] ++ vars, body,
     closures := #[] }
 
 def startAlg : AlgId := ⟨2000020, 0⟩
@@ -203,7 +200,7 @@ def setTimeoutAlg : AlgId := ⟨2000029, 0⟩
 def fieldN (n : String) : FieldId := (N.field? n).getD 0
 
 /-- A new Record of the sort of that name. -/
-def recordE (sort : String) (fs : List (FieldId × Expr)) : Expr := .record .none (some ((N.sort? sort).getD Known.sRecord)) fs
+def recordE (sort : String) (fs : List (FieldId × Expr)) : Expr := .record (some ((N.sort? sort).getD Known.sRecord)) fs
 
 def zeroE : Expr := .math .none (.num (.dec 0))
 
@@ -212,51 +209,51 @@ def idxE (e : Expr) (i : Nat) : Expr := .index e (.math .none (.num (.dec i)))
 /-- AgentMain(source), the closure over slot 3 a new agent's execution context runs: InitializeHostDefinedRealm;
 ParseScript(_source_, the current Realm Record, *undefined*), then ScriptEvaluation where it parses (the completion
 ignored); then forever: its jobs (AgentNextJob() until ~empty~: AgentPrepareJob, the job's call, AgentCleanupJob,
-ClearKeptObjects(), then as main's job loop an Assert that the call's completion is not abrupt, at the erratum of
-the job's clause (`Names.jobErrata`, by AgentJobClause) in every mode); AgentTakeMessage(); for ~empty~,
+ClearKeptObjects(), then as main's job loop an AssertAlways that the call's completion is not abrupt for each clause in
+`Names.checkedJobs` by AgentJobClause); AgentTakeMessage(); for ~empty~,
 SuspendAgentUntil(~empty~, AgentJobDue()) and the woken wait; else,
 with a callback, a new SharedArrayBuffer of the message's Shared Data Block and length in this agent's realm
 (AllocateSharedArrayBuffer's object), and Call(callback, *undefined*, « it, n ») (the completion ignored). -/
 def agentMain : CloLit :=
   let m : Expr := .var 10
-  let errors : Cond := .preds (.var 9) (.isTy true .or [.listOf "a" (.sort "" [] ((N.sort? "error").getD 0) "errors")]) []
+  let errors : Cond := .preds (.var 9) (.isTy true false [.listOf (.sort [] ((N.sort? "error").getD 0))]) []
   let sab : Expr := .var 11
-  let normal : Cond := .preds (.var 14) (.isTy true .or [.sort "an" [] Known.sAbruptComp ""]) []
-  let erratumAt : ClauseId × ErratumId → Node := fun (c, e) =>
-    st (.if_ (.preds (ownCall jobClauseClause [.var 12]) (.isVal false .or [.math .none (.num (.dec c))]) [])
-      (.inline (.assertAt (some e) normal)) [] none)
+  let normal : Cond := .preds (.var 14) (.isTy true false [.sort [] Known.sAbruptComp]) []
+  let checkJobAt : ClauseId → Stmt := fun c =>
+    .if_ (.preds (ownCall jobClauseClause [.var 12]) (.isVal false false [.math .none (.num (.dec c))]) [])
+      (.inline (.assertAlways normal)) [] none
   { kind := .abstract, atomic := false, params := none, caps := [3, 6], body := [
-    st (.perform (.bang (.call (secCallee N "sec-initializehostdefinedrealm") []))),
-    st (.let_ 8 (primCall Known.pCurrentRealm [])),
-    st (.let_ 15 (primCall Known.pRunning [])),
-    st (.let_ 9 (.call (secCallee N "sec-parse-script") [.var 3, .var 8, .val .undefined])),
-    st (.if_ errors (.inline (.perform (.call (secCallee N "sec-runtime-semantics-scriptevaluation") [.var 9]))) [] none),
-    st (.remove (.var 15) 0),
-    st (.repeat_ [
-      st (.let_ 12 (primCall Known.pAgentNextJob [])),
-      st (.repeatWhile (emptyC true (.var 12)) ([
-        st (.remove (.var 6) 0),
-        st (.let_ 13 (primCall Known.pAgentPrepareJob [.var 12])),
-        st (.let_ 14 (.apply (.var 13) [])),
-        st (.perform (primCall Known.pAgentCleanupJob [.var 12])),
-        st (.push (.var 6) 0),
-        st (.perform (.call (secCallee N "sec-clear-kept-objects") []))] ++ N.jobErrata.map erratumAt ++ [
-        st (.assert normal),
-        st (.set (.var 12) (primCall Known.pAgentNextJob []))])),
-      st (.let_ 10 (ownCall takeMessageClause [])),
-      st (.if_ (emptyC false m)
-        (.block [st (.perform (primCall Known.pSuspendAgentUntil [.enum Known.eEmpty, ownCall jobDueClause []])),
+    .perform (.bang (.call (secCallee N "sec-initializehostdefinedrealm") [])),
+    .let_ 8 (primCall Known.pCurrentRealm []),
+    .let_ 15 (primCall Known.pRunning []),
+    .let_ 9 (.call (secCallee N "sec-parse-script") [.var 3, .var 8, .val .undefined]),
+    .if_ errors (.inline (.perform (.call (secCallee N "sec-runtime-semantics-scriptevaluation") [.var 9]))) [] none,
+    .remove (.var 15) 0,
+    .repeat_ [
+      .let_ 12 (primCall Known.pAgentNextJob []),
+      .repeatWhile (emptyC true (.var 12)) ([
+        .remove (.var 6) 0,
+        .let_ 13 (primCall Known.pAgentPrepareJob [.var 12]),
+        .let_ 14 (.apply (.var 13) []),
+        .perform (primCall Known.pAgentCleanupJob [.var 12]),
+        .push (.var 6) 0,
+        .perform (.call (secCallee N "sec-clear-kept-objects") [])] ++ N.checkedJobs.map checkJobAt ++ [
+        .assert normal,
+        .set (.var 12) (primCall Known.pAgentNextJob [])]),
+      .let_ 10 (ownCall takeMessageClause []),
+      .if_ (emptyC false m)
+        (.block [.perform (primCall Known.pSuspendAgentUntil [.enum Known.eEmpty, ownCall jobDueClause []]),
           wokenWait N]) []
-        (some (.mk [] none (.block [
-          st (.if_ (.preds (idxE m 2) (.isVal true .or [.val .undefined]) []) (.block [
-            st (.push (.var 15) 0),
-            st (.let_ 11 (.bang (.call (secCallee N "sec-ordinarycreatefromconstructor")
-              [.intrinsic (fieldN N "SharedArrayBuffer"), .val (.str "%SharedArrayBuffer.prototype%" ""),
-               .list [.fieldName (fieldN N "ArrayBufferData"), .fieldName (fieldN N "ArrayBufferByteLength")]]))),
-            st (.set (.field sab (fieldN N "ArrayBufferData")) (.field (idxE m 0) (fieldN N "ArrayBufferData"))),
-            st (.set (.field sab (fieldN N "ArrayBufferByteLength")) (.field (idxE m 0) (fieldN N "ArrayBufferByteLength"))),
-            st (.perform (.call (secCallee N "sec-call") [idxE m 2, .val .undefined, .list [sab, idxE m 1]])),
-            st (.remove (.var 15) 0)]) [] none)]))))])] }
+        (some (.mk none (.block [
+          .if_ (.preds (idxE m 2) (.isVal true false [.val .undefined]) []) (.block [
+            .push (.var 15) 0,
+            .let_ 11 (.bang (.call (secCallee N "sec-ordinarycreatefromconstructor")
+              [.intrinsic (fieldN N "SharedArrayBuffer"), .val (.str "%SharedArrayBuffer.prototype%"),
+               .list [.fieldName (fieldN N "ArrayBufferData"), .fieldName (fieldN N "ArrayBufferByteLength")]])),
+            .set (.field sab (fieldN N "ArrayBufferData")) (.field (idxE m 0) (fieldN N "ArrayBufferData")),
+            .set (.field sab (fieldN N "ArrayBufferByteLength")) (.field (idxE m 0) (fieldN N "ArrayBufferByteLength")),
+            .perform (.call (secCallee N "sec-call") [idxE m 2, .val .undefined, .list [sab, idxE m 1]]),
+            .remove (.var 15) 0]) [] none])))]] }
 
 /-- `$262.agent.start(source)`: `? ToString(source)`; a new Agent Record of the surrounding agent's candidate
 execution ([[CanBlock]] *true*, the host's choices as `newAgent`'s), its [[Signifier]] itself, its [[ParkedStack]]
@@ -268,80 +265,80 @@ def startBuiltin : Alg :=
   { builtinAlg startAlg "$262.agent.start" 1
       #["source", "src", "execution", "agent", "context", "status", "realm", "script", "message", "sab", "k", "job",
         "result", "realmCtx"] [
-      st (.let_ 3 (.q (.call (secCallee N "sec-tostring") [.var 2]))),
-      st (.let_ 4 (.field (primCall Known.pAgentRecord []) Known.fCandidateExecution)),
-      st (.let_ 5 (recordE N "Agent Record" [(f "LittleEndian", .val .true), (f "CanBlock", .val .true),
+      .let_ 3 (.q (.call (secCallee N "sec-tostring") [.var 2])),
+      .let_ 4 (.field (primCall Known.pAgentRecord []) Known.fCandidateExecution),
+      .let_ 5 (recordE N "Agent Record" [(f "LittleEndian", .val .true), (f "CanBlock", .val .true),
         (f "IsLockFree1", .val .true), (f "IsLockFree2", .val .true), (f "IsLockFree8", .val .true),
         (f "KeptAlive", .list []), (f "ModuleAsyncEvaluationCount", zeroE), (f "GlobalSymbolRegistry", .list []),
-        (Known.fCandidateExecution, ex)])),
-      st (.set (.field (.var 5) Known.fSignifier) (.var 5)),
-      st (.let_ 6 (recordE N "execution context" [])),
-      st (.setCodeState (.var 6) (.closure 0)),
-      st (.set (.field (.var 5) Known.fParkedStack) (.list [.var 6])),
-      st (.perform (primCall Known.pAppend [recordE N "Agent Events Record" [(Known.fAgentSignifier, .var 5),
-        (f "EventList", .list []), (f "AgentSynchronizesWith", .list [])], .field ex Known.fEventsRecords])),
-      st (.ret (some (.val .undefined)))] with closures := #[agentMain N] }
+        (Known.fCandidateExecution, ex)]),
+      .set (.field (.var 5) Known.fSignifier) (.var 5),
+      .let_ 6 (recordE N "execution context" []),
+      .setCodeState (.var 6) (.closure 0),
+      .set (.field (.var 5) Known.fParkedStack) (.list [.var 6]),
+      .perform (primCall Known.pAppend [recordE N "Agent Events Record" [(Known.fAgentSignifier, .var 5),
+        (f "EventList", .list []), (f "AgentSynchronizesWith", .list [])], .field ex Known.fEventsRecords]),
+      .ret (some (.val .undefined))] with closures := #[agentMain N] }
 
 /-- `$262.agent.broadcast(sab, n)`: `? RequireInternalSlot(sab, [[ArrayBufferData]])`, a *TypeError* for an
 ArrayBuffer; AgentBroadcast(sab, n); WakeAgent of each agent waiting for a message; AgentInterleave until every
 agent has taken it; *undefined*. -/
 def broadcastBuiltin : Alg :=
   builtinAlg broadcastAlg "$262.agent.broadcast" 2 #["sab", "n", "idle"] [
-    st (.perform (.q (.call (secCallee N "sec-requireinternalslot") [.var 2, .fieldName (fieldN N "ArrayBufferData")]))),
-    st (.if_ (.preds (.call (secCallee N "sec-issharedarraybuffer") [.var 2]) (.isVal false .or [.val .false]) [])
-      (.inline (.throwErr (fieldN N "TypeError"))) [] none),
-    st (.perform (ownCall broadcastClause [.var 2, .var 3])),
-    st (.let_ 4 (ownCall idleAgentClause [])),
-    st (.repeatWhile (emptyC true (.var 4)) [st (.perform (primCall Known.pWakeAgent [.var 4])),
-      st (.set (.var 4) (ownCall idleAgentClause []))]),
-    st (.repeatWhile (.preds (ownCall allTakenClause []) (.isVal false .or [.val .false]) []) [interleaveStep N]),
-    st (.ret (some (.val .undefined)))]
+    .perform (.q (.call (secCallee N "sec-requireinternalslot") [.var 2, .fieldName (fieldN N "ArrayBufferData")])),
+    .if_ (.preds (.call (secCallee N "sec-issharedarraybuffer") [.var 2]) (.isVal false false [.val .false]) [])
+      (.inline (.throwVal (.call (.alg Known.algNewError) [.fieldName (fieldN N "TypeError")]))) [] none,
+    .perform (ownCall broadcastClause [.var 2, .var 3]),
+    .let_ 4 (ownCall idleAgentClause []),
+    .repeatWhile (emptyC true (.var 4)) [.perform (primCall Known.pWakeAgent [.var 4]),
+      .set (.var 4) (ownCall idleAgentClause [])],
+    .repeatWhile (.preds (ownCall allTakenClause []) (.isVal false false [.val .false]) []) [interleaveStep N],
+    .ret (some (.val .undefined))]
 
 /-- `$262.agent.getReport()`: AgentInterleave; the oldest report not taken, else *null*. -/
 def getReportBuiltin : Alg :=
   builtinAlg getReportAlg "$262.agent.getReport" 0 #["report"] [interleaveStep N,
-    st (.let_ 2 (ownCall takeReportClause [])),
-    st (.if_ (emptyC false (.var 2)) (.inline (.ret (some (.val .null)))) [] none),
-    st (.ret (some (.var 2)))]
+    .let_ 2 (ownCall takeReportClause []),
+    .if_ (emptyC false (.var 2)) (.inline (.ret (some (.val .null)))) [] none,
+    .ret (some (.var 2))]
 
 /-- `$262.agent.sleep(ms)`: SuspendAgentUntil(*undefined*, AgentWakeTime(`? ToNumber(ms)`)) and the woken wait;
 *undefined*. -/
 def sleepBuiltin : Alg :=
   builtinAlg sleepAlg "$262.agent.sleep" 1 #["ms", "t"] [
-    st (.let_ 3 (ownCall wakeTimeClause [.q (.call (secCallee N "sec-tonumber") [.var 2])])),
-    st (.perform (primCall Known.pSuspendAgentUntil [.val .undefined, .var 3])),
+    .let_ 3 (ownCall wakeTimeClause [.q (.call (secCallee N "sec-tonumber") [.var 2])]),
+    .perform (primCall Known.pSuspendAgentUntil [.val .undefined, .var 3]),
     wokenWait N,
-    st (.ret (some (.val .undefined)))]
+    .ret (some (.val .undefined))]
 
 /-- `$262.agent.monotonicNow()`: TimeNow(). -/
 def monotonicNowBuiltin : Alg :=
-  builtinAlg monotonicNowAlg "$262.agent.monotonicNow" 0 #[] [st (.ret (some (primCall Known.pTimeNow [])))]
+  builtinAlg monotonicNowAlg "$262.agent.monotonicNow" 0 #[] [.ret (some (primCall Known.pTimeNow []))]
 
 /-- `$262.agent.receiveBroadcast(callback)`: AgentReceive(callback); *undefined*. -/
 def receiveBuiltin : Alg :=
   builtinAlg receiveAlg "$262.agent.receiveBroadcast" 1 #["callback"] [
-    st (.perform (ownCall receiveClause [.var 2])), st (.ret (some (.val .undefined)))]
+    .perform (ownCall receiveClause [.var 2]), .ret (some (.val .undefined))]
 
 /-- `$262.agent.report(message)`: AgentReport(`? ToString(message)`); *undefined*. -/
 def reportBuiltin : Alg :=
   builtinAlg reportAlg "$262.agent.report" 1 #["message", "string"] [
-    st (.let_ 3 (.q (.call (secCallee N "sec-tostring") [.var 2]))),
-    st (.perform (ownCall reportClause [.var 3])), st (.ret (some (.val .undefined)))]
+    .let_ 3 (.q (.call (secCallee N "sec-tostring") [.var 2])),
+    .perform (ownCall reportClause [.var 3]), .ret (some (.val .undefined))]
 
 /-- `$262.agent.leaving()`: *undefined*. -/
 def leavingBuiltin : Alg :=
-  builtinAlg leavingAlg "$262.agent.leaving" 0 #[] [st (.ret (some (.val .undefined)))]
+  builtinAlg leavingAlg "$262.agent.leaving" 0 #[] [.ret (some (.val .undefined))]
 
 /-- Main's idle step: ~empty~ where AgentIdleUntil() is ~empty~; else SuspendAgentUntil(*undefined*, it),
 AgentInterleave and the woken wait; ~unused~. -/
 def idleBuiltin : Alg :=
-  { id := idleAlg, name := "HostIdle", header := { kind := .ao, params := [], ret := none, recv := none, desc := [] },
-    vars := #["t"], attrs := [], indent := 0, closures := #[], body := [
-    st (.let_ 0 (ownCall idleUntilClause [])),
-    st (.if_ (emptyC false (.var 0)) (.inline (.ret (some (.enum Known.eEmpty)))) [] none),
-    st (.perform (primCall Known.pSuspendAgentUntil [.val .undefined, .var 0])),
+  { id := idleAlg, name := "HostIdle", header := { kind := .ao, params := [], ret := none, recv := none },
+    vars := #["t"], closures := #[], body := [
+    .let_ 0 (ownCall idleUntilClause []),
+    .if_ (emptyC false (.var 0)) (.inline (.ret (some (.enum Known.eEmpty)))) [] none,
+    .perform (primCall Known.pSuspendAgentUntil [.val .undefined, .var 0]),
     interleaveStep N, wokenWait N,
-    st (.ret (some (.enum Known.eUnused)))] }
+    .ret (some (.enum Known.eUnused))] }
 
 /-- `setTimeout(callback, delay)`: `? ToIntegerOrInfinity(delay)`, 0 where it is infinite or negative; a Job
 Abstract Closure that performs `? Call(callback, *undefined*)`; HostEnqueueTimeoutJob(it, the current Realm
@@ -349,17 +346,17 @@ Record, 𝔽(the delay)); *undefined*. -/
 def setTimeoutBuiltin : Alg :=
   let ms : Expr := .var 4
   { builtinAlg setTimeoutAlg "setTimeout" 2 #["callback", "delay", "ms", "job"] [
-      st (.let_ 4 (.q (.call (secCallee N "sec-tointegerorinfinity") [.var 3]))),
-      st (.if_ (.preds ms (.isVal false .or [.math .plus .inf, .math .minus .inf]) [])
-        (.inline (.set (.var 4) zeroE)) [] none),
-      st (.set (.var 4) (primCall Known.pMax [ms, zeroE])),
-      st (.let_ 5 (.closure 0)),
-      st (.perform (.call (secCallee N "sec-hostenqueuetimeoutjob") [.var 5, primCall Known.pCurrentRealm [],
-        primCall Known.pF [ms]])),
-      st (.ret (some (.val .undefined)))] with
+      .let_ 4 (.q (.call (secCallee N "sec-tointegerorinfinity") [.var 3])),
+      .if_ (.preds ms (.isVal false false [.math .plus .inf, .math .minus .inf]) [])
+        (.inline (.set (.var 4) zeroE)) [] none,
+      .set (.var 4) (primCall Known.pMax [ms, zeroE]),
+      .let_ 5 (.closure 0),
+      .perform (.call (secCallee N "sec-hostenqueuetimeoutjob") [.var 5, primCall Known.pCurrentRealm [],
+        primCall Known.pF [ms]]),
+      .ret (some (.val .undefined))] with
     closures := #[{ kind := .abstract, atomic := false, params := none, caps := [2], body := [
-      st (.perform (.q (.call (secCallee N "sec-call") [.var 2, .val .undefined, .list []]))),
-      st (.ret (some (.enum Known.eUnused)))] }] }
+      .perform (.q (.call (secCallee N "sec-call") [.var 2, .val .undefined, .list []])),
+      .ret (some (.enum Known.eUnused))] }] }
 
 /-- The agent API's algorithms and `setTimeout`. -/
 def agentBuiltins : List Alg :=

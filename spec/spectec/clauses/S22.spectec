@@ -1,0 +1,3025 @@
+-- ECMA-262 SpecTec Clauses: S22
+
+def @sec-string-constructor-string-value "String" (kind builtin params [value]) vars [#"this value", NewTarget, value, string] {
+  if value fails $Present() {
+    let string = $"the empty String"()
+  }
+  else {
+    if new_target is val {undefined} and value is ty {Symbol} -> return @sec-symboldescriptivestring(value)
+    let string = ? @sec-tostring(value)
+  }
+  if new_target is val {undefined} -> return string
+  return @sec-stringcreate(string, ? @sec-getprototypefromconstructor(new_target, "%String.prototype%"))
+}
+
+def @sec-string.fromcharcode "String.fromCharCode" (kind builtin params [codeUnits rest]) vars [#"this value", NewTarget, codeUnits, result, next, nextCU] {
+  let result = $"the empty String"()
+  for_each next in codeUnits {
+    let nextCU = $UnitOrPointOf(data choice 1, $ℝ(? @sec-touint16(next)))
+    set var result = $"string-concatenation"(result, nextCU)
+  }
+  return result
+}
+
+def @sec-string.fromcodepoint "String.fromCodePoint" (kind builtin params [codePoints rest]) vars [#"this value", NewTarget, codePoints, result, next, nextCP] {
+  let result = $"the empty String"()
+  for_each next in codePoints {
+    let nextCP = ? @sec-tonumber(next)
+    if nextCP is not ty {#"integral Number"} -> throw @ph-new-error([[RangeError]])
+    if $ℝ(nextCP) < 0 or $ℝ(nextCP) > math(hex(1114111, "10FFFF")) -> throw @ph-new-error([[RangeError]])
+    set var result = $"string-concatenation"(result, @sec-utf16encodecodepoint($ℝ(nextCP)))
+  }
+  assert_if codePoints sat $IsEmpty() then result is val {$"the empty String"()}
+  return result
+}
+
+def @sec-string.raw "String.raw" (kind builtin params [template, substitutions rest]) vars [#"this value", NewTarget, template, substitutions, substitutionCount, cooked, literals, literalCount, result, nextIndex, nextLiteralValue, nextLiteral, nextSubValue, nextSub] {
+  let substitutionCount = $ListLen(?substitutions)
+  let cooked = ? @sec-toobject(template)
+  let literals = ? @sec-toobject(? @sec-get-o-p(cooked, "raw"))
+  let literalCount = ? @sec-lengthofarraylike(literals)
+  if literalCount <= 0 -> return $"the empty String"()
+  let result = $"the empty String"()
+  let nextIndex = 0
+  repeat {
+    let nextLiteralValue = ? @sec-get-o-p(literals, ! @sec-tostring($𝔽(nextIndex)))
+    let nextLiteral = ? @sec-tostring(nextLiteralValue)
+    set var result = $"string-concatenation"(result, nextLiteral)
+    if nextIndex + 1 == literalCount -> return result
+    if nextIndex < substitutionCount {
+      let nextSubValue = substitutions[nextIndex]
+      let nextSub = ? @sec-tostring(nextSubValue)
+      set var result = $"string-concatenation"(result, nextSub)
+    }
+    set var nextIndex = nextIndex + 1
+  }
+}
+
+def @sec-string.prototype.at "String.prototype.at" (kind builtin params [index]) vars [#"this value", NewTarget, index, thisValue, string, length, k] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let length = $StrLen(?string)
+  let k = ? @sec-toabsoluteindex(index, length)
+  if k < 0 or k >= length -> return undefined
+  return $Substring(?string, ?k, k + 1)
+}
+
+def @sec-string.prototype.charat "String.prototype.charAt" (kind builtin params [position]) vars [#"this value", NewTarget, position, thisValue, string, size] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  set var position = ? @sec-tointegerorinfinity(position)
+  let size = $StrLen(?string)
+  if position < 0 or position >= size -> return $"the empty String"()
+  return $Substring(?string, ?position, position + 1)
+}
+
+def @sec-string.prototype.charcodeat "String.prototype.charCodeAt" (kind builtin params [position]) vars [#"this value", NewTarget, position, thisValue, string, size] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  set var position = ? @sec-tointegerorinfinity(position)
+  let size = $StrLen(?string)
+  if position < 0 or position >= size -> return nan
+  return $NumberFor($NumericValue($UnitAt(?position, @ph-the-string(data choice 1, ?string))))
+}
+
+def @sec-string.prototype.codepointat "String.prototype.codePointAt" (kind builtin params [position]) vars [#"this value", NewTarget, position, thisValue, string, size, codePoint] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  set var position = ? @sec-tointegerorinfinity(position)
+  let size = $StrLen(?string)
+  if position < 0 or position >= size -> return undefined
+  let codePoint = @sec-codepointat(string, position)
+  return $𝔽(codePoint[[CodePoint]])
+}
+
+def @sec-string.prototype.concat "String.prototype.concat" (kind builtin params [args rest]) vars [#"this value", NewTarget, args, thisValue, string, result, next, nextString] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let result = string
+  for_each next in args {
+    let nextString = ? @sec-tostring(next)
+    if $StringTooLarge($StrLen(?result) + $StrLen(?nextString)) is val {true} -> throw @ph-new-error([[RangeError]])
+    set var result = $"string-concatenation"(result, nextString)
+  }
+  return result
+}
+
+def @sec-string.prototype.endswith "String.prototype.endsWith" (kind builtin params [searchString, endPosition opt]) vars [#"this value", NewTarget, searchString, endPosition, thisValue, string, isRegexp, length, end, searchLength, start, substring] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let isRegexp = ? @sec-isregexp(searchString)
+  if isRegexp is val {true} -> throw @ph-new-error([[TypeError]])
+  set var searchString = ? @sec-tostring(searchString)
+  let length = $StrLen(?string)
+  if_else endPosition is val {undefined} { let end = length } else { let end = $clamping(? @sec-tointegerorinfinity(endPosition), 0, ?length) }
+  let searchLength = $StrLen(?searchString)
+  if searchLength == 0 -> return true
+  let start = end - searchLength
+  if start < 0 -> return false
+  let substring = $Substring(?string, ?start, ?end)
+  if substring is val {searchString} -> return true
+  return false
+}
+
+def @sec-string.prototype.includes "String.prototype.includes" (kind builtin params [searchString, position opt]) vars [#"this value", NewTarget, searchString, position, thisValue, string, isRegexp, length, start, index] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let isRegexp = ? @sec-isregexp(searchString)
+  if isRegexp is val {true} -> throw @ph-new-error([[TypeError]])
+  set var searchString = ? @sec-tostring(searchString)
+  let length = $StrLen(?string)
+  let start = $clamping(? @sec-tointegerorinfinity(position), 0, ?length)
+  assert_if position is val {undefined} then start is val {0}
+  let index = @sec-stringindexof(string, searchString, start)
+  if index is val {~not-found~} -> return false
+  return true
+}
+
+def @sec-string.prototype.indexof "String.prototype.indexOf" (kind builtin params [searchString, position opt]) vars [#"this value", NewTarget, searchString, position, thisValue, string, length, start, result] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  set var searchString = ? @sec-tostring(searchString)
+  let length = $StrLen(?string)
+  let start = $clamping(? @sec-tointegerorinfinity(position), 0, ?length)
+  assert_if position is val {undefined} then start is val {0}
+  let result = @sec-stringindexof(string, searchString, start)
+  if result is val {~not-found~} -> return num_f(-1)
+  return $𝔽(result)
+}
+
+def @sec-string.prototype.iswellformed "String.prototype.isWellFormed" (kind builtin params []) vars [#"this value", NewTarget, thisValue, string] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  return @sec-isstringwellformedunicode(string)
+}
+
+def @sec-string.prototype.lastindexof "String.prototype.lastIndexOf" (kind builtin params [searchString, position opt]) vars [#"this value", NewTarget, searchString, position, thisValue, string, numberPosition, length, searchLength, maxStart, start, result] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  set var searchString = ? @sec-tostring(searchString)
+  let numberPosition = ? @sec-tonumber(position)
+  let length = $StrLen(?string)
+  let searchLength = $StrLen(?searchString)
+  let maxStart = length - searchLength
+  if maxStart < 0 -> return num_f(-1)
+  if_else numberPosition is val {nan} { let start = maxStart } else { let start = $clamping(! @sec-tointegerorinfinity(numberPosition), 0, ?maxStart) }
+  assert_if position is val {undefined} then start is val {maxStart}
+  let result = @sec-stringlastindexof(string, searchString, start)
+  if result is val {~not-found~} -> return num_f(-1)
+  return $𝔽(result)
+}
+
+def @sec-string.prototype.localecompare "String.prototype.localeCompare" (kind builtin params [#"that", reserved1 opt, reserved2 opt]) vars [#"this value", NewTarget, #"that", reserved1, reserved2, thisValue, string, thatValue] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let thatValue = ? @sec-tostring(#"that")
+  return $LocaleCompare(string, thatValue)
+}
+
+def @sec-string.prototype.match "String.prototype.match" (kind builtin params [regexpOrPattern]) vars [#"this value", NewTarget, regexpOrPattern, thisValue, matcher, string, regexp] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  if regexpOrPattern is ty {Object} {
+    let matcher = ? @sec-getmethod(regexpOrPattern, $WellKnownSymbol("Symbol.match"))
+    if matcher is not val {undefined} {
+      return ? @sec-call(matcher, regexpOrPattern, [thisValue])
+    }
+  }
+  let string = ? @sec-tostring(thisValue)
+  let regexp = ? @sec-regexpcreate(regexpOrPattern, undefined)
+  return ? @sec-invoke(regexp, $WellKnownSymbol("Symbol.match"), [string])
+}
+
+def @sec-string.prototype.matchall "String.prototype.matchAll" (kind builtin params [regexpOrPattern]) vars [#"this value", NewTarget, regexpOrPattern, thisValue, isRegexp, flags, matcher, string, regexp] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  if regexpOrPattern is ty {Object} {
+    let isRegexp = ? @sec-isregexp(regexpOrPattern)
+    if isRegexp is val {true} {
+      let flags = ? @sec-get-o-p(regexpOrPattern, "flags")
+      perform ? @sec-requireobjectcoercible(flags)
+      if ? @sec-tostring(flags) fails $Contains("g") -> throw @ph-new-error([[TypeError]])
+    }
+    let matcher = ? @sec-getmethod(regexpOrPattern, $WellKnownSymbol("Symbol.matchAll"))
+    if matcher is not val {undefined} {
+      return ? @sec-call(matcher, regexpOrPattern, [thisValue])
+    }
+  }
+  let string = ? @sec-tostring(thisValue)
+  let regexp = ? @sec-regexpcreate(regexpOrPattern, "g")
+  return ? @sec-invoke(regexp, $WellKnownSymbol("Symbol.matchAll"), [string])
+}
+
+def @sec-string.prototype.normalize "String.prototype.normalize" (kind builtin params [#"form" opt]) vars [#"this value", NewTarget, #"form", thisValue, string, normal] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  if #"form" is val {undefined} -> set var #"form" = "NFC"
+  else -> set var #"form" = ? @sec-tostring(#"form")
+  if #"form" is not val {"NFC"; "NFD"; "NFKC"; "NFKD"} -> throw @ph-new-error([[RangeError]])
+  let normal = $UnicodeNormalize(string, #"form")
+  return normal
+}
+
+def @sec-string.prototype.padend "String.prototype.padEnd" (kind builtin params [maxLength, fillString opt]) vars [#"this value", NewTarget, maxLength, fillString, thisValue] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  return ? @sec-stringpaddingbuiltinsimpl(thisValue, maxLength, fillString, ~end~)
+}
+
+def @sec-string.prototype.padstart "String.prototype.padStart" (kind builtin params [maxLength, fillString opt]) vars [#"this value", NewTarget, maxLength, fillString, thisValue] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  return ? @sec-stringpaddingbuiltinsimpl(thisValue, maxLength, fillString, ~start~)
+}
+
+def @sec-stringpaddingbuiltinsimpl "StringPaddingBuiltinsImpl" (kind ao params [thisValue : #"ECMAScript language value", maxLength : #"ECMAScript language value", fillString : #"ECMAScript language value", placement : val(~start~) | val(~end~)] -> completion<String> | #"throw completion") vars [thisValue, maxLength, fillString, placement, string, intMaxLength, stringLength] {
+  let string = ? @sec-tostring(thisValue)
+  let intMaxLength = $ℝ(? @sec-tolength(maxLength))
+  let stringLength = $StrLen(?string)
+  if intMaxLength <= stringLength -> return string
+  if fillString is val {undefined} -> set var fillString = @ph-string-solely($CodeUnit(cu(32, "0020", "SPACE")))
+  else -> set var fillString = ? @sec-tostring(fillString)
+  if fillString is not val {$"the empty String"()} and $StringTooLarge(intMaxLength) is val {true} -> throw @ph-new-error([[RangeError]])
+  return @sec-stringpad(string, intMaxLength, fillString, placement)
+}
+
+def @sec-stringpad "StringPad" (kind ao params [string : String, maxLength : sort [#"non-negative"] integer, fillString : String, placement : val(~start~) | val(~end~)] -> String) vars [string, maxLength, fillString, placement, stringLength, fillLength, truncatedStringFiller] {
+  let stringLength = $StrLen(?string)
+  if maxLength <= stringLength -> return string
+  if fillString is val {$"the empty String"()} -> return string
+  let fillLength = maxLength - stringLength
+  let truncatedStringFiller = @ph-repeat-to-length(?fillString, ?fillLength)
+  if placement is val {~start~} -> return $"string-concatenation"(truncatedStringFiller, string)
+  return $"string-concatenation"(string, truncatedStringFiller)
+}
+
+def @sec-tozeropaddeddecimalstring "ToZeroPaddedDecimalString" (kind ao params [n : sort [#"non-negative"] integer, minLength : sort [#"non-negative"] integer] -> String) vars [n, minLength, string] {
+  let string = @ph-decimal-string(?n)
+  return @sec-stringpad(string, minLength, "0", ~start~)
+}
+
+def @sec-string.prototype.repeat "String.prototype.repeat" (kind builtin params [count]) vars [#"this value", NewTarget, count, thisValue, string, n] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let n = ? @sec-tointegerorinfinity(count)
+  if n < 0 or n == math(+∞) -> throw @ph-new-error([[RangeError]])
+  if n == 0 -> return $"the empty String"()
+  if $StringTooLarge(n * $StrLen(?string)) is val {true} -> throw @ph-new-error([[RangeError]])
+  return @ph-copies-appended(?n, ?string)
+}
+
+def @sec-string.prototype.replace "String.prototype.replace" (kind builtin params [searchValue, replaceValue]) vars [#"this value", NewTarget, searchValue, replaceValue, thisValue, replacer, string, searchString, functionalReplace, searchLength, position, preceding, following, replacement, #"captures"] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  if searchValue is ty {Object} {
+    let replacer = ? @sec-getmethod(searchValue, $WellKnownSymbol("Symbol.replace"))
+    if replacer is not val {undefined} {
+      return ? @sec-call(replacer, searchValue, [thisValue, replaceValue])
+    }
+  }
+  let string = ? @sec-tostring(thisValue)
+  let searchString = ? @sec-tostring(searchValue)
+  let functionalReplace = @sec-iscallable(replaceValue)
+  if functionalReplace is val {false} {
+    set var replaceValue = ? @sec-tostring(replaceValue)
+  }
+  let searchLength = $StrLen(?searchString)
+  let position = @sec-stringindexof(string, searchString, 0)
+  if position is val {~not-found~} -> return string
+  let preceding = $Substring(?string, 0, ?position)
+  let following = $Substring(?string, position + searchLength, data absent)
+  if functionalReplace is val {true} {
+    let replacement = ? @sec-tostring(? @sec-call(replaceValue, undefined, [searchString, $𝔽(position), string]))
+  }
+  else {
+    assert replaceValue is ty {String}
+    let #"captures" = $ListNew()
+    let replacement = ! @sec-getsubstitution(searchString, string, position, #"captures", undefined, replaceValue)
+  }
+  return $"string-concatenation"(preceding, replacement, following)
+}
+
+def @sec-getsubstitution "GetSubstitution" (kind ao params [matched : String, string : String, position : sort [#"non-negative"] integer, #"captures" : list<String | val(undefined)>, namedCaptures : Object | val(undefined), replacementTemplate : String] -> completion<String> | #"throw completion") vars [matched, string, position, #"captures", namedCaptures, replacementTemplate, stringLength, result, templateRemainder, #"ref", refReplacement, matchLength, tailPosition, digitCount, digits, index, captureLength, capture, gtPosition, groupName, refLength] {
+  let stringLength = $StrLen(?string)
+  assert position <= stringLength
+  let result = $"the empty String"()
+  let templateRemainder = replacementTemplate
+  repeat_while templateRemainder is not val {$"the empty String"()} {
+    note "The following steps isolate _ref_ (a prefix of _templateRemainder_), determine _refReplacement_ (its replacement), and then append that replacement to _result_."
+    if templateRemainder sat $StartsWith("$$") {
+      let #"ref" = "$$"
+      let refReplacement = "$"
+    }
+    else_if templateRemainder sat $StartsWith("$`") {
+      let #"ref" = "$`"
+      let refReplacement = $Substring(?string, 0, ?position)
+    }
+    else_if templateRemainder sat $StartsWith("$&") {
+      let #"ref" = "$&"
+      let refReplacement = matched
+    }
+    else_if expr @ph-starts-dollar-quote(?templateRemainder) {
+      let #"ref" = "$'"
+      let matchLength = $StrLen(?matched)
+      let tailPosition = position + matchLength
+      let refReplacement = $Substring(?string, $min(tailPosition, stringLength), data absent)
+      note "_tailPosition_ can exceed _stringLength_ only if this abstract operation was invoked by a call to the intrinsic %Symbol.replace% method of %RegExp.prototype% on an object whose *\"exec\"* property is not the intrinsic %RegExp.prototype.exec%."
+    }
+    else_if expr @ph-dollar-one-digit(?templateRemainder) {
+      if_else expr @ph-dollar-two-digits(?templateRemainder) { let digitCount = 2 } else { let digitCount = 1 }
+      let digits = $Substring(?templateRemainder, 1, 1 + digitCount)
+      let index = $ℝ(@sec-stringtonumber(digits))
+      assert expr $Chain(0, data choice 1, ?index, data choice 1, 99)
+      let captureLength = $ListLen(?#"captures")
+      if index > captureLength and digitCount == 2 {
+        note "When a two-digit replacement pattern specifies an index exceeding the count of capturing groups, it is treated as a one-digit replacement pattern followed by a literal digit."
+        set var digitCount = 1
+        set var digits = $Substring(?digits, 0, 1)
+        set var index = $ℝ(@sec-stringtonumber(digits))
+      }
+      let #"ref" = $Substring(?templateRemainder, 0, 1 + digitCount)
+      if expr $Chain(1, data choice 1, ?index, data choice 1, ?captureLength) {
+        let capture = #"captures"[index - 1]
+        if capture is val {undefined} {
+          let refReplacement = $"the empty String"()
+        }
+        else {
+          let refReplacement = capture
+        }
+      }
+      else {
+        let refReplacement = #"ref"
+      }
+    }
+    else_if templateRemainder sat $StartsWith("$<") {
+      let gtPosition = @sec-stringindexof(templateRemainder, ">", 0)
+      if gtPosition is val {~not-found~} or namedCaptures is val {undefined} {
+        let #"ref" = "$<"
+        let refReplacement = #"ref"
+      }
+      else {
+        let #"ref" = $Substring(?templateRemainder, 0, gtPosition + 1)
+        let groupName = $Substring(?templateRemainder, 2, ?gtPosition)
+        assert namedCaptures is ty {Object}
+        let capture = ? @sec-get-o-p(namedCaptures, groupName)
+        if capture is val {undefined} {
+          let refReplacement = $"the empty String"()
+        }
+        else {
+          let refReplacement = ? @sec-tostring(capture)
+        }
+      }
+    }
+    else {
+      let #"ref" = $Substring(?templateRemainder, 0, 1)
+      let refReplacement = #"ref"
+    }
+    let refLength = $StrLen(?#"ref")
+    set var templateRemainder = $Substring(?templateRemainder, ?refLength, data absent)
+    set var result = $"string-concatenation"(result, refReplacement)
+  }
+  return result
+}
+
+def @sec-string.prototype.replaceall "String.prototype.replaceAll" (kind builtin params [searchValue, replaceValue]) vars [#"this value", NewTarget, searchValue, replaceValue, thisValue, isRegexp, flags, replacer, string, searchString, functionalReplace, searchLength, advanceBy, matchPositions, position, endOfLastMatch, result, matchPosition, preserved, replacement, #"captures"] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  if searchValue is ty {Object} {
+    let isRegexp = ? @sec-isregexp(searchValue)
+    if isRegexp is val {true} {
+      let flags = ? @sec-get-o-p(searchValue, "flags")
+      perform ? @sec-requireobjectcoercible(flags)
+      if ? @sec-tostring(flags) fails $Contains("g") -> throw @ph-new-error([[TypeError]])
+    }
+    let replacer = ? @sec-getmethod(searchValue, $WellKnownSymbol("Symbol.replace"))
+    if replacer is not val {undefined} {
+      return ? @sec-call(replacer, searchValue, [thisValue, replaceValue])
+    }
+  }
+  let string = ? @sec-tostring(thisValue)
+  let searchString = ? @sec-tostring(searchValue)
+  let functionalReplace = @sec-iscallable(replaceValue)
+  if functionalReplace is val {false} {
+    set var replaceValue = ? @sec-tostring(replaceValue)
+  }
+  let searchLength = $StrLen(?searchString)
+  let advanceBy = $max(1, searchLength)
+  let matchPositions = $ListNew()
+  let position = @sec-stringindexof(string, searchString, 0)
+  repeat_while position is not val {~not-found~} {
+    perform $Append(?position, ?matchPositions)
+    set var position = @sec-stringindexof(string, searchString, position + advanceBy)
+  }
+  let endOfLastMatch = 0
+  let result = $"the empty String"()
+  for_each matchPosition in matchPositions {
+    let preserved = $Substring(?string, ?endOfLastMatch, ?matchPosition)
+    if functionalReplace is val {true} {
+      let replacement = ? @sec-tostring(? @sec-call(replaceValue, undefined, [searchString, $𝔽(matchPosition), string]))
+    }
+    else {
+      assert replaceValue is ty {String}
+      let #"captures" = $ListNew()
+      let replacement = ! @sec-getsubstitution(searchString, string, matchPosition, #"captures", undefined, replaceValue)
+    }
+    set var result = $"string-concatenation"(result, preserved, replacement)
+    set var endOfLastMatch = matchPosition + searchLength
+  }
+  if endOfLastMatch < $StrLen(?string) {
+    set var result = $"string-concatenation"(result, $Substring(?string, ?endOfLastMatch, data absent))
+  }
+  return result
+}
+
+def @sec-string.prototype.search "String.prototype.search" (kind builtin params [regexpOrPattern]) vars [#"this value", NewTarget, regexpOrPattern, thisValue, searcher, string, regexp] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  if regexpOrPattern is ty {Object} {
+    let searcher = ? @sec-getmethod(regexpOrPattern, $WellKnownSymbol("Symbol.search"))
+    if searcher is not val {undefined} {
+      return ? @sec-call(searcher, regexpOrPattern, [thisValue])
+    }
+  }
+  let string = ? @sec-tostring(thisValue)
+  let regexp = ? @sec-regexpcreate(regexpOrPattern, undefined)
+  return ? @sec-invoke(regexp, $WellKnownSymbol("Symbol.search"), [string])
+}
+
+def @sec-string.prototype.slice "String.prototype.slice" (kind builtin params [start, end]) vars [#"this value", NewTarget, start, end, thisValue, string, length, #"from", #"to"] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let length = $StrLen(?string)
+  let #"from" = ? @sec-toclampedindex(start, length)
+  if_else end is val {undefined} { let #"to" = length } else { let #"to" = ? @sec-toclampedindex(end, length) }
+  if #"from" >= #"to" -> return $"the empty String"()
+  return $Substring(?string, ?#"from", ?#"to")
+}
+
+def @sec-string.prototype.split "String.prototype.split" (kind builtin params [separator, substringLimit]) vars [#"this value", NewTarget, separator, substringLimit, thisValue, splitter, string, substringLimitInt, separatorString, separatorLength, stringLength, outLength, head, codeUnits, i, substrings, searchStart, matchIndex, substring] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  if separator is ty {Object} {
+    let splitter = ? @sec-getmethod(separator, $WellKnownSymbol("Symbol.split"))
+    if splitter is not val {undefined} {
+      return ? @sec-call(splitter, separator, [thisValue, substringLimit])
+    }
+  }
+  let string = ? @sec-tostring(thisValue)
+  if_else substringLimit is val {undefined} { let substringLimitInt = 2 ^ 32 - 1 } else { let substringLimitInt = $ℝ(? @sec-touint32(substringLimit)) }
+  let separatorString = ? @sec-tostring(separator)
+  if substringLimitInt == 0 {
+    return @sec-createarrayfromlist([])
+  }
+  if separator is val {undefined} {
+    return @sec-createarrayfromlist([string])
+  }
+  let separatorLength = $StrLen(?separatorString)
+  if separatorLength == 0 {
+    let stringLength = $StrLen(?string)
+    let outLength = $clamping(?substringLimitInt, 0, ?stringLength)
+    let head = $Substring(?string, 0, ?outLength)
+    let codeUnits = $ListNew()
+    for_range i incl 0 .. excl outLength {
+      perform $Append($Substring(?head, ?i, i + 1), ?codeUnits)
+    }
+    return @sec-createarrayfromlist(codeUnits)
+  }
+  if string is val {$"the empty String"()} -> return @sec-createarrayfromlist([string])
+  let substrings = $ListNew()
+  let searchStart = 0
+  let matchIndex = @sec-stringindexof(string, separatorString, 0)
+  repeat_while matchIndex is not val {~not-found~} {
+    let substring = $Substring(?string, ?searchStart, ?matchIndex)
+    perform $Append(?substring, ?substrings)
+    if $ListLen(?substrings) is val {substringLimitInt} -> return @sec-createarrayfromlist(substrings)
+    set var searchStart = matchIndex + separatorLength
+    set var matchIndex = @sec-stringindexof(string, separatorString, searchStart)
+  }
+  let substring = $Substring(?string, ?searchStart, data absent)
+  perform $Append(?substring, ?substrings)
+  return @sec-createarrayfromlist(substrings)
+}
+
+def @sec-string.prototype.startswith "String.prototype.startsWith" (kind builtin params [searchString, position opt]) vars [#"this value", NewTarget, searchString, position, thisValue, string, isRegexp, length, start, searchLength, end, substring] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let isRegexp = ? @sec-isregexp(searchString)
+  if isRegexp is val {true} -> throw @ph-new-error([[TypeError]])
+  set var searchString = ? @sec-tostring(searchString)
+  let length = $StrLen(?string)
+  let start = $clamping(? @sec-tointegerorinfinity(position), 0, ?length)
+  assert_if position is val {undefined} then start is val {0}
+  let searchLength = $StrLen(?searchString)
+  if searchLength == 0 -> return true
+  let end = start + searchLength
+  if end > length -> return false
+  let substring = $Substring(?string, ?start, ?end)
+  if substring is val {searchString} -> return true
+  return false
+}
+
+def @sec-string.prototype.substring "String.prototype.substring" (kind builtin params [start, end]) vars [#"this value", NewTarget, start, end, thisValue, string, length, finalStart, finalEnd, #"from", #"to"] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let length = $StrLen(?string)
+  let finalStart = $clamping(? @sec-tointegerorinfinity(start), 0, ?length)
+  assert_if start is val {undefined} then finalStart is val {0}
+  if_else end is val {undefined} { let finalEnd = length } else { let finalEnd = $clamping(? @sec-tointegerorinfinity(end), 0, ?length) }
+  let #"from" = $min(finalStart, finalEnd)
+  let #"to" = $max(finalStart, finalEnd)
+  return $Substring(?string, ?#"from", ?#"to")
+}
+
+def @sec-string.prototype.tolowercase "String.prototype.toLowerCase" (kind builtin params []) vars [#"this value", NewTarget, thisValue, string, sText, lowerText, lowercaseString] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let sText = @sec-stringtocodepoints(string)
+  let lowerText = $toLowercase(sText)
+  let lowercaseString = @sec-codepointstostring(lowerText)
+  return lowercaseString
+}
+
+def @sec-string.prototype.tostring "String.prototype.toString" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-thisstringvalue(this_value)
+}
+
+def @sec-string.prototype.towellformed "String.prototype.toWellFormed" (kind builtin params []) vars [#"this value", NewTarget, thisValue, string, stringLength, k, result, codePoint] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let stringLength = $StrLen(?string)
+  let k = 0
+  let result = $"the empty String"()
+  repeat_while k < stringLength {
+    let codePoint = @sec-codepointat(string, k)
+    if codePoint[[IsUnpairedSurrogate]] is val {true} {
+      set var result = $"string-concatenation"(result, cu(65533, "FFFD", "REPLACEMENT CHARACTER"))
+    }
+    else {
+      set var result = $"string-concatenation"(result, @sec-utf16encodecodepoint(codePoint[[CodePoint]]))
+    }
+    set var k = k + codePoint[[CodeUnitCount]]
+  }
+  return result
+}
+
+def @sec-string.prototype.trim "String.prototype.trim" (kind builtin params []) vars [#"this value", NewTarget, thisValue] {
+  let thisValue = this_value
+  return ? @sec-trimstring(thisValue, ~start+end~)
+}
+
+def @sec-trimstring "TrimString" (kind ao params [arg : #"ECMAScript language value", #"where" : val(~start~) | val(~end~) | val(~start+end~)] -> completion<String> | #"throw completion") vars [arg, #"where", string, trimmedString] {
+  perform ? @sec-requireobjectcoercible(arg)
+  let string = ? @sec-tostring(arg)
+  if #"where" is val {~start~} {
+    let trimmedString = @ph-trim-leading(?string)
+  }
+  else_if #"where" is val {~end~} {
+    let trimmedString = @ph-trim-trailing(?string)
+  }
+  else {
+    assert #"where" is val {~start+end~}
+    let trimmedString = @ph-trim-both(?string)
+  }
+  return trimmedString
+}
+
+def @sec-string.prototype.trimend "String.prototype.trimEnd" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-trimstring(string, ~end~)
+}
+
+def @sec-string.prototype.trimstart "String.prototype.trimStart" (kind builtin params []) vars [#"this value", NewTarget, string] {
+  let string = this_value
+  return ? @sec-trimstring(string, ~start~)
+}
+
+def @sec-string.prototype.valueof "String.prototype.valueOf" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-thisstringvalue(this_value)
+}
+
+def @sec-thisstringvalue "ThisStringValue" (kind ao params [arg : #"ECMAScript language value"] -> completion<String> | #"throw completion") vars [arg, string] {
+  if arg is ty {String} -> return arg
+  if arg is ty {Object} and arg sat $HasSlot([[StringData]]) {
+    let string = arg[[StringData]]
+    assert string is ty {String}
+    return string
+  }
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-string.prototype-%symbol.iterator% "String.prototype [ %Symbol.iterator% ]" (kind builtin params []) vars [#"this value", NewTarget, string, #"closure", length, position, codePoint, nextIndex, resultString] {
+  let string = this_value
+  perform ? @sec-requireobjectcoercible(string)
+  set var string = ? @sec-tostring(string)
+  let #"closure" = closure 0
+  return @sec-createiteratorfromclosure(#"closure", "%StringIteratorPrototype%", intrinsic [[StringIteratorPrototype]])
+  closure abstract params none captures [string] {
+    let length = $StrLen(?string)
+    let position = 0
+    repeat_while position < length {
+      let codePoint = @sec-codepointat(string, position)
+      let nextIndex = position + codePoint[[CodeUnitCount]]
+      let resultString = $Substring(?string, ?position, ?nextIndex)
+      set var position = nextIndex
+      perform ? @sec-generatoryield(@sec-createiterresultobject(resultString, false))
+    }
+    return @sec-normalcompletion(~unused~)
+  }
+}
+
+def @sec-%stringiteratorprototype%.next "%StringIteratorPrototype%.next" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-generatorresume(this_value, ~empty~, "%StringIteratorPrototype%")
+}
+
+def @sec-countleftcapturingparenswithin "CountLeftCapturingParensWithin" (kind ao params [parseNode : #"Parse Node"] -> sort [#"non-negative"] integer) vars [parseNode, atoms, extendedAtoms] {
+  assert parseNode sat @ph-production-in(clause @sec-patterns)
+  let atoms = @ph-count-nodes-within(prods [p"RegExp 0 Atom :: `(` GroupSpecifier[?UnicodeMode]? Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"RegExp 1 Atom :: `(` GroupSpecifier[?UnicodeMode]? Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"], ?parseNode)
+  let extendedAtoms = @ph-count-nodes-within(prods [p"AnnexB 0 ExtendedAtom :: `(` GroupSpecifier[~UnicodeMode]? Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"AnnexB 1 ExtendedAtom :: `(` GroupSpecifier[~UnicodeMode]? Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"], ?parseNode)
+  return atoms + extendedAtoms
+}
+
+def @sec-countleftcapturingparensbefore "CountLeftCapturingParensBefore" (kind ao params [parseNode : #"Parse Node"] -> sort [#"non-negative"] integer) vars [parseNode, pattern, atoms, extendedAtoms] {
+  assert parseNode sat @ph-production-in(clause @sec-patterns)
+  let pattern = @ph-nt-containing(|Pattern|, ?parseNode)
+  let atoms = @ph-count-nodes-before(prods [p"RegExp 0 Atom :: `(` GroupSpecifier[?UnicodeMode]? Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"RegExp 1 Atom :: `(` GroupSpecifier[?UnicodeMode]? Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"], ?pattern, ?parseNode, ?parseNode)
+  let extendedAtoms = @ph-count-nodes-before(prods [p"AnnexB 0 ExtendedAtom :: `(` GroupSpecifier[~UnicodeMode]? Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"AnnexB 1 ExtendedAtom :: `(` GroupSpecifier[~UnicodeMode]? Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"], ?pattern, ?parseNode, ?parseNode)
+  return atoms + extendedAtoms
+}
+
+def @sec-mightbothparticipate "MightBothParticipate" (kind ao params [x : #"Parse Node", y : #"Parse Node"] -> Boolean) vars [x, y, d, left, right] {
+  assert $NearestEnclosing(x, [|Pattern|]) is val {$NearestEnclosing(y, [|Pattern|])}
+  for_each d in $ParseNodesWithin($NearestEnclosing(x, [|Pattern|])) {
+    if expr $InstanceOf(d, prods [p"RegExp - Disjunction :: Alternative[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `|` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]"]) {
+      let left = $ParseNodesWithin($ChildOf(|Alternative|, ?d))
+      let right = $ParseNodesWithin($ChildOf(|Disjunction|, ?d))
+      if left sat $Contains(?x) and right sat $Contains(?y) -> return false
+      if right sat $Contains(?x) and left sat $Contains(?y) -> return false
+    }
+  }
+  return true
+}
+
+def @sec-groupspecifiersthatmatch "GroupSpecifiersThatMatch" (kind ao params [thisGroupName : |GroupName|] -> doc "a List of |GroupSpecifier| Parse Nodes") vars [thisGroupName, name, pattern, result, groupSpecifier] {
+  let name = sdo CapturingGroupName(thisGroupName)
+  let pattern = @ph-nt-containing(|Pattern|, ?thisGroupName)
+  let result = $ListNew()
+  for_each groupSpecifier in $ParseNodesWithin(pattern) {
+    if groupSpecifier is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |GroupSpecifier|))} {
+      if sdo CapturingGroupName(groupSpecifier) is val {name} {
+        perform $Append(?groupSpecifier, ?result)
+      }
+    }
+  }
+  return result
+}
+
+def @sec-runtime-semantics-repeatmatcher-abstract-operation "RepeatMatcher" (kind ao params [m : Matcher, min : sort [#"non-negative"] integer, max : sort [#"non-negative"] integer | val(math(+∞)), greedy : Boolean, matchState : MatchState, continue : MatcherContinuation, parenIndex : sort [#"non-negative"] integer, parenCount : sort [#"non-negative"] integer] -> MatchState | val(~failure~)) vars [m, min, max, greedy, matchState, continue, parenIndex, parenCount, d, y, min2, max2, capability, k, input, e, xr, z] {
+  if max == 0 -> return continue(matchState)
+  let d = closure 0
+  let capability = $Copy(matchState[[Captures]])
+  for_range k incl parenIndex + 1 .. incl parenIndex + parenCount {
+    set expr capability[k] = undefined
+  }
+  let input = matchState[[Input]]
+  let e = matchState[[EndIndex]]
+  let xr = record MatchState { [[Input]]: input, [[EndIndex]]: e, [[Captures]]: capability }
+  if min != 0 -> return m(xr, d)
+  if greedy is val {false} {
+    let z = continue(matchState)
+    if z is not val {~failure~} -> return z
+    return m(xr, d)
+  }
+  let z = m(xr, d)
+  if z is not val {~failure~} -> return z
+  return continue(matchState)
+  closure matcher_continuation params [y] captures [m, min, max, greedy, matchState, continue, parenIndex, parenCount] {
+    assert y is ty {MatchState}
+    if min == 0 and y[[EndIndex]] == matchState[[EndIndex]] -> return ~failure~
+    if_else min == 0 { let min2 = 0 } else { let min2 = min - 1 }
+    if_else max == math(+∞) { let max2 = math(+∞) } else { let max2 = max - 1 }
+    return @sec-runtime-semantics-repeatmatcher-abstract-operation(m, min2, max2, greedy, y, continue, parenIndex, parenCount)
+  }
+}
+
+def @sec-emptymatcher "EmptyMatcher" (kind ao params [] -> Matcher) vars [matchState, continue] {
+  return closure 0
+  closure matcher params [matchState, continue] captures [] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    return continue(matchState)
+  }
+}
+
+def @sec-matchtwoalternatives "MatchTwoAlternatives" (kind ao params [m1 : Matcher, m2 : Matcher] -> Matcher) vars [m1, m2, matchState, continue, result] {
+  return closure 0
+  closure matcher params [matchState, continue] captures [m1, m2] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let result = m1(matchState, continue)
+    if result is not val {~failure~} -> return result
+    return m2(matchState, continue)
+  }
+}
+
+def @sec-matchsequence "MatchSequence" (kind ao params [m1 : Matcher, m2 : Matcher, direction : val(~forward~) | val(~backward~)] -> Matcher) vars [m1, m2, direction, matchState, continue, d, y] {
+  if direction is val {~forward~} {
+    return closure 0
+  }
+  assert direction is val {~backward~}
+  return closure 2
+  closure matcher params [matchState, continue] captures [m1, m2] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let d = closure 1
+    return m1(matchState, d)
+  }
+  closure matcher_continuation params [y] captures [continue, m2] {
+    assert y is ty {MatchState}
+    return m2(y, continue)
+  }
+  closure matcher params [matchState, continue] captures [m1, m2] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let d = closure 3
+    return m2(matchState, d)
+  }
+  closure matcher_continuation params [y] captures [continue, m1] {
+    assert y is ty {MatchState}
+    return m1(y, continue)
+  }
+}
+
+def @sec-runtime-semantics-iswordchar-abstract-operation "IsWordChar" (kind ao params [regexpRecord : #"RegExp Record", input : list<character that sat @ph-character-of-pattern(regexpRecord)>, e : integer] -> Boolean) vars [regexpRecord, input, e, inputLength, char] {
+  let inputLength = $ListLen(?input)
+  if e == math(-1) or e == inputLength -> return false
+  let char = $Char(input[e])
+  if @sec-wordcharacters(regexpRecord) sat $Contains(?char) -> return true
+  return false
+}
+
+def @sec-runtime-semantics-charactersetmatcher-abstract-operation "CharacterSetMatcher" (kind ao params [regexpRecord : #"RegExp Record", charSet : CharSet, invert : Boolean, direction : val(~forward~) | val(~backward~)] -> Matcher) vars [regexpRecord, charSet, invert, direction, x, c, input, endIndex, f, inputLength, index, char, cc, a, found, capability, y] {
+  if regexpRecord[[UnicodeSets]] is val {true} {
+    assert invert is val {false}
+    assert expr @ph-every-element-single-character(?charSet)
+  }
+  return closure 0
+  closure matcher params [x, c] captures [regexpRecord, charSet, invert, direction] {
+    assert x is ty {MatchState}
+    assert c is ty {MatcherContinuation}
+    let input = x[[Input]]
+    let endIndex = x[[EndIndex]]
+    if direction is val {~forward~} -> let f = endIndex + 1
+    else -> let f = endIndex - 1
+    let inputLength = $ListLen(?input)
+    if f < 0 or f > inputLength -> return ~failure~
+    let index = $min(endIndex, f)
+    let char = $Char(input[index])
+    let cc = @sec-runtime-semantics-canonicalize-ch(regexpRecord, char)
+    let found = $CharSetHasCanonical(charSet, cc, @sec-runtime-semantics-haseitherunicodeflag-abstract-operation(regexpRecord), regexpRecord[[IgnoreCase]])
+    if invert is val {false} and found is val {false} -> return ~failure~
+    if invert is val {true} and found is val {true} -> return ~failure~
+    let capability = x[[Captures]]
+    let y = record MatchState { [[Input]]: input, [[EndIndex]]: f, [[Captures]]: capability }
+    return c(y)
+  }
+}
+
+def @sec-backreference-matcher "BackreferenceMatcher" (kind ao params [regexpRecord : #"RegExp Record", ns : list<sort [positive] integer>, direction : val(~forward~) | val(~backward~)] -> Matcher) vars [regexpRecord, ns, direction, x, c, input, capability, r, n, endIndex, rs, re, length, f, inputLength, g, i, y] {
+  return closure 0
+  closure matcher params [x, c] captures [regexpRecord, ns, direction] {
+    assert x is ty {MatchState}
+    assert c is ty {MatcherContinuation}
+    let input = x[[Input]]
+    let capability = x[[Captures]]
+    let r = undefined
+    for_each n : integer in ns {
+      if capability[n] is not val {undefined} {
+        assert r is val {undefined}
+        set var r = capability[n]
+      }
+    }
+    if r is val {undefined} -> return c(x)
+    let endIndex = x[[EndIndex]]
+    let rs = r[[StartIndex]]
+    let re = r[[EndIndex]]
+    let length = re - rs
+    if direction is val {~forward~} -> let f = endIndex + length
+    else -> let f = endIndex - length
+    let inputLength = $ListLen(?input)
+    if f < 0 or f > inputLength -> return ~failure~
+    let g = $min(endIndex, f)
+    for_range i incl 0 .. excl length {
+      if @sec-runtime-semantics-canonicalize-ch(regexpRecord, input[rs + i]) is not val {@sec-runtime-semantics-canonicalize-ch(regexpRecord, input[g + i])} -> return ~failure~
+    }
+    let y = record MatchState { [[Input]]: input, [[EndIndex]]: f, [[Captures]]: capability }
+    return c(y)
+  }
+}
+
+def @sec-runtime-semantics-canonicalize-ch "Canonicalize" (kind ao params [regexpRecord : #"RegExp Record", char : character that sat @ph-character-of-pattern(regexpRecord)] -> character that sat @ph-character-of-pattern(regexpRecord)) vars [regexpRecord, char, folded, codePoint, mappedCodePoints, mappedCodePoint] {
+  if @sec-runtime-semantics-haseitherunicodeflag-abstract-operation(regexpRecord) is val {true} and regexpRecord[[IgnoreCase]] is val {true} {
+    let folded = $SimpleCaseFold(char)
+    if folded is not val {~empty~} -> return folded
+    return char
+  }
+  if regexpRecord[[IgnoreCase]] is val {false} -> return char
+  assert char is ty {#"code unit"}
+  let codePoint = $UnitOrPointOf(data choice 0, $NumericValue(?char))
+  let mappedCodePoints = $toUppercase([codePoint])
+  if $StrLen(@sec-codepointstostring(mappedCodePoints)) != 1 -> return char
+  assert $ListLen(?mappedCodePoints) is val {1}
+  let mappedCodePoint = @ph-single-code-point-element(?mappedCodePoints)
+  if $NumericValue(?char) >= 128 and $NumericValue(?mappedCodePoint) < 128 -> return char
+  return $UnitOrPointOf(data choice 1, $NumericValue(?mappedCodePoint))
+}
+
+def @sec-updatemodifiers "UpdateModifiers" (kind ao params [regexpRecord : #"RegExp Record", add : String, #"remove" : String] -> #"RegExp Record") vars [regexpRecord, add, #"remove", ignoreCase, multiline, dotAll, unicode, unicodeSets, capturingGroupsCount] {
+  assert expr @ph-no-elements-in-common(?add, ?#"remove")
+  let ignoreCase = regexpRecord[[IgnoreCase]]
+  let multiline = regexpRecord[[Multiline]]
+  let dotAll = regexpRecord[[DotAll]]
+  let unicode = regexpRecord[[Unicode]]
+  let unicodeSets = regexpRecord[[UnicodeSets]]
+  let capturingGroupsCount = regexpRecord[[CapturingGroupsCount]]
+  if #"remove" sat $Contains("i") -> set var ignoreCase = false
+  else_if add sat $Contains("i") -> set var ignoreCase = true
+  if #"remove" sat $Contains("m") -> set var multiline = false
+  else_if add sat $Contains("m") -> set var multiline = true
+  if #"remove" sat $Contains("s") -> set var dotAll = false
+  else_if add sat $Contains("s") -> set var dotAll = true
+  return record #"RegExp Record" { [[IgnoreCase]]: ignoreCase, [[Multiline]]: multiline, [[DotAll]]: dotAll, [[Unicode]]: unicode, [[UnicodeSets]]: unicodeSets, [[CapturingGroupsCount]]: capturingGroupsCount }
+}
+
+def @sec-runtime-semantics-characterrange-abstract-operation "CharacterRange" (kind ao params [charSet : CharSet, otherSet : CharSet] -> CharSet) vars [charSet, otherSet, a, b, i, j] {
+  assert $ListLen(?charSet) is val {1}
+  assert $ListElem(data choice 0, ?charSet) is not ty {List} or $ListLen($ListElem(data choice 0, ?charSet)) is val {1}
+  assert $ListLen(?otherSet) is val {1}
+  assert $ListElem(data choice 0, ?otherSet) is not ty {List} or $ListLen($ListElem(data choice 0, ?otherSet)) is val {1}
+  let a = @ph-one-character(?charSet)
+  let b = @ph-one-character(?otherSet)
+  let i = $CharValue(?a)
+  let j = $CharValue(?b)
+  assert i <= j
+  return @ph-character-interval(?i, ?j)
+}
+
+def @sec-runtime-semantics-haseitherunicodeflag-abstract-operation "HasEitherUnicodeFlag" (kind ao params [regexpRecord : #"RegExp Record"] -> Boolean) vars [regexpRecord] {
+  if regexpRecord[[Unicode]] is val {true} or regexpRecord[[UnicodeSets]] is val {true} -> return true
+  return false
+}
+
+def @sec-wordcharacters "WordCharacters" (kind ao params [regexpRecord : #"RegExp Record"] -> CharSet) vars [regexpRecord, basicWordChars, extraWordChars, c] {
+  let basicWordChars = @ph-charset-of-every-character(@ph-ascii-word-characters())
+  if_else regexpRecord[[IgnoreCase]] is val {true} { let extraWordChars = $CharSetCanonExtra(basicWordChars, @sec-runtime-semantics-haseitherunicodeflag-abstract-operation(regexpRecord)) } else { let extraWordChars = $EmptyCharSet() }
+  if @sec-runtime-semantics-haseitherunicodeflag-abstract-operation(regexpRecord) is val {false} or regexpRecord[[IgnoreCase]] is val {false} {
+    assert extraWordChars sat $IsEmpty()
+  }
+  return $CharSetUnionAll([basicWordChars, extraWordChars])
+}
+
+def @sec-allcharacters "AllCharacters" (kind ao params [regexpRecord : #"RegExp Record"] -> CharSet) vars [regexpRecord, c] {
+  if regexpRecord[[UnicodeSets]] is val {true} and regexpRecord[[IgnoreCase]] is val {true} {
+    return $CharSetNoScf()
+  }
+  if @sec-runtime-semantics-haseitherunicodeflag-abstract-operation(regexpRecord) is val {true} {
+    return @ph-all-code-points()
+  }
+  return @ph-all-code-units()
+}
+
+def @sec-maybesimplecasefolding "MaybeSimpleCaseFolding" (kind ao params [regexpRecord : #"RegExp Record", charSet : CharSet] -> CharSet) vars [regexpRecord, charSet, otherSet, s, t, codePoint] {
+  if regexpRecord[[UnicodeSets]] is val {false} or regexpRecord[[IgnoreCase]] is val {false} -> return charSet
+  let otherSet = $NewRecord(data sort CharSet, data sort #"empty")
+  for_each s : CharSetElement in charSet {
+    let t = @ph-empty-character-sequence(data choice 1)
+    for_each codePoint : sort [single] #"code point" in s {
+      perform $Append($scf(codePoint), ?t)
+    }
+    perform $SetAdd(?t, ?otherSet)
+  }
+  return otherSet
+}
+
+def @sec-charactercomplement "CharacterComplement" (kind ao params [regexpRecord : #"RegExp Record", complement : CharSet] -> CharSet) vars [regexpRecord, complement, charSet] {
+  let charSet = @sec-allcharacters(regexpRecord)
+  return @ph-charset-minus(?charSet, ?complement)
+}
+
+def @sec-runtime-semantics-unicodematchproperty-p "UnicodeMatchProperty" (kind ao params [regexpRecord : #"RegExp Record", p : #"ECMAScript source text"] -> #"Unicode property name") vars [regexpRecord, p, c, t] {
+  if regexpRecord[[UnicodeSets]] is val {true} and p sat @ph-listed-property-name(table t"table-binary-unicode-properties-of-strings") {
+    return $CodePoints(?p)
+  }
+  assert p sat @ph-listed-property-name-or-alias-either(table t"table-nonbinary-unicode-properties", table t"table-binary-unicode-properties")
+  if_else p sat @ph-listed-property-name-or-alias(table t"table-nonbinary-unicode-properties") { let t = table t"table-nonbinary-unicode-properties" } else { let t = table t"table-binary-unicode-properties" }
+  let c = $TableLookup(t, "Canonical property name", "Property name and aliases", @sec-codepointstostring(p))
+  return $CodePoints(?c)
+}
+
+def @sec-runtime-semantics-unicodematchpropertyvalue-p-v "UnicodeMatchPropertyValue" (kind ao params [p : #"ECMAScript source text", v : #"ECMAScript source text"] -> #"Unicode property value") vars [p, v, value] {
+  assert p sat @ph-listed-canonical-property-name(table t"table-nonbinary-unicode-properties")
+  assert! v sat @ph-property-value-alias(?p)
+  let value = $CanonicalPropertyValue(p, v)
+  return $CodePoints(?value)
+}
+
+def @sec-regexpcreate "RegExpCreate" (kind ao params [pattern : #"ECMAScript language value", flags : String | val(undefined)] -> completion<Object> | #"throw completion") vars [pattern, flags, #"obj"] {
+  let #"obj" = ! @sec-regexpalloc(intrinsic [[RegExp]])
+  return ? @sec-regexpinitialize(#"obj", pattern, flags)
+}
+
+def @sec-regexpalloc "RegExpAlloc" (kind ao params [newTarget : constructor] -> completion<Object> | #"throw completion") vars [newTarget, #"obj"] {
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%RegExp.prototype%", [[[OriginalSource]], [[OriginalFlags]], [[RegExpRecord]], [[RegExpMatcher]]])
+  perform ! @sec-definepropertyorthrow(#"obj", "lastIndex", record PropertyDescriptor { [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+  return #"obj"
+}
+
+def @sec-regexpinitialize "RegExpInitialize" (kind ao params [#"obj" : Object, pattern : #"ECMAScript language value", flags : #"ECMAScript language value"] -> completion<Object> | #"throw completion") vars [#"obj", pattern, flags, i, m, s, u, v, patternText, k, parseResult, capturingGroupsCount, regexpRecord] {
+  if pattern is val {undefined} -> set var pattern = $"the empty String"()
+  else -> set var pattern = ? @sec-tostring(pattern)
+  if flags is val {undefined} -> set var flags = $"the empty String"()
+  else -> set var flags = ? @sec-tostring(flags)
+  if flags sat @ph-units-other-than(data choice 0, ["d", "g", "i", "m", "s", "u", "v", "y"]) -> throw @ph-new-error([[SyntaxError]])
+  if flags sat @ph-unit-more-than-once() -> throw @ph-new-error([[SyntaxError]])
+  if_else flags sat $Contains("i") { let i = true } else { let i = false }
+  if_else flags sat $Contains("m") { let m = true } else { let m = false }
+  if_else flags sat $Contains("s") { let s = true } else { let s = false }
+  if_else flags sat $Contains("u") { let u = true } else { let u = false }
+  if_else flags sat $Contains("v") { let v = true } else { let v = false }
+  if u is val {true} or v is val {true} {
+    let patternText = @sec-stringtocodepoints(pattern)
+  }
+  else {
+    let patternText = $ListNew()
+    for_range k incl 0 .. excl $StrLen(?pattern) {
+      perform $Append($UnitOrPointOf(data choice 0, $NumericValue($UnitAt(?k, ?pattern))), ?patternText)
+    }
+  }
+  let parseResult = @sec-parsepattern(patternText, u, v)
+  if parseResult is ty {pred(sat @ph-type-syntax-errors())} -> throw @ph-new-error([[SyntaxError]])
+  assert parseResult is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |Pattern|))}
+  set field #"obj"[[OriginalSource]] = pattern
+  set field #"obj"[[OriginalFlags]] = flags
+  let capturingGroupsCount = @sec-countleftcapturingparenswithin(parseResult)
+  let regexpRecord = record #"RegExp Record" { [[IgnoreCase]]: i, [[Multiline]]: m, [[DotAll]]: s, [[Unicode]]: u, [[UnicodeSets]]: v, [[CapturingGroupsCount]]: capturingGroupsCount }
+  set field #"obj"[[RegExpRecord]] = regexpRecord
+  set field #"obj"[[RegExpMatcher]] = sdo CompilePattern(parseResult; regexpRecord)
+  perform ? @sec-set-o-p-v-throw(#"obj", "lastIndex", num_f(+0), true)
+  return #"obj"
+}
+
+def @sec-parsepattern "ParsePattern" (kind ao params [patternText : seq<#"Unicode code point">, u : Boolean, v : Boolean] -> #"Parse Node" | pred(sat @ph-type-syntax-errors())) vars [patternText, u, v, parseResult] {
+  if expr $"the host is a web browser"(data choice 0, clause @sec-regular-expressions-patterns) -> return @sec-parsepattern-annexb(patternText, u, v)
+  if v is val {true} and u is val {true} {
+    let parseResult = @ph-syntax-errors()
+  }
+  else_if v is val {true} {
+    let parseResult = @sec-parsetext(patternText, |Pattern[+UnicodeMode, +UnicodeSetsMode, +NamedCaptureGroups]|)
+  }
+  else_if u is val {true} {
+    let parseResult = @sec-parsetext(patternText, |Pattern[+UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups]|)
+  }
+  else {
+    let parseResult = @sec-parsetext(patternText, |Pattern[~UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups]|)
+  }
+  return parseResult
+}
+
+def @sec-regexp-pattern-flags "RegExp" (kind builtin params [patternOrRegexp, flags]) vars [#"this value", NewTarget, patternOrRegexp, flags, patternIsRegExp, newTarget, patternCtor, patternSource, #"obj"] {
+  let patternIsRegExp = ? @sec-isregexp(patternOrRegexp)
+  if new_target is val {undefined} {
+    let newTarget = $ActiveFunction()
+    if patternIsRegExp is val {true} and flags is val {undefined} {
+      let patternCtor = ? @sec-get-o-p(patternOrRegexp, "constructor")
+      if @sec-samevalue(newTarget, patternCtor) is val {true} -> return patternOrRegexp
+    }
+  }
+  else {
+    let newTarget = new_target
+  }
+  if patternOrRegexp is ty {Object} and patternOrRegexp sat $HasSlot([[RegExpMatcher]]) {
+    let patternSource = patternOrRegexp[[OriginalSource]]
+    if flags is val {undefined} -> set var flags = patternOrRegexp[[OriginalFlags]]
+  }
+  else_if patternIsRegExp is val {true} {
+    let patternSource = ? @sec-get-o-p(patternOrRegexp, "source")
+    if flags is val {undefined} {
+      set var flags = ? @sec-get-o-p(patternOrRegexp, "flags")
+    }
+  }
+  else {
+    let patternSource = patternOrRegexp
+  }
+  let #"obj" = ? @sec-regexpalloc(newTarget)
+  return ? @sec-regexpinitialize(#"obj", patternSource, flags)
+}
+
+def @sec-regexp.escape "RegExp.escape" (kind builtin params [string]) vars [#"this value", NewTarget, string, escaped, codePointList, codePoint, numericValue, #"hex"] {
+  if string is not ty {String} -> throw @ph-new-error([[TypeError]])
+  let escaped = $"the empty String"()
+  let codePointList = @sec-stringtocodepoints(string)
+  for_each codePoint : #"code point" in codePointList {
+    if escaped is val {$"the empty String"()} and codePoint sat @ph-matched-by-either([|DecimalDigit|, |AsciiLetter|]) {
+      note "Escaping a leading digit ensures that output corresponds with pattern text which may be used after a `\\0` character escape or a |DecimalEscape| such as `\\1` and still match _string_ rather than be interpreted as an extension of the preceding escape sequence. Escaping a leading ASCII letter does the same for the context after `\\c`."
+      let numericValue = $NumericValue(?codePoint)
+      let #"hex" = @sec-numeric-types-number-tostring($𝔽(numericValue), 16)
+      assert $StrLen(?#"hex") is val {2}
+      set var escaped = $"string-concatenation"($CodeUnit(cu(92, "005C", "REVERSE SOLIDUS")), "x", #"hex")
+    }
+    else {
+      set var escaped = $"string-concatenation"(escaped, @sec-encodeforregexpescape(codePoint))
+    }
+  }
+  return escaped
+}
+
+def @sec-encodeforregexpescape "EncodeForRegExpEscape" (kind ao params [codePoint : #"code point"] -> String) vars [codePoint, otherPunctuators, toEscape, codePointNumber, #"hex", escaped, codeUnits, codeUnit, i] {
+  if codePoint sat @ph-matched-by(|SyntaxCharacter|) or codePoint is val {cp(47, "002F", "SOLIDUS")} {
+    return $"string-concatenation"(cu(92, "005C", "REVERSE SOLIDUS"), @sec-utf16encodecodepoint(codePoint))
+  }
+  if codePoint sat @ph-tn-listed-in-column(data choice 0, data sort #"code point", code "Code Point", table t"table-controlescape-code-point-values") {
+    return $"string-concatenation"(cu(92, "005C", "REVERSE SOLIDUS"), $TableLookup(table t"table-controlescape-code-point-values", code "ControlEscape", code "Code Point", ?codePoint))
+  }
+  let otherPunctuators = $"string-concatenation"(",-=<>#&!%:;@~'`", $CodeUnit(cu(34, "0022", "QUOTATION MARK")))
+  let toEscape = @sec-stringtocodepoints(otherPunctuators)
+  if toEscape sat $Contains(?codePoint) or codePoint sat @ph-matched-by-either([|WhiteSpace|, |LineTerminator|]) or codePoint sat @ph-surrogate-value() {
+    let codePointNumber = $NumericValue(?codePoint)
+    if codePointNumber <= math(hex(255, "FF")) {
+      let #"hex" = @sec-numeric-types-number-tostring($𝔽(codePointNumber), 16)
+      return $"string-concatenation"($CodeUnit(cu(92, "005C", "REVERSE SOLIDUS")), "x", @sec-stringpad(#"hex", 2, "0", ~start~))
+    }
+    let escaped = $"the empty String"()
+    let codeUnits = @sec-utf16encodecodepoint(codePoint)
+    for_range i incl 0 .. excl $StrLen(?codeUnits) {
+      let codeUnit = $UnitAt(?i, ?codeUnits)
+      set var escaped = $"string-concatenation"(escaped, @sec-unicodeescape(codeUnit))
+    }
+    return escaped
+  }
+  return @sec-utf16encodecodepoint(codePoint)
+}
+
+def @sec-get-regexp-%symbol.species% "get RegExp [ %Symbol.species% ]" (kind builtin params []) vars [#"this value", NewTarget] {
+  return this_value
+}
+
+def @sec-regexp.prototype.exec "RegExp.prototype.exec" (kind builtin params [string]) vars [#"this value", NewTarget, string, regexp] {
+  let regexp = this_value
+  perform ? @sec-requireinternalslot(regexp, [[RegExpMatcher]])
+  set var string = ? @sec-tostring(string)
+  return ? @sec-regexpbuiltinexec(regexp, string)
+}
+
+def @sec-get-regexp.prototype.dotAll "get RegExp.prototype.dotAll" (kind builtin params []) vars [#"this value", NewTarget, regexp, codeUnit] {
+  let regexp = this_value
+  let codeUnit = $CodeUnit(cu(115, "0073", "LATIN SMALL LETTER S"))
+  return ? @sec-regexphasflag(regexp, codeUnit)
+}
+
+def @sec-get-regexp.prototype.flags "get RegExp.prototype.flags" (kind builtin params []) vars [#"this value", NewTarget, regexp, codeUnits, hasIndices, global, ignoreCase, multiline, dotAll, unicode, unicodeSets, sticky, result, #"cu"] {
+  let regexp = this_value
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let codeUnits = $ListNew()
+  let hasIndices = @sec-toboolean(? @sec-get-o-p(regexp, "hasIndices"))
+  if hasIndices is val {true} -> perform $Append($CodeUnit(cu(100, "0064", "LATIN SMALL LETTER D")), ?codeUnits)
+  let global = @sec-toboolean(? @sec-get-o-p(regexp, "global"))
+  if global is val {true} -> perform $Append($CodeUnit(cu(103, "0067", "LATIN SMALL LETTER G")), ?codeUnits)
+  let ignoreCase = @sec-toboolean(? @sec-get-o-p(regexp, "ignoreCase"))
+  if ignoreCase is val {true} -> perform $Append($CodeUnit(cu(105, "0069", "LATIN SMALL LETTER I")), ?codeUnits)
+  let multiline = @sec-toboolean(? @sec-get-o-p(regexp, "multiline"))
+  if multiline is val {true} -> perform $Append($CodeUnit(cu(109, "006D", "LATIN SMALL LETTER M")), ?codeUnits)
+  let dotAll = @sec-toboolean(? @sec-get-o-p(regexp, "dotAll"))
+  if dotAll is val {true} -> perform $Append($CodeUnit(cu(115, "0073", "LATIN SMALL LETTER S")), ?codeUnits)
+  let unicode = @sec-toboolean(? @sec-get-o-p(regexp, "unicode"))
+  if unicode is val {true} -> perform $Append($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")), ?codeUnits)
+  let unicodeSets = @sec-toboolean(? @sec-get-o-p(regexp, "unicodeSets"))
+  if unicodeSets is val {true} -> perform $Append($CodeUnit(cu(118, "0076", "LATIN SMALL LETTER V")), ?codeUnits)
+  let sticky = @sec-toboolean(? @sec-get-o-p(regexp, "sticky"))
+  if sticky is val {true} -> perform $Append($CodeUnit(cu(121, "0079", "LATIN SMALL LETTER Y")), ?codeUnits)
+  let result = $"the empty String"()
+  for_each #"cu" in codeUnits {
+    set var result = $"string-concatenation"(result, $StrOfUnits(#"cu"))
+  }
+  return result
+}
+
+def @sec-regexphasflag "RegExpHasFlag" (kind ao params [regexp : #"ECMAScript language value", codeUnit : #"code unit"] -> completion<Boolean | val(undefined)> | #"throw completion") vars [regexp, codeUnit, flags] {
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if regexp fails $HasSlot([[OriginalFlags]]) {
+    if @sec-samevalue(regexp, intrinsic [[RegExp.prototype]]) is val {true} -> return undefined
+    throw @ph-new-error([[TypeError]])
+  }
+  let flags = regexp[[OriginalFlags]]
+  if flags sat $Contains(?codeUnit) -> return true
+  return false
+}
+
+def @sec-get-regexp.prototype.global "get RegExp.prototype.global" (kind builtin params []) vars [#"this value", NewTarget, regexp, codeUnit] {
+  let regexp = this_value
+  let codeUnit = $CodeUnit(cu(103, "0067", "LATIN SMALL LETTER G"))
+  return ? @sec-regexphasflag(regexp, codeUnit)
+}
+
+def @sec-get-regexp.prototype.hasIndices "get RegExp.prototype.hasIndices" (kind builtin params []) vars [#"this value", NewTarget, regexp, codeUnit] {
+  let regexp = this_value
+  let codeUnit = $CodeUnit(cu(100, "0064", "LATIN SMALL LETTER D"))
+  return ? @sec-regexphasflag(regexp, codeUnit)
+}
+
+def @sec-get-regexp.prototype.ignorecase "get RegExp.prototype.ignoreCase" (kind builtin params []) vars [#"this value", NewTarget, regexp, codeUnit] {
+  let regexp = this_value
+  let codeUnit = $CodeUnit(cu(105, "0069", "LATIN SMALL LETTER I"))
+  return ? @sec-regexphasflag(regexp, codeUnit)
+}
+
+def @sec-regexp.prototype-%symbol.match% "RegExp.prototype [ %Symbol.match% ]" (kind builtin params [string]) vars [#"this value", NewTarget, string, regexp, flags, fullUnicode, array, matchCount, result, matchString, thisIndex, nextIndex] {
+  let regexp = this_value
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  set var string = ? @sec-tostring(string)
+  let flags = ? @sec-tostring(? @sec-get-o-p(regexp, "flags"))
+  if flags fails $Contains("g") -> return ? @sec-regexpexec(regexp, string)
+  if_else flags sat $Contains("u") or flags sat $Contains("v") { let fullUnicode = true } else { let fullUnicode = false }
+  perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", num_f(+0), true)
+  let array = ! @sec-arraycreate(0)
+  let matchCount = 0
+  repeat {
+    let result = ? @sec-regexpexec(regexp, string)
+    if result is val {null} {
+      if matchCount == 0 -> return null
+      return array
+    }
+    let matchString = ? @sec-tostring(? @sec-get-o-p(result, "0"))
+    perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(matchCount)), matchString)
+    if matchString is val {$"the empty String"()} {
+      let thisIndex = $ℝ(? @sec-tolength(? @sec-get-o-p(regexp, "lastIndex")))
+      let nextIndex = @sec-advancestringindex(string, thisIndex, fullUnicode)
+      perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", $𝔽(nextIndex), true)
+    }
+    set var matchCount = matchCount + 1
+  }
+}
+
+def @sec-regexp-prototype-%symbol.matchall% "RegExp.prototype [ %Symbol.matchAll% ]" (kind builtin params [string]) vars [#"this value", NewTarget, string, regexp, speciesCtor, flags, matcher, lastIndex, global, fullUnicode] {
+  let regexp = this_value
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  set var string = ? @sec-tostring(string)
+  let speciesCtor = ? @sec-speciesconstructor(regexp, intrinsic [[RegExp]])
+  let flags = ? @sec-tostring(? @sec-get-o-p(regexp, "flags"))
+  let matcher = ? @sec-construct(speciesCtor, [regexp, flags])
+  let lastIndex = ? @sec-tolength(? @sec-get-o-p(regexp, "lastIndex"))
+  perform ? @sec-set-o-p-v-throw(matcher, "lastIndex", lastIndex, true)
+  if flags sat $Contains("g") -> let global = true
+  else -> let global = false
+  if flags sat $Contains("u") or flags sat $Contains("v") -> let fullUnicode = true
+  else -> let fullUnicode = false
+  return @sec-createregexpstringiterator(matcher, string, global, fullUnicode)
+}
+
+def @sec-get-regexp.prototype.multiline "get RegExp.prototype.multiline" (kind builtin params []) vars [#"this value", NewTarget, regexp, codeUnit] {
+  let regexp = this_value
+  let codeUnit = $CodeUnit(cu(109, "006D", "LATIN SMALL LETTER M"))
+  return ? @sec-regexphasflag(regexp, codeUnit)
+}
+
+def @sec-regexp.prototype-%symbol.replace% "RegExp.prototype [ %Symbol.replace% ]" (kind builtin params [string, replaceValue]) vars [#"this value", NewTarget, string, replaceValue, regexp, stringLength, functionalReplace, flags, global, results, done, result, matchString, thisIndex, fullUnicode, nextIndex, accumulatedResult, nextSourcePosition, resultLength, capturesCount, matched, matchLength, position, #"captures", captureNumber, capture, namedCaptures, replacerArgs, replacementValue, replacementString] {
+  let regexp = this_value
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  set var string = ? @sec-tostring(string)
+  let stringLength = $StrLen(?string)
+  let functionalReplace = @sec-iscallable(replaceValue)
+  if functionalReplace is val {false} {
+    set var replaceValue = ? @sec-tostring(replaceValue)
+  }
+  let flags = ? @sec-tostring(? @sec-get-o-p(regexp, "flags"))
+  if_else flags sat $Contains("g") { let global = true } else { let global = false }
+  if global is val {true} {
+    perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", num_f(+0), true)
+  }
+  let results = $ListNew()
+  let done = false
+  repeat_while done is val {false} {
+    let result = ? @sec-regexpexec(regexp, string)
+    if result is val {null} {
+      set var done = true
+    }
+    else {
+      perform $Append(?result, ?results)
+      if global is val {false} {
+        set var done = true
+      }
+      else {
+        let matchString = ? @sec-tostring(? @sec-get-o-p(result, "0"))
+        if matchString is val {$"the empty String"()} {
+          let thisIndex = $ℝ(? @sec-tolength(? @sec-get-o-p(regexp, "lastIndex")))
+          if_else flags sat $Contains("u") or flags sat $Contains("v") { let fullUnicode = true } else { let fullUnicode = false }
+          let nextIndex = @sec-advancestringindex(string, thisIndex, fullUnicode)
+          perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", $𝔽(nextIndex), true)
+        }
+      }
+    }
+  }
+  let accumulatedResult = $"the empty String"()
+  let nextSourcePosition = 0
+  for_each result in results {
+    let resultLength = ? @sec-lengthofarraylike(result)
+    let capturesCount = $max(resultLength - 1, 0)
+    let matched = ? @sec-tostring(? @sec-get-o-p(result, "0"))
+    let matchLength = $StrLen(?matched)
+    let position = ? @sec-tointegerorinfinity(? @sec-get-o-p(result, "index"))
+    set var position = $clamping(?position, 0, ?stringLength)
+    let #"captures" = $ListNew()
+    let captureNumber = 1
+    repeat_while captureNumber <= capturesCount {
+      let capture = ? @sec-get-o-p(result, ! @sec-tostring($𝔽(captureNumber)))
+      if capture is not val {undefined} {
+        set var capture = ? @sec-tostring(capture)
+      }
+      perform $Append(?capture, ?#"captures")
+      note "When _captureNumber_ = 1, the preceding step puts the first element into _captures_ (at index 0). More generally, the _captureNumber_<sup>th</sup> capture (the characters captured by the _captureNumber_<sup>th</sup> set of capturing parentheses) is at _captures_[_captureNumber_ - 1]."
+      set var captureNumber = captureNumber + 1
+    }
+    let namedCaptures = ? @sec-get-o-p(result, "groups")
+    if functionalReplace is val {true} {
+      let replacerArgs = $ListConcat([[matched], #"captures", [$𝔽(position), string]])
+      if namedCaptures is not val {undefined} {
+        perform $Append(?namedCaptures, ?replacerArgs)
+      }
+      let replacementValue = ? @sec-call(replaceValue, undefined, replacerArgs)
+      let replacementString = ? @sec-tostring(replacementValue)
+    }
+    else {
+      if namedCaptures is not val {undefined} {
+        set var namedCaptures = ? @sec-toobject(namedCaptures)
+      }
+      let replacementString = ? @sec-getsubstitution(matched, string, position, #"captures", namedCaptures, replaceValue)
+    }
+    if position >= nextSourcePosition {
+      note "_position_ should not normally move backwards. If it does, it is an indication of an ill-behaving RegExp subclass or use of an access triggered side-effect to change the global flag or other characteristics of _regexp_. In such cases, the corresponding substitution is ignored."
+      set var accumulatedResult = $"string-concatenation"(accumulatedResult, $Substring(?string, ?nextSourcePosition, ?position), replacementString)
+      set var nextSourcePosition = position + matchLength
+    }
+  }
+  if nextSourcePosition >= stringLength -> return accumulatedResult
+  return $"string-concatenation"(accumulatedResult, $Substring(?string, ?nextSourcePosition, data absent))
+}
+
+def @sec-regexp.prototype-%symbol.search% "RegExp.prototype [ %Symbol.search% ]" (kind builtin params [string]) vars [#"this value", NewTarget, string, regexp, previousLastIndex, result, currentLastIndex] {
+  let regexp = this_value
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  set var string = ? @sec-tostring(string)
+  let previousLastIndex = ? @sec-get-o-p(regexp, "lastIndex")
+  if previousLastIndex is not val {num_f(+0)} {
+    perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", num_f(+0), true)
+  }
+  let result = ? @sec-regexpexec(regexp, string)
+  let currentLastIndex = ? @sec-get-o-p(regexp, "lastIndex")
+  if @sec-samevalue(currentLastIndex, previousLastIndex) is val {false} {
+    perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", previousLastIndex, true)
+  }
+  if result is val {null} -> return num_f(-1)
+  return ? @sec-get-o-p(result, "index")
+}
+
+def @sec-get-regexp.prototype.source "get RegExp.prototype.source" (kind builtin params []) vars [#"this value", NewTarget, regexp, source, flags] {
+  let regexp = this_value
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if regexp fails $HasSlot([[OriginalSource]]) {
+    if @sec-samevalue(regexp, intrinsic [[RegExp.prototype]]) is val {true} -> return "(?:)"
+    throw @ph-new-error([[TypeError]])
+  }
+  assert regexp sat $HasSlot([[OriginalFlags]])
+  let source = regexp[[OriginalSource]]
+  let flags = regexp[[OriginalFlags]]
+  return @sec-escaperegexppattern(source, flags)
+}
+
+def @sec-escaperegexppattern "EscapeRegExpPattern" (kind ao params [pattern : String, flags : String] -> String) vars [pattern, flags, patternSymbol, escapedPattern] {
+  if flags sat $Contains("v") {
+    let patternSymbol = |Pattern[+UnicodeMode, +UnicodeSetsMode]|
+  }
+  else_if flags sat $Contains("u") {
+    let patternSymbol = |Pattern[+UnicodeMode, ~UnicodeSetsMode]|
+  }
+  else {
+    let patternSymbol = |Pattern[~UnicodeMode, ~UnicodeSetsMode]|
+  }
+  let escapedPattern = $EscapePattern(pattern, flags)
+  return escapedPattern
+}
+
+def @sec-regexp.prototype-%symbol.split% "RegExp.prototype [ %Symbol.split% ]" (kind builtin params [string, substringLimit]) vars [#"this value", NewTarget, string, substringLimit, regexp, speciesCtor, flags, unicodeMatching, newFlags, splitter, array, lengthA, substringLimitInt, matchResult, size, lastMatchEnd, searchIndex, matchEnd, substring, numberOfCaptures, captureIndex, nextCapture] {
+  let regexp = this_value
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  set var string = ? @sec-tostring(string)
+  let speciesCtor = ? @sec-speciesconstructor(regexp, intrinsic [[RegExp]])
+  let flags = ? @sec-tostring(? @sec-get-o-p(regexp, "flags"))
+  if flags sat $Contains("u") or flags sat $Contains("v") -> let unicodeMatching = true
+  else -> let unicodeMatching = false
+  if flags sat $Contains("y") -> let newFlags = flags
+  else -> let newFlags = $"string-concatenation"(flags, "y")
+  let splitter = ? @sec-construct(speciesCtor, [regexp, newFlags])
+  let array = ! @sec-arraycreate(0)
+  let lengthA = 0
+  if_else substringLimit is val {undefined} { let substringLimitInt = 2 ^ 32 - 1 } else { let substringLimitInt = $ℝ(? @sec-touint32(substringLimit)) }
+  if substringLimitInt == 0 -> return array
+  if string is val {$"the empty String"()} {
+    let matchResult = ? @sec-regexpexec(splitter, string)
+    if matchResult is not val {null} -> return array
+    perform ! @sec-createdatapropertyorthrow(array, "0", string)
+    return array
+  }
+  let size = $StrLen(?string)
+  let lastMatchEnd = 0
+  let searchIndex = lastMatchEnd
+  repeat_while searchIndex < size {
+    perform ? @sec-set-o-p-v-throw(splitter, "lastIndex", $𝔽(searchIndex), true)
+    let matchResult = ? @sec-regexpexec(splitter, string)
+    if matchResult is val {null} {
+      set var searchIndex = @sec-advancestringindex(string, searchIndex, unicodeMatching)
+    }
+    else {
+      let matchEnd = $ℝ(? @sec-tolength(? @sec-get-o-p(splitter, "lastIndex")))
+      set var matchEnd = $min(matchEnd, size)
+      if matchEnd == lastMatchEnd {
+        set var searchIndex = @sec-advancestringindex(string, searchIndex, unicodeMatching)
+      }
+      else {
+        let substring = $Substring(?string, ?lastMatchEnd, ?searchIndex)
+        perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(lengthA)), substring)
+        set var lengthA = lengthA + 1
+        if lengthA == substringLimitInt -> return array
+        set var lastMatchEnd = matchEnd
+        let numberOfCaptures = ? @sec-lengthofarraylike(matchResult)
+        set var numberOfCaptures = $max(numberOfCaptures - 1, 0)
+        let captureIndex = 1
+        repeat_while captureIndex <= numberOfCaptures {
+          let nextCapture = ? @sec-get-o-p(matchResult, ! @sec-tostring($𝔽(captureIndex)))
+          perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(lengthA)), nextCapture)
+          set var captureIndex = captureIndex + 1
+          set var lengthA = lengthA + 1
+          if lengthA == substringLimitInt -> return array
+        }
+        set var searchIndex = lastMatchEnd
+      }
+    }
+  }
+  let substring = $Substring(?string, ?lastMatchEnd, ?size)
+  perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(lengthA)), substring)
+  return array
+}
+
+def @sec-get-regexp.prototype.sticky "get RegExp.prototype.sticky" (kind builtin params []) vars [#"this value", NewTarget, regexp, codeUnit] {
+  let regexp = this_value
+  let codeUnit = $CodeUnit(cu(121, "0079", "LATIN SMALL LETTER Y"))
+  return ? @sec-regexphasflag(regexp, codeUnit)
+}
+
+def @sec-regexp.prototype.test "RegExp.prototype.test" (kind builtin params [string]) vars [#"this value", NewTarget, string, regexp, match] {
+  let regexp = this_value
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  set var string = ? @sec-tostring(string)
+  let match = ? @sec-regexpexec(regexp, string)
+  if match is val {null} -> return false
+  return true
+}
+
+def @sec-regexp.prototype.tostring "RegExp.prototype.toString" (kind builtin params []) vars [#"this value", NewTarget, regexp, pattern, flags, result] {
+  let regexp = this_value
+  if regexp is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let pattern = ? @sec-tostring(? @sec-get-o-p(regexp, "source"))
+  let flags = ? @sec-tostring(? @sec-get-o-p(regexp, "flags"))
+  let result = $"string-concatenation"("/", pattern, "/", flags)
+  return result
+}
+
+def @sec-get-regexp.prototype.unicode "get RegExp.prototype.unicode" (kind builtin params []) vars [#"this value", NewTarget, regexp, codeUnit] {
+  let regexp = this_value
+  let codeUnit = $CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U"))
+  return ? @sec-regexphasflag(regexp, codeUnit)
+}
+
+def @sec-get-regexp.prototype.unicodesets "get RegExp.prototype.unicodeSets" (kind builtin params []) vars [#"this value", NewTarget, regexp, codeUnit] {
+  let regexp = this_value
+  let codeUnit = $CodeUnit(cu(118, "0076", "LATIN SMALL LETTER V"))
+  return ? @sec-regexphasflag(regexp, codeUnit)
+}
+
+def @sec-regexpexec "RegExpExec" (kind ao params [regexp : Object, string : String] -> completion<Object | val(null)> | #"throw completion") vars [regexp, string, exec, result] {
+  let exec = ? @sec-get-o-p(regexp, "exec")
+  if @sec-iscallable(exec) is val {true} {
+    let result = ? @sec-call(exec, regexp, [string])
+    if result is not ty {Object} and result is not val {null} -> throw @ph-new-error([[TypeError]])
+    return result
+  }
+  perform ? @sec-requireinternalslot(regexp, [[RegExpMatcher]])
+  return ? @sec-regexpbuiltinexec(regexp, string)
+}
+
+def @sec-regexpbuiltinexec "RegExpBuiltinExec" (kind ao params [regexp : #"initialized RegExp instance", string : String] -> completion<#"Array exotic object" | val(null)> | #"throw completion") vars [regexp, string, length, lastIndex, flags, global, sticky, hasIndices, matcher, fullUnicode, matchSucceeded, input, inputIndex, result, endIndex, capturingGroupsCount, array, match, indices, groupNames, matchedSubstring, groups, hasGroups, matchedGroupNames, i, capture, capturedValue, captureStart, captureEnd, captureRecord, groupName, groupNameNode, indicesArray] {
+  let length = $StrLen(?string)
+  let lastIndex = $ℝ(? @sec-tolength(! @sec-get-o-p(regexp, "lastIndex")))
+  let flags = regexp[[OriginalFlags]]
+  if_else flags sat $Contains("g") { let global = true } else { let global = false }
+  if_else flags sat $Contains("y") { let sticky = true } else { let sticky = false }
+  if_else flags sat $Contains("d") { let hasIndices = true } else { let hasIndices = false }
+  if global is val {false} and sticky is val {false} -> set var lastIndex = 0
+  let matcher = regexp[[RegExpMatcher]]
+  if_else flags sat $Contains("u") or flags sat $Contains("v") { let fullUnicode = true } else { let fullUnicode = false }
+  let matchSucceeded = false
+  if_else fullUnicode is val {true} { let input = @sec-stringtocodepoints(string) } else { let input = @ph-list-whose-elements([@ph-code-units-of-string(data choice 1, ?string)]) }
+  note "Each element of _input_ is considered to be a character."
+  repeat_while matchSucceeded is val {false} {
+    if lastIndex > length {
+      if global is val {true} or sticky is val {true} {
+        perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", num_f(+0), true)
+      }
+      return null
+    }
+    let inputIndex = @ph-input-index-of(?input, ?lastIndex, ?string)
+    let result = matcher(input, inputIndex)
+    if result is val {~failure~} {
+      if sticky is val {true} {
+        perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", num_f(+0), true)
+        return null
+      }
+      set var lastIndex = @sec-advancestringindex(string, lastIndex, fullUnicode)
+    }
+    else {
+      assert result is ty {MatchState}
+      set var matchSucceeded = true
+    }
+  }
+  let endIndex = result[[EndIndex]]
+  if fullUnicode is val {true} -> set var endIndex = @sec-getstringindex(string, endIndex)
+  if global is val {true} or sticky is val {true} {
+    perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", $𝔽(endIndex), true)
+  }
+  let capturingGroupsCount = $ListLen(result[[Captures]])
+  assert capturingGroupsCount == regexp[[RegExpRecord]][[CapturingGroupsCount]]
+  assert capturingGroupsCount < 2 ^ 32 - 1
+  let array = ! @sec-arraycreate(capturingGroupsCount + 1)
+  assert $ℝ(@sec-ordinarygetownproperty(array, "length")[[Value]]) == capturingGroupsCount + 1
+  perform ! @sec-createdatapropertyorthrow(array, "index", $𝔽(lastIndex))
+  perform ! @sec-createdatapropertyorthrow(array, "input", string)
+  let match = record #"Match Record" { [[StartIndex]]: lastIndex, [[EndIndex]]: endIndex }
+  let indices = $ListNew()
+  let groupNames = $ListNew()
+  perform $Append(?match, ?indices)
+  let matchedSubstring = @sec-getmatchstring(string, match)
+  perform ! @sec-createdatapropertyorthrow(array, "0", matchedSubstring)
+  if regexp sat @ph-contains-any-nt(|GroupName|) {
+    let groups = @sec-ordinaryobjectcreate(null)
+    let hasGroups = true
+  }
+  else {
+    let groups = undefined
+    let hasGroups = false
+  }
+  perform ! @sec-createdatapropertyorthrow(array, "groups", groups)
+  let matchedGroupNames = $ListNew()
+  for_range i incl 1 .. incl capturingGroupsCount {
+    let capture = @ph-ith-element(?i, result[[Captures]])
+    if capture is val {undefined} {
+      let capturedValue = undefined
+      perform $Append(undefined, ?indices)
+    }
+    else {
+      let captureStart = capture[[StartIndex]]
+      let captureEnd = capture[[EndIndex]]
+      if fullUnicode is val {true} {
+        set var captureStart = @sec-getstringindex(string, captureStart)
+        set var captureEnd = @sec-getstringindex(string, captureEnd)
+      }
+      let captureRecord = record #"Match Record" { [[StartIndex]]: captureStart, [[EndIndex]]: captureEnd }
+      let capturedValue = @sec-getmatchstring(string, captureRecord)
+      perform $Append(?captureRecord, ?indices)
+    }
+    perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(i)), capturedValue)
+    let groupNameNode = @formal-capturegroupname(@formal-regexppattern(regexp), i)
+    if groupNameNode is not val {~empty~} {
+      let groupName = sdo CapturingGroupName(groupNameNode)
+      if matchedGroupNames sat $Contains(?groupName) {
+        assert capturedValue is val {undefined}
+        perform $Append(undefined, ?groupNames)
+      }
+      else {
+        if capturedValue is not val {undefined} -> perform $Append(?groupName, ?matchedGroupNames)
+        note "If there are multiple groups named _groupName_, _groups_ may already have an _groupName_ property at this point. However, because _groups_ is an ordinary object whose properties are all writable data properties, the call to CreateDataPropertyOrThrow is nevertheless guaranteed to succeed."
+        perform ! @sec-createdatapropertyorthrow(groups, groupName, capturedValue)
+        perform $Append(?groupName, ?groupNames)
+      }
+    }
+    else {
+      perform $Append(undefined, ?groupNames)
+    }
+  }
+  if hasIndices is val {true} {
+    let indicesArray = @sec-makematchindicesindexpairarray(string, indices, groupNames, hasGroups)
+    perform ! @sec-createdatapropertyorthrow(array, "indices", indicesArray)
+  }
+  return array
+}
+
+def @sec-advancestringindex "AdvanceStringIndex" (kind ao params [string : String, index : sort [#"non-negative"] integer, unicode : Boolean] -> sort [#"non-negative"] integer) vars [string, index, unicode, length, codePoint] {
+  assert index <= 2 ^ 53 - 1
+  if unicode is val {false} -> return index + 1
+  let length = $StrLen(?string)
+  if index + 1 >= length -> return index + 1
+  let codePoint = @sec-codepointat(string, index)
+  return index + codePoint[[CodeUnitCount]]
+}
+
+def @sec-getstringindex "GetStringIndex" (kind ao params [string : String, codePointIndex : sort [#"non-negative"] integer] -> sort [#"non-negative"] integer) vars [string, codePointIndex, length, codeUnitCount, codePointCount, codePoint] {
+  if string is val {$"the empty String"()} -> return 0
+  let length = $StrLen(?string)
+  let codeUnitCount = 0
+  let codePointCount = 0
+  repeat_while codeUnitCount < length {
+    if codePointCount == codePointIndex -> return codeUnitCount
+    let codePoint = @sec-codepointat(string, codeUnitCount)
+    set var codeUnitCount = codeUnitCount + codePoint[[CodeUnitCount]]
+    set var codePointCount = codePointCount + 1
+  }
+  return length
+}
+
+def @sec-getmatchstring "GetMatchString" (kind ao params [string : String, match : #"Match Record"] -> String) vars [string, match] {
+  assert! expr $Chain(match[[StartIndex]], data choice 1, match[[EndIndex]], data choice 1, $StrLen(?string))
+  return $Substring(?string, match[[StartIndex]], match[[EndIndex]])
+}
+
+def @sec-getmatchindexpair "GetMatchIndexPair" (kind ao params [string : String, match : #"Match Record"] -> Array) vars [string, match] {
+  assert expr $Chain(match[[StartIndex]], data choice 1, match[[EndIndex]], data choice 1, $StrLen(?string))
+  return @sec-createarrayfromlist([$𝔽(match[[StartIndex]]), $𝔽(match[[EndIndex]])])
+}
+
+def @sec-makematchindicesindexpairarray "MakeMatchIndicesIndexPairArray" (kind ao params [string : String, indices : list<#"Match Record" | val(undefined)>, groupNames : list<String | val(undefined)>, hasGroups : Boolean] -> Array) vars [string, indices, groupNames, hasGroups, n, array, groups, i, matchIndices, matchIndexPair, name] {
+  let n = $ListLen(?indices)
+  assert n < 2 ^ 32 - 1
+  assert groupNames sat @ph-has-n-elements(n - 1)
+  note "The _groupNames_ List contains elements aligned with the _indices_ List starting at _indices_[1]."
+  let array = ! @sec-arraycreate(n)
+  if hasGroups is val {true} {
+    let groups = @sec-ordinaryobjectcreate(null)
+  }
+  else {
+    let groups = undefined
+  }
+  perform ! @sec-createdatapropertyorthrow(array, "groups", groups)
+  for_range i incl 0 .. excl n {
+    let matchIndices = indices[i]
+    if matchIndices is not val {undefined} {
+      let matchIndexPair = @sec-getmatchindexpair(string, matchIndices)
+    }
+    else {
+      let matchIndexPair = undefined
+    }
+    perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(i)), matchIndexPair)
+    if i > 0 {
+      let name = groupNames[i - 1]
+      if name is not val {undefined} {
+        assert groups is not val {undefined}
+        note "If there are multiple groups named _name_, _groups_ may already have an _name_ property at this point. However, because _groups_ is an ordinary object whose properties are all writable data properties, the call to CreateDataPropertyOrThrow is nevertheless guaranteed to succeed."
+        perform ! @sec-createdatapropertyorthrow(groups, name, matchIndexPair)
+      }
+    }
+  }
+  return array
+}
+
+def @sec-createregexpstringiterator "CreateRegExpStringIterator" (kind ao params [regexp : Object, string : String, global : Boolean, fullUnicode : Boolean] -> Object) vars [regexp, string, global, fullUnicode, iterator] {
+  let iterator = @sec-ordinaryobjectcreate(intrinsic [[RegExpStringIteratorPrototype]], [[[IteratingRegExp]], [[IteratedString]], [[Global]], [[Unicode]], [[Done]]])
+  set field iterator[[IteratingRegExp]] = regexp
+  set field iterator[[IteratedString]] = string
+  set field iterator[[Global]] = global
+  set field iterator[[Unicode]] = fullUnicode
+  set field iterator[[Done]] = false
+  return iterator
+}
+
+def @sec-%regexpstringiteratorprototype%.next "%RegExpStringIteratorPrototype%.next" (kind builtin params []) vars [#"this value", NewTarget, iteratorObj, regexp, string, global, fullUnicode, match, matchString, thisIndex, nextIndex] {
+  let iteratorObj = this_value
+  if iteratorObj is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if iteratorObj sat @ph-not-has-all-slots(data sort #"RegExp String Iterator Object Instance", data choice 0, clause @sec-properties-of-regexp-string-iterator-instances) -> throw @ph-new-error([[TypeError]])
+  if iteratorObj[[Done]] is val {true} {
+    return @sec-createiterresultobject(undefined, true)
+  }
+  let regexp = iteratorObj[[IteratingRegExp]]
+  let string = iteratorObj[[IteratedString]]
+  let global = iteratorObj[[Global]]
+  let fullUnicode = iteratorObj[[Unicode]]
+  let match = ? @sec-regexpexec(regexp, string)
+  if match is val {null} {
+    set field iteratorObj[[Done]] = true
+    return @sec-createiterresultobject(undefined, true)
+  }
+  if global is val {false} {
+    set field iteratorObj[[Done]] = true
+    return @sec-createiterresultobject(match, false)
+  }
+  let matchString = ? @sec-tostring(? @sec-get-o-p(match, "0"))
+  if matchString is val {$"the empty String"()} {
+    let thisIndex = $ℝ(? @sec-tolength(? @sec-get-o-p(regexp, "lastIndex")))
+    let nextIndex = @sec-advancestringindex(string, thisIndex, fullUnicode)
+    perform ? @sec-set-o-p-v-throw(regexp, "lastIndex", $𝔽(nextIndex), true)
+  }
+  return @sec-createiterresultobject(match, false)
+}
+
+sdo_row @sec-patterns-static-semantics-capturing-group-number CapturingGroupNumber form alg {
+  prods [p"RegExp 0 DecimalEscape :: NonZeroDigit DecimalDigits[~Sep]? [lookahead ∉ DecimalDigit]"]
+  keys ["DecimalEscape :: NonZeroDigit"]
+  vars []
+  steps {
+    return sdo MV(child 5 |NonZeroDigit|)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-capturing-group-number#1 CapturingGroupNumber form alg {
+  prods [p"RegExp 1 DecimalEscape :: NonZeroDigit DecimalDigits[~Sep]? [lookahead ∉ DecimalDigit]"]
+  keys ["DecimalEscape :: NonZeroDigit DecimalDigits"]
+  vars [n]
+  steps {
+    let n = $Count(data choice 2, child 5 |DecimalDigits|)
+    return (sdo MV(child 5 |NonZeroDigit|) * 10 ^ n plus sdo MV(child 5 |DecimalDigits|))
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-is-character-class IsCharacterClass form alg {
+  prods [p"RegExp - ClassAtom :: `-`", p"RegExp - ClassAtomNoDash :: SourceCharacter but not one of `\\` or `]` or `-`", p"AnnexB - ClassAtomNoDash :: SourceCharacter but not one of `\\` or `]` or `-`", p"RegExp - ClassEscape :: `b`", p"AnnexB - ClassEscape :: `b`", p"RegExp - ClassEscape :: [+UnicodeMode] `-`", p"AnnexB - ClassEscape :: [+UnicodeMode] `-`", p"RegExp - ClassEscape :: CharacterEscape[?UnicodeMode]", p"AnnexB - ClassEscape :: CharacterEscape[?UnicodeMode, ?NamedCaptureGroups]"]
+  keys ["\n          ClassAtom ::\n            `-`\n\n          ClassAtomNoDash ::\n            SourceCharacter but not one of `\\` or `]` or `-`\n\n          ClassEscape ::\n            `b`\n            `-`\n            CharacterEscape\n        "]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-is-character-class#1 IsCharacterClass form alg {
+  prods [p"RegExp - ClassEscape :: CharacterClassEscape[?UnicodeMode]", p"AnnexB - ClassEscape :: CharacterClassEscape[?UnicodeMode]"]
+  keys ["ClassEscape :: CharacterClassEscape"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value CharacterValue form alg {
+  prods [p"RegExp - ClassAtom :: `-`"]
+  keys ["\n          ClassAtom :: `-`\n        "]
+  vars []
+  steps {
+    return $NumericValue(cp(45, "002D", "HYPHEN-MINUS"))
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#1 CharacterValue form alg {
+  prods [p"RegExp - ClassAtomNoDash :: SourceCharacter but not one of `\\` or `]` or `-`", p"AnnexB - ClassAtomNoDash :: SourceCharacter but not one of `\\` or `]` or `-`"]
+  keys ["\n          ClassAtomNoDash :: SourceCharacter but not one of `\\` or `]` or `-`\n        "]
+  vars [codePoint]
+  steps {
+    let codePoint = $CodePointMatched(child 5 |SourceCharacter|)
+    return $NumericValue(?codePoint)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#2 CharacterValue form alg {
+  prods [p"RegExp - ClassEscape :: `b`", p"AnnexB - ClassEscape :: `b`"]
+  keys ["\n          ClassEscape :: `b`\n        "]
+  vars []
+  steps {
+    return $NumericValue(cp(8, "0008", "BACKSPACE"))
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#3 CharacterValue form alg {
+  prods [p"RegExp - ClassEscape :: [+UnicodeMode] `-`", p"AnnexB - ClassEscape :: [+UnicodeMode] `-`"]
+  keys ["\n          ClassEscape :: `-`\n        "]
+  vars []
+  steps {
+    return $NumericValue(cp(45, "002D", "HYPHEN-MINUS"))
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#4 CharacterValue form alg {
+  prods [p"RegExp - CharacterEscape :: ControlEscape", p"AnnexB - CharacterEscape :: ControlEscape"]
+  keys ["CharacterEscape :: ControlEscape"]
+  vars []
+  steps {
+    return $TableLookup(table t"table-controlescape-code-point-values", "Numeric Value", "ControlEscape", @sec-codepointstostring($SourceText(child 5 |ControlEscape|)))
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#5 CharacterValue form alg {
+  prods [p"RegExp - CharacterEscape :: `c` AsciiLetter", p"AnnexB - CharacterEscape :: `c` AsciiLetter"]
+  keys ["CharacterEscape :: `c` AsciiLetter"]
+  vars [codePoint, i]
+  steps {
+    let codePoint = $CodePointMatched(child 5 |AsciiLetter|)
+    let i = $NumericValue(?codePoint)
+    return $Remainder(?i, 32)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#6 CharacterValue form alg {
+  prods [p"RegExp - CharacterEscape :: `0` [lookahead ∉ DecimalDigit]", p"AnnexB - CharacterEscape :: `0` [lookahead ∉ DecimalDigit]"]
+  keys ["CharacterEscape :: `0` [lookahead &notin; DecimalDigit]"]
+  vars []
+  steps {
+    return $NumericValue(cp(0, "0000", "NULL"))
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#7 CharacterValue form alg {
+  prods [p"RegExp - CharacterEscape :: HexEscapeSequence", p"AnnexB - CharacterEscape :: HexEscapeSequence"]
+  keys ["CharacterEscape :: HexEscapeSequence"]
+  vars []
+  steps {
+    return sdo MV(child 5 |HexEscapeSequence|)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#8 CharacterValue form alg {
+  prods [p"RegExp - RegExpUnicodeEscapeSequence :: [+UnicodeMode] `u` HexLeadSurrogate `\\u` HexTrailSurrogate"]
+  keys ["RegExpUnicodeEscapeSequence :: `u` HexLeadSurrogate `\\u` HexTrailSurrogate"]
+  vars [lead, trail, codePoint]
+  steps {
+    let lead = sdo CharacterValue(child 5 |HexLeadSurrogate|)
+    let trail = sdo CharacterValue(child 5 |HexTrailSurrogate|)
+    let codePoint = @sec-utf16decodesurrogatepair(lead, trail)
+    return $NumericValue(?codePoint)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#9 CharacterValue form alg {
+  prods [p"RegExp - RegExpUnicodeEscapeSequence :: [~UnicodeMode] `u` Hex4Digits"]
+  keys ["RegExpUnicodeEscapeSequence :: `u` Hex4Digits"]
+  vars []
+  steps {
+    return sdo MV(child 5 |Hex4Digits|)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#10 CharacterValue form alg {
+  prods [p"RegExp - RegExpUnicodeEscapeSequence :: [+UnicodeMode] `u{` CodePoint `}`"]
+  keys ["RegExpUnicodeEscapeSequence :: `u{` CodePoint `}`"]
+  vars []
+  steps {
+    return sdo MV(child 5 |CodePoint|)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#11 CharacterValue form alg {
+  prods [p"RegExp - HexLeadSurrogate :: Hex4Digits [> but only if the MV of |Hex4Digits| is in the inclusive interval from 0xD800 to 0xDBFF]", p"RegExp - HexTrailSurrogate :: Hex4Digits [> but only if the MV of |Hex4Digits| is in the inclusive interval from 0xDC00 to 0xDFFF]", p"RegExp - HexNonSurrogate :: Hex4Digits [> but only if the MV of |Hex4Digits| is not in the inclusive interval from 0xD800 to 0xDFFF]"]
+  keys ["\n          HexLeadSurrogate :: Hex4Digits\n\n          HexTrailSurrogate :: Hex4Digits\n\n          HexNonSurrogate :: Hex4Digits\n        "]
+  vars []
+  steps {
+    return sdo MV(child 5 |Hex4Digits|)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#12 CharacterValue form alg {
+  prods [p"RegExp - CharacterEscape :: IdentityEscape[?UnicodeMode]", p"AnnexB - CharacterEscape :: IdentityEscape[?UnicodeMode, ?NamedCaptureGroups]"]
+  keys ["CharacterEscape :: IdentityEscape"]
+  vars [codePoint]
+  steps {
+    let codePoint = $CodePointMatched(child 5 |IdentityEscape|)
+    return $NumericValue(?codePoint)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#13 CharacterValue form alg {
+  prods [p"RegExp - ClassSetCharacter :: [lookahead ∉ ClassSetReservedDoublePunctuator] SourceCharacter but not ClassSetSyntaxCharacter"]
+  keys ["ClassSetCharacter :: SourceCharacter but not ClassSetSyntaxCharacter"]
+  vars [codePoint]
+  steps {
+    let codePoint = $CodePointMatched(child 5 |SourceCharacter|)
+    return $NumericValue(?codePoint)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#14 CharacterValue form alg {
+  prods [p"RegExp - ClassSetCharacter :: `\\` ClassSetReservedPunctuator"]
+  keys ["ClassSetCharacter :: `\\` ClassSetReservedPunctuator"]
+  vars [codePoint]
+  steps {
+    let codePoint = $CodePointMatched(child 5 |ClassSetReservedPunctuator|)
+    return $NumericValue(?codePoint)
+  }
+}
+
+sdo_row @sec-patterns-static-semantics-character-value#15 CharacterValue form alg {
+  prods [p"RegExp - ClassSetCharacter :: `\\b`"]
+  keys ["ClassSetCharacter :: `\\b`"]
+  vars []
+  steps {
+    return $NumericValue(cp(8, "0008", "BACKSPACE"))
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings MayContainStrings form alg {
+  prods [p"RegExp - CharacterClassEscape :: `d`", p"RegExp - CharacterClassEscape :: `D`", p"RegExp - CharacterClassEscape :: `s`", p"RegExp - CharacterClassEscape :: `S`", p"RegExp - CharacterClassEscape :: `w`", p"RegExp - CharacterClassEscape :: `W`", p"RegExp - CharacterClassEscape :: [+UnicodeMode] `P{` UnicodePropertyValueExpression `}`", p"RegExp - UnicodePropertyValueExpression :: UnicodePropertyName `=` UnicodePropertyValue", p"RegExp - NestedClass :: `[^` ClassContents[+UnicodeMode, +UnicodeSetsMode] `]`", p"RegExp - ClassContents :: [empty]", p"RegExp - ClassContents :: [~UnicodeSetsMode] NonemptyClassRanges[?UnicodeMode]", p"RegExp - ClassSetOperand :: ClassSetCharacter"]
+  keys ["\n          CharacterClassEscape ::\n            `d`\n            `D`\n            `s`\n            `S`\n            `w`\n            `W`\n            `P{` UnicodePropertyValueExpression `}`\n\n          UnicodePropertyValueExpression ::\n            UnicodePropertyName `=` UnicodePropertyValue\n\n          NestedClass ::\n            `[^` ClassContents `]`\n\n          ClassContents ::\n            [empty]\n            NonemptyClassRanges\n\n          ClassSetOperand ::\n            ClassSetCharacter\n        "]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#1 MayContainStrings form alg {
+  prods [p"RegExp - UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue"]
+  keys ["UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue"]
+  vars []
+  steps {
+    if $SourceText(child 5 |LoneUnicodePropertyNameOrValue|) sat @ph-listed-binary-property-of-strings(table t"table-binary-unicode-properties-of-strings") -> return true
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#2 MayContainStrings form alg {
+  prods [p"RegExp 0 ClassUnion :: ClassSetRange ClassUnion?", p"RegExp 1 ClassUnion :: ClassSetRange ClassUnion?"]
+  keys ["ClassUnion :: ClassSetRange ClassUnion?"]
+  vars []
+  steps {
+    if child 4 |ClassUnion| sat $Present() -> return sdo MayContainStrings(child 4 |ClassUnion|)
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#3 MayContainStrings form alg {
+  prods [p"RegExp 0 ClassUnion :: ClassSetOperand ClassUnion?", p"RegExp 1 ClassUnion :: ClassSetOperand ClassUnion?"]
+  keys ["ClassUnion :: ClassSetOperand ClassUnion?"]
+  vars []
+  steps {
+    if sdo MayContainStrings(child 4 |ClassSetOperand|) is val {true} -> return true
+    if child 5 |ClassUnion| sat $Present() -> return sdo MayContainStrings(child 4 |ClassUnion|)
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#4 MayContainStrings form alg {
+  prods [p"RegExp - ClassIntersection :: ClassSetOperand `&&` [lookahead != `&`] ClassSetOperand"]
+  keys ["ClassIntersection :: ClassSetOperand `&amp;&amp;` ClassSetOperand"]
+  vars []
+  steps {
+    if sdo MayContainStrings(child 0 |ClassSetOperand|) is val {false} -> return false
+    if sdo MayContainStrings(child 1 |ClassSetOperand|) is val {false} -> return false
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#5 MayContainStrings form alg {
+  prods [p"RegExp - ClassIntersection :: ClassIntersection `&&` [lookahead != `&`] ClassSetOperand"]
+  keys ["ClassIntersection :: ClassIntersection `&amp;&amp;` ClassSetOperand"]
+  vars []
+  steps {
+    if sdo MayContainStrings(child 4 |ClassIntersection|) is val {false} -> return false
+    if sdo MayContainStrings(child 4 |ClassSetOperand|) is val {false} -> return false
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#6 MayContainStrings form alg {
+  prods [p"RegExp - ClassSubtraction :: ClassSetOperand `--` ClassSetOperand"]
+  keys ["ClassSubtraction :: ClassSetOperand `--` ClassSetOperand"]
+  vars []
+  steps {
+    return sdo MayContainStrings(child 0 |ClassSetOperand|)
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#7 MayContainStrings form alg {
+  prods [p"RegExp - ClassSubtraction :: ClassSubtraction `--` ClassSetOperand"]
+  keys ["ClassSubtraction :: ClassSubtraction `--` ClassSetOperand"]
+  vars []
+  steps {
+    return sdo MayContainStrings(child 4 |ClassSubtraction|)
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#8 MayContainStrings form alg {
+  prods [p"RegExp - ClassStringDisjunctionContents :: ClassString `|` ClassStringDisjunctionContents"]
+  keys ["ClassStringDisjunctionContents :: ClassString `|` ClassStringDisjunctionContents"]
+  vars []
+  steps {
+    if sdo MayContainStrings(child 4 |ClassString|) is val {true} -> return true
+    return sdo MayContainStrings(child 4 |ClassStringDisjunctionContents|)
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#9 MayContainStrings form alg {
+  prods [p"RegExp - ClassString :: [empty]"]
+  keys ["ClassString :: [empty]"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#10 MayContainStrings form alg {
+  prods [p"RegExp - ClassString :: NonEmptyClassString"]
+  keys ["ClassString :: NonEmptyClassString"]
+  vars []
+  steps {
+    return sdo MayContainStrings(child 4 |NonEmptyClassString|)
+  }
+}
+
+sdo_row @sec-static-semantics-maycontainstrings#11 MayContainStrings form alg {
+  prods [p"RegExp 0 NonEmptyClassString :: ClassSetCharacter NonEmptyClassString?", p"RegExp 1 NonEmptyClassString :: ClassSetCharacter NonEmptyClassString?"]
+  keys ["NonEmptyClassString :: ClassSetCharacter NonEmptyClassString?"]
+  vars []
+  steps {
+    if child 5 |NonEmptyClassString| sat $Present() -> return true
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-capturinggroupname CapturingGroupName form alg {
+  prods [p"RegExp - GroupName :: `<` RegExpIdentifierName[?UnicodeMode] `>`"]
+  keys ["\n          GroupName :: `&lt;` RegExpIdentifierName `&gt;`\n        "]
+  vars [nameUnescaped]
+  steps {
+    let nameUnescaped = sdo RegExpIdentifierCodePoints(child 5 |RegExpIdentifierName|)
+    return @sec-codepointstostring(nameUnescaped)
+  }
+}
+
+sdo_row @sec-regexpidentifiercodepoints RegExpIdentifierCodePoints form alg {
+  prods [p"RegExp - RegExpIdentifierName :: RegExpIdentifierStart[?UnicodeMode]"]
+  keys ["RegExpIdentifierName :: RegExpIdentifierStart"]
+  vars [codePoint]
+  steps {
+    let codePoint = sdo RegExpIdentifierCodePoint(child 5 |RegExpIdentifierStart|)
+    return [codePoint]
+  }
+}
+
+sdo_row @sec-regexpidentifiercodepoints#1 RegExpIdentifierCodePoints form alg {
+  prods [p"RegExp - RegExpIdentifierName :: RegExpIdentifierName[?UnicodeMode] RegExpIdentifierPart[?UnicodeMode]"]
+  keys ["RegExpIdentifierName :: RegExpIdentifierName RegExpIdentifierPart"]
+  vars [codePoints, codePoint]
+  steps {
+    let codePoints = sdo RegExpIdentifierCodePoints(child 3 |RegExpIdentifierName|)
+    let codePoint = sdo RegExpIdentifierCodePoint(child 5 |RegExpIdentifierPart|)
+    return $ListConcat([codePoints, [codePoint]])
+  }
+}
+
+sdo_row @sec-regexpidentifiercodepoint RegExpIdentifierCodePoint form alg {
+  prods [p"RegExp - RegExpIdentifierStart :: IdentifierStartChar"]
+  keys ["RegExpIdentifierStart :: IdentifierStartChar"]
+  vars []
+  steps {
+    return $CodePointMatched(child 5 |IdentifierStartChar|)
+  }
+}
+
+sdo_row @sec-regexpidentifiercodepoint#1 RegExpIdentifierCodePoint form alg {
+  prods [p"RegExp - RegExpIdentifierPart :: IdentifierPartChar"]
+  keys ["RegExpIdentifierPart :: IdentifierPartChar"]
+  vars []
+  steps {
+    return $CodePointMatched(child 5 |IdentifierPartChar|)
+  }
+}
+
+sdo_row @sec-regexpidentifiercodepoint#2 RegExpIdentifierCodePoint form alg {
+  prods [p"RegExp - RegExpIdentifierStart :: `\\` RegExpUnicodeEscapeSequence[+UnicodeMode]", p"RegExp - RegExpIdentifierPart :: `\\` RegExpUnicodeEscapeSequence[+UnicodeMode]"]
+  keys ["\n          RegExpIdentifierStart :: `\\` RegExpUnicodeEscapeSequence\n\n          RegExpIdentifierPart :: `\\` RegExpUnicodeEscapeSequence\n        "]
+  vars []
+  steps {
+    return $UnitOrPointOf(data choice 0, sdo CharacterValue(child 5 |RegExpUnicodeEscapeSequence|))
+  }
+}
+
+sdo_row @sec-regexpidentifiercodepoint#3 RegExpIdentifierCodePoint form alg {
+  prods [p"RegExp - RegExpIdentifierStart :: [~UnicodeMode] UnicodeLeadSurrogate UnicodeTrailSurrogate", p"RegExp - RegExpIdentifierPart :: [~UnicodeMode] UnicodeLeadSurrogate UnicodeTrailSurrogate"]
+  keys ["\n          RegExpIdentifierStart :: UnicodeLeadSurrogate UnicodeTrailSurrogate\n\n          RegExpIdentifierPart :: UnicodeLeadSurrogate UnicodeTrailSurrogate\n        "]
+  vars [lead, trail]
+  steps {
+    let lead = $UnitOrPointOf(data choice 1, $NumericValue($CodePointMatched(child 5 |UnicodeLeadSurrogate|)))
+    let trail = $UnitOrPointOf(data choice 1, $NumericValue($CodePointMatched(child 5 |UnicodeTrailSurrogate|)))
+    return @sec-utf16decodesurrogatepair(lead, trail)
+  }
+}
+
+sdo_row @sec-compilepattern CompilePattern form alg {
+  prods [p"RegExp - Pattern :: Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]"]
+  keys ["Pattern :: Disjunction"]
+  vars [regexpRecord, m, input, index, c, y, capability, x]
+  steps {
+    let m = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, ~forward~)
+    return closure 0
+  }
+  closure abstract params [input, index] captures [regexpRecord, m] {
+    assert input is ty {list<character that sat @ph-character-of-pattern(?regexpRecord)>}
+    assert expr $Chain(0, data choice 1, ?index, data choice 1, $ListLen(?input))
+    let c = closure 1
+    let capability = $OneIndexedList(regexpRecord[[CapturingGroupsCount]], undefined)
+    let x = record MatchState { [[Input]]: input, [[EndIndex]]: index, [[Captures]]: capability }
+    return m(x, c)
+  }
+  closure matcher_continuation params [y] captures [] {
+    assert y is ty {MatchState}
+    return y
+  }
+}
+
+sdo_row @sec-compilesubpattern CompileSubpattern form alg {
+  prods [p"RegExp - Disjunction :: Alternative[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `|` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]"]
+  keys ["Disjunction :: Alternative `|` Disjunction"]
+  vars [regexpRecord, direction, m1, m2]
+  steps {
+    let m1 = sdo CompileSubpattern(child 5 |Alternative|; regexpRecord, direction)
+    let m2 = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, direction)
+    return @sec-matchtwoalternatives(m1, m2)
+  }
+}
+
+sdo_row @sec-compilesubpattern#1 CompileSubpattern form alg {
+  prods [p"RegExp - Alternative :: [empty]"]
+  keys ["Alternative :: [empty]"]
+  vars [regexpRecord, direction]
+  steps {
+    return @sec-emptymatcher()
+  }
+}
+
+sdo_row @sec-compilesubpattern#2 CompileSubpattern form alg {
+  prods [p"RegExp - Alternative :: Alternative[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] Term[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]"]
+  keys ["Alternative :: Alternative Term"]
+  vars [regexpRecord, direction, m1, m2]
+  steps {
+    let m1 = sdo CompileSubpattern(child 5 |Alternative|; regexpRecord, direction)
+    let m2 = sdo CompileSubpattern(child 5 |Term|; regexpRecord, direction)
+    return @sec-matchsequence(m1, m2, direction)
+  }
+}
+
+sdo_row @sec-compilesubpattern#3 CompileSubpattern form alg {
+  prods [p"RegExp - Term :: Assertion[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]", p"AnnexB - Term :: [+UnicodeMode] Assertion[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]", p"AnnexB - Term :: [~UnicodeMode] Assertion[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups]"]
+  keys ["Term :: Assertion"]
+  vars [regexpRecord, direction]
+  steps {
+    return sdo CompileAssertion(child 5 |Assertion|; regexpRecord)
+  }
+}
+
+sdo_row @sec-compilesubpattern#4 CompileSubpattern form alg {
+  prods [p"RegExp - Term :: Atom[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]", p"AnnexB - Term :: [+UnicodeMode] Atom[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups]"]
+  keys ["Term :: Atom"]
+  vars [regexpRecord, direction]
+  steps {
+    return sdo CompileAtom(child 5 |Atom|; regexpRecord, direction)
+  }
+}
+
+sdo_row @sec-compilesubpattern#5 CompileSubpattern form alg {
+  prods [p"RegExp - Term :: Atom[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] Quantifier", p"AnnexB - Term :: [+UnicodeMode] Atom[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] Quantifier"]
+  keys ["Term :: Atom Quantifier"]
+  vars [regexpRecord, direction, m, q, parenIndex, parenCount, x, c]
+  steps {
+    let m = sdo CompileAtom(child 5 |Atom|; regexpRecord, direction)
+    let q = sdo CompileQuantifier(child 5 |Quantifier|)
+    assert q[[Min]] <= q[[Max]]
+    let parenIndex = @sec-countleftcapturingparensbefore(child 6 |Term|)
+    let parenCount = @sec-countleftcapturingparenswithin(child 5 |Atom|)
+    return closure 0
+  }
+  closure matcher params [x, c] captures [m, q, parenIndex, parenCount] {
+    assert x is ty {MatchState}
+    assert c is ty {MatcherContinuation}
+    return @sec-runtime-semantics-repeatmatcher-abstract-operation(m, q[[Min]], q[[Max]], q[[Greedy]], x, c, parenIndex, parenCount)
+  }
+}
+
+sdo_row @sec-compileassertion CompileAssertion form alg {
+  prods [p"RegExp - Assertion :: `^`", p"AnnexB - Assertion :: `^`"]
+  keys ["Assertion :: `^`"]
+  vars [regexpRecord, matchState, continue, input, e]
+  steps {
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [regexpRecord] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let input = matchState[[Input]]
+    let e = matchState[[EndIndex]]
+    if e == 0 or regexpRecord[[Multiline]] is val {true} and $Char(input[e - 1]) sat @ph-matched-by(|LineTerminator|) {
+      return continue(matchState)
+    }
+    return ~failure~
+  }
+}
+
+sdo_row @sec-compileassertion#1 CompileAssertion form alg {
+  prods [p"RegExp - Assertion :: `$`", p"AnnexB - Assertion :: `$`"]
+  keys ["Assertion :: `$`"]
+  vars [regexpRecord, matchState, continue, input, e, inputLength]
+  steps {
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [regexpRecord] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let input = matchState[[Input]]
+    let e = matchState[[EndIndex]]
+    let inputLength = $ListLen(?input)
+    if e == inputLength or regexpRecord[[Multiline]] is val {true} and $Char(input[e]) sat @ph-matched-by(|LineTerminator|) {
+      return continue(matchState)
+    }
+    return ~failure~
+  }
+}
+
+sdo_row @sec-compileassertion#2 CompileAssertion form alg {
+  prods [p"RegExp - Assertion :: `\\b`", p"AnnexB - Assertion :: `\\b`"]
+  keys ["Assertion :: `\\b`"]
+  vars [regexpRecord, matchState, continue, input, e, a, b]
+  steps {
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [regexpRecord] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let input = matchState[[Input]]
+    let e = matchState[[EndIndex]]
+    let a = @sec-runtime-semantics-iswordchar-abstract-operation(regexpRecord, input, e - 1)
+    let b = @sec-runtime-semantics-iswordchar-abstract-operation(regexpRecord, input, e)
+    if a is val {true} and b is val {false} or a is val {false} and b is val {true} -> return continue(matchState)
+    return ~failure~
+  }
+}
+
+sdo_row @sec-compileassertion#3 CompileAssertion form alg {
+  prods [p"RegExp - Assertion :: `\\B`", p"AnnexB - Assertion :: `\\B`"]
+  keys ["Assertion :: `\\B`"]
+  vars [regexpRecord, matchState, continue, input, e, a, b]
+  steps {
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [regexpRecord] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let input = matchState[[Input]]
+    let e = matchState[[EndIndex]]
+    let a = @sec-runtime-semantics-iswordchar-abstract-operation(regexpRecord, input, e - 1)
+    let b = @sec-runtime-semantics-iswordchar-abstract-operation(regexpRecord, input, e)
+    if a is val {true} and b is val {true} or a is val {false} and b is val {false} -> return continue(matchState)
+    return ~failure~
+  }
+}
+
+sdo_row @sec-compileassertion#4 CompileAssertion form alg {
+  prods [p"RegExp - Assertion :: `(?=` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"AnnexB - Assertion :: [+UnicodeMode] `(?=` Disjunction[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Assertion :: `(?=` Disjunction `)`"]
+  vars [regexpRecord, m, matchState, continue, d, y, result, capability, input, xe, z]
+  steps {
+    let m = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, ~forward~)
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [m] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let d = closure 1
+    let result = m(matchState, d)
+    if result is val {~failure~} -> return ~failure~
+    assert result is ty {MatchState}
+    let capability = result[[Captures]]
+    let input = matchState[[Input]]
+    let xe = matchState[[EndIndex]]
+    let z = record MatchState { [[Input]]: input, [[EndIndex]]: xe, [[Captures]]: capability }
+    return continue(z)
+  }
+  closure matcher_continuation params [y] captures [] {
+    assert y is ty {MatchState}
+    return y
+  }
+}
+
+sdo_row @sec-compileassertion#5 CompileAssertion form alg {
+  prods [p"RegExp - Assertion :: `(?!` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"AnnexB - Assertion :: [+UnicodeMode] `(?!` Disjunction[+UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Assertion :: `(?!` Disjunction `)`"]
+  vars [regexpRecord, m, matchState, continue, d, y, result]
+  steps {
+    let m = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, ~forward~)
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [m] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let d = closure 1
+    let result = m(matchState, d)
+    if result is not val {~failure~} -> return ~failure~
+    return continue(matchState)
+  }
+  closure matcher_continuation params [y] captures [] {
+    assert y is ty {MatchState}
+    return y
+  }
+}
+
+sdo_row @sec-compileassertion#6 CompileAssertion form alg {
+  prods [p"RegExp - Assertion :: `(?<=` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"AnnexB - Assertion :: `(?<=` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Assertion :: `(?&lt;=` Disjunction `)`"]
+  vars [regexpRecord, m, matchState, continue, d, y, result, capability, input, xe, z]
+  steps {
+    let m = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, ~backward~)
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [m] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let d = closure 1
+    let result = m(matchState, d)
+    if result is val {~failure~} -> return ~failure~
+    assert result is ty {MatchState}
+    let capability = result[[Captures]]
+    let input = matchState[[Input]]
+    let xe = matchState[[EndIndex]]
+    let z = record MatchState { [[Input]]: input, [[EndIndex]]: xe, [[Captures]]: capability }
+    return continue(z)
+  }
+  closure matcher_continuation params [y] captures [] {
+    assert y is ty {MatchState}
+    return y
+  }
+}
+
+sdo_row @sec-compileassertion#7 CompileAssertion form alg {
+  prods [p"RegExp - Assertion :: `(?<!` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"AnnexB - Assertion :: `(?<!` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Assertion :: `(?&lt;!` Disjunction `)`"]
+  vars [regexpRecord, m, matchState, continue, d, y, result]
+  steps {
+    let m = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, ~backward~)
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [m] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let d = closure 1
+    let result = m(matchState, d)
+    if result is not val {~failure~} -> return ~failure~
+    return continue(matchState)
+  }
+  closure matcher_continuation params [y] captures [] {
+    assert y is ty {MatchState}
+    return y
+  }
+}
+
+sdo_row @sec-compilequantifier CompileQuantifier form alg {
+  prods [p"RegExp - Quantifier :: QuantifierPrefix"]
+  keys ["Quantifier :: QuantifierPrefix"]
+  vars [qp]
+  steps {
+    let qp = sdo CompileQuantifierPrefix(child 5 |QuantifierPrefix|)
+    return record Record { [[Min]]: qp[[Min]], [[Max]]: qp[[Max]], [[Greedy]]: true }
+  }
+}
+
+sdo_row @sec-compilequantifier#1 CompileQuantifier form alg {
+  prods [p"RegExp - Quantifier :: QuantifierPrefix `?`"]
+  keys ["Quantifier :: QuantifierPrefix `?`"]
+  vars [qp]
+  steps {
+    let qp = sdo CompileQuantifierPrefix(child 5 |QuantifierPrefix|)
+    return record Record { [[Min]]: qp[[Min]], [[Max]]: qp[[Max]], [[Greedy]]: false }
+  }
+}
+
+sdo_row @sec-compilequantifierprefix CompileQuantifierPrefix form alg {
+  prods [p"RegExp - QuantifierPrefix :: `*`"]
+  keys ["QuantifierPrefix :: `*`"]
+  vars []
+  steps {
+    return record Record { [[Min]]: 0, [[Max]]: math(+∞) }
+  }
+}
+
+sdo_row @sec-compilequantifierprefix#1 CompileQuantifierPrefix form alg {
+  prods [p"RegExp - QuantifierPrefix :: `+`"]
+  keys ["QuantifierPrefix :: `+`"]
+  vars []
+  steps {
+    return record Record { [[Min]]: 1, [[Max]]: math(+∞) }
+  }
+}
+
+sdo_row @sec-compilequantifierprefix#2 CompileQuantifierPrefix form alg {
+  prods [p"RegExp - QuantifierPrefix :: `?`"]
+  keys ["QuantifierPrefix :: `?`"]
+  vars []
+  steps {
+    return record Record { [[Min]]: 0, [[Max]]: 1 }
+  }
+}
+
+sdo_row @sec-compilequantifierprefix#3 CompileQuantifierPrefix form alg {
+  prods [p"RegExp - QuantifierPrefix :: `{` DecimalDigits[~Sep] `}`"]
+  keys ["QuantifierPrefix :: `{` DecimalDigits `}`"]
+  vars [i]
+  steps {
+    let i = @ph-see-xref(sdo MV(child 5 |DecimalDigits|), clause @sec-literals-numeric-literals)
+    return record Record { [[Min]]: i, [[Max]]: i }
+  }
+}
+
+sdo_row @sec-compilequantifierprefix#4 CompileQuantifierPrefix form alg {
+  prods [p"RegExp - QuantifierPrefix :: `{` DecimalDigits[~Sep] `,}`"]
+  keys ["QuantifierPrefix :: `{` DecimalDigits `,}`"]
+  vars [i]
+  steps {
+    let i = sdo MV(child 5 |DecimalDigits|)
+    return record Record { [[Min]]: i, [[Max]]: math(+∞) }
+  }
+}
+
+sdo_row @sec-compilequantifierprefix#5 CompileQuantifierPrefix form alg {
+  prods [p"RegExp - QuantifierPrefix :: `{` DecimalDigits[~Sep] `,` DecimalDigits[~Sep] `}`"]
+  keys ["QuantifierPrefix :: `{` DecimalDigits `,` DecimalDigits `}`"]
+  vars [i, j]
+  steps {
+    let i = sdo MV(child 0 |DecimalDigits|)
+    let j = sdo MV(child 1 |DecimalDigits|)
+    return record Record { [[Min]]: i, [[Max]]: j }
+  }
+}
+
+sdo_row @sec-compileatom CompileAtom form alg {
+  prods [p"RegExp - Atom :: PatternCharacter"]
+  keys ["Atom :: PatternCharacter"]
+  vars [regexpRecord, direction, char, charSet]
+  steps {
+    let char = @ph-character-of-node(data choice 0, child 5 |PatternCharacter|)
+    let charSet = $CharSetOne(?char)
+    return @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, charSet, false, direction)
+  }
+}
+
+sdo_row @sec-compileatom#1 CompileAtom form alg {
+  prods [p"RegExp - Atom :: `.`"]
+  keys ["Atom :: `.`"]
+  vars [regexpRecord, direction, charSet]
+  steps {
+    let charSet = @sec-allcharacters(regexpRecord)
+    if regexpRecord[[DotAll]] is not val {true} {
+      set var charSet = @ph-charset-minus(?charSet, $RightHandSideCharacters([|LineTerminator|]))
+    }
+    return @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, charSet, false, direction)
+  }
+}
+
+sdo_row @sec-compileatom#2 CompileAtom form alg {
+  prods [p"RegExp - Atom :: CharacterClass[?UnicodeMode, ?UnicodeSetsMode]"]
+  keys ["Atom :: CharacterClass"]
+  vars [regexpRecord, direction, cc, cs, listOfMatchers, csSequences, s, remaining, cs2, m2, c1, cs1, m1, singles]
+  steps {
+    let cc = sdo CompileCharacterClass(child 5 |CharacterClass|; regexpRecord)
+    let cs = cc[[CharSet]]
+    if regexpRecord[[UnicodeSets]] is val {false} or expr @ph-every-single-character(?cs, ?cs) -> return @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, cs, cc[[Invert]], direction)
+    assert cc[[Invert]] is val {false}
+    let listOfMatchers = $ListNew()
+    let csSequences = $ListNew()
+    for_each s : CharSetElement in cs {
+      if expr @ph-charset-element-longer-than-one(?s) -> perform $Append(?s, ?csSequences)
+    }
+    perform @ph-sort-by-length(?csSequences, data sort CharSetElement)
+    for_each s : CharSetElement in csSequences {
+      assert s sat @ph-code-point-sequence(2)
+      let remaining = @ph-list-consisting-of(@ph-code-points-of(?s))
+      let cs2 = $CharSetOne($ListElem(data choice 2, ?remaining))
+      let m2 = @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, cs2, false, direction)
+      perform $RemoveLast(?remaining)
+      for_each c1 : #"code point" rev in remaining {
+        let cs1 = $CharSetOne(?c1)
+        let m1 = @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, cs1, false, direction)
+        set var m2 = @sec-matchsequence(m1, m2, direction)
+      }
+      perform $Append(?m2, ?listOfMatchers)
+    }
+    let singles = @ph-charset-singles(?cs)
+    perform $Append(@sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, singles, false, direction), ?listOfMatchers)
+    if cs sat $Contains(@ph-empty-character-sequence(data choice 0)) -> perform $Append(@sec-emptymatcher(), ?listOfMatchers)
+    let m2 = @ph-last-in(data sort Matcher, ?listOfMatchers)
+    for_each m1 : Matcher in @ph-iter-backwards(?listOfMatchers) {
+      set var m2 = @sec-matchtwoalternatives(m1, m2)
+    }
+    return m2
+  }
+}
+
+sdo_row @sec-compileatom#3 CompileAtom form alg {
+  prods [p"RegExp 0 Atom :: `(` GroupSpecifier[?UnicodeMode]? Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"RegExp 1 Atom :: `(` GroupSpecifier[?UnicodeMode]? Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Atom :: `(` GroupSpecifier? Disjunction `)`"]
+  vars [regexpRecord, direction, m, parenIndex, x, c, d, y, capability, input, xe, ye, r, z]
+  steps {
+    let m = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, direction)
+    let parenIndex = @sec-countleftcapturingparensbefore(child 6 |Atom|)
+    return closure 0
+  }
+  closure matcher params [x, c] captures [direction, m, parenIndex] {
+    assert x is ty {MatchState}
+    assert c is ty {MatcherContinuation}
+    let d = closure 1
+    return m(x, d)
+  }
+  closure matcher_continuation params [y] captures [x, c, direction, parenIndex] {
+    assert y is ty {MatchState}
+    let capability = $Copy(y[[Captures]])
+    let input = x[[Input]]
+    let xe = x[[EndIndex]]
+    let ye = y[[EndIndex]]
+    if direction is val {~forward~} {
+      assert xe <= ye
+      let r = record CaptureRange { [[StartIndex]]: xe, [[EndIndex]]: ye }
+    }
+    else {
+      assert direction is val {~backward~}
+      assert ye <= xe
+      let r = record CaptureRange { [[StartIndex]]: ye, [[EndIndex]]: xe }
+    }
+    set expr capability[parenIndex + 1] = r
+    let z = record MatchState { [[Input]]: input, [[EndIndex]]: ye, [[Captures]]: capability }
+    return c(z)
+  }
+}
+
+sdo_row @sec-compileatom#4 CompileAtom form alg {
+  prods [p"RegExp - Atom :: `(?` RegularExpressionModifiers `:` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Atom :: `(?` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars [regexpRecord, direction, addModifiers, removeModifiers, modifiedRer]
+  steps {
+    let addModifiers = $SourceText(child 5 |RegularExpressionModifiers|)
+    let removeModifiers = $"the empty String"()
+    let modifiedRer = @sec-updatemodifiers(regexpRecord, @sec-codepointstostring(addModifiers), removeModifiers)
+    return sdo CompileSubpattern(child 5 |Disjunction|; modifiedRer, direction)
+  }
+}
+
+sdo_row @sec-compileatom#5 CompileAtom form alg {
+  prods [p"RegExp - Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[?UnicodeMode, ?UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["Atom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars [regexpRecord, direction, addModifiers, removeModifiers, modifiedRer]
+  steps {
+    let addModifiers = $SourceText(child 0 |RegularExpressionModifiers|)
+    let removeModifiers = $SourceText(child 1 |RegularExpressionModifiers|)
+    let modifiedRer = @sec-updatemodifiers(regexpRecord, @sec-codepointstostring(addModifiers), @sec-codepointstostring(removeModifiers))
+    return sdo CompileSubpattern(child 5 |Disjunction|; modifiedRer, direction)
+  }
+}
+
+sdo_row @sec-compileatom#6 CompileAtom form alg {
+  prods [p"RegExp - AtomEscape :: DecimalEscape", p"AnnexB - AtomEscape :: [+UnicodeMode] DecimalEscape", p"AnnexB - AtomEscape :: [~UnicodeMode] DecimalEscape [> but only if the CapturingGroupNumber of |DecimalEscape| is ≤ CountLeftCapturingParensWithin(the |Pattern| containing |DecimalEscape|)]"]
+  keys ["AtomEscape :: DecimalEscape"]
+  vars [regexpRecord, direction, n]
+  steps {
+    let n = sdo CapturingGroupNumber(child 5 |DecimalEscape|)
+    assert n <= regexpRecord[[CapturingGroupsCount]]
+    return @sec-backreference-matcher(regexpRecord, [n], direction)
+  }
+}
+
+sdo_row @sec-compileatom#7 CompileAtom form alg {
+  prods [p"RegExp - AtomEscape :: CharacterEscape[?UnicodeMode]", p"AnnexB - AtomEscape :: CharacterEscape[?UnicodeMode, ?NamedCaptureGroups]"]
+  keys ["AtomEscape :: CharacterEscape"]
+  vars [regexpRecord, direction, charValue, char, charSet]
+  steps {
+    let charValue = sdo CharacterValue(child 5 |CharacterEscape|)
+    let char = $Char(?charValue)
+    let charSet = $CharSetOne(?char)
+    return @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, charSet, false, direction)
+  }
+}
+
+sdo_row @sec-compileatom#8 CompileAtom form alg {
+  prods [p"RegExp - AtomEscape :: CharacterClassEscape[?UnicodeMode]", p"AnnexB - AtomEscape :: CharacterClassEscape[?UnicodeMode]"]
+  keys ["AtomEscape :: CharacterClassEscape"]
+  vars [regexpRecord, direction, cs, listOfMatchers, csSequences, s, remaining, cs2, m2, c1, cs1, m1, singles]
+  steps {
+    let cs = sdo CompileToCharSet(child 5 |CharacterClassEscape|; regexpRecord)
+    if regexpRecord[[UnicodeSets]] is val {false} or expr @ph-every-single-character(?cs, ?cs) -> return @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, cs, false, direction)
+    let listOfMatchers = $ListNew()
+    let csSequences = $ListNew()
+    for_each s : CharSetElement in cs {
+      if expr @ph-charset-element-longer-than-one(?s) -> perform $Append(?s, ?csSequences)
+    }
+    perform @ph-sort-by-length(?csSequences, data sort CharSetElement)
+    for_each s : CharSetElement in csSequences {
+      assert s sat @ph-code-point-sequence(2)
+      let remaining = @ph-list-consisting-of(@ph-code-points-of(?s))
+      let cs2 = $CharSetOne($ListElem(data choice 2, ?remaining))
+      let m2 = @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, cs2, false, direction)
+      perform $RemoveLast(?remaining)
+      for_each c1 : #"code point" rev in remaining {
+        let cs1 = $CharSetOne(?c1)
+        let m1 = @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, cs1, false, direction)
+        set var m2 = @sec-matchsequence(m1, m2, direction)
+      }
+      perform $Append(?m2, ?listOfMatchers)
+    }
+    let singles = @ph-charset-singles(?cs)
+    perform $Append(@sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, singles, false, direction), ?listOfMatchers)
+    if cs sat $Contains(@ph-empty-character-sequence(data choice 0)) -> perform $Append(@sec-emptymatcher(), ?listOfMatchers)
+    let m2 = @ph-last-in(data sort Matcher, ?listOfMatchers)
+    for_each m1 : Matcher in @ph-iter-backwards(?listOfMatchers) {
+      set var m2 = @sec-matchtwoalternatives(m1, m2)
+    }
+    return m2
+  }
+}
+
+sdo_row @sec-compileatom#9 CompileAtom form alg {
+  prods [p"RegExp - AtomEscape :: [+NamedCaptureGroups] `k` GroupName[?UnicodeMode]", p"AnnexB - AtomEscape :: [+NamedCaptureGroups] `k` GroupName[?UnicodeMode]"]
+  keys ["AtomEscape :: `k` GroupName"]
+  vars [regexpRecord, direction, matchingGroupSpecifiers, parenIndices, groupSpecifier, parenIndex]
+  steps {
+    let matchingGroupSpecifiers = @sec-groupspecifiersthatmatch(child 5 |GroupName|)
+    let parenIndices = $ListNew()
+    for_each groupSpecifier : |GroupSpecifier| in matchingGroupSpecifiers {
+      let parenIndex = @sec-countleftcapturingparensbefore(groupSpecifier)
+      perform $Append(?parenIndex, ?parenIndices)
+    }
+    return @sec-backreference-matcher(regexpRecord, parenIndices, direction)
+  }
+}
+
+sdo_row @sec-compilecharacterclass CompileCharacterClass form alg {
+  prods [p"RegExp - CharacterClass :: `[` [lookahead != `^`] ClassContents[?UnicodeMode, ?UnicodeSetsMode] `]`"]
+  keys ["CharacterClass :: `[` ClassContents `]`"]
+  vars [regexpRecord, charSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+    return record Record { [[CharSet]]: charSet, [[Invert]]: false }
+  }
+}
+
+sdo_row @sec-compilecharacterclass#1 CompileCharacterClass form alg {
+  prods [p"RegExp - CharacterClass :: `[^` ClassContents[?UnicodeMode, ?UnicodeSetsMode] `]`"]
+  keys ["CharacterClass :: `[^` ClassContents `]`"]
+  vars [regexpRecord, charSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+    if regexpRecord[[UnicodeSets]] is val {true} {
+      return record Record { [[CharSet]]: @sec-charactercomplement(regexpRecord, charSet), [[Invert]]: false }
+    }
+    return record Record { [[CharSet]]: charSet, [[Invert]]: true }
+  }
+}
+
+sdo_row @sec-compiletocharset CompileToCharSet form alg {
+  prods [p"RegExp - ClassContents :: [empty]"]
+  keys ["ClassContents :: [empty]"]
+  vars [regexpRecord]
+  steps {
+    return @ph-empty-charset()
+  }
+}
+
+sdo_row @sec-compiletocharset#1 CompileToCharSet form alg {
+  prods [p"RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode] NonemptyClassRangesNoDash[?UnicodeMode]"]
+  keys ["NonemptyClassRanges :: ClassAtom NonemptyClassRangesNoDash"]
+  vars [regexpRecord, charSet, otherSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassAtom|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 5 |NonemptyClassRangesNoDash|; regexpRecord)
+    return $CharSetUnion(data choice 0, ?charSet, ?otherSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#2 CompileToCharSet form alg {
+  prods [p"RegExp - NonemptyClassRanges :: ClassAtom[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRanges :: ClassAtom `-` ClassAtom ClassContents"]
+  vars [regexpRecord, charSet, otherSet, remainingSet, rangeSet]
+  steps {
+    if expr $"the host is a web browser"(data choice 0, clause @sec-regular-expressions-patterns) {
+      let charSet = sdo CompileToCharSet(child 0 |ClassAtom|; regexpRecord)
+      let otherSet = sdo CompileToCharSet(child 1 |ClassAtom|; regexpRecord)
+      let remainingSet = sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+      let rangeSet = @sec-runtime-semantics-characterrangeorunion-abstract-operation(regexpRecord, charSet, otherSet)
+      return $CharSetUnionAll([rangeSet, remainingSet])
+    }
+    let charSet = sdo CompileToCharSet(child 0 |ClassAtom|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 1 |ClassAtom|; regexpRecord)
+    let remainingSet = sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+    let rangeSet = @sec-runtime-semantics-characterrange-abstract-operation(charSet, otherSet)
+    return $CharSetUnionAll([rangeSet, remainingSet])
+  }
+}
+
+sdo_row @sec-compiletocharset#3 CompileToCharSet form alg {
+  prods [p"RegExp - NonemptyClassRangesNoDash :: ClassAtomNoDash[?UnicodeMode] NonemptyClassRangesNoDash[?UnicodeMode]"]
+  keys ["NonemptyClassRangesNoDash :: ClassAtomNoDash NonemptyClassRangesNoDash"]
+  vars [regexpRecord, charSet, otherSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassAtomNoDash|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 5 |NonemptyClassRangesNoDash|; regexpRecord)
+    return $CharSetUnion(data choice 0, ?charSet, ?otherSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#4 CompileToCharSet form alg {
+  prods [p"RegExp - NonemptyClassRangesNoDash :: ClassAtomNoDash[?UnicodeMode] `-` ClassAtom[?UnicodeMode] ClassContents[?UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["NonemptyClassRangesNoDash :: ClassAtomNoDash `-` ClassAtom ClassContents"]
+  vars [regexpRecord, charSet, otherSet, remainingSet, rangeSet]
+  steps {
+    if expr $"the host is a web browser"(data choice 0, clause @sec-regular-expressions-patterns) {
+      let charSet = sdo CompileToCharSet(child 5 |ClassAtomNoDash|; regexpRecord)
+      let otherSet = sdo CompileToCharSet(child 5 |ClassAtom|; regexpRecord)
+      let remainingSet = sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+      let rangeSet = @sec-runtime-semantics-characterrangeorunion-abstract-operation(regexpRecord, charSet, otherSet)
+      return $CharSetUnionAll([rangeSet, remainingSet])
+    }
+    let charSet = sdo CompileToCharSet(child 5 |ClassAtomNoDash|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 5 |ClassAtom|; regexpRecord)
+    let remainingSet = sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+    let rangeSet = @sec-runtime-semantics-characterrange-abstract-operation(charSet, otherSet)
+    return $CharSetUnionAll([rangeSet, remainingSet])
+  }
+}
+
+sdo_row @sec-compiletocharset#5 CompileToCharSet form alg {
+  prods [p"RegExp - ClassAtom :: `-`"]
+  keys ["ClassAtom :: `-`"]
+  vars [regexpRecord]
+  steps {
+    return $CharSetOne(@ph-code-and-name(code "-", cp(45, "002D", "HYPHEN-MINUS")))
+  }
+}
+
+sdo_row @sec-compiletocharset#6 CompileToCharSet form alg {
+  prods [p"RegExp - ClassAtomNoDash :: SourceCharacter but not one of `\\` or `]` or `-`", p"AnnexB - ClassAtomNoDash :: SourceCharacter but not one of `\\` or `]` or `-`"]
+  keys ["ClassAtomNoDash :: SourceCharacter but not one of `\\` or `]` or `-`"]
+  vars [regexpRecord]
+  steps {
+    return @ph-charset-containing(@ph-character-of-node(data choice 0, child 5 |SourceCharacter|))
+  }
+}
+
+sdo_row @sec-compiletocharset#7 CompileToCharSet form alg {
+  prods [p"RegExp - ClassEscape :: `b`", p"AnnexB - ClassEscape :: `b`", p"RegExp - ClassEscape :: [+UnicodeMode] `-`", p"AnnexB - ClassEscape :: [+UnicodeMode] `-`", p"RegExp - ClassEscape :: CharacterEscape[?UnicodeMode]", p"AnnexB - ClassEscape :: CharacterEscape[?UnicodeMode, ?NamedCaptureGroups]"]
+  keys ["\n          ClassEscape ::\n            `b`\n            `-`\n            CharacterEscape\n        "]
+  vars [regexpRecord, charValue, char]
+  steps {
+    let charValue = sdo CharacterValue(call_at @ph-this-nt(|ClassEscape|))
+    let char = $Char(?charValue)
+    return $CharSetOne(?char)
+  }
+}
+
+sdo_row @sec-compiletocharset#8 CompileToCharSet form alg {
+  prods [p"RegExp - CharacterClassEscape :: `d`"]
+  keys ["CharacterClassEscape :: `d`"]
+  vars [regexpRecord]
+  steps {
+    return @ph-decimal-digit-charset()
+  }
+}
+
+sdo_row @sec-compiletocharset#9 CompileToCharSet form alg {
+  prods [p"RegExp - CharacterClassEscape :: `D`"]
+  keys ["CharacterClassEscape :: `D`"]
+  vars [regexpRecord, charSet, escape]
+  steps {
+    let escape = $ParseGoal(@sec-stringtocodepoints("d"), |CharacterClassEscape|, false, false, false)
+    assert expr $InstanceOf(escape, prods [p"RegExp - CharacterClassEscape :: `d`"])
+    let charSet = sdo CompileToCharSet(escape; regexpRecord)
+    return @sec-charactercomplement(regexpRecord, charSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#10 CompileToCharSet form alg {
+  prods [p"RegExp - CharacterClassEscape :: `s`"]
+  keys ["CharacterClassEscape :: `s`"]
+  vars [regexpRecord]
+  steps {
+    return $RightHandSideCharacters([|WhiteSpace|, |LineTerminator|])
+  }
+}
+
+sdo_row @sec-compiletocharset#11 CompileToCharSet form alg {
+  prods [p"RegExp - CharacterClassEscape :: `S`"]
+  keys ["CharacterClassEscape :: `S`"]
+  vars [regexpRecord, charSet, escape]
+  steps {
+    let escape = $ParseGoal(@sec-stringtocodepoints("s"), |CharacterClassEscape|, false, false, false)
+    assert expr $InstanceOf(escape, prods [p"RegExp - CharacterClassEscape :: `s`"])
+    let charSet = sdo CompileToCharSet(escape; regexpRecord)
+    return @sec-charactercomplement(regexpRecord, charSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#12 CompileToCharSet form alg {
+  prods [p"RegExp - CharacterClassEscape :: `w`"]
+  keys ["CharacterClassEscape :: `w`"]
+  vars [regexpRecord]
+  steps {
+    return @sec-maybesimplecasefolding(regexpRecord, @sec-wordcharacters(regexpRecord))
+  }
+}
+
+sdo_row @sec-compiletocharset#13 CompileToCharSet form alg {
+  prods [p"RegExp - CharacterClassEscape :: `W`"]
+  keys ["CharacterClassEscape :: `W`"]
+  vars [regexpRecord, charSet, escape]
+  steps {
+    let escape = $ParseGoal(@sec-stringtocodepoints("w"), |CharacterClassEscape|, false, false, false)
+    assert expr $InstanceOf(escape, prods [p"RegExp - CharacterClassEscape :: `w`"])
+    let charSet = sdo CompileToCharSet(escape; regexpRecord)
+    return @sec-charactercomplement(regexpRecord, charSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#14 CompileToCharSet form alg {
+  prods [p"RegExp - CharacterClassEscape :: [+UnicodeMode] `p{` UnicodePropertyValueExpression `}`"]
+  keys ["CharacterClassEscape :: `p{` UnicodePropertyValueExpression `}`"]
+  vars [regexpRecord]
+  steps {
+    return sdo CompileToCharSet(child 5 |UnicodePropertyValueExpression|; regexpRecord)
+  }
+}
+
+sdo_row @sec-compiletocharset#15 CompileToCharSet form alg {
+  prods [p"RegExp - CharacterClassEscape :: [+UnicodeMode] `P{` UnicodePropertyValueExpression `}`"]
+  keys ["CharacterClassEscape :: `P{` UnicodePropertyValueExpression `}`"]
+  vars [regexpRecord, charSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |UnicodePropertyValueExpression|; regexpRecord)
+    assert charSet sat @ph-only-single-code-points()
+    return @sec-charactercomplement(regexpRecord, charSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#16 CompileToCharSet form alg {
+  prods [p"RegExp - UnicodePropertyValueExpression :: UnicodePropertyName `=` UnicodePropertyValue"]
+  keys ["UnicodePropertyValueExpression :: UnicodePropertyName `=` UnicodePropertyValue"]
+  vars [regexpRecord, ps, p, vs, v, charSet]
+  steps {
+    let ps = $SourceText(child 5 |UnicodePropertyName|)
+    let p = @sec-runtime-semantics-unicodematchproperty-p(regexpRecord, ps)
+    assert p sat @ph-listed-property-name-or-alias(table t"table-nonbinary-unicode-properties")
+    let vs = $SourceText(child 5 |UnicodePropertyValue|)
+    let v = @sec-runtime-semantics-unicodematchpropertyvalue-p-v(p, vs)
+    let charSet = @ph-property-code-points(?p, ?v)
+    return @sec-maybesimplecasefolding(regexpRecord, charSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#17 CompileToCharSet form alg {
+  prods [p"RegExp - UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue"]
+  keys ["UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue"]
+  vars [regexpRecord, s, v, p, charSet]
+  steps {
+    let s = $SourceText(child 5 |LoneUnicodePropertyNameOrValue|)
+    if s sat @ph-general-category-value-alias() {
+      let v = @sec-runtime-semantics-unicodematchpropertyvalue-p-v(@sec-stringtocodepoints("General_Category"), s)
+      return @ph-general-category-code-points(?v)
+    }
+    let p = @sec-runtime-semantics-unicodematchproperty-p(regexpRecord, s)
+    assert p sat @ph-listed-binary-property-or-of-strings(table t"table-binary-unicode-properties", table t"table-binary-unicode-properties-of-strings")
+    let charSet = @ph-property-true-elements(?p)
+    return @sec-maybesimplecasefolding(regexpRecord, charSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#18 CompileToCharSet form alg {
+  prods [p"RegExp 0 ClassUnion :: ClassSetRange ClassUnion?", p"RegExp 1 ClassUnion :: ClassSetRange ClassUnion?"]
+  keys ["ClassUnion :: ClassSetRange ClassUnion?"]
+  vars [regexpRecord, charSet, otherSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassSetRange|; regexpRecord)
+    if child 5 |ClassUnion| sat $Present() {
+      let otherSet = sdo CompileToCharSet(child 5 |ClassUnion|; regexpRecord)
+      return $CharSetUnion(data choice 0, ?charSet, ?otherSet)
+    }
+    return charSet
+  }
+}
+
+sdo_row @sec-compiletocharset#19 CompileToCharSet form alg {
+  prods [p"RegExp 0 ClassUnion :: ClassSetOperand ClassUnion?", p"RegExp 1 ClassUnion :: ClassSetOperand ClassUnion?"]
+  keys ["ClassUnion :: ClassSetOperand ClassUnion?"]
+  vars [regexpRecord, charSet, otherSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassSetOperand|; regexpRecord)
+    if child 5 |ClassUnion| sat $Present() {
+      let otherSet = sdo CompileToCharSet(child 5 |ClassUnion|; regexpRecord)
+      return $CharSetUnion(data choice 0, ?charSet, ?otherSet)
+    }
+    return charSet
+  }
+}
+
+sdo_row @sec-compiletocharset#20 CompileToCharSet form alg {
+  prods [p"RegExp - ClassIntersection :: ClassSetOperand `&&` [lookahead != `&`] ClassSetOperand"]
+  keys ["ClassIntersection :: ClassSetOperand `&amp;&amp;` ClassSetOperand"]
+  vars [regexpRecord, charSet, otherSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 0 |ClassSetOperand|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 1 |ClassSetOperand|; regexpRecord)
+    return $CharSetUnion(data choice 1, ?charSet, ?otherSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#21 CompileToCharSet form alg {
+  prods [p"RegExp - ClassIntersection :: ClassIntersection `&&` [lookahead != `&`] ClassSetOperand"]
+  keys ["ClassIntersection :: ClassIntersection `&amp;&amp;` ClassSetOperand"]
+  vars [regexpRecord, charSet, otherSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 4 |ClassIntersection|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 4 |ClassSetOperand|; regexpRecord)
+    return $CharSetUnion(data choice 1, ?charSet, ?otherSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#22 CompileToCharSet form alg {
+  prods [p"RegExp - ClassSubtraction :: ClassSetOperand `--` ClassSetOperand"]
+  keys ["ClassSubtraction :: ClassSetOperand `--` ClassSetOperand"]
+  vars [regexpRecord, charSet, otherSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 0 |ClassSetOperand|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 1 |ClassSetOperand|; regexpRecord)
+    return @ph-charset-minus(?charSet, ?otherSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#23 CompileToCharSet form alg {
+  prods [p"RegExp - ClassSubtraction :: ClassSubtraction `--` ClassSetOperand"]
+  keys ["ClassSubtraction :: ClassSubtraction `--` ClassSetOperand"]
+  vars [regexpRecord, charSet, otherSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 4 |ClassSubtraction|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 4 |ClassSetOperand|; regexpRecord)
+    return @ph-charset-minus(?charSet, ?otherSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#24 CompileToCharSet form alg {
+  prods [p"RegExp - ClassSetRange :: ClassSetCharacter `-` ClassSetCharacter"]
+  keys ["ClassSetRange :: ClassSetCharacter `-` ClassSetCharacter"]
+  vars [regexpRecord, charSet, otherSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 0 |ClassSetCharacter|; regexpRecord)
+    let otherSet = sdo CompileToCharSet(child 1 |ClassSetCharacter|; regexpRecord)
+    return @sec-maybesimplecasefolding(regexpRecord, @sec-runtime-semantics-characterrange-abstract-operation(charSet, otherSet))
+  }
+}
+
+sdo_row @sec-compiletocharset#25 CompileToCharSet form alg {
+  prods [p"RegExp - ClassSetOperand :: ClassSetCharacter"]
+  keys ["ClassSetOperand :: ClassSetCharacter"]
+  vars [regexpRecord, charSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassSetCharacter|; regexpRecord)
+    return @sec-maybesimplecasefolding(regexpRecord, charSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#26 CompileToCharSet form alg {
+  prods [p"RegExp - ClassSetOperand :: ClassStringDisjunction"]
+  keys ["ClassSetOperand :: ClassStringDisjunction"]
+  vars [regexpRecord, charSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassStringDisjunction|; regexpRecord)
+    return @sec-maybesimplecasefolding(regexpRecord, charSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#27 CompileToCharSet form alg {
+  prods [p"RegExp - ClassSetOperand :: NestedClass"]
+  keys ["ClassSetOperand :: NestedClass"]
+  vars [regexpRecord]
+  steps {
+    return sdo CompileToCharSet(child 5 |NestedClass|; regexpRecord)
+  }
+}
+
+sdo_row @sec-compiletocharset#28 CompileToCharSet form alg {
+  prods [p"RegExp - NestedClass :: `[` [lookahead != `^`] ClassContents[+UnicodeMode, +UnicodeSetsMode] `]`"]
+  keys ["NestedClass :: `[` ClassContents `]`"]
+  vars [regexpRecord]
+  steps {
+    return sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+  }
+}
+
+sdo_row @sec-compiletocharset#29 CompileToCharSet form alg {
+  prods [p"RegExp - NestedClass :: `[^` ClassContents[+UnicodeMode, +UnicodeSetsMode] `]`"]
+  keys ["NestedClass :: `[^` ClassContents `]`"]
+  vars [regexpRecord, charSet]
+  steps {
+    let charSet = sdo CompileToCharSet(child 5 |ClassContents|; regexpRecord)
+    return @sec-charactercomplement(regexpRecord, charSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#30 CompileToCharSet form alg {
+  prods [p"RegExp - NestedClass :: `\\` CharacterClassEscape[+UnicodeMode]"]
+  keys ["NestedClass :: `\\` CharacterClassEscape"]
+  vars [regexpRecord]
+  steps {
+    return sdo CompileToCharSet(child 5 |CharacterClassEscape|; regexpRecord)
+  }
+}
+
+sdo_row @sec-compiletocharset#31 CompileToCharSet form alg {
+  prods [p"RegExp - ClassStringDisjunction :: `\\q{` ClassStringDisjunctionContents `}`"]
+  keys ["ClassStringDisjunction :: `\\q{` ClassStringDisjunctionContents `}`"]
+  vars [regexpRecord]
+  steps {
+    return sdo CompileToCharSet(child 5 |ClassStringDisjunctionContents|; regexpRecord)
+  }
+}
+
+sdo_row @sec-compiletocharset#32 CompileToCharSet form alg {
+  prods [p"RegExp - ClassStringDisjunctionContents :: ClassString"]
+  keys ["ClassStringDisjunctionContents :: ClassString"]
+  vars [regexpRecord, s]
+  steps {
+    let s = sdo CompileClassSetString(child 5 |ClassString|; regexpRecord)
+    return @ph-charset-one-string(?s)
+  }
+}
+
+sdo_row @sec-compiletocharset#33 CompileToCharSet form alg {
+  prods [p"RegExp - ClassStringDisjunctionContents :: ClassString `|` ClassStringDisjunctionContents"]
+  keys ["ClassStringDisjunctionContents :: ClassString `|` ClassStringDisjunctionContents"]
+  vars [regexpRecord, s, charSet, otherSet]
+  steps {
+    let s = sdo CompileClassSetString(child 5 |ClassString|; regexpRecord)
+    let charSet = @ph-charset-one-string(?s)
+    let otherSet = sdo CompileToCharSet(child 5 |ClassStringDisjunctionContents|; regexpRecord)
+    return $CharSetUnion(data choice 0, ?charSet, ?otherSet)
+  }
+}
+
+sdo_row @sec-compiletocharset#34 CompileToCharSet form alg {
+  prods [p"RegExp - ClassSetCharacter :: [lookahead ∉ ClassSetReservedDoublePunctuator] SourceCharacter but not ClassSetSyntaxCharacter", p"RegExp - ClassSetCharacter :: `\\` CharacterEscape[+UnicodeMode]", p"RegExp - ClassSetCharacter :: `\\` ClassSetReservedPunctuator"]
+  keys ["\n          ClassSetCharacter ::\n            SourceCharacter but not ClassSetSyntaxCharacter\n            `\\` CharacterEscape\n            `\\` ClassSetReservedPunctuator\n        "]
+  vars [regexpRecord, charValue, char]
+  steps {
+    let charValue = sdo CharacterValue(call_at @ph-this-nt(|ClassSetCharacter|))
+    let char = $Char(?charValue)
+    return $CharSetOne(?char)
+  }
+}
+
+sdo_row @sec-compiletocharset#35 CompileToCharSet form alg {
+  prods [p"RegExp - ClassSetCharacter :: `\\b`"]
+  keys ["ClassSetCharacter :: `\\b`"]
+  vars [regexpRecord]
+  steps {
+    return $CharSetOne(cp(8, "0008", "BACKSPACE"))
+  }
+}
+
+sdo_row @sec-compileclasssetstring CompileClassSetString form alg {
+  prods [p"RegExp - ClassString :: [empty]"]
+  keys ["ClassString :: [empty]"]
+  vars [regexpRecord]
+  steps {
+    return @ph-empty-character-sequence(data choice 1)
+  }
+}
+
+sdo_row @sec-compileclasssetstring#1 CompileClassSetString form alg {
+  prods [p"RegExp - ClassString :: NonEmptyClassString"]
+  keys ["ClassString :: NonEmptyClassString"]
+  vars [regexpRecord]
+  steps {
+    return sdo CompileClassSetString(child 5 |NonEmptyClassString|; regexpRecord)
+  }
+}
+
+sdo_row @sec-compileclasssetstring#2 CompileClassSetString form alg {
+  prods [p"RegExp 0 NonEmptyClassString :: ClassSetCharacter NonEmptyClassString?", p"RegExp 1 NonEmptyClassString :: ClassSetCharacter NonEmptyClassString?"]
+  keys ["NonEmptyClassString :: ClassSetCharacter NonEmptyClassString?"]
+  vars [regexpRecord, cs, s1, s2]
+  steps {
+    let cs = sdo CompileToCharSet(child 5 |ClassSetCharacter|; regexpRecord)
+    let s1 = @ph-single-charset-element(?cs)
+    if child 5 |NonEmptyClassString| sat $Present() {
+      let s2 = sdo CompileClassSetString(child 5 |NonEmptyClassString|; regexpRecord)
+      return @ph-concatenation([s1, s2])
+    }
+    return s1
+  }
+}
+

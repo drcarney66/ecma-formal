@@ -2,7 +2,6 @@ module
 
 public import Engine.Parse.Keys
 public import Ecma.Grammar.Notation
-public import Ecma.Grammar.Gen.Readings
 public import Std.Data.HashMap
 public import Std.Data.HashSet
 
@@ -22,8 +21,6 @@ overlays and their conditions.
 namespace Engine.Parse
 
 open Ecma.Grammar
-
-deriving instance DecidableEq for NT
 
 /-- The caller's Parse Nodes and code point classes. -/
 structure Builder (N : Type) where
@@ -131,60 +128,39 @@ def orderedIn (cx : Ctx) (g : GrammarId) : List Nat :=
       then m.insert id else m
     | none => m
 
-/-- An alternative in effect: written alternative `idx` of `rule` in grammar `wg`; `fresh` for a
-reading's alternative GL does not have. -/
+/-- An alternative in effect: written alternative `idx` of `rule` in grammar `wg`. -/
 structure Eff where
   alt : Alt
   wg : GrammarId
   rule : Rule
   idx : Nat
-  fresh : Bool
 
 /-- An overlay rule's alternatives in effect. -/
-def overlayEffs (r : Rule) : List Eff := (writtenAlts r).zipIdx.map fun (a, i) => Eff.mk a .annexB r i false
+def overlayEffs (r : Rule) : List Eff := (writtenAlts r).zipIdx.map fun (a, i) => Eff.mk a .annexB r i
 
-/-- The alternatives of `n` in effect in grammar `g` under the readings `rd` in context `cx`
-(`GL.alts`): a reading's definition, its alternatives equal to pinned ones being those and one
-that differs from a pinned one only in lookahead restrictions that production with the reading's,
-else the pinned one; then the overlays in effect, `extend` adding the alternatives it does not
-restate and `replace` replacing the definition. -/
-def effAlts (g : GrammarId) (rd : List RuleReading) (cx : Ctx) (n : Nat) : Option (List Eff) := do
+/-- The alternatives of `n` in effect in grammar `g` in context `cx` (`GL.alts`): the pinned
+alternatives, then the overlays in effect, `extend` adding the alternatives it does not restate and
+`replace` replacing the definition. -/
+def effAlts (g : GrammarId) (cx : Ctx) (n : Nat) : Option (List Eff) := do
   let _ ← ruleIn g n
   let base := match pinnedIn g n with
     | none => []
-    | some (wg, r) =>
-      let pinned := (writtenAlts r).zipIdx.map fun (a, i) => Eff.mk a wg r i false
-      match rd.find? (fun x => x.grammar == g && x.rule.lhs.ctorIdx == n) with
-      | some x => (writtenAlts x.rule).zipIdx.map fun (a, i) => match pinned.find? (·.alt == a) with
-        | some e => e
-        | none => match pinned.find? (·.alt.bare == a.bare) with
-          | some e => { e with alt := a }
-          | none => ⟨a, g, x.rule, i, true⟩
-      | none => pinned
+    | some (wg, r) => (writtenAlts r).zipIdx.map fun (a, i) => Eff.mk a wg r i
   pure ((overlaysIn cx g n).foldl (fun acc (r, m) => match m with
     | .extend => acc ++ (overlayEffs r).filter fun e => !acc.any (·.alt == e.alt)
     | .replace => overlayEffs r) base)
 
-/-- The readings' right-hand sides, numbered past GL's numbers (`GL.prodId`). -/
-def readingProds (rd : List RuleReading) : Array Prod := (prodsOf (rd.map fun x => (x.grammar, [x.rule]))).toArray
-
-/-- Production id `p` is past GL's numbers: a reading's own right-hand side. -/
-@[irreducible] def isFresh (p : Nat) : Bool := prods.size ≤ p
-
-/-- Right-hand side `p`: GL's, or past GL's numbers a reading's; none at a retired number. -/
-def prodOf (rd : List RuleReading) (p : Nat) : Option Prod :=
-  if p < prods.size then prods[p]?.join else (readingProds rd)[p - prods.size]?
+/-- Right-hand side `p`; none at a retired number. -/
+def prodOf (p : Nat) : Option Prod :=
+  prods[p]?.join
 
 /-- The production id of written alternative `alt` of `r` (in grammar `g`) with presences `mask`. -/
 def prodId (g : GrammarId) (r : Rule) (alt : Nat) (mask : List Bool) : Option Nat :=
   prodTable.get[(g.ctorIdx, r.lhs.ctorIdx, alt, mask)]?
 
 /-- The production id of an alternative in effect with presences `mask`. -/
-def effId (rd : List RuleReading) (e : Eff) (mask : List Bool) : Option Nat :=
-  if e.fresh then
-    ((readingProds rd).findIdx? fun p => p.grammar == e.wg && p.rule.lhs == e.rule.lhs && p.alt == e.idx && p.mask == mask).map
-      (prods.size + ·)
-  else prodId e.wg e.rule e.idx mask
+def effId (e : Eff) (mask : List Bool) : Option Nat :=
+  prodId e.wg e.rule e.idx mask
 
 /-- The code points `lo` to `hi`. -/
 def points (cs : Array Nat) (lo hi : Nat) : Array Nat := cs.extract lo hi

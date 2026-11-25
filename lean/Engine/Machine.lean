@@ -99,11 +99,10 @@ def Prog'.memo (P : Prog) (algs owners : List AlgId) (rows : List (SdoId × Prod
     covered := fun p => covered.get p fun _ => Q.covered p
     clauseRows := Q.clauseRows }
 
-/-- A source's algorithms (the plan's declared ones included), SDO rows, their owners, early rules' productions,
+/-- A source's algorithms, SDO rows, their owners, early rules' productions,
 and tables' count. -/
 def keysOf (s : Src) : List AlgId × List AlgId × List (SdoId × ProdId) × List ProdId × Nat :=
-  let d := (Spec.Plan.ofSrc s).decl s.prog s.expandMacros.rows
-  ((s.algs ++ d.algs).map (·.id), s.rows.map (·.id), s.rows.flatMap (fun r => r.prods.map (r.sdo, ·)),
+  (s.algs.map (·.id), s.rows.map (·.id), s.rows.flatMap (fun r => r.prods.map (r.sdo, ·)),
     s.earlyRows.flatMap (·.prods), s.tables.length)
 
 /-- The specification's keys (`keysOf`). -/
@@ -118,20 +117,20 @@ def facts (P : Prog) : Engine.Accel.Table.Facts :=
   { tab := Engine.Accel.Contains.tabOf P }
 
 /-- The engine's set-up over `P'`: the accelerator table's rows. -/
-def ctx (P' : Prog') (H : Host F) (rd : ErratumId → Reading) (chk : Bool) : Setup :=
-  Setup.ofTable (Engine.Accel.Table.fastTable (facts P'.P) rd) P' H rd chk
+def ctx (P' : Prog') (H : Host F) (chk : Bool) : Setup :=
+  Setup.ofTable (Engine.Accel.Table.fastTable (facts P'.P)) P' H chk
 
 /-- The program's units (`unitOf`), each found once, on first use: `rows` the source's SDO rows (id, SDO,
 productions), `keys` the algorithms' and rows' ids. -/
-def unitsMemo (P : Prog) (rd : ErratumId → Reading) (rows : List (AlgId × SdoId × List ProdId)) (keys : List AlgId) :
+def unitsMemo (P : Prog) (rows : List (AlgId × SdoId × List ProdId)) (keys : List AlgId) :
     Units :=
   let sdoOf : Std.HashMap (Nat × Nat × ProdId) SdoId := rows.foldl (fun m (a, s, ks) =>
     ks.foldl (fun m k => m.insert (a.clause, a.idx, k) s) m) {}
   let rowAt := fun (a : AlgId) (k : ProdId) => (sdoOf[(a.clause, a.idx, k)]?).bind fun s => P.row s k
-  { own := (Memo.of idKey keys fun a => unitOf P rowAt rd a none).map
+  { own := (Memo.of idKey keys fun a => unitOf P rowAt a none).map
     ownAt := (Memo.of (fun (x : AlgId × ProdId) => (x.1.clause, x.1.idx, x.2))
-      (rows.flatMap fun (a, _, ks) => ks.map (a, ·)) fun (a, k) => unitOf P rowAt rd a (some k)).map
-    other := fun a prod => unitOf P rowAt rd a prod }
+      (rows.flatMap fun (a, _, ks) => ks.map (a, ·)) fun (a, k) => unitOf P rowAt a (some k)).map
+    other := fun a prod => unitOf P rowAt a prod }
 
 /-- The specification's SDO rows: each one's id, SDO and productions. -/
 def specRows : List (AlgId × SdoId × List ProdId) := Spec.src.rows.map fun r => (r.id, r.sdo, r.prods)
@@ -143,9 +142,9 @@ unsafe def traceOut.impl (l : String) (k : Unit → Out F) : Out F := dbgTrace l
 def traceOut (_l : String) (k : Unit → Out F) : Out F := k ()
 
 /-- `k`, after printing the line of the step `c` enters on stderr; not a step of the driver's own algorithms. -/
-@[inline] def traced (units : Thunk Units) (rd : ErratumId → Reading) (c : Cfg F) (k : Unit → Out F) : Out F :=
+@[inline] def traced (units : Thunk Units) (c : Cfg F) (k : Unit → Out F) : Out F :=
   if (c.frames.head?.map fun f => Engine.Host.driverAlg f.alg).getD false then k () else
-  match stepLine Ecma.Gen.decls units Ecma.Gen.clauses Ecma.Gen.errataIds rd c with
+  match stepLine Ecma.Gen.decls units Ecma.Gen.clauses c with
   | some l => traceOut l k
   | none => k ()
 
@@ -190,7 +189,7 @@ def stepE (E : Setup) (c : Cfg F) : Out F :=
   let fs := c.frames
   let e := if ob.cover then entered c else none
   let k := fun _ => stepA E c
-  let o := if ob.trace then traced units E.X.rd c k else k ()
+  let o := if ob.trace then traced units c k else k ()
   let o := if ob.sites then noteOut fs o else o
   if ob.cover then noteStep units e o else o
 

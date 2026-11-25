@@ -35,13 +35,13 @@ def expectedKids : List Item → List Bool → List (Nat × Bool × List Arg)
 /-- The code point and syntactic grammars. -/
 def grammarIds : List GrammarId := [.numericString, .lexical, .syntactic, .regExp, .json]
 
-/-- Production `p`, right-hand side `P`, is an alternative in effect in some grammar under `rd` in context `cx`. -/
-def inEffect (rd : List RuleReading) (cx : Ctx) (p : Nat) (P : Prod) : Bool :=
-  grammarIds.any fun g => ((effAlts g rd cx P.rule.lhs.ctorIdx).getD []).any fun e =>
-    e.wg == P.grammar && e.idx == P.alt && e.rule == P.rule && e.fresh == isFresh p
+/-- Production's right-hand side `P` is an alternative in effect in some grammar in context `cx`. -/
+def inEffect (cx : Ctx) (P : Prod) : Bool :=
+  grammarIds.any fun g => ((effAlts g cx P.rule.lhs.ctorIdx).getD []).any fun e =>
+    e.wg == P.grammar && e.idx == P.alt && e.rule == P.rule
 
 /-- The failures of one node, without its descendants. -/
-def checkNode (B : Builder N) (rd : List RuleReading) (cx : Ctx) (cs : Array Nat) (stamp : Nat) (n : N) :
+def checkNode (B : Builder N) (cx : Ctx) (cs : Array Nat) (stamp : Nat) (n : N) :
     List String := Id.run do
   let (lo, hi) := B.span n
   let pre := s!"node {B.prod n} [{lo},{hi}): "
@@ -49,9 +49,9 @@ def checkNode (B : Builder N) (rd : List RuleReading) (cx : Ctx) (cs : Array Nat
   if B.stamp n != stamp then errs := errs ++ [pre ++ "stamp"]
   if !(lo ≤ hi && hi ≤ cs.size) then errs := errs ++ [pre ++ "span"]
   else if B.text n != points cs lo hi then errs := errs ++ [pre ++ "text"]
-  let some P := prodOf rd (B.prod n) | return errs ++ [pre ++ "no such production"]
+  let some P := prodOf (B.prod n) | return errs ++ [pre ++ "no such production"]
   if P.rule.lhs.ctorIdx != B.nt n then errs := errs ++ [pre ++ "nonterminal"]
-  if P.grammar == .annexB && !inEffect rd cx (B.prod n) P then errs := errs ++ [pre ++ "an Annex B production not in effect"]
+  if P.grammar == .annexB && !inEffect cx P then errs := errs ++ [pre ++ "an Annex B production not in effect"]
   let some a := (writtenAlts P.rule)[P.alt]? | return errs ++ [pre ++ "no such alternative"]
   if !a.guard.all (Guard.holds (B.args n)) then errs := errs ++ [pre ++ "guard"]
   let want := expectedKids a.rhs P.mask

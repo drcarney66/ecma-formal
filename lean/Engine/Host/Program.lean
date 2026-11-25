@@ -211,7 +211,7 @@ def showThrown (s : State Impl) : Val Impl → String
       | _ => showVal N s (.obj o)
   | v => showVal N s v
 
-/-- A stop's name as the programs print it; an erratum by its name (readings.emu's `name=`). -/
+/-- A stop's name as the programs print it. -/
 def stopName : Stop → String
   | .blocked => "blocked"
   | .sortError => "sortError"
@@ -219,7 +219,6 @@ def stopName : Stop → String
   | .residue => "residue"
   | .noReturn => "noReturn"
   | .implLimit => "implLimit"
-  | .erratum e => s!"erratum {Ecma.Gen.errata.getD e (toString e)}"
 
 /-- The result line and exit status of a program's completion; the lines `print` wrote. -/
 def outcome (c : Cells) : Res Impl (Val Impl) → String × UInt32 × List String

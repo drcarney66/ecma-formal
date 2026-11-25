@@ -36,8 +36,8 @@ structure PushSite where
 
 /-- The push sites, step paths outermost first (spec.html at the pinned ecma262). -/
 def pushSites : List PushSite :=
-  [ -- spec.html:12170 (step 9 pushes; setup only)
-    { secId := "sec-initializehostdefinedrealm", after := [9] },
+  [ -- spec.html:12170 (step 11 pushes; setup only)
+    { secId := "sec-initializehostdefinedrealm", after := [11] },
     -- spec.html:12450 (step 3 pushes; the resumed computation removes it before step 5)
     { secId := "sec-runsuspendedcontext", after := [3], upTo := some [4], kind := "resume" },
     -- spec.html:12469 (step 2 removes the running context; step 4 resumes the caller)
@@ -59,8 +59,8 @@ def pushSites : List PushSite :=
     { secId := "sec-builtincallorconstruct", after := [10], upTo := some [13], kind := "builtin" },
     -- spec.html:26812, 26819 (step 10 pushes; 14 removes)
     { secId := "sec-runtime-semantics-scriptevaluation", after := [10], upTo := some [14], kind := "script" },
-    -- spec.html:30499, 30505 (step 27 pushes; 31 removes)
-    { secId := "sec-performeval", after := [27], upTo := some [31], kind := "eval" },
+    -- spec.html:30499, 30505 (step 36 pushes; 40 removes)
+    { secId := "sec-performeval", after := [36], upTo := some [40], kind := "eval" },
     -- spec.html:29266, 29287 (step 17 pushes; 25 removes)
     { secId := "sec-source-text-module-record-initialize-environment", after := [17], upTo := some [25],
       kind := "module" },

@@ -144,8 +144,6 @@ inductive Stop where
   | noReturn
   /-- an implementation limit of the host -/
   | implLimit
-  /-- the literal text of erratum `e` failing at one of its sites (readings.emu `stops=`) -/
-  | erratum (e : ErratumId)
   deriving Repr, BEq, Inhabited
 
 end

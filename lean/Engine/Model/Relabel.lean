@@ -26,7 +26,7 @@ goal, at a cover parser invocations made).
 namespace Engine.Model.Relabel
 
 open Engine.Model Ecma.Grammar
-open Ecma (NtId ParamId ErratumId Reading ParseCx)
+open Ecma (NtId ParamId ParseCx)
 
 /-- The covers relabelled, each with the goal whose production has the cover's right-hand side. -/
 def pairs : List (NtId × NtId) :=
@@ -50,34 +50,32 @@ def present : List Item → List Bool → List Item
   | i :: is, ms => i :: present is ms
   | [], _ => []
 
-/-- The production of goal `k` with the right-hand side of production `p`, under the rules `rs` in context
-`gx`: `k`'s only alternative in effect, unguarded and without optional symbols, when its right-hand side is
-`p`'s under `p`'s mask. -/
-def target (rs : List RuleReading) (gx : Ctx) (p k : Nat) : Option Nat := do
-  let P ← Engine.Parse.prodOf rs p
+/-- The production of goal `k` with the right-hand side of production `p`, in context `gx`: `k`'s only
+alternative in effect, unguarded and without optional symbols, when its right-hand side is `p`'s under
+`p`'s mask. -/
+def target (gx : Ctx) (p k : Nat) : Option Nat := do
+  let P ← Engine.Parse.prodOf p
   let a ← P.altOf
-  let es ← Engine.Parse.effAlts .syntactic rs gx k
+  let es ← Engine.Parse.effAlts .syntactic gx k
   let [e] := es | none
   guard (e.alt.guard.isEmpty && e.alt.opts == 0 && e.alt.rhs == present a.rhs P.mask)
-  Engine.Parse.effId rs e []
+  Engine.Parse.effId e []
 
-/-- The covered node of cover `n` at goal `k`, invocation `st`, with the parameters `args`, the errata read as
-`sel`, in context `cx`: `n`'s subtree relabelled, its root checked; none to decline. -/
-def relabel (sel : ErratumId → Reading) (cx : ParseCx) (st : Nat) (n : Node) (k : NtId)
-    (args : List (ParamId × Bool)) : Option Node :=
+/-- The covered node of cover `n` at goal `k`, invocation `st`, with the parameters `args`, in context `cx`:
+`n`'s subtree relabelled, its root checked; none to decline. -/
+def relabel (cx : ParseCx) (st : Nat) (n : Node) (k : NtId) (args : List (ParamId × Bool)) : Option Node :=
   match n with
   | .mk _ lo hi p nt _ kids t => do
-    guard (!litLook sel && !litCover sel && pairs.contains (nt, k))
-    let rs := Ecma.rulesUnder readings sel
+    guard (pairs.contains (nt, k))
     let gx := grammarCx cx
-    let p' ← target rs gx p k
+    let p' ← target gx p k
     let cs := t.toArray
     let r := Node.mk st 0 (hi - lo) p' k (Engine.Parse.paramsOfArgs args)
       (kids.map fun (m, c) => (m, c.map (shift st lo cs))) (Engine.Parse.view cs 0 cs.size)
-    guard (Engine.Parse.checkNode builder rs gx cs st r).isEmpty
+    guard (Engine.Parse.checkNode builder gx cs st r).isEmpty
     let d := Engine.Parse.Syntax.depth cs.size + 1
     guard (!gx.annexB.any || Engine.Parse.Strict.sloppyOk builder d cx.strict d [] r == some true)
-    guard (shaped rs r)
+    guard (shaped r)
     return r
 
 end Engine.Model.Relabel

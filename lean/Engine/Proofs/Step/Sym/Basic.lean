@@ -75,12 +75,10 @@ macro "mstep" : tactic => `(tactic| (
     List.getElem?_toArray, List.getElem?_cons_succ, List.getElem?_cons_zero, Option.getD_some]))
 
 /-- `mstep`, but not at a sort's test or an algorithm's call: there `rfl` would try to compute the program's tables
-(maximum recursion depth, an error and not a failure). It fails there, so `repeat gstep` stops; and not at a
-definition reading's steps, where a row's lemma enters them (`step_reading`). -/
+(maximum recursion depth, an error and not a failure). It fails there, so `repeat gstep` stops. -/
 macro "gstep" : tactic => `(tactic| (
   fail_if_success (show Steps _ ⟨_, _, .invoke (.sort _ _)⟩ _)
   fail_if_success (show Steps _ ⟨_, _, .invoke (.alg _ _)⟩ _)
-  fail_if_success (show Steps _ ⟨_, _, .code (.reading _ _ :: _)⟩ _)
   mstep
   try simp only [used_math]))
 
@@ -101,14 +99,6 @@ macro "mdecide" : tactic =>
   `(tactic| (simp [numeral_dec, numeral_hex, Model.MathVal.lt, Model.MathVal.eq, Model.MathVal.add, Model.MathVal.neg,
       Model.MathVal.mul] <;> omega))
 
-/-! ## Reads -/
-
-/-- The machine's transition at a definition reading's steps, before other steps: their code, the rest under it. -/
-theorem step_reading (X : Ctx F) (s : State F) (fr : List (Frame F)) (r : ErratumId) (code : Code)
-    (i : Ins) (is : Code) :
-    step X ⟨s, fr, .code (.reading r code :: i :: is)⟩ =
-      .inl { (⟨s, fr, .code (.reading r code :: i :: is)⟩ : Cfg F).push (.seq (i :: is)) with ctl := .code code } := by
-  simp [step, exec]; rfl
 
 /-- A read of a bound variable. -/
 theorem step_var (X : Ctx F) (s : State F) (f : Frame F) (fs : List (Frame F)) (x : Slot) (w : Val F)

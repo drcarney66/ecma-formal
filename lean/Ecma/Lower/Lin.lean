@@ -8,11 +8,10 @@ public import Ecma.Lower.Expand
 @[expose] public section
 
 /-!
-# `lin`: the expanded program as the machine's code
+# `lin`: the program as the machine's code
 
-Statements as code with step sites at the steps' paths (`.nodes`: step `i :: up`, an `If`'s `Else if` and `Else`
-steps after it, nested steps one level in, an erratum's readings and a definition reading's steps under
-`r :: 0 :: p`); each unit's code, a
+Statements as code with step sites at the steps' paths (step `i :: up`, an `If`'s `Else if` and `Else`
+steps after it, nested steps one level in); each unit's code, a
 closure literal's under its literal's step; `lin s host`, the machine's program of `s.expanded host`.
 -/
 
@@ -23,9 +22,8 @@ section Lin
 variable (cx : Cx)
 
 /-- The width of a step: an `If` numbers its `Else if` and `Else` steps after it. -/
-def width : Node → Nat
-  | .mk _ (.if_ _ _ arms els) => 1 + arms.length + els.toList.length
-  | .mk _ (.readings _ (.if_ _ _ arms els) _) => 1 + arms.length + els.toList.length
+def width : Stmt → Nat
+  | .if_ _ _ arms els => 1 + arms.length + els.toList.length
   | _ => 1
 
 /-- The path of the `j`th `Else if` or `Else` step after the step at `p`. -/
@@ -33,14 +31,6 @@ def armPath (p : List Nat) (j : Nat) : List Nat :=
   match p with
   | i :: up => (i + 1 + j) :: up
   | [] => []
-
-/-- The holes a step whose nested steps its form does not take evaluates, then its residue. -/
-def withStepsCode : Stmt → Code
-  | .phrase p hs | .mutate p hs => (linArgs cx p hs).map .eval ++ [.residue "withSteps"]
-  | .prose ch ps => match ch.live? with
-    | some _ => (linParts cx ps).map .eval ++ [.residue "withSteps"]
-    | none => [.residue "withSteps"]
-  | _ => [.residue "withSteps"]
 
 mutual
 /-- A statement at step path `p`. -/
@@ -54,19 +44,15 @@ def linS (p : List Nat) : Stmt → Code
     | none, _ => [.residue "set"]
   | .ret none => [.retUnused]
   | .ret (some e) => [.ret (linE cx e)]
-  | .retSee e _ => [.ret (linE cx e)]
   | .perform e => [.eval (linE cx e)]
-  | .if_ c b arms els => match c.binder? with
-    | some _ => [.residue "such"]
-    | none => [.br (linC cx c) (linBody p b) (linArms p 0 arms (linEls p arms.length els))]
+  | .if_ c b arms els => [.br (linC cx c) (linBody p b) (linArms p 0 arms (linEls p arms.length els))]
   | .ifElse c s1 s2 => [.br (linC cx c) (linS p s1) (linS p s2)]
   | .assert c => if c.unchecked then [] else [.assert (linC cx c)]
-  | .assertAt r c => if c.unchecked then [] else [.assertAt r (linC cx c)]
+  | .assertAlways c => if c.unchecked then [] else [.assertAlways (linC cx c)]
   | .assertIf c d => match uncheckedIf c d with
     | some _ => []
     | none => [.assertIf (linC cx c) (linC cx d)]
   | .unreachable _ => [.stop .assertFailed]
-  | .throwErr _ => [.residue "throwErr"]
   | .throwVal e => [.throw (linE cx e)]
   | .note _ => []
   | .repeat_ b => [.loop none .rep p (linNodes b 1 p)]
@@ -76,8 +62,6 @@ def linS (p : List Nat) : Stmt → Code
   | .forEachRec _ x l b => [.loop (some x) (.each (linE cx l) false) p (linBody p b)]
   | .forRange x lo li hi hi' desc b =>
     [.loop (some x) (.range (linE cx lo) (linE cx hi) li hi' desc) p (linBody p b)]
-  | .mutate .. => [.residue "phrase"]
-  | .forSuchThat .. => [.residue "forSuchThat"]
   | .forKeys x o c order b => [.loop (some x) (.keys (linE cx o) order (linC cx c)) p (linBody p b)]
   | .forIndex x l b => [.loop (some x) (.idx (linE cx l)) p (linBody p b)]
   | .forChildren x b => [.loop (some x) (.kids none) p (linBody p b)]
@@ -88,25 +72,15 @@ def linS (p : List Nat) : Stmt → Code
   | .remove e _ => [.ctxRemove (linE cx e)]
   | .removeRestore e r => [.ctxRemove (linE cx e), .ctxTopIs (linE cx r)]
   | .resumeTop => []
-  | .resumeLet e v x _ => [.transfer (some x) (linE cx e) (linE cx v)]
+  | .resumeLet e v x => [.transfer (some x) (linE cx e) (linE cx v)]
   | .resume e v => [.transfer none (linE cx e) (linE cx v)]
   | .setCodeState e f => [.setField Known.fCodeState (linE cx e) (linE cx f)]
-  | .readings r lit alts => Ins.ofReadings r (linS p lit) (linAlts r p alts)
-  | .findSuchThat .. => [.residue "find"]
-  | .letSuchThat .. => [.residue "letSuch"]
-  | .letMany .. => [.residue "letMany"]
-  | .macro .. => [.stop .sortError]
-  | .phrase .. => [.residue "phrase"]
-  | .prose ch ps => [.eval (match ch.live? with
-    | some q => .call (.prim q) (linParts cx ps)
-    | none => .residue "prose")]
-  | .withSteps s _ => withStepsCode cx s
-  | .expanded _ _ ns => linNodes ns 1 p
+  | .block ns => linNodes ns 1 p
 
 /-- Steps from number `i` under `up`, each entered at its site. -/
-def linNodes : List Node → Nat → List Nat → Code
+def linNodes : List Stmt → Nat → List Nat → Code
   | [], _, _ => []
-  | n@(.mk _ s) :: ns, i, up => .site (i :: up) :: linS (i :: up) s ++ linNodes ns (i + width n) up
+  | s :: ns, i, up => .site (i :: up) :: linS (i :: up) s ++ linNodes ns (i + width s) up
 
 /-- A body at its step's path: an inline statement there, or steps one level in. -/
 def linBody (p : List Nat) : Body → Code
@@ -125,18 +99,8 @@ def linEls (p : List Nat) (j : Nat) : Option Arm → Code
 
 /-- The `j`th `Else if` or `Else` step after the step at `p`, the code after it `next` when its test fails. -/
 def linArm (p : List Nat) (j : Nat) : Arm → Code → Code
-  | .mk _ none b, _ => .site (armPath p j) :: linBody (armPath p j) b
-  | .mk _ (some c) b, next => .site (armPath p j) :: match c.binder? with
-    | some _ => [.residue "such"]
-    | none => [.br (linC cx c) (linBody (armPath p j) b) next]
-
-/-- An erratum's readings, or a definition reading's, their steps under `r :: 0 :: p`. -/
-def linAlt (r : ErratumId) (p : List Nat) : Reading × List Node → Reading × Code
-  | (rd, ns) => (rd, linNodes ns 1 (r :: 0 :: p))
-
-def linAlts (r : ErratumId) (p : List Nat) : List (Reading × List Node) → List (Reading × Code)
-  | [] => []
-  | a :: as => linAlt r p a :: linAlts r p as
+  | .mk none b, _ => .site (armPath p j) :: linBody (armPath p j) b
+  | .mk (some c) b, next => .site (armPath p j) :: [.br (linC cx c) (linBody (armPath p j) b) next]
 end
 
 end Lin
@@ -151,7 +115,6 @@ def Op.clos : Op → List Nat
   | .on _ r as => Op.clos r ++ Op.closL as
   | .bind a b | .all a b => Op.clos a ++ Op.clos b
   | .andT cs t => Op.closL cs ++ Op.clos t
-  | .erratum _ _ e => Op.clos e
   | _ => []
 
 def Op.closL : List Op → List Nat
@@ -174,21 +137,12 @@ def Code.cloSites (p : List Nat) : Code → List (Nat × List Nat)
 
 def Ins.cloSites (p : List Nat) : Ins → List (Nat × List Nat)
   | .let_ _ e | .eval e | .ret e | .throw e | .ctxPush e | .ctxRemove e | .ctxTopIs e | .assert e
-  | .assertAt _ e => e.clos.map (·, p)
+  | .assertAlways e => e.clos.map (·, p)
   | .setField _ a b | .transfer _ a b | .assertIf a b => (a.clos ++ b.clos).map (·, p)
   | .setIndex a b c => (a.clos ++ b.clos ++ c.clos).map (·, p)
   | .br c t e => c.clos.map (·, p) ++ Code.cloSites p t ++ Code.cloSites p e
   | .loop _ it _ b => it.clos.map (·, p) ++ Code.cloSites p b
-  | .readings _ lit alts => Code.cloSites p lit ++ Ins.altSites p alts
-  | .reading _ c => Code.cloSites p c
   | _ => []
-
-def Ins.altSite (p : List Nat) : Reading × Code → List (Nat × List Nat)
-  | (_, c) => Code.cloSites p c
-
-def Ins.altSites (p : List Nat) : List (Reading × Code) → List (Nat × List Nat)
-  | [] => []
-  | a :: as => Ins.altSite p a ++ Ins.altSites p as
 end
 
 /-- An owner's closure literals' code: each under the path of the step making it, found in the owner's code
@@ -233,7 +187,7 @@ def rowCode (P : Prog) (r : List (Option CellBody)) : RowCode :=
     cells := r.map fun c => c.map (cellCode P) }
 
 /-- An owner's closures and steps: an algorithm's, else an SDO row's. -/
-def ownerOf (P : Prog) (a : AlgId) : Option (Array CloLit × List Node) :=
+def ownerOf (P : Prog) (a : AlgId) : Option (Array CloLit × List Stmt) :=
   match P.alg a with
   | some g => some (g.closures, g.body)
   | none => (P.rowOf a).map fun r => (r.closures, r.body)

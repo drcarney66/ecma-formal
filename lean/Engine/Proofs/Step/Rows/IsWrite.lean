@@ -51,9 +51,9 @@ theorem sortTest_write (H : Host F) (call : AlgId → List (Val F) → Run F (Va
 
 open Engine.Accel in
 /-- The machine's transition at the sort test of WriteSharedMemory. -/
-theorem step_sort_write (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (s : State F) (fr : List (Frame F))
+theorem step_sort_write (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (v : Val F) :
-    step (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.sort 35 v)⟩ = leafV ⟨s, fr, .invoke (.sort 35 v)⟩ (isWrite v) := by
+    step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sort 35 v)⟩ = leafV ⟨s, fr, .invoke (.sort 35 v)⟩ (isWrite v) := by
   simp only [step, invoke, spec_P, sortDef_write]
   rw [sortTest_write]
 
@@ -100,9 +100,9 @@ theorem isWrite_post (X : Ctx F) (s : State F) (fs : List (Frame F)) (a : AlgId)
 
 open Engine.Accel in
 /-- sort-WriteSharedMemory-event's steps where `isWrite` answers: its answer, in the same state. -/
-theorem isWrite_steps (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (s : State F) (fs : List (Frame F))
+theorem isWrite_steps (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (a : AlgId) (nd : Option F.Node) (w : Val F) (b : Bool) (hw : w ≠ .unbound) (h : isWrite w s = .ok (.bool b) s) :
-    Steps (Ctx.spec Engine.P' H rd chk)
+    Steps (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, nd, #[w], .steps false true true, [], [], none⟩ :: fs, .code isWriteCode⟩ ⟨s, fs, .val (.bool b)⟩ := by
   refine Steps.trans (isWrite_pre _ s fs a nd w hw) (Steps.next ?_ (isWrite_post _ s fs a nd w b))
   rw [step_sort_write, isWrite_used]
@@ -110,30 +110,29 @@ theorem isWrite_steps (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (s 
   rfl
 
 open Engine.Accel in
-/-- sort-WriteSharedMemory-event's run where `isWrite` stops: the same stop, labelled by the caller's frames. -/
-theorem isWrite_stops (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (s : State F) (fs : List (Frame F))
+/-- sort-WriteSharedMemory-event's run where `isWrite` stops: the same stop. -/
+theorem isWrite_stops (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (a : AlgId) (nd : Option F.Node) (w : Val F) (e : Stop) (hw : w ≠ .unbound) (h : isWrite w s = .stop e) :
-    Runs (Ctx.spec Engine.P' H rd chk)
+    Runs (Ctx.spec Engine.P' H chk)
       ⟨s, ⟨a, nd, #[w], .steps false true true, [], [], none⟩ :: fs, .code isWriteCode⟩
-      (.stop (fs.foldl (fun q f => f.kind.label q) e)) := by
+      (.stop e) := by
   refine ⟨_, isWrite_pre _ s fs a nd w hw, ?_⟩
   show step _ _ = _
   rw [step_sort_write, isWrite_used]
   simp only [leafV, bindR, h]
-  rfl
 
 /-! ## The row -/
 
 open Engine.Accel in
 /-- The engine's shortcut at sort-WriteSharedMemory-event is the specification's steps, from a configuration whose
 transition enters the algorithm's frame. -/
-theorem isWrite_row (H : Host F) (rd : ErratumId → Reading) (chk : Bool) [PinsHold] (c : Cfg F) (vs : List (Val F))
+theorem isWrite_row (H : Host F) (chk : Bool) [PinsHold] (c : Cfg F) (vs : List (Val F))
     (r : Run F (Option (Val F))) (nd : Option F.Node) (he : isWriteEntry vs = some r)
-    (hstep : step (Ctx.spec Engine.P' H rd chk) c =
-      enterAlg (Ctx.spec Engine.P' H rd chk) c isWriteAlg nd (isWriteAlg.args vs) isWriteAlg.header.rc true true) :
-    Sim (Ctx.spec Engine.P' H rd chk) c (bindR c r fun o c => match o with
+    (hstep : step (Ctx.spec Engine.P' H chk) c =
+      enterAlg (Ctx.spec Engine.P' H chk) c isWriteAlg nd (isWriteAlg.args vs) isWriteAlg.header.rc true true) :
+    Sim (Ctx.spec Engine.P' H chk) c (bindR c r fun o c => match o with
       | some v => c.to (.val v)
-      | none => step (Ctx.spec Engine.P' H rd chk) c) := by
+      | none => step (Ctx.spec Engine.P' H chk) c) := by
   unfold isWriteEntry at he
   split at he
   · cases he
@@ -141,7 +140,7 @@ theorem isWrite_row (H : Host F) (rd : ErratumId → Reading) (chk : Bool) [Pins
     have hv : v ≠ .unbound := fun h => hv (by rw [h])
     cases he
     obtain ⟨st, fs, ctl⟩ := c
-    have hcode : (Ctx.spec Engine.P' H rd chk).algCode isWriteAlg.id = isWriteCode := by
+    have hcode : (Ctx.spec Engine.P' H chk).algCode isWriteAlg.id = isWriteCode := by
       show (Engine.P'.alg ⟨2775, 0⟩).getD _ = _
       rw [isWriteCode_pin]; rfl
     rcases isWrite_cases v st with ⟨b, h⟩ | h
@@ -149,10 +148,10 @@ theorem isWrite_row (H : Host F) (rd : ErratumId → Reading) (chk : Bool) [Pins
       show Steps _ _ _
       refine Steps.next hstep ?_
       rw [hcode]
-      exact isWrite_steps H rd chk st fs _ nd v.used b (used_bound hv) (by rw [isWrite_used]; exact h)
+      exact isWrite_steps H chk st fs _ nd v.used b (used_bound hv) (by rw [isWrite_used]; exact h)
     · simp only [bindR, always, h, Run.Res.bind]
       refine .inr ?_
-      obtain ⟨c', hs, he⟩ := isWrite_stops H rd chk st fs isWriteAlg.id nd v.used .sortError (used_bound hv)
+      obtain ⟨c', hs, he⟩ := isWrite_stops H chk st fs isWriteAlg.id nd v.used .sortError (used_bound hv)
         (by rw [isWrite_used]; exact h)
       refine ⟨c', Steps.next hstep ?_, he⟩
       rw [hcode]
@@ -161,8 +160,8 @@ theorem isWrite_row (H : Host F) (rd : ErratumId → Reading) (chk : Bool) [Pins
 
 open Engine.Accel in
 /-- sort-WriteSharedMemory-event's row. -/
-theorem isWrite_algRow (H : Host F) (rd : ErratumId → Reading) (chk : Bool) [PinsHold] :
-    AlgRow (Ctx.spec Engine.P' H rd chk) ⟨2775, 0⟩ isWriteEntry :=
-  ⟨isWriteAlg, isWriteAlg_pin, fun c vs r nd he hstep => isWrite_row H rd chk c vs r nd he hstep⟩
+theorem isWrite_algRow (H : Host F) (chk : Bool) [PinsHold] :
+    AlgRow (Ctx.spec Engine.P' H chk) ⟨2775, 0⟩ isWriteEntry :=
+  ⟨isWriteAlg, isWriteAlg_pin, fun c vs r nd he hstep => isWrite_row H chk c vs r nd he hstep⟩
 
 end Engine.Machine

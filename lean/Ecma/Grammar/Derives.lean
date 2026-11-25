@@ -115,18 +115,18 @@ def CondOk (is : List Item) (t : Tree) : Prop :=
   | .onlyIf c :: _ => A.cond c inp t
   | _ => True
 
-variable (gl : GL) (rd : List RuleReading) (cx : Ctx) (g : GrammarId)
+variable (gl : GL) (cx : Ctx) (g : GrammarId)
 
 mutual
 /-- One stratum: nonterminal `n` with parameters `ps` derives the input `i` to
 `j` as node `t`, the exclusions read in `neg`. -/
 inductive Step : NT → List Param → Nat → Nat → Tree → Prop
   | node {n ps i j m kids id} (s : Src) :
-      s ∈ gl.alts rd cx g n → s.alt.guard.all (Guard.holds ps) →
-      gl.prodId rd s m = some id → Seq s ps 0 s.alt.rhs i j m kids →
+      s ∈ gl.alts cx g n → s.alt.guard.all (Guard.holds ps) →
+      gl.prodId s m = some id → Seq s ps 0 s.alt.rhs i j m kids →
       Step n ps i j (.node n id ps i j kids)
   | lex {n ps i t} {e : T} :
-      gl.alts rd cx g n = [] → inp[i]? = some e → A.leaf n e t → Step n ps i (i + 1) (.lex i t)
+      gl.alts cx g n = [] → inp[i]? = some e → A.leaf n e t → Step n ps i (i + 1) (.lex i t)
 
 /-- Items `k` on of right-hand side `s` derive the input `i` to `j`, with the
 optional symbols' presences `m` and the nodes `ts`. -/
@@ -162,17 +162,17 @@ end
 end
 
 /-- Stratum `k` of the derivation relation. -/
-def DerivesAt (gl : GL) (rd : List RuleReading) (cx : Ctx) (g : GrammarId) {T : Type} (A : Alphabet T)
+def DerivesAt (gl : GL) (cx : Ctx) (g : GrammarId) {T : Type} (A : Alphabet T)
     (inp : List T) : Nat → NT → List Param → Nat → Nat → Tree → Prop
   | 0 => fun _ _ _ _ _ => False
-  | k + 1 => Step A (fun n ps i j => ∃ t, DerivesAt gl rd cx g A inp k n ps i j t) inp gl rd cx g
+  | k + 1 => Step A (fun n ps i j => ∃ t, DerivesAt gl cx g A inp k n ps i j t) inp gl cx g
 
-/-- §5.1: in grammar `g` under reading `rd` and context `cx`, `n` with
+/-- §5.1: in grammar `g` and context `cx`, `n` with
 parameters `ps` derives the input `i` to `j` as `t`: at every stratum from
 some on. -/
-def Derives (gl : GL) (rd : List RuleReading) (cx : Ctx) (g : GrammarId) {T : Type} (A : Alphabet T)
+def Derives (gl : GL) (cx : Ctx) (g : GrammarId) {T : Type} (A : Alphabet T)
     (inp : List T) (n : NT) (ps : List Param) (i j : Nat) (t : Tree) : Prop :=
-  ∃ K, ∀ k, K ≤ k → DerivesAt gl rd cx g A inp k n ps i j t
+  ∃ K, ∀ k, K ≤ k → DerivesAt gl cx g A inp k n ps i j t
 
 /-! ## Code points: the lexical, RegExp and numeric string grammars -/
 
@@ -227,7 +227,7 @@ def Element.breaks (src : List Nat) (e : Element) : Bool :=
   e.kind == some .LineTerminator ||
     (e.kind == some .Comment && (slice src e.i e.j).any lineTerminators.contains)
 
-variable (gl : GL) (rd : List RuleReading) (cx : Ctx) (P : CodePrims)
+variable (gl : GL) (cx : Ctx) (P : CodePrims)
 
 /-- §12: the source text is scanned left to right into the input elements
 `els`, each the longest sequence of code points its lexical goal derives; §12.9.3: the code point
@@ -235,11 +235,11 @@ after a |NumericLiteral| is not an |IdentifierStart| or a |DecimalDigit|. -/
 def Scans (src : List Nat) (els : List Element) : Prop :=
   (els.zipIdx.all fun (e, k) => e.i == (if k == 0 then 0 else (els[k - 1]?.map (·.j)).getD 0)) = true ∧
   (els.getLast?.map (·.j)).getD 0 = src.length ∧
-  ∀ e ∈ els, e.i < e.j ∧ Derives gl rd cx .lexical (codeAlphabet P) src e.goal [] e.i e.j e.tree ∧
-    (∀ h, e.j < h → h ≤ src.length → ¬ ∃ t, Derives gl rd cx .lexical (codeAlphabet P) src e.goal [] e.i h t) ∧
+  ∀ e ∈ els, e.i < e.j ∧ Derives gl cx .lexical (codeAlphabet P) src e.goal [] e.i e.j e.tree ∧
+    (∀ h, e.j < h → h ≤ src.length → ¬ ∃ t, Derives gl cx .lexical (codeAlphabet P) src e.goal [] e.i h t) ∧
     (e.tree.has .NumericLiteral e.i e.j = true → e.j < src.length →
       ∀ n ∈ [NT.IdentifierStart, NT.DecimalDigit],
-        ¬ ∃ t, Derives gl rd cx .lexical (codeAlphabet P) src n [] e.j (e.j + 1) t)
+        ¬ ∃ t, Derives gl cx .lexical (codeAlphabet P) src n [] e.j (e.j + 1) t)
 
 /-- Why §12.10 inserted a virtual semicolon: rule 1 (an offending token after
 a line terminator, or `}`), rule 1's `)` of a do-while, rule 2, rule 3. -/
@@ -284,22 +284,22 @@ def tokenAlphabet : Alphabet Token where
     | _, _ => False
   phrase _ _ := False
   cond _ _ _ := False
-  leaf n tok t := tok.virt = none ∧ Derives gl rd cx .lexical (codeAlphabet P) tok.text n [] 0 tok.text.length t
+  leaf n tok t := tok.virt = none ∧ Derives gl cx .lexical (codeAlphabet P) tok.text n [] 0 tok.text.length t
   noLT toks i := ∀ tok, toks[i]? = some tok → tok.lt = false
   look := pastVirt
 
 /-- A token sequence the goal derives. -/
 def Sentence (goal : NT) (ps : List Param) (toks : List Token) (t : Tree) : Prop :=
-  Derives gl rd cx .syntactic (tokenAlphabet gl rd cx P) toks goal ps 0 toks.length t
+  Derives gl cx .syntactic (tokenAlphabet gl cx P) toks goal ps 0 toks.length t
 
 /-- Some sentence of the goal starts with these tokens. -/
 def Viable (goal : NT) (ps : List Param) (pre : List Token) : Prop :=
-  ∃ rest t, Sentence gl rd cx P goal ps (pre ++ rest) t
+  ∃ rest t, Sentence gl cx P goal ps (pre ++ rest) t
 
 /-- §12.10, rule 3's "allowed by some production": viable when line
 terminators are ignored. -/
 def ViableAnyLT (goal : NT) (ps : List Param) (pre : List Token) : Prop :=
-  Viable gl rd cx P goal ps (pre.map fun tok => { tok with lt := false })
+  Viable gl cx P goal ps (pre.map fun tok => { tok with lt := false })
 
 /-- §12.10: each virtual semicolon of `toks` is inserted as a rule says, before
 an offending token (not allowed by any production) after a line terminator or
@@ -311,13 +311,13 @@ def ASIOk (goal : NT) (ps : List Param) (toks : List Token) : Prop :=
     let pre := toks.take k
     let next := toks[k + 1]?
     match why with
-    | .offending => ∃ nx, next = some nx ∧ nx.virt = none ∧ ¬ Viable gl rd cx P goal ps (pre ++ [nx]) ∧
+    | .offending => ∃ nx, next = some nx ∧ nx.virt = none ∧ ¬ Viable gl cx P goal ps (pre ++ [nx]) ∧
         (nx.lt ∨ nx.text = "}".toList.map Char.toNat)
-    | .paren => ∃ nx, next = some nx ∧ ¬ Viable gl rd cx P goal ps (pre ++ [nx]) ∧
+    | .paren => ∃ nx, next = some nx ∧ ¬ Viable gl cx P goal ps (pre ++ [nx]) ∧
         (pre.getLast?.map (·.text)) = some (")".toList.map Char.toNat)
-    | .eof => next = none ∧ ¬ ∃ t, Sentence gl rd cx P goal ps pre t
-    | .restricted => ∃ nx, next = some nx ∧ nx.lt ∧ ViableAnyLT gl rd cx P goal ps (pre ++ [nx]) ∧
-        ¬ Viable gl rd cx P goal ps (pre ++ [nx])
+    | .eof => next = none ∧ ¬ ∃ t, Sentence gl cx P goal ps pre t
+    | .restricted => ∃ nx, next = some nx ∧ nx.lt ∧ ViableAnyLT gl cx P goal ps (pre ++ [nx]) ∧
+        ¬ Viable gl cx P goal ps (pre ++ [nx])
 
 /-- §12.10's overriding condition at the `;` that ends the |LexicalDeclaration|
 of `for ( LexicalDeclaration …`: it is the header's first, never virtual. -/
@@ -355,8 +355,8 @@ def lexicalGoal (first : Bool) (regExp template : Bool) : NT :=
 
 /-- A nonterminal's instance may come next after `pre`. -/
 def Permitted (goal : NT) (ps : List Param) (pre : List Token) (x : NT) : Prop :=
-  ∃ tok rest t lt, tok.virt = none ∧ (tokenAlphabet gl rd cx P).leaf x tok lt ∧
-    Sentence gl rd cx P goal ps (pre ++ tok :: rest) t
+  ∃ tok rest t lt, tok.virt = none ∧ (tokenAlphabet gl cx P).leaf x tok lt ∧
+    Sentence gl cx P goal ps (pre ++ tok :: rest) t
 
 /-- The shortest prefix of `toks` with `n` real tokens. -/
 def realPrefix : Nat → List Token → List Token
@@ -392,17 +392,17 @@ inductive Lead where
 def Lead.Holds (c : Lead) (tok : Token) : Prop :=
   tok.virt = none ∧ match c with
     | .div => tok.text = "/".toList.map Char.toNat ∨ tok.text = "/=".toList.map Char.toNat
-    | .re => ∃ d, (tokenAlphabet gl rd cx P).leaf .RegularExpressionLiteral tok d
+    | .re => ∃ d, (tokenAlphabet gl cx P).leaf .RegularExpressionLiteral tok d
     | .rbrace => tok.text = "}".toList.map Char.toNat
-    | .tm => ∃ d, (tokenAlphabet gl rd cx P).leaf .TemplateMiddle tok d ∨
-        (tokenAlphabet gl rd cx P).leaf .TemplateTail tok d
+    | .tm => ∃ d, (tokenAlphabet gl cx P).leaf .TemplateMiddle tok d ∨
+        (tokenAlphabet gl cx P).leaf .TemplateTail tok d
 
 /-- Definition reading of spec.html:16887's "syntactic grammar context that is consuming the input
 elements": the parse's own position. The classes a token at position `p` of `toks` has in a parse
 that is the parse `t` of `toks` before `p` (`Tree.cut`): the items of `t` open at `p` and their
 ancestors' items fix the context, never another parse of the same prefix. -/
 def Tree.nextBits (goal : NT) (ps : List Param) (toks : List Token) (t : Tree) (p : Nat) (c : Lead) : Prop :=
-  ∃ tok rest t', Lead.Holds gl rd cx P c tok ∧ Sentence gl rd cx P goal ps (toks.take p ++ tok :: rest) t' ∧
+  ∃ tok rest t', Lead.Holds gl cx P c tok ∧ Sentence gl cx P goal ps (toks.take p ++ tok :: rest) t' ∧
     t'.cut p = t.cut p
 
 /-- The leading classes permitted after the first `n` real tokens of the parse `t` of `toks`: at the
@@ -411,11 +411,11 @@ def PermitsAt (goal : NT) (ps : List Param) (toks : List Token) (t : Tree) (n : 
   let pre := realPrefix n toks
   if (toks[pre.length]?.bind (·.virt)).isSome then
     match c with
-    | .re => Permitted gl rd cx P goal ps pre .RegularExpressionLiteral
-    | .tm => Permitted gl rd cx P goal ps pre .TemplateMiddle ∨ Permitted gl rd cx P goal ps pre .TemplateTail
-    | .div => ∃ str ∈ ["/", "/="], ∃ lt, Viable gl rd cx P goal ps (pre ++ [realTok str lt])
-    | .rbrace => ∃ lt, Viable gl rd cx P goal ps (pre ++ [realTok "}" lt])
-  else t.nextBits gl rd cx P goal ps toks pre.length c
+    | .re => Permitted gl cx P goal ps pre .RegularExpressionLiteral
+    | .tm => Permitted gl cx P goal ps pre .TemplateMiddle ∨ Permitted gl cx P goal ps pre .TemplateTail
+    | .div => ∃ str ∈ ["/", "/="], ∃ lt, Viable gl cx P goal ps (pre ++ [realTok str lt])
+    | .rbrace => ∃ lt, Viable gl cx P goal ps (pre ++ [realTok "}" lt])
+  else t.nextBits gl cx P goal ps toks pre.length c
 
 /-- §12: each input element of the parse `t` is read with the goal its context permits (`PermitsAt`),
 trivia with the next token's. -/
@@ -423,8 +423,8 @@ def GoalsAt (goal : NT) (ps : List Param) (src : List Nat) (els : List Element) 
     Prop :=
   ∀ k e, els[k]? = some e →
     let n := (tokensOf src (els.take k)).length
-    ∃ r tm : Bool, (r = true ↔ PermitsAt gl rd cx P goal ps toks t n .re) ∧
-      (tm = true ↔ PermitsAt gl rd cx P goal ps toks t n .tm) ∧
+    ∃ r tm : Bool, (r = true ↔ PermitsAt gl cx P goal ps toks t n .re) ∧
+      (tm = true ↔ PermitsAt gl cx P goal ps toks t n .tm) ∧
       e.goal = lexicalGoal (k == 0 && (goal == .Script || goal == .Module)) r tm
 
 /-! ## B.1.2: ordered alternatives and the group-number condition -/
@@ -437,7 +437,7 @@ def Tree.Commits (g : GrammarId) (D : NT → List Param → Nat → Nat → Tree
   | .lex _ t => t.Commits g D
   | .node n id ps i _ kids =>
     (n ∈ gl.orderedNts cx g → ∀ h id' kids' k k', D n ps i h (.node n id' ps i h kids') →
-      gl.altPos rd cx g n id = some k → gl.altPos rd cx g n id' = some k' → k ≤ k') ∧ all kids
+      gl.altPos cx g n id = some k → gl.altPos cx g n id' = some k' → k ≤ k') ∧ all kids
 where
   all : List Tree → Prop
     | [] => True
@@ -446,8 +446,8 @@ where
 /-- A parse of the whole input with B.1.2's ordered alternatives: a derivation whose every node
 commits (`Tree.Commits`), an earlier alternative's match read in `Derives`. -/
 def Committed (g : GrammarId) (goal : NT) (ps : List Param) (src : List Nat) (t : Tree) : Prop :=
-  Derives gl rd cx g (codeAlphabet P) src goal ps 0 src.length t ∧
-    t.Commits gl rd cx g (Derives gl rd cx g (codeAlphabet P) src)
+  Derives gl cx g (codeAlphabet P) src goal ps 0 src.length t ∧
+    t.Commits gl cx g (Derives gl cx g (codeAlphabet P) src)
 
 /-- The primitives with `c` as B.1.2's group-number condition. -/
 def CodePrims.withGroup (P : CodePrims) (c : List Nat → Tree → Prop) : CodePrims :=
@@ -469,14 +469,14 @@ def decimalMV (cs : List Nat) : Nat := cs.foldl (fun a c => 10 * a + (c - 0x30))
 parse of the input as Pattern[~UnicodeMode, ~UnicodeSetsMode, ~NamedCaptureGroups] with the condition
 true ("the |Pattern| containing |DecimalEscape|" being the tree the condition selects). -/
 def groupCond (inp : List Nat) (t : Tree) : Prop :=
-  ∃ T, Committed gl rd cx (P.withGroup fun _ _ => True) .regExp .Pattern [] inp T ∧
+  ∃ T, Committed gl cx (P.withGroup fun _ _ => True) .regExp .Pattern [] inp T ∧
     decimalMV (slice inp t.span.1 t.span.2) ≤ T.countProds gl.capturingIds
 
 /-- A code point grammar's goal (RegExp's |Pattern|, the numeric string
 grammar's) parses the text as `t`; with B.1.2's ordered alternatives, a
 committed parse, its group-number condition `groupCond`. -/
 def ParsesCode (g : GrammarId) (goal : NT) (ps : List Param) (src : List Nat) (t : Tree) : Prop :=
-  if gl.ordered cx g then Committed gl rd cx (P.withGroup (groupCond gl rd cx P)) g goal ps src t
-  else Derives gl rd cx g (codeAlphabet P) src goal ps 0 src.length t
+  if gl.ordered cx g then Committed gl cx (P.withGroup (groupCond gl cx P)) g goal ps src t
+  else Derives gl cx g (codeAlphabet P) src goal ps 0 src.length t
 
 end Ecma.Grammar

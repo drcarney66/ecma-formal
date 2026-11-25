@@ -68,7 +68,7 @@ def tokOf : Lexed → Lexed
 finds a derivation of `n` over the token's code points. -/
 def leafOf (n : NT) : Lexed → Except Stop (Option Nat)
   | .tok t => do
-    let r ← (Code.parse (T := Unit) B (cs.extract t.i t.j) .lexical [] cx t.i cs 0 n []).run'
+    let r ← (Code.parse (T := Unit) B (cs.extract t.i t.j) .lexical cx t.i cs 0 n []).run'
       { steps := Code.budget (t.j - t.i) }
     pure (r.map fun _ => 2 * t.j)
   | _ => pure none
@@ -185,7 +185,6 @@ def span (lo hi : Nat) : SM (Memo B cs first cx) (Nat × Nat) := do
 /-- The tokens' alphabet, with the virtual `;` before the code points `vs`. -/
 def alpha : Alpha N (Memo B cs first cx) where
   g := .syntactic
-  rd := []
   cx := cx
   term := term B cs first cx vs
   leaf := leaf B cs first cx vs
@@ -202,7 +201,7 @@ def alpha : Alpha N (Memo B cs first cx) where
     match ← lex B cs first cx (goalOf n) (a / 2) with
     | .tok t =>
       unless 2 * t.j == b do throw (.check "a leaf's span")
-      match (Code.parse (T := Unit) B (cs.extract t.i t.j) .lexical [] cx t.i cs stamp n []).run'
+      match (Code.parse (T := Unit) B (cs.extract t.i t.j) .lexical cx t.i cs stamp n []).run'
           { steps := Code.budget (t.j - t.i) } with
       | .ok (some node) => pure node
       | .ok none => throw (.check "a leaf with no lexical derivation")
@@ -245,16 +244,9 @@ def bothAsked (asks : Std.HashMap Nat Nat) : Option Stop :=
     some (.unimplemented s!"decline1 {if (m &&& 3) == 3 then "slash" else "brace"} at {s / 2}")
   | none => none
 
-/-- A search's answer and final state as `run`'s: with `lit`, no decision once a lookahead read past
-a virtual `;`. -/
-def answer (lit : Bool) : Except Stop (Option N × St (Memo B cs first cx)) → Except Stop (Option N)
-  | .ok (r, st) => if lit && st.spans then .error (.unimplemented "a lookahead over an inserted `;`") else .ok r
-  | .error e => .error e
-
 /-- Goal `goal` with parameters `ps` over the tokens of `cs` in context `cx`: its Parse Node, or none
-when no parse exists; `lit` (LookaheadSourceTokens read literally): no decision once a lookahead
-read past a virtual `;`. -/
-def run (goal : NT) (ps : List Param) (lit : Bool := false) : Except Stop (Option N) := do
+when no parse exists. -/
+def run (goal : NT) (ps : List Param) : Except Stop (Option N) := do
   let size := 2 * cs.size + 2
   let rec go : Nat → Std.HashMap Nat Bool → SM (Memo B cs (firstOf goal) cx) (Option N)
     | 0, _ => throw .fuel
@@ -278,6 +270,6 @@ def run (goal : NT) (ps : List Param) (lit : Bool := false) : Except Stop (Optio
         modify (·.cut (2 * p))
         go fuel (vs.insert p paren)
       | none => return none
-  answer B cs (firstOf goal) cx lit ((go (cs.size + 2) {}).run { steps := budget cs.size })
+  (go (cs.size + 2) {}).run' { steps := budget cs.size }
 
 end Engine.Parse.Syntax

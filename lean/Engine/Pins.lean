@@ -173,7 +173,7 @@ def containsShapes : List (AlgId × Nat × Code) :=
 /-- The check of the program's row table: at each key of Contains or ComputedPropertyContains whose row has an
 id of `containsShapes`, the row has that many variables and the key's code is that code. -/
 def containsRowsCheck : Bool :=
-  Spec.src.expandMacros.rowMap.keys.all fun (s, k) => !(s == 23 || s == 24) ||
+  Spec.src.rowMap.keys.all fun (s, k) => !(s == 23 || s == 24) ||
     (match Engine.P.row s k with
     | none => true
     | some r => match containsShapes.lookup r.id with
@@ -506,9 +506,9 @@ open Ecma
 /-- The engine's set-up at the host `H`: the accelerator table's shortcuts (`Machine.ctx`) when `accel` holds and
 every pinned equation checks (`Machine.pinsOkThunk`), else none (`Machine.plain`), and the store's ceiling `mc`, in
 cells. -/
-def setupAt (H : Host Impl) (mc : Option Nat) (accel : Bool) (rd : ErratumId → Reading) (chk : Bool) :
+def setupAt (H : Host Impl) (mc : Option Nat) (accel : Bool) (chk : Bool) :
     Machine.Setup :=
-  let E := { Machine.ctx P' H rd chk with maxCells := mc }
+  let E := { Machine.ctx P' H chk with maxCells := mc }
   if accel && Machine.pinsOkThunk.get then E else Machine.plain E
 
 end Engine

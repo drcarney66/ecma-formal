@@ -72,9 +72,8 @@ def behs : List (AlgId × Beh) :=
    (⟨323, 3⟩, .any [(24, 274)]), (⟨323, 4⟩, .any [(24, 274)]), (⟨323, 5⟩, .any [(24, 271), (24, 272)]),
    (⟨323, 6⟩, .ret false), (⟨323, 7⟩, .ret false), (⟨323, 8⟩, .any [(24, 274)]), (⟨323, 9⟩, .any [(24, 274)])]
 
-/-- Contains' default definition: its id, and the ContainsAwaitCover erratum with the productions
-and the nonterminal of its test262 and proposed readings. -/
-def dfltShape : Option (AlgId × ErratumId × List ProdId × NtId) := some (⟨322, 0⟩, 32, [672], 282)
+/-- Contains' default definition: its id, the ContainsAwaitCover production `[672]` and nonterminal `|AwaitExpression|`. -/
+def dfltShape : Option (AlgId × List ProdId × NtId) := some (⟨322, 0⟩, [672], 282)
 
 /-- What the walk reads of a program: an SDO's row at a production (its id), an SDO's default
 algorithm when it has a meaning, a production's terminals by position and its chain nonterminal. -/
@@ -149,7 +148,7 @@ def dfltAt (aw : Option (List ProdId × NtId)) : Option Bool :=
 
 /-- SDO `s` at `nd`, its nested calls by `rec`: its row, else its default, else at the child of a
 chain production (`knotSdo`). -/
-def step (rd : ErratumId → Reading) (s : SdoId) : Option Bool :=
+def step (s : SdoId) : Option Bool :=
   if !(s == sdoC || s == sdoCPC) then none else
   match T.row s (M.nodeProd nd) with
   | some a => match behs.lookup a with
@@ -157,9 +156,9 @@ def step (rd : ErratumId → Reading) (s : SdoId) : Option Bool :=
     | none => none
   | none => match T.dflt s with
     | some a => match dfltShape with
-      | some (d, e, ps, k) =>
+      | some (d, ps, k) =>
         if a == d then
-          dfltAt T sym rec nd (if rd e == .test262 || rd e == .proposed then some (ps, k) else none)
+          dfltAt T sym rec nd (some (ps, k))
         else none
       | none => none
     | none => match T.chain (M.nodeProd nd) with
@@ -171,9 +170,9 @@ def step (rd : ErratumId → Reading) (s : SdoId) : Option Bool :=
 end Walk
 
 /-- The walk, at most `n` nested calls deep. -/
-def walk (T : Tab) (rd : ErratumId → Reading) (sym : Sym) : Nat → SdoId → M.Node → Option Bool
+def walk (T : Tab) (sym : Sym) : Nat → SdoId → M.Node → Option Bool
   | 0, _, _ => none
-  | n + 1, s, nd => step T sym (walk T rd sym n) nd rd s
+  | n + 1, s, nd => step T sym (walk T sym n) nd s
 
 /-- The program's tables for `AccelContains`: its rows' ids, its defaults that have a meaning, its
 terminals and chain productions. -/
@@ -183,12 +182,12 @@ def tabOf (P : Prog) : Tab :=
     terms := P.terms
     chain := P.chain }
 
-/-- Contains and ComputedPropertyContains of a symbol at a Parse Node, over `T` under the readings
-`rd`: a Boolean in the same state, or `none`. -/
-def accelSdo (T : Tab) (rd : ErratumId → Reading) (s : SdoId) (nd : M.Node) (vs : List (Val M)) :
+/-- Contains and ComputedPropertyContains of a symbol at a Parse Node, over `T`:
+a Boolean in the same state, or `none`. -/
+def accelSdo (T : Tab) (s : SdoId) (nd : M.Node) (vs : List (Val M)) :
     Option (Run M (Val M)) :=
   match vs with
-  | [v] => (symOf v).bind fun sym => (walk T rd sym depthMax s nd).map fun b => Run.pure (.bool b)
+  | [v] => (symOf v).bind fun sym => (walk T sym depthMax s nd).map fun b => Run.pure (.bool b)
   | _ => none
 
 end Engine.Accel.Contains

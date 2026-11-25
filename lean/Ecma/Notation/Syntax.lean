@@ -27,15 +27,13 @@ abbrev EnumId := Nat
 abbrev IntrinsicId := FieldId
 /-- A syntax-directed operation, by name. -/
 abbrev SdoId := Nat
-/-- A right-hand side of GL: the number spec/formal/prod-ids.txt gives it (`Grammar.GL.ids`). -/
+/-- A right-hand side of GL: the number `spec/ids/prod-ids.txt` gives it (`Grammar.GL.ids`). -/
 abbrev ProdId := Nat
-/-- A nonterminal of GL: `Grammar.NT`'s constructor index, the number spec/formal/nt-ids.txt gives it. -/
+/-- A nonterminal of GL: `Grammar.NT`'s constructor index, the number `spec/ids/nt-ids.txt` gives it. -/
 abbrev NtId := Nat
 /-- A grammatical parameter of GL (`Yield`, `Await`, …): `Grammar.Param`'s constructor index, the number
-spec/formal/param-ids.txt gives it. -/
+`spec/ids/param-ids.txt` gives it. -/
 abbrev ParamId := Nat
-/-- A domain phrase class: a row of the phrase table. -/
-abbrev PhraseId := Nat
 /-- A declared primitive: notation-level operations (𝔽, ℝ, ℤ, abs, floor, …) and channel (b). -/
 abbrev PrimId := Nat
 /-- A sort name of the type-noun lexicon. -/
@@ -45,33 +43,13 @@ abbrev MethodId := Nat
 /-- A clause of spec.html (its `id`), in document order. -/
 abbrev ClauseId := Nat
 
-/-- An `emu-table`, by its index in `Ecma.Gen.tables` flattened: the number spec/formal/table-ids.txt gives it. -/
+/-- An `emu-table`, by its index in `Ecma.Gen.tables` flattened: the number `spec/ids/table-ids.txt` gives it. -/
 abbrev TableId := Nat
 
 /-- An algorithm: a clause and its position among the clause's algorithms. -/
 structure AlgId where
   clause : ClauseId
   idx : Nat
-  deriving BEq, Inhabited
-
-/-- A step or element attribute, as written: `[id="step-foo"]`, `normative-optional`. -/
-structure Attr where
-  key : String
-  value : Option String
-  deriving BEq, Inhabited
-
-/-- `<emu-xref>`'s form. -/
-inductive XrefForm where
-  | plain
-  | title
-  | content (text : String)
-  deriving BEq, Inhabited
-
-structure Xref where
-  href : String
-  form : XrefForm
-  /-- the clause the href names, if it names one (tables and other targets do not) -/
-  clause : Option ClauseId
   deriving BEq, Inhabited
 
 /-- The 𝔽 or ℤ subscript of a literal. -/
@@ -107,8 +85,7 @@ inductive ValLit where
   | null
   | true
   | false
-  /-- `s` decoded; `w` as written where it is not `s` re-escaped (`&`, `<`), else "" -/
-  | str (s : String) (w : String)
+  | str (s : String)
   | nan (sub : Sub)
   | num (sign : Sign) (m : Mag) (sub : Sub)
   /-- `*this*` -/
@@ -119,44 +96,9 @@ inductive ValLit where
   | bigN (n : Numeral)
   deriving BEq, Inhabited
 
-/-- `the X of Y` against `X of Y`. -/
-inductive Article where
-  | the
-  | none
-  deriving BEq, Inhabited
-
-/-- `is either A or B`, `is one of A, B`, `is A or B`, `is neither A nor B`. -/
-inductive AltForm where
-  | either
-  | oneOf
-  | or
-  | neither
-  deriving BEq, Inhabited
-
-/-- A connective's surface: `A and B`, `A, and B`, `A, B, and C`; `A, or if B`. -/
-inductive ConnForm where
-  | plain
-  | comma
-  | orIf
-  /-- `both of the following conditions are true: c1 and c2` (`all` for more; `any` for or) -/
-  | following
-  deriving BEq, Inhabited
-
 inductive Conj where
   | and
   | or
-  deriving BEq, Inhabited
-
-/-- How a list of expressions is written. -/
-inductive ListForm where
-  /-- `(a, b)` -/
-  | paren
-  /-- `a, b` -/
-  | comma
-  /-- `a and b`, `a, b, and c` (or `or`) -/
-  | english (c : Conj)
-  /-- continuation lines `* a` after the step -/
-  | bullets
   deriving BEq, Inhabited
 
 inductive UnOp where
@@ -225,49 +167,11 @@ inductive Callee where
   | prim (p : PrimId)
   deriving BEq, Inhabited
 
-/-- Where a residual prose node goes (the three visible channels). -/
-inductive Channel where
-  /-- not yet assigned: a visible stop in the machine -/
-  | pending
-  /-- (a) a spec-issue candidate (`Decls.reasons`), meaning `p` meanwhile if declared -/
-  | upstream (reason : Nat) (p : Option PrimId)
-  /-- (b) a declared primitive: applied to the prose's holes in order when `wired` (they are
-  its signature's arguments), else a visible stop -/
-  | prim (p : PrimId) (wired : Bool)
-  /-- (c) annotated prose of a kind (`Decls.notes`: prose Assert, choice, host-defined), meaning `p` if declared -/
-  | annotated (kind : Nat) (p : Option PrimId)
-  deriving BEq, Inhabited
-
-/-- A live prose channel's primitive (prose calls it on the holes); none for a residue channel. -/
-def Channel.live? : Channel → Option PrimId
-  | .prim q true | .upstream _ (some q) | .annotated _ (some q) => some q
-  | _ => none
-
-/-- A primitive's documentation: its signature and one-line meaning, as the overlay or the
-residue classifier states them ("" for the notation primitives the machine defines). -/
+/-- A primitive's documentation: its signature and one-line meaning ("" for notation primitives). -/
 structure PrimDoc where
   sig : String
   meaning : String
   deriving BEq, Inhabited
-
-/-- An erratum, by its row of the overlay's readings table. -/
-abbrev ErratumId := Nat
-
-/-- A reading of an erratum's step: the pinned text, what test262 requires, or our fix. -/
-inductive Reading where
-  | literal
-  | test262
-  | proposed
-  /-- the overlay's reading of prose steps (`<emu-reading steps=…>`), the only one it gives -/
-  | definition
-  deriving BEq, Inhabited
-
-/-- The alternative a step's readings take under the errata's readings `rd`: a definition reading's (its one
-alternative, `.definition`) whatever `rd` says, for it is no choice; an erratum's, the one `rd e` names if the step
-has it (else the pinned step, `none`). -/
-def Reading.pick {α : Type} (rd : ErratumId → Reading) (e : ErratumId) : List (Reading × α) → Option (Reading × α)
-  | [(.definition, a)] => some (.definition, a)
-  | alts => alts.find? (·.1 == rd e)
 
 /-- The kinds of Abstract Closure literal. -/
 inductive CloKind where
@@ -297,22 +201,22 @@ inductive Expr where
   /-- `|NT[+P, ~Q]|`: a grammar symbol and its parameters (`true`: `+`) -/
   | nt (n : NtId) (args : List (ParamId × Bool))
   /-- inline `<emu-grammar>`: its GL productions (one per presence of its optional symbols) -/
-  | prod (ps : List ProdId) (raw : String)
+  | prod (ps : List ProdId)
   /-- `0x002E (FULL STOP)` -/
   | codeUnit (n : Nat) (digits : String) (name : Option String)
   /-- `U+002D (HYPHEN-MINUS)` -/
   | codePoint (n : Nat) (digits : String) (name : Option String)
-  /-- `` `code` ``: decoded; `w` as written where it is not `s` re-escaped, else "" -/
-  | code (s : String) (w : String)
+  /-- `` `code` `` -/
+  | code (s : String)
   /-- `` `super` `` where a grammar symbol is meant: the terminal symbol of that text -/
   | term (s : String)
   | call (f : Callee) (args : List Expr)
   /-- algorithm `a` on `args` at the Parse Node the steps run at -/
   | callAt (a : AlgId) (args : List Expr)
-  /-- `the SDO of X [with argument(s) …]`; `ctxRead` for execution-context components -/
-  | sdo (s : SdoId) (a : Article) (subject : Expr) (args : List Expr)
+  /-- `the SDO of X [with argument(s) …]` -/
+  | sdo (s : SdoId) (subject : Expr) (args : List Expr)
   /-- `the LexicalEnvironment of _ctx_` -/
-  | component (c : FieldId) (a : Article) (subject : Expr)
+  | component (c : FieldId) (subject : Expr)
   /-- `_e_.[[F]]` -/
   | field (e : Expr) (f : FieldId)
   /-- `_e_.[[M]](args)` -/
@@ -327,49 +231,33 @@ inductive Expr where
   | q (e : Expr)
   /-- `! e` -/
   | bang (e : Expr)
-  /-- `! e` at a site of erratum `r` (readings.emu `stops=`): an abrupt completion stops as `r` -/
-  | bangAt (r : ErratumId) (e : Expr)
-  /-- `e` at a site of erratum `r`: a failed check in it, its callees' included, stops as `r` (a caller's
-  step), and when `sort` a sort error too (a field chain) -/
-  | erratum (r : ErratumId) (sort : Bool) (e : Expr)
   | un (o : UnOp) (e : Expr)
   | bin (o : BinOp) (a b : Expr)
   | paren (e : Expr)
   /-- `« a, b »` -/
   | list (es : List Expr)
-  /-- `Record { [[F]]: e, … }`, `the Completion Record { … }`, `{ }`; `kind` is a sort name -/
-  | record (a : Article) (kind : Option SortId) (fs : List (FieldId × Expr))
+  /-- `Record { [[F]]: e, … }`, `{ }`; `kind` is a sort name -/
+  | record (kind : Option SortId) (fs : List (FieldId × Expr))
   /-- `the Completion Record with which _ctx_ was just resumed` -/
   | resumedWith (ctx : Expr)
   /-- `this Parse Node`: the node an SDO row runs at -/
   | thisNode
-  /-- `the first |X|`, `the second |X|`, `the third |X|` (k 0–2), `the fourth |X|` (7), `the derived |X|` (3), `the |X|` (4),
-  `|X|` (5): an occurrence of a nonterminal in this production's right-hand side; `|X|` (6): its
-  left-hand side, the Parse Node itself; elsewhere `|X|` is a grammar symbol (`nt`) -/
-  | child (k : Nat) (n : NtId) (suffix : String)
-  /-- `|X|` inside `If |Y| is <emu-grammar>P</emu-grammar>` with `X` on P's right-hand side: the child
-  of the node `e` (`|Y|`) -/
-  | childOf (e : Expr) (n : NtId) (suffix : String)
-  /-- `the *this* value` (`bare`: `*this* value`) of a built-in function (§10.3.1): its algorithm's
-  hidden slot 0 -/
-  | thisValue (bare : Bool)
+  /-- `the first |X|`, …, `|X|` (k): an occurrence of a nonterminal in this production -/
+  | child (k : Nat) (n : NtId)
+  /-- `|X|` of node `e` through its unit chain -/
+  | childOf (e : Expr) (n : NtId)
+  /-- `the *this* value` of a built-in function (§10.3.1): its algorithm's hidden slot 0 -/
+  | thisValue
   /-- `NewTarget` of a built-in function: its algorithm's hidden slot 1 -/
   | newTarget
-  /-- `<emu-meta effects="…">e</emu-meta>` -/
-  | annot (attrs : List Attr) (e : Expr)
-  | xref (x : Xref)
+  | xref (c : ClauseId)
   /-- an Abstract Closure literal: its index in the algorithm's `closures` -/
   | closure (site : Nat)
-  /-- an `emu-xref` to table `t` -/
-  | table (t : TableId) (x : Xref)
-  /-- `the definition specified in <xref>`: the algorithm of the clause `x` names; `asSpecified` when written `Set p as specified in <xref>` -/
-  | definition (x : Xref) (asSpecified : Bool)
+  | table (t : TableId)
+  /-- `the definition specified in <clause>`: the algorithm of `c` -/
+  | definition (c : ClauseId)
   /-- `the value that k corresponds to in <table t>`: the step cell of the row `k` selects -/
-  | tableStep (t : TableId) (key : Expr) (x : Xref)
-  /-- `the largest T _x_ (closest to +∞) such that c` (`max`), or `the smallest … (closest to -∞) …` -/
-  | extreme (max : Bool) (x : Slot) (ty : TyExpr) (c : Cond)
-  | phrase (p : PhraseId) (holes : List Hole)
-  | prose (ch : Channel) (parts : List Part)
+  | tableStep (t : TableId) (key : Expr)
   /-- a variable read as a bound-variable hole: one not yet bound is `.absent` -/
   | bnd (x : Slot)
   | data (d : DataLit)
@@ -378,9 +266,8 @@ inductive Expr where
 
 /-- A predicate of a subject: `is v`, `is not either a String or a Symbol`, `is present`. -/
 inductive Pred where
-  | isVal (neg : Bool) (f : AltForm) (vs : List Expr)
-  | isTy (neg : Bool) (f : AltForm) (ts : List TyExpr)
-  | phrase (p : PhraseId) (holes : List Hole)
+  | isVal (neg neither : Bool) (vs : List Expr)
+  | isTy (neg neither : Bool) (ts : List TyExpr)
   /-- `f` on `args` and then the subject, a Boolean; negated when `neg` -/
   | call (f : Callee) (args : List Expr) (neg : Bool)
 
@@ -389,15 +276,11 @@ inductive Cond where
   /-- a subject and the predicates it shares: `e is finite and is not v` -/
   | preds (e : Expr) (p : Pred) (rest : List (Conj × Pred))
   | rel (o : RelOp) (a b : Expr)
-  | and (f : ConnForm) (cs : List Cond)
-  | or (f : ConnForm) (cs : List Cond)
+  | and (cs : List Cond)
+  | or (cs : List Cond)
   | paren (c : Cond)
-  /-- `the following algorithm returns *true*:` and algorithm `a`'s `emu-alg` (printed as its
-  own), run at the rule's Parse Node -/
+  /-- `the following algorithm returns *true*:` -/
   | alg (a : AlgId)
-  /-- a condition phrase: `the host is a web browser`, `lo ≤ x < hi` -/
-  | phrase (p : PhraseId) (holes : List Hole)
-  | prose (ch : Channel) (parts : List Part)
   /-- an expression's value, a Boolean -/
   | expr (e : Expr)
   /-- an unchecked condition by its key: an Assert passes over it, elsewhere a residue -/
@@ -405,51 +288,24 @@ inductive Cond where
 
 /-- Type expressions: header types and the type nouns of steps. -/
 inductive TyExpr where
-  /-- `a Number`, `an ordinary object`, `the Property Descriptor`; modifiers are sort names;
-  `w`: the sort's words as written where they are another form of its name (a plural), else "" -/
-  | sort (a : String) (mods : List SortId) (s : SortId) (w : String)
-  | listOf (a : String) (t : TyExpr)
-  /-- `A or B`, `either A, B, or C`, `one of …`; `comma` for `either A, or B` (a nested list before) -/
-  | union (f : AltForm) (c : ConnForm) (ts : List TyExpr)
+  | sort (mods : List SortId) (s : SortId)
+  | listOf (t : TyExpr)
+  | seqOf (t : TyExpr)
+  | butNot (base exc : TyExpr)
+  | doc (text : String)
+  | union (ts : List TyExpr)
   /-- `a normal completion containing T` -/
   | completion (normal : Option TyExpr)
   /-- `an integer in the inclusive interval from a to b` -/
   | interval (t : TyExpr) (lo hi : Expr)
   | value (v : Expr)
-  /-- `a _t_`: the type a type hole holds; the article as written -/
-  | var (a : String) (x : Slot)
-  /-- `a |X|`; the article as written, possibly empty -/
-  | nt (a : String) (n : NtId) (suffix : String)
+  | var (x : Slot)
+  | nt (n : NtId)
   | record (fs : List (FieldId × TyExpr))
   /-- `an Object that has a [[F]] internal slot` -/
   | that (t : TyExpr) (p : Pred) (rest : List (Conj × Pred))
-  | phrase (p : PhraseId) (holes : List Hole)
-  | prose (parts : List Part)
   /-- a predicate as a type: only a pass writes it -/
   | pred (p : Pred)
-
-/-- An argument of a phrase: its kind is fixed by the phrase table's template. -/
-inductive Hole where
-  | e (x : Expr)
-  | c (x : Cond)
-  | t (x : TyExpr)
-  /-- a variable the phrase binds -/
-  | b (x : Slot)
-  /-- a condition over the variables `xs` the phrase binds, in their order: a test of its candidates -/
-  | bc (xs : List Slot) (x : Cond)
-  /-- the alternative a template's choice takes, by index (an optional: 0 present, 1 absent) -/
-  | w (i : Nat)
-  | l (f : ListForm) (xs : List Expr)
-  /-- words as written: a table column's name; after a step's template, its continuation
-  lines, indented from the step's marker -/
-  | text (s : String)
-  /-- words naming a field or component, as its name is written: `the Generator component of e` -/
-  | field (f : FieldId)
-
-/-- A piece of residual prose: verbatim text, or a typed hole inside it. -/
-inductive Part where
-  | text (s : String)
-  | hole (h : Hole)
 end
 
 /-- The place `Set` writes. -/
@@ -462,14 +318,11 @@ mutual
 /-- A step's body: an inline statement (`If c, return x.`) or nested steps. -/
 inductive Body where
   | inline (s : Stmt)
-  | block (ss : List Node)
+  | block (ns : List Stmt)
 
-/-- Statement forms (§5.2 and the spec's conventions). Repeated forms that differ only in
-surface keep a variant index `v`, printed by the form's table and ignored by the machine. -/
+/-- Statement forms (§5.2 and the spec's conventions). -/
 inductive Stmt where
   | let_ (x : Slot) (e : Expr)
-  /-- `Let x be e, and let y be f.`-style forms with several binders -/
-  | letMany (xs : List Slot) (e : Expr) (v : Nat)
   | set (p : Place) (e : Expr)
   | ret (e : Option Expr)
   | perform (e : Expr)
@@ -478,32 +331,23 @@ inductive Stmt where
   /-- `If c, S1; else S2.` -/
   | ifElse (c : Cond) (s1 s2 : Stmt)
   | assert (c : Cond)
-  /-- `Assert: c` at a site of erratum `r`, checked in every mode: a false `c` stops as `r`; `none` at a
-  site with a caller condition, a failed Assert that the caller's `erratum` relabels -/
-  | assertAt (r : Option ErratumId) (c : Cond)
+  | assertAlways (c : Cond)
   /-- `Assert: If c, then d.` -/
   | assertIf (c d : Cond)
   /-- `Assert: This step is never reached.` and the `assert-meta` forms -/
   | unreachable (v : Nat)
-  /-- `Throw a *TypeError* exception.` -/
-  | throwErr (e : ErrorId)
   | throwVal (e : Expr)
-  | note (text : List Part)
-  | repeat_ (b : List Node)
-  | repeatWhile (c : Cond) (b : List Node)
-  | repeatUntil (c : Cond) (b : List Node)
+  | note (text : String)
+  | repeat_ (b : List Stmt)
+  | repeatWhile (c : Cond) (b : List Stmt)
+  | repeatUntil (c : Cond) (b : List Stmt)
   /-- `For each element e of L, do` / `For each T e of L, do`; `ty` for the typed form; `rev` for reverse List order -/
   | forEach (x : Slot) (ty : Option TyExpr) (l : Expr) (rev : Bool) (b : Body)
   /-- `For each Record { [[A]], [[B]] } r of L, do` -/
   | forEachRec (fs : List FieldId) (x : Slot) (l : Expr) (b : Body)
   /-- `For each integer i such that lo ≤ i < hi, in ascending order, do` -/
   | forRange (x : Slot) (lo : Expr) (loIncl : Bool) (hi : Expr) (hiIncl : Bool) (desc : Bool) (b : Body)
-  /-- `Append e to L.`, `Remove …`, `Insert …`, … : the spec's mutations, by phrase -/
-  | mutate (p : PhraseId) (holes : List Hole)
-  /-- `For each _T_ _x_ such that _c_, do` over a domain the text names only by _T_ and _c_ -/
-  | forSuchThat (x : Slot) (ty : TyExpr) (c : Cond) (order : Option Nat) (b : Body)
-  /-- `For each own property key _P_ of _O_ such that _c_, in … order, do`; order 0 ascending numeric
-  index, 1 ascending chronological order of property creation, 2 descending numeric index -/
+  /-- `For each own property key _P_ of _O_ such that _c_, in … order, do` -/
   | forKeys (x : Slot) (o : Expr) (c : Cond) (order : Nat) (b : Body)
   /-- `For each index _i_ of _L_, do` -/
   | forIndex (x : Slot) (l : Expr) (b : Body)
@@ -512,9 +356,7 @@ inductive Stmt where
   /-- `For each child node _child_ of E, do` -/
   | forChildrenOf (x : Slot) (e : Expr) (b : Body)
   /-- `Repeat _n_ times:` -/
-  | repeatN (n : Expr) (b : List Node)
-  /-- `Return _e_ (see xref).`: `Return _e_` -/
-  | retSee (e : Expr) (see : Xref)
+  | repeatN (n : Expr) (b : List Stmt)
   /-- `Suspend _ctx_.` (`v` 0); `Suspend _ctx_ and remove it from the execution context stack.` (1) -/
   | suspend (ctx : Expr) (v : Nat)
   /-- `Push _ctx_ onto the execution context stack; _ctx_ is now the running execution context.` -/
@@ -529,44 +371,27 @@ inductive Stmt where
   | resumeTop
   /-- `Resume the suspended evaluation of _ctx_ passing _c_ as the result of the operation that
   suspended it. Let _x_ be the Completion Record passed by the resumed computation.` -/
-  | resumeLet (ctx c : Expr) (x : Slot) (annot : List Attr)
+  | resumeLet (ctx c : Expr) (x : Slot)
   /-- `Resume _ctx_, passing _c_.` -/
   | resume (ctx c : Expr)
   /-- `Set the code evaluation state of _ctx_ such that when evaluation is resumed for that execution
   context, _clo_ will be called with no arguments.` -/
   | setCodeState (ctx clo : Expr)
-  /-- a step with an erratum: the pinned step, and the other readings' steps (`<emu-reading>`) -/
-  | readings (e : ErratumId) (lit : Stmt) (alts : List (Reading × List Node))
-  /-- `Find a T _x_ such that c; but if this is not possible (reason), S.` -/
-  | findSuchThat (x : Slot) (ty : TyExpr) (c : Cond) (reason : String) (fail : Stmt)
-  /-- `Let _xs_ be integers such that c, and o is as small as possible`: the slots bound to integers
-  c holds of, best on `objs` in order (`true`: as large as possible, `false`: as small as possible) -/
-  | letSuchThat (xs : List Slot) (c : Cond) (objs : List (Bool × Expr))
-  /-- `IfAbruptRejectPromise(e, cap).` and the other shorthand macros -/
-  | macro (m : AlgId) (args : List Expr)
-  | phrase (p : PhraseId) (holes : List Hole)
-  | prose (ch : Channel) (parts : List Part)
-  /-- a phrase, mutation or prose step and its nested steps, which its form does not take -/
-  | withSteps (s : Stmt) (sub : List Node)
-  /-- a macro use with its expansion's steps, their parameters renamed to the use's variables
-  (`Alg.expandMacros`) -/
-  | expanded (m : AlgId) (args : List Expr) (body : List Node)
+  /-- a block of steps (for instance, a macro expansion) -/
+  | block (ns : List Stmt)
 
-/-- A numbered step: its attributes and statement; layout is regenerated from depth. -/
-inductive Node where
-  | mk (attrs : List Attr) (s : Stmt)
-
-/-- An `Else if c, …` step (`c` present) or an `Else, …` step (`c` absent), with its attributes. -/
+/-- An `Else if c, …` step (`c` present) or an `Else, …` step (`c` absent). -/
 inductive Arm where
-  | mk (attrs : List Attr) (c : Option Cond) (b : Body)
+  | mk (c : Option Cond) (b : Body)
 end
 
 instance : Inhabited Expr := ⟨.var 0⟩
-instance : Inhabited Pred := ⟨.isVal false .or []⟩
-instance : Inhabited Cond := ⟨.and .plain []⟩
-instance : Inhabited TyExpr := ⟨.prose []⟩
+instance : Inhabited Pred := ⟨.isVal false false []⟩
+instance : Inhabited Cond := ⟨.and []⟩
+instance : Inhabited TyExpr := ⟨.doc ""⟩
 instance : Inhabited Stmt := ⟨.ret none⟩
-instance : Inhabited Node := ⟨.mk [] default⟩
+instance : Inhabited Body := ⟨.block []⟩
+instance : Inhabited Arm := ⟨.mk none (.block [])⟩
 
 /-- An Abstract Closure literal: `a new Abstract Closure with parameters (…) that captures …
 and performs the following steps when called:`. Its slots are the algorithm's. -/
@@ -577,7 +402,7 @@ structure CloLit where
   /-- `none`: "with no parameters" -/
   params : Option (List Slot)
   caps : List Slot
-  body : List Node
+  body : List Stmt
   /-- this, NewTarget, the passed arguments List: slots a built-in call binds -/
   frame : Option (Slot × Slot × Slot) := none
 
@@ -609,45 +434,35 @@ structure Header where
   ret : Option TyExpr
   /-- the `for:` receiver and its type -/
   recv : Option (Slot × TyExpr)
-  /-- `description:` prose -/
-  desc : List Part
 
-/-- One algorithm: a clause's `emu-alg` with its header and variable table. -/
+/-- One algorithm: a clause's definition with its header and variable table. -/
 structure Alg where
   id : AlgId
   name : String
   header : Header
   /-- variable names by slot, without underscores: the receiver, the parameters, then the rest -/
   vars : Array String
-  /-- the `emu-alg` element's own attributes -/
-  attrs : List Attr
-  /-- the column of the `emu-alg` tag; steps sit two columns in, two more a level -/
-  indent : Nat
-  body : List Node
+  body : List Stmt
   /-- the Abstract Closure literals, in text order -/
   closures : Array CloLit
 
 /-- How an SDO row is written: an `emu-alg` after its `emu-grammar`, or an equation bullet. -/
 inductive RowForm where
-  | alg (attrs : List Attr)
+  | alg
   | equation
   deriving BEq, Inhabited
 
-/-- A row of a syntax-directed operation: the productions it is keyed by, and its body.
-Children are referred to as `|NT|` (`Expr.nt`) and resolved against the row's productions. -/
+/-- A row of a syntax-directed operation: the productions it is keyed by, and its body. -/
 structure SdoRow where
   id : AlgId
   sdo : SdoId
   prods : List ProdId
-  /-- the row's grammar keys as written, one per `<emu-grammar>` (the productions' text, which
-  `ecma-print` prints and `scripts/bijection.py` compares with spec.html's) -/
+  /-- the row's grammar keys as written -/
   keys : List String
   form : RowForm
-  /-- the column of the `emu-alg` tag -/
-  indent : Nat
   /-- variable names by slot: the SDO's parameters first -/
   vars : Array String
-  body : List Node
+  body : List Stmt
   closures : Array CloLit
   /-- an annex clause's row for its SDO ("are augmented with the following", "is extended as follows") -/
   annex : Bool := false
@@ -655,120 +470,26 @@ structure SdoRow where
 /-- The rows with the annex rows first, so that a later main row on the same key replaces them. -/
 def SdoRow.mainLast (rs : List SdoRow) : List SdoRow := rs.filter (·.annex) ++ rs.filter (!·.annex)
 
-/-- A constructor's `Repr` from its name and arguments, as `deriving Repr` writes it. -/
-def reprCtor (f : Std.Format) (prec : Nat) : Std.Format :=
-  Repr.addAppParen (.group (.nest (if prec >= max_prec then 1 else 2) f)) prec
-
-/-- A list's `Repr` from its elements' formats, as `List.repr` writes it. -/
-def reprList : List Std.Format → Std.Format
-  | [] => "[]"
-  | fs => Std.Format.bracket "[" (Std.Format.joinSep fs ("," ++ Std.Format.line)) "]"
-
-/-- A template piece of the phrase table. -/
-inductive Piece where
-  | word (s : String)
-  /-- a hole: 0 expression, 1 condition, 2 type, 3 binder, 4 steps, 5 list, 6 words -/
-  | hole (kind : Nat)
-  /-- alternatives (an optional part is `[part, []]`), selected by a `Hole.w` -/
-  | choice (alts : List (List Piece))
-  /-- no space before the next piece -/
-  | glue
-  deriving Inhabited
-
-mutual
-/-- `Piece`'s `Repr`, as `deriving Repr` writes it, by structural recursion (a derived one is
-`partial`: `Piece` is nested). -/
-def Piece.repr : Piece → Nat → Std.Format
-  | .word a, prec => reprCtor ("Ecma.Piece.word" ++ .line ++ reprArg a) prec
-  | .hole a, prec => reprCtor ("Ecma.Piece.hole" ++ .line ++ reprArg a) prec
-  | .choice a, prec => reprCtor ("Ecma.Piece.choice" ++ .line ++ reprList (Piece.reprsAlts a)) prec
-  | .glue, prec => reprCtor "Ecma.Piece.glue" prec
-
-/-- The formats of a list of alternatives. -/
-def Piece.reprsAlts : List (List Piece) → List Std.Format
-  | [] => []
-  | ps :: alts => reprList (Piece.reprs ps) :: Piece.reprsAlts alts
-
-/-- The formats of a list of pieces. -/
-def Piece.reprs : List Piece → List Std.Format
-  | [] => []
-  | p :: ps => Piece.repr p 0 :: Piece.reprs ps
-end
-
-instance : Repr Piece := ⟨Piece.repr⟩
-
-mutual
-/-- `Piece`'s `BEq`, as `deriving BEq` writes it, by structural recursion. -/
-def Piece.beq : Piece → Piece → Bool
-  | .word a, .word b => a == b
-  | .hole a, .hole b => a == b
-  | .choice a, .choice b => Piece.beqAlts a b
-  | .glue, .glue => true
-  | _, _ => false
-
-/-- Two lists of alternatives are equal. -/
-def Piece.beqAlts : List (List Piece) → List (List Piece) → Bool
-  | [], [] => true
-  | a :: as, b :: bs => Piece.beqList a b && Piece.beqAlts as bs
-  | _, _ => false
-
-/-- Two lists of pieces are equal. -/
-def Piece.beqList : List Piece → List Piece → Bool
-  | [], [] => true
-  | a :: as, b :: bs => Piece.beq a b && Piece.beqList as bs
-  | _, _ => false
-end
-
-instance : BEq Piece := ⟨Piece.beq⟩
-
-/-- An argument of a phrase's meaning: one of its holes, an enum value, a predicate
-phrase's subject, this Parse Node, or a sort. -/
-inductive PhraseArg where
-  | hole (i : Nat)
-  /-- the last hole, a list hole: its elements, as the last arguments -/
-  | spread (i : Nat)
-  | enum (e : EnumId)
+/-- An argument of a `SortTest`: the value itself (`subject`), or an enum constant. -/
+inductive SortArg where
   | subject
-  /-- the Parse Node the SDO row runs at -/
-  | thisNode
-  /-- a sort, as a type hole of that sort is -/
-  | sort (s : SortId)
-  /-- a field or internal slot name -/
-  | field (f : FieldId)
-  /-- an alternative of the primitive's choice, fixed -/
-  | choice (k : Nat)
+  | enum (e : EnumId)
   deriving BEq, Inhabited
 
-/-- What a phrase means: an algorithm of the overlay (`<emu-phrase>`), or a primitive applied
-to arguments (`neg`: its negation, for a negative predicate phrase). -/
-inductive PhraseMeaning where
-  | alg (a : AlgId)
-  | prim (p : PrimId) (args : List PhraseArg) (neg : Bool)
+/-- A runtime membership test for a data sort: none, an algorithm, or a primitive on `SortArg`s. -/
+inductive SortTest where
   | none
+  | alg (a : AlgId)
+  | prim (p : PrimId) (args : List SortArg) (neg : Bool)
   deriving BEq, Inhabited
-
-/-- Whether a phrase meaning spreads its list hole. -/
-def PhraseMeaning.spreads : PhraseMeaning → Bool
-  | .prim _ args _ => args.any fun | .spread _ => true | _ => false
-  | _ => false
 
 /-- A data sort: its direct supertypes, and its test (the value is the subject); a Record
 sort's values are the Records of its kind and of its subsorts'. -/
 structure SortDef where
   super : List SortId := []
-  test : PhraseMeaning := .none
+  test : SortTest := .none
   /-- its values are the Records of this kind -/
   record : Bool := false
-  /-- the predicate phrase over the context's variable that refines its test where that variable is in scope -/
-  context : Option PhraseId := none
-  deriving BEq, Inhabited
-
-/-- A phrase-table row: its category (statement, expression, condition, type, place),
-template, and meaning. -/
-structure Phrase where
-  cat : Nat
-  template : List Piece
-  meaning : PhraseMeaning
   deriving BEq, Inhabited
 
 /-- A terminal of a grammar's right-hand side (§5.1.6): its source text, or a code point by its
@@ -786,40 +507,28 @@ structure Decls where
   fields : Array String
   enums : Array String
   sdos : Array String
+  methods : Array String
   nts : Array String
   /-- GL's grammatical parameters, by `ParamId` -/
   params : Array String
   prods : Array String
   prims : Array String
-  sorts : Array String
-  methods : Array String
-  phrases : Array Phrase
-  /-- each SDO's header (params and return type), by SDO -/
-  sdoHeaders : Array (Option Header)
   /-- per primitive, its documentation -/
   primDocs : Array PrimDoc
-  /-- residue channel (a)'s spec-issue reasons -/
-  reasons : Array String
-  /-- residue channel (c)'s kinds -/
-  notes : Array String
-  /-- the errata, by name, in the overlay's order (spec/formal/readings.emu) -/
-  errata : Array String
-  /-- per erratum, the reading today's model applies (`pending` as `proposed`) -/
-  parity : Array Reading
-  /-- each sort's definition (`spec/formal/sorts.emu`), by `SortId`; none for `Known`'s
-  sorts, which the value decides -/
+  sorts : Array String
+  /-- each sort's definition, by `SortId`; none for `Known`'s sorts, which the value decides -/
   sortDefs : Array (Option SortDef) := #[]
-  /-- per SDO, the algorithm its clause gives every production it lists no row for ("implicitly
-  has the following default definition"), by `SdoId` -/
+  /-- each SDO's header (params and return type), by SDO -/
+  sdoHeaders : Array (Option Header)
+  /-- per SDO, the algorithm its clause gives every production it lists no row for, by `SdoId` -/
   sdoDefaults : Array (Option AlgId) := #[]
+  /-- clauses whose Job completions are checked in every mode (§9.5) -/
+  checkedJobs : Array ClauseId := #[]
   /-- the nonterminals each of whose main-grammar right-hand sides is one terminal, with those
   terminals in grammar order -/
   alts : Array (NtId × List GTerminal) := #[]
-  /-- per clause a production-in phrase names, the productions defined in it (with the Annex B
-  overlays of a grammar it wholly defines) -/
+  /-- per clause a production-in phrase names, the productions defined in it -/
   clauseProds : Array (ClauseId × List ProdId) := #[]
-  /-- the literal errata whose text stops at the job loop's check (§9.5) for a Job its clause makes -/
-  jobErrata : Array (ClauseId × ErratumId) := #[]
 
 /-! Names the machine refers to: `crates/spec-gen` interns these first, at these indices. -/
 namespace Known
@@ -1331,27 +1040,12 @@ def pHostExtendIntrinsics : PrimId := 262
 /-- HostExtendObject(o): the host's additional own properties of the object o the steps have just created. -/
 def pHostExtendObject : PrimId := 263
 
-/-- Phrases the machine uses: "a newly created *E* object". -/
-def phNewError : PhraseId := 0
-/-- "_s_'s F" (prim Component): a place in `Set _ctx_'s LexicalEnvironment to …`. -/
-def phPoss : PhraseId := 22
-/-- "the F component of _s_" (prim Component): a place in `Set the Generator component of _genContext_ to …`. -/
-def phComponentOf : PhraseId := 237
+/-- `NewError`: the helper clause constructing `*Error*` objects (`⟨2570, 0⟩`). -/
+def algNewError : AlgId := ⟨2570, 0⟩
+/-- Primitive id for unresolved prose (`$""`). -/
+def resPrim : PrimId := 100000
 
 def sdoEarlyErrors : SdoId := 0
-
-/-- `the |X| of n` through n's unit chain. -/
-def erUnitChainChild : ErratumId := 0
-/-- A lookahead reads past the inserted semicolons. -/
-def erLookaheadSourceTokens : ErratumId := 3
-/-- B.1.1's |HTMLCloseComment| input element is a comment. -/
-def erHTMLCloseCommentToken : ErratumId := 4
-/-- B.1.2's ordered alternatives as commitment. -/
-def erAnnexBRegExpOrder : ErratumId := 5
-/-- B.1.2's group count read from a committed parse with the condition true. -/
-def erAnnexBGroupCount : ErratumId := 6
-/-- A covered node's parent is its cover's parent. -/
-def erCoveredNodeParent : ErratumId := 8
 end Known
 
 /-- The enum of ClosureKind that names a literal's kind; none for "a new Abstract Closure". -/
@@ -1362,12 +1056,9 @@ def CloKind.enumId : CloKind → Option EnumId
   | .matcherContinuation => some Known.eMatcherContinuation
   | .readModifyWrite => some Known.eReadModifyWrite
 
-/-- A field written as an expression, as a place: its field and subject. `the F of _s_`, and the
-phrases of prim Component `_s_'s F` and `the F component of _s_` (kept as phrases for printing). -/
+/-- A field written as an expression, as a place: its field and subject. -/
 def Expr.fieldPlace? : Expr → Option (FieldId × Expr)
-  | .component f _ s => some (f, s)
-  | .phrase p [.e s, .field f] => if p == Known.phPoss then some (f, s) else none
-  | .phrase p [.field f, .e s] => if p == Known.phComponentOf then some (f, s) else none
+  | .component f s => some (f, s)
   | _ => none
 
 end Ecma

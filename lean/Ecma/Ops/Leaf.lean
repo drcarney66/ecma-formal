@@ -64,13 +64,9 @@ def unitChain : Nat → M.Node → List M.Node
       | _ => []
     | none => []
 
-/-- The nodes `the |X| of nd` reads: `nd`'s unit chain, or `nd` alone under UnitChainChild's literal reading. -/
-def childChain (nd : M.Node) : List M.Node :=
-  if D.reading Known.erUnitChainChild == .literal then [nd] else unitChain D 64 nd
-
-/-- `the |X| of nd`: the child `nt` of the first node of `childChain` whose production has one. -/
+/-- `the |X| of nd`: the child `nt` of the first node of `nd`'s unit chain whose production has one. -/
 def nodeChildOf (nt : NtId) (nd : M.Node) : Run M (Val M) :=
-  match (childChain D nd).findSome? (M.nodeChild · nt 0) with
+  match (unitChain D 64 nd).findSome? (M.nodeChild · nt 0) with
   | some (some c) => Run.pure (.node c)
   | some none => Run.pure .absent
   | none => Run.stop .sortError
@@ -140,7 +136,7 @@ def sortVals : List (Val M) → Option (List SortId)
 
 /-- NewRecord's modifiers and sort: a type value of a sort, or the sort and then its modifiers. -/
 def tyArg : List (Val M) → Option (List SortId × SortId)
-  | [.ty (.sort _ mods s _) ..] => some (mods, s)
+  | [.ty (.sort mods s) ..] => some (mods, s)
   | .sort s :: m :: ms => (sortVals (m :: ms)).map (·, s)
   | _ => none
 
@@ -162,7 +158,7 @@ def tyNt (k : NtId) : PM M n := fun _ v => match v with
   | .str t => do
     let cx : ParseCx := ⟨← D.annexB, false, false, k == Grammar.NT.Module.ctorIdx⟩
     let st ← newParse cx
-    match M.parse D.reading cx st (Prims.Strings.strPoints t) k [] with
+    match M.parse cx st (Prims.Strings.strPoints t) k [] with
     | some r => return r.isSome
     | none => Run.stop .residue
   | _ => return false

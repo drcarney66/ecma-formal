@@ -1,0 +1,7 @@
+-- ECMA-262 SpecTec Clauses: S05
+
+def @sec-completion-ao "Completion" (kind ao params [completionRecord : #"Completion Record"] -> #"Completion Record") vars [completionRecord] {
+  assert completionRecord is ty {#"Completion Record"}
+  return completionRecord
+}
+

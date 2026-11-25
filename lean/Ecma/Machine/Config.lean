@@ -20,25 +20,22 @@ open Ecma
 
 variable {M : Model}
 
-/-- What the machine runs: the program's code, the host, the reading chosen for each erratum (the code holds a
-definition reading's steps with no choice), and whether Asserts are checked. -/
+/-- What the machine runs: the program's code, the host, and whether Asserts are checked. -/
 structure Ctx (M : Model) where
   prog : Prog'
   H : Host M
-  rd : ErratumId → Reading
   chk : Bool
 
 /-- The program's static fields. -/
 abbrev Ctx.P (X : Ctx M) : Prog := X.prog.P
 
 /-- A call the machine makes, with its argument values: an algorithm, an SDO at a Parse Node, a closure, an internal
-method, a phrase, a primitive, a sort's test, a table step, the early errors, a cover test or the host's Jobs. -/
+method, a primitive, a sort's test, a table step, the early errors, a cover test or the host's Jobs. -/
 inductive Call (M : Model) where
   | alg (a : AlgId) (vs : List (Val M))
   | sdo (s : SdoId) (nd : M.Node) (vs : List (Val M))
   | clo (site : CloSite) (caps vs : List (Val M))
   | cmethod (m : MethodId) (r : Val M) (vs : List (Val M))
-  | phrase (p : PhraseId) (nd : Option M.Node) (vs : List (Val M))
   | callAt (a : AlgId) (nd : M.Node) (vs : List (Val M))
   | prim (q : PrimId) (vs : List (Val M))
   | sort (s : SortId) (v : Val M)
@@ -117,13 +114,11 @@ def leafCtx (X : Ctx M) : LeafCtx M :=
   { sub := subSort X.P 64
     unit := X.P.unit
     terms := X.P.terms
-    spread := fun p => (X.P.phrase p).spreads
     overlayClause := X.P.overlayClause
     annexB := hostSections X
-    reading := X.rd
     checked := X.chk
     exhausts := X.H.exhausts
-    jobErratum := X.P.jobErratum }
+    jobChecked := X.P.jobChecked }
 
 /-- A constant's value. -/
 def constV : Const → Run M (Val M)
@@ -147,7 +142,6 @@ def leaf (D : LeafCtx M) : Leaf → List (Val M) → Run M (Val M)
   | .field f, [v] => readField v f
   | .q, [v] => question D.checked v
   | .bang, [v] => bang D.checked v
-  | .bangAt r, [v] => bangAt D.checked (Stop.at D.reading r .assertFailed) v
   | .un o, [v] => unOp o v
   | .bin o, [a, b] => binOp o a b
   | .rel o, [a, b] => do return .bool (← relOp o a b)
@@ -203,9 +197,6 @@ def Cfg.push (c : Cfg M) (k : Kont M) : Cfg M :=
   | f :: fs => { c with frames := { f with konts := k :: f.konts } :: fs }
   | [] => { c with frames := [⟨⟨0, 0⟩, none, #[], .eval, [], [k], none⟩] }
 
-/-- A stop in `c` as it leaves `c`'s frames, innermost first. -/
-def Cfg.label (c : Cfg M) (q : Stop) : Stop := c.frames.foldl (fun q f => f.kind.label q) q
-
 /-- The innermost frame (a holder frame when there is none). -/
 def Cfg.top (c : Cfg M) : Frame M := c.frames.headD ⟨⟨0, 0⟩, none, #[], .eval, [], [], none⟩
 
@@ -248,13 +239,13 @@ def bindR {α : Type} (c : Cfg M) (r : Run M α) (k : α → Cfg M → Out M) : 
   match r s with
   | .ok a t => k a ⟨t, fr, ctl⟩
   | .esc v t => .inl ⟨t, fr, .esc v⟩
-  | .stop e => .inr (.stop (fr.foldl (fun q f => f.kind.label q) e))
+  | .stop e => .inr (.stop e)
 
 /-- A leaf computation's value, to the next continuation. -/
 def leafV (c : Cfg M) (r : Run M (Val M)) : Out M := bindR c r fun v c => c.to (.val v)
 
-/-- A stop at `c`, labelled by its frames. -/
-def stopF (c : Cfg M) (r : Stop) : Out M := .inr (.stop (c.label r))
+/-- A stop at `c`. -/
+def stopF (_c : Cfg M) (r : Stop) : Out M := .inr (.stop r)
 
 /-- A form the machine does not run. -/
 def todoF (form : String) : Out M := .inr (.todo form)

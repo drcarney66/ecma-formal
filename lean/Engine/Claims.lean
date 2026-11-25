@@ -33,7 +33,7 @@ the specification's step. Every row of the table is proved (`Proofs/Step/`); a p
 (`Engine.P'`, tables of thunks) is the specification's program (`Engine.P'_eq : Engine.P' = Spec.program hostAlgs`).
 
 The set-ups covered: `ecma-run` by default and with `--no-accel` (`Engine.Cli.dispatchOf` builds `Engine.setupAt`),
-whatever `--checked`, `--reading`, `--erratum`, `--literal`, `--max-heap`, the host's options (`--host-seed`,
+whatever `--checked`, `--max-heap`, the host's options (`--host-seed`,
 `--web-browser`, `--annex-b`, `--can-block`, `--resize-in-place`), the trace, `--sites` and `--cover` (the loop's
 observers are the identity to the logic). Outside the claim: the debugger's loop
 (`Debugger.Machine.runW`, `partial`).
@@ -78,7 +78,7 @@ def implementation (o : Engine.Host.HostOpts) (cells : Engine.Host.Cells) (mc : 
     Ecma.Implementation Impl where
   extras := hostAlgs
   host := hostBy o cells
-  step rd chk := Engine.Machine.stepE (setupAt (hostBy o cells) mc accel rd chk)
+  step chk := Engine.Machine.stepE (setupAt (hostBy o cells) mc accel chk)
 
 end Engine
 
@@ -89,7 +89,7 @@ open Ecma Ecma.Machine
 /-- Parent's laws, proved. -/
 theorem parentLaws : Model.ParentLaws Impl := Engine.Impl.parentLaws
 
-/-- The Parse Node accessors' laws, proved, over the specification's GL under the engine's readings
+/-- The Parse Node accessors' laws, proved, over the specification's GL
 (`Engine.Impl.grammarCtx`), whatever the parse's context: a Parse Node `parse` gives, and a covered node `cover`
 gives, has passed the check that every node's children are its production's occurrences (`Engine.shapeOk`). -/
 theorem nodeLaws (cx : Grammar.Ctx) (P : Grammar.CodePrims) (strict : Bool) :

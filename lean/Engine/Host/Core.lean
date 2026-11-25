@@ -171,13 +171,11 @@ def printBuiltin : Alg := {
   id := printAlg
   name := "print"
   header := { kind := .builtin, params := [{ x := 2, ty := none, optional := false, rest := false }],
-              ret := none, recv := none, desc := [] }
+              ret := none, recv := none }
   vars := #["this value", "NewTarget", "value", "string"]
-  attrs := []
-  indent := 0
-  body := [.mk [] (.let_ 3 (.q (.call (.alg ⟨(N.clauseOf? "sec-tostring").getD 0, 0⟩) [.var 2]))),
-    .mk [] (.perform (.call (.alg ⟨printClause, 0⟩) [.var 3])),
-    .mk [] (.ret (some (.val .undefined)))]
+  body := [.let_ 3 (.q (.call (.alg ⟨(N.clauseOf? "sec-tostring").getD 0, 0⟩) [.var 2])),
+    .perform (.call (.alg ⟨printClause, 0⟩) [.var 3]),
+    .ret (some (.val .undefined))]
   closures := #[] }
 
 /-- `print`'s line, written to the host's output. -/
@@ -195,15 +193,13 @@ def detachBuiltin : Alg :=
   { id := detachAlg
     name := "$262.detachArrayBuffer"
     header := { kind := .builtin, params := [{ x := 2, ty := none, optional := false, rest := false }],
-                ret := none, recv := none, desc := [] }
+                ret := none, recv := none }
     vars := #["this value", "NewTarget", "buffer"]
-    attrs := []
-    indent := 0
-    body := [.mk [] (.perform (.q (.call (alg "sec-requireinternalslot") [.var 2, .fieldName ((N.field? "ArrayBufferData").getD 0)]))),
-      .mk [] (.if_ (.preds (.call (alg "sec-issharedarraybuffer") [.var 2]) (.isVal false .or [.val .true]) [])
-        (.inline (.throwErr ((N.field? "TypeError").getD 0))) [] none),
-      .mk [] (.perform (.q (.call (alg "sec-detacharraybuffer") [.var 2]))),
-      .mk [] (.ret (some (.val .null)))]
+    body := [.perform (.q (.call (alg "sec-requireinternalslot") [.var 2, .fieldName ((N.field? "ArrayBufferData").getD 0)])),
+      .if_ (.preds (.call (alg "sec-issharedarraybuffer") [.var 2]) (.isVal false false [.val .true]) [])
+        (.inline (.throwVal (.call (.alg Known.algNewError) [.fieldName ((N.field? "TypeError").getD 0)]))) [] none,
+      .perform (.q (.call (alg "sec-detacharraybuffer") [.var 2])),
+      .ret (some (.val .null))]
     closures := #[] }
 
 /-- `$262.createRealm`'s behaviour. -/
@@ -216,18 +212,16 @@ def createRealmBuiltin : Alg :=
   let running : Expr := .call (.prim Known.pRunning) []
   { id := createRealmAlg
     name := "$262.createRealm"
-    header := { kind := .builtin, params := [], ret := none, recv := none, desc := [] }
+    header := { kind := .builtin, params := [], ret := none, recv := none }
     vars := #["this value", "NewTarget", "callerContext", "status", "newContext", "realm"]
-    attrs := []
-    indent := 0
-    body := [.mk [] (.let_ 2 running),
-      .mk [] (.let_ 3 (.call (alg "sec-completion-ao") [.call (alg "sec-initializehostdefinedrealm") []])),
-      .mk [] (.let_ 4 running),
-      .mk [] (.let_ 5 (.call (.prim Known.pCurrentRealm) [])),
-      .mk [] (.removeRestore (.var 4) (.var 2)),
-      .mk [] (.perform (.q (.var 3))),
-      .mk [] (.ret (some (.q (.call (alg "sec-get-o-p")
-        [.field (.var 5) ((N.field? "GlobalObject").getD 0), .val (.str "$262" "")]))))]
+    body := [.let_ 2 running,
+      .let_ 3 (.call (alg "sec-completion-ao") [.call (alg "sec-initializehostdefinedrealm") []]),
+      .let_ 4 running,
+      .let_ 5 (.call (.prim Known.pCurrentRealm) []),
+      .removeRestore (.var 4) (.var 2),
+      .perform (.q (.var 3)),
+      .ret (some (.q (.call (alg "sec-get-o-p")
+        [.field (.var 5) ((N.field? "GlobalObject").getD 0), .val (.str "$262")])))]
     closures := #[] }
 
 /-- `$262.evalScript`'s behaviour. -/
@@ -238,22 +232,20 @@ Realm Record, *undefined*) (a List of errors: a throw completion of the first); 
 Completion(ScriptEvaluation(_s_)). -/
 def evalScriptBuiltin : Alg :=
   let alg (sec : String) : Callee := .alg ⟨(N.clauseOf? sec).getD 0, 0⟩
-  let errors : Cond := .preds (.var 4) (.isTy false .or [.listOf "a" (.sort "" [] ((N.sort? "error").getD 0) "errors")]) []
+  let errors : Cond := .preds (.var 4) (.isTy false false [.listOf (.sort [] ((N.sort? "error").getD 0))]) []
   { id := evalScriptAlg
     name := "$262.evalScript"
     header := { kind := .builtin, params := [{ x := 2, ty := none, optional := false, rest := false }],
-                ret := none, recv := none, desc := [] }
+                ret := none, recv := none }
     vars := #["this value", "NewTarget", "sourceText", "realm", "s", "status"]
-    attrs := []
-    indent := 0
-    body := [.mk [] (.if_ (.preds (.var 2) (.isTy true .or [.sort "a" [] Known.sString ""]) [])
-        (.inline (.throwErr ((N.field? "TypeError").getD 0))) [] none),
-      .mk [] (.let_ 3 (.call (.prim Known.pCurrentRealm) [])),
-      .mk [] (.let_ 4 (.call (alg "sec-parse-script") [.var 2, .var 3, .val .undefined])),
-      .mk [] (.if_ errors (.inline (.ret (some (.call (alg "sec-throwcompletion")
-        [.index (.var 4) (.math .none (.num (.dec 0)))])))) [] none),
-      .mk [] (.let_ 5 (.call (alg "sec-runtime-semantics-scriptevaluation") [.var 4])),
-      .mk [] (.ret (some (.call (alg "sec-completion-ao") [.var 5])))]
+    body := [.if_ (.preds (.var 2) (.isTy true false [.sort [] Known.sString]) [])
+        (.inline (.throwVal (.call (.alg Known.algNewError) [.fieldName ((N.field? "TypeError").getD 0)]))) [] none,
+      .let_ 3 (.call (.prim Known.pCurrentRealm) []),
+      .let_ 4 (.call (alg "sec-parse-script") [.var 2, .var 3, .val .undefined]),
+      .if_ errors (.inline (.ret (some (.call (alg "sec-throwcompletion")
+        [.index (.var 4) (.math .none (.num (.dec 0)))])))) [] none,
+      .let_ 5 (.call (alg "sec-runtime-semantics-scriptevaluation") [.var 4]),
+      .ret (some (.call (alg "sec-completion-ao") [.var 5]))]
     closures := #[] }
 
 /-- `$262.IsHTMLDDA`'s behaviour. -/
@@ -263,11 +255,9 @@ def isHTMLDDAAlg : AlgId := ⟨2000009, 0⟩
 def isHTMLDDABuiltin : Alg :=
   { id := isHTMLDDAAlg
     name := "$262.IsHTMLDDA"
-    header := { kind := .builtin, params := [], ret := none, recv := none, desc := [] }
+    header := { kind := .builtin, params := [], ret := none, recv := none }
     vars := #["this value", "NewTarget"]
-    attrs := []
-    indent := 0
-    body := [.mk [] (.ret (some (.val .null)))]
+    body := [.ret (some (.val .null))]
     closures := #[] }
 
 /-! HostLoadImportedModule: a host algorithm (`loaderBuiltin`) over the module map, whose clauses
@@ -368,45 +358,43 @@ FinishLoadingImportedModule, synchronously. -/
 def loaderBuiltin : Alg :=
   let alg (sec : String) : Callee := .alg ⟨(N.clauseOf? sec).getD 0, 0⟩
   let fld (n : String) : FieldId := (N.field? n).getD 0
-  let isEmpty (x : Slot) : Cond := .preds (.var x) (.isVal false .or [.enum Known.eEmpty]) []
-  let isStr (x : Slot) (v : String) : Cond := .preds (.var x) (.isVal false .or [.val (.str v "")]) []
-  let errors : Cond := .preds (.var 5) (.isTy false .or [.listOf "a" (.sort "" [] ((N.sort? "error").getD 0) "errors")]) []
-  let isNormal : Cond := .preds (.var 7) (.isTy false .or [.sort "a" [] Known.sNormalComp ""]) []
+  let isEmpty (x : Slot) : Cond := .preds (.var x) (.isVal false false [.enum Known.eEmpty]) []
+  let isStr (x : Slot) (v : String) : Cond := .preds (.var x) (.isVal false false [.val (.str v)]) []
+  let errors : Cond := .preds (.var 5) (.isTy false false [.listOf (.sort [] ((N.sort? "error").getD 0))]) []
+  let isNormal : Cond := .preds (.var 7) (.isTy false false [.sort [] Known.sNormalComp]) []
   let normalC (e : Expr) : Expr := .call (alg "sec-normalcompletion") [e]
   let throwC (e : Expr) : Expr := .call (alg "sec-throwcompletion") [e]
-  let typeError : Expr := .phrase Known.phNewError [.e (.val (.err (fld "TypeError")))]
+  let typeError : Expr := .call (.alg Known.algNewError) [.fieldName (fld "TypeError")]
   let parse : Expr := .call (alg "sec-parsemodule") [.var 6, .call (.prim Known.pCurrentRealm) [], .enum Known.eEmpty]
   let param (x : Slot) : Param := { x, ty := none, optional := false, rest := false }
   { id := loaderAlg N
     name := "HostLoadImportedModule"
-    header := { kind := .ao, params := [param 0, param 1, param 2, param 3], ret := none, recv := none, desc := [] }
+    header := { kind := .ao, params := [param 0, param 1, param 2, param 3], ret := none, recv := none }
     vars := #["referrer", "moduleRequest", "hostDefined", "payload", "specifier", "module", "sourceText", "result",
       "type", "attr"]
-    attrs := []
-    indent := 0
-    body := [.mk [] (.let_ 4 (.call (.alg ⟨keyClause, 0⟩) [.var 0, .field (.var 1) (fld "Specifier")])),
-      .mk [] (.let_ 8 (.enum Known.eEmpty)),
-      .mk [] (.forEach 9 none (.field (.var 1) (fld "Attributes")) false (.block [
-        .mk [] (.if_ (.preds (.field (.var 9) (fld "Key")) (.isVal false .or [.val (.str "type" "")]) [])
-          (.inline (.set (.var 8) (.field (.var 9) (fld "Value")))) [] none)])),
-      .mk [] (.let_ 5 (.call (.alg ⟨loadedClause, 0⟩) [.var 4, .var 8])),
-      .mk [] (.if_ (isEmpty 5) (.block [
-          .mk [] (.let_ 6 (.call (.alg ⟨sourceClause, 0⟩) [.var 4])),
-          .mk [] (.if_ (isEmpty 6) (.inline (.let_ 7 (throwC typeError)))
-            [.mk [] (some (isStr 8 "json")) (.block [
-              .mk [] (.let_ 7 (.call (alg "sec-completion-ao") [.call (alg "sec-parse-json-module") [.var 6]])),
-              .mk [] (.if_ isNormal (.inline (.perform (.call (.alg ⟨storeClause, 0⟩)
-                [.var 4, .var 8, .field (.var 7) (fld "Value")]))) [] none)]),
-             .mk [] (some (.preds (.var 8) (.isVal true .or [.enum Known.eEmpty]) [])) (.inline (.let_ 7 (throwC typeError)))]
-            (some (.mk [] none (.block [
-            .mk [] (.set (.var 5) parse),
-            .mk [] (.if_ errors (.inline (.let_ 7 (throwC (.index (.var 5) (.math .none (.num (.dec 0))))))) []
-              (some (.mk [] none (.block [
-                .mk [] (.perform (.call (.alg ⟨storeClause, 0⟩) [.var 4, .var 8, .var 5])),
-                .mk [] (.let_ 7 (normalC (.var 5)))]))))]))))])
-        [] (some (.mk [] none (.inline (.let_ 7 (normalC (.var 5))))))),
-      .mk [] (.perform (.call (alg "sec-FinishLoadingImportedModule") [.var 0, .var 1, .var 3, .var 7])),
-      .mk [] (.ret (some (.enum Known.eUnused)))]
+    body := [.let_ 4 (.call (.alg ⟨keyClause, 0⟩) [.var 0, .field (.var 1) (fld "Specifier")]),
+      .let_ 8 (.enum Known.eEmpty),
+      .forEach 9 none (.field (.var 1) (fld "Attributes")) false (.block [
+        .if_ (.preds (.field (.var 9) (fld "Key")) (.isVal false false [.val (.str "type")]) [])
+          (.inline (.set (.var 8) (.field (.var 9) (fld "Value")))) [] none]),
+      .let_ 5 (.call (.alg ⟨loadedClause, 0⟩) [.var 4, .var 8]),
+      .if_ (isEmpty 5) (.block [
+          .let_ 6 (.call (.alg ⟨sourceClause, 0⟩) [.var 4]),
+          .if_ (isEmpty 6) (.inline (.let_ 7 (throwC typeError)))
+            [.mk (some (isStr 8 "json")) (.block [
+              .let_ 7 (.call (alg "sec-completion-ao") [.call (alg "sec-parse-json-module") [.var 6]]),
+              .if_ isNormal (.inline (.perform (.call (.alg ⟨storeClause, 0⟩)
+                [.var 4, .var 8, .field (.var 7) (fld "Value")]))) [] none]),
+             .mk (some (.preds (.var 8) (.isVal true false [.enum Known.eEmpty]) [])) (.inline (.let_ 7 (throwC typeError)))]
+            (some (.mk none (.block [
+            .set (.var 5) parse,
+            .if_ errors (.inline (.let_ 7 (throwC (.index (.var 5) (.math .none (.num (.dec 0))))))) []
+              (some (.mk none (.block [
+                .perform (.call (.alg ⟨storeClause, 0⟩) [.var 4, .var 8, .var 5]),
+                .let_ 7 (normalC (.var 5))])))])))])
+        [] (some (.mk none (.inline (.let_ 7 (normalC (.var 5)))))),
+      .perform (.call (alg "sec-FinishLoadingImportedModule") [.var 0, .var 1, .var 3, .var 7]),
+      .ret (some (.enum Known.eUnused))]
     closures := #[] }
 
 /-! The agent's first Job: the program, as algorithms of the host's (§9.6: a host evaluates its scripts and
@@ -432,40 +420,39 @@ def driverAlg (a : AlgId) : Bool := runScriptAlg.clause ≤ a.clause && a.clause
 def firstBuiltins : List Alg :=
   let alg (sec : String) : Callee := .alg ⟨(N.clauseOf? sec).getD 0, 0⟩
   let fld (n : String) : FieldId := (N.field? n).getD 0
-  let st (s : Stmt) : Node := .mk [] s
   let param (x : Slot) : Param := { x, ty := none, optional := false, rest := false }
-  let errors (x : Slot) : Cond := .preds (.var x) (.isTy false .or [.listOf "a" (.sort "" [] ((N.sort? "error").getD 0) "errors")]) []
+  let errors (x : Slot) : Cond := .preds (.var x) (.isTy false false [.listOf (.sort [] ((N.sort? "error").getD 0))]) []
   let throwFirst (x : Slot) : Stmt :=
     .if_ (errors x) (.inline (.ret (some (.call (alg "sec-throwcompletion") [.index (.var x) (.math .none (.num (.dec 0)))])))) [] none
   let state (x : Slot) (e : String) : Cond :=
-    .preds (.field (.var x) (fld "PromiseState")) (.isVal false .or [.enum ((N.enum? e).getD 0)]) []
-  let mk (id : AlgId) (name : String) (n : Nat) (vars : Array String) (body : List Node) : Alg :=
-    { id, name, header := { kind := .ao, params := (List.range n).map param, ret := none, recv := none, desc := [] },
-      vars, attrs := [], indent := 0, closures := #[], body }
+    .preds (.field (.var x) (fld "PromiseState")) (.isVal false false [.enum ((N.enum? e).getD 0)]) []
+  let mk (id : AlgId) (name : String) (n : Nat) (vars : Array String) (body : List Stmt) : Alg :=
+    { id, name, header := { kind := .ao, params := (List.range n).map param, ret := none, recv := none },
+      vars, closures := #[], body }
   [mk runScriptAlg "HostRunScript" 2 #["sourceText", "realm", "s"] [
-      st (.let_ 2 (.call (alg "sec-parse-script") [.var 0, .var 1, .val .undefined])),
-      st (throwFirst 2),
-      st (.ret (some (.call (alg "sec-runtime-semantics-scriptevaluation") [.var 2])))],
+      .let_ 2 (.call (alg "sec-parse-script") [.var 0, .var 1, .val .undefined]),
+      throwFirst 2,
+      .ret (some (.call (alg "sec-runtime-semantics-scriptevaluation") [.var 2]))],
     mk runModuleAlg "HostRunModule" 3 #["sourceText", "realm", "key", "m", "p", "l"] [
-      st (.let_ 3 (.call (alg "sec-parsemodule") [.var 0, .var 1, .enum Known.eEmpty])),
-      st (throwFirst 3),
-      st (.perform (.call (.alg ⟨storeClause, 0⟩) [.var 2, .enum Known.eEmpty, .var 3])),
-      st (.let_ 4 (.call (alg "sec-LoadRequestedModules") [.var 3])),
-      st (.if_ (state 4 "rejected") (.inline (.ret (some (.call (alg "sec-throwcompletion")
-        [.field (.var 4) (fld "PromiseResult")])))) [] none),
-      st (.assert (state 4 "fulfilled")),
-      st (.let_ 5 (.call (alg "sec-completion-ao") [.call (alg "sec-moduledeclarationlinking") [.var 3]])),
-      st (.if_ (.preds (.var 5) (.isTy true .or [.sort "a" [] Known.sNormalComp ""]) [])
-        (.inline (.ret (some (.var 5)))) [] none),
-      st (.ret (some (.call (alg "sec-moduleevaluation") [.var 3])))],
+      .let_ 3 (.call (alg "sec-parsemodule") [.var 0, .var 1, .enum Known.eEmpty]),
+      throwFirst 3,
+      .perform (.call (.alg ⟨storeClause, 0⟩) [.var 2, .enum Known.eEmpty, .var 3]),
+      .let_ 4 (.call (alg "sec-LoadRequestedModules") [.var 3]),
+      .if_ (state 4 "rejected") (.inline (.ret (some (.call (alg "sec-throwcompletion")
+        [.field (.var 4) (fld "PromiseResult")])))) [] none,
+      .assert (state 4 "fulfilled"),
+      .let_ 5 (.call (alg "sec-completion-ao") [.call (alg "sec-moduledeclarationlinking") [.var 3]]),
+      .if_ (.preds (.var 5) (.isTy true false [.sort [] Known.sNormalComp]) [])
+        (.inline (.ret (some (.var 5)))) [] none,
+      .ret (some (.call (alg "sec-moduleevaluation") [.var 3]))],
     mk parseScriptAlg "HostParseScript" 2 #["sourceText", "realm", "s"] [
-      st (.let_ 2 (.call (alg "sec-parse-script") [.var 0, .var 1, .val .undefined])),
-      st (throwFirst 2),
-      st (.ret (some (.call (alg "sec-normalcompletion") [.val .undefined])))],
+      .let_ 2 (.call (alg "sec-parse-script") [.var 0, .var 1, .val .undefined]),
+      throwFirst 2,
+      .ret (some (.call (alg "sec-normalcompletion") [.val .undefined]))],
     mk parseModuleAlg "HostParseModule" 2 #["sourceText", "realm", "m"] [
-      st (.let_ 2 (.call (alg "sec-parsemodule") [.var 0, .var 1, .enum Known.eEmpty])),
-      st (throwFirst 2),
-      st (.ret (some (.call (alg "sec-normalcompletion") [.val .undefined])))]]
+      .let_ 2 (.call (alg "sec-parsemodule") [.var 0, .var 1, .enum Known.eEmpty]),
+      throwFirst 2,
+      .ret (some (.call (alg "sec-normalcompletion") [.val .undefined]))]]
 
 /-- NaNEncoding(value, w, p): `nanCode w p`. -/
 def nanEncoding : List (Val Impl) → Run Impl (Val Impl)

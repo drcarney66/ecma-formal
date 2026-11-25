@@ -121,30 +121,29 @@ def decSeq (B : Builder N) (cs : Array Nat) (rec : NT → List Param → Nat →
   | _ :: _, _, _ => throw (.unimplemented "a negative item or a condition inside a negative item")
 
 /-- A negative item's nonterminal `n` under `ps` derives exactly the code points `i` to `h` in
-grammar `g` under `rd` in context `cx`, within `fuel` levels: an exhaustive search over the splits. -/
-def dec (B : Builder N) (cs : Array Nat) (g : GrammarId) (rd : List RuleReading) (cx : Ctx) :
+grammar `g` in context `cx`, within `fuel` levels: an exhaustive search over the splits. -/
+def dec (B : Builder N) (cs : Array Nat) (g : GrammarId) (cx : Ctx) :
     Nat → NT → List Param → Nat → Nat → Except Stop Bool
   | 0, _, _, _, _ => throw .depth
   | f + 1, n, ps, i, h => do
-    let some es := effAlts g rd cx n.ctorIdx | return false
+    let some es := effAlts g cx n.ctorIdx | return false
     es.anyM fun e =>
-      if e.alt.guard.all (Guard.holds ps) then decSeq B cs (dec B cs g rd cx f) ps e.alt.rhs i h else pure false
+      if e.alt.guard.all (Guard.holds ps) then decSeq B cs (dec B cs g cx f) ps e.alt.rhs i h else pure false
 
 /-- A lookahead's nonterminal `n` derives some code points from `i`: one of its terminals starts
 there (a nonterminal not a set of terminals is a stop). -/
-def decAny (B : Builder N) (cs : Array Nat) (g : GrammarId) (rd : List RuleReading) (cx : Ctx) (n : NT) (i : Nat) :
+def decAny (B : Builder N) (cs : Array Nat) (g : GrammarId) (cx : Ctx) (n : NT) (i : Nat) :
     Except Stop Bool := do
-  let some es := effAlts g rd cx n.ctorIdx | return false
+  let some es := effAlts g cx n.ctorIdx | return false
   es.anyM fun e => match e.alt.guard, e.alt.rhs with
     | [], [.sym (.t x) false] => pure (termEnd B cs x i).isSome
     | _, _ => throw (.unimplemented "a lookahead nonterminal that is not a set of terminals")
 
-/-- The code point alphabet of grammar `g` under readings `rd` in context `cx` over `cs`, its spans
+/-- The code point alphabet of grammar `g` in context `cx` over `cs`, its spans
 offset by `off`, its texts views of `src` at those spans, B.1.2's group-number condition `grp`. -/
-def alpha (B : Builder N) (cs : Array Nat) (g : GrammarId) (rd : List RuleReading) (cx : Ctx) (off : Nat := 0)
+def alpha (B : Builder N) (cs : Array Nat) (g : GrammarId) (cx : Ctx) (off : Nat := 0)
     (src : Array Nat := cs) (grp : Option (Nat → Bool) := none) : Alpha N T where
   g := g
-  rd := rd
   cx := cx
   term _ _ _ x p := pure (termEnd B cs x p)
   leaf _ _ := pure none
@@ -160,8 +159,8 @@ def alpha (B : Builder N) (cs : Array Nat) (g : GrammarId) (rd : List RuleReadin
   span a b := pure (off + a, off + b)
   text a b := pure (view src (off + a) (off + b))
   leafNode _ _ _ := throw (.check "a leaf in a code point grammar")
-  negSpan n ps a b := liftE (dec B cs g rd cx 64 n ps a b)
-  negAny n a := liftE (decAny B cs g rd cx n a)
+  negSpan n ps a b := liftE (dec B cs g cx 64 n ps a b)
+  negAny n a := liftE (decAny B cs g cx n a)
 
 /-- The recursion depth bound over `n` code points: a list nests once per element, a group a few
 levels per code point. -/
@@ -170,13 +169,13 @@ def depth (n : Nat) : Nat := 8 * n + 1000
 /-- The steps a search of `n` code points may take. -/
 def budget (n : Nat) : Nat := 4096 * (n + 1)
 
-/-- Goal `n` with parameters `ps` over the whole input `cs` of grammar `g` under readings `rd` in
+/-- Goal `n` with parameters `ps` over the whole input `cs` of grammar `g` in
 context `cx`, the group-number condition `grp`: its Parse Node (spans offset by `off`, texts views of `src`),
 or none when the search finds no derivation. -/
-def parse (B : Builder N) (cs : Array Nat) (g : GrammarId) (rd : List RuleReading) (cx : Ctx) (off : Nat)
+def parse (B : Builder N) (cs : Array Nat) (g : GrammarId) (cx : Ctx) (off : Nat)
     (src : Array Nat) (stamp : Nat) (n : NT) (ps : List Param) (grp : Option (Nat → Bool) := none) :
     SM T (Option N) := do
-  let A : Alpha N T := alpha B cs g rd cx off src grp
+  let A : Alpha N T := alpha B cs g cx off src grp
   let es ← finalEnds A cs.size (depth cs.size) n ps 0
   unless es.mem cs.size do return none
   let nd ← build A B cs.size (depth cs.size) stamp (depth cs.size) n ps 0 cs.size
@@ -190,24 +189,24 @@ def countCapturing (B : Builder N) : Nat → N → Except Stop Nat
       fun a k => return a + (← countCapturing B d k)
 
 /-- `parse` from a fresh state, the group-number condition `grp`. -/
-def runWith (B : Builder N) (cs : Array Nat) (g : GrammarId) (rd : List RuleReading) (cx : Ctx) (stamp : Nat) (n : NT)
+def runWith (B : Builder N) (cs : Array Nat) (g : GrammarId) (cx : Ctx) (stamp : Nat) (n : NT)
     (ps : List Param) (grp : Option (Nat → Bool)) : Except Stop (Option N) :=
-  (parse (T := Unit) B cs g rd cx 0 cs stamp n ps grp).run' { steps := budget cs.size }
+  (parse (T := Unit) B cs g cx 0 cs stamp n ps grp).run' { steps := budget cs.size }
 
 /-- B.1.2's group-number condition, stratified (`Ecma.Grammar.groupCond`): CapturingGroupNumber at most
 the left-capturing parentheses of the committed Pattern[~UnicodeMode, ~UnicodeSetsMode,
 ~NamedCaptureGroups] over `cs` with the condition true; false without one. -/
-def groupLimit (B : Builder N) (cs : Array Nat) (g : GrammarId) (rd : List RuleReading) (cx : Ctx) :
+def groupLimit (B : Builder N) (cs : Array Nat) (g : GrammarId) (cx : Ctx) :
     Except Stop (Nat → Bool) := do
-  match ← runWith B cs g rd cx 0 .Pattern [] (some fun _ => true) with
+  match ← runWith B cs g cx 0 .Pattern [] (some fun _ => true) with
   | some t => let k ← countCapturing B (depth cs.size) t; return (· ≤ k)
   | none => return fun _ => false
 
 /-- `parse` from a fresh state; where B.1.2 orders `g`, the committed parse with the group-number
 condition `groupLimit`. -/
-def run (B : Builder N) (cs : Array Nat) (g : GrammarId) (rd : List RuleReading) (cx : Ctx) (stamp : Nat) (n : NT)
+def run (B : Builder N) (cs : Array Nat) (g : GrammarId) (cx : Ctx) (stamp : Nat) (n : NT)
     (ps : List Param) : Except Stop (Option N) :=
-  if (orderedIn cx g).isEmpty then (parse (T := Unit) B cs g rd cx 0 cs stamp n ps).run' { steps := budget cs.size }
-  else do runWith B cs g rd cx stamp n ps (some (← groupLimit B cs g rd cx))
+  if (orderedIn cx g).isEmpty then (parse (T := Unit) B cs g cx 0 cs stamp n ps).run' { steps := budget cs.size }
+  else do runWith B cs g cx stamp n ps (some (← groupLimit B cs g cx))
 
 end Engine.Parse.Code

@@ -70,17 +70,15 @@ def writtenAlts (r : Rule) : List Alt :=
   | .oneOf rows => rows.flatten.map fun t => ⟨[], [.sym (.t t) false], none⟩
 
 /-- An alternative in effect: the grammar and rule it is written in and its
-index among the rule's written productions; `fresh` for a reading's
-alternative that GL does not have. -/
+index among the rule's written productions. -/
 structure Src where
   grammar : GrammarId
   rule : Rule
   idx : Nat
   alt : Alt
-  fresh : Bool
 
-def srcsOf (g : GrammarId) (r : Rule) (fresh : Bool := false) : List Src :=
-  (writtenAlts r).zipIdx.map fun (a, i) => ⟨g, r, i, a, fresh⟩
+def srcsOf (g : GrammarId) (r : Rule) : List Src :=
+  (writtenAlts r).zipIdx.map fun (a, i) => ⟨g, r, i, a⟩
 
 def GL.rulesOf (gl : GL) (g : GrammarId) : List Rule := (gl.grammars.lookup g).getD []
 
@@ -98,35 +96,20 @@ def GL.overlays (gl : GL) (cx : Ctx) (g : GrammarId) : List (Block × OverlayMod
     | .overlay s m c => if overlayGrammar s == g && cx.annexB.has s && condHolds cx c then some (b, m) else none
     | _ => none
 
-/-- The alternatives of `n` in effect in grammar `g`: a reading's definition
-(its alternatives equal to pinned ones are those, and one that differs from a
-pinned one only in lookahead restrictions is that production with the
-reading's restrictions), else the pinned one, with the overlays in effect:
+/-- The alternatives of `n` in effect in grammar `g` with the overlays in effect:
 `extend` adds the alternatives it does not restate, `replace` replaces the
 definition. -/
-def GL.alts (gl : GL) (rd : List RuleReading) (cx : Ctx) (g : GrammarId) (n : NT) : List Src :=
-  let base := match rd.find? (fun x => x.grammar == g && x.rule.lhs == n) with
-    | some x =>
-      let pinned := gl.pinned g n
-      (srcsOf g x.rule true).map fun s => match pinned.find? (·.alt == s.alt) with
-        | some p => p
-        | none => match pinned.find? (·.alt.bare == s.alt.bare) with
-          | some p => { p with alt := s.alt }
-          | none => s
-    | none => gl.pinned g n
+def GL.alts (gl : GL) (cx : Ctx) (g : GrammarId) (n : NT) : List Src :=
   (gl.overlays cx g).foldl (fun acc (b, m) =>
     match b.rules.find? (·.lhs == n), m with
     | none, _ => acc
     | some r, .extend => acc ++ (srcsOf .annexB r).filter fun s => !acc.any (·.alt == s.alt)
-    | some r, .replace => srcsOf .annexB r) base
+    | some r, .replace => srcsOf .annexB r) (gl.pinned g n)
 
-/-- The production id of a right-hand side: the number GL gives it (`GL.byId`), or for a reading's
-fresh alternative one past GL's numbers, in the readings' order. -/
-def GL.prodId (gl : GL) (rd : List RuleReading) (s : Src) (m : List Bool) : Option Nat :=
+/-- The production id of a right-hand side: the number GL gives it (`GL.byId`). -/
+def GL.prodId (gl : GL) (s : Src) (m : List Bool) : Option Nat :=
   let hit := fun (p : Prod) => p.grammar == s.grammar && p.rule.lhs == s.rule.lhs && p.alt == s.idx && p.mask == m
-  if s.fresh then
-    ((prodsOf (rd.map fun x => (x.grammar, [x.rule]))).findIdx? hit).map (gl.byId.size + ·)
-  else gl.byId.findIdx? (·.any hit)
+  gl.byId.findIdx? (·.any hit)
 
 /-- The written production index (`Production` constructor) of a right-hand side. -/
 def GL.ctorOf (gl : GL) (s : Src) : Option Nat :=
@@ -142,8 +125,8 @@ def GL.orderedNts (gl : GL) (cx : Ctx) (g : GrammarId) : List NT :=
   (gl.overlays cx g).flatMap fun (b, _) => if b.kind matches .overlay .regExpPatterns _ _ then b.rules.map (·.lhs) else []
 
 /-- The position in `GL.alts` of the alternative of `n` with production id `id`. -/
-def GL.altPos (gl : GL) (rd : List RuleReading) (cx : Ctx) (g : GrammarId) (n : NT) (id : Nat) : Option Nat :=
-  ((gl.alts rd cx g n).zipIdx.find? fun (s, _) => (masks s.alt.opts).any (gl.prodId rd s · == some id)).map (·.2)
+def GL.altPos (gl : GL) (cx : Ctx) (g : GrammarId) (n : NT) (id : Nat) : Option Nat :=
+  ((gl.alts cx g n).zipIdx.find? fun (s, _) => (masks s.alt.opts).any (gl.prodId s · == some id)).map (·.2)
 
 /-- The right-hand side `( GroupSpecifier? Disjunction )`. -/
 def capturingRhs : List Item → Bool

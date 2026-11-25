@@ -12,8 +12,7 @@ The derived `Repr` instances of `Ecma.Ecma.Syntax`'s types, for printing and deb
 
 namespace Ecma
 
-deriving instance Repr for AlgId, Attr, XrefForm, Xref, Sub, Numeral, Sign, Mag, ValLit, Article,
-  AltForm, ConnForm, Conj, ListForm, UnOp, DataLit, BinOp, RelOp, MathFn, Callee, Channel, PrimDoc, Reading,
-  CloKind, AlgKind, RowForm, PhraseArg, PhraseMeaning, SortDef, Phrase, GTerminal
+deriving instance Repr for AlgId, Sub, Numeral, Sign, Mag, ValLit, Conj, UnOp, DataLit, BinOp, RelOp,
+  MathFn, Callee, PrimDoc, CloKind, AlgKind, RowForm, SortArg, SortTest, SortDef, GTerminal
 
 end Ecma

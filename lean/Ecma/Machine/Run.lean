@@ -20,11 +20,9 @@ open Ecma
 
 variable {M : Model}
 
-/-- The specification's context: the program's code, the host, the readings chosen for the errata, and whether
-Asserts are checked. A definition reading is no choice: the code holds its steps (`Ins.reading`), and `rd` is not
-asked of it. -/
-def Ctx.spec (prog : Prog') (H : Host M) (rd : ErratumId → Reading) (chk : Bool) : Ctx M :=
-  { prog, H, rd, chk }
+/-- The specification's context: the program's code, the host, and whether Asserts are checked. -/
+def Ctx.spec (prog : Prog') (H : Host M) (chk : Bool) : Ctx M :=
+  { prog, H, chk }
 
 /-- One transition. -/
 def Step (X : Ctx M) (c c' : Cfg M) : Prop := step X c = .inl c'

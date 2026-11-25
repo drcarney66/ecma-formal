@@ -1,0 +1,1239 @@
+-- ECMA-262 SpecTec Clauses: S12
+
+sdo_row @sec-identifiercodepoints IdentifierCodePoints form alg {
+  prods [p"Lexical - IdentifierName :: IdentifierStart"]
+  keys ["IdentifierName :: IdentifierStart"]
+  vars [codePoint]
+  steps {
+    let codePoint = sdo IdentifierCodePoint(child 5 |IdentifierStart|)
+    return [codePoint]
+  }
+}
+
+sdo_row @sec-identifiercodepoints#1 IdentifierCodePoints form alg {
+  prods [p"Lexical - IdentifierName :: IdentifierName IdentifierPart"]
+  keys ["IdentifierName :: IdentifierName IdentifierPart"]
+  vars [codePoints, codePoint]
+  steps {
+    let codePoints = sdo IdentifierCodePoints(child 3 |IdentifierName|)
+    let codePoint = sdo IdentifierCodePoint(child 5 |IdentifierPart|)
+    return $ListConcat([codePoints, [codePoint]])
+  }
+}
+
+sdo_row @sec-identifiercodepoint IdentifierCodePoint form alg {
+  prods [p"Lexical - IdentifierStart :: IdentifierStartChar"]
+  keys ["IdentifierStart :: IdentifierStartChar"]
+  vars []
+  steps {
+    return $CodePointMatched(child 5 |IdentifierStartChar|)
+  }
+}
+
+sdo_row @sec-identifiercodepoint#1 IdentifierCodePoint form alg {
+  prods [p"Lexical - IdentifierPart :: IdentifierPartChar"]
+  keys ["IdentifierPart :: IdentifierPartChar"]
+  vars []
+  steps {
+    return $CodePointMatched(child 5 |IdentifierPartChar|)
+  }
+}
+
+sdo_row @sec-identifiercodepoint#2 IdentifierCodePoint form alg {
+  prods [p"Lexical - UnicodeEscapeSequence :: `u` Hex4Digits"]
+  keys ["UnicodeEscapeSequence :: `u` Hex4Digits"]
+  vars []
+  steps {
+    return $UnitOrPointOf(data choice 0, sdo MV(child 5 |Hex4Digits|))
+  }
+}
+
+sdo_row @sec-identifiercodepoint#3 IdentifierCodePoint form alg {
+  prods [p"Lexical - UnicodeEscapeSequence :: `u{` CodePoint `}`"]
+  keys ["UnicodeEscapeSequence :: `u{` CodePoint `}`"]
+  vars []
+  steps {
+    return $UnitOrPointOf(data choice 0, sdo MV(child 5 |CodePoint|))
+  }
+}
+
+sdo_row @sec-static-semantics-mv MV form equation {
+  prods [p"Lexical 10 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?"]
+  keys ["DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits"]
+  vars [n]
+  steps {
+    let n = $CodePointCount(child 5 |DecimalDigits|, |NumericLiteralSeparator|)
+    return sdo MV(child 5 |DecimalIntegerLiteral|) + (sdo MV(child 5 |DecimalDigits|) * 10 ^ neg n)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#1 MV form equation {
+  prods [p"Lexical 01 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?"]
+  keys ["DecimalLiteral :: DecimalIntegerLiteral `.` ExponentPart"]
+  vars [e]
+  steps {
+    let e = sdo MV(child 5 |ExponentPart|)
+    return sdo MV(child 5 |DecimalIntegerLiteral|) * 10 ^ e
+  }
+}
+
+sdo_row @sec-static-semantics-mv#2 MV form equation {
+  prods [p"Lexical 11 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?"]
+  keys ["DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits ExponentPart"]
+  vars [n, e]
+  steps {
+    let n = $CodePointCount(child 5 |DecimalDigits|, |NumericLiteralSeparator|)
+    let e = sdo MV(child 5 |ExponentPart|)
+    return (sdo MV(child 5 |DecimalIntegerLiteral|) + (sdo MV(child 5 |DecimalDigits|) * 10 ^ neg n)) * 10 ^ e
+  }
+}
+
+sdo_row @sec-static-semantics-mv#3 MV form equation {
+  prods [p"Lexical 0 DecimalLiteral :: `.` DecimalDigits[+Sep] ExponentPart[+Sep]?"]
+  keys ["DecimalLiteral :: `.` DecimalDigits"]
+  vars [n]
+  steps {
+    let n = $CodePointCount(child 5 |DecimalDigits|, |NumericLiteralSeparator|)
+    return sdo MV(child 5 |DecimalDigits|) * 10 ^ neg n
+  }
+}
+
+sdo_row @sec-static-semantics-mv#4 MV form equation {
+  prods [p"Lexical 1 DecimalLiteral :: `.` DecimalDigits[+Sep] ExponentPart[+Sep]?"]
+  keys ["DecimalLiteral :: `.` DecimalDigits ExponentPart"]
+  vars [e, n]
+  steps {
+    let n = $CodePointCount(child 5 |DecimalDigits|, |NumericLiteralSeparator|)
+    let e = sdo MV(child 5 |ExponentPart|)
+    return sdo MV(child 5 |DecimalDigits|) * 10 ^ {e - n}
+  }
+}
+
+sdo_row @sec-static-semantics-mv#5 MV form equation {
+  prods [p"Lexical 1 DecimalLiteral :: DecimalIntegerLiteral ExponentPart[+Sep]?"]
+  keys ["DecimalLiteral :: DecimalIntegerLiteral ExponentPart"]
+  vars [e]
+  steps {
+    let e = sdo MV(child 5 |ExponentPart|)
+    return sdo MV(child 5 |DecimalIntegerLiteral|) * 10 ^ e
+  }
+}
+
+sdo_row @sec-static-semantics-mv#6 MV form equation {
+  prods []
+  keys ["DecimalIntegerLiteral :: `0`"]
+  vars []
+  steps {
+    return 0
+  }
+}
+
+sdo_row @sec-static-semantics-mv#7 MV form equation {
+  prods [p"Lexical 0 DecimalIntegerLiteral :: NonZeroDigit NumericLiteralSeparator? DecimalDigits[+Sep]", p"Lexical 1 DecimalIntegerLiteral :: NonZeroDigit NumericLiteralSeparator? DecimalDigits[+Sep]"]
+  keys ["DecimalIntegerLiteral :: NonZeroDigit NumericLiteralSeparator? DecimalDigits"]
+  vars [n]
+  steps {
+    let n = $CodePointCount(child 5 |DecimalDigits|, |NumericLiteralSeparator|)
+    return (sdo MV(child 5 |NonZeroDigit|) * 10 ^ n) + sdo MV(child 5 |DecimalDigits|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#8 MV form equation {
+  prods [p"Lexical - DecimalDigits :: DecimalDigits[?Sep] DecimalDigit"]
+  keys ["DecimalDigits :: DecimalDigits DecimalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |DecimalDigits|) * 10) + sdo MV(child 5 |DecimalDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#9 MV form equation {
+  prods [p"Lexical - DecimalDigits :: [+Sep] DecimalDigits[+Sep] NumericLiteralSeparator DecimalDigit"]
+  keys ["DecimalDigits :: DecimalDigits NumericLiteralSeparator DecimalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |DecimalDigits|) * 10) + sdo MV(child 5 |DecimalDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#10 MV form equation {
+  prods [p"Lexical - ExponentPart :: ExponentIndicator SignedInteger[?Sep]"]
+  keys ["ExponentPart :: ExponentIndicator SignedInteger"]
+  vars []
+  steps {
+    return sdo MV(child 5 |SignedInteger|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#11 MV form equation {
+  prods [p"Lexical - SignedInteger :: `-` DecimalDigits[?Sep]"]
+  keys ["SignedInteger :: `-` DecimalDigits"]
+  vars []
+  steps {
+    return $Negative(sdo MV(child 5 |DecimalDigits|))
+  }
+}
+
+sdo_row @sec-static-semantics-mv#12 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `0`", p"Lexical - HexDigit :: `0`", p"Lexical - OctalDigit :: `0`", p"Lexical - LegacyOctalEscapeSequence :: `0` [lookahead ∈ { `8`, `9` }]", p"Lexical - BinaryDigit :: `0`"]
+  keys ["DecimalDigit :: `0`", "HexDigit :: `0`", "OctalDigit :: `0`", "LegacyOctalEscapeSequence :: `0`", "BinaryDigit :: `0`"]
+  vars []
+  steps {
+    return 0
+  }
+}
+
+sdo_row @sec-static-semantics-mv#13 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `1`", p"Lexical - NonZeroDigit :: `1`", p"Lexical - HexDigit :: `1`", p"Lexical - OctalDigit :: `1`", p"Lexical - BinaryDigit :: `1`"]
+  keys ["DecimalDigit :: `1`", "NonZeroDigit :: `1`", "HexDigit :: `1`", "OctalDigit :: `1`", "BinaryDigit :: `1`"]
+  vars []
+  steps {
+    return 1
+  }
+}
+
+sdo_row @sec-static-semantics-mv#14 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `2`", p"Lexical - NonZeroDigit :: `2`", p"Lexical - HexDigit :: `2`", p"Lexical - OctalDigit :: `2`"]
+  keys ["DecimalDigit :: `2`", "NonZeroDigit :: `2`", "HexDigit :: `2`", "OctalDigit :: `2`"]
+  vars []
+  steps {
+    return 2
+  }
+}
+
+sdo_row @sec-static-semantics-mv#15 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `3`", p"Lexical - NonZeroDigit :: `3`", p"Lexical - HexDigit :: `3`", p"Lexical - OctalDigit :: `3`"]
+  keys ["DecimalDigit :: `3`", "NonZeroDigit :: `3`", "HexDigit :: `3`", "OctalDigit :: `3`"]
+  vars []
+  steps {
+    return 3
+  }
+}
+
+sdo_row @sec-static-semantics-mv#16 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `4`", p"Lexical - NonZeroDigit :: `4`", p"Lexical - HexDigit :: `4`", p"Lexical - OctalDigit :: `4`"]
+  keys ["DecimalDigit :: `4`", "NonZeroDigit :: `4`", "HexDigit :: `4`", "OctalDigit :: `4`"]
+  vars []
+  steps {
+    return 4
+  }
+}
+
+sdo_row @sec-static-semantics-mv#17 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `5`", p"Lexical - NonZeroDigit :: `5`", p"Lexical - HexDigit :: `5`", p"Lexical - OctalDigit :: `5`"]
+  keys ["DecimalDigit :: `5`", "NonZeroDigit :: `5`", "HexDigit :: `5`", "OctalDigit :: `5`"]
+  vars []
+  steps {
+    return 5
+  }
+}
+
+sdo_row @sec-static-semantics-mv#18 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `6`", p"Lexical - NonZeroDigit :: `6`", p"Lexical - HexDigit :: `6`", p"Lexical - OctalDigit :: `6`"]
+  keys ["DecimalDigit :: `6`", "NonZeroDigit :: `6`", "HexDigit :: `6`", "OctalDigit :: `6`"]
+  vars []
+  steps {
+    return 6
+  }
+}
+
+sdo_row @sec-static-semantics-mv#19 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `7`", p"Lexical - NonZeroDigit :: `7`", p"Lexical - HexDigit :: `7`", p"Lexical - OctalDigit :: `7`"]
+  keys ["DecimalDigit :: `7`", "NonZeroDigit :: `7`", "HexDigit :: `7`", "OctalDigit :: `7`"]
+  vars []
+  steps {
+    return 7
+  }
+}
+
+sdo_row @sec-static-semantics-mv#20 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `8`", p"Lexical - NonZeroDigit :: `8`", p"Lexical - NonOctalDigit :: `8`", p"Lexical - HexDigit :: `8`"]
+  keys ["DecimalDigit :: `8`", "NonZeroDigit :: `8`", "NonOctalDigit :: `8`", "HexDigit :: `8`"]
+  vars []
+  steps {
+    return 8
+  }
+}
+
+sdo_row @sec-static-semantics-mv#21 MV form equation {
+  prods [p"Lexical - DecimalDigit :: `9`", p"Lexical - NonZeroDigit :: `9`", p"Lexical - NonOctalDigit :: `9`", p"Lexical - HexDigit :: `9`"]
+  keys ["DecimalDigit :: `9`", "NonZeroDigit :: `9`", "NonOctalDigit :: `9`", "HexDigit :: `9`"]
+  vars []
+  steps {
+    return 9
+  }
+}
+
+sdo_row @sec-static-semantics-mv#22 MV form equation {
+  prods [p"Lexical - HexDigit :: `a`", p"Lexical - HexDigit :: `A`"]
+  keys ["HexDigit :: `a`", "HexDigit :: `A`"]
+  vars []
+  steps {
+    return 10
+  }
+}
+
+sdo_row @sec-static-semantics-mv#23 MV form equation {
+  prods [p"Lexical - HexDigit :: `b`", p"Lexical - HexDigit :: `B`"]
+  keys ["HexDigit :: `b`", "HexDigit :: `B`"]
+  vars []
+  steps {
+    return 11
+  }
+}
+
+sdo_row @sec-static-semantics-mv#24 MV form equation {
+  prods [p"Lexical - HexDigit :: `c`", p"Lexical - HexDigit :: `C`"]
+  keys ["HexDigit :: `c`", "HexDigit :: `C`"]
+  vars []
+  steps {
+    return 12
+  }
+}
+
+sdo_row @sec-static-semantics-mv#25 MV form equation {
+  prods [p"Lexical - HexDigit :: `d`", p"Lexical - HexDigit :: `D`"]
+  keys ["HexDigit :: `d`", "HexDigit :: `D`"]
+  vars []
+  steps {
+    return 13
+  }
+}
+
+sdo_row @sec-static-semantics-mv#26 MV form equation {
+  prods [p"Lexical - HexDigit :: `e`", p"Lexical - HexDigit :: `E`"]
+  keys ["HexDigit :: `e`", "HexDigit :: `E`"]
+  vars []
+  steps {
+    return 14
+  }
+}
+
+sdo_row @sec-static-semantics-mv#27 MV form equation {
+  prods [p"Lexical - HexDigit :: `f`", p"Lexical - HexDigit :: `F`"]
+  keys ["HexDigit :: `f`", "HexDigit :: `F`"]
+  vars []
+  steps {
+    return 15
+  }
+}
+
+sdo_row @sec-static-semantics-mv#28 MV form equation {
+  prods [p"Lexical - BinaryDigits :: BinaryDigits[?Sep] BinaryDigit"]
+  keys ["BinaryDigits :: BinaryDigits BinaryDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |BinaryDigits|) * 2) + sdo MV(child 5 |BinaryDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#29 MV form equation {
+  prods [p"Lexical - BinaryDigits :: [+Sep] BinaryDigits[+Sep] NumericLiteralSeparator BinaryDigit"]
+  keys ["BinaryDigits :: BinaryDigits NumericLiteralSeparator BinaryDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |BinaryDigits|) * 2) + sdo MV(child 5 |BinaryDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#30 MV form equation {
+  prods [p"Lexical - OctalDigits :: OctalDigits[?Sep] OctalDigit"]
+  keys ["OctalDigits :: OctalDigits OctalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |OctalDigits|) * 8) + sdo MV(child 5 |OctalDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#31 MV form equation {
+  prods [p"Lexical - OctalDigits :: [+Sep] OctalDigits[+Sep] NumericLiteralSeparator OctalDigit"]
+  keys ["OctalDigits :: OctalDigits NumericLiteralSeparator OctalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |OctalDigits|) * 8) + sdo MV(child 5 |OctalDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#32 MV form equation {
+  prods [p"Lexical - LegacyOctalIntegerLiteral :: LegacyOctalIntegerLiteral OctalDigit"]
+  keys ["LegacyOctalIntegerLiteral :: LegacyOctalIntegerLiteral OctalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |LegacyOctalIntegerLiteral|) * 8) + sdo MV(child 5 |OctalDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#33 MV form equation {
+  prods [p"Lexical 1 NonOctalDecimalIntegerLiteral :: `0` LegacyOctalLikeDecimalDigits? NonOctalDigit"]
+  keys ["NonOctalDecimalIntegerLiteral :: `0` LegacyOctalLikeDecimalDigits NonOctalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |LegacyOctalLikeDecimalDigits|) * 10) + sdo MV(child 5 |NonOctalDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#34 MV form equation {
+  prods [p"Lexical - NonOctalDecimalIntegerLiteral :: NonOctalDecimalIntegerLiteral DecimalDigit"]
+  keys ["NonOctalDecimalIntegerLiteral :: NonOctalDecimalIntegerLiteral DecimalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |NonOctalDecimalIntegerLiteral|) * 10) + sdo MV(child 5 |DecimalDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#35 MV form equation {
+  prods [p"Lexical - LegacyOctalLikeDecimalDigits :: LegacyOctalLikeDecimalDigits OctalDigit"]
+  keys ["LegacyOctalLikeDecimalDigits :: LegacyOctalLikeDecimalDigits OctalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |LegacyOctalLikeDecimalDigits|) * 10) + sdo MV(child 5 |OctalDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#36 MV form equation {
+  prods [p"Lexical - HexDigits :: HexDigits[?Sep] HexDigit"]
+  keys ["HexDigits :: HexDigits HexDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |HexDigits|) * 16) + sdo MV(child 5 |HexDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-mv#37 MV form equation {
+  prods [p"Lexical - HexDigits :: [+Sep] HexDigits[+Sep] NumericLiteralSeparator HexDigit"]
+  keys ["HexDigits :: HexDigits NumericLiteralSeparator HexDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |HexDigits|) * 16) + sdo MV(child 5 |HexDigit|)
+  }
+}
+
+sdo_row @sec-numericvalue NumericValue form alg {
+  prods [p"Lexical - NumericLiteral :: DecimalLiteral"]
+  keys ["NumericLiteral :: DecimalLiteral"]
+  vars [d, e, a, fd, b, n]
+  steps {
+    let d = child 5 |DecimalLiteral|
+    assert d is ty {#"Parse Node"}
+    if expr $InstanceOf(d, prods [p"Lexical 10 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?"]) or expr $InstanceOf(d, prods [p"Lexical 00 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?"]) or expr $InstanceOf(d, prods [p"Lexical 0 DecimalLiteral :: `.` DecimalDigits[+Sep] ExponentPart[+Sep]?"]) or expr $InstanceOf(d, prods [p"Lexical 0 DecimalLiteral :: DecimalIntegerLiteral ExponentPart[+Sep]?"]) -> return @sec-roundmvresult(sdo MV(d))
+    let e = sdo MV($ChildOf(|ExponentPart|, ?d))
+    if_else expr $InstanceOf(d, prods [p"Lexical 1 DecimalLiteral :: `.` DecimalDigits[+Sep] ExponentPart[+Sep]?"]) { let a = 0 } else { let a = sdo MV($ChildOf(|DecimalIntegerLiteral|, ?d)) }
+    if expr $InstanceOf(d, prods [p"Lexical 11 DecimalLiteral :: DecimalIntegerLiteral `.` DecimalDigits[+Sep]? ExponentPart[+Sep]?"]) or expr $InstanceOf(d, prods [p"Lexical 1 DecimalLiteral :: `.` DecimalDigits[+Sep] ExponentPart[+Sep]?"]) {
+      let fd = $ChildOf(|DecimalDigits|, ?d)
+      let b = sdo MV(fd)
+      let n = $CodePointCount(?fd, |NumericLiteralSeparator|)
+    }
+    else {
+      let b = 0
+      let n = 0
+    }
+    return @formal-rounddecimalmv(a * 10 ^ n + b, e - n)
+  }
+}
+
+sdo_row @sec-numericvalue#1 NumericValue form alg {
+  prods [p"Lexical - NumericLiteral :: NonDecimalIntegerLiteral[+Sep]"]
+  keys ["NumericLiteral :: NonDecimalIntegerLiteral"]
+  vars []
+  steps {
+    return $𝔽(sdo MV(child 5 |NonDecimalIntegerLiteral|))
+  }
+}
+
+sdo_row @sec-numericvalue#2 NumericValue form alg {
+  prods [p"Lexical - NumericLiteral :: LegacyOctalIntegerLiteral"]
+  keys ["NumericLiteral :: LegacyOctalIntegerLiteral"]
+  vars []
+  steps {
+    return $𝔽(sdo MV(child 5 |LegacyOctalIntegerLiteral|))
+  }
+}
+
+sdo_row @sec-numericvalue#3 NumericValue form alg {
+  prods [p"Lexical - NumericLiteral :: NonDecimalIntegerLiteral[+Sep] BigIntLiteralSuffix"]
+  keys ["NumericLiteral :: NonDecimalIntegerLiteral BigIntLiteralSuffix"]
+  vars []
+  steps {
+    return $BigIntFor(sdo MV(child 5 |NonDecimalIntegerLiteral|))
+  }
+}
+
+sdo_row @sec-numericvalue#4 NumericValue form alg {
+  prods [p"Lexical - DecimalBigIntegerLiteral :: `0` BigIntLiteralSuffix"]
+  keys ["DecimalBigIntegerLiteral :: `0` BigIntLiteralSuffix"]
+  vars []
+  steps {
+    return num_z(0)
+  }
+}
+
+sdo_row @sec-numericvalue#5 NumericValue form alg {
+  prods [p"Lexical 0 DecimalBigIntegerLiteral :: NonZeroDigit DecimalDigits[+Sep]? BigIntLiteralSuffix"]
+  keys ["DecimalBigIntegerLiteral :: NonZeroDigit BigIntLiteralSuffix"]
+  vars []
+  steps {
+    return $BigIntFor(sdo MV(child 5 |NonZeroDigit|))
+  }
+}
+
+sdo_row @sec-numericvalue#6 NumericValue form alg {
+  prods [p"Lexical 1 DecimalBigIntegerLiteral :: NonZeroDigit DecimalDigits[+Sep]? BigIntLiteralSuffix", p"Lexical - DecimalBigIntegerLiteral :: NonZeroDigit NumericLiteralSeparator DecimalDigits[+Sep] BigIntLiteralSuffix"]
+  keys ["\n          DecimalBigIntegerLiteral ::\n            NonZeroDigit DecimalDigits BigIntLiteralSuffix\n            NonZeroDigit NumericLiteralSeparator DecimalDigits BigIntLiteralSuffix\n        "]
+  vars [n, mv]
+  steps {
+    let n = $CodePointCount(child 5 |DecimalDigits|, |NumericLiteralSeparator|)
+    let mv = (sdo MV(child 5 |NonZeroDigit|) * 10 ^ n) + sdo MV(child 5 |DecimalDigits|)
+    return $ℤ(mv)
+  }
+}
+
+sdo_row @sec-static-semantics-sv SV form equation {
+  prods [p"Lexical 0 StringLiteral :: `\"` DoubleStringCharacters? `\"`"]
+  keys ["StringLiteral :: `\"` `\"`"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-sv#1 SV form equation {
+  prods [p"Lexical 0 StringLiteral :: `'` SingleStringCharacters? `'`"]
+  keys ["StringLiteral :: `'` `'`"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-sv#2 SV form equation {
+  prods [p"Lexical 1 DoubleStringCharacters :: DoubleStringCharacter DoubleStringCharacters?"]
+  keys ["DoubleStringCharacters :: DoubleStringCharacter DoubleStringCharacters"]
+  vars []
+  steps {
+    return $"string-concatenation"(sdo SV(child 5 |DoubleStringCharacter|), sdo SV(child 5 |DoubleStringCharacters|))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#3 SV form equation {
+  prods [p"Lexical 1 SingleStringCharacters :: SingleStringCharacter SingleStringCharacters?"]
+  keys ["SingleStringCharacters :: SingleStringCharacter SingleStringCharacters"]
+  vars []
+  steps {
+    return $"string-concatenation"(sdo SV(child 5 |SingleStringCharacter|), sdo SV(child 5 |SingleStringCharacters|))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#4 SV form equation {
+  prods [p"Lexical - DoubleStringCharacter :: SourceCharacter but not one of `\"` or `\\` or LineTerminator"]
+  keys ["DoubleStringCharacter :: SourceCharacter but not one of `\"` or `\\` or LineTerminator"]
+  vars []
+  steps {
+    return @ph-utf16-of($CodePointMatched(child 5 |SourceCharacter|))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#5 SV form equation {
+  prods [p"Lexical - DoubleStringCharacter :: <LS>"]
+  keys ["DoubleStringCharacter :: &lt;LS&gt;"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(8232, "2028", "LINE SEPARATOR")))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#6 SV form equation {
+  prods [p"Lexical - DoubleStringCharacter :: <PS>"]
+  keys ["DoubleStringCharacter :: &lt;PS&gt;"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(8233, "2029", "PARAGRAPH SEPARATOR")))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#7 SV form equation {
+  prods [p"Lexical - DoubleStringCharacter :: LineContinuation"]
+  keys ["DoubleStringCharacter :: LineContinuation"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-sv#8 SV form equation {
+  prods [p"Lexical - SingleStringCharacter :: SourceCharacter but not one of `'` or `\\` or LineTerminator"]
+  keys ["SingleStringCharacter :: SourceCharacter but not one of `'` or `\\` or LineTerminator"]
+  vars []
+  steps {
+    return @ph-utf16-of($CodePointMatched(child 5 |SourceCharacter|))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#9 SV form equation {
+  prods [p"Lexical - SingleStringCharacter :: <LS>"]
+  keys ["SingleStringCharacter :: &lt;LS&gt;"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(8232, "2028", "LINE SEPARATOR")))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#10 SV form equation {
+  prods [p"Lexical - SingleStringCharacter :: <PS>"]
+  keys ["SingleStringCharacter :: &lt;PS&gt;"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(8233, "2029", "PARAGRAPH SEPARATOR")))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#11 SV form equation {
+  prods [p"Lexical - SingleStringCharacter :: LineContinuation"]
+  keys ["SingleStringCharacter :: LineContinuation"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-sv#12 SV form equation {
+  prods [p"Lexical - EscapeSequence :: `0` [lookahead ∉ DecimalDigit]"]
+  keys ["EscapeSequence :: `0`"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(0, "0000", "NULL")))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#13 SV form equation {
+  prods [p"Lexical - CharacterEscapeSequence :: SingleEscapeCharacter"]
+  keys ["CharacterEscapeSequence :: SingleEscapeCharacter"]
+  vars []
+  steps {
+    return $StrOfUnits(@ph-cu-table(child 4 |SingleEscapeCharacter|, table t"table-string-single-character-escape-sequences"))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#14 SV form equation {
+  prods [p"Lexical - NonEscapeCharacter :: SourceCharacter but not one of EscapeCharacter or LineTerminator"]
+  keys ["NonEscapeCharacter :: SourceCharacter but not one of EscapeCharacter or LineTerminator"]
+  vars []
+  steps {
+    return @ph-utf16-of($CodePointMatched(child 5 |SourceCharacter|))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#15 SV form equation {
+  prods [p"Lexical - EscapeSequence :: LegacyOctalEscapeSequence"]
+  keys ["EscapeSequence :: LegacyOctalEscapeSequence"]
+  vars []
+  steps {
+    return $StrOfUnits($UnitOrPointOf(data choice 1, sdo MV(child 5 |LegacyOctalEscapeSequence|)))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#16 SV form equation {
+  prods [p"Lexical - NonOctalDecimalEscapeSequence :: `8`"]
+  keys ["NonOctalDecimalEscapeSequence :: `8`"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(56, "0038", "DIGIT EIGHT")))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#17 SV form equation {
+  prods [p"Lexical - NonOctalDecimalEscapeSequence :: `9`"]
+  keys ["NonOctalDecimalEscapeSequence :: `9`"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(57, "0039", "DIGIT NINE")))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#18 SV form equation {
+  prods [p"Lexical - HexEscapeSequence :: `x` HexDigit HexDigit"]
+  keys ["HexEscapeSequence :: `x` HexDigit HexDigit"]
+  vars []
+  steps {
+    return $StrOfUnits($UnitOrPointOf(data choice 1, sdo MV(child 6 |HexEscapeSequence|)))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#19 SV form equation {
+  prods [p"Lexical - Hex4Digits :: HexDigit HexDigit HexDigit HexDigit"]
+  keys ["Hex4Digits :: HexDigit HexDigit HexDigit HexDigit"]
+  vars []
+  steps {
+    return $StrOfUnits($UnitOrPointOf(data choice 1, sdo MV(child 6 |Hex4Digits|)))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#20 SV form equation {
+  prods [p"Lexical - UnicodeEscapeSequence :: `u{` CodePoint `}`"]
+  keys ["UnicodeEscapeSequence :: `u{` CodePoint `}`"]
+  vars []
+  steps {
+    return @ph-utf16-of(sdo MV(child 5 |CodePoint|))
+  }
+}
+
+sdo_row @sec-static-semantics-sv#21 SV form equation {
+  prods [p"Lexical - TemplateEscapeSequence :: `0` [lookahead ∉ DecimalDigit]"]
+  keys ["TemplateEscapeSequence :: `0`"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(0, "0000", "NULL")))
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv MV form equation {
+  prods [p"Lexical - LegacyOctalEscapeSequence :: ZeroToThree OctalDigit [lookahead ∉ OctalDigit]"]
+  keys ["LegacyOctalEscapeSequence :: ZeroToThree OctalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |ZeroToThree|) * 8) + sdo MV(child 5 |OctalDigit|)
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#1 MV form equation {
+  prods [p"Lexical - LegacyOctalEscapeSequence :: FourToSeven OctalDigit"]
+  keys ["LegacyOctalEscapeSequence :: FourToSeven OctalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |FourToSeven|) * 8) + sdo MV(child 5 |OctalDigit|)
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#2 MV form equation {
+  prods [p"Lexical - LegacyOctalEscapeSequence :: ZeroToThree OctalDigit OctalDigit"]
+  keys ["LegacyOctalEscapeSequence :: ZeroToThree OctalDigit OctalDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 5 |ZeroToThree|) * 64) + (sdo MV(child 0 |OctalDigit|) * 8) + sdo MV(child 1 |OctalDigit|)
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#3 MV form equation {
+  prods [p"Lexical - ZeroToThree :: `0`"]
+  keys ["ZeroToThree :: `0`"]
+  vars []
+  steps {
+    return 0
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#4 MV form equation {
+  prods [p"Lexical - ZeroToThree :: `1`"]
+  keys ["ZeroToThree :: `1`"]
+  vars []
+  steps {
+    return 1
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#5 MV form equation {
+  prods [p"Lexical - ZeroToThree :: `2`"]
+  keys ["ZeroToThree :: `2`"]
+  vars []
+  steps {
+    return 2
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#6 MV form equation {
+  prods [p"Lexical - ZeroToThree :: `3`"]
+  keys ["ZeroToThree :: `3`"]
+  vars []
+  steps {
+    return 3
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#7 MV form equation {
+  prods [p"Lexical - FourToSeven :: `4`"]
+  keys ["FourToSeven :: `4`"]
+  vars []
+  steps {
+    return 4
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#8 MV form equation {
+  prods [p"Lexical - FourToSeven :: `5`"]
+  keys ["FourToSeven :: `5`"]
+  vars []
+  steps {
+    return 5
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#9 MV form equation {
+  prods [p"Lexical - FourToSeven :: `6`"]
+  keys ["FourToSeven :: `6`"]
+  vars []
+  steps {
+    return 6
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#10 MV form equation {
+  prods [p"Lexical - FourToSeven :: `7`"]
+  keys ["FourToSeven :: `7`"]
+  vars []
+  steps {
+    return 7
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#11 MV form equation {
+  prods [p"Lexical - HexEscapeSequence :: `x` HexDigit HexDigit"]
+  keys ["HexEscapeSequence :: `x` HexDigit HexDigit"]
+  vars []
+  steps {
+    return (sdo MV(child 0 |HexDigit|) * 16) + sdo MV(child 1 |HexDigit|)
+  }
+}
+
+sdo_row @sec-string-literals-static-semantics-mv#12 MV form equation {
+  prods [p"Lexical - Hex4Digits :: HexDigit HexDigit HexDigit HexDigit"]
+  keys ["Hex4Digits :: HexDigit HexDigit HexDigit HexDigit"]
+  vars []
+  steps {
+    return (math(hex(4096, "1000")) * sdo MV(child 0 |HexDigit|)) + (math(hex(256, "100")) * sdo MV(child 1 |HexDigit|)) + (math(hex(16, "10")) * sdo MV(child 2 |HexDigit|)) + sdo MV(child 7 |HexDigit|)
+  }
+}
+
+sdo_row @sec-static-semantics-bodytext BodyText form alg {
+  prods [p"Lexical - RegularExpressionLiteral :: `/` RegularExpressionBody `/` RegularExpressionFlags"]
+  keys ["RegularExpressionLiteral :: `/` RegularExpressionBody `/` RegularExpressionFlags"]
+  vars []
+  steps {
+    return $SourceText(child 5 |RegularExpressionBody|)
+  }
+}
+
+sdo_row @sec-static-semantics-flagtext FlagText form alg {
+  prods [p"Lexical - RegularExpressionLiteral :: `/` RegularExpressionBody `/` RegularExpressionFlags"]
+  keys ["RegularExpressionLiteral :: `/` RegularExpressionBody `/` RegularExpressionFlags"]
+  vars []
+  steps {
+    return $SourceText(child 5 |RegularExpressionFlags|)
+  }
+}
+
+sdo_row @sec-static-semantics-tv TV form equation {
+  prods [p"Lexical 0 NoSubstitutionTemplate :: ``` TemplateCharacters? ```"]
+  keys ["NoSubstitutionTemplate :: ``` ```"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-tv#1 TV form equation {
+  prods [p"Lexical 0 TemplateHead :: ``` TemplateCharacters? `${`"]
+  keys ["TemplateHead :: ``` `${`"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-tv#2 TV form equation {
+  prods [p"Lexical 0 TemplateMiddle :: `}` TemplateCharacters? `${`"]
+  keys ["TemplateMiddle :: `}` `${`"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-tv#3 TV form equation {
+  prods [p"Lexical 0 TemplateTail :: `}` TemplateCharacters? ```"]
+  keys ["TemplateTail :: `}` ```"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-tv#4 TV form equation {
+  prods [p"Lexical 1 TemplateCharacters :: TemplateCharacter TemplateCharacters?"]
+  keys ["TemplateCharacters :: TemplateCharacter TemplateCharacters"]
+  vars [value0, value1]
+  steps {
+    let value0 = sdo TV(child 5 |TemplateCharacter|)
+    let value1 = sdo TV(child 5 |TemplateCharacters|)
+    if value0 is val {undefined} or value1 is val {undefined} -> return undefined
+    else -> return $"string-concatenation"(value0, value1)
+  }
+}
+
+sdo_row @sec-static-semantics-tv#5 TV form equation {
+  prods [p"Lexical - TemplateCharacter :: SourceCharacter but not one of ``` or `\\` or `$` or LineTerminator"]
+  keys ["TemplateCharacter :: SourceCharacter but not one of ``` or `\\` or `$` or LineTerminator"]
+  vars []
+  steps {
+    return @ph-utf16-of($CodePointMatched(child 5 |SourceCharacter|))
+  }
+}
+
+sdo_row @sec-static-semantics-tv#6 TV form equation {
+  prods [p"Lexical - TemplateCharacter :: `$` [lookahead != `{`]"]
+  keys ["TemplateCharacter :: `$`"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(36, "0024", "DOLLAR SIGN")))
+  }
+}
+
+sdo_row @sec-static-semantics-tv#7 TV form equation {
+  prods [p"Lexical - TemplateCharacter :: `\\` TemplateEscapeSequence"]
+  keys ["TemplateCharacter :: `\\` TemplateEscapeSequence"]
+  vars []
+  steps {
+    return sdo SV(child 5 |TemplateEscapeSequence|)
+  }
+}
+
+sdo_row @sec-static-semantics-tv#8 TV form equation {
+  prods [p"Lexical - TemplateCharacter :: `\\` NotEscapeSequence"]
+  keys ["TemplateCharacter :: `\\` NotEscapeSequence"]
+  vars []
+  steps {
+    return undefined
+  }
+}
+
+sdo_row @sec-static-semantics-tv#9 TV form equation {
+  prods [p"Lexical - TemplateCharacter :: LineTerminatorSequence"]
+  keys ["TemplateCharacter :: LineTerminatorSequence"]
+  vars []
+  steps {
+    return sdo TRV(child 5 |LineTerminatorSequence|)
+  }
+}
+
+sdo_row @sec-static-semantics-tv#10 TV form equation {
+  prods [p"Lexical - LineContinuation :: `\\` LineTerminatorSequence"]
+  keys ["LineContinuation :: `\\` LineTerminatorSequence"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-trv TRV form equation {
+  prods [p"Lexical 0 NoSubstitutionTemplate :: ``` TemplateCharacters? ```"]
+  keys ["NoSubstitutionTemplate :: ``` ```"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-trv#1 TRV form equation {
+  prods [p"Lexical 0 TemplateHead :: ``` TemplateCharacters? `${`"]
+  keys ["TemplateHead :: ``` `${`"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-trv#2 TRV form equation {
+  prods [p"Lexical 0 TemplateMiddle :: `}` TemplateCharacters? `${`"]
+  keys ["TemplateMiddle :: `}` `${`"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-trv#3 TRV form equation {
+  prods [p"Lexical 0 TemplateTail :: `}` TemplateCharacters? ```"]
+  keys ["TemplateTail :: `}` ```"]
+  vars []
+  steps {
+    return $"the empty String"()
+  }
+}
+
+sdo_row @sec-static-semantics-trv#4 TRV form equation {
+  prods [p"Lexical 1 TemplateCharacters :: TemplateCharacter TemplateCharacters?"]
+  keys ["TemplateCharacters :: TemplateCharacter TemplateCharacters"]
+  vars []
+  steps {
+    return $"string-concatenation"(sdo TRV(child 5 |TemplateCharacter|), sdo TRV(child 5 |TemplateCharacters|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#5 TRV form equation {
+  prods [p"Lexical - TemplateCharacter :: SourceCharacter but not one of ``` or `\\` or `$` or LineTerminator"]
+  keys ["TemplateCharacter :: SourceCharacter but not one of ``` or `\\` or `$` or LineTerminator"]
+  vars []
+  steps {
+    return @ph-utf16-of($CodePointMatched(child 5 |SourceCharacter|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#6 TRV form equation {
+  prods [p"Lexical - TemplateCharacter :: `$` [lookahead != `{`]"]
+  keys ["TemplateCharacter :: `$`"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(36, "0024", "DOLLAR SIGN")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#7 TRV form equation {
+  prods [p"Lexical - TemplateCharacter :: `\\` TemplateEscapeSequence"]
+  keys ["TemplateCharacter :: `\\` TemplateEscapeSequence"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(92, "005C", "REVERSE SOLIDUS")), sdo TRV(child 5 |TemplateEscapeSequence|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#8 TRV form equation {
+  prods [p"Lexical - TemplateCharacter :: `\\` NotEscapeSequence"]
+  keys ["TemplateCharacter :: `\\` NotEscapeSequence"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(92, "005C", "REVERSE SOLIDUS")), sdo TRV(child 5 |NotEscapeSequence|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#9 TRV form equation {
+  prods [p"Lexical - TemplateEscapeSequence :: `0` [lookahead ∉ DecimalDigit]"]
+  keys ["TemplateEscapeSequence :: `0`"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(48, "0030", "DIGIT ZERO")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#10 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `0` DecimalDigit"]
+  keys ["NotEscapeSequence :: `0` DecimalDigit"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(48, "0030", "DIGIT ZERO")), sdo TRV(child 5 |DecimalDigit|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#11 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `x` [lookahead ∉ HexDigit]"]
+  keys ["NotEscapeSequence :: `x` [lookahead &notin; HexDigit]"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(120, "0078", "LATIN SMALL LETTER X")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#12 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `x` HexDigit [lookahead ∉ HexDigit]"]
+  keys ["NotEscapeSequence :: `x` HexDigit [lookahead &notin; HexDigit]"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(120, "0078", "LATIN SMALL LETTER X")), sdo TRV(child 5 |HexDigit|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#13 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `u` [lookahead ∉ HexDigit] [lookahead != `{`]"]
+  keys ["NotEscapeSequence :: `u` [lookahead &notin; HexDigit] [lookahead != `{`]"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#14 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `u` HexDigit [lookahead ∉ HexDigit]"]
+  keys ["NotEscapeSequence :: `u` HexDigit [lookahead &notin; HexDigit]"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")), sdo TRV(child 5 |HexDigit|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#15 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `u` HexDigit HexDigit [lookahead ∉ HexDigit]"]
+  keys ["NotEscapeSequence :: `u` HexDigit HexDigit [lookahead &notin; HexDigit]"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")), sdo TRV(child 0 |HexDigit|), sdo TRV(child 1 |HexDigit|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#16 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `u` HexDigit HexDigit HexDigit [lookahead ∉ HexDigit]"]
+  keys ["NotEscapeSequence :: `u` HexDigit HexDigit HexDigit [lookahead &notin; HexDigit]"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")), sdo TRV(child 0 |HexDigit|), sdo TRV(child 1 |HexDigit|), sdo TRV(child 2 |HexDigit|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#17 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `u` `{` [lookahead ∉ HexDigit]"]
+  keys ["NotEscapeSequence :: `u` `{` [lookahead &notin; HexDigit]"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")), $CodeUnit(cu(123, "007B", "LEFT CURLY BRACKET")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#18 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `u` `{` NotCodePoint [lookahead ∉ HexDigit]"]
+  keys ["NotEscapeSequence :: `u` `{` NotCodePoint [lookahead &notin; HexDigit]"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")), $CodeUnit(cu(123, "007B", "LEFT CURLY BRACKET")), sdo TRV(child 5 |NotCodePoint|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#19 TRV form equation {
+  prods [p"Lexical - NotEscapeSequence :: `u` `{` CodePoint [lookahead ∉ HexDigit] [lookahead != `}`]"]
+  keys ["NotEscapeSequence :: `u` `{` CodePoint [lookahead &notin; HexDigit] [lookahead != `}`]"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")), $CodeUnit(cu(123, "007B", "LEFT CURLY BRACKET")), sdo TRV(child 5 |CodePoint|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#20 TRV form equation {
+  prods [p"Lexical - DecimalDigit :: `0`", p"Lexical - DecimalDigit :: `1`", p"Lexical - DecimalDigit :: `2`", p"Lexical - DecimalDigit :: `3`", p"Lexical - DecimalDigit :: `4`", p"Lexical - DecimalDigit :: `5`", p"Lexical - DecimalDigit :: `6`", p"Lexical - DecimalDigit :: `7`", p"Lexical - DecimalDigit :: `8`", p"Lexical - DecimalDigit :: `9`"]
+  keys ["DecimalDigit :: one of `0` `1` `2` `3` `4` `5` `6` `7` `8` `9`"]
+  vars []
+  steps {
+    return @ph-utf16-of($CodePointMatched(this_node))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#21 TRV form equation {
+  prods [p"Lexical - CharacterEscapeSequence :: NonEscapeCharacter"]
+  keys ["CharacterEscapeSequence :: NonEscapeCharacter"]
+  vars []
+  steps {
+    return sdo SV(child 5 |NonEscapeCharacter|)
+  }
+}
+
+sdo_row @sec-static-semantics-trv#22 TRV form equation {
+  prods [p"Lexical - SingleEscapeCharacter :: `'`", p"Lexical - SingleEscapeCharacter :: `\"`", p"Lexical - SingleEscapeCharacter :: `\\`", p"Lexical - SingleEscapeCharacter :: `b`", p"Lexical - SingleEscapeCharacter :: `f`", p"Lexical - SingleEscapeCharacter :: `n`", p"Lexical - SingleEscapeCharacter :: `r`", p"Lexical - SingleEscapeCharacter :: `t`", p"Lexical - SingleEscapeCharacter :: `v`"]
+  keys ["SingleEscapeCharacter :: one of `'` `\"` `\\` `b` `f` `n` `r` `t` `v`"]
+  vars []
+  steps {
+    return @ph-utf16-of($CodePointMatched(this_node))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#23 TRV form equation {
+  prods [p"Lexical - HexEscapeSequence :: `x` HexDigit HexDigit"]
+  keys ["HexEscapeSequence :: `x` HexDigit HexDigit"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(120, "0078", "LATIN SMALL LETTER X")), sdo TRV(child 0 |HexDigit|), sdo TRV(child 1 |HexDigit|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#24 TRV form equation {
+  prods [p"Lexical - UnicodeEscapeSequence :: `u` Hex4Digits"]
+  keys ["UnicodeEscapeSequence :: `u` Hex4Digits"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")), sdo TRV(child 5 |Hex4Digits|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#25 TRV form equation {
+  prods [p"Lexical - UnicodeEscapeSequence :: `u{` CodePoint `}`"]
+  keys ["UnicodeEscapeSequence :: `u{` CodePoint `}`"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(117, "0075", "LATIN SMALL LETTER U")), $CodeUnit(cu(123, "007B", "LEFT CURLY BRACKET")), sdo TRV(child 5 |CodePoint|), $CodeUnit(cu(125, "007D", "RIGHT CURLY BRACKET")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#26 TRV form equation {
+  prods [p"Lexical - Hex4Digits :: HexDigit HexDigit HexDigit HexDigit"]
+  keys ["Hex4Digits :: HexDigit HexDigit HexDigit HexDigit"]
+  vars []
+  steps {
+    return $"string-concatenation"(sdo TRV(child 0 |HexDigit|), sdo TRV(child 1 |HexDigit|), sdo TRV(child 2 |HexDigit|), sdo TRV(child 7 |HexDigit|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#27 TRV form equation {
+  prods [p"Lexical - HexDigits :: HexDigits[?Sep] HexDigit"]
+  keys ["HexDigits :: HexDigits HexDigit"]
+  vars []
+  steps {
+    return $"string-concatenation"(sdo TRV(child 5 |HexDigits|), sdo TRV(child 5 |HexDigit|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#28 TRV form equation {
+  prods [p"Lexical - HexDigit :: `0`", p"Lexical - HexDigit :: `1`", p"Lexical - HexDigit :: `2`", p"Lexical - HexDigit :: `3`", p"Lexical - HexDigit :: `4`", p"Lexical - HexDigit :: `5`", p"Lexical - HexDigit :: `6`", p"Lexical - HexDigit :: `7`", p"Lexical - HexDigit :: `8`", p"Lexical - HexDigit :: `9`", p"Lexical - HexDigit :: `a`", p"Lexical - HexDigit :: `b`", p"Lexical - HexDigit :: `c`", p"Lexical - HexDigit :: `d`", p"Lexical - HexDigit :: `e`", p"Lexical - HexDigit :: `f`", p"Lexical - HexDigit :: `A`", p"Lexical - HexDigit :: `B`", p"Lexical - HexDigit :: `C`", p"Lexical - HexDigit :: `D`", p"Lexical - HexDigit :: `E`", p"Lexical - HexDigit :: `F`"]
+  keys ["HexDigit :: one of `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`"]
+  vars []
+  steps {
+    return @ph-utf16-of($CodePointMatched(this_node))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#29 TRV form equation {
+  prods [p"Lexical - LineContinuation :: `\\` LineTerminatorSequence"]
+  keys ["LineContinuation :: `\\` LineTerminatorSequence"]
+  vars []
+  steps {
+    return $"string-concatenation"($CodeUnit(cu(92, "005C", "REVERSE SOLIDUS")), sdo TRV(child 5 |LineTerminatorSequence|))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#30 TRV form equation {
+  prods [p"Lexical - LineTerminatorSequence :: <LF>"]
+  keys ["LineTerminatorSequence :: &lt;LF&gt;"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(10, "000A", "LINE FEED")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#31 TRV form equation {
+  prods [p"Lexical - LineTerminatorSequence :: <CR> [lookahead != <LF>]"]
+  keys ["LineTerminatorSequence :: &lt;CR&gt;"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(10, "000A", "LINE FEED")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#32 TRV form equation {
+  prods [p"Lexical - LineTerminatorSequence :: <LS>"]
+  keys ["LineTerminatorSequence :: &lt;LS&gt;"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(8232, "2028", "LINE SEPARATOR")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#33 TRV form equation {
+  prods [p"Lexical - LineTerminatorSequence :: <PS>"]
+  keys ["LineTerminatorSequence :: &lt;PS&gt;"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(8233, "2029", "PARAGRAPH SEPARATOR")))
+  }
+}
+
+sdo_row @sec-static-semantics-trv#34 TRV form equation {
+  prods [p"Lexical - LineTerminatorSequence :: <CR> <LF>"]
+  keys ["LineTerminatorSequence :: &lt;CR&gt; &lt;LF&gt;"]
+  vars []
+  steps {
+    return $StrOfUnits($CodeUnit(cu(10, "000A", "LINE FEED")))
+  }
+}
+

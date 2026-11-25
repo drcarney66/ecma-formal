@@ -19,12 +19,6 @@ namespace Ecma
 
 variable {M : Model}
 
-/-- A condition that binds a variable in its consequent: a lone predicate phrase with a bound
-variable hole (`contains a T x such that c`), whose value is the List of the values it binds. -/
-def Cond.binder? : Cond → Option (Expr × PhraseId × List Hole × Slot)
-  | .preds e (.phrase p hs) [] => (hs.findSome? fun | .b x => some x | _ => none).map (e, p, hs, ·)
-  | _ => none
-
 /-- A node's child nodes in order: its present right-hand side's symbols, a terminal's Parse Node at
 its position and the nonterminals' nodes between. -/
 def childVals (D : LeafCtx M) (nd : M.Node) : List (Val M) :=
@@ -47,13 +41,13 @@ def Header.rc (h : Header) : Bool :=
   | .internalMethod, _ => true
   | .builtin, _ => true
   | _, some t => isComp t || match t with
-    | .union _ _ ts => ts.any isComp
+    | .union ts => ts.any isComp
     | _ => false
   | _, none => false
 where
   isComp : TyExpr → Bool
     | .completion _ => true
-    | .sort _ _ s _ => s == Known.sComp || s == Known.sNormalComp || s == Known.sAbruptComp ||
+    | .sort _ s => s == Known.sComp || s == Known.sNormalComp || s == Known.sAbruptComp ||
         s == Known.sThrowComp || s == Known.sReturnComp
     | _ => false
 
@@ -81,8 +75,8 @@ def sdoArity (hs : Array (Option Header)) (s : SdoId) : Nat :=
   | some (some h) => h.params.length
   | _ => 0
 
-/-- What the knot resolves: the program's algorithms, SDO rows, chain productions, concrete
-methods by Record kind, and phrase meanings. -/
+/-- What the knot resolves: the program's algorithms, SDO rows, chain productions, and concrete
+methods by Record kind. -/
 structure Prog where
   alg : AlgId → Option Alg
   row : SdoId → ProdId → Option SdoRow
@@ -97,7 +91,6 @@ structure Prog where
   /-- a nonterminal's parameters, as its rule declares them -/
   params : NtId → List ParamId
   method : SortId → MethodId → Option AlgId
-  phrase : PhraseId → PhraseMeaning
   /-- whether an SDO's header declares a Completion Record -/
   sdoRc : SdoId → Bool
   /-- an SDO's number of parameters -/
@@ -122,8 +115,8 @@ structure Prog where
   rowOf : AlgId → Option SdoRow := fun _ => none
   /-- the realm table: the built-in objects and the clauses' properties -/
   realm : RealmTable := {}
-  /-- the erratum whose text stops at the job loop's check for a Job the clause makes -/
-  jobErratum : ClauseId → Option ErratumId := fun _ => none
+  /-- whether a Job the clause makes has its completion checked in every mode (§9.5) -/
+  jobChecked : ClauseId → Bool := fun _ => false
 
 /-- The closures of the algorithm or SDO row that defines a closure site, and its variable count. -/
 def Prog.cloOf (P : Prog) (a : AlgId) : Option (Array CloLit × Nat) :=
@@ -154,7 +147,7 @@ def sortTest (P : Prog) (H : Host M) (call : AlgId → List (Val M) → Run M (V
   | some d =>
     let test : Run M Bool := match d.test with
       | .prim q args neg => do
-        let xs := args.map (phraseArg none [v])
+        let xs := args.map (sortArg v)
         let r ← bool (← if q == Known.pClosureKind then closureKind P xs
           else if hostPrim q then H.choiceL q xs else prim q xs)
         return neg != r

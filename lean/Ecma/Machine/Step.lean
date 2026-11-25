@@ -107,7 +107,7 @@ def tstepRes (X : Ctx M) (c : Cfg M) (a : AlgId) (nd : Option M.Node) (tb : Tabl
       c.enter ⟨cg.id, nd, initSlots cg.vars.size env, .steps false false false, [], [], none⟩
         (.code (X.algCode g))
     | none => stopF c .sortError
-  | .kept .. => stopF c .residue
+  | .raw .. => stopF c .residue
   | _ => match rc.cell 1 with
     | some cc => leafV c (cellOne X cc)
     | none => stopF c .residue
@@ -173,14 +173,6 @@ def invoke (X : Ctx M) (c : Cfg M) : Call M → Out M
         | none => stopF c .sortError
       | _ => stopF c .sortError
     | _ => stopF c .sortError
-  | .phrase p nd vs => match X.P.phrase p with
-    | .alg a => match nd, X.P.alg a with
-      | some n, some g => enterAlg X c g (some n) (g.args vs) g.header.rc true true
-      | _, _ => c.to (.invoke (.alg a vs))
-    | .prim q args neg =>
-      let c := if neg then c.push (.args (.leaf (.isTy true false)) [] []) else c
-      c.to (.invoke (.prim q (phraseArgs nd vs args)))
-    | .none => stopF c .residue
   | .callAt a nd vs => match X.P.alg a with
     | some g => enterAlg X c g (some nd) (g.args vs) g.header.rc true true
     | none => stopF c .residue
@@ -398,7 +390,6 @@ def finish (X : Ctx M) (c : Cfg M) (f : Fin M) (vs : List (Val M)) : Out M :=
     | .ty .. => stopF c .residue
     | u => c.to (.val (.bool (Val.same w u)))
   | .call (.tstep t), [key] => c.to (.invoke (.tstep c.top.alg c.top.node t key c.top.slots.toList))
-  | .call (.phrase p), vs => c.to (.invoke (.phrase p none vs))
   | .call (.earlyRow p i), [] => match c.top.node with
     | some nd => c.to (.invoke (.earlyRow p i nd))
     | none => stopF c .sortError
@@ -434,14 +425,14 @@ def finish (X : Ctx M) (c : Cfg M) (f : Fin M) (vs : List (Val M)) : Out M :=
     bindR c (collectBoundary X.H) fun _ c => match v with
       | .comp t _ _ =>
         if t == Known.eNormal then c.to (.invoke (.jobs clear))
-        else if jobChecked (leafCtx X) (some job) then stopF c (jobStop (leafCtx X) (some job))
+        else if jobChecked (leafCtx X) (some job) then stopF c jobStop
         else c.to (.val v)
       | _ => c.to (.invoke (.jobs clear))
   | .tupInto acc, [v] => match c.top.get acc, v with
     | .tuple a, .tuple b => (c.setSlot acc (.tuple (a ++ b))).to .done
     | _, _ => stopF c .sortError
   | .cover acc k err, [v] => match v with
-    | .node n => bindR c (do reparse X.rd (← hostSections X) (X.P.params k) n k) fun r c =>
+    | .node n => bindR c (do reparse (← hostSections X) (X.P.params k) n k) fun r c =>
       match r with
       | some (some n') => (c.push (.args (.tupInto acc) [] [])).to (.invoke (.early true [M.nodeProd n'] n'))
       | some none => c.to (.code [.let_ acc (.leaf .tupCat [.var acc, .leaf .tuple [err]])])
@@ -473,7 +464,7 @@ def finish (X : Ctx M) (c : Cfg M) (f : Fin M) (vs : List (Val M)) : Out M :=
   | .drop, _ => c.to .done
   | .ret, [v] => match c.top.kind with
     | .steps rc _ _ => c.to (.ret (retConv rc v))
-    | .eval | .erratum .. => c.to (.ret v)
+    | .eval => c.to (.ret v)
   | .throw, [v] => c.to (.esc (.comp Known.eThrow v (.enum Known.eEmpty)))
   | .setField f, [o, e] => bindR c (writeField o f e) fun _ c => c.to .done
   | .setIndex e, [.ref a, .math j] => bindR c (readCell a) fun cell c => match cell with
@@ -494,7 +485,7 @@ def finish (X : Ctx M) (c : Cfg M) (f : Fin M) (vs : List (Val M)) : Out M :=
     | _ => stopF c .sortError
   | .br t e, [v] => withBool c v fun b => c.to (.code (if b then t else e))
   | .assert, [v] => withBool c v fun b => if b then c.to .done else stopF c .assertFailed
-  | .assertAt r, [v] => withBool c v fun b => if b then c.to .done else stopF c (Stop.atAssert X.rd r)
+  | .assertAlways, [v] => withBool c v fun b => if b then c.to .done else stopF c .assertFailed
   | .assertIf d, [v] => withBool c v fun b => if b then (c.push (.args .assert [] [])).to (.op d) else c.to .done
   | .ctxPush, [v] =>
     bindR c (ctxPush X.H.exhausts v) fun _ c => c.to .done
@@ -544,11 +535,6 @@ def evalOp (X : Ctx M) (c : Cfg M) : Op → Out M
   | .andT [] t => c.to (.op t)
   | .andT (o :: os) t => (c.push (.juncT os t)).to (.op o)
   | .all l t => (c.push (.args (.all t) [] [])).to (.op l)
-  | .erratum r sort e =>
-    if X.rd r == .literal then c.enter { c.top with kind := .erratum r sort, konts := [] } (.op e) else c.to (.op e)
-  | .readings e lit alts => match alts.find? (·.1 == X.rd e) with
-    | some (_, o) => c.to (.op o)
-    | none => c.to (.op lit)
   | .stop r => stopF c r
   | .residue _ => stopF c .residue
 
@@ -562,24 +548,17 @@ def exec (X : Ctx M) (c : Cfg M) : Ins → Out M
   | .ret e => (c.push (.args .ret [] [])).to (.op e)
   | .retUnused => match c.top.kind with
     | .steps rc _ _ => c.to (.ret (retConv rc (.enum Known.eUnused)))
-    | .eval | .erratum .. => c.to (.ret (.enum Known.eUnused))
+    | .eval => c.to (.ret (.enum Known.eUnused))
   | .throw e => (c.push (.args .throw [] [])).to (.op e)
   | .br cd t e => (c.push (.args (.br t e) [] [])).to (.op cd)
   | .assert cd => if !X.chk then c.to .done else (c.push (.args .assert [] [])).to (.op cd)
-  | .assertAt r cd => (c.push (.args (.assertAt r) [] [])).to (.op cd)
+  | .assertAlways cd => (c.push (.args .assertAlways [] [])).to (.op cd)
   | .assertIf cd d => if !X.chk then c.to .done else (c.push (.args (.assertIf d) [] [])).to (.op cd)
   | .loop x it p body => startArgs X c (.loopInit x it p body) it.ops
   | .ctxPush e => (c.push (.args .ctxPush [] [])).to (.op e)
   | .ctxRemove e => (c.push (.args .ctxRemove [] [])).to (.op e)
   | .ctxTopIs e => (c.push (.args .ctxTopIs [] [])).to (.op e)
   | .transfer x ctx v => startArgs X c (.transfer x) [ctx, v]
-  | .readings r lit alts => match alts.find? (·.1 == X.rd r) with
-    | some (_, code) => c.to (.code code)
-    | none => c.to (.code lit)
-  | .reading _ code => c.to (.code code)
-  | .byReading e lit alts => match alts.find? (·.1 == X.rd e) with
-    | some (_, code) => c.to (.code code)
-    | none => c.to (.code lit)
   | .cover acc p k err => (c.push (.args (.cover acc k err) [] [])).to (.op p)
   | .stop r => stopF c r
   | .residue _ => stopF c .residue
@@ -631,7 +610,7 @@ def step (X : Ctx M) (c : Cfg M) : Out M :=
     | f :: fs => match f.konts with
       | k :: ks => apply X { c with frames := { f with konts := ks } :: fs } k v
       | [] => match f.kind with
-        | .eval | .erratum .. => c.pop.to (.val v)
+        | .eval => c.pop.to (.val v)
         | .steps .. => stopF c .noReturn
     | [] => .inr (.ok v c.s)
   | .done => match c.frames with

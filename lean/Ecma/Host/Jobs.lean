@@ -40,15 +40,12 @@ def collectBoundary (H : Host M) : Run M Unit := do
   if s.frames.isEmpty then
     let _ ← Run.hostStep .collect H.collect
 
-/-- The erratum of a Job `job`'s clause (`jobErratum`), if any. -/
-def jobErr (D : LeafCtx M) : Option (Val M) → Option ErratumId
-  | some (.clo site _) => D.jobErratum site.alg.clause
-  | _ => none
+/-- The stop of a Job `job` that completes abruptly (§9.5 ¶8). -/
+def jobStop : Stop := .assertFailed
 
-/-- The stop of a Job `job` that completes abruptly (§9.5 ¶8): its clause's erratum, if any. -/
-def jobStop (D : LeafCtx M) (job : Option (Val M)) : Stop := Stop.atAssert D.reading (jobErr D job)
-
-/-- Whether the job loop checks a Job `job`'s completion: in checked mode, and at an erratum's site in every mode. -/
-def jobChecked (D : LeafCtx M) (job : Option (Val M)) : Bool := D.checked || (jobErr D job).isSome
+/-- Whether the job loop checks a Job `job`'s completion: in checked mode, and on clauses listed in `jobChecked`. -/
+def jobChecked (D : LeafCtx M) : Option (Val M) → Bool
+  | some (.clo site _) => D.checked || D.jobChecked site.alg.clause
+  | _ => D.checked
 
 end Ecma

@@ -35,8 +35,8 @@ structure Names where
   sort? : String → Option SortId
   /-- A sort's direct supersorts. -/
   sortSuper : SortId → List SortId
-  /-- The literal errata whose text stops at the job loop's check for a Job the clause makes. -/
-  jobErrata : List (ClauseId × ErratumId) := []
+  /-- The clauses whose Jobs check for an abrupt completion at the job loop. -/
+  checkedJobs : List ClauseId := []
 
 namespace Names
 

@@ -1,5 +1,0 @@
-# Every Expr.extreme site, which FastP's accelerator decides: each site's predicate holds of a
-# set of integers closed downward (largest) or upward (smallest) and is decided false everywhere
-# else, so it is a predicate of Model.SiteP, where FastP's choice is lawful. Emission
-# fails for an Expr.extreme step not listed here.
-sec-yearfromtime 1	the largest integer y with TimeFromYear(y) ≤ tv: TimeFromYear is increasing

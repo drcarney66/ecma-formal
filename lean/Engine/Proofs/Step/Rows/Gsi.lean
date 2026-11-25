@@ -32,10 +32,10 @@ abbrev gsiIter : Iter :=
 
 open Engine.Accel in
 /-- GetStringIndex's loop and return, from a round's head: `scanIdx`'s index, its Records allocated. -/
-theorem gsi_loop [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (st : State F) (fs : List (Frame F))
+theorem gsi_loop [PinsHold] (H : Host F) (chk : Bool) (st : State F) (fs : List (Frame F))
     (nd : Option F.Node) (s : Array UInt16) (i : Int) :
     ∀ (k p c : Nat) (rs : Array (Cell F)) (v5 : Val F) (q : List Nat) (r : Nat), p ≤ s.size → s.size - p ≤ k →
-    Steps (Ctx.spec Engine.P' H rd chk)
+    Steps (Ctx.spec Engine.P' H chk)
       ⟨{ st with heap := st.heap ++ rs },
         ⟨⟨1548, 0⟩, nd, #[.str s, .math (.int i), .math (.int s.size), .math (.int p), .math (.int c), v5],
           .steps false true true, q, [.seq [.site [6], .ret (.var 2)]], none⟩ :: fs,
@@ -68,7 +68,7 @@ theorem gsi_loop [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Boo
         rw [e]
         refine Steps.codeIf false (by mdecide) ?_
         gsteps
-        refine Steps.trans (cpa_steps H rd chk _ _ s p hlt) ?_
+        refine Steps.trans (cpa_steps H chk _ _ s p hlt) ?_
         gsteps
         refine Steps.next (step_field _ _ _ _ _ _ _ _ _ _ _ _ _ (cpRec_count _ _ (cpAt s p) (heap_push_get _ _))) ?_
         rw [show (st.heap ++ rs).push (cpRec (cpAt s p)) = st.heap ++ rs.push (cpRec (cpAt s p)) from by simp]
@@ -83,9 +83,9 @@ theorem gsi_loop [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Boo
 
 open Engine.Accel in
 /-- GetStringIndex's steps at a String that is not empty and an integer: `scanIdx`'s index, its Records allocated. -/
-theorem gsi_steps [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (st : State F) (fs : List (Frame F))
+theorem gsi_steps [PinsHold] (H : Host F) (chk : Bool) (st : State F) (fs : List (Frame F))
     (nd : Option F.Node) (s : Array UInt16) (i : Int) (hs : s.size ≠ 0) :
-    Steps (Ctx.spec Engine.P' H rd chk)
+    Steps (Ctx.spec Engine.P' H chk)
       ⟨st, ⟨⟨1548, 0⟩, nd, #[.str s, .math (.int i), .unbound, .unbound, .unbound, .unbound], .steps false true true,
         [], [], none⟩ :: fs, .code gsiCode⟩
       ⟨{ st with heap := st.heap ++ (scanIdx s i s.size 0 0 #[]).2 }, fs,
@@ -94,14 +94,14 @@ theorem gsi_steps [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bo
   have hne : s ≠ #[] := fun h => hs (by rw [h]; rfl)
   refine Steps.valBool false (by simp [sameIs, Val.same, Val.used, utf16_empty, hne]) ?_
   gsteps_round
-  have h := gsi_loop H rd chk st fs nd s i s.size 0 0 #[] .unbound [5] (0 + 1) (Nat.zero_le _) (by omega)
+  have h := gsi_loop H chk st fs nd s i s.size 0 0 #[] .unbound [5] (0 + 1) (Nat.zero_le _) (by omega)
   rw [Array.append_empty] at h
   exact h
 
 /-- GetStringIndex's steps at the empty String: 0, in the same state. -/
-theorem gsi_steps_empty (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (st : State F) (fs : List (Frame F))
+theorem gsi_steps_empty (H : Host F) (chk : Bool) (st : State F) (fs : List (Frame F))
     (nd : Option F.Node) (i : Int) :
-    Steps (Ctx.spec Engine.P' H rd chk)
+    Steps (Ctx.spec Engine.P' H chk)
       ⟨st, ⟨⟨1548, 0⟩, nd, #[.str #[], .math (.int i), .unbound, .unbound, .unbound, .unbound], .steps false true true,
         [], [], none⟩ :: fs, .code gsiCode⟩
       ⟨st, fs, .val (.math (.int 0))⟩ := by
@@ -113,20 +113,20 @@ theorem gsi_steps_empty (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (
 open Engine.Accel in
 /-- The engine's shortcut at GetStringIndex is the specification's steps, from a configuration whose transition
 enters the algorithm's frame. -/
-theorem gsi_row [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bool) (c : Cfg F) (vs : List (Val F))
+theorem gsi_row [PinsHold] (H : Host F) (chk : Bool) (c : Cfg F) (vs : List (Val F))
     (r : Run F (Option (Val F))) (nd : Option F.Node) (he : gsiEntry vs = some r)
-    (hstep : step (Ctx.spec Engine.P' H rd chk) c =
-      enterAlg (Ctx.spec Engine.P' H rd chk) c gsiAlg nd (gsiAlg.args vs) gsiAlg.header.rc true true) :
-    Sim (Ctx.spec Engine.P' H rd chk) c (bindR c r fun o c => match o with
+    (hstep : step (Ctx.spec Engine.P' H chk) c =
+      enterAlg (Ctx.spec Engine.P' H chk) c gsiAlg nd (gsiAlg.args vs) gsiAlg.header.rc true true) :
+    Sim (Ctx.spec Engine.P' H chk) c (bindR c r fun o c => match o with
       | some v => c.to (.val v)
-      | none => step (Ctx.spec Engine.P' H rd chk) c) := by
+      | none => step (Ctx.spec Engine.P' H chk) c) := by
   unfold gsiEntry at he
   split at he
   · rename_i s i
     split at he
     · cases he
       obtain ⟨st, fs, ctl⟩ := c
-      have hcode : (Ctx.spec Engine.P' H rd chk).algCode gsiAlg.id = gsiCode := by
+      have hcode : (Ctx.spec Engine.P' H chk).algCode gsiAlg.id = gsiCode := by
         show (Engine.P'.alg ⟨1548, 0⟩).getD _ = _
         rw [gsiCode_pin]; rfl
       by_cases hs : s.size = 0
@@ -137,7 +137,7 @@ theorem gsi_row [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bool
         show Steps _ _ _
         refine Steps.next hstep ?_
         rw [hcode]
-        exact gsi_steps_empty H rd chk st fs nd i
+        exact gsi_steps_empty H chk st fs nd i
       · have hr : gsiRun s i st = .ok (.math (.int (scanIdx s i s.size 0 0 #[]).1))
             { st with heap := st.heap ++ (scanIdx s i s.size 0 0 #[]).2 } := by
           unfold gsiRun; exact if_neg hs
@@ -145,15 +145,15 @@ theorem gsi_row [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bool
         show Steps _ _ _
         refine Steps.next hstep ?_
         rw [hcode]
-        exact gsi_steps H rd chk st fs nd s i hs
+        exact gsi_steps H chk st fs nd s i hs
     · cases he
   · cases he
 
 open Engine.Accel in
 /-- GetStringIndex's row. -/
-theorem gsi_algRow [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bool) :
-    AlgRow (Ctx.spec Engine.P' H rd chk) ⟨1548, 0⟩ gsiEntry :=
-  ⟨gsiAlg, gsiAlg_pin, fun c vs r nd he hstep => gsi_row H rd chk c vs r nd he hstep⟩
+theorem gsi_algRow [PinsHold] (H : Host F) (chk : Bool) :
+    AlgRow (Ctx.spec Engine.P' H chk) ⟨1548, 0⟩ gsiEntry :=
+  ⟨gsiAlg, gsiAlg_pin, fun c vs r nd he hstep => gsi_row H chk c vs r nd he hstep⟩
 
 
 end Engine.Machine

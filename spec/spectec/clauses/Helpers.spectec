@@ -1,0 +1,3560 @@
+-- ECMA-262 SpecTec Clauses: Helpers
+
+def @ph-assert-critical "ph-assert-critical" (kind ao params [waiterList : #"WaiterList Record"]) vars [waiterList] {
+  assert $EnteredCriticalSections() sat $Contains(?waiterList)
+  return ~unused~
+}
+
+def @ph-type-pairs-of "ph-type-pairs-of" (kind ao params [t : doc "a type", v : pred(sat @ph-type-anything())]) vars [t, v, e] {
+  if v is not ty {List} -> return false
+  if $ListLen(?v) is not val {2} -> return false
+  for_each e in v {
+    if e is not ty {var t} -> return false
+  }
+  return true
+}
+
+def @ph-property-value-alias "ph-property-value-alias" (kind ao params [p : #"ECMAScript source text", v : #"ECMAScript source text"]) vars [p, v] {
+  return $IsPropertyValueAlias(p, v)
+}
+
+def @ph-not-property-value-alias-given-by "ph-not-property-value-alias-given-by" (kind ao params [p : #"ECMAScript source text", v : #"ECMAScript source text"]) vars [p, v] {
+  if $IsPropertyValueAlias(p, v) is val {true} -> return false
+  return true
+}
+
+def @ph-general-category-value-alias "ph-general-category-value-alias" (kind ao params [v : #"ECMAScript source text"]) vars [v] {
+  return $IsPropertyValueAlias(code "General_Category", v)
+}
+
+def @ph-not-lone-property "ph-not-lone-property" (kind ao params [t : doc "a table", u : doc "a table", s : #"ECMAScript source text"]) vars [t, u, s] {
+  if $IsPropertyValueAlias(code "General_Category", s) is val {true} -> return false
+  if $TableColumnHas(t, "Property name and aliases", @sec-codepointstostring(s)) is val {true} -> return false
+  if $TableColumnHas(u, "Property name", @sec-codepointstostring(s)) is val {true} -> return false
+  return true
+}
+
+def @ph-property-code-points "ph-property-code-points" (kind ao params [p : list<#"code point">, v : list<#"code point">]) vars [p, v] {
+  return $PropertyCharSet(p, v)
+}
+
+def @ph-general-category-code-points "ph-general-category-code-points" (kind ao params [v : list<#"code point">]) vars [v] {
+  return $PropertyCharSet(code "General_Category", v)
+}
+
+def @ph-property-true-elements "ph-property-true-elements" (kind ao params [p : list<#"code point">]) vars [p] {
+  return $PropertyCharSet(p, code "True")
+}
+
+def @ph-not-exactly-one-character "ph-not-exactly-one-character" (kind ao params [cs : CharSet]) vars [cs] {
+  if $ListLen(?cs) == 1 and $CharSetAllSingle(cs) is val {true} -> return false
+  return true
+}
+
+def @ph-decimal-digit-charset "ph-decimal-digit-charset" (kind ao params []) vars [] {
+  return $CharSetInterval(math(hex(48, "0030")), math(hex(57, "0039")))
+}
+
+def @ph-character-interval "ph-character-interval" (kind ao params [i : sort [#"non-negative"] integer, j : sort [#"non-negative"] integer]) vars [i, j] {
+  return $CharSetInterval(i, j)
+}
+
+def @ph-charset-of-every-character "ph-charset-of-every-character" (kind ao params [s : String]) vars [s, #"set", i, c] {
+  let #"set" = $EmptyCharSet()
+  for_range i incl 0 .. excl $StrLen(?s) {
+    let c = $NumericValue($UnitAt(?i, ?s))
+    perform $SetAdd(?c, ?#"set")
+  }
+  return #"set"
+}
+
+def @ph-single-charset-element "ph-single-charset-element" (kind ao params [cs : CharSet]) vars [cs, e] {
+  assert $ListLen(?cs) is val {1}
+  let e = $ListElem(data choice 0, ?cs)
+  if e is ty {List} -> return e
+  return [e]
+}
+
+def @ph-input-index-of "ph-input-index-of" (kind ao params [input : list<character>, lastIndex : sort [#"non-negative"] integer, string : String]) vars [input, lastIndex, string, position, index, #"cp"] {
+  if $ListLen(?input) is val {$StrLen(?string)} -> return lastIndex
+  let position = 0
+  let index = 0
+  repeat_while position < lastIndex {
+    let #"cp" = @sec-codepointat(string, position)
+    if position + #"cp"[[CodeUnitCount]] > lastIndex -> return index
+    set var position = position + #"cp"[[CodeUnitCount]]
+    set var index = index + 1
+  }
+  return index
+}
+
+def @ph-code-units-of-string "ph-code-units-of-string" (kind ao params [#"choice 0", s : String]) vars [#"choice 0", s, l, i] {
+  let l = $ListNew()
+  for_range i incl 0 .. excl $StrLen(?s) {
+    perform $Append($UnitAt(?i, ?s), ?l)
+  }
+  return l
+}
+
+def @ph-character-of-node "ph-character-of-node" (kind ao params [#"choice 0", n : #"Parse Node"]) vars [#"choice 0", n] {
+  return $Char($CodePointMatched(?n))
+}
+
+def @ph-remove-first-n "ph-remove-first-n" (kind ao params [n : sort [#"non-negative"] integer, l : List]) vars [n, l] {
+  assert n <= $ListLen(?l)
+  repeat_n n {
+    perform $RemoveFirst(?l)
+  }
+  return ~unused~
+}
+
+def @ph-every-single-character "ph-every-single-character" (kind ao params [cs : CharSet, t : CharSet]) vars [cs, t] {
+  assert t is val {cs}
+  return $CharSetAllSingle(cs)
+}
+
+def @ph-charset-element-longer-than-one "ph-charset-element-longer-than-one" (kind ao params [s : CharSetElement]) vars [s] {
+  if s is ty {List} and $ListLen(?s) > 1 -> return true
+  return false
+}
+
+def @ph-sort-by-length "ph-sort-by-length" (kind ao params [l : list<CharSetElement>, t : doc "a sort"]) vars [l, t, max, e, k, sorted, n] {
+  let max = 0
+  for_each e in l {
+    if_else e is ty {List} { let k = $ListLen(?e) } else { let k = 1 }
+    if k > max -> set var max = k
+  }
+  let sorted = $ListNew()
+  for_range n incl 0 .. incl max desc {
+    for_each e in l {
+      if_else e is ty {List} { let k = $ListLen(?e) } else { let k = 1 }
+      if k == n -> perform $Append(?e, ?sorted)
+    }
+  }
+  repeat_while l fails $IsEmpty() {
+    perform $RemoveFirst(?l)
+  }
+  for_each e in sorted {
+    perform $Append(?e, ?l)
+  }
+  return ~unused~
+}
+
+def @ph-code-point-sequence "ph-code-point-sequence" (kind ao params [n : sort [#"non-negative"] integer, s : CharSetElement]) vars [n, s, #"seq", c] {
+  if_else s is ty {List} { let #"seq" = s } else { let #"seq" = [s] }
+  if $ListLen(?#"seq") < n -> return false
+  for_each c in #"seq" {
+    if c is not ty {#"code point"} -> return false
+  }
+  return true
+}
+
+def @ph-charset-singles "ph-charset-singles" (kind ao params [cs : CharSet]) vars [cs] {
+  return $CharSetSingles(cs)
+}
+
+def @ph-empty-character-sequence "ph-empty-character-sequence" (kind ao params [#"choice 0"]) vars [#"choice 0"] {
+  return $ListNew()
+}
+
+def @ph-last-in "ph-last-in" (kind ao params [t : doc "a sort", l : List]) vars [t, l] {
+  return $ListElem(data choice 2, ?l)
+}
+
+def @ph-empty-charset "ph-empty-charset" (kind ao params []) vars [] {
+  return $EmptyCharSet()
+}
+
+def @ph-code-and-name "ph-code-and-name" (kind ao params [c : String, u : #"code point"]) vars [c, u] {
+  assert c is val {@sec-codepointstostring([u])}
+  return $Char(?u)
+}
+
+def @ph-charset-containing "ph-charset-containing" (kind ao params [c : CharSetElement]) vars [c] {
+  return $CharSetOne(?c)
+}
+
+def @ph-charset-minus "ph-charset-minus" (kind ao params [a : CharSet, b : CharSet]) vars [a, b] {
+  return $CharSetMinus(a, b)
+}
+
+def @ph-charset-one-string "ph-charset-one-string" (kind ao params [s : list<character>]) vars [s] {
+  if $ListLen(?s) is val {1} -> return $CharSetOne($ListElem(data choice 0, ?s))
+  return $CharSetOne(?s)
+}
+
+def @ph-one-character "ph-one-character" (kind ao params [cs : CharSet]) vars [cs, e] {
+  assert $ListLen(?cs) is val {1}
+  let e = $ListElem(data choice 0, ?cs)
+  if e is ty {List} -> return $ListElem(data choice 0, ?e)
+  return e
+}
+
+def @ph-all-code-points "ph-all-code-points" (kind ao params []) vars [] {
+  return @ph-character-interval(0, math(hex(1114111, "10FFFF")))
+}
+
+def @ph-all-code-units "ph-all-code-units" (kind ao params []) vars [] {
+  return @ph-character-interval(0, math(hex(65535, "FFFF")))
+}
+
+def @ph-concatenation "ph-concatenation" (kind ao params [ls : list<List>]) vars [ls, r, s, c] {
+  let r = $ListNew()
+  for_each s in ls {
+    for_each c in s {
+      perform $Append(?c, ?r)
+    }
+  }
+  return r
+}
+
+def @ph-syntax-errors "ph-syntax-errors" (kind ao params []) vars [] {
+  return [@ph-new-error(err [[SyntaxError]])]
+}
+
+def @ph-set-each-index "ph-set-each-index" (kind ao params [a : #"Data Block", b : list<#"byte value">]) vars [a, b, k] {
+  assert $ListLen(?b) >= $Count(data choice 3, ?a)
+  for_range k incl 0 .. excl $Count(data choice 3, ?a) {
+    set expr a[k] = b[k]
+  }
+  return ~unused~
+}
+
+def @ph-utf16-of "ph-utf16-of" (kind ao params [#"cp" : #"code point"]) vars [#"cp"] {
+  return @sec-utf16encodecodepoint(#"cp")
+}
+
+def @ph-nt-containing "ph-nt-containing" (kind ao params [#"nt" : nonterminal, node : #"Parse Node"]) vars [#"nt", node, n] {
+  let n = $NearestEnclosing(node, [#"nt"])
+  assert n is not val {~empty~}
+  return n
+}
+
+def @ph-contains-any-nt "ph-contains-any-nt" (kind ao params [#"nt" : nonterminal, x : #"Parse Node" | Object]) vars [#"nt", x, node, n] {
+  if_else x is ty {#"Parse Node"} { let node = x } else { let node = @formal-regexppattern(x) }
+  for_each n in $ParseNodesWithin(node) {
+    if n is not val {node} and expr $InstanceOf(n, ?#"nt") -> return true
+  }
+  return false
+}
+
+def @ph-second-to-top-context "ph-second-to-top-context" (kind ao params []) vars [c] {
+  let c = $ContextBelowTop()
+  assert c is not val {~empty~}
+  return c
+}
+
+def @ph-only-one-argument-passed "ph-only-one-argument-passed" (kind ao params []) vars [] {
+  if $ListLen($PassedArguments()) is val {1} -> return true
+  return false
+}
+
+def @ph-has-binding "ph-has-binding" (kind ao params [N : String, env : #"Environment Record"]) vars [N, env] {
+  if $BindingNames(env) sat $Contains(?N) -> return true
+  return false
+}
+
+def @ph-not-has-binding "ph-not-has-binding" (kind ao params [#"choice 0", N : String, env : #"Environment Record"]) vars [#"choice 0", N, env] {
+  if $BindingNames(env) sat $Contains(?N) -> return false
+  return true
+}
+
+def @ph-not-env-for "ph-not-env-for" (kind ao params [#"choice 0", #"nt" : nonterminal, env : #"Environment Record"]) vars [#"choice 0", #"nt", env] {
+  if env sat $HasField([[CreatedFor]]) {
+    if expr $InstanceOf(env[[CreatedFor]], ?#"nt") -> return false
+  }
+  return true
+}
+
+def @ph-binding-for "ph-binding-for" (kind ao params [N : String, env : #"Environment Record"]) vars [N, env] {
+  return $BindingFor(env, N)
+}
+
+def @ph-bound-value "ph-bound-value" (kind ao params [N : String, env : #"Environment Record"]) vars [N, env] {
+  return $BindingFor(env, N)[[Value]]
+}
+
+def @ph-env-empty "ph-env-empty" (kind ao params [t : doc "an Environment Record sort"]) vars [t] {
+  return $NewBindingsRecord(t)
+}
+
+def @ph-not-yet-initialized "ph-not-yet-initialized" (kind ao params [b : binding]) vars [b] {
+  if b[[Initialized]] is val {true} -> return false
+  return true
+}
+
+def @ph-time-at-least "ph-time-at-least" (kind ao params [a : #"mathematical value", b : #"mathematical value"]) vars [a, b] {
+  if a >= b -> return true
+  return false
+}
+
+def @ph-ith-element "ph-ith-element" (kind ao params [i : sort [positive] integer, l : List]) vars [i, l, k, found, e] {
+  assert i <= $ListLen(?l)
+  let k = 0
+  let found = ~empty~
+  for_each e in l {
+    set var k = k + 1
+    if k == i -> set var found = e
+  }
+  return found
+}
+
+def @ph-single-code-point-element "ph-single-code-point-element" (kind ao params [l : list<#"code point">]) vars [l] {
+  return $ListElem(data choice 0, ?l)
+}
+
+def @ph-set-difference "ph-set-difference" (kind ao params [a : Set, b : Set]) vars [a, b, s, e] {
+  let s = $ListNew()
+  for_each e in a {
+    if b fails $Contains(?e) -> perform $Append(?e, ?s)
+  }
+  return s
+}
+
+def @ph-block-bytes "ph-block-bytes" (kind ao params [#"block" : #"Data Block", i : sort [#"non-negative"] integer, j : sort [#"non-negative"] integer]) vars [#"block", i, j, l, k] {
+  let l = $ListNew()
+  for_range k incl i .. excl j {
+    perform $Append(#"block"[k], ?l)
+  }
+  return l
+}
+
+def @ph-duplicate-entries "ph-duplicate-entries" (kind ao params [#"choice 0", l : List]) vars [#"choice 0", l, seen, e] {
+  let seen = $ListNew()
+  for_each e in l {
+    if seen sat $Contains(?e) -> return true
+    perform $Append(?e, ?seen)
+  }
+  return false
+}
+
+def @ph-element-also-occurs "ph-element-also-occurs" (kind ao params [a : List, b : List]) vars [a, b, e] {
+  for_each e in a {
+    if b sat $Contains(?e) -> return true
+  }
+  return false
+}
+
+def @ph-result-of "ph-result-of" (kind ao params [x : pred(sat @ph-type-anything())]) vars [x] {
+  return x
+}
+
+def @ph-occurs-exactly-once "ph-occurs-exactly-once" (kind ao params [l : List, x : pred(sat @ph-type-anything())]) vars [l, x, count, e] {
+  let count = 0
+  for_each e in l {
+    if e is val {x} -> set var count = count + 1
+  }
+  if count == 1 -> return true
+  return false
+}
+
+def @ph-more-than-one-occurrence "ph-more-than-one-occurrence" (kind ao params [x : pred(sat @ph-type-anything()), l : List]) vars [x, l, count, e] {
+  let count = 0
+  for_each e in l {
+    if e is val {x} -> set var count = count + 1
+  }
+  if count > 1 -> return true
+  return false
+}
+
+def @ph-duplicate-entries-for "ph-duplicate-entries-for" (kind ao params [x : pred(sat @ph-type-anything()), l : List]) vars [x, l] {
+  if l sat @ph-more-than-one-occurrence(?x) -> return true
+  return false
+}
+
+def @ph-element-not-in-either "ph-element-not-in-either" (kind ao params [a : List, b : List, c : List]) vars [a, b, c, e] {
+  for_each e in a {
+    if b fails $Contains(?e) and c fails $Contains(?e) -> return true
+  }
+  return false
+}
+
+def @ph-list-consisting-of "ph-list-consisting-of" (kind ao params [l : List]) vars [l] {
+  return $Copy(?l)
+}
+
+def @ph-the-list "ph-the-list" (kind ao params [l : List]) vars [l] {
+  assert l is ty {List}
+  return l
+}
+
+def @ph-the-string "ph-the-string" (kind ao params [#"choice 0", s : String]) vars [#"choice 0", s] {
+  assert s is ty {String}
+  return s
+}
+
+def @ph-new-error "ph-new-error" (kind ao params [name : doc "an error constructor's name"]) vars [name, o] {
+  if name is val {err [[AggregateError]]} -> let o = @sec-ordinaryobjectcreate(intrinsic [[AggregateError.prototype]], [[[ErrorData]]])
+  else_if name is val {err [[EvalError]]} -> let o = @sec-ordinaryobjectcreate(intrinsic [[EvalError.prototype]], [[[ErrorData]]])
+  else_if name is val {err [[RangeError]]} -> let o = @sec-ordinaryobjectcreate(intrinsic [[RangeError.prototype]], [[[ErrorData]]])
+  else_if name is val {err [[ReferenceError]]} -> let o = @sec-ordinaryobjectcreate(intrinsic [[ReferenceError.prototype]], [[[ErrorData]]])
+  else_if name is val {err [[SuppressedError]]} -> let o = @sec-ordinaryobjectcreate(intrinsic [[SuppressedError.prototype]], [[[ErrorData]]])
+  else_if name is val {err [[SyntaxError]]} -> let o = @sec-ordinaryobjectcreate(intrinsic [[SyntaxError.prototype]], [[[ErrorData]]])
+  else_if name is val {err [[TypeError]]} -> let o = @sec-ordinaryobjectcreate(intrinsic [[TypeError.prototype]], [[[ErrorData]]])
+  else {
+    assert name is val {err [[URIError]]}
+    let o = @sec-ordinaryobjectcreate(intrinsic [[URIError.prototype]], [[[ErrorData]]])
+  }
+  perform $HostExtendObject(o)
+  return o
+}
+
+def @ph-no-duplicate-entries "ph-no-duplicate-entries" (kind ao params [#"choice 0", l : List]) vars [#"choice 0", l] {
+  if l sat @ph-duplicate-entries(data choice 0) -> return false
+  return true
+}
+
+def @ph-any-duplicate-entries "ph-any-duplicate-entries" (kind ao params [#"choice 0", l : List]) vars [#"choice 0", l] {
+  if l sat @ph-duplicate-entries(data choice 0) -> return true
+  return false
+}
+
+def @ph-elements-of "ph-elements-of" (kind ao params [l : List]) vars [l] {
+  return $Copy(?l)
+}
+
+def @ph-first-elements-of "ph-first-elements-of" (kind ao params [k : sort [#"non-negative"] integer, l : List]) vars [k, l, r, e] {
+  assert k <= $ListLen(?l)
+  let r = $ListNew()
+  for_each e in l {
+    if $ListLen(?r) < k -> perform $Append(?e, ?r)
+  }
+  return r
+}
+
+def @ph-append-elements "ph-append-elements" (kind ao params [a : List, b : List]) vars [a, b, e] {
+  for_each e in a {
+    perform $Append(?e, ?b)
+  }
+  return ~unused~
+}
+
+def @ph-list-whose-elements "ph-list-whose-elements" (kind ao params [parts : List]) vars [parts, elements] {
+  let elements = $ListElem(data choice 0, ?parts)
+  assert elements is ty {List}
+  return $Copy(?elements)
+}
+
+def @ph-has-no-elements "ph-has-no-elements" (kind ao params [l : List]) vars [l] {
+  if l sat $IsEmpty() -> return true
+  return false
+}
+
+def @ph-has-any-elements "ph-has-any-elements" (kind ao params [l : List]) vars [l] {
+  if l sat $IsEmpty() -> return false
+  return true
+}
+
+def @ph-has-n-elements "ph-has-n-elements" (kind ao params [n : sort [#"non-negative"] integer, l : List]) vars [n, l] {
+  if $ListLen(?l) == n -> return true
+  return false
+}
+
+def @ph-new-record "ph-new-record" (kind ao params [r : Record]) vars [r] {
+  return r
+}
+
+def @ph-both-are "ph-both-are" (kind ao params [a : pred(sat @ph-type-anything()), b : pred(sat @ph-type-anything()), v : pred(sat @ph-type-anything())]) vars [a, b, v] {
+  if a is val {v} and b is val {v} -> return true
+  return false
+}
+
+def @ph-integers-ascending "ph-integers-ascending" (kind ao params [a : integer, b : integer]) vars [a, b, l, k] {
+  let l = $ListNew()
+  for_range k incl a .. excl b {
+    perform $Append(?k, ?l)
+  }
+  return l
+}
+
+def @ph-integers-descending "ph-integers-descending" (kind ao params [a : integer, b : integer]) vars [a, b, l, k] {
+  let l = $ListNew()
+  for_range k incl a .. excl b desc {
+    perform $Append(?k, ?l)
+  }
+  return l
+}
+
+def @ph-elements-in-order "ph-elements-in-order" (kind ao params [l : List]) vars [l, r, e] {
+  let r = $ListNew()
+  for_each e in l {
+    perform $Append(?e, ?r)
+  }
+  return r
+}
+
+def @ph-elements-by-async-order "ph-elements-by-async-order" (kind ao params [l : list<Record>]) vars [l, #"rest", r, min, e] {
+  let #"rest" = $Copy(?l)
+  let r = $ListNew()
+  repeat_while #"rest" fails $IsEmpty() {
+    let min = $ListElem(data choice 1, ?#"rest")
+    for_each e in #"rest" {
+      if e[[AsyncEvaluationOrder]] < min[[AsyncEvaluationOrder]] -> set var min = e
+    }
+    perform $Append(?min, ?r)
+    perform $RemoveElem(?min, ?#"rest")
+  }
+  return r
+}
+
+def @ph-elements-lexicographic "ph-elements-lexicographic" (kind ao params [l : list<String>]) vars [l, #"rest", r, min, e] {
+  let #"rest" = $Copy(?l)
+  let r = $ListNew()
+  repeat_while #"rest" fails $IsEmpty() {
+    let min = $ListElem(data choice 1, ?#"rest")
+    for_each e in #"rest" {
+      if ! @sec-islessthan(e, min, true) is val {true} -> set var min = e
+    }
+    perform $Append(?min, ?r)
+    perform $RemoveElem(?min, ?#"rest")
+  }
+  return r
+}
+
+def @ph-elem-whose "ph-elem-whose" (kind ao params [l : List, f : doc "a field name", #"choice 2", v : pred(sat @ph-type-anything())]) vars [l, f, #"choice 2", v] {
+  return $ListFind(f, l, v)
+}
+
+def @ph-elem-whose-tn "ph-elem-whose-tn" (kind ao params [t : doc "a type", l : List, f : doc "a field name", #"choice 3", v : pred(sat @ph-type-anything())]) vars [t, l, f, #"choice 3", v] {
+  return $ListFindOf(t, f, l, v)
+}
+
+def @ph-neither-nor-nor "ph-neither-nor-nor" (kind ao params [a : doc "a type", b : doc "a type", c : doc "a type", x : pred(sat @ph-type-anything())]) vars [a, b, c, x] {
+  if x is ty {var a} -> return false
+  if x is ty {var b} -> return false
+  if x is ty {var c} -> return false
+  return true
+}
+
+def @ph-same-tn "ph-same-tn" (kind ao params [a : pred(sat @ph-type-anything()), b : pred(sat @ph-type-anything()), t : doc "a type"]) vars [a, b, t] {
+  if a is val {b} and a is ty {var t} -> return true
+  return false
+}
+
+def @ph-not-same-tn "ph-not-same-tn" (kind ao params [a : pred(sat @ph-type-anything()), b : pred(sat @ph-type-anything()), t : doc "a type"]) vars [a, b, t] {
+  if a is val {b} and a is ty {var t} -> return false
+  return true
+}
+
+def @ph-same-as "ph-same-as" (kind ao params [t : doc "a type", e : pred(sat @ph-type-anything()), x : pred(sat @ph-type-anything())]) vars [t, e, x] {
+  if x is val {e} and x is ty {var t} -> return true
+  return false
+}
+
+def @ph-both-empty "ph-both-empty" (kind ao params [xs : List]) vars [xs, x] {
+  assert $ListLen(?xs) is val {2}
+  for_each x in xs {
+    if x fails $IsEmpty() -> return false
+  }
+  return true
+}
+
+def @ph-two-entries "ph-two-entries" (kind ao params [a : pred(sat @ph-type-anything()), b : pred(sat @ph-type-anything()), c : doc "a condition on _a_ and _b_", l : List]) vars [a, b, c, l, n, i, j] {
+  let n = $ListLen(?l)
+  for_range i incl 0 .. excl n {
+    for_range j incl 0 .. excl n {
+      if i != j and c(l[i], l[j]) is val {true} -> return true
+    }
+  }
+  return false
+}
+
+def @ph-contains-such "ph-contains-such" (kind ao params [#"choice 0", t : doc "a type", x : pred(sat @ph-type-anything()), c : doc "a condition on _x_", l : List]) vars [#"choice 0", t, x, c, l, e] {
+  for_each e in l {
+    if e is ty {var t} and c(e) is val {true} -> return true
+  }
+  return false
+}
+
+def @ph-contains-such-binds "ph-contains-such-binds" (kind ao params [#"choice 0", t : doc "a type", x : pred(sat @ph-type-anything()), c : doc "a condition on _x_", l : List]) vars [#"choice 0", t, x, c, l, r, e] {
+  let r = $ListNew()
+  for_each e in l {
+    if e is ty {var t} and c(e) is val {true} -> perform $Append(?e, ?r)
+  }
+  return r
+}
+
+def @ph-not-contains-such "ph-not-contains-such" (kind ao params [#"choice 0", t : doc "a type", x : pred(sat @ph-type-anything()), c : doc "a condition on _x_", l : List]) vars [#"choice 0", t, x, c, l, e] {
+  for_each e in l {
+    if e is ty {var t} and c(e) is val {true} -> return false
+  }
+  return true
+}
+
+def @ph-iter-backwards "ph-iter-backwards" (kind ao params [l : List]) vars [l, r, n, k] {
+  let r = $ListNew()
+  let n = $ListLen(?l)
+  let k = n - 1
+  repeat_while k > 0 {
+    set var k = k - 1
+    perform $Append(l[k], ?r)
+  }
+  return r
+}
+
+def @ph-see-xref "ph-see-xref" (kind ao params [e : pred(sat @ph-type-anything()), r : doc "a cross-reference"]) vars [e, r] {
+  return e
+}
+
+def @ph-bytes-decode-binary16 "ph-bytes-decode-binary16" (kind ao params [bytes : list<#"byte value">]) vars [bytes, n, place, b, sign, biased, fraction, v] {
+  assert $ListLen(?bytes) is val {2}
+  let n = 0
+  let place = 1
+  for_each b in bytes {
+    set var n = n + b * place
+    set var place = place * 256
+  }
+  let sign = $floor(n / 2 ^ 15)
+  let biased = $floor(n / 2 ^ 10) modulo 2 ^ 5
+  let fraction = n modulo 2 ^ 10
+  if biased == 2 ^ 5 - 1 {
+    if fraction != 0 -> return nan
+    if sign == 1 -> return num_f(-∞)
+    return num_f(+∞)
+  }
+  if_else biased == 0 { let v = fraction * 2 ^ math(-24) } else { let v = (2 ^ 10 + fraction) * 2 ^ {biased - 25} }
+  if sign == 1 {
+    if v == 0 -> return num_f(-0)
+    return $𝔽(neg v)
+  }
+  return $𝔽(v)
+}
+
+def @ph-bytes-decode-binary32 "ph-bytes-decode-binary32" (kind ao params [bytes : list<#"byte value">]) vars [bytes, n, place, b, sign, biased, fraction, v] {
+  assert $ListLen(?bytes) is val {4}
+  let n = 0
+  let place = 1
+  for_each b in bytes {
+    set var n = n + b * place
+    set var place = place * 256
+  }
+  let sign = $floor(n / 2 ^ 31)
+  let biased = $floor(n / 2 ^ 23) modulo 2 ^ 8
+  let fraction = n modulo 2 ^ 23
+  if biased == 2 ^ 8 - 1 {
+    if fraction != 0 -> return nan
+    if sign == 1 -> return num_f(-∞)
+    return num_f(+∞)
+  }
+  if_else biased == 0 { let v = fraction * 2 ^ math(-149) } else { let v = (2 ^ 23 + fraction) * 2 ^ {biased - 150} }
+  if sign == 1 {
+    if v == 0 -> return num_f(-0)
+    return $𝔽(neg v)
+  }
+  return $𝔽(v)
+}
+
+def @ph-bytes-decode-binary64 "ph-bytes-decode-binary64" (kind ao params [bytes : list<#"byte value">]) vars [bytes, n, place, b, sign, biased, fraction, v] {
+  assert $ListLen(?bytes) is val {8}
+  let n = 0
+  let place = 1
+  for_each b in bytes {
+    set var n = n + b * place
+    set var place = place * 256
+  }
+  let sign = $floor(n / 2 ^ 63)
+  let biased = $floor(n / 2 ^ 52) modulo 2 ^ 11
+  let fraction = n modulo 2 ^ 52
+  if biased == 2 ^ 11 - 1 {
+    if fraction != 0 -> return nan
+    if sign == 1 -> return num_f(-∞)
+    return num_f(+∞)
+  }
+  if_else biased == 0 { let v = fraction * 2 ^ math(-1074) } else { let v = (2 ^ 52 + fraction) * 2 ^ {biased - 1075} }
+  if sign == 1 {
+    if v == 0 -> return num_f(-0)
+    return $𝔽(neg v)
+  }
+  return $𝔽(v)
+}
+
+def @ph-bytes-decode-signed "ph-bytes-decode-signed" (kind ao params [bytes : list<#"byte value">, len : sort [positive] integer]) vars [bytes, len, n, place, b] {
+  assert len == 8 * $ListLen(?bytes)
+  let n = 0
+  let place = 1
+  for_each b in bytes {
+    set var n = n + b * place
+    set var place = place * 256
+  }
+  if n >= 2 ^ {len - 1} -> return n - 2 ^ len
+  return n
+}
+
+def @ph-bytes-decode-unsigned "ph-bytes-decode-unsigned" (kind ao params [bytes : list<#"byte value">]) vars [bytes, n, place, b] {
+  let n = 0
+  let place = 1
+  for_each b in bytes {
+    set var n = n + b * place
+    set var place = place * 256
+  }
+  return n
+}
+
+def @ph-sufficient-bytes "ph-sufficient-bytes" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer, byteIndex : sort [#"non-negative"] integer, type : #"TypedArray element type"]) vars [arrayBuffer, byteIndex, type, #"block", elementSize] {
+  let #"block" = arrayBuffer[[ArrayBufferData]]
+  let elementSize = $TableLookup(table t"table-the-typedarray-constructors", code "Element Size", code "Element Type", ?type)
+  if byteIndex + elementSize <= $Count(data choice 3, ?#"block") -> return true
+  return false
+}
+
+def @ph-list-of-length "ph-list-of-length" (kind ao params [n : sort [#"non-negative"] integer, l : List]) vars [n, l] {
+  assert $ListLen(?l) is val {n}
+  return $Copy(?l)
+}
+
+def @ph-bytes-from "ph-bytes-from" (kind ao params [n : sort [#"non-negative"] integer, #"block" : #"Data Block", i : sort [#"non-negative"] integer]) vars [n, #"block", i] {
+  return @ph-block-bytes(?#"block", ?i, i + n)
+}
+
+def @ph-append-fields "ph-append-fields" (kind ao params [#"fields" : list<#"internal slot name">, l : List]) vars [#"fields", l, f] {
+  for_each f in #"fields" {
+    perform $Append(?f, ?l)
+  }
+  return ~unused~
+}
+
+def @ph-overlapping-memory-ranges "ph-overlapping-memory-ranges" (kind ao params [e : #"Shared Data Block event", f : #"Shared Data Block event"]) vars [e, f] {
+  if e[[Block]] is not val {f[[Block]]} -> return false
+  if e[[ByteIndex]] == f[[ByteIndex]] and e[[ElementSize]] == f[[ElementSize]] -> return false
+  if e[[ByteIndex]] < f[[ByteIndex]] + f[[ElementSize]] and f[[ByteIndex]] < e[[ByteIndex]] + e[[ElementSize]] -> return true
+  return false
+}
+
+def @ph-not-disjoint-memory-ranges "ph-not-disjoint-memory-ranges" (kind ao params [e : #"Shared Data Block event", f : #"Shared Data Block event"]) vars [e, f] {
+  if e[[Block]] is not val {f[[Block]]} -> return false
+  if e[[ByteIndex]] == f[[ByteIndex]] and e[[ElementSize]] == f[[ElementSize]] -> return true
+  if expr @ph-overlapping-memory-ranges(?e, ?f) -> return true
+  return false
+}
+
+def @ph-not-the-case "ph-not-the-case" (kind ao params [#"choice 0", c : Boolean]) vars [#"choice 0", c] {
+  if c is val {true} -> return false
+  return true
+}
+
+def @ph-new-data-block "ph-new-data-block" (kind ao params [n : sort [#"non-negative"] integer]) vars [n] {
+  return $NewDataBlock(n)
+}
+
+def @ph-bit-string-32 "ph-bit-string-32" (kind ao params [x : integer]) vars [x] {
+  assert x sat $InInterval(neg {2 ^ 31}, 2 ^ 31 - 1)
+  return @sec-tofixedsizeinteger(x, ~unsigned~, 32)
+}
+
+def @ph-integer-of-bit-string-32 "ph-integer-of-bit-string-32" (kind ao params [bits : integer]) vars [bits] {
+  assert bits sat $InInterval(0, 2 ^ 32 - 1)
+  return @sec-tofixedsizeinteger(bits, ~signed~, 32)
+}
+
+def @ph-number-floor "ph-number-floor" (kind ao params [n : Number]) vars [n] {
+  assert n sat $IsFinite()
+  if n is val {num_f(+0); num_f(-0)} -> return n
+  return $𝔽($floor($ℝ(n)))
+}
+
+def @ph-number-ceil "ph-number-ceil" (kind ao params [n : Number]) vars [n] {
+  assert n sat $IsFinite()
+  if n is val {num_f(+0); num_f(-0)} -> return n
+  if n < num_f(-0) and n > num_f(-1) -> return num_f(-0)
+  return $𝔽(neg $floor(neg $ℝ(n)))
+}
+
+def @ph-number-round "ph-number-round" (kind ao params [n : Number]) vars [n] {
+  assert n sat $IsFinite()
+  if n is val {num_f(+0); num_f(-0)} -> return n
+  if n < num_f(-0) and n >= num_f(-frac(0, 5, 1)) -> return num_f(-0)
+  return $𝔽($floor($ℝ(n) + math(frac(0, 5, 1))))
+}
+
+def @ph-number-trunc "ph-number-trunc" (kind ao params [n : Number]) vars [n] {
+  assert n sat $IsFinite()
+  if n is val {num_f(+0); num_f(-0)} -> return n
+  if n < num_f(-0) and n > num_f(-1) -> return num_f(-0)
+  return $𝔽($truncate($ℝ(n)))
+}
+
+def @ph-leading-zero-bits-32 "ph-leading-zero-bits-32" (kind ao params [n : #"integral Number"]) vars [n, m, p] {
+  assert $ℝ(n) sat $InInterval(0, 2 ^ 32 - 1)
+  let m = $ℝ(n)
+  let p = 32
+  repeat_while m > 0 {
+    set var m = $floor(m / 2)
+    set var p = p - 1
+  }
+  return p
+}
+
+def @ph-raised-to-the-power "ph-raised-to-the-power" (kind ao params [base : BigInt, exponent : BigInt]) vars [base, exponent] {
+  assert exponent >= num_z(0)
+  return $ℤ($ℝ(base) ^ $ℝ(exponent))
+}
+
+def @ph-base-16-value "ph-base-16-value" (kind ao params [hexits : String]) vars [hexits, n, i, c, d] {
+  let n = 0
+  for_range i incl 0 .. excl $StrLen(?hexits) {
+    assert "0123456789abcdefABCDEF" sat $Contains($Substring(?hexits, ?i, i + 1))
+    let c = $NumericValue($UnitAt(?i, ?hexits))
+    if c >= math(hex(97, "0061")) -> let d = c - math(hex(97, "0061")) + 10
+    else_if c >= math(hex(65, "0041")) -> let d = c - math(hex(65, "0041")) + 10
+    else -> let d = c - math(hex(48, "0030"))
+    set var n = 16 * n + d
+  }
+  return n
+}
+
+def @ph-leading-one-bits "ph-leading-one-bits" (kind ao params [octet : integer]) vars [octet, n, bit] {
+  assert octet sat $InInterval(0, 255)
+  let n = 0
+  let bit = 128
+  repeat_while bit >= 1 and $floor(octet / bit) modulo 2 == 1 {
+    set var n = n + 1
+    set var bit = bit / 2
+  }
+  return n
+}
+
+def @ph-twenty-significant-digits "ph-twenty-significant-digits" (kind ao params [n : #"mathematical value"]) vars [n, k, e] {
+  assert n >= 0
+  assert pass "there is an integer _ ≥ 0 such that _ × 10<sup>_</sup> is an integer"
+  if n == 0 -> return true
+  let e = $DecimalExponent(n)
+  if n * 10 ^ {19 - e} is ty {integer} -> return true
+  return false
+}
+
+def @ph-zero-after-twentieth "ph-zero-after-twentieth" (kind ao params [n : #"mathematical value"]) vars [n, scale] {
+  assert n > 0
+  let scale = 10 ^ {19 - $DecimalExponent(n)}
+  return $floor(n * scale) / scale
+}
+
+def @ph-zero-after-twentieth-incremented "ph-zero-after-twentieth-incremented" (kind ao params [n : #"mathematical value"]) vars [n, scale] {
+  assert n > 0
+  let scale = 10 ^ {19 - $DecimalExponent(n)}
+  return ($floor(n * scale) + 1) / scale
+}
+
+def @ph-decimal-digits "ph-decimal-digits" (kind ao params [n : sort [#"non-negative"] integer]) vars [n] {
+  return $IntToRadix(n, 10)
+}
+
+def @ph-to-binary32 "ph-to-binary32" (kind ao params [n : Number, #"choice 1"]) vars [n, #"choice 1", a, e, q, m, r, v] {
+  if n fails $IsFinite() -> return n
+  if n is val {num_f(+0); num_f(-0)} -> return n
+  let a = $abs($ℝ(n))
+  let e = 0
+  repeat_while 2 ^ e > a {
+    set var e = e - 1
+  }
+  repeat_while 2 ^ {e + 1} <= a {
+    set var e = e + 1
+  }
+  if e < math(-126) -> set var e = math(-126)
+  let q = 2 ^ {e - 23}
+  let m = a / q
+  let r = $floor(m)
+  if m - r > math(frac(0, 5, 1)) -> set var r = r + 1
+  else_if m - r == math(frac(0, 5, 1)) and r modulo 2 == 1 -> set var r = r + 1
+  let v = r * q
+  if v >= 2 ^ 128 {
+    if n < num_f(-0) -> return num_f(-∞)
+    return num_f(+∞)
+  }
+  if v == 0 {
+    if n < num_f(-0) -> return num_f(-0)
+    return num_f(+0)
+  }
+  if n < num_f(-0) -> return $𝔽(neg v)
+  return $𝔽(v)
+}
+
+def @ph-to-binary16 "ph-to-binary16" (kind ao params [n : Number, #"choice 1"]) vars [n, #"choice 1", a, e, q, m, r, v] {
+  if n fails $IsFinite() -> return n
+  if n is val {num_f(+0); num_f(-0)} -> return n
+  let a = $abs($ℝ(n))
+  let e = 0
+  repeat_while 2 ^ e > a {
+    set var e = e - 1
+  }
+  repeat_while 2 ^ {e + 1} <= a {
+    set var e = e + 1
+  }
+  if e < math(-14) -> set var e = math(-14)
+  let q = 2 ^ {e - 10}
+  let m = a / q
+  let r = $floor(m)
+  if m - r > math(frac(0, 5, 1)) -> set var r = r + 1
+  else_if m - r == math(frac(0, 5, 1)) and r modulo 2 == 1 -> set var r = r + 1
+  let v = r * q
+  if v >= 2 ^ 16 {
+    if n < num_f(-0) -> return num_f(-∞)
+    return num_f(+∞)
+  }
+  if v == 0 {
+    if n < num_f(-0) -> return num_f(-0)
+    return num_f(+0)
+  }
+  if n < num_f(-0) -> return $𝔽(neg v)
+  return $𝔽(v)
+}
+
+def @ph-to-binary64 "ph-to-binary64" (kind ao params [n : Number, #"choice 1"]) vars [n, #"choice 1"] {
+  return n
+}
+
+def @ph-number-corresponding "ph-number-corresponding" (kind ao params [n : Number]) vars [n] {
+  assert n is ty {Number}
+  return n
+}
+
+def @ph-representation-radix "ph-representation-radix" (kind ao params [n : sort [#"non-negative"] integer | BigInt, radix : integer]) vars [n, radix] {
+  if n is ty {BigInt} -> set var n = $ℝ(n)
+  assert n is ty {integer} and n >= 0 and radix sat $InInterval(2, 36)
+  return $IntToRadix(n, radix)
+}
+
+def @ph-decimal-representation "ph-decimal-representation" (kind ao params [n : sort [#"non-negative"] integer]) vars [n] {
+  return @ph-representation-radix(?n, 10)
+}
+
+def @ph-single-digit "ph-single-digit" (kind ao params [n : sort [#"non-negative"] integer]) vars [n] {
+  assert n < 10
+  return @ph-decimal-representation(?n)
+}
+
+def @ph-most-significant-digit "ph-most-significant-digit" (kind ao params [s : String]) vars [s] {
+  assert s is not val {$"the empty String"()}
+  return $Substring(?s, 0, 1)
+}
+
+def @ph-k-digits "ph-k-digits" (kind ao params [k : sort [#"non-negative"] integer, s : String]) vars [k, s] {
+  assert $StrLen(?s) is val {k}
+  return s
+}
+
+def @ph-most-significant-k-digits "ph-most-significant-k-digits" (kind ao params [k : sort [#"non-negative"] integer, s : String]) vars [k, s] {
+  assert k <= $StrLen(?s)
+  return $Substring(?s, 0, ?k)
+}
+
+def @ph-remaining-k-digits "ph-remaining-k-digits" (kind ao params [k : sort [#"non-negative"] integer, s : String]) vars [k, s] {
+  assert k <= $StrLen(?s)
+  return $Substring(?s, $StrLen(?s) - k, data absent)
+}
+
+def @ph-code-unit-of "ph-code-unit-of" (kind ao params [s : String]) vars [s] {
+  assert $StrLen(?s) is val {1}
+  return $UnitAt(0, ?s)
+}
+
+def @ph-code-units-of "ph-code-units-of" (kind ao params [s : String]) vars [s] {
+  return s
+}
+
+def @ph-num-pi "ph-num-pi" (kind ao params [k : integer]) vars [k] {
+  return k * $Pi()
+}
+
+def @ph-if-and-if "ph-if-and-if" (kind ao params [a : pred(sat @ph-type-anything()), c : Boolean, b : pred(sat @ph-type-anything()), d : Boolean]) vars [a, c, b, d] {
+  if c is val {true} -> return a
+  assert d is val {true}
+  return b
+}
+
+def @ph-ge "ph-ge" (kind ao params [y : #"extended mathematical value", x : #"extended mathematical value"]) vars [y, x] {
+  if x >= y -> return true
+  return false
+}
+
+def @ph-gt "ph-gt" (kind ao params [y : #"extended mathematical value", x : #"extended mathematical value"]) vars [y, x] {
+  if x > y -> return true
+  return false
+}
+
+def @ph-has-attribute-values "ph-has-attribute-values" (kind ao params [r : Record, p : #"Property Descriptor"]) vars [r, p] {
+  if r sat $HasField([[Value]]) {
+    if p fails $HasField([[Value]]) -> return false
+    if @sec-samevalue(p[[Value]], r[[Value]]) is val {false} -> return false
+  }
+  if r sat $HasField([[Writable]]) {
+    if p fails $HasField([[Writable]]) -> return false
+    if @sec-samevalue(p[[Writable]], r[[Writable]]) is val {false} -> return false
+  }
+  if r sat $HasField([[Get]]) {
+    if p fails $HasField([[Get]]) -> return false
+    if @sec-samevalue(p[[Get]], r[[Get]]) is val {false} -> return false
+  }
+  if r sat $HasField([[Set]]) {
+    if p fails $HasField([[Set]]) -> return false
+    if @sec-samevalue(p[[Set]], r[[Set]]) is val {false} -> return false
+  }
+  if r sat $HasField([[Enumerable]]) {
+    if p fails $HasField([[Enumerable]]) -> return false
+    if @sec-samevalue(p[[Enumerable]], r[[Enumerable]]) is val {false} -> return false
+  }
+  if r sat $HasField([[Configurable]]) {
+    if p fails $HasField([[Configurable]]) -> return false
+    if @sec-samevalue(p[[Configurable]], r[[Configurable]]) is val {false} -> return false
+  }
+  return true
+}
+
+def @ph-has-slot-or "ph-has-slot-or" (kind ao params [#"choice 0", f : #"internal slot name", g : #"internal slot name", O : Object]) vars [#"choice 0", f, g, O] {
+  if O fails $HasSlot(?f) and O fails $HasSlot(?g) -> return false
+  return true
+}
+
+def @ph-intrinsic-function "ph-intrinsic-function" (kind ao params [f : #"function object"]) vars [f] {
+  assert @sec-iscallable(f) is val {true}
+  return f
+}
+
+def @ph-no-registry-entry "ph-no-registry-entry" (kind ao params [x : String | Symbol, l : list<#"GlobalSymbolRegistry Record">]) vars [x, l, e] {
+  for_each e in l {
+    if x is ty {String} and e[[Key]] is val {x} -> return false
+    if x is ty {Symbol} and @sec-samevalue(e[[Symbol]], x) is val {true} -> return false
+  }
+  return true
+}
+
+def @ph-replace-in "ph-replace-in" (kind ao params [old : pred(sat @ph-type-anything()), l : List, #"new" : pred(sat @ph-type-anything())]) vars [old, l, #"new"] {
+  perform $ReplaceElem(?l, ?old, ?#"new")
+  return ~unused~
+}
+
+def @ph-is-now "ph-is-now" (kind ao params [y : pred(sat @ph-type-anything()), x : pred(sat @ph-type-anything())]) vars [y, x] {
+  if x is val {y} -> return true
+  return false
+}
+
+def @ph-generator-context "ph-generator-context" (kind ao params [ctx : #"execution context"]) vars [ctx] {
+  if ctx sat $HasField([[Generator]]) -> return true
+  return false
+}
+
+def @ph-iff "ph-iff" (kind ao params [a : Boolean, b : Boolean]) vars [a, b] {
+  if a is val {b} -> return true
+  return false
+}
+
+def @ph-type-no-own-properties "ph-type-no-own-properties" (kind ao params [#"choice 0", t : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, v, P] {
+  if v is not ty {var t} -> return false
+  if v is not ty {Object} -> return false
+  for_keys P of v where P is ty {#"property key"} order 1 {
+    return false
+  }
+  return true
+}
+
+def @ph-new-symbol-whose-description "ph-new-symbol-whose-description" (kind ao params [d : String | val(undefined)]) vars [d] {
+  return $NewSymbol(d)
+}
+
+def @ph-new-private-name-whose-description "ph-new-private-name-whose-description" (kind ao params [d : String]) vars [d, n] {
+  let n = $NewRecord(data sort #"Private Name")
+  set field n[[Description]] = d
+  return n
+}
+
+def @ph-new-builtin-function "ph-new-builtin-function" (kind ao params [B : doc "an Abstract Closure, a set of algorithm steps, or some other definition of a function's behaviour provided in this specification", #"repeat 1", S : doc "a List of names of internal slots"]) vars [B, #"repeat 1", S, func] {
+  let func = @sec-makebasicobject($ListConcat([S, [[[InitialName]], [[Behaviour]]]]))
+  set field func[[Call]] = ref @sec-built-in-function-objects-call-thisargument-argumentslist
+  set field func[[Behaviour]] = B
+  return func
+}
+
+def @ph-set-methods "ph-set-methods" (kind ao params [O : Object, #"choice 1", #"choice 2", x : doc "a clause"]) vars [O, #"choice 1", #"choice 2", x] {
+  if x is val {clause @sec-ordinary-object-internal-methods-and-internal-slots} {
+    set field O[[GetPrototypeOf]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof
+    set field O[[SetPrototypeOf]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v
+    set field O[[IsExtensible]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-isextensible
+    set field O[[PreventExtensions]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-preventextensions
+    set field O[[GetOwnProperty]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-getownproperty-p
+    set field O[[DefineOwnProperty]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-defineownproperty-p-desc
+    set field O[[HasProperty]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p
+    set field O[[Get]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-get-p-receiver
+    set field O[[Set]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-set-p-v-receiver
+    set field O[[Delete]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-delete-p
+    set field O[[OwnPropertyKeys]] = ref @sec-ordinary-object-internal-methods-and-internal-slots-ownpropertykeys
+  }
+  else_if x is val {clause @sec-module-namespace-exotic-objects} {
+    set field O[[GetPrototypeOf]] = ref @sec-module-namespace-exotic-objects-getprototypeof
+    set field O[[SetPrototypeOf]] = ref @sec-module-namespace-exotic-objects-setprototypeof-v
+    set field O[[IsExtensible]] = ref @sec-module-namespace-exotic-objects-isextensible
+    set field O[[PreventExtensions]] = ref @sec-module-namespace-exotic-objects-preventextensions
+    set field O[[GetOwnProperty]] = ref @sec-module-namespace-exotic-objects-getownproperty-p
+    set field O[[DefineOwnProperty]] = ref @sec-module-namespace-exotic-objects-defineownproperty-p-desc
+    set field O[[HasProperty]] = ref @sec-module-namespace-exotic-objects-hasproperty-p
+    set field O[[Get]] = ref @sec-module-namespace-exotic-objects-get-p-receiver
+    set field O[[Set]] = ref @sec-module-namespace-exotic-objects-set-p-v-receiver
+    set field O[[Delete]] = ref @sec-module-namespace-exotic-objects-delete-p
+    set field O[[OwnPropertyKeys]] = ref @sec-module-namespace-exotic-objects-ownpropertykeys
+  }
+  else {
+    assert x is val {clause @sec-proxy-object-internal-methods-and-internal-slots}
+    set field O[[GetPrototypeOf]] = ref @sec-proxy-object-internal-methods-and-internal-slots-getprototypeof
+    set field O[[SetPrototypeOf]] = ref @sec-proxy-object-internal-methods-and-internal-slots-setprototypeof-v
+    set field O[[IsExtensible]] = ref @sec-proxy-object-internal-methods-and-internal-slots-isextensible
+    set field O[[PreventExtensions]] = ref @sec-proxy-object-internal-methods-and-internal-slots-preventextensions
+    set field O[[GetOwnProperty]] = ref @sec-proxy-object-internal-methods-and-internal-slots-getownproperty-p
+    set field O[[DefineOwnProperty]] = ref @sec-proxy-object-internal-methods-and-internal-slots-defineownproperty-p-desc
+    set field O[[HasProperty]] = ref @sec-proxy-object-internal-methods-and-internal-slots-hasproperty-p
+    set field O[[Get]] = ref @sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver
+    set field O[[Set]] = ref @sec-proxy-object-internal-methods-and-internal-slots-set-p-v-receiver
+    set field O[[Delete]] = ref @sec-proxy-object-internal-methods-and-internal-slots-delete-p
+    set field O[[OwnPropertyKeys]] = ref @sec-proxy-object-internal-methods-and-internal-slots-ownpropertykeys
+  }
+  return ~unused~
+}
+
+def @ph-matched-by "ph-matched-by" (kind ao params [#"nt" : nonterminal, x : doc "a code point, a character or a String"]) vars [#"nt", x, #"text"] {
+  if_else x is ty {String} { let #"text" = @sec-stringtocodepoints(x) } else { let #"text" = [x] }
+  if $ParseGoal(#"text", #"nt", false, false, false) is val {~empty~} -> return false
+  return true
+}
+
+def @ph-not-matched-by "ph-not-matched-by" (kind ao params [#"nt" : nonterminal, x : doc "a code point, a character or a String"]) vars [#"nt", x] {
+  if x sat @ph-matched-by(?#"nt") -> return false
+  return true
+}
+
+def @ph-this-production "ph-this-production" (kind ao params [#"choice 0"]) vars [#"choice 0"] {
+  return this_node
+}
+
+def @ph-enclosing-nt "ph-enclosing-nt" (kind ao params [#"nt" : nonterminal]) vars [#"nt", n] {
+  let n = $NearestEnclosing(this_node, [#"nt"])
+  assert n is not val {~empty~}
+  return n
+}
+
+def @ph-this-nt "ph-this-nt" (kind ao params [#"nt" : nonterminal]) vars [#"nt"] {
+  assert expr $InstanceOf(this_node, ?#"nt")
+  return this_node
+}
+
+def @ph-not-some-cp-matched "ph-not-some-cp-matched" (kind ao params [#"choice 0", #"choice 1", #"nt" : nonterminal, x : #"code point" | integer]) vars [#"choice 0", #"choice 1", #"nt", x] {
+  if x sat @ph-matched-by(?#"nt") -> return false
+  return true
+}
+
+def @ph-matched-by-either "ph-matched-by-either" (kind ao params [alts : list<nonterminal>, x : #"code point"]) vars [alts, x, #"nt"] {
+  for_each #"nt" in alts {
+    if x sat @ph-matched-by(?#"nt") -> return true
+  }
+  return false
+}
+
+def @ph-parsed-for-parsejson "ph-parsed-for-parsejson" (kind ao params [n : #"Parse Node"]) vars [n] {
+  return $InParseJSONScript(n)
+}
+
+def @ph-in-json-evaluated-script "ph-in-json-evaluated-script" (kind ao params [n : #"Parse Node"]) vars [n] {
+  return $InParseJSONScript(n)
+}
+
+def @ph-type-intrinsic-keys "ph-type-intrinsic-keys" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v, #"keys", entry, f] {
+  if v is not ty {Record} -> return false
+  let #"keys" = $ListNew()
+  for_each entry : Record in $IntrinsicObjects() {
+    set var #"keys" = $ListConcat([#"keys", entry[[Names]]])
+  }
+  for_each f in $RecordFieldNames(v) {
+    if #"keys" fails $Contains(?f) -> return false
+    if $Component(v, f) is not ty {Object} -> return false
+  }
+  return true
+}
+
+def @ph-same-code-units "ph-same-code-units" (kind ao params [x : String, y : String]) vars [x, y, i] {
+  if $StrLen(?x) != $StrLen(?y) -> return false
+  for_range i incl 0 .. excl $StrLen(?x) {
+    if $UnitAt(?i, ?x) is not val {$UnitAt(?i, ?y)} -> return false
+  }
+  return true
+}
+
+def @ph-string-solely "ph-string-solely" (kind ao params [c : #"code unit"]) vars [c] {
+  return $StrOfUnits(c)
+}
+
+def @ph-repeat-to-length "ph-repeat-to-length" (kind ao params [s : String, n : sort [#"non-negative"] integer]) vars [s, n, r] {
+  assert s is not val {$"the empty String"()}
+  let r = $StringRepeat(s, $floor(n / $StrLen(?s)) + 1)
+  return $Substring(?r, 0, ?n)
+}
+
+def @ph-copies-appended "ph-copies-appended" (kind ao params [n : sort [#"non-negative"] integer, s : String]) vars [n, s] {
+  return $StringRepeat(s, n)
+}
+
+def @ph-dollar-one-digit "ph-dollar-one-digit" (kind ao params [t : String]) vars [t] {
+  if $StrLen(?t) < 2 -> return false
+  if $NumericValue($UnitAt(0, ?t)) != math(hex(36, "0024")) -> return false
+  if $NumericValue($UnitAt(1, ?t)) sat $InInterval(math(hex(48, "0030")), math(hex(57, "0039"))) -> return true
+  return false
+}
+
+def @ph-dollar-two-digits "ph-dollar-two-digits" (kind ao params [t : String]) vars [t] {
+  if $StrLen(?t) < 3 -> return false
+  if $NumericValue($UnitAt(0, ?t)) != math(hex(36, "0024")) -> return false
+  if $NumericValue($UnitAt(1, ?t)) fails $InInterval(math(hex(48, "0030")), math(hex(57, "0039"))) -> return false
+  if $NumericValue($UnitAt(2, ?t)) sat $InInterval(math(hex(48, "0030")), math(hex(57, "0039"))) -> return true
+  return false
+}
+
+def @ph-sole-code-unit "ph-sole-code-unit" (kind ao params [s : String]) vars [s] {
+  assert $StrLen(?s) is val {1}
+  return $UnitAt(0, ?s)
+}
+
+def @ph-not-in-base64-alphabet "ph-not-in-base64-alphabet" (kind ao params [c : #"code unit"]) vars [c, alphabet, i] {
+  let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+  for_range i incl 0 .. excl $StrLen(?alphabet) {
+    if $UnitAt(?i, ?alphabet) is val {c} -> return false
+  }
+  return true
+}
+
+def @ph-utf8-encode "ph-utf8-encode" (kind ao params [#"cp" : #"code point"]) vars [#"cp"] {
+  assert #"cp" fails $InInterval(math(hex(55296, "D800")), math(hex(57343, "DFFF")))
+  if #"cp" <= math(hex(127, "7F")) -> return [#"cp"]
+  if #"cp" <= math(hex(2047, "7FF")) -> return [math(hex(192, "C0")) + $floor(#"cp" / 64), math(hex(128, "80")) + (#"cp" modulo 64)]
+  if #"cp" <= math(hex(65535, "FFFF")) -> return [math(hex(224, "E0")) + $floor(#"cp" / 4096), math(hex(128, "80")) + ($floor(#"cp" / 64) modulo 64), math(hex(128, "80")) + (#"cp" modulo 64)]
+  return [math(hex(240, "F0")) + $floor(#"cp" / 262144), math(hex(128, "80")) + ($floor(#"cp" / 4096) modulo 64), math(hex(128, "80")) + ($floor(#"cp" / 64) modulo 64), math(hex(128, "80")) + (#"cp" modulo 64)]
+}
+
+def @ph-utf8-decode "ph-utf8-decode" (kind ao params [octets : list<integer>]) vars [octets, n, #"cp", k] {
+  let n = $ListLen(?octets)
+  assert n sat $InInterval(1, 4)
+  if n == 1 -> return octets[0]
+  if n == 2 -> let #"cp" = octets[0] modulo 32
+  else_if n == 3 -> let #"cp" = octets[0] modulo 16
+  else -> let #"cp" = octets[0] modulo 8
+  for_range k incl 1 .. excl n {
+    set var #"cp" = #"cp" * 64 + (octets[k] modulo 64)
+  }
+  return #"cp"
+}
+
+def @ph-not-valid-utf8 "ph-not-valid-utf8" (kind ao params [octets : list<integer>]) vars [octets, n, lead, k, #"cp"] {
+  let n = $ListLen(?octets)
+  if n fails $InInterval(1, 4) -> return true
+  let lead = octets[0]
+  if n == 1 and lead > math(hex(127, "7F")) -> return true
+  if n == 2 and lead fails $InInterval(math(hex(192, "C0")), math(hex(223, "DF"))) -> return true
+  if n == 3 and lead fails $InInterval(math(hex(224, "E0")), math(hex(239, "EF"))) -> return true
+  if n == 4 and lead fails $InInterval(math(hex(240, "F0")), math(hex(247, "F7"))) -> return true
+  for_range k incl 1 .. excl n {
+    if octets[k] fails $InInterval(math(hex(128, "80")), math(hex(191, "BF"))) -> return true
+  }
+  let #"cp" = @ph-utf8-decode(?octets)
+  if n == 2 and #"cp" < math(hex(128, "80")) -> return true
+  if n == 3 and #"cp" < math(hex(2048, "800")) -> return true
+  if n == 4 and #"cp" < math(hex(65536, "10000")) -> return true
+  if #"cp" > math(hex(1114111, "10FFFF")) -> return true
+  if #"cp" sat $InInterval(math(hex(55296, "D800")), math(hex(57343, "DFFF"))) -> return true
+  return false
+}
+
+def @ph-code-unit-replaced "ph-code-unit-replaced" (kind ao params [s : String, c : #"code unit", t : String, r : String]) vars [s, c, t, r, result, i] {
+  assert s is val {t}
+  assert $StrLen(?r) is val {6}
+  let result = $"the empty String"()
+  for_range i incl 0 .. excl $StrLen(?s) {
+    if $UnitAt(?i, ?s) is val {c} -> set var result = $"string-concatenation"(result, r)
+    else -> set var result = $"string-concatenation"(result, $Substring(?s, ?i, i + 1))
+  }
+  return result
+}
+
+def @ph-last-code-unit "ph-last-code-unit" (kind ao params [s : String]) vars [s] {
+  assert s is not val {$"the empty String"()}
+  return $UnitAt($StrLen(?s) - 1, ?s)
+}
+
+def @ph-not-json-first-unit "ph-not-json-first-unit" (kind ao params [c : #"code unit"]) vars [c] {
+  if c sat $InInterval(math(hex(97, "0061")), math(hex(122, "007A"))) -> return false
+  if c sat $InInterval(math(hex(48, "0030")), math(hex(57, "0039"))) -> return false
+  if c == math(hex(34, "0022")) -> return false
+  if c == math(hex(45, "002D")) -> return false
+  return true
+}
+
+def @ph-not-json-last-unit "ph-not-json-last-unit" (kind ao params [c : #"code unit"]) vars [c] {
+  if c sat $InInterval(math(hex(97, "0061")), math(hex(122, "007A"))) -> return false
+  if c sat $InInterval(math(hex(48, "0030")), math(hex(57, "0039"))) -> return false
+  if c == math(hex(34, "0022")) -> return false
+  return true
+}
+
+def @ph-ascii-word-characters "ph-ascii-word-characters" (kind ao params []) vars [] {
+  return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_"
+}
+
+def @ph-upper-hex "ph-upper-hex" (kind ao params [n : sort [#"non-negative"] integer]) vars [n, digits, s, m, d] {
+  if n == 0 -> return "0"
+  let digits = "0123456789ABCDEF"
+  let s = $"the empty String"()
+  let m = n
+  repeat_while m > 0 {
+    let d = m modulo 16
+    set var s = $"string-concatenation"($Substring(?digits, ?d, d + 1), s)
+    set var m = $floor(m / 16)
+  }
+  return s
+}
+
+def @ph-lower-hex "ph-lower-hex" (kind ao params [n : sort [#"non-negative"] integer]) vars [n] {
+  return @ph-representation-radix(?n, 16)
+}
+
+def @ph-decimal-string "ph-decimal-string" (kind ao params [n : sort [#"non-negative"] integer]) vars [n] {
+  return @ph-representation-radix(?n, 10)
+}
+
+def @ph-units-not-in "ph-units-not-in" (kind ao params [#"choice 0", t : String, s : String]) vars [#"choice 0", t, s, i] {
+  for_range i incl 0 .. excl $StrLen(?s) {
+    if t fails $Contains($Substring(?s, ?i, i + 1)) -> return true
+  }
+  return false
+}
+
+def @ph-is-single-code-point "ph-is-single-code-point" (kind ao params [c : #"code point", s : list<#"code point">]) vars [c, s] {
+  if $ListLen(?s) is not val {1} -> return false
+  if s[0] is val {c} -> return true
+  return false
+}
+
+def @ph-same-code-point-twice "ph-same-code-point-twice" (kind ao params [s : list<#"code point">]) vars [s, seen, c] {
+  let seen = $ListNew()
+  for_each c in s {
+    if seen sat $Contains(?c) -> return true
+    perform $Append(?c, ?seen)
+  }
+  return false
+}
+
+def @ph-code-point-also-in "ph-code-point-also-in" (kind ao params [a : list<#"code point">, b : list<#"code point">]) vars [a, b, c] {
+  for_each c in a {
+    if b sat $Contains(?c) -> return true
+  }
+  return false
+}
+
+def @ph-code-points-of "ph-code-points-of" (kind ao params [s : list<#"code point">]) vars [s] {
+  return $Copy(?s)
+}
+
+def @ph-surrogate-value "ph-surrogate-value" (kind ao params [#"cp" : #"code point"]) vars [#"cp"] {
+  if #"cp" sat $InInterval(math(hex(55296, "D800")), math(hex(57343, "DFFF"))) -> return true
+  return false
+}
+
+def @ph-value-less-than "ph-value-less-than" (kind ao params [v : #"code unit" | #"code point", #"cp" : #"code point"]) vars [v, #"cp"] {
+  if #"cp" < v -> return true
+  return false
+}
+
+def @ph-units-other-than "ph-units-other-than" (kind ao params [#"choice 0", alts : list<String>, s : String]) vars [#"choice 0", alts, s, i] {
+  for_range i incl 0 .. excl $StrLen(?s) {
+    if alts fails $Contains($Substring(?s, ?i, i + 1)) -> return true
+  }
+  return false
+}
+
+def @ph-points-other-than "ph-points-other-than" (kind ao params [#"choice 0", alts : list<String>, s : String | list<#"code point">]) vars [#"choice 0", alts, s, cps, #"cp"] {
+  if_else s is ty {String} { let cps = @sec-stringtocodepoints(s) } else { let cps = s }
+  for_each #"cp" in cps {
+    if alts fails $Contains(@sec-codepointstostring([#"cp"])) -> return true
+  }
+  return false
+}
+
+def @ph-unit-more-than-once "ph-unit-more-than-once" (kind ao params [s : String]) vars [s, seen, i, u] {
+  let seen = $ListNew()
+  for_range i incl 0 .. excl $StrLen(?s) {
+    let u = $UnitAt(?i, ?s)
+    if seen sat $Contains(?u) -> return true
+    perform $Append(?u, ?seen)
+  }
+  return false
+}
+
+def @ph-point-more-than-once "ph-point-more-than-once" (kind ao params [s : String | list<#"code point">]) vars [s, cps, seen, #"cp"] {
+  if_else s is ty {String} { let cps = @sec-stringtocodepoints(s) } else { let cps = s }
+  let seen = $ListNew()
+  for_each #"cp" in cps {
+    if seen sat $Contains(?#"cp") -> return true
+    perform $Append(?#"cp", ?seen)
+  }
+  return false
+}
+
+def @ph-occurrences-of "ph-occurrences-of" (kind ao params [n : sort [#"non-negative"] integer, c : #"code unit"]) vars [n, c] {
+  return $StringRepeat(@ph-string-solely(?c), n)
+}
+
+def @ph-first-code-units "ph-first-code-units" (kind ao params [k : sort [#"non-negative"] integer, s : String]) vars [k, s] {
+  assert k <= $StrLen(?s)
+  return $Substring(?s, 0, ?k)
+}
+
+def @ph-other-code-units "ph-other-code-units" (kind ao params [#"choice 0", k : sort [#"non-negative"] integer, s : String]) vars [#"choice 0", k, s] {
+  assert k <= $StrLen(?s)
+  return $Substring(?s, $StrLen(?s) - k, data absent)
+}
+
+def @ph-trim-leading "ph-trim-leading" (kind ao params [s : String]) vars [s, ws, len, i, #"cp"] {
+  let ws = $RightHandSideCharacters([|WhiteSpace|, |LineTerminator|])
+  let len = $StrLen(?s)
+  let i = 0
+  repeat_while i < len {
+    let #"cp" = @sec-codepointat(s, i)
+    if #"cp"[[IsUnpairedSurrogate]] is val {true} or ws fails $Contains(#"cp"[[CodePoint]]) -> return $Substring(?s, ?i, data absent)
+    if_else #"cp"[[CodeUnitCount]] is val {2} { set var i = i + 2 } else { set var i = i + 1 }
+  }
+  return $"the empty String"()
+}
+
+def @ph-trim-trailing "ph-trim-trailing" (kind ao params [s : String]) vars [s, ws, end, u, start, hi, #"cp"] {
+  let ws = $RightHandSideCharacters([|WhiteSpace|, |LineTerminator|])
+  let end = $StrLen(?s)
+  repeat_while end > 0 {
+    let u = $NumericValue($UnitAt(end - 1, ?s))
+    let start = end - 1
+    if end >= 2 and u sat $InInterval(math(hex(56320, "DC00")), math(hex(57343, "DFFF"))) {
+      let hi = $NumericValue($UnitAt(end - 2, ?s))
+      if hi sat $InInterval(math(hex(55296, "D800")), math(hex(56319, "DBFF"))) -> set var start = end - 2
+    }
+    let #"cp" = @sec-codepointat(s, start)
+    if #"cp"[[IsUnpairedSurrogate]] is val {true} or ws fails $Contains(#"cp"[[CodePoint]]) -> return $Substring(?s, 0, ?end)
+    set var end = start
+  }
+  return $"the empty String"()
+}
+
+def @ph-trim-both "ph-trim-both" (kind ao params [s : String]) vars [s, t] {
+  let t = @ph-trim-leading(?s)
+  return @ph-trim-trailing(?t)
+}
+
+def @ph-starts-dollar-quote "ph-starts-dollar-quote" (kind ao params [t : String]) vars [t] {
+  if t sat $StartsWith("$'") -> return true
+  return false
+}
+
+def @ph-annexb-foreach "ph-annexb-foreach" (kind ao params [#"nt" : nonterminal, d : pred(sat @ph-type-anything()), sl : nonterminal, alts : list<nonterminal>, x : pred(sat @ph-type-anything()), root : #"Parse Node", y : pred(sat @ph-type-anything())]) vars [#"nt", d, sl, alts, x, root, y, found, n, #"list", owner, alt] {
+  let found = $ListNew()
+  for_each n in @formal-parsenodeswithinprocessed(root) {
+    if expr $InstanceOf(n, ?#"nt") {
+      let #"list" = @formal-directlycontaininglist(n, sl)
+      if #"list" is not val {~empty~} {
+        let owner = $Parent(#"list")
+        for_each alt in alts {
+          if expr $InstanceOf(owner, ?alt) and @ph-contains(?root, ?owner) is val {true} -> perform $Append(?n, ?found)
+        }
+      }
+    }
+  }
+  return found
+}
+
+def @ph-node-within "ph-node-within" (kind ao params [#"nt" : nonterminal, node : #"Parse Node"]) vars [#"nt", node, found, n] {
+  let found = $ListNew()
+  for_each n in $ParseNodesWithin(node) {
+    if expr $InstanceOf(n, ?#"nt") -> perform $Append(?n, ?found)
+  }
+  assert $ListLen(?found) is val {1}
+  return found[0]
+}
+
+def @ph-first-node-within "ph-first-node-within" (kind ao params [#"nt" : nonterminal, node : #"Parse Node"]) vars [#"nt", node, found, n] {
+  let found = $ListNew()
+  for_each n in $ParseNodesWithin(node) {
+    if expr $InstanceOf(n, ?#"nt") -> perform $Append(?n, ?found)
+  }
+  assert found fails $IsEmpty()
+  return found[0]
+}
+
+def @ph-second-node-within "ph-second-node-within" (kind ao params [#"nt" : nonterminal, node : #"Parse Node"]) vars [#"nt", node, found, n] {
+  let found = $ListNew()
+  for_each n in $ParseNodesWithin(node) {
+    if expr $InstanceOf(n, ?#"nt") -> perform $Append(?n, ?found)
+  }
+  assert $ListLen(?found) >= 2
+  return found[1]
+}
+
+def @ph-count-nodes-within "ph-count-nodes-within" (kind ao params [p : production, node : #"Parse Node"]) vars [p, node, count, n] {
+  let count = 0
+  for_each n in $ParseNodesWithin(node) {
+    if expr $InstanceOf(n, ?p) -> set var count = count + 1
+  }
+  return count
+}
+
+def @ph-count-nodes-before "ph-count-nodes-before" (kind ao params [p : production, root : #"Parse Node", a : #"Parse Node", b : #"Parse Node"]) vars [p, root, a, b, nodes, count, seenA, n, within, occursBefore, containsB] {
+  let nodes = $ParseNodesWithin(root)
+  assert nodes sat $Contains(?a)
+  let count = 0
+  let seenA = false
+  for_each n in nodes {
+    if n is val {a} -> set var seenA = true
+    if expr $InstanceOf(n, ?p) {
+      let within = $ParseNodesWithin(n)
+      let occursBefore = false
+      if seenA is val {false} and within fails $Contains(?a) -> set var occursBefore = true
+      let containsB = false
+      if n is not val {b} and within sat $Contains(?b) -> set var containsB = true
+      if occursBefore is val {true} or containsB is val {true} -> set var count = count + 1
+    }
+  }
+  return count
+}
+
+def @ph-contains-node "ph-contains-node" (kind ao params [#"choice 0", #"nt" : nonterminal, node : #"Parse Node"]) vars [#"choice 0", #"nt", node, n] {
+  for_each n in $ParseNodesWithin(node) {
+    if n is not val {node} and expr $InstanceOf(n, ?#"nt") -> return true
+  }
+  return false
+}
+
+def @ph-not-contains-node "ph-not-contains-node" (kind ao params [#"choice 0", #"nt" : nonterminal, node : #"Parse Node"]) vars [#"choice 0", #"nt", node, n] {
+  for_each n in $ParseNodesWithin(node) {
+    if n is not val {node} and expr $InstanceOf(n, ?#"nt") -> return false
+  }
+  return true
+}
+
+def @ph-not-contains-two-nodes "ph-not-contains-two-nodes" (kind ao params [#"nt" : nonterminal, node : #"Parse Node"]) vars [#"nt", node, count, n] {
+  let count = 0
+  for_each n in $ParseNodesWithin(node) {
+    if n is not val {node} and expr $InstanceOf(n, ?#"nt") -> set var count = count + 1
+  }
+  if count >= 2 -> return false
+  return true
+}
+
+def @ph-nt-of-a "ph-nt-of-a" (kind ao params [a : nonterminal, #"choice 1", b : nonterminal, x : #"Parse Node"]) vars [a, #"choice 1", b, x, p, c] {
+  let p = $NearestEnclosing(x, [b])
+  if p is val {~empty~} -> return false
+  for_children_of c in p {
+    if c is val {x} and expr $InstanceOf(x, ?a) -> return true
+  }
+  return false
+}
+
+def @ph-items-in "ph-items-in" (kind ao params [#"nt" : nonterminal, node : #"Parse Node"]) vars [#"nt", node] {
+  return @formal-outermostinstances(#"nt", node)
+}
+
+def @ph-nt-var "ph-nt-var" (kind ao params [#"nt" : nonterminal, x : #"Parse Node"]) vars [#"nt", x] {
+  assert expr $InstanceOf(x, ?#"nt")
+  return x
+}
+
+def @ph-use-strict "ph-use-strict" (kind ao params [body : doc "a |FunctionBody| or |ScriptBody| Parse Node"]) vars [body] {
+  return $HasUseStrictDirective(body)
+}
+
+def @ph-source-strict "ph-source-strict" (kind ao params [node : #"Parse Node"]) vars [node] {
+  return $StrictModeCode(node)
+}
+
+def @ph-that-non-strict "ph-that-non-strict" (kind ao params []) vars [] {
+  if $StrictModeCode(this_node) is val {true} -> return false
+  return true
+}
+
+def @ph-numeric-value-defined "ph-numeric-value-defined" (kind ao params [x : #"Parse Node", #"ref" : pred(sat @ph-type-anything())]) vars [x, #"ref"] {
+  return sdo NumericValue(x)
+}
+
+def @ph-sv-defined "ph-sv-defined" (kind ao params [x : #"Parse Node", #"ref" : pred(sat @ph-type-anything())]) vars [x, #"ref"] {
+  return sdo SV(x)
+}
+
+def @ph-tv-defined "ph-tv-defined" (kind ao params [x : #"Parse Node", #"ref" : pred(sat @ph-type-anything())]) vars [x, #"ref"] {
+  return sdo TV(x)
+}
+
+def @ph-contains "ph-contains" (kind ao params [x : #"Parse Node", symbol : #"grammar symbol" | #"Parse Node"]) vars [x, symbol] {
+  return sdo Contains(x; symbol)
+}
+
+def @ph-contains-cond "ph-contains-cond" (kind ao params [x : #"Parse Node", symbol : #"grammar symbol"]) vars [x, symbol] {
+  return sdo Contains(x; symbol)
+}
+
+def @ph-token "ph-token" (kind ao params [c : doc "a terminal symbol"]) vars [c] {
+  return c
+}
+
+def @ph-token-nt "ph-token-nt" (kind ao params [#"nt" : nonterminal, c : doc "a terminal symbol"]) vars [#"nt", c] {
+  return c
+}
+
+def @ph-type-nt-parse-node "ph-type-nt-parse-node" (kind ao params [#"choice 0", #"nt" : nonterminal, v : pred(sat @ph-type-anything())]) vars [#"choice 0", #"nt", v] {
+  if v is not ty {#"Parse Node"} -> return false
+  if expr $InstanceOf(v, ?#"nt") -> return true
+  return false
+}
+
+def @ph-contained-within "ph-contained-within" (kind ao params [t : doc "a type", node : #"Parse Node"]) vars [t, node, n] {
+  for_each n in @formal-enclosingnodes(node) {
+    if n is ty {var t} -> return true
+  }
+  return false
+}
+
+def @ph-not-nested "ph-not-nested" (kind ao params [c : doc "a terminal symbol", t : doc "a type", node : #"Parse Node"]) vars [c, t, node, n] {
+  assert c is val {@ph-token(term "static")}
+  for_each n in @formal-enclosingnodes(node) {
+    if n is ty {var t} -> return false
+    if n is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |FunctionBody|))} or n is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |ClassStaticBlockBody|))} -> return true
+  }
+  return true
+}
+
+def @ph-not-nested-alt "ph-not-nested-alt" (kind ao params [c : doc "a terminal symbol", t : doc "a type", node : #"Parse Node"]) vars [c, t, node, n] {
+  assert c is val {@ph-token(term "static")}
+  for_each n in @formal-enclosingnodes(node) {
+    if n is ty {var t} -> return false
+    if n is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |FunctionBody|))} or n is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |ClassStaticBlockBody|))} -> return true
+  }
+  return true
+}
+
+def @ph-contains-any-nts "ph-contains-any-nts" (kind ao params [#"nt" : nonterminal, l : List]) vars [#"nt", l, e] {
+  for_each e in l {
+    if e is ty {#"Parse Node"} and expr $InstanceOf(e, ?#"nt") -> return true
+  }
+  return false
+}
+
+def @ph-source-matched "ph-source-matched" (kind ao params [node : #"Parse Node"]) vars [node] {
+  return true
+}
+
+def @ph-two-distinct "ph-two-distinct" (kind ao params [p : #"Parse Node", #"nt" : nonterminal, x : pred(sat @ph-type-anything()), y : pred(sat @ph-type-anything()), c : doc "a condition on _x_ and _y_", d : doc "a condition on _x_ and _y_"]) vars [p, #"nt", x, y, c, d, found, n, m, k] {
+  let found = $ListNew()
+  for_each n in $ParseNodesWithin(p) {
+    if n is not val {p} and expr $InstanceOf(n, ?#"nt") -> perform $Append(?n, ?found)
+  }
+  for_each m in found {
+    for_each k in found {
+      if m is not val {k} and c(m, k) is val {true} and d(m, k) is val {true} -> return true
+    }
+  }
+  return false
+}
+
+def @ph-stringvalue-any-nt-except "ph-stringvalue-any-nt-except" (kind ao params [#"nt" : nonterminal, alts : list<String>, s : String]) vars [#"nt", alts, s, v] {
+  let v = sdo StringValue(#"nt")
+  if alts fails $Contains(?v) and s is val {v} -> return true
+  return false
+}
+
+def @ph-stringvalue-terminal-except "ph-stringvalue-terminal-except" (kind ao params [#"nt" : nonterminal, alts : list<String>, s : String]) vars [#"nt", alts, s, t] {
+  for_each t in $TerminalAlternatives(#"nt") {
+    if alts fails $Contains(?t) and s is val {t} -> return true
+  }
+  return false
+}
+
+def @ph-production-in "ph-production-in" (kind ao params [g : doc "a clause", n : #"Parse Node"]) vars [g, n] {
+  return $InstanceOf(n, g)
+}
+
+def @ph-annexb-replacing "ph-annexb-replacing" (kind ao params [fd : nonterminal, funcDecl : #"Parse Node", vs : nonterminal, F : String, bi : nonterminal, body : pred(sat @ph-type-anything())]) vars [fd, funcDecl, vs, F, bi, body, #"text", tree] {
+  let #"text" = $ReplacedSourceText(funcDecl, $"string-concatenation"("var ", F, ";"))
+  let tree = $ParseGoal(#"text", $GoalSymbolOf(funcDecl), $StrictFromOutside(funcDecl), $InParseJSONScript(funcDecl), $InDirectEval(funcDecl))
+  if tree is val {~empty~} -> return false
+  if @formal-earlyerrorsof(tree) sat $IsEmpty() -> return true
+  return false
+}
+
+def @ph-annexb-evaluated "ph-annexb-evaluated" (kind ao params [fd : nonterminal, funcDecl : #"Parse Node", fe : nonterminal, x : doc "a clause", #"steps" : pred(sat @ph-type-abstract-closure())]) vars [fd, funcDecl, fe, x, #"steps"] {
+  perform $SetEvaluationSteps(funcDecl, #"steps")
+  return ~unused~
+}
+
+def @ph-derives-error "ph-derives-error" (kind ao params [#"cover" : nonterminal, #"nt" : nonterminal]) vars [#"cover", #"nt"] {
+  return @formal-parenthesizedoperandiserror($ChildOf(|UnaryExpression|, this_node))
+}
+
+def @ph-cu-table "ph-cu-table" (kind ao params [c : #"Parse Node", t : doc "a table"]) vars [c, t, e] {
+  let e = $"string-concatenation"(cu(92, "005C", "REVERSE SOLIDUS"), @sec-utf16encodecodepoint($CodePointMatched(?c)))
+  return $TableLookup(t, "Code Unit Value", "Escape Sequence", e)
+}
+
+def @ph-intrinsic-assoc "ph-intrinsic-assoc" (kind ao params [n : String, t : doc "a table"]) vars [n, t] {
+  return $TableRowValue(t, "Intrinsic", n)
+}
+
+def @ph-typedarray-constructor-name "ph-typedarray-constructor-name" (kind ao params []) vars [] {
+  return $TableRowValue(table t"table-the-typedarray-constructors", "Constructor Name", $ActiveFunction())
+}
+
+def @ph-name-of-entry "ph-name-of-entry" (kind ao params [t : doc "a table", column : String, k : pred(sat @ph-type-anything())]) vars [t, column, k] {
+  return $TableLookup(t, "Name", column, k)
+}
+
+def @ph-listed-in-column "ph-listed-in-column" (kind ao params [column : String, t : doc "a table", x : pred(sat @ph-type-anything())]) vars [column, t, x] {
+  return $TableColumnHas(t, column, x)
+}
+
+def @ph-tn-listed-in-column "ph-tn-listed-in-column" (kind ao params [#"choice 0", tn : doc "a type", column : String, t : doc "a table", x : pred(sat @ph-type-anything())]) vars [#"choice 0", tn, column, t, x] {
+  if x is not ty {var tn} -> return false
+  return $TableColumnHas(t, column, x)
+}
+
+def @ph-listed-property-name "ph-listed-property-name" (kind ao params [t : doc "a table", p : #"ECMAScript source text"]) vars [t, p] {
+  return $TableColumnHas(t, "Property name", @sec-codepointstostring(p))
+}
+
+def @ph-listed-property-name-or-alias "ph-listed-property-name-or-alias" (kind ao params [t : doc "a table", p : #"ECMAScript source text"]) vars [t, p] {
+  return $TableColumnHas(t, "Property name and aliases", @sec-codepointstostring(p))
+}
+
+def @ph-not-listed-property-name-or-alias "ph-not-listed-property-name-or-alias" (kind ao params [t : doc "a table", p : #"ECMAScript source text"]) vars [t, p] {
+  if $TableColumnHas(t, "Property name and aliases", @sec-codepointstostring(p)) is val {true} -> return false
+  return true
+}
+
+def @ph-listed-property-name-or-alias-either "ph-listed-property-name-or-alias-either" (kind ao params [t : doc "a table", u : doc "a table", p : #"ECMAScript source text"]) vars [t, u, p] {
+  if $TableColumnHas(t, "Property name and aliases", @sec-codepointstostring(p)) is val {true} -> return true
+  return $TableColumnHas(u, "Property name and aliases", @sec-codepointstostring(p))
+}
+
+def @ph-listed-binary-property-or-of-strings "ph-listed-binary-property-or-of-strings" (kind ao params [t : doc "a table", u : doc "a table", p : #"ECMAScript source text"]) vars [t, u, p] {
+  if $TableColumnHas(t, "Property name and aliases", @sec-codepointstostring(p)) is val {true} -> return true
+  return $TableColumnHas(u, "Property name", @sec-codepointstostring(p))
+}
+
+def @ph-listed-canonical-property-name "ph-listed-canonical-property-name" (kind ao params [t : doc "a table", p : #"ECMAScript source text"]) vars [t, p] {
+  return $TableColumnHas(t, "Canonical property name", @sec-codepointstostring(p))
+}
+
+def @ph-listed-binary-property-of-strings "ph-listed-binary-property-of-strings" (kind ao params [t : doc "a table", p : #"ECMAScript source text"]) vars [t, p] {
+  return $TableColumnHas(t, "Property name", @sec-codepointstostring(p))
+}
+
+def @ph-has-all-slots "ph-has-all-slots" (kind ao params [k : doc "a type", #"choice 1", c : doc "a clause", o : Object]) vars [k, #"choice 1", c, o] {
+  return $HasSlots($SlotsListed(c), o)
+}
+
+def @ph-not-has-all-slots "ph-not-has-all-slots" (kind ao params [k : doc "a type", #"choice 1", c : doc "a clause", o : Object]) vars [k, #"choice 1", c, o] {
+  if $HasSlots($SlotsListed(c), o) is val {true} -> return false
+  return true
+}
+
+def @ph-type-anything "ph-type-anything" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  return true
+}
+
+def @ph-type-abstract-closure "ph-type-abstract-closure" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"Abstract Closure"} -> return true
+  return false
+}
+
+def @ph-type-at-least "ph-type-at-least" (kind ao params [#"choice 0", t : doc "a type", lo : #"extended mathematical value", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, lo, v] {
+  if v is not ty {var t} -> return false
+  if v >= lo -> return true
+  return false
+}
+
+def @ph-type-promise "ph-type-promise" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  return @sec-ispromise(v)
+}
+
+def @ph-type-syntax-errors "ph-type-syntax-errors" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v, e] {
+  if v is not ty {List} -> return false
+  if v sat $IsEmpty() -> return false
+  for_each e in v {
+    if e is not ty {Object} -> return false
+    if e fails $HasSlot([[ErrorData]]) -> return false
+  }
+  return true
+}
+
+def @ph-type-closure-no-params "ph-type-closure-no-params" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {#"Abstract Closure"} -> return false
+  if $ClosureArity(v) == 0 -> return true
+  return false
+}
+
+def @ph-type-header-closure-no-params "ph-type-header-closure-no-params" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {#"Abstract Closure"} -> return false
+  if $ClosureArity(v) == 0 -> return true
+  return false
+}
+
+def @ph-type-closure-two-params "ph-type-closure-two-params" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {#"Abstract Closure"} -> return false
+  if $ClosureArity(v) == 2 -> return true
+  return false
+}
+
+def @ph-type-except "ph-type-except" (kind ao params [t : doc "a type", v : pred(sat @ph-type-anything())]) vars [t, v] {
+  if v is ty {var t} -> return false
+  return true
+}
+
+def @ph-type-but-not "ph-type-but-not" (kind ao params [t : doc "a type", u : doc "a type", v : pred(sat @ph-type-anything())]) vars [t, u, v] {
+  if v is not ty {var t} -> return false
+  if v is ty {var u} -> return false
+  return true
+}
+
+def @ph-type-but-not-one "ph-type-but-not-one" (kind ao params [t : doc "a type", u : doc "a type", v : pred(sat @ph-type-anything())]) vars [t, u, v] {
+  if v is not ty {var t} -> return false
+  if v is ty {var u} -> return false
+  return true
+}
+
+def @ph-type-sequence-of "ph-type-sequence-of" (kind ao params [#"choice 0", t : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, v, e] {
+  if v is not ty {List} -> return false
+  for_each e in v {
+    if e is not ty {var t} -> return false
+  }
+  return true
+}
+
+def @ph-type-conforms-iterator-result "ph-type-conforms-iterator-result" (kind ao params [#"choice 0", t : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, v] {
+  if v is ty {var t} -> return true
+  return false
+}
+
+def @ph-type-function-returns "ph-type-function-returns" (kind ao params [#"choice 0", t : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, v] {
+  if v is ty {#"function object"} -> return true
+  return false
+}
+
+def @ph-type-returns "ph-type-returns" (kind ao params [#"choice 0", t : doc "a type", u : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, u, v] {
+  if v is ty {var t} -> return true
+  return false
+}
+
+def @ph-type-promise-for "ph-type-promise-for" (kind ao params [t : doc "a type", v : pred(sat @ph-type-anything())]) vars [t, v] {
+  return @sec-ispromise(v)
+}
+
+def @ph-type-default "ph-type-default" (kind ao params [t : doc "a type", d : pred(sat @ph-type-anything()), v : pred(sat @ph-type-anything())]) vars [t, d, v] {
+  if v is ty {var t} -> return true
+  return false
+}
+
+def @sort-Super-Reference-Record "sort-Super-Reference-Record" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {#"Reference Record"} -> return false
+  return @sec-issuperreference(v)
+}
+
+def @sort-WriteSharedMemory-event "sort-WriteSharedMemory-event" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {WriteSharedMemory} -> return true
+  return false
+}
+
+def @sort-continue-completion "sort-continue-completion" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {#"Completion Record"} -> return false
+  if v[[Type]] is val {~continue~} -> return true
+  return false
+}
+
+def @sort-break-completion "sort-break-completion" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {#"Completion Record"} -> return false
+  if v[[Type]] is val {~break~} -> return true
+  return false
+}
+
+def @sort-implementation-defined-Completion-Record "sort-implementation-defined-Completion-Record" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"Completion Record"} -> return true
+  return false
+}
+
+def @sort-fully "sort-fully" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {#"Property Descriptor"} -> return false
+  if @sec-isaccessordescriptor(v) is val {true} {
+    if v sat $HasField([[Getter]]) and v sat $HasField([[Setter]]) and v sat $HasField([[Enumerable]]) and v sat $HasField([[Configurable]]) -> return true
+    return false
+  }
+  if @sec-isdatadescriptor(v) is val {true} {
+    if v sat $HasField([[Value]]) and v sat $HasField([[Writable]]) and v sat $HasField([[Enumerable]]) and v sat $HasField([[Configurable]]) -> return true
+  }
+  return false
+}
+
+def @sort-populated "sort-populated" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  return true
+}
+
+def @sort-object "sort-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {Object} -> return true
+  return false
+}
+
+def @sort-function-object "sort-function-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasMethod([[Call]]) -> return true
+  return false
+}
+
+def @sort-constructor "sort-constructor" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasMethod([[Construct]]) -> return true
+  return false
+}
+
+def @sort-ordinary "sort-ordinary" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if expr not $IsOrdinaryMethod(v[[GetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof) -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v) -> return false
+  if expr not $IsOrdinaryMethod(v[[IsExtensible]], clause @sec-ordinary-object-internal-methods-and-internal-slots-isextensible) -> return false
+  if expr not $IsOrdinaryMethod(v[[PreventExtensions]], clause @sec-ordinary-object-internal-methods-and-internal-slots-preventextensions) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetOwnProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getownproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[DefineOwnProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-defineownproperty-p-desc) -> return false
+  if expr not $IsOrdinaryMethod(v[[HasProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[Get]], clause @sec-ordinary-object-internal-methods-and-internal-slots-get-p-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Set]], clause @sec-ordinary-object-internal-methods-and-internal-slots-set-p-v-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Delete]], clause @sec-ordinary-object-internal-methods-and-internal-slots-delete-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[OwnPropertyKeys]], clause @sec-ordinary-object-internal-methods-and-internal-slots-ownpropertykeys) -> return false
+  if v sat $HasMethod([[Call]]) {
+    if expr not $IsOrdinaryMethod(v[[Call]], clause @sec-ecmascript-function-objects-call-thisargument-argumentslist) and expr not $IsOrdinaryMethod(v[[Call]], clause @sec-built-in-function-objects-call-thisargument-argumentslist) -> return false
+  }
+  if v sat $HasMethod([[Construct]]) {
+    if expr not $IsOrdinaryMethod(v[[Construct]], clause @sec-ecmascript-function-objects-construct-argumentslist-newtarget) and expr not $IsOrdinaryMethod(v[[Construct]], clause @sec-built-in-function-objects-construct-argumentslist-newtarget) -> return false
+  }
+  return true
+}
+
+def @sort-extensible "sort-extensible" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[Extensible]]) -> return $""()
+  return v[[Extensible]]
+}
+
+def @sort-ECMAScript-function-object "sort-ECMAScript-function-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {sort [ordinary] object} -> return false
+  if @sec-iscallable(v) is val {false} -> return false
+  if expr not $IsOrdinaryMethod(v[[Call]], clause @sec-ecmascript-function-objects-call-thisargument-argumentslist) -> return false
+  return true
+}
+
+def @sort-built-in "sort-built-in" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {sort [ordinary] object} -> return false
+  if @sec-iscallable(v) is val {false} -> return false
+  if expr not $IsOrdinaryMethod(v[[Call]], clause @sec-built-in-function-objects-call-thisargument-argumentslist) -> return false
+  return true
+}
+
+def @sort-bound-function-exotic-object "sort-bound-function-exotic-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if @sec-iscallable(v) is val {false} -> return false
+  if expr not $IsOrdinaryMethod(v[[Call]], clause @sec-bound-function-exotic-objects-call-thisargument-argumentslist) -> return false
+  if v sat $HasMethod([[Construct]]) {
+    if expr not $IsOrdinaryMethod(v[[Construct]], clause @sec-bound-function-exotic-objects-construct-argumentslist-newtarget) -> return false
+  }
+  if expr not $IsOrdinaryMethod(v[[GetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof) -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v) -> return false
+  if expr not $IsOrdinaryMethod(v[[IsExtensible]], clause @sec-ordinary-object-internal-methods-and-internal-slots-isextensible) -> return false
+  if expr not $IsOrdinaryMethod(v[[PreventExtensions]], clause @sec-ordinary-object-internal-methods-and-internal-slots-preventextensions) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetOwnProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getownproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[DefineOwnProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-defineownproperty-p-desc) -> return false
+  if expr not $IsOrdinaryMethod(v[[HasProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[Get]], clause @sec-ordinary-object-internal-methods-and-internal-slots-get-p-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Set]], clause @sec-ordinary-object-internal-methods-and-internal-slots-set-p-v-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Delete]], clause @sec-ordinary-object-internal-methods-and-internal-slots-delete-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[OwnPropertyKeys]], clause @sec-ordinary-object-internal-methods-and-internal-slots-ownpropertykeys) -> return false
+  return true
+}
+
+def @sort-Array-exotic-object "sort-Array-exotic-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasMethod([[Call]]) -> return false
+  if v sat $HasMethod([[Construct]]) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof) -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v) -> return false
+  if expr not $IsOrdinaryMethod(v[[IsExtensible]], clause @sec-ordinary-object-internal-methods-and-internal-slots-isextensible) -> return false
+  if expr not $IsOrdinaryMethod(v[[PreventExtensions]], clause @sec-ordinary-object-internal-methods-and-internal-slots-preventextensions) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetOwnProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getownproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[DefineOwnProperty]], clause @sec-array-exotic-objects-defineownproperty-p-desc) -> return false
+  if expr not $IsOrdinaryMethod(v[[HasProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[Get]], clause @sec-ordinary-object-internal-methods-and-internal-slots-get-p-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Set]], clause @sec-ordinary-object-internal-methods-and-internal-slots-set-p-v-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Delete]], clause @sec-ordinary-object-internal-methods-and-internal-slots-delete-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[OwnPropertyKeys]], clause @sec-ordinary-object-internal-methods-and-internal-slots-ownpropertykeys) -> return false
+  return true
+}
+
+def @sort-Array "sort-Array" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"Array exotic object"} -> return true
+  return false
+}
+
+def @sort-String-exotic-object "sort-String-exotic-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasMethod([[Call]]) -> return false
+  if v sat $HasMethod([[Construct]]) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof) -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v) -> return false
+  if expr not $IsOrdinaryMethod(v[[IsExtensible]], clause @sec-ordinary-object-internal-methods-and-internal-slots-isextensible) -> return false
+  if expr not $IsOrdinaryMethod(v[[PreventExtensions]], clause @sec-ordinary-object-internal-methods-and-internal-slots-preventextensions) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetOwnProperty]], clause @sec-string-exotic-objects-getownproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[DefineOwnProperty]], clause @sec-string-exotic-objects-defineownproperty-p-desc) -> return false
+  if expr not $IsOrdinaryMethod(v[[HasProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[Get]], clause @sec-ordinary-object-internal-methods-and-internal-slots-get-p-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Set]], clause @sec-ordinary-object-internal-methods-and-internal-slots-set-p-v-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Delete]], clause @sec-ordinary-object-internal-methods-and-internal-slots-delete-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[OwnPropertyKeys]], clause @sec-string-exotic-objects-ownpropertykeys) -> return false
+  return true
+}
+
+def @sort-arguments-exotic-object "sort-arguments-exotic-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasMethod([[Call]]) -> return false
+  if v sat $HasMethod([[Construct]]) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof) -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v) -> return false
+  if expr not $IsOrdinaryMethod(v[[IsExtensible]], clause @sec-ordinary-object-internal-methods-and-internal-slots-isextensible) -> return false
+  if expr not $IsOrdinaryMethod(v[[PreventExtensions]], clause @sec-ordinary-object-internal-methods-and-internal-slots-preventextensions) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetOwnProperty]], clause @sec-arguments-exotic-objects-getownproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[DefineOwnProperty]], clause @sec-arguments-exotic-objects-defineownproperty-p-desc) -> return false
+  if expr not $IsOrdinaryMethod(v[[HasProperty]], clause @sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[Get]], clause @sec-arguments-exotic-objects-get-p-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Set]], clause @sec-arguments-exotic-objects-set-p-v-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Delete]], clause @sec-arguments-exotic-objects-delete-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[OwnPropertyKeys]], clause @sec-ordinary-object-internal-methods-and-internal-slots-ownpropertykeys) -> return false
+  return true
+}
+
+def @sort-TypedArray "sort-TypedArray" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasMethod([[Call]]) -> return false
+  if v sat $HasMethod([[Construct]]) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof) -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v) -> return false
+  if expr not $IsOrdinaryMethod(v[[IsExtensible]], clause @sec-ordinary-object-internal-methods-and-internal-slots-isextensible) -> return false
+  if expr not $IsOrdinaryMethod(v[[PreventExtensions]], clause @sec-typedarray-preventextensions) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetOwnProperty]], clause @sec-typedarray-getownproperty) -> return false
+  if expr not $IsOrdinaryMethod(v[[DefineOwnProperty]], clause @sec-typedarray-defineownproperty) -> return false
+  if expr not $IsOrdinaryMethod(v[[HasProperty]], clause @sec-typedarray-hasproperty) -> return false
+  if expr not $IsOrdinaryMethod(v[[Get]], clause @sec-typedarray-get) -> return false
+  if expr not $IsOrdinaryMethod(v[[Set]], clause @sec-typedarray-set) -> return false
+  if expr not $IsOrdinaryMethod(v[[Delete]], clause @sec-typedarray-delete) -> return false
+  if expr not $IsOrdinaryMethod(v[[OwnPropertyKeys]], clause @sec-typedarray-ownpropertykeys) -> return false
+  return true
+}
+
+def @sort-module-namespace-exotic-object "sort-module-namespace-exotic-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasMethod([[Call]]) -> return false
+  if v sat $HasMethod([[Construct]]) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetPrototypeOf]], clause @sec-module-namespace-exotic-objects-getprototypeof) -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-module-namespace-exotic-objects-setprototypeof-v) -> return false
+  if expr not $IsOrdinaryMethod(v[[IsExtensible]], clause @sec-module-namespace-exotic-objects-isextensible) -> return false
+  if expr not $IsOrdinaryMethod(v[[PreventExtensions]], clause @sec-module-namespace-exotic-objects-preventextensions) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetOwnProperty]], clause @sec-module-namespace-exotic-objects-getownproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[DefineOwnProperty]], clause @sec-module-namespace-exotic-objects-defineownproperty-p-desc) -> return false
+  if expr not $IsOrdinaryMethod(v[[HasProperty]], clause @sec-module-namespace-exotic-objects-hasproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[Get]], clause @sec-module-namespace-exotic-objects-get-p-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Set]], clause @sec-module-namespace-exotic-objects-set-p-v-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Delete]], clause @sec-module-namespace-exotic-objects-delete-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[OwnPropertyKeys]], clause @sec-module-namespace-exotic-objects-ownpropertykeys) -> return false
+  return true
+}
+
+def @sort-Proxy-exotic-object "sort-Proxy-exotic-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if expr not $IsOrdinaryMethod(v[[GetPrototypeOf]], clause @sec-proxy-object-internal-methods-and-internal-slots-getprototypeof) -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-proxy-object-internal-methods-and-internal-slots-setprototypeof-v) -> return false
+  if expr not $IsOrdinaryMethod(v[[IsExtensible]], clause @sec-proxy-object-internal-methods-and-internal-slots-isextensible) -> return false
+  if expr not $IsOrdinaryMethod(v[[PreventExtensions]], clause @sec-proxy-object-internal-methods-and-internal-slots-preventextensions) -> return false
+  if expr not $IsOrdinaryMethod(v[[GetOwnProperty]], clause @sec-proxy-object-internal-methods-and-internal-slots-getownproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[DefineOwnProperty]], clause @sec-proxy-object-internal-methods-and-internal-slots-defineownproperty-p-desc) -> return false
+  if expr not $IsOrdinaryMethod(v[[HasProperty]], clause @sec-proxy-object-internal-methods-and-internal-slots-hasproperty-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[Get]], clause @sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Set]], clause @sec-proxy-object-internal-methods-and-internal-slots-set-p-v-receiver) -> return false
+  if expr not $IsOrdinaryMethod(v[[Delete]], clause @sec-proxy-object-internal-methods-and-internal-slots-delete-p) -> return false
+  if expr not $IsOrdinaryMethod(v[[OwnPropertyKeys]], clause @sec-proxy-object-internal-methods-and-internal-slots-ownpropertykeys) -> return false
+  if v sat $HasMethod([[Call]]) {
+    if expr not $IsOrdinaryMethod(v[[Call]], clause @sec-proxy-object-internal-methods-and-internal-slots-call-thisargument-argumentslist) -> return false
+  }
+  if v sat $HasMethod([[Construct]]) {
+    if expr not $IsOrdinaryMethod(v[[Construct]], clause @sec-proxy-object-internal-methods-and-internal-slots-construct-argumentslist-newtarget) -> return false
+  }
+  return true
+}
+
+def @sort-immutable "sort-immutable" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-immutable-prototype-exotic-objects-setprototypeof-v) -> return false
+  return true
+}
+
+def @sort-prototype-exotic-object "sort-prototype-exotic-object" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if expr not $IsOrdinaryMethod(v[[SetPrototypeOf]], clause @sec-immutable-prototype-exotic-objects-setprototypeof-v) -> return false
+  return true
+}
+
+def @sort-WeakRef "sort-WeakRef" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[WeakRefTarget]]) -> return false
+  return true
+}
+
+def @sort-FinalizationRegistry "sort-FinalizationRegistry" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[Cells]]) -> return false
+  return true
+}
+
+def @sort-WeakMap "sort-WeakMap" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[WeakMapData]]) -> return false
+  return true
+}
+
+def @sort-WeakSet "sort-WeakSet" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[WeakSetData]]) -> return false
+  return true
+}
+
+def @sort-DataView "sort-DataView" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[DataView]]) -> return false
+  return true
+}
+
+def @sort-Generator "sort-Generator" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[GeneratorState]]) -> return false
+  return true
+}
+
+def @sort-AsyncGenerator "sort-AsyncGenerator" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[AsyncGeneratorState]]) -> return false
+  return true
+}
+
+def @sort-ArrayBuffer "sort-ArrayBuffer" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[ArrayBufferData]]) -> return false
+  if v[[ArrayBufferData]] is ty {#"Shared Data Block"} -> return false
+  return true
+}
+
+def @sort-SharedArrayBuffer "sort-SharedArrayBuffer" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[ArrayBufferData]]) -> return false
+  if v[[ArrayBufferData]] is ty {#"Shared Data Block"} -> return true
+  return false
+}
+
+def @sort-Uint8Array "sort-Uint8Array" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[TypedArrayName]]) -> return false
+  if v[[TypedArrayName]] is val {"Uint8Array"} -> return true
+  return false
+}
+
+def @sort-For-In-Iterator-instance "sort-For-In-Iterator-instance" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasSlots([[[Object]], [[ObjectWasVisited]], [[VisitedKeys]], [[RemainingKeys]]]) -> return true
+  return false
+}
+
+def @sort-Array-Iterator-Instance "sort-Array-Iterator-Instance" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasSlots([[[IteratedArrayLike]], [[ArrayLikeNextIndex]], [[ArrayLikeIterationKind]]]) -> return true
+  return false
+}
+
+def @sort-RegExp-String-Iterator-Object-Instance "sort-RegExp-String-Iterator-Object-Instance" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v sat $HasSlots([[[IteratingRegExp]], [[IteratedString]], [[Global]], [[Unicode]], [[Done]]]) -> return true
+  return false
+}
+
+def @sort-initialized-RegExp-instance "sort-initialized-RegExp-instance" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[RegExpMatcher]]) -> return false
+  if v[[RegExpMatcher]] is val {undefined} -> return false
+  return true
+}
+
+def @sort-Undefined "sort-Undefined" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is val {undefined} -> return true
+  return false
+}
+
+def @sort-Null "sort-Null" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is val {null} -> return true
+  return false
+}
+
+def @sort-integral-Number "sort-integral-Number" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Number} -> return false
+  if v fails $IsFinite() -> return false
+  if $ℝ(v) is ty {integer} -> return true
+  return false
+}
+
+def @sort-NaN "sort-NaN" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is val {nan} -> return true
+  return false
+}
+
+def @sort-non-negative "sort-non-negative" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {Number} {
+    if v sat $InInterval(num_f(+0), num_f(+∞)) -> return true
+    return false
+  }
+  if v is ty {#"extended mathematical value"} and v >= 0 -> return true
+  return false
+}
+
+def @sort-positive "sort-positive" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"extended mathematical value"} and v > 0 -> return true
+  return false
+}
+
+def @sort-odd "sort-odd" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {Number} {
+    if v is not ty {#"integral Number"} -> return false
+    set var v = $ℝ(v)
+  }
+  if v is ty {integer} and v sat $Parity(data choice 1) -> return true
+  return false
+}
+
+def @sort-time-value "sort-time-value" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"integral Number"} -> return true
+  if v is val {nan} -> return true
+  return false
+}
+
+def @sort-epoch-nanoseconds-count "sort-epoch-nanoseconds-count" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {integer} and v sat $InInterval($TimeConst(data choice 12), $TimeConst(data choice 11)) -> return true
+  return false
+}
+
+def @sort-Unicode-code-point "sort-Unicode-code-point" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {integer} and v sat $InInterval(0, math(hex(1114111, "10FFFF"))) -> return true
+  return false
+}
+
+def @sort-code-point "sort-code-point" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"Unicode code point"} -> return true
+  return false
+}
+
+def @sort-code-unit "sort-code-unit" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {integer} and v sat $InInterval(0, math(hex(65535, "FFFF"))) -> return true
+  return false
+}
+
+def @sort-surrogate "sort-surrogate" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"code unit"} and $NumericValue(?v) sat $InInterval(math(hex(55296, "D800")), math(hex(57343, "DFFF"))) -> return true
+  return false
+}
+
+def @sort-leading "sort-leading" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"code unit"} and $NumericValue(?v) sat $InInterval(math(hex(55296, "D800")), math(hex(56319, "DBFF"))) -> return true
+  return false
+}
+
+def @sort-trailing "sort-trailing" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"code unit"} and $NumericValue(?v) sat $InInterval(math(hex(56320, "DC00")), math(hex(57343, "DFFF"))) -> return true
+  return false
+}
+
+def @sort-character "sort-character" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"code point"} -> return true
+  return false
+}
+
+def @sort-CharSetElement "sort-CharSetElement" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {character} -> return true
+  if v is ty {list<character>} -> return true
+  return false
+}
+
+def @sort-single "sort-single" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {List} {
+    if $ListLen(?v) is val {1} -> return true
+    return false
+  }
+  return true
+}
+
+def @sort-possibly-empty "sort-possibly-empty" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  return true
+}
+
+def @sort-byte-value "sort-byte-value" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {integer} and v sat $InInterval(0, 255) -> return true
+  return false
+}
+
+def @sort-byte "sort-byte" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"byte value"} -> return true
+  return false
+}
+
+def @sort-property-name "sort-property-name" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {String} -> return true
+  return false
+}
+
+def @sort-integer-index "sort-integer-index" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v, n] {
+  if v is not ty {#"property name"} -> return false
+  let n = @sec-canonicalnumericindexstring(v)
+  if n is ty {#"integral Number"} and n sat $InInterval(num_f(+0), $𝔽(2 ^ 53 - 1)) -> return true
+  return false
+}
+
+def @sort-array-index "sort-array-index" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v, n] {
+  if v is not ty {#"integer index"} -> return false
+  let n = @sec-canonicalnumericindexstring(v)
+  if n is ty {#"integral Number"} and n sat $InInterval(num_f(+0), $𝔽(2 ^ 32 - 2)) -> return true
+  return false
+}
+
+def @sort-sequence-of-Unicode-code-points "sort-sequence-of-Unicode-code-points" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v, e] {
+  if v is not ty {List} -> return false
+  for_each e in v {
+    if e is not ty {#"code point"} -> return false
+  }
+  return true
+}
+
+def @sort-ECMAScript-source-text "sort-ECMAScript-source-text" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {#"sequence of Unicode code points"} -> return true
+  return false
+}
+
+def @sort-TypedArray-element-type "sort-TypedArray-element-type" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is val {~int8~; ~uint8~; ~uint8clamped~; ~int16~; ~uint16~; ~int32~; ~uint32~; ~bigint64~; ~biguint64~; ~float16~; ~float32~; ~float64~} -> return true
+  return false
+}
+
+def @sort-error "sort-error" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Object} -> return false
+  if v fails $HasSlot([[ErrorData]]) -> return false
+  return true
+}
+
+def @sort-binding "sort-binding" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Record} -> return false
+  if v fails $HasField([[Mutable]]) -> return false
+  return true
+}
+
+def @sort-strict "sort-strict" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {binding} -> return false
+  return v[[Strict]]
+}
+
+def @sort-mutable "sort-mutable" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {binding} -> return false
+  return v[[Mutable]]
+}
+
+def @sort-uninitialized "sort-uninitialized" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {binding} -> return false
+  if v[[Initialized]] is val {true} -> return false
+  return true
+}
+
+def @sort-indirect "sort-indirect" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {binding} -> return false
+  if v fails $HasField([[Module]]) -> return false
+  return true
+}
+
+def @formal-agent-interleave "formal-agent-interleave" (kind ao params [] -> val(~unused~)) vars [agent, execution, eventsRecord, target] {
+  assert $EnteredCriticalSections() sat $IsEmpty()
+  let agent = $AgentRecord()
+  let execution = agent[[CandidateExecution]]
+  let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+  let target = $HostSelectAgent(agent, $ListLen(eventsRecord[[EventList]]))
+  if target is val {~empty~} {
+    perform $AgentTimeout()
+    return ~unused~
+  }
+  perform $SwitchToAgent(target)
+  resume $Running() with @sec-normalcompletion(~unused~)
+  return ~unused~
+}
+
+def @formal-regexppattern "formal-regexppattern" (kind ao params [regexp : #"initialized RegExp instance"] -> |Pattern|) vars [regexp, pattern, flags, u, v, patternText, i, parseResult] {
+  let pattern = regexp[[OriginalSource]]
+  let flags = regexp[[OriginalFlags]]
+  if_else flags sat $Contains("u") { let u = true } else { let u = false }
+  if_else flags sat $Contains("v") { let v = true } else { let v = false }
+  if u is val {true} or v is val {true} {
+    let patternText = @sec-stringtocodepoints(pattern)
+  }
+  else {
+    let patternText = $ListNew()
+    for_range i incl 0 .. excl $StrLen(?pattern) {
+      perform $Append($UnitOrPointOf(data choice 0, $NumericValue($UnitAt(?i, ?pattern))), ?patternText)
+    }
+  }
+  let parseResult = @sec-parsepattern(patternText, u, v)
+  assert parseResult is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |Pattern|))}
+  return parseResult
+}
+
+def @formal-capturegroupname "formal-capturegroupname" (kind ao params [pattern : |Pattern|, i : sort [positive] integer] -> |GroupName| | val(~empty~)) vars [pattern, i, specifier] {
+  for_each specifier in $ParseNodesWithin(pattern) {
+    if specifier is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |GroupSpecifier|))} and @sec-countleftcapturingparensbefore(specifier) == i -> return $ChildOf(|GroupName|, ?specifier)
+  }
+  return ~empty~
+}
+
+def @formal-isdatetimerepresentable "formal-isdatetimerepresentable" (kind ao params [tv : sort [finite] #"time value"] -> Boolean) vars [tv, year] {
+  let year = @sec-yearfromtime(tv)
+  if year sat $InInterval(math(-999999), 999999) -> return true
+  return false
+}
+
+def @formal-datetimestring "formal-datetimestring" (kind ao params [tv : sort [finite] #"time value", expanded : Boolean] -> String) vars [tv, expanded, year, yearString, month, day, hour, minute, second, ms, date, time] {
+  assert @formal-isdatetimerepresentable(tv) is val {true}
+  let year = @sec-yearfromtime(tv)
+  if expanded is val {false} and year sat $InInterval(0, 9999) -> let yearString = @sec-tozeropaddeddecimalstring(year, 4)
+  else_if year >= 0 -> let yearString = $"string-concatenation"("+", @sec-tozeropaddeddecimalstring(year, 6))
+  else -> let yearString = $"string-concatenation"("-", @sec-tozeropaddeddecimalstring(neg year, 6))
+  let month = @sec-tozeropaddeddecimalstring(@sec-monthfromtime(tv) + 1, 2)
+  let day = @sec-tozeropaddeddecimalstring(@sec-datefromtime(tv), 2)
+  let hour = @sec-tozeropaddeddecimalstring(@sec-hourfromtime(tv), 2)
+  let minute = @sec-tozeropaddeddecimalstring(@sec-minutefromtime(tv), 2)
+  let second = @sec-tozeropaddeddecimalstring(@sec-secondfromtime(tv), 2)
+  let ms = @sec-tozeropaddeddecimalstring(@sec-millisecondfromtime(tv), 3)
+  let date = $"string-concatenation"(yearString, "-", month, "-", day)
+  let time = $"string-concatenation"(hour, ":", minute, ":", second, ".", ms)
+  return $"string-concatenation"(date, "T", time, "Z")
+}
+
+def @formal-ieeebits "formal-ieeebits" (kind ao params [value : Number, w : sort [positive] integer, p : sort [positive] integer] -> sort [#"non-negative"] integer) vars [value, w, p, bias, sign, a, e] {
+  let bias = 2 ^ {w - 1} - 1
+  if value is val {nan} -> return $NaNEncoding(value, w, p)
+  if_else value is val {num_f(-0)} or value < num_f(-0) { let sign = 2 ^ {w + p - 1} } else { let sign = 0 }
+  if value is val {num_f(+∞); num_f(-∞)} -> return sign + (2 ^ w - 1) * 2 ^ {p - 1}
+  let a = $abs($ℝ(value))
+  if a == 0 -> return sign
+  let e = 0
+  repeat_while 2 ^ e > a {
+    set var e = e - 1
+  }
+  repeat_while 2 ^ {e + 1} <= a {
+    set var e = e + 1
+  }
+  if e < 1 - bias -> return sign + a / 2 ^ {2 - bias - p}
+  return sign + (e + bias) * 2 ^ {p - 1} + (a / 2 ^ {e - p + 1} - 2 ^ {p - 1})
+}
+
+def @formal-littleendianbytes "formal-littleendianbytes" (kind ao params [n : sort [#"non-negative"] integer, size : sort [#"non-negative"] integer] -> list<#"byte value">) vars [n, size, bytes, m] {
+  assert n < 2 ^ {8 * size}
+  let bytes = $ListNew()
+  let m = n
+  repeat_n size {
+    perform $Append(m modulo 256, ?bytes)
+    set var m = $floor(m / 256)
+  }
+  return bytes
+}
+
+def @formal-base64encode "formal-base64encode" (kind ao params [bytes : list<#"byte value">, alphabet : String, omitPadding : Boolean] -> String) vars [bytes, alphabet, omitPadding, out, len, i, k, n, j, v] {
+  assert $StrLen(?alphabet) is val {64}
+  let out = $"the empty String"()
+  let len = $ListLen(?bytes)
+  let i = 0
+  repeat_while i < len {
+    let k = $min(3, len - i)
+    let n = 0
+    for_range j incl 0 .. excl 3 {
+      if_else j < k { set var n = n * 256 + bytes[i + j] } else { set var n = n * 256 }
+    }
+    for_range j incl 0 .. excl 4 {
+      if j <= k {
+        let v = $floor(n / 2 ^ {6 * (3 - j)}) modulo 64
+        set var out = $"string-concatenation"(out, $Substring(?alphabet, ?v, v + 1))
+      }
+      else_if omitPadding is val {false} {
+        set var out = $"string-concatenation"(out, "=")
+      }
+    }
+    set var i = i + 3
+  }
+  return out
+}
+
+def @formal-string.prototype.tolocaleuppercase "formal-string.prototype.tolocaleuppercase" (kind builtin params [reserved1 opt, reserved2 opt]) vars [#"this value", NewTarget, reserved1, reserved2, thisValue, string, sText, upperText, uppercaseString] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let sText = @sec-stringtocodepoints(string)
+  let upperText = $LocaleUppercase(sText)
+  let uppercaseString = @sec-codepointstostring(upperText)
+  return uppercaseString
+}
+
+def @formal-string.prototype.tolocalelowercase "formal-string.prototype.tolocalelowercase" (kind builtin params [reserved1 opt, reserved2 opt]) vars [#"this value", NewTarget, reserved1, reserved2, thisValue, string, sText, lowerText, lowercaseString] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let sText = @sec-stringtocodepoints(string)
+  let lowerText = $LocaleLowercase(sText)
+  let lowercaseString = @sec-codepointstostring(lowerText)
+  return lowercaseString
+}
+
+def @formal-number.prototype.tolocalestring "formal-number.prototype.tolocalestring" (kind builtin params [reserved1 opt, reserved2 opt]) vars [#"this value", NewTarget, reserved1, reserved2, x, s] {
+  let x = ? @sec-thisnumbervalue(this_value)
+  let s = $LocaleNumberString(x)
+  if s is val {~empty~} -> return @sec-numeric-types-number-tostring(x, 10)
+  return s
+}
+
+def @formal-bigint.prototype.tolocalestring "formal-bigint.prototype.tolocalestring" (kind builtin params [reserved1 opt, reserved2 opt]) vars [#"this value", NewTarget, reserved1, reserved2, x, s] {
+  let x = ? @sec-thisbigintvalue(this_value)
+  let s = $LocaleNumberString(x)
+  if s is val {~empty~} -> return @sec-numeric-types-bigint-tostring(x, 10)
+  return s
+}
+
+def @formal-date.prototype.tolocaledatestring "formal-date.prototype.tolocaledatestring" (kind builtin params [reserved1 opt, reserved2 opt]) vars [#"this value", NewTarget, reserved1, reserved2, dateObj, s, tv, t] {
+  let dateObj = this_value
+  let s = $LocaleDateString(~date~, dateObj)
+  if s is val {~throw~} -> throw @ph-new-error([[TypeError]])
+  if s is val {~empty~} {
+    perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+    let tv = dateObj[[DateValue]]
+    if tv is val {nan} -> return "Invalid Date"
+    let t = @sec-localtime(tv)
+    return @sec-datestring(t)
+  }
+  return s
+}
+
+def @formal-date.prototype.tolocalestring "formal-date.prototype.tolocalestring" (kind builtin params [reserved1 opt, reserved2 opt]) vars [#"this value", NewTarget, reserved1, reserved2, dateObj, s, tv] {
+  let dateObj = this_value
+  let s = $LocaleDateString(~all~, dateObj)
+  if s is val {~throw~} -> throw @ph-new-error([[TypeError]])
+  if s is val {~empty~} {
+    perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+    let tv = dateObj[[DateValue]]
+    return @sec-todatestring(tv)
+  }
+  return s
+}
+
+def @formal-date.prototype.tolocaletimestring "formal-date.prototype.tolocaletimestring" (kind builtin params [reserved1 opt, reserved2 opt]) vars [#"this value", NewTarget, reserved1, reserved2, dateObj, s, tv, localTime] {
+  let dateObj = this_value
+  let s = $LocaleDateString(~time~, dateObj)
+  if s is val {~throw~} -> throw @ph-new-error([[TypeError]])
+  if s is val {~empty~} {
+    perform ? @sec-requireinternalslot(dateObj, [[DateValue]])
+    let tv = dateObj[[DateValue]]
+    if tv is val {nan} -> return "Invalid Date"
+    let localTime = @sec-localtime(tv)
+    return $"string-concatenation"(@sec-timestring(localTime), @sec-timezoneestring(tv))
+  }
+  return s
+}
+
+def @formal-singleagentreadbytes "formal-singleagentreadbytes" (kind ao params [execution : #"candidate execution", eventsRecord : #"Agent Events Record", #"block" : #"Shared Data Block", byteIndex : sort [#"non-negative"] integer, elementSize : sort [#"non-negative"] integer] -> list<#"byte value">) vars [execution, eventsRecord, #"block", byteIndex, elementSize, bytes, byteLocation, latest, event, payloadIndex, chosenValueRecord, modifyOp, bytesModified] {
+  let bytes = $ListNew()
+  for_range byteLocation incl byteIndex .. excl byteIndex + elementSize {
+    let latest = ~empty~
+    for_each event in eventsRecord[[EventList]] {
+      if event is ty {#"WriteSharedMemory event"} or event is ty {ReadModifyWriteSharedMemory} {
+        if event[[Block]] is val {#"block"} and event[[ByteIndex]] <= byteLocation and byteLocation < event[[ByteIndex]] + event[[ElementSize]] -> set var latest = event
+      }
+    }
+    assert latest is not val {~empty~}
+    let payloadIndex = byteLocation - latest[[ByteIndex]]
+    if latest is ty {#"WriteSharedMemory event"} {
+      perform $Append(latest[[Payload]][payloadIndex], ?bytes)
+    }
+    else {
+      let chosenValueRecord = @ph-elem-whose(execution[[ChosenValues]], [[Event]], data choice 0, ?latest)
+      let modifyOp = latest[[ModifyOp]]
+      let bytesModified = modifyOp(chosenValueRecord[[ChosenValue]], latest[[Payload]])
+      perform $Append(bytesModified[payloadIndex], ?bytes)
+    }
+  }
+  return bytes
+}
+
+def @formal-choosesharedbytes "formal-choosesharedbytes" (kind ao params [execution : #"candidate execution", eventsRecord : #"Agent Events Record", #"block" : #"Shared Data Block", byteIndex : sort [#"non-negative"] integer, elementSize : sort [#"non-negative"] integer] -> list<#"byte value">) vars [execution, eventsRecord, #"block", byteIndex, elementSize, writes, bytes, byteLocation, writeEvent, payloadIndex, chosenValueRecord, modifyOp, bytesModified] {
+  let writes = $ChooseReadsBytesFrom(execution, eventsRecord, #"block", byteIndex, elementSize)
+  let bytes = $ListNew()
+  let byteLocation = byteIndex
+  for_each writeEvent in writes {
+    let payloadIndex = byteLocation - writeEvent[[ByteIndex]]
+    if writeEvent is ty {#"WriteSharedMemory event"} {
+      perform $Append(writeEvent[[Payload]][payloadIndex], ?bytes)
+    }
+    else {
+      let chosenValueRecord = @ph-elem-whose(execution[[ChosenValues]], [[Event]], data choice 0, ?writeEvent)
+      let modifyOp = writeEvent[[ModifyOp]]
+      let bytesModified = modifyOp(chosenValueRecord[[ChosenValue]], writeEvent[[Payload]])
+      perform $Append(bytesModified[payloadIndex], ?bytes)
+    }
+    set var byteLocation = byteLocation + 1
+  }
+  return bytes
+}
+
+def @formal-radixdigitvalue "formal-radixdigitvalue" (kind ao params [c : #"code unit"] -> sort [#"non-negative"] integer | val(~empty~)) vars [c, n] {
+  let n = $NumericValue(?c)
+  if n sat $InInterval(math(hex(48, "0030")), math(hex(57, "0039"))) -> return n - math(hex(48, "0030"))
+  if n sat $InInterval(math(hex(65, "0041")), math(hex(90, "005A"))) -> return n - math(hex(65, "0041")) + 10
+  if n sat $InInterval(math(hex(97, "0061")), math(hex(122, "007A"))) -> return n - math(hex(97, "0061")) + 10
+  return ~empty~
+}
+
+def @formal-earlyerrorsof "formal-earlyerrorsof" (kind ao params [node : #"Parse Node"] -> doc "a List of *SyntaxError* objects") vars [node, errors, #"child"] {
+  if node sat @ph-production-in(clause @sec-functiondeclarations-in-ifstatement-statement-clauses) -> return @formal-earlyerrorsof($CoveredBy(|IfStatement|, ?node))
+  let errors = $ListNew()
+  for_children_of #"child" in node {
+    if expr $InstanceOf(#"child", data sort nonterminal) {
+      if $MustCoverChild(node, #"child") is val {false} -> set var errors = $ListConcat([errors, @formal-earlyerrorsof(#"child")])
+    }
+  }
+  if errors fails $IsEmpty() -> return errors
+  return sdo #"Early Errors"(node)
+}
+
+def @formal-parsetextin "formal-parsetextin" (kind ao params [sourceText : String | seq<#"Unicode code point">, goalSymbol : doc "a nonterminal in one of the ECMAScript grammars", strict : Boolean, json : Boolean, direct : Boolean] -> #"Parse Node" | pred(sat @ph-type-syntax-errors())) vars [sourceText, goalSymbol, strict, json, direct, tree, errors] {
+  if sourceText is ty {String} -> set var sourceText = @sec-stringtocodepoints(sourceText)
+  let tree = $ParseGoal(sourceText, goalSymbol, strict, json, direct)
+  if tree is val {~empty~} -> return [@ph-new-error(err [[SyntaxError]])]
+  let errors = @formal-earlyerrorsof(tree)
+  if errors sat $IsEmpty() -> return tree
+  return errors
+}
+
+def @formal-function-prototype "formal-function-prototype" (kind builtin params []) vars [#"this value", NewTarget] {
+  return undefined
+}
+
+def @formal-date.now "formal-date.now" (kind builtin params []) vars [#"this value", NewTarget] {
+  return $TimeNow()
+}
+
+def @formal-date.parse "formal-date.parse" (kind builtin params [string]) vars [#"this value", NewTarget, string, s] {
+  let s = ? @sec-tostring(string)
+  return $ParseDateString(s)
+}
+
+def @formal-string.prototype.touppercase "formal-string.prototype.touppercase" (kind builtin params []) vars [#"this value", NewTarget, thisValue, string, sText, upperText, uppercaseString] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  let string = ? @sec-tostring(thisValue)
+  let sText = @sec-stringtocodepoints(string)
+  let upperText = $toUppercase(sText)
+  let uppercaseString = @sec-codepointstostring(upperText)
+  return uppercaseString
+}
+
+def @formal-propertyprovided "formal-propertyprovided" (kind ao params [p : Record] -> Boolean) vars [p] {
+  if p[[Omittable]] is val {true} and $OmitSharedArrayBuffer() is val {true} -> return false
+  if p[[Optional]] is val {false} -> return true
+  if expr $"the host is a web browser"(data choice 1, data absent) -> return true
+  return $HostSupportsOptional(p[[Clause]])
+}
+
+def @formal-intrinsicpropertydescriptor "formal-intrinsicpropertydescriptor" (kind ao params [p : Record, objects : list<Object>] -> #"Property Descriptor") vars [p, objects, getter, setter, value] {
+  if p[[Kind]] is val {~accessor~} {
+    if_else p[[Get]] is val {~empty~} { let getter = undefined } else { let getter = objects[p[[Get]]] }
+    if_else p[[Set]] is val {~empty~} { let setter = undefined } else { let setter = objects[p[[Set]]] }
+    return record PropertyDescriptor { [[Getter]]: getter, [[Setter]]: setter, [[Enumerable]]: p[[Enumerable]], [[Configurable]]: p[[Configurable]] }
+  }
+  if p[[Object]] is not val {~empty~} {
+    let value = objects[p[[Object]]]
+  }
+  else_if p[[Created]] is not val {~empty~} {
+    assert p[[Created]] is val {clause @sec-array.prototype-%symbol.unscopables%}
+    let value = @sec-array.prototype-%symbol.unscopables%()
+  }
+  else {
+    let value = p[[Value]]
+  }
+  return record PropertyDescriptor { [[Value]]: value, [[Writable]]: p[[Writable]], [[Enumerable]]: p[[Enumerable]], [[Configurable]]: p[[Configurable]] }
+}
+
+def @formal-outermostinstances "formal-outermostinstances" (kind ao params [symbol : #"grammar symbol", node : #"Parse Node"] -> list<#"Parse Node">) vars [symbol, node, found, #"child"] {
+  let found = $ListNew()
+  for_children_of #"child" in node {
+    if expr $InstanceOf(#"child", ?symbol) -> perform $Append(?#"child", ?found)
+    else -> set var found = $ListConcat([found, @formal-outermostinstances(symbol, #"child")])
+  }
+  return found
+}
+
+def @formal-directlycontaininglist "formal-directlycontaininglist" (kind ao params [node : #"Parse Node", symbol : nonterminal] -> #"Parse Node" | val(~empty~)) vars [node, symbol, #"list", m] {
+  let #"list" = $NearestEnclosing(node, [symbol])
+  if #"list" is val {~empty~} -> return ~empty~
+  let m = $Parent(node)
+  repeat_while m is not val {#"list"} {
+    if $ListLen($ChildNodes(m)) is not val {1} -> return ~empty~
+    set var m = $Parent(m)
+  }
+  repeat_while expr $InstanceOf($Parent(#"list"), ?symbol) {
+    set var #"list" = $Parent(#"list")
+  }
+  return #"list"
+}
+
+def @formal-protopropertycount "formal-protopropertycount" (kind ao params [#"list" : |PropertyDefinitionList|] -> sort [#"non-negative"] integer) vars [#"list", count, definition] {
+  let count = 0
+  for_each definition in @formal-outermostinstances(|PropertyDefinition|, #"list") {
+    if definition is val {prods [p"Syntactic - PropertyDefinition : PropertyName[?Yield, ?Await] `:` AssignmentExpression[+In, ?Yield, ?Await]"]} and sdo PropName(definition) is val {"__proto__"} -> set var count = count + 1
+  }
+  return count
+}
+
+def @formal-isprivateaccessorpair "formal-isprivateaccessorpair" (kind ao params [#"list" : |ClassElementList|, name : String] -> Boolean) vars [#"list", name, getters, setters, others, getterStatic, setterStatic, element, n, getter, setter, methods] {
+  let getters = 0
+  let setters = 0
+  let others = 0
+  let getterStatic = false
+  let setterStatic = false
+  for_each element in @formal-outermostinstances(|ClassElement|, #"list") {
+    for_each n in sdo PrivateBoundIdentifiers(element) {
+      if n is val {name} {
+        let getter = false
+        let setter = false
+        if element is val {prods [p"Syntactic - ClassElement : MethodDefinition[?Yield, ?Await]"]} or element is val {prods [p"Syntactic - ClassElement : `static` MethodDefinition[?Yield, ?Await]"]} {
+          let methods = @formal-outermostinstances(|MethodDefinition|, element)
+          if methods[0] is val {prods [p"Syntactic - MethodDefinition : `get` ClassElementName[?Yield, ?Await] `(` `)` `{` FunctionBody[~Yield, ~Await] `}`"]} -> set var getter = true
+          if methods[0] is val {prods [p"Syntactic - MethodDefinition : `set` ClassElementName[?Yield, ?Await] `(` PropertySetParameterList `)` `{` FunctionBody[~Yield, ~Await] `}`"]} -> set var setter = true
+        }
+        if getter is val {true} {
+          set var getters = getters + 1
+          set var getterStatic = sdo IsStatic(element)
+        }
+        else_if setter is val {true} {
+          set var setters = setters + 1
+          set var setterStatic = sdo IsStatic(element)
+        }
+        else {
+          set var others = others + 1
+        }
+      }
+    }
+  }
+  if getters == 1 and setters == 1 and others == 0 and getterStatic is val {setterStatic} -> return true
+  return false
+}
+
+def @formal-privateduplicatesareaccessorpairs "formal-privateduplicatesareaccessorpairs" (kind ao params [#"list" : |ClassElementList|] -> Boolean) vars [#"list", names, name] {
+  let names = sdo PrivateBoundIdentifiers(#"list")
+  for_each name in names {
+    if names sat @ph-more-than-one-occurrence(?name) and @formal-isprivateaccessorpair(#"list", name) is val {false} -> return false
+  }
+  return true
+}
+
+def @formal-duplicatesonlyfunctiondeclarations "formal-duplicatesonlyfunctiondeclarations" (kind ao params [node : #"Parse Node"] -> Boolean) vars [node, names, d, n] {
+  let names = sdo LexicallyDeclaredNames(node)
+  for_each d in sdo LexicallyScopedDeclarations(node) {
+    for_each n in sdo BoundNames(d) {
+      if names sat @ph-more-than-one-occurrence(?n) and d is not ty {pred(sat @ph-type-nt-parse-node(data choice 0, |FunctionDeclaration|))} -> return false
+    }
+  }
+  return true
+}
+
+def @formal-enclosingnodes "formal-enclosingnodes" (kind ao params [node : #"Parse Node"] -> list<#"Parse Node">) vars [node, #"goal", nodes, n] {
+  let #"goal" = $GoalSymbolOf(node)
+  let nodes = $ListNew()
+  let n = node
+  repeat_while $NearestEnclosing(n, [#"goal"]) is not val {~empty~} {
+    set var n = $Parent(n)
+    perform $Append(?n, ?nodes)
+  }
+  return nodes
+}
+
+def @formal-deleteoperandiserror "formal-deleteoperandiserror" (kind ao params [operand : #"Parse Node"] -> Boolean) vars [operand] {
+  if @sec-isstrict(operand) is val {true} and operand is val {prods [p"Syntactic - PrimaryExpression : IdentifierReference[?Yield, ?Await]"]; prods [p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` PrivateIdentifier"]; prods [p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] `.` PrivateIdentifier"]; prods [p"Syntactic - OptionalChain : `?.` PrivateIdentifier"]; prods [p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `.` PrivateIdentifier"]} -> return true
+  return @formal-parenthesizedoperandiserror(operand)
+}
+
+def @formal-parenthesizedoperandiserror "formal-parenthesizedoperandiserror" (kind ao params [operand : #"Parse Node"] -> Boolean) vars [operand, #"cover", expression] {
+  if operand is not val {prods [p"Syntactic - PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]"]} -> return false
+  let #"cover" = @ph-first-node-within(|CoverParenthesizedExpressionAndArrowParameterList|, ?operand)
+  let expression = $CoveredBy(|ParenthesizedExpression|, ?#"cover")
+  return @formal-deleteoperandiserror($ChildOf(|Expression|, ?expression))
+}
+
+def @formal-parsenodeswithinprocessed "formal-parsenodeswithinprocessed" (kind ao params [node : #"Parse Node"] -> list<#"Parse Node">) vars [node, nodes, ifStatement, #"child"] {
+  let nodes = [node]
+  if node sat @ph-production-in(clause @sec-functiondeclarations-in-ifstatement-statement-clauses) {
+    let ifStatement = $CoveredBy(|IfStatement|, ?node)
+    return $ListConcat([nodes, @formal-parsenodeswithinprocessed(ifStatement)])
+  }
+  for_children_of #"child" in node {
+    set var nodes = $ListConcat([nodes, @formal-parsenodeswithinprocessed(#"child")])
+  }
+  return nodes
+}
+
+def @ph-character-of-pattern "ph-character-of-pattern" (kind ao params [regexpRecord : #"RegExp Record", v : pred(sat @ph-type-anything())]) vars [regexpRecord, v] {
+  if @sec-runtime-semantics-haseitherunicodeflag-abstract-operation(regexpRecord) is val {true} {
+    if v is ty {#"code point"} -> return true
+    return false
+  }
+  if v is ty {#"code unit"} -> return true
+  return false
+}
+
+def @sec-joinindexedproperties "JoinIndexedProperties" (kind ao params [#"obj" : Object, length : sort [#"non-negative"] integer, separator : String, methodName : #"property key" opt, methodArgs : list<#"ECMAScript language value"> opt] -> completion<String> | #"throw completion") vars [#"obj", length, separator, methodName, methodArgs, result, k, element, elementString] {
+  if methodName sat $Present() and methodArgs fails $Present() -> set var methodArgs = $ListNew()
+  let result = $"the empty String"()
+  let k = 0
+  repeat_while k < length {
+    if k > 0 {
+      if $StringTooLarge($StrLen(?result) + $StrLen(?separator)) is val {true} -> throw @ph-new-error([[RangeError]])
+      set var result = $"string-concatenation"(result, separator)
+    }
+    note "If _obj_ is a TypedArray, the following invocation of Get will return a normal completion."
+    let element = ? @sec-get-o-p(#"obj", ! @sec-tostring($𝔽(k)))
+    if element is neither val {undefined; null} {
+      if methodName sat $Present() {
+        let elementString = ? @sec-tostring(? @sec-invoke(element, methodName, methodArgs))
+      }
+      else {
+        note "If _obj_ is a TypedArray, the following invocation of ToString will return a normal completion."
+        let elementString = ? @sec-tostring(element)
+      }
+      if $StringTooLarge($StrLen(?result) + $StrLen(?elementString)) is val {true} -> throw @ph-new-error([[RangeError]])
+      set var result = $"string-concatenation"(result, elementString)
+    }
+    set var k = k + 1
+  }
+  return result
+}
+
+def @sec-iterator.prototype.chunks "Iterator.prototype.chunks" (kind builtin params [chunkSize]) vars [#"this value", NewTarget, chunkSize, #"obj", iterated, error, #"closure", buffer, value, #"completion", result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if chunkSize is not ty {#"integral Number"} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  if chunkSize fails $InInterval(num_f(1), $𝔽(2 ^ 32 - 1)) {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let #"closure" = closure 0
+  let result = @sec-createiteratorfromclosure(#"closure", "Iterator Helper", intrinsic [[IteratorHelperPrototype]], [[[UnderlyingIterators]]])
+  set field result[[UnderlyingIterators]] = [iterated]
+  return result
+  closure abstract params none captures [iterated, chunkSize] {
+    let buffer = $ListNew()
+    repeat {
+      let value = ? @sec-iteratorstepvalue(iterated)
+      if value is val {~done~} {
+        if buffer fails $IsEmpty() {
+          perform @sec-completion-ao(@sec-yield(@sec-createarrayfromlist(buffer)))
+        }
+        return @sec-returncompletion(undefined)
+      }
+      perform $Append(?value, ?buffer)
+      if $ListLen(?buffer) is val {$ℝ(chunkSize)} {
+        let #"completion" = @sec-completion-ao(@sec-yield(@sec-createarrayfromlist(buffer)))
+        block {
+          assert #"completion" is ty {#"Completion Record"}
+          if #"completion" is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, #"completion")
+          set var #"completion" = ! #"completion"
+        }
+        set var buffer = $ListNew()
+      }
+    }
+  }
+}
+
+def @sec-iterator.prototype.includes "Iterator.prototype.includes" (kind builtin params [searchElement, skippedElements opt]) vars [#"this value", NewTarget, searchElement, skippedElements, #"obj", iterated, toSkip, error, skipped, value] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if skippedElements is val {undefined} {
+    let toSkip = num_f(+0)
+  }
+  else {
+    if skippedElements sat @ph-not-infinity-or-integral() {
+      let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+      return ? @sec-iteratorclose(iterated, error)
+    }
+    let toSkip = skippedElements
+  }
+  if toSkip < num_f(-0) {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  if toSkip sat $IsFinite() and toSkip > $𝔽(2 ^ 53 - 1) {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  let skipped = num_f(+0)
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  repeat {
+    let value = ? @sec-iteratorstepvalue(iterated)
+    if value is val {~done~} -> return false
+    if skipped < toSkip {
+      set var skipped = skipped + num_f(1)
+    }
+    else_if @sec-samevaluezero(value, searchElement) is val {true} {
+      return ? @sec-iteratorclose(iterated, @sec-normalcompletion(true))
+    }
+  }
+}
+
+def @sec-iterator.prototype.join "Iterator.prototype.join" (kind builtin params [separator]) vars [#"this value", NewTarget, separator, #"obj", iterated, separatorString, result, first, value, valueString] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if separator is val {undefined} {
+    let separatorString = ","
+  }
+  else {
+    let separatorString = @sec-completion-ao(@sec-tostring(separator))
+    block {
+      assert separatorString is ty {#"Completion Record"}
+      if separatorString is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, separatorString)
+      set var separatorString = ! separatorString
+    }
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let result = $"the empty String"()
+  let first = true
+  repeat {
+    let value = ? @sec-iteratorstepvalue(iterated)
+    if value is val {~done~} -> return result
+    if first is val {true} {
+      set var first = false
+    }
+    else {
+      set var result = $"string-concatenation"(result, separatorString)
+    }
+    if value is neither val {undefined; null} {
+      let valueString = @sec-completion-ao(@sec-tostring(value))
+      block {
+        assert valueString is ty {#"Completion Record"}
+        if valueString is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, valueString)
+        set var valueString = ! valueString
+      }
+      set var result = $"string-concatenation"(result, valueString)
+    }
+  }
+}
+
+def @sec-iterator.prototype.windows "Iterator.prototype.windows" (kind builtin params [windowSize, undersized opt]) vars [#"this value", NewTarget, windowSize, undersized, #"obj", iterated, error, #"closure", buffer, value, #"completion", result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if windowSize is not ty {#"integral Number"} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  if windowSize fails $InInterval(num_f(1), $𝔽(2 ^ 32 - 1)) {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  if undersized is val {undefined} -> set var undersized = "only-full"
+  if undersized is neither val {"only-full"; "allow-partial"} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let #"closure" = closure 0
+  let result = @sec-createiteratorfromclosure(#"closure", "Iterator Helper", intrinsic [[IteratorHelperPrototype]], [[[UnderlyingIterators]]])
+  set field result[[UnderlyingIterators]] = [iterated]
+  return result
+  closure abstract params none captures [iterated, windowSize, undersized] {
+    let buffer = $ListNew()
+    repeat {
+      let value = ? @sec-iteratorstepvalue(iterated)
+      if value is val {~done~} {
+        if undersized is val {"allow-partial"} and buffer fails $IsEmpty() and $ListLen(?buffer) < $ℝ(windowSize) {
+          perform @sec-completion-ao(@sec-yield(@sec-createarrayfromlist(buffer)))
+        }
+        return @sec-returncompletion(undefined)
+      }
+      if $ListLen(?buffer) is val {$ℝ(windowSize)} {
+        perform $RemoveFirst(?buffer)
+      }
+      perform $Append(?value, ?buffer)
+      if $ListLen(?buffer) is val {$ℝ(windowSize)} {
+        let #"completion" = @sec-completion-ao(@sec-yield(@sec-createarrayfromlist(buffer)))
+        block {
+          assert #"completion" is ty {#"Completion Record"}
+          if #"completion" is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, #"completion")
+          set var #"completion" = ! #"completion"
+        }
+      }
+    }
+  }
+}
+
+def @ph-finite-numbers "ph-finite-numbers" (kind ao params [xs : list<Number>]) vars [xs, x] {
+  for_each x in xs {
+    if x is not ty {sort [finite] Number} -> return false
+  }
+  return true
+}
+
+def @ph-nonzero-finite-numbers "ph-nonzero-finite-numbers" (kind ao params [xs : list<Number>]) vars [xs, x] {
+  for_each x in xs {
+    if x is not ty {sort [#"non-zero", finite] Number} -> return false
+  }
+  return true
+}
+
+def @ph-not-infinity-or-integral "ph-not-infinity-or-integral" (kind ao params [x : #"ECMAScript language value"]) vars [x] {
+  if x is val {num_f(+∞); num_f(-∞)} -> return false
+  if x is ty {#"integral Number"} -> return false
+  return true
+}
+
+def @sort-non-zero "sort-non-zero" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is ty {Number} {
+    if v is val {num_f(+0); num_f(-0)} -> return false
+    return true
+  }
+  if v is ty {#"mathematical value"} and v != 0 -> return true
+  return false
+}
+
+def @sort-finite "sort-finite" (kind ao params [v : pred(sat @ph-type-anything())]) vars [v] {
+  if v is not ty {Number} and v is not ty {BigInt} and v is not ty {#"extended mathematical value"} -> return false
+  if v sat $IsFinite() -> return true
+  return false
+}
+
+def @ph-only-single-code-points "ph-only-single-code-points" (kind ao params [cs : CharSet]) vars [cs] {
+  return $CharSetAllSingle(cs)
+}
+
+def @ph-named-exports-resolvable "ph-named-exports-resolvable" (kind ao params [module : #"Source Text Module Record"]) vars [module, e] {
+  for_each e : #"ExportEntry Record" in $ListConcat([module[[LocalExportEntries]], module[[IndirectExportEntries]]]) {
+    if module.ResolveExport(e[[ExportName]]) is not ty {#"ResolvedBinding Record"} -> return false
+  }
+  return true
+}
+
+def @ph-every-element-single-character "ph-every-element-single-character" (kind ao params [cs : CharSet]) vars [cs] {
+  return $CharSetAllSingle(cs)
+}
+
+def @ph-no-elements-in-common "ph-no-elements-in-common" (kind ao params [a : String, b : String]) vars [a, b, i] {
+  for_range i incl 0 .. excl $StrLen(?a) {
+    if b sat $Contains($Substring(?a, ?i, i + 1)) -> return false
+  }
+  return true
+}
+
+def @ph-all-ready-to-evaluate "ph-all-ready-to-evaluate" (kind ao params [l : list<#"Cyclic Module Record">]) vars [l, m] {
+  for_each m in l {
+    if m[[AsyncEvaluationOrder]] is not ty {integer} -> return false
+    if m[[PendingAsyncDependencies]] != 0 -> return false
+    if m[[EvaluationError]] is not val {~empty~} -> return false
+  }
+  return true
+}
+
+def @ph-contains-one-such "ph-contains-one-such" (kind ao params [t : doc "a type", x : pred(sat @ph-type-anything()), c : doc "a condition on _x_", l : List]) vars [t, x, c, l, n, e] {
+  let n = 0
+  for_each e in l {
+    if e is ty {var t} and c(e) is val {true} -> set var n = n + 1
+  }
+  if n == 1 -> return true
+  return false
+}
+
+def @ph-list-of-write-events "ph-list-of-write-events" (kind ao params [n : sort [#"non-negative"] integer, l : List]) vars [n, l, w] {
+  if $ListLen(?l) != n -> return false
+  for_each w in l {
+    if w is not ty {#"WriteSharedMemory event"} and w is not ty {ReadModifyWriteSharedMemory} -> return false
+  }
+  return true
+}
+
+def @ph-type-no-non-configurable-properties "ph-type-no-non-configurable-properties" (kind ao params [#"choice 0", t : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, v, P] {
+  if v is not ty {var t} -> return false
+  if v is not ty {Object} -> return false
+  for_keys P of v where P is ty {#"property key"} order 1 {
+    if @sec-ordinarygetownproperty(v, P)[[Configurable]] is val {false} -> return false
+  }
+  return true
+}
+
+def @ph-not-explicitly-defined-export "ph-not-explicitly-defined-export" (kind ao params [n : String, module : #"Source Text Module Record"]) vars [n, module, e] {
+  for_each e : #"ExportEntry Record" in module[[LocalExportEntries]] {
+    if e[[ExportName]] is val {n} -> return false
+  }
+  for_each e : #"ExportEntry Record" in module[[IndirectExportEntries]] {
+    if e[[ExportName]] is val {n} -> return false
+  }
+  return true
+}
+
+def @ph-no-waiter-with "ph-no-waiter-with" (kind ao params [l : list<#"Waiter Record">, p : #"PromiseCapability Record" | val(~blocking~), a : #"agent signifier"]) vars [l, p, a, w] {
+  for_each w in l {
+    if w[[PromiseCapability]] is val {p} and w[[AgentSignifier]] is val {a} -> return false
+  }
+  return true
+}
+
+def @ph-exactly-one-private-name "ph-exactly-one-private-name" (kind ao params [l : list<#"Private Name">, d : String]) vars [l, d, n, pn] {
+  let n = 0
+  for_each pn in l {
+    if pn[[Description]] is val {d} -> set var n = n + 1
+  }
+  if n == 1 -> return true
+  return false
+}
+
+def @formal-rounddecimalmv "formal-rounddecimalmv" (kind ao params [m : sort [#"non-negative"] integer, k : integer] -> Number) vars [m, k, e] {
+  if m == 0 -> return num_f(+0)
+  let e = $DecimalExponent(m) + k
+  if e > 309 -> return num_f(+∞)
+  if e < math(-325) -> return num_f(+0)
+  return @sec-roundmvresult(m * 10 ^ k)
+}
+
+def @spec-cond-0 "spec-cond" (kind ao params [x0, x1]) vars [x0, x1] {
+  return bool(x0[[Key]] is val {x1[[Key]]})
+}
+
+def @spec-cond-1 "spec-cond" (kind ao params [x0, x1]) vars [x0, x1] {
+  return bool(sdo CapturingGroupName(x0) is val {sdo CapturingGroupName(x1)})
+}
+
+def @spec-cond-2 "spec-cond" (kind ao params [x0, x1]) vars [x0, x1] {
+  return bool(@sec-mightbothparticipate(x0, x1) is val {true})
+}
+
+def @spec-type-0 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {|VariableDeclaration|})
+}
+
+def @spec-type-1 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {|ForBinding|})
+}
+
+def @spec-type-2 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {|BindingIdentifier|})
+}
+
+def @spec-type-3 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {sort [extensible, ordinary] object})
+}
+
+def @spec-type-4 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {|Script| that sat @ph-parsed-for-parsejson()})
+}
+
+def @spec-type-5 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {|IterationStatement|})
+}
+
+def @spec-type-6 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {|IterationStatement| | |SwitchStatement|})
+}
+
+def @spec-type-7 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {pred(sat @ph-type-anything())})
+}
+
+def @spec-type-8 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {pred(sat @ph-type-promise-for(data sort #"IteratorResult object"))})
+}
+
+def @spec-type-9 "spec-type" (kind ao params [v]) vars [v] {
+  return bool(v is ty {pred(sat @ph-type-promise())})
+}
+
+def @spec-copy-0 "ph-neither-nor-nor" (kind ao params [a : doc "a type", b : doc "a type", c : doc "a type", x : pred(sat @ph-type-anything())]) vars [a, b, c, x] {
+  if x is ty {pred(sat @spec-type-0())} -> return false
+  if x is ty {pred(sat @spec-type-1())} -> return false
+  if x is ty {pred(sat @spec-type-2())} -> return false
+  return true
+}
+
+def @spec-copy-1 "ph-type-no-own-properties" (kind ao params [#"choice 0", t : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, v, P] {
+  if v is not ty {pred(sat @spec-type-3())} -> return false
+  if v is not ty {Object} -> return false
+  for_keys P of v where P is ty {#"property key"} order 1 {
+    return false
+  }
+  return true
+}
+
+def @spec-copy-2 "ph-type-no-non-configurable-properties" (kind ao params [#"choice 0", t : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, v, P] {
+  if v is not ty {pred(sat @spec-type-3())} -> return false
+  if v is not ty {Object} -> return false
+  for_keys P of v where P is ty {#"property key"} order 1 {
+    if @sec-ordinarygetownproperty(v, P)[[Configurable]] is val {false} -> return false
+  }
+  return true
+}
+
+def @spec-copy-3 "ph-contained-within" (kind ao params [t : doc "a type", node : #"Parse Node"]) vars [t, node, n] {
+  for_each n in @formal-enclosingnodes(node) {
+    if n is ty {pred(sat @spec-type-4())} -> return true
+  }
+  return false
+}
+
+def @spec-copy-4 "ph-not-nested" (kind ao params [c : doc "a terminal symbol", t : doc "a type", node : #"Parse Node"]) vars [c, t, node, n] {
+  assert c is val {@ph-token(term "static")}
+  for_each n in @formal-enclosingnodes(node) {
+    if n is ty {pred(sat @spec-type-5())} -> return false
+    if n is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |FunctionBody|))} or n is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |ClassStaticBlockBody|))} -> return true
+  }
+  return true
+}
+
+def @spec-copy-5 "ph-not-nested-alt" (kind ao params [c : doc "a terminal symbol", t : doc "a type", node : #"Parse Node"]) vars [c, t, node, n] {
+  assert c is val {@ph-token(term "static")}
+  for_each n in @formal-enclosingnodes(node) {
+    if n is ty {pred(sat @spec-type-6())} -> return false
+    if n is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |FunctionBody|))} or n is ty {pred(sat @ph-type-nt-parse-node(data choice 0, |ClassStaticBlockBody|))} -> return true
+  }
+  return true
+}
+
+def @spec-copy-6 "ph-type-default" (kind ao params [t : doc "a type", d : pred(sat @ph-type-anything()), v : pred(sat @ph-type-anything())]) vars [t, d, v] {
+  if v is ty {pred(sat @spec-type-7())} -> return true
+  return false
+}
+
+def @spec-copy-7 "ph-type-function-returns" (kind ao params [#"choice 0", t : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, v] {
+  if v is ty {#"function object"} -> return true
+  return false
+}
+
+def @spec-copy-8 "ph-type-returns" (kind ao params [#"choice 0", t : doc "a type", u : doc "a type", v : pred(sat @ph-type-anything())]) vars [#"choice 0", t, u, v] {
+  if v is ty {var t} -> return true
+  return false
+}
+
+sdo_row @row-propname-coverinitializedname PropName form alg {
+  prods [p"Syntactic - PropertyDefinition : CoverInitializedName[?Yield, ?Await]"]
+  keys ["PropertyDefinition : CoverInitializedName"]
+  vars []
+  steps {
+    return sdo StringValue($ChildOf(|IdentifierReference|, child 5 |CoverInitializedName|))
+  }
+}
+
+sdo_row @row-compilesubpattern-quantifiableassertion-quantifier CompileSubpattern form alg {
+  prods [p"AnnexB - Term :: [~UnicodeMode] QuantifiableAssertion[?NamedCaptureGroups] Quantifier"]
+  keys ["Term :: QuantifiableAssertion Quantifier"]
+  vars [regexpRecord, direction, m, q, parenIndex, parenCount, x, c]
+  steps {
+    let m = sdo CompileAssertion(child 5 |QuantifiableAssertion|; regexpRecord)
+    let q = sdo CompileQuantifier(child 5 |Quantifier|)
+    assert q[[Min]] <= q[[Max]]
+    let parenIndex = @sec-countleftcapturingparensbefore(child 6 |Term|)
+    let parenCount = @sec-countleftcapturingparenswithin(child 5 |QuantifiableAssertion|)
+    return closure 0
+  }
+  closure matcher params [x, c] captures [m, q, parenIndex, parenCount] {
+    assert x is ty {MatchState}
+    assert c is ty {MatcherContinuation}
+    return @sec-runtime-semantics-repeatmatcher-abstract-operation(m, q[[Min]], q[[Max]], q[[Greedy]], x, c, parenIndex, parenCount)
+  }
+}
+
+sdo_row @row-compilesubpattern-extendedatom-quantifier CompileSubpattern form alg {
+  prods [p"AnnexB - Term :: [~UnicodeMode] ExtendedAtom[?NamedCaptureGroups] Quantifier"]
+  keys ["Term :: ExtendedAtom Quantifier"]
+  vars [regexpRecord, direction, m, q, parenIndex, parenCount, x, c]
+  steps {
+    let m = sdo CompileAtom(child 5 |ExtendedAtom|; regexpRecord, direction)
+    let q = sdo CompileQuantifier(child 5 |Quantifier|)
+    assert q[[Min]] <= q[[Max]]
+    let parenIndex = @sec-countleftcapturingparensbefore(child 6 |Term|)
+    let parenCount = @sec-countleftcapturingparenswithin(child 5 |ExtendedAtom|)
+    return closure 0
+  }
+  closure matcher params [x, c] captures [m, q, parenIndex, parenCount] {
+    assert x is ty {MatchState}
+    assert c is ty {MatcherContinuation}
+    return @sec-runtime-semantics-repeatmatcher-abstract-operation(m, q[[Min]], q[[Max]], q[[Greedy]], x, c, parenIndex, parenCount)
+  }
+}
+
+sdo_row @row-compilesubpattern-extendedatom CompileSubpattern form alg {
+  prods [p"AnnexB - Term :: [~UnicodeMode] ExtendedAtom[?NamedCaptureGroups]"]
+  keys ["Term :: ExtendedAtom"]
+  vars [regexpRecord, direction]
+  steps {
+    return sdo CompileAtom(child 5 |ExtendedAtom|; regexpRecord, direction)
+  }
+}
+
+sdo_row @row-compileassertion-quantifiableassertion-lookahead CompileAssertion form alg {
+  prods [p"AnnexB - QuantifiableAssertion :: `(?=` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["QuantifiableAssertion :: `(?=` Disjunction `)`"]
+  vars [regexpRecord, m, matchState, continue, d, y, result, capability, input, xe, z]
+  steps {
+    let m = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, ~forward~)
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [m] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let d = closure 1
+    let result = m(matchState, d)
+    if result is val {~failure~} -> return ~failure~
+    assert result is ty {MatchState}
+    let capability = result[[Captures]]
+    let input = matchState[[Input]]
+    let xe = matchState[[EndIndex]]
+    let z = record MatchState { [[Input]]: input, [[EndIndex]]: xe, [[Captures]]: capability }
+    return continue(z)
+  }
+  closure matcher_continuation params [y] captures [] {
+    assert y is ty {MatchState}
+    return y
+  }
+}
+
+sdo_row @row-compileassertion-quantifiableassertion-negative-lookahead CompileAssertion form alg {
+  prods [p"AnnexB - QuantifiableAssertion :: `(?!` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["QuantifiableAssertion :: `(?!` Disjunction `)`"]
+  vars [regexpRecord, m, matchState, continue, d, y, result]
+  steps {
+    let m = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, ~forward~)
+    return closure 0
+  }
+  closure matcher params [matchState, continue] captures [m] {
+    assert matchState is ty {MatchState}
+    assert continue is ty {MatcherContinuation}
+    let d = closure 1
+    let result = m(matchState, d)
+    if result is not val {~failure~} -> return ~failure~
+    return continue(matchState)
+  }
+  closure matcher_continuation params [y] captures [] {
+    assert y is ty {MatchState}
+    return y
+  }
+}
+
+sdo_row @row-compileatom-extendedatom-dot CompileAtom form alg {
+  prods [p"AnnexB - ExtendedAtom :: `.`"]
+  keys ["ExtendedAtom :: `.`"]
+  vars [regexpRecord, direction, charSet]
+  steps {
+    let charSet = @sec-allcharacters(regexpRecord)
+    if regexpRecord[[DotAll]] is not val {true} {
+      set var charSet = @ph-charset-minus(?charSet, $RightHandSideCharacters([|LineTerminator|]))
+    }
+    return @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, charSet, false, direction)
+  }
+}
+
+sdo_row @row-compileatom-extendedatom-characterclass CompileAtom form alg {
+  prods [p"AnnexB - ExtendedAtom :: CharacterClass[~UnicodeMode, ~UnicodeSetsMode]"]
+  keys ["ExtendedAtom :: CharacterClass"]
+  vars [regexpRecord, direction, cc, cs, listOfMatchers, csSequences, s, remaining, cs2, m2, c1, cs1, m1, singles]
+  steps {
+    let cc = sdo CompileCharacterClass(child 5 |CharacterClass|; regexpRecord)
+    let cs = cc[[CharSet]]
+    if regexpRecord[[UnicodeSets]] is val {false} or expr @ph-every-single-character(?cs, ?cs) -> return @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, cs, cc[[Invert]], direction)
+    assert cc[[Invert]] is val {false}
+    let listOfMatchers = $ListNew()
+    let csSequences = $ListNew()
+    for_each s : CharSetElement in cs {
+      if expr @ph-charset-element-longer-than-one(?s) -> perform $Append(?s, ?csSequences)
+    }
+    perform @ph-sort-by-length(?csSequences, data sort CharSetElement)
+    for_each s : CharSetElement in csSequences {
+      assert s sat @ph-code-point-sequence(2)
+      let remaining = @ph-list-consisting-of(@ph-code-points-of(?s))
+      let cs2 = $CharSetOne($ListElem(data choice 2, ?remaining))
+      let m2 = @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, cs2, false, direction)
+      perform $RemoveLast(?remaining)
+      for_each c1 : #"code point" rev in remaining {
+        let cs1 = $CharSetOne(?c1)
+        let m1 = @sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, cs1, false, direction)
+        set var m2 = @sec-matchsequence(m1, m2, direction)
+      }
+      perform $Append(?m2, ?listOfMatchers)
+    }
+    let singles = @ph-charset-singles(?cs)
+    perform $Append(@sec-runtime-semantics-charactersetmatcher-abstract-operation(regexpRecord, singles, false, direction), ?listOfMatchers)
+    if cs sat $Contains(@ph-empty-character-sequence(data choice 0)) -> perform $Append(@sec-emptymatcher(), ?listOfMatchers)
+    let m2 = @ph-last-in(data sort Matcher, ?listOfMatchers)
+    for_each m1 : Matcher in @ph-iter-backwards(?listOfMatchers) {
+      set var m2 = @sec-matchtwoalternatives(m1, m2)
+    }
+    return m2
+  }
+}
+
+sdo_row @row-compileatom-extendedatom-group CompileAtom form alg {
+  prods [p"AnnexB 0 ExtendedAtom :: `(` GroupSpecifier[~UnicodeMode]? Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`", p"AnnexB 1 ExtendedAtom :: `(` GroupSpecifier[~UnicodeMode]? Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["ExtendedAtom :: `(` GroupSpecifier? Disjunction `)`"]
+  vars [regexpRecord, direction, m, parenIndex, x, c, d, y, capability, input, xe, ye, r, z]
+  steps {
+    let m = sdo CompileSubpattern(child 5 |Disjunction|; regexpRecord, direction)
+    let parenIndex = @sec-countleftcapturingparensbefore(child 6 |ExtendedAtom|)
+    return closure 0
+  }
+  closure matcher params [x, c] captures [direction, m, parenIndex] {
+    assert x is ty {MatchState}
+    assert c is ty {MatcherContinuation}
+    let d = closure 1
+    return m(x, d)
+  }
+  closure matcher_continuation params [y] captures [x, c, direction, parenIndex] {
+    assert y is ty {MatchState}
+    let capability = $Copy(y[[Captures]])
+    let input = x[[Input]]
+    let xe = x[[EndIndex]]
+    let ye = y[[EndIndex]]
+    if direction is val {~forward~} {
+      assert xe <= ye
+      let r = record CaptureRange { [[StartIndex]]: xe, [[EndIndex]]: ye }
+    }
+    else {
+      assert direction is val {~backward~}
+      assert ye <= xe
+      let r = record CaptureRange { [[StartIndex]]: ye, [[EndIndex]]: xe }
+    }
+    set expr capability[parenIndex + 1] = r
+    let z = record MatchState { [[Input]]: input, [[EndIndex]]: ye, [[Captures]]: capability }
+    return c(z)
+  }
+}
+
+sdo_row @row-compileatom-extendedatom-modifiers CompileAtom form alg {
+  prods [p"AnnexB - ExtendedAtom :: `(?` RegularExpressionModifiers `:` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["ExtendedAtom :: `(?` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars [regexpRecord, direction, addModifiers, removeModifiers, modifiedRer]
+  steps {
+    let addModifiers = $SourceText(child 5 |RegularExpressionModifiers|)
+    let removeModifiers = $"the empty String"()
+    let modifiedRer = @sec-updatemodifiers(regexpRecord, @sec-codepointstostring(addModifiers), removeModifiers)
+    return sdo CompileSubpattern(child 5 |Disjunction|; modifiedRer, direction)
+  }
+}
+
+sdo_row @row-compileatom-extendedatom-modifiers-remove CompileAtom form alg {
+  prods [p"AnnexB - ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction[~UnicodeMode, ~UnicodeSetsMode, ?NamedCaptureGroups] `)`"]
+  keys ["ExtendedAtom :: `(?` RegularExpressionModifiers `-` RegularExpressionModifiers `:` Disjunction `)`"]
+  vars [regexpRecord, direction, addModifiers, removeModifiers, modifiedRer]
+  steps {
+    let addModifiers = $SourceText(child 0 |RegularExpressionModifiers|)
+    let removeModifiers = $SourceText(child 1 |RegularExpressionModifiers|)
+    let modifiedRer = @sec-updatemodifiers(regexpRecord, @sec-codepointstostring(addModifiers), @sec-codepointstostring(removeModifiers))
+    return sdo CompileSubpattern(child 5 |Disjunction|; modifiedRer, direction)
+  }
+}
+
+sdo_row @row-evaluation-if-function Evaluation form alg {
+  prods [p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` Statement[?Yield, ?Await, ?Return]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] [lookahead != `else`]"]
+  keys ["IfStatement :\n      `if` `(` Expression `)` FunctionDeclaration `else` Statement\n      `if` `(` Expression `)` Statement `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration"]
+  vars [ifStatement]
+  steps {
+    let ifStatement = $CoveredBy(|IfStatement|, child 6 |IfStatement|)
+    return ? sdo Evaluation(ifStatement)
+  }
+}
+
+sdo_row @row-hascallintailposition-if-function HasCallInTailPosition form alg {
+  prods [p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` Statement[?Yield, ?Await, ?Return]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] [lookahead != `else`]"]
+  keys ["IfStatement :\n      `if` `(` Expression `)` FunctionDeclaration `else` Statement\n      `if` `(` Expression `)` Statement `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration"]
+  vars [call, ifStatement]
+  steps {
+    let ifStatement = $CoveredBy(|IfStatement|, child 6 |IfStatement|)
+    return sdo HasCallInTailPosition(ifStatement; call)
+  }
+}
+
+sdo_row @row-vardeclarednames-if-function VarDeclaredNames form alg {
+  prods [p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` Statement[?Yield, ?Await, ?Return]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] [lookahead != `else`]"]
+  keys ["IfStatement :\n      `if` `(` Expression `)` FunctionDeclaration `else` Statement\n      `if` `(` Expression `)` Statement `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration"]
+  vars [ifStatement]
+  steps {
+    let ifStatement = $CoveredBy(|IfStatement|, child 6 |IfStatement|)
+    return sdo VarDeclaredNames(ifStatement)
+  }
+}
+
+sdo_row @row-varscopeddeclarations-if-function VarScopedDeclarations form alg {
+  prods [p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` Statement[?Yield, ?Await, ?Return]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] [lookahead != `else`]"]
+  keys ["IfStatement :\n      `if` `(` Expression `)` FunctionDeclaration `else` Statement\n      `if` `(` Expression `)` Statement `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration"]
+  vars [ifStatement]
+  steps {
+    let ifStatement = $CoveredBy(|IfStatement|, child 6 |IfStatement|)
+    return sdo VarScopedDeclarations(ifStatement)
+  }
+}
+
+sdo_row @row-containsduplicatelabels-if-function ContainsDuplicateLabels form alg {
+  prods [p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` Statement[?Yield, ?Await, ?Return]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] [lookahead != `else`]"]
+  keys ["IfStatement :\n      `if` `(` Expression `)` FunctionDeclaration `else` Statement\n      `if` `(` Expression `)` Statement `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration"]
+  vars [labelSet, ifStatement]
+  steps {
+    let ifStatement = $CoveredBy(|IfStatement|, child 6 |IfStatement|)
+    return sdo ContainsDuplicateLabels(ifStatement; labelSet)
+  }
+}
+
+sdo_row @row-containsundefinedbreaktarget-if-function ContainsUndefinedBreakTarget form alg {
+  prods [p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` Statement[?Yield, ?Await, ?Return]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] [lookahead != `else`]"]
+  keys ["IfStatement :\n      `if` `(` Expression `)` FunctionDeclaration `else` Statement\n      `if` `(` Expression `)` Statement `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration"]
+  vars [labelSet, ifStatement]
+  steps {
+    let ifStatement = $CoveredBy(|IfStatement|, child 6 |IfStatement|)
+    return sdo ContainsUndefinedBreakTarget(ifStatement; labelSet)
+  }
+}
+
+sdo_row @row-containsundefinedcontinuetarget-if-function ContainsUndefinedContinueTarget form alg {
+  prods [p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` Statement[?Yield, ?Await, ?Return]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] [lookahead != `else`]"]
+  keys ["IfStatement :\n      `if` `(` Expression `)` FunctionDeclaration `else` Statement\n      `if` `(` Expression `)` Statement `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration"]
+  vars [iterationSet, labelSet, ifStatement]
+  steps {
+    let ifStatement = $CoveredBy(|IfStatement|, child 6 |IfStatement|)
+    return sdo ContainsUndefinedContinueTarget(ifStatement; iterationSet, labelSet)
+  }
+}
+
+sdo_row @row-contains-if-function Contains form alg {
+  prods [p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` Statement[?Yield, ?Await, ?Return]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] `else` FunctionDeclaration[?Yield, ?Await, ~Default]", p"AnnexB - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` FunctionDeclaration[?Yield, ?Await, ~Default] [lookahead != `else`]"]
+  keys ["IfStatement :\n      `if` `(` Expression `)` FunctionDeclaration `else` Statement\n      `if` `(` Expression `)` Statement `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration `else` FunctionDeclaration\n      `if` `(` Expression `)` FunctionDeclaration"]
+  vars [symbol, ifStatement]
+  steps {
+    let ifStatement = $CoveredBy(|IfStatement|, child 6 |IfStatement|)
+    return @ph-contains(?ifStatement, ?symbol)
+  }
+}
+
+sdo_row @row-ischaracterclass-classcontrolletter IsCharacterClass form alg annex {
+  prods [p"AnnexB - ClassEscape :: [~UnicodeMode] `c` ClassControlLetter"]
+  keys ["ClassEscape :: `c` ClassControlLetter"]
+  vars []
+  steps {
+    return false
+  }
+}
+

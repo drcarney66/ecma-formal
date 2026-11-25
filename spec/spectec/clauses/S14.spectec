@@ -1,0 +1,1354 @@
+-- ECMA-262 SpecTec Clauses: S14
+
+def @sec-blockdeclarationinstantiation "BlockDeclarationInstantiation" (kind ao params [#"code" : #"Parse Node", envRecord : #"Declarative Environment Record"] -> val(~unused~)) vars [#"code", envRecord, decls, privateEnv, decl, name, funcName, funcObj] {
+  let decls = sdo LexicallyScopedDeclarations(#"code")
+  let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+  for_each decl in decls {
+    for_each name in sdo BoundNames(decl) {
+      if sdo IsConstantDeclaration(decl) is val {true} {
+        perform ! envRecord.CreateImmutableBinding(name, true)
+      }
+      else {
+        if expr $"the host is a web browser"(data choice 0, clause @sec-block-level-function-declarations-web-legacy-compatibility-semantics) {
+          if ! envRecord.HasBinding(name) is val {false} {
+            perform ! envRecord.CreateMutableBinding(name, false)
+          }
+        }
+        else {
+          perform ! envRecord.CreateMutableBinding(name, false)
+        }
+      }
+    }
+    if decl is ty {|FunctionDeclaration|; |GeneratorDeclaration|; |AsyncFunctionDeclaration|; |AsyncGeneratorDeclaration|} {
+      let funcName = $ListElem(data choice 0, sdo BoundNames(decl))
+      let funcObj = sdo InstantiateFunctionDeclaration(decl; envRecord, privateEnv)
+      if expr $"the host is a web browser"(data choice 0, clause @sec-block-level-function-declarations-web-legacy-compatibility-semantics) {
+        if @ph-binding-for(?funcName, ?envRecord) is ty {sort [uninitialized] binding} {
+          perform ! envRecord.InitializeBinding(funcName, funcObj)
+        }
+        else {
+          assert decl is ty {|FunctionDeclaration|}
+          perform ! envRecord.SetMutableBinding(funcName, funcObj, false)
+        }
+      }
+      else {
+        perform ! envRecord.InitializeBinding(funcName, funcObj)
+      }
+    }
+  }
+  return ~unused~
+}
+
+def @sec-loopcontinues "LoopContinues" (kind ao params [#"completion" : #"Completion Record", labelSet : list<String>] -> Boolean) vars [#"completion", labelSet] {
+  if #"completion" is ty {#"normal completion"} -> return true
+  if #"completion" is not ty {#"continue completion"} -> return false
+  if #"completion"[[Target]] is val {~empty~} -> return true
+  if labelSet sat $Contains(#"completion"[[Target]]) -> return true
+  return false
+}
+
+def @sec-forbodyevaluation "ForBodyEvaluation" (kind ao params [#"test" : |Expression| | val(~empty~), increment : |Expression| | val(~empty~), #"stmt" : |Statement|, perIterationBindings : list<String>, labelSet : list<String>] -> completion<#"ECMAScript language value"> | #"abrupt completion") vars [#"test", increment, #"stmt", perIterationBindings, labelSet, iterationResult, testRef, testValue, result, incrementRef] {
+  let iterationResult = undefined
+  perform ? @sec-createperiterationenvironment(perIterationBindings)
+  repeat {
+    if #"test" is not val {~empty~} {
+      let testRef = ? sdo Evaluation(#"test")
+      let testValue = ? @sec-getvalue(testRef)
+      if @sec-toboolean(testValue) is val {false} -> return iterationResult
+    }
+    let result = @sec-completion-ao(sdo Evaluation(#"stmt"))
+    if @sec-loopcontinues(result, labelSet) is val {false} -> return ? @sec-updateempty(result, iterationResult)
+    if result[[Value]] is not val {~empty~} -> set var iterationResult = result[[Value]]
+    perform ? @sec-createperiterationenvironment(perIterationBindings)
+    if increment is not val {~empty~} {
+      let incrementRef = ? sdo Evaluation(increment)
+      perform ? @sec-getvalue(incrementRef)
+    }
+  }
+}
+
+def @sec-createperiterationenvironment "CreatePerIterationEnvironment" (kind ao params [perIterationBindings : list<String>] -> completion<val(~unused~)> | #"throw completion") vars [perIterationBindings, lastIterationEnv, outer, thisIterationEnv, name, lastValue] {
+  if perIterationBindings sat @ph-has-any-elements() {
+    let lastIterationEnv = $Component($Running(), [[LexicalEnvironment]])
+    let outer = lastIterationEnv[[OuterEnv]]
+    assert outer is not val {null}
+    let thisIterationEnv = @sec-newdeclarativeenvironment(outer)
+    for_each name in perIterationBindings {
+      perform ! thisIterationEnv.CreateMutableBinding(name, false)
+      let lastValue = ? lastIterationEnv.GetBindingValue(name, true)
+      perform ! thisIterationEnv.InitializeBinding(name, lastValue)
+    }
+    set field $Running()[[LexicalEnvironment]] = thisIterationEnv
+  }
+  return ~unused~
+}
+
+def @sec-runtime-semantics-forinofheadevaluation "ForIn/OfHeadEvaluation" (kind ao params [uninitializedBoundNames : list<String>, expr : |Expression| | |AssignmentExpression|, iterationKind : val(~enumerate~) | val(~iterate~) | val(~async-iterate~)] -> completion<#"Iterator Record"> | #"abrupt completion") vars [uninitializedBoundNames, expr, iterationKind, oldEnv, newEnv, name, exprRef, exprValue, #"obj", iterator, nextMethod, iteratorKind] {
+  let oldEnv = $Component($Running(), [[LexicalEnvironment]])
+  if uninitializedBoundNames fails $IsEmpty() {
+    assert uninitializedBoundNames sat @ph-no-duplicate-entries(data choice 0)
+    let newEnv = @sec-newdeclarativeenvironment(oldEnv)
+    for_each name : String in uninitializedBoundNames {
+      perform ! newEnv.CreateMutableBinding(name, false)
+    }
+    set field $Running()[[LexicalEnvironment]] = newEnv
+  }
+  let exprRef = @sec-completion-ao(sdo Evaluation(expr))
+  set field $Running()[[LexicalEnvironment]] = oldEnv
+  let exprValue = ? @sec-getvalue(? exprRef)
+  if iterationKind is val {~enumerate~} {
+    if exprValue is val {undefined; null} {
+      return record #"Completion Record" { [[Type]]: ~break~, [[Value]]: ~empty~, [[Target]]: ~empty~ }
+    }
+    let #"obj" = ! @sec-toobject(exprValue)
+    let iterator = @sec-enumerate-object-properties(#"obj")
+    let nextMethod = ! @sec-getv(iterator, "next")
+    return record #"Iterator Record" { [[Iterator]]: iterator, [[NextMethod]]: nextMethod, [[Done]]: false }
+  }
+  assert iterationKind is val {~iterate~; ~async-iterate~}
+  if iterationKind is val {~async-iterate~} -> let iteratorKind = ~async~
+  else -> let iteratorKind = ~sync~
+  return ? @sec-getiterator(exprValue, iteratorKind)
+}
+
+def @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset "ForIn/OfBodyEvaluation" (kind ao params [lhs : #"Parse Node", #"stmt" : |Statement|, iteratorRecord : #"Iterator Record", iterationKind : val(~enumerate~) | val(~iterate~), lhsKind : val(~assignment~) | val(~var-binding~) | val(~lexical-binding~), labelSet : list<String>, iteratorKind : val(~sync~) | val(~async~) opt] -> completion<#"ECMAScript language value"> | #"abrupt completion") vars [lhs, #"stmt", iteratorRecord, iterationKind, lhsKind, labelSet, iteratorKind, oldEnv, iterationResult, declKind, destructuring, assignmentPattern, nextResult, done, nextValue, status, lhsRef, iterationEnv, lhsName, base, result] {
+  if iteratorKind fails $Present() -> set var iteratorKind = ~sync~
+  let oldEnv = $Component($Running(), [[LexicalEnvironment]])
+  let iterationResult = undefined
+  if lhsKind is val {~lexical-binding~} {
+    assert lhs is ty {|ForDeclaration|}
+    if sdo IsAwaitUsingDeclaration(lhs) is val {true} {
+      let declKind = ~async-dispose~
+    }
+    else_if sdo IsUsingDeclaration(lhs) is val {true} {
+      let declKind = ~sync-dispose~
+    }
+    else {
+      let declKind = ~normal~
+    }
+  }
+  else {
+    let declKind = ~normal~
+  }
+  let destructuring = sdo IsDestructuring(lhs)
+  if destructuring is val {true} and lhsKind is val {~assignment~} {
+    assert lhs is ty {|LeftHandSideExpression|}
+    let assignmentPattern = $CoveredBy(|AssignmentPattern|, ?lhs)
+  }
+  repeat {
+    let nextResult = ? @sec-call(iteratorRecord[[NextMethod]], iteratorRecord[[Iterator]])
+    if iteratorKind is val {~async~} -> set var nextResult = ? @await(nextResult)
+    if nextResult is not ty {Object} -> throw @ph-new-error([[TypeError]])
+    let done = ? @sec-iteratorcomplete(nextResult)
+    if done is val {true} -> return iterationResult
+    let nextValue = ? @sec-iteratorvalue(nextResult)
+    if lhsKind is val {~assignment~; ~var-binding~} {
+      if destructuring is val {true} {
+        if lhsKind is val {~assignment~} {
+          let status = @sec-completion-ao(sdo DestructuringAssignmentEvaluation(assignmentPattern; nextValue))
+        }
+        else {
+          assert lhsKind is val {~var-binding~}
+          assert lhs is ty {|ForBinding|}
+          let status = @sec-completion-ao(sdo BindingInitialization(lhs; nextValue, undefined))
+        }
+      }
+      else {
+        let lhsRef = @sec-completion-ao(sdo Evaluation(lhs))
+        if lhsKind is val {~assignment~} and sdo AssignmentTargetType(lhs) is val {~web-compat~} -> throw @ph-new-error([[ReferenceError]])
+        if lhsRef is ty {#"abrupt completion"} {
+          let status = lhsRef
+        }
+        else {
+          let status = @sec-completion-ao(@sec-putvalue(lhsRef[[Value]], nextValue))
+        }
+      }
+      let iterationEnv = undefined
+    }
+    else {
+      assert lhsKind is val {~lexical-binding~}
+      assert lhs is ty {|ForDeclaration|}
+      let iterationEnv = @sec-newdeclarativeenvironment(oldEnv)
+      perform sdo ForDeclarationBindingInstantiation(lhs; iterationEnv)
+      set field $Running()[[LexicalEnvironment]] = iterationEnv
+      if destructuring is val {true} {
+        let status = @sec-completion-ao(sdo ForDeclarationBindingInitialization(lhs; nextValue, iterationEnv))
+      }
+      else {
+        assert $ListLen(sdo BoundNames(lhs)) is val {1}
+        let lhsName = $ListElem(data choice 0, sdo BoundNames(lhs))
+        let lhsRef = ! @sec-resolvebinding(lhsName)
+        if declKind is not val {~normal~} {
+          assert @sec-isunresolvablereference(lhsRef) is val {false}
+          let base = lhsRef[[Base]]
+          assert base is ty {#"Declarative Environment Record"}
+          let status = @sec-completion-ao(@sec-adddisposableresource(base[[DisposableResourceStack]], nextValue, declKind))
+        }
+        else {
+          let status = @sec-normalcompletion(~unused~)
+        }
+        if status is ty {#"normal completion"} {
+          set var status = @sec-completion-ao(@sec-initializereferencedbinding(lhsRef, nextValue))
+        }
+      }
+    }
+    if status is ty {#"abrupt completion"} {
+      if iterationEnv is not val {undefined} {
+        set var status = @sec-completion-ao(@sec-disposeresources(iterationEnv[[DisposableResourceStack]], status))
+        assert status is ty {#"abrupt completion"}
+      }
+      set field $Running()[[LexicalEnvironment]] = oldEnv
+      if iterationKind is val {~enumerate~} -> return ? status
+      assert iterationKind is val {~iterate~}
+      if iteratorKind is val {~async~} -> return ? @sec-asynciteratorclose(iteratorRecord, status)
+      return ? @sec-iteratorclose(iteratorRecord, status)
+    }
+    let result = @sec-completion-ao(sdo Evaluation(#"stmt"))
+    if iterationEnv is not val {undefined} {
+      set var result = @sec-completion-ao(@sec-disposeresources(iterationEnv[[DisposableResourceStack]], result))
+    }
+    set field $Running()[[LexicalEnvironment]] = oldEnv
+    if @sec-loopcontinues(result, labelSet) is val {false} {
+      set var status = @sec-completion-ao(@sec-updateempty(result, iterationResult))
+      if iterationKind is val {~enumerate~} -> return ? status
+      assert iterationKind is val {~iterate~}
+      if iteratorKind is val {~async~} -> return ? @sec-asynciteratorclose(iteratorRecord, status)
+      return ? @sec-iteratorclose(iteratorRecord, status)
+    }
+    if result[[Value]] is not val {~empty~} -> set var iterationResult = result[[Value]]
+  }
+}
+
+def @sec-enumerate-object-properties "EnumerateObjectProperties" (kind ao params [#"obj" : Object] -> #"iterator object") vars [#"obj", history, #"closure", action, O, result, next, iterator] {
+  let history = $ListNew()
+  let #"closure" = closure 0
+  let next = @sec-createbuiltinfunction(#"closure", 0, "next", [])
+  let iterator = @sec-ordinaryobjectcreate(null)
+  perform ! @sec-createdatapropertyorthrow(iterator, "next", next)
+  return iterator
+  closure abstract params none captures [#"obj", history] {
+    repeat {
+      let action = $ForInStep(#"obj", history)
+      if action[[Kind]] is val {~done~} -> return @sec-createiterresultobject(undefined, true)
+      if action[[Kind]] is val {~yield~} {
+        perform $Append(record Record { [[Action]]: action, [[Result]]: ~empty~ }, ?history)
+        return @sec-createiterresultobject(action[[Key]], false)
+      }
+      let O = action[[Object]]
+      let result = ~empty~
+      if action[[Kind]] is val {~own-property-keys~} -> set var result = ? O[[OwnPropertyKeys]]()
+      else_if action[[Kind]] is val {~get-own-property~} -> set var result = ? O[[GetOwnProperty]](action[[Key]])
+      else {
+        assert action[[Kind]] is val {~get-prototype-of~}
+        set var result = ? O[[GetPrototypeOf]]()
+      }
+      perform $Append(record Record { [[Action]]: action, [[Result]]: result }, ?history)
+    }
+  }
+}
+
+def @sec-createforiniterator "CreateForInIterator" (kind ao params [#"obj" : Object] -> doc "a For-In Iterator") vars [#"obj", iterator] {
+  let iterator = @sec-ordinaryobjectcreate(intrinsic [[ForInIteratorPrototype]], [[[Object]], [[ObjectWasVisited]], [[VisitedKeys]], [[RemainingKeys]]])
+  set field iterator[[Object]] = #"obj"
+  set field iterator[[ObjectWasVisited]] = false
+  set field iterator[[VisitedKeys]] = $ListNew()
+  set field iterator[[RemainingKeys]] = $ListNew()
+  return iterator
+}
+
+def @sec-%foriniteratorprototype%.next "%ForInIteratorPrototype%.next" (kind builtin params []) vars [#"this value", NewTarget, iterator, #"obj", #"keys", key, propertyDesc] {
+  let iterator = this_value
+  assert iterator is ty {Object}
+  assert iterator sat @ph-has-all-slots(data sort #"For-In Iterator instance", data choice 1, clause @sec-properties-of-for-in-iterator-instances)
+  let #"obj" = iterator[[Object]]
+  repeat {
+    if iterator[[ObjectWasVisited]] is val {false} {
+      let #"keys" = ? #"obj"[[OwnPropertyKeys]]()
+      for_each key in #"keys" {
+        if key is ty {String} {
+          perform $Append(?key, iterator[[RemainingKeys]])
+        }
+      }
+      set field iterator[[ObjectWasVisited]] = true
+    }
+    repeat_while iterator[[RemainingKeys]] fails $IsEmpty() {
+      let key = $ListElem(data choice 1, iterator[[RemainingKeys]])
+      perform $RemoveFirst(iterator[[RemainingKeys]])
+      if iterator[[VisitedKeys]] fails $Contains(?key) {
+        let propertyDesc = ? #"obj"[[GetOwnProperty]](key)
+        if propertyDesc is not val {undefined} {
+          perform $Append(?key, iterator[[VisitedKeys]])
+          if propertyDesc[[Enumerable]] is val {true} -> return @sec-createiterresultobject(key, false)
+        }
+      }
+    }
+    set var #"obj" = ? #"obj"[[GetPrototypeOf]]()
+    set field iterator[[Object]] = #"obj"
+    set field iterator[[ObjectWasVisited]] = false
+    if #"obj" is val {null} -> return @sec-createiterresultobject(undefined, true)
+  }
+}
+
+def @sec-runtime-semantics-caseclauseisselected "CaseClauseIsSelected" (kind ao params [caseClauseNode : |CaseClause|, input : #"ECMAScript language value"] -> completion<Boolean> | #"abrupt completion") vars [caseClauseNode, input, exprRef, clauseSelector] {
+  assert expr $InstanceOf(caseClauseNode, prods [p"Syntactic 0 CaseClause : `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?", p"Syntactic 1 CaseClause : `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?"])
+  let exprRef = ? sdo Evaluation($ChildOf(|Expression|, ?caseClauseNode))
+  let clauseSelector = ? @sec-getvalue(exprRef)
+  return @sec-isstrictlyequal(input, clauseSelector)
+}
+
+def @sec-islabelledfunction "IsLabelledFunction" (kind ao params [#"stmt" : |Statement|] -> Boolean) vars [#"stmt", item, subStmt] {
+  if #"stmt" is not ty {|LabelledStatement|} -> return false
+  let item = $ChildOf(|LabelledItem|, ?#"stmt")
+  if item is val {prods [p"Syntactic - LabelledItem : FunctionDeclaration[?Yield, ?Await, ~Default]"]} -> return true
+  let subStmt = $ChildOf(|Statement|, ?item)
+  return @sec-islabelledfunction(subStmt)
+}
+
+sdo_row @sec-statement-semantics-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - HoistableDeclaration : GeneratorDeclaration[?Yield, ?Await, ?Default]", p"Syntactic - HoistableDeclaration : AsyncFunctionDeclaration[?Yield, ?Await, ?Default]", p"Syntactic - HoistableDeclaration : AsyncGeneratorDeclaration[?Yield, ?Await, ?Default]"]
+  keys ["\n        HoistableDeclaration :\n          GeneratorDeclaration\n          AsyncFunctionDeclaration\n          AsyncGeneratorDeclaration\n      "]
+  vars []
+  steps {
+    return ~empty~
+  }
+}
+
+sdo_row @sec-statement-semantics-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - HoistableDeclaration : FunctionDeclaration[?Yield, ?Await, ?Default]"]
+  keys ["\n        HoistableDeclaration : FunctionDeclaration\n      "]
+  vars []
+  steps {
+    return ? sdo Evaluation(child 5 |FunctionDeclaration|)
+  }
+}
+
+sdo_row @sec-statement-semantics-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - BreakableStatement : IterationStatement[?Yield, ?Await, ?Return]", p"Syntactic - BreakableStatement : SwitchStatement[?Yield, ?Await, ?Return]"]
+  keys ["\n        BreakableStatement :\n          IterationStatement\n          SwitchStatement\n      "]
+  vars [newLabelSet]
+  steps {
+    let newLabelSet = $ListNew()
+    return ? sdo LabelledEvaluation(call_at @ph-this-nt(|BreakableStatement|); newLabelSet)
+  }
+}
+
+sdo_row @sec-return-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ReturnStatement : `return` `;`"]
+  keys ["ReturnStatement : `return` `;`"]
+  vars []
+  steps {
+    return @sec-returncompletion(undefined)
+  }
+}
+
+sdo_row @sec-return-statement-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - ReturnStatement : `return` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`"]
+  keys ["ReturnStatement : `return` Expression `;`"]
+  vars [exprRef, exprValue]
+  steps {
+    let exprRef = ? sdo Evaluation(child 5 |Expression|)
+    let exprValue = ? @sec-getvalue(exprRef)
+    if @sec-getgeneratorkind() is val {~async~} -> set var exprValue = ? @await(exprValue)
+    return @sec-returncompletion(exprValue)
+  }
+}
+
+sdo_row @sec-with-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - WithStatement : `with` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["WithStatement : `with` `(` Expression `)` Statement"]
+  vars [value, #"obj", oldEnv, newEnv, stmtCompletion]
+  steps {
+    let value = ? sdo Evaluation(child 5 |Expression|)
+    let #"obj" = ? @sec-toobject(? @sec-getvalue(value))
+    let oldEnv = $Component($Running(), [[LexicalEnvironment]])
+    let newEnv = @sec-newobjectenvironment(#"obj", true, oldEnv)
+    set field $Running()[[LexicalEnvironment]] = newEnv
+    let stmtCompletion = @sec-completion-ao(sdo Evaluation(child 5 |Statement|))
+    set field $Running()[[LexicalEnvironment]] = oldEnv
+    return ? @sec-updateempty(stmtCompletion, undefined)
+  }
+}
+
+sdo_row @sec-runtime-semantics-caseblockevaluation CaseBlockEvaluation form alg {
+  prods [p"Syntactic 0 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? `}`"]
+  keys ["CaseBlock : `{` `}`"]
+  vars [input]
+  steps {
+    return undefined
+  }
+}
+
+sdo_row @sec-runtime-semantics-caseblockevaluation#1 CaseBlockEvaluation form alg {
+  prods [p"Syntactic 1 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? `}`"]
+  keys ["CaseBlock : `{` CaseClauses `}`"]
+  vars [input, resultValue, caseClauses, found, #"clause", #"completion"]
+  steps {
+    let resultValue = undefined
+    let caseClauses = @ph-items-in(|CaseClause|, child 5 |CaseClauses|)
+    let found = false
+    for_each #"clause" : |CaseClause| in caseClauses {
+      if found is val {false} {
+        set var found = ? @sec-runtime-semantics-caseclauseisselected(#"clause", input)
+      }
+      if found is val {true} {
+        let #"completion" = @sec-completion-ao(sdo Evaluation(#"clause"))
+        if #"completion"[[Value]] is not val {~empty~} -> set var resultValue = #"completion"[[Value]]
+        if #"completion" is ty {#"abrupt completion"} -> return ? @sec-updateempty(#"completion", resultValue)
+      }
+    }
+    return resultValue
+  }
+}
+
+sdo_row @sec-runtime-semantics-caseblockevaluation#2 CaseBlockEvaluation form alg {
+  prods [p"Syntactic 00 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`", p"Syntactic 01 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`", p"Syntactic 10 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`", p"Syntactic 11 CaseBlock : `{` CaseClauses[?Yield, ?Await, ?Return]? DefaultClause[?Yield, ?Await, ?Return] CaseClauses[?Yield, ?Await, ?Return]? `}`"]
+  keys ["CaseBlock : `{` CaseClauses? DefaultClause CaseClauses? `}`"]
+  vars [input, resultValue, caseClauses, found, #"clause", #"completion", foundInB, secondCaseClauses, defaultR]
+  steps {
+    let resultValue = undefined
+    if child 0 |CaseClauses| sat $Present() {
+      let caseClauses = @ph-items-in(|CaseClause|, child 0 |CaseClauses|)
+    }
+    else {
+      let caseClauses = $ListNew()
+    }
+    let found = false
+    for_each #"clause" : |CaseClause| in caseClauses {
+      if found is val {false} {
+        set var found = ? @sec-runtime-semantics-caseclauseisselected(#"clause", input)
+      }
+      if found is val {true} {
+        let #"completion" = @sec-completion-ao(sdo Evaluation(#"clause"))
+        if #"completion"[[Value]] is not val {~empty~} -> set var resultValue = #"completion"[[Value]]
+        if #"completion" is ty {#"abrupt completion"} -> return ? @sec-updateempty(#"completion", resultValue)
+      }
+    }
+    let foundInB = false
+    if child 1 |CaseClauses| sat $Present() {
+      let secondCaseClauses = @ph-items-in(|CaseClause|, child 1 |CaseClauses|)
+    }
+    else {
+      let secondCaseClauses = $ListNew()
+    }
+    if found is val {false} {
+      for_each #"clause" : |CaseClause| in secondCaseClauses {
+        if foundInB is val {false} {
+          set var foundInB = ? @sec-runtime-semantics-caseclauseisselected(#"clause", input)
+        }
+        if foundInB is val {true} {
+          let #"completion" = @sec-completion-ao(sdo Evaluation(@ph-nt-var(|CaseClause|, ?#"clause")))
+          if #"completion"[[Value]] is not val {~empty~} -> set var resultValue = #"completion"[[Value]]
+          if #"completion" is ty {#"abrupt completion"} -> return ? @sec-updateempty(#"completion", resultValue)
+        }
+      }
+    }
+    if foundInB is val {true} -> return resultValue
+    let defaultR = @sec-completion-ao(sdo Evaluation(child 5 |DefaultClause|))
+    if defaultR[[Value]] is not val {~empty~} -> set var resultValue = defaultR[[Value]]
+    if defaultR is ty {#"abrupt completion"} -> return ? @sec-updateempty(defaultR, resultValue)
+    note "The following is another complete iteration of the second |CaseClauses|."
+    for_each #"clause" : |CaseClause| in secondCaseClauses {
+      let #"completion" = @sec-completion-ao(sdo Evaluation(@ph-nt-var(|CaseClause|, ?#"clause")))
+      if #"completion"[[Value]] is not val {~empty~} -> set var resultValue = #"completion"[[Value]]
+      if #"completion" is ty {#"abrupt completion"} -> return ? @sec-updateempty(#"completion", resultValue)
+    }
+    return resultValue
+  }
+}
+
+sdo_row @sec-switch-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - SwitchStatement : `switch` `(` Expression[+In, ?Yield, ?Await] `)` CaseBlock[?Yield, ?Await, ?Return]"]
+  keys ["SwitchStatement : `switch` `(` Expression `)` CaseBlock"]
+  vars [exprRef, switchValue, oldEnv, blockEnv, blockResult]
+  steps {
+    let exprRef = ? sdo Evaluation(child 5 |Expression|)
+    let switchValue = ? @sec-getvalue(exprRef)
+    let oldEnv = $Component($Running(), [[LexicalEnvironment]])
+    let blockEnv = @sec-newdeclarativeenvironment(oldEnv)
+    perform @sec-blockdeclarationinstantiation(child 5 |CaseBlock|, blockEnv)
+    set field $Running()[[LexicalEnvironment]] = blockEnv
+    let blockResult = @sec-completion-ao(sdo CaseBlockEvaluation(child 5 |CaseBlock|; switchValue))
+    assert blockEnv[[DisposableResourceStack]] sat $IsEmpty()
+    set field $Running()[[LexicalEnvironment]] = oldEnv
+    return blockResult
+  }
+}
+
+sdo_row @sec-switch-statement-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic 0 CaseClause : `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?"]
+  keys ["CaseClause : `case` Expression `:`"]
+  vars []
+  steps {
+    return ~empty~
+  }
+}
+
+sdo_row @sec-switch-statement-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic 1 CaseClause : `case` Expression[+In, ?Yield, ?Await] `:` StatementList[?Yield, ?Await, ?Return]?"]
+  keys ["CaseClause : `case` Expression `:` StatementList"]
+  vars []
+  steps {
+    return ? sdo Evaluation(child 5 |StatementList|)
+  }
+}
+
+sdo_row @sec-switch-statement-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic 0 DefaultClause : `default` `:` StatementList[?Yield, ?Await, ?Return]?"]
+  keys ["DefaultClause : `default` `:`"]
+  vars []
+  steps {
+    return ~empty~
+  }
+}
+
+sdo_row @sec-switch-statement-runtime-semantics-evaluation#4 Evaluation form alg {
+  prods [p"Syntactic 1 DefaultClause : `default` `:` StatementList[?Yield, ?Await, ?Return]?"]
+  keys ["DefaultClause : `default` `:` StatementList"]
+  vars []
+  steps {
+    return ? sdo Evaluation(child 5 |StatementList|)
+  }
+}
+
+sdo_row @sec-labelled-statements-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - LabelledStatement : LabelIdentifier[?Yield, ?Await] `:` LabelledItem[?Yield, ?Await, ?Return]"]
+  keys ["LabelledStatement : LabelIdentifier `:` LabelledItem"]
+  vars []
+  steps {
+    return ? sdo LabelledEvaluation(call_at @ph-this-nt(|LabelledStatement|); [])
+  }
+}
+
+sdo_row @sec-runtime-semantics-labelledevaluation LabelledEvaluation form alg {
+  prods [p"Syntactic - BreakableStatement : IterationStatement[?Yield, ?Await, ?Return]"]
+  keys ["BreakableStatement : IterationStatement"]
+  vars [labelSet, stmtResult]
+  steps {
+    let stmtResult = @sec-completion-ao(sdo LoopEvaluation(child 5 |IterationStatement|; labelSet))
+    if stmtResult is ty {#"break completion"} and stmtResult[[Target]] is val {~empty~} {
+      if stmtResult[[Value]] is not val {~empty~} -> return stmtResult[[Value]]
+      return undefined
+    }
+    return ? stmtResult
+  }
+}
+
+sdo_row @sec-runtime-semantics-labelledevaluation#1 LabelledEvaluation form alg {
+  prods [p"Syntactic - BreakableStatement : SwitchStatement[?Yield, ?Await, ?Return]"]
+  keys ["BreakableStatement : SwitchStatement"]
+  vars [labelSet, stmtResult]
+  steps {
+    let stmtResult = @sec-completion-ao(sdo Evaluation(child 5 |SwitchStatement|))
+    if stmtResult is ty {#"break completion"} and stmtResult[[Target]] is val {~empty~} {
+      if stmtResult[[Value]] is not val {~empty~} -> return stmtResult[[Value]]
+      return undefined
+    }
+    return ? stmtResult
+  }
+}
+
+sdo_row @sec-runtime-semantics-labelledevaluation#2 LabelledEvaluation form alg {
+  prods [p"Syntactic - LabelledStatement : LabelIdentifier[?Yield, ?Await] `:` LabelledItem[?Yield, ?Await, ?Return]"]
+  keys ["LabelledStatement : LabelIdentifier `:` LabelledItem"]
+  vars [labelSet, label, newLabelSet, stmtResult]
+  steps {
+    let label = sdo StringValue(child 5 |LabelIdentifier|)
+    let newLabelSet = $ListConcat([labelSet, [label]])
+    let stmtResult = @sec-completion-ao(sdo LabelledEvaluation(child 5 |LabelledItem|; newLabelSet))
+    if stmtResult is ty {#"break completion"} and stmtResult[[Target]] is val {label} -> return stmtResult[[Value]]
+    return ? stmtResult
+  }
+}
+
+sdo_row @sec-runtime-semantics-labelledevaluation#3 LabelledEvaluation form alg {
+  prods [p"Syntactic - LabelledItem : FunctionDeclaration[?Yield, ?Await, ~Default]"]
+  keys ["LabelledItem : FunctionDeclaration"]
+  vars [labelSet]
+  steps {
+    return ? sdo Evaluation(child 5 |FunctionDeclaration|)
+  }
+}
+
+sdo_row @sec-runtime-semantics-labelledevaluation#4 LabelledEvaluation form alg {
+  prods [p"Syntactic - Statement : BlockStatement[?Yield, ?Await, ?Return]", p"Syntactic - Statement : VariableStatement[?Yield, ?Await]", p"Syntactic - Statement : EmptyStatement", p"Syntactic - Statement : ExpressionStatement[?Yield, ?Await]", p"Syntactic - Statement : IfStatement[?Yield, ?Await, ?Return]", p"Syntactic - Statement : ContinueStatement[?Yield, ?Await]", p"Syntactic - Statement : BreakStatement[?Yield, ?Await]", p"Syntactic - Statement : [+Return] ReturnStatement[?Yield, ?Await]", p"Syntactic - Statement : WithStatement[?Yield, ?Await, ?Return]", p"Syntactic - Statement : ThrowStatement[?Yield, ?Await]", p"Syntactic - Statement : TryStatement[?Yield, ?Await, ?Return]", p"Syntactic - Statement : DebuggerStatement"]
+  keys ["\n        Statement :\n          BlockStatement\n          VariableStatement\n          EmptyStatement\n          ExpressionStatement\n          IfStatement\n          ContinueStatement\n          BreakStatement\n          ReturnStatement\n          WithStatement\n          ThrowStatement\n          TryStatement\n          DebuggerStatement\n      "]
+  vars [labelSet]
+  steps {
+    return ? sdo Evaluation(child 6 |Statement|)
+  }
+}
+
+sdo_row @sec-throw-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ThrowStatement : `throw` [no LineTerminator here] Expression[+In, ?Yield, ?Await] `;`"]
+  keys ["ThrowStatement : `throw` Expression `;`"]
+  vars [exprRef, exprValue]
+  steps {
+    let exprRef = ? sdo Evaluation(child 5 |Expression|)
+    let exprValue = ? @sec-getvalue(exprRef)
+    throw exprValue
+  }
+}
+
+sdo_row @sec-runtime-semantics-catchclauseevaluation CatchClauseEvaluation form alg {
+  prods [p"Syntactic - Catch : `catch` `(` CatchParameter[?Yield, ?Await] `)` Block[?Yield, ?Await, ?Return]"]
+  keys ["Catch : `catch` `(` CatchParameter `)` Block"]
+  vars [thrownValue, oldEnv, catchEnv, argName, status, blockCompletion]
+  steps {
+    let oldEnv = $Component($Running(), [[LexicalEnvironment]])
+    let catchEnv = @sec-newdeclarativeenvironment(oldEnv)
+    set field catchEnv[[CreatedFor]] = this_node
+    for_each argName in sdo BoundNames(child 5 |CatchParameter|) {
+      perform ! catchEnv.CreateMutableBinding(argName, false)
+    }
+    set field $Running()[[LexicalEnvironment]] = catchEnv
+    let status = @sec-completion-ao(sdo BindingInitialization(child 5 |CatchParameter|; thrownValue, catchEnv))
+    if status is ty {#"abrupt completion"} {
+      set field $Running()[[LexicalEnvironment]] = oldEnv
+      return ? status
+    }
+    let blockCompletion = @sec-completion-ao(sdo Evaluation(child 5 |Block|))
+    set field $Running()[[LexicalEnvironment]] = oldEnv
+    return ? blockCompletion
+  }
+}
+
+sdo_row @sec-runtime-semantics-catchclauseevaluation#1 CatchClauseEvaluation form alg {
+  prods [p"Syntactic - Catch : `catch` Block[?Yield, ?Await, ?Return]"]
+  keys ["Catch : `catch` Block"]
+  vars [thrownValue]
+  steps {
+    return ? sdo Evaluation(child 5 |Block|)
+  }
+}
+
+sdo_row @sec-try-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - TryStatement : `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return]"]
+  keys ["TryStatement : `try` Block Catch"]
+  vars [blockResult, catchResult]
+  steps {
+    let blockResult = @sec-completion-ao(sdo Evaluation(child 5 |Block|))
+    if blockResult is ty {#"throw completion"} -> let catchResult = @sec-completion-ao(sdo CatchClauseEvaluation(child 5 |Catch|; blockResult[[Value]]))
+    else -> let catchResult = blockResult
+    return ? @sec-updateempty(catchResult, undefined)
+  }
+}
+
+sdo_row @sec-try-statement-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - TryStatement : `try` Block[?Yield, ?Await, ?Return] Finally[?Yield, ?Await, ?Return]"]
+  keys ["TryStatement : `try` Block Finally"]
+  vars [blockResult, finallyResult]
+  steps {
+    let blockResult = @sec-completion-ao(sdo Evaluation(child 5 |Block|))
+    let finallyResult = @sec-completion-ao(sdo Evaluation(child 5 |Finally|))
+    if finallyResult is ty {#"normal completion"} -> set var finallyResult = blockResult
+    return ? @sec-updateempty(finallyResult, undefined)
+  }
+}
+
+sdo_row @sec-try-statement-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - TryStatement : `try` Block[?Yield, ?Await, ?Return] Catch[?Yield, ?Await, ?Return] Finally[?Yield, ?Await, ?Return]"]
+  keys ["TryStatement : `try` Block Catch Finally"]
+  vars [blockResult, catchResult, finallyResult]
+  steps {
+    let blockResult = @sec-completion-ao(sdo Evaluation(child 5 |Block|))
+    if blockResult is ty {#"throw completion"} -> let catchResult = @sec-completion-ao(sdo CatchClauseEvaluation(child 5 |Catch|; blockResult[[Value]]))
+    else -> let catchResult = blockResult
+    let finallyResult = @sec-completion-ao(sdo Evaluation(child 5 |Finally|))
+    if finallyResult is ty {#"normal completion"} -> set var finallyResult = catchResult
+    return ? @sec-updateempty(finallyResult, undefined)
+  }
+}
+
+sdo_row @sec-debugger-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - DebuggerStatement : `debugger` `;`"]
+  keys ["DebuggerStatement : `debugger` `;`"]
+  vars []
+  steps {
+    if $DebuggerEnabled() is val {true} {
+      perform $DebuggerAction()
+      return $NewRecord(data sort #"implementation-defined Completion Record")
+    }
+    return ~empty~
+  }
+}
+
+sdo_row @sec-block-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic 0 Block : `{` StatementList[?Yield, ?Await, ?Return]? `}`"]
+  keys ["Block : `{` `}`"]
+  vars []
+  steps {
+    return ~empty~
+  }
+}
+
+sdo_row @sec-block-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic 1 Block : `{` StatementList[?Yield, ?Await, ?Return]? `}`"]
+  keys ["Block : `{` StatementList `}`"]
+  vars [oldEnv, blockEnv, blockValue]
+  steps {
+    let oldEnv = $Component($Running(), [[LexicalEnvironment]])
+    let blockEnv = @sec-newdeclarativeenvironment(oldEnv)
+    perform @sec-blockdeclarationinstantiation(child 5 |StatementList|, blockEnv)
+    set field $Running()[[LexicalEnvironment]] = blockEnv
+    let blockValue = @sec-completion-ao(sdo Evaluation(child 5 |StatementList|))
+    set var blockValue = @sec-completion-ao(@sec-disposeresources(blockEnv[[DisposableResourceStack]], blockValue))
+    set field $Running()[[LexicalEnvironment]] = oldEnv
+    return ? blockValue
+  }
+}
+
+sdo_row @sec-block-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - StatementList : StatementList[?Yield, ?Await, ?Return] StatementListItem[?Yield, ?Await, ?Return]"]
+  keys ["StatementList : StatementList StatementListItem"]
+  vars [sl, s]
+  steps {
+    let sl = ? sdo Evaluation(child 5 |StatementList|)
+    let s = @sec-completion-ao(sdo Evaluation(child 5 |StatementListItem|))
+    return ? @sec-updateempty(s, sl)
+  }
+}
+
+sdo_row @sec-let-and-const-declarations-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - LexicalDeclaration : LetOrConst BindingList[?In, ?Yield, ?Await, +Pattern] `;`"]
+  keys ["LexicalDeclaration : LetOrConst BindingList `;`"]
+  vars []
+  steps {
+    perform ? sdo BindingEvaluation(child 5 |BindingList|; ~normal~)
+    return ~empty~
+  }
+}
+
+sdo_row @sec-let-and-const-declarations-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - UsingDeclaration : `using` [no LineTerminator here] BindingList[?In, ?Yield, ?Await, ~Pattern] `;`"]
+  keys ["UsingDeclaration : `using` BindingList `;`"]
+  vars []
+  steps {
+    perform ? sdo BindingEvaluation(child 5 |BindingList|; ~sync-dispose~)
+    return ~empty~
+  }
+}
+
+sdo_row @sec-let-and-const-declarations-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield] [no LineTerminator here] BindingList[?In, ?Yield, +Await, ~Pattern] `;`"]
+  keys ["AwaitUsingDeclaration : CoverAwaitExpressionAndAwaitUsingDeclarationHead BindingList `;`"]
+  vars []
+  steps {
+    perform ? sdo BindingEvaluation(child 5 |BindingList|; ~async-dispose~)
+    return ~empty~
+  }
+}
+
+sdo_row @sec-bindingevaluation BindingEvaluation form alg {
+  prods [p"Syntactic - BindingList : BindingList[?In, ?Yield, ?Await, ?Pattern] `,` LexicalBinding[?In, ?Yield, ?Await, ?Pattern]"]
+  keys ["BindingList : BindingList `,` LexicalBinding"]
+  vars [#"kind"]
+  steps {
+    perform ? sdo BindingEvaluation(child 3 |BindingList|; #"kind")
+    return ? sdo BindingEvaluation(child 5 |LexicalBinding|; #"kind")
+  }
+}
+
+sdo_row @sec-bindingevaluation#1 BindingEvaluation form alg {
+  prods [p"Syntactic 0 LexicalBinding : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?"]
+  keys ["LexicalBinding : BindingIdentifier"]
+  vars [#"kind", lhs]
+  steps {
+    assert #"kind" is val {~normal~}
+    let lhs = ! @sec-resolvebinding(sdo StringValue(child 5 |BindingIdentifier|))
+    perform ! @sec-initializereferencedbinding(lhs, undefined)
+    return ~unused~
+  }
+}
+
+sdo_row @sec-bindingevaluation#2 BindingEvaluation form alg {
+  prods [p"Syntactic 1 LexicalBinding : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?"]
+  keys ["LexicalBinding : BindingIdentifier Initializer"]
+  vars [#"kind", name, lhs, value, rhs, base]
+  steps {
+    let name = sdo StringValue(child 5 |BindingIdentifier|)
+    let lhs = ! @sec-resolvebinding(name)
+    if @sec-isanonymousfunctiondefinition(child 5 |Initializer|) is val {true} {
+      let value = ? sdo NamedEvaluation(child 5 |Initializer|; name)
+    }
+    else {
+      let rhs = ? sdo Evaluation(child 5 |Initializer|)
+      let value = ? @sec-getvalue(rhs)
+    }
+    if #"kind" is not val {~normal~} {
+      assert @sec-isunresolvablereference(lhs) is val {false}
+      let base = lhs[[Base]]
+      assert base is ty {#"Declarative Environment Record"}
+      perform ? @sec-adddisposableresource(base[[DisposableResourceStack]], value, #"kind")
+    }
+    perform ? @sec-initializereferencedbinding(lhs, value)
+    return ~unused~
+  }
+}
+
+sdo_row @sec-bindingevaluation#3 BindingEvaluation form alg {
+  prods [p"Syntactic - LexicalBinding : [+Pattern] BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]"]
+  keys ["LexicalBinding : BindingPattern Initializer"]
+  vars [#"kind", rhs, value, envRecord]
+  steps {
+    assert #"kind" is val {~normal~}
+    let rhs = ? sdo Evaluation(child 5 |Initializer|)
+    let value = ? @sec-getvalue(rhs)
+    let envRecord = $Component($Running(), [[LexicalEnvironment]])
+    return ? sdo BindingInitialization(child 5 |BindingPattern|; value, envRecord)
+  }
+}
+
+sdo_row @sec-variable-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - VariableStatement : `var` VariableDeclarationList[+In, ?Yield, ?Await] `;`"]
+  keys ["VariableStatement : `var` VariableDeclarationList `;`"]
+  vars []
+  steps {
+    perform ? sdo Evaluation(child 5 |VariableDeclarationList|)
+    return ~empty~
+  }
+}
+
+sdo_row @sec-variable-statement-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - VariableDeclarationList : VariableDeclarationList[?In, ?Yield, ?Await] `,` VariableDeclaration[?In, ?Yield, ?Await]"]
+  keys ["VariableDeclarationList : VariableDeclarationList `,` VariableDeclaration"]
+  vars []
+  steps {
+    perform ? sdo Evaluation(child 5 |VariableDeclarationList|)
+    return ? sdo Evaluation(child 5 |VariableDeclaration|)
+  }
+}
+
+sdo_row @sec-variable-statement-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic 0 VariableDeclaration : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?"]
+  keys ["VariableDeclaration : BindingIdentifier"]
+  vars []
+  steps {
+    return ~empty~
+  }
+}
+
+sdo_row @sec-variable-statement-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic 1 VariableDeclaration : BindingIdentifier[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]?"]
+  keys ["VariableDeclaration : BindingIdentifier Initializer"]
+  vars [name, lhs, value, rhs]
+  steps {
+    let name = sdo StringValue(child 5 |BindingIdentifier|)
+    let lhs = ? @sec-resolvebinding(name)
+    if @sec-isanonymousfunctiondefinition(child 5 |Initializer|) is val {true} {
+      let value = ? sdo NamedEvaluation(child 5 |Initializer|; name)
+    }
+    else {
+      let rhs = ? sdo Evaluation(child 5 |Initializer|)
+      let value = ? @sec-getvalue(rhs)
+    }
+    perform ? @sec-putvalue(lhs, value)
+    return ~empty~
+  }
+}
+
+sdo_row @sec-variable-statement-runtime-semantics-evaluation#4 Evaluation form alg {
+  prods [p"Syntactic - VariableDeclaration : BindingPattern[?Yield, ?Await] Initializer[?In, ?Yield, ?Await]"]
+  keys ["VariableDeclaration : BindingPattern Initializer"]
+  vars [rhs, rightValue]
+  steps {
+    let rhs = ? sdo Evaluation(child 5 |Initializer|)
+    let rightValue = ? @sec-getvalue(rhs)
+    return ? sdo BindingInitialization(child 5 |BindingPattern|; rightValue, undefined)
+  }
+}
+
+sdo_row @sec-destructuring-binding-patterns-runtime-semantics-propertybindinginitialization PropertyBindingInitialization form alg {
+  prods [p"Syntactic - BindingPropertyList : BindingPropertyList[?Yield, ?Await] `,` BindingProperty[?Yield, ?Await]"]
+  keys ["BindingPropertyList : BindingPropertyList `,` BindingProperty"]
+  vars [value, envRecord, boundNames, nextNames]
+  steps {
+    let boundNames = ? sdo PropertyBindingInitialization(child 5 |BindingPropertyList|; value, envRecord)
+    let nextNames = ? sdo PropertyBindingInitialization(child 5 |BindingProperty|; value, envRecord)
+    return $ListConcat([boundNames, nextNames])
+  }
+}
+
+sdo_row @sec-destructuring-binding-patterns-runtime-semantics-propertybindinginitialization#1 PropertyBindingInitialization form alg {
+  prods [p"Syntactic - BindingProperty : SingleNameBinding[?Yield, ?Await]"]
+  keys ["BindingProperty : SingleNameBinding"]
+  vars [value, envRecord, name]
+  steps {
+    let name = $ListElem(data choice 0, sdo BoundNames(child 5 |SingleNameBinding|))
+    perform ? sdo KeyedBindingInitialization(child 5 |SingleNameBinding|; value, envRecord, name)
+    return [name]
+  }
+}
+
+sdo_row @sec-destructuring-binding-patterns-runtime-semantics-propertybindinginitialization#2 PropertyBindingInitialization form alg {
+  prods [p"Syntactic - BindingProperty : PropertyName[?Yield, ?Await] `:` BindingElement[?Yield, ?Await]"]
+  keys ["BindingProperty : PropertyName `:` BindingElement"]
+  vars [value, envRecord, propertyKey]
+  steps {
+    let propertyKey = ? sdo Evaluation(child 5 |PropertyName|)
+    perform ? sdo KeyedBindingInitialization(child 5 |BindingElement|; value, envRecord, propertyKey)
+    return [propertyKey]
+  }
+}
+
+sdo_row @sec-destructuring-binding-patterns-runtime-semantics-restbindinginitialization RestBindingInitialization form alg {
+  prods [p"Syntactic - BindingRestProperty : `...` BindingIdentifier[?Yield, ?Await]"]
+  keys ["BindingRestProperty : `...` BindingIdentifier"]
+  vars [value, envRecord, excludedNames, lhs, restObj]
+  steps {
+    let lhs = ? @sec-resolvebinding(sdo StringValue(child 5 |BindingIdentifier|), envRecord)
+    let restObj = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+    perform ? @sec-copydataproperties(restObj, value, excludedNames)
+    if envRecord is val {undefined} -> return ? @sec-putvalue(lhs, restObj)
+    return ? @sec-initializereferencedbinding(lhs, restObj)
+  }
+}
+
+sdo_row @sec-runtime-semantics-keyedbindinginitialization KeyedBindingInitialization form alg {
+  prods [p"Syntactic 0 BindingElement : BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 BindingElement : BindingPattern[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["BindingElement : BindingPattern Initializer?"]
+  vars [value, envRecord, propertyName, defaultValue]
+  steps {
+    set var value = ? @sec-getv(value, propertyName)
+    if child 5 |Initializer| sat $Present() and value is val {undefined} {
+      let defaultValue = ? sdo Evaluation(child 5 |Initializer|)
+      set var value = ? @sec-getvalue(defaultValue)
+    }
+    return ? sdo BindingInitialization(child 5 |BindingPattern|; value, envRecord)
+  }
+}
+
+sdo_row @sec-runtime-semantics-keyedbindinginitialization#1 KeyedBindingInitialization form alg {
+  prods [p"Syntactic 0 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 SingleNameBinding : BindingIdentifier[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["SingleNameBinding : BindingIdentifier Initializer?"]
+  vars [value, envRecord, propertyName, name, lhs, defaultValue]
+  steps {
+    let name = sdo StringValue(child 5 |BindingIdentifier|)
+    let lhs = ? @sec-resolvebinding(name, envRecord)
+    set var value = ? @sec-getv(value, propertyName)
+    if child 5 |Initializer| sat $Present() and value is val {undefined} {
+      if @sec-isanonymousfunctiondefinition(child 5 |Initializer|) is val {true} {
+        set var value = ? sdo NamedEvaluation(child 5 |Initializer|; name)
+      }
+      else {
+        let defaultValue = ? sdo Evaluation(child 5 |Initializer|)
+        set var value = ? @sec-getvalue(defaultValue)
+      }
+    }
+    if envRecord is val {undefined} -> return ? @sec-putvalue(lhs, value)
+    return ? @sec-initializereferencedbinding(lhs, value)
+  }
+}
+
+sdo_row @sec-empty-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - EmptyStatement : `;`"]
+  keys ["EmptyStatement : `;`"]
+  vars []
+  steps {
+    return ~empty~
+  }
+}
+
+sdo_row @sec-expression-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ExpressionStatement : [lookahead ∉ { `{`, `function`, `async` [no LineTerminator here] `function`, `class`, `let` `[` }] Expression[+In, ?Yield, ?Await] `;`"]
+  keys ["ExpressionStatement : Expression `;`"]
+  vars [exprRef]
+  steps {
+    let exprRef = ? sdo Evaluation(child 5 |Expression|)
+    return ? @sec-getvalue(exprRef)
+  }
+}
+
+sdo_row @sec-if-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] `else` Statement[?Yield, ?Await, ?Return]"]
+  keys ["IfStatement : `if` `(` Expression `)` Statement `else` Statement"]
+  vars [exprRef, exprValue, stmtCompletion]
+  steps {
+    let exprRef = ? sdo Evaluation(child 5 |Expression|)
+    let exprValue = @sec-toboolean(? @sec-getvalue(exprRef))
+    if exprValue is val {true} {
+      let stmtCompletion = @sec-completion-ao(sdo Evaluation(child 0 |Statement|))
+    }
+    else {
+      let stmtCompletion = @sec-completion-ao(sdo Evaluation(child 1 |Statement|))
+    }
+    return ? @sec-updateempty(stmtCompletion, undefined)
+  }
+}
+
+sdo_row @sec-if-statement-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - IfStatement : `if` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return] [lookahead != `else`]"]
+  keys ["IfStatement : `if` `(` Expression `)` Statement"]
+  vars [exprRef, exprValue, stmtCompletion]
+  steps {
+    let exprRef = ? sdo Evaluation(child 5 |Expression|)
+    let exprValue = @sec-toboolean(? @sec-getvalue(exprRef))
+    if exprValue is val {false} -> return undefined
+    let stmtCompletion = @sec-completion-ao(sdo Evaluation(child 5 |Statement|))
+    return ? @sec-updateempty(stmtCompletion, undefined)
+  }
+}
+
+sdo_row @sec-runtime-semantics-loopevaluation LoopEvaluation form alg {
+  prods [p"Syntactic - IterationStatement : DoWhileStatement[?Yield, ?Await, ?Return]"]
+  keys ["IterationStatement : DoWhileStatement"]
+  vars [labelSet]
+  steps {
+    return ? sdo DoWhileLoopEvaluation(child 5 |DoWhileStatement|; labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-loopevaluation#1 LoopEvaluation form alg {
+  prods [p"Syntactic - IterationStatement : WhileStatement[?Yield, ?Await, ?Return]"]
+  keys ["IterationStatement : WhileStatement"]
+  vars [labelSet]
+  steps {
+    return ? sdo WhileLoopEvaluation(child 5 |WhileStatement|; labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-loopevaluation#2 LoopEvaluation form alg {
+  prods [p"Syntactic - IterationStatement : ForStatement[?Yield, ?Await, ?Return]"]
+  keys ["IterationStatement : ForStatement"]
+  vars [labelSet]
+  steps {
+    return ? sdo ForLoopEvaluation(child 5 |ForStatement|; labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-loopevaluation#3 LoopEvaluation form alg {
+  prods [p"Syntactic - IterationStatement : ForInOfStatement[?Yield, ?Await, ?Return]"]
+  keys ["IterationStatement : ForInOfStatement"]
+  vars [labelSet]
+  steps {
+    return ? sdo ForInOfLoopEvaluation(child 5 |ForInOfStatement|; labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-dowhileloopevaluation DoWhileLoopEvaluation form alg {
+  prods [p"Syntactic - DoWhileStatement : `do` Statement[?Yield, ?Await, ?Return] `while` `(` Expression[+In, ?Yield, ?Await] `)` `;`"]
+  keys ["DoWhileStatement : `do` Statement `while` `(` Expression `)` `;`"]
+  vars [labelSet, iterationResult, stmtResult, exprRef, exprValue]
+  steps {
+    let iterationResult = undefined
+    repeat {
+      let stmtResult = @sec-completion-ao(sdo Evaluation(child 5 |Statement|))
+      if @sec-loopcontinues(stmtResult, labelSet) is val {false} -> return ? @sec-updateempty(stmtResult, iterationResult)
+      if stmtResult[[Value]] is not val {~empty~} -> set var iterationResult = stmtResult[[Value]]
+      let exprRef = ? sdo Evaluation(child 5 |Expression|)
+      let exprValue = ? @sec-getvalue(exprRef)
+      if @sec-toboolean(exprValue) is val {false} -> return iterationResult
+    }
+  }
+}
+
+sdo_row @sec-runtime-semantics-whileloopevaluation WhileLoopEvaluation form alg {
+  prods [p"Syntactic - WhileStatement : `while` `(` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["WhileStatement : `while` `(` Expression `)` Statement"]
+  vars [labelSet, iterationResult, exprRef, exprValue, stmtResult]
+  steps {
+    let iterationResult = undefined
+    repeat {
+      let exprRef = ? sdo Evaluation(child 5 |Expression|)
+      let exprValue = ? @sec-getvalue(exprRef)
+      if @sec-toboolean(exprValue) is val {false} -> return iterationResult
+      let stmtResult = @sec-completion-ao(sdo Evaluation(child 5 |Statement|))
+      if @sec-loopcontinues(stmtResult, labelSet) is val {false} -> return ? @sec-updateempty(stmtResult, iterationResult)
+      if stmtResult[[Value]] is not val {~empty~} -> set var iterationResult = stmtResult[[Value]]
+    }
+  }
+}
+
+sdo_row @sec-runtime-semantics-forloopevaluation ForLoopEvaluation form alg {
+  prods [p"Syntactic 000 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 001 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 010 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 011 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 100 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 101 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 110 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 111 ForStatement : `for` `(` [lookahead != `let` `[`] Expression[~In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForStatement : `for` `(` Expression? `;` Expression? `;` Expression? `)` Statement"]
+  vars [labelSet, exprRef, #"test", increment]
+  steps {
+    if child 0 |Expression| sat $Present() {
+      let exprRef = ? sdo Evaluation(child 0 |Expression|)
+      perform ? @sec-getvalue(exprRef)
+    }
+    if_else child 1 |Expression| sat $Present() { let #"test" = child 1 |Expression| } else { let #"test" = ~empty~ }
+    if_else child 2 |Expression| sat $Present() { let increment = child 2 |Expression| } else { let increment = ~empty~ }
+    return ? @sec-forbodyevaluation(#"test", increment, child 5 |Statement|, [], labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forloopevaluation#1 ForLoopEvaluation form alg {
+  prods [p"Syntactic 00 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 01 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 10 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 11 ForStatement : `for` `(` `var` VariableDeclarationList[~In, ?Yield, ?Await] `;` Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForStatement : `for` `(` `var` VariableDeclarationList `;` Expression? `;` Expression? `)` Statement"]
+  vars [labelSet, #"test", increment]
+  steps {
+    perform ? sdo Evaluation(child 5 |VariableDeclarationList|)
+    if_else child 0 |Expression| sat $Present() { let #"test" = child 0 |Expression| } else { let #"test" = ~empty~ }
+    if_else child 1 |Expression| sat $Present() { let increment = child 1 |Expression| } else { let increment = ~empty~ }
+    return ? @sec-forbodyevaluation(#"test", increment, child 5 |Statement|, [], labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forloopevaluation#2 ForLoopEvaluation form alg {
+  prods [p"Syntactic 00 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 01 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 10 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]", p"Syntactic 11 ForStatement : `for` `(` LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? `;` Expression[+In, ?Yield, ?Await]? `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForStatement : `for` `(` LexicalDeclaration Expression? `;` Expression? `)` Statement"]
+  vars [labelSet, oldEnv, loopEnv, isConst, boundNames, name, forDecl, perIterationLets, #"test", increment, bodyResult]
+  steps {
+    let oldEnv = $Component($Running(), [[LexicalEnvironment]])
+    let loopEnv = @sec-newdeclarativeenvironment(oldEnv)
+    let isConst = sdo IsConstantDeclaration(child 5 |LexicalDeclaration|)
+    let boundNames = sdo BoundNames(child 5 |LexicalDeclaration|)
+    for_each name in boundNames {
+      if isConst is val {true} {
+        perform ! loopEnv.CreateImmutableBinding(name, true)
+      }
+      else {
+        perform ! loopEnv.CreateMutableBinding(name, false)
+      }
+    }
+    set field $Running()[[LexicalEnvironment]] = loopEnv
+    let forDecl = @sec-completion-ao(sdo Evaluation(child 5 |LexicalDeclaration|))
+    if forDecl is ty {#"abrupt completion"} {
+      set var forDecl = @sec-completion-ao(@sec-disposeresources(loopEnv[[DisposableResourceStack]], forDecl))
+      assert forDecl is ty {#"abrupt completion"}
+      set field $Running()[[LexicalEnvironment]] = oldEnv
+      return ? forDecl
+    }
+    if_else isConst is val {false} { let perIterationLets = boundNames } else { let perIterationLets = $ListNew() }
+    if_else child 0 |Expression| sat $Present() { let #"test" = child 0 |Expression| } else { let #"test" = ~empty~ }
+    if_else child 1 |Expression| sat $Present() { let increment = child 1 |Expression| } else { let increment = ~empty~ }
+    let bodyResult = @sec-completion-ao(@sec-forbodyevaluation(#"test", increment, child 5 |Statement|, perIterationLets, labelSet))
+    set var bodyResult = @sec-completion-ao(@sec-disposeresources(loopEnv[[DisposableResourceStack]], bodyResult))
+    assert_if bodyResult is ty {#"normal completion"} then bodyResult[[Value]] is not val {~empty~}
+    set field $Running()[[LexicalEnvironment]] = oldEnv
+    return ? bodyResult
+  }
+}
+
+sdo_row @sec-static-semantics-isdestructuring IsDestructuring form alg {
+  prods [p"Syntactic - MemberExpression : PrimaryExpression[?Yield, ?Await]"]
+  keys ["MemberExpression : PrimaryExpression"]
+  vars []
+  steps {
+    if child 5 |PrimaryExpression| is ty {|ObjectLiteral|; |ArrayLiteral|} -> return true
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-isdestructuring#1 IsDestructuring form alg {
+  prods [p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`", p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` IdentifierName", p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]", p"Syntactic - MemberExpression : SuperProperty[?Yield, ?Await]", p"Syntactic - MemberExpression : MetaProperty", p"Syntactic - MemberExpression : `new` MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]", p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` PrivateIdentifier", p"Syntactic - NewExpression : `new` NewExpression[?Yield, ?Await]", p"Syntactic - LeftHandSideExpression : CallExpression[?Yield, ?Await]", p"Syntactic - LeftHandSideExpression : OptionalExpression[?Yield, ?Await]"]
+  keys ["\n          MemberExpression :\n            MemberExpression `[` Expression `]`\n            MemberExpression `.` IdentifierName\n            MemberExpression TemplateLiteral\n            SuperProperty\n            MetaProperty\n            `new` MemberExpression Arguments\n            MemberExpression `.` PrivateIdentifier\n\n          NewExpression :\n            `new` NewExpression\n\n          LeftHandSideExpression :\n            CallExpression\n            OptionalExpression\n        "]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-isdestructuring#2 IsDestructuring form alg {
+  prods [p"Syntactic - ForDeclaration : LetOrConst ForBinding[?Yield, ?Await, +Pattern]"]
+  keys ["ForDeclaration : LetOrConst ForBinding"]
+  vars []
+  steps {
+    return sdo IsDestructuring(child 5 |ForBinding|)
+  }
+}
+
+sdo_row @sec-static-semantics-isdestructuring#3 IsDestructuring form alg {
+  prods [p"Syntactic - ForBinding : BindingIdentifier[?Yield, ?Await]"]
+  keys ["ForBinding : BindingIdentifier"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-isdestructuring#4 IsDestructuring form alg {
+  prods [p"Syntactic - ForBinding : [+Pattern] BindingPattern[?Yield, ?Await]"]
+  keys ["ForBinding : BindingPattern"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-runtime-semantics-fordeclarationbindinginitialization ForDeclarationBindingInitialization form alg {
+  prods [p"Syntactic - ForDeclaration : LetOrConst ForBinding[?Yield, ?Await, +Pattern]"]
+  keys ["ForDeclaration : LetOrConst ForBinding"]
+  vars [value, envRecord]
+  steps {
+    return ? sdo BindingInitialization(child 5 |ForBinding|; value, envRecord)
+  }
+}
+
+sdo_row @sec-runtime-semantics-fordeclarationbindinginitialization#1 ForDeclarationBindingInitialization form alg {
+  prods [p"Syntactic - ForDeclaration : [+Using] `using` [no LineTerminator here] ForBinding[?Yield, ?Await, ~Pattern]", p"Syntactic - ForDeclaration : [+Using, +Await] `await` [no LineTerminator here] `using` [no LineTerminator here] ForBinding[?Yield, +Await, ~Pattern]"]
+  keys ["\n          ForDeclaration :\n            `using` ForBinding\n            `await` `using` ForBinding\n        "]
+  vars [value, envRecord]
+  steps {
+    throw @ph-new-error([[SyntaxError]])
+  }
+}
+
+sdo_row @sec-runtime-semantics-fordeclarationbindinginstantiation ForDeclarationBindingInstantiation form alg {
+  prods [p"Syntactic - ForDeclaration : LetOrConst ForBinding[?Yield, ?Await, +Pattern]"]
+  keys ["ForDeclaration : LetOrConst ForBinding"]
+  vars [envRecord, name]
+  steps {
+    for_each name in sdo BoundNames(child 5 |ForBinding|) {
+      if sdo IsConstantDeclaration(child 5 |LetOrConst|) is val {true} {
+        perform ! envRecord.CreateImmutableBinding(name, true)
+      }
+      else {
+        perform ! envRecord.CreateMutableBinding(name, false)
+      }
+    }
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-fordeclarationbindinginstantiation#1 ForDeclarationBindingInstantiation form alg {
+  prods [p"Syntactic - ForDeclaration : [+Using] `using` [no LineTerminator here] ForBinding[?Yield, ?Await, ~Pattern]", p"Syntactic - ForDeclaration : [+Using, +Await] `await` [no LineTerminator here] `using` [no LineTerminator here] ForBinding[?Yield, +Await, ~Pattern]"]
+  keys ["\n          ForDeclaration :\n            `using` ForBinding\n            `await` `using` ForBinding\n        "]
+  vars [envRecord, name]
+  steps {
+    for_each name in sdo BoundNames(child 5 |ForBinding|) {
+      perform ! envRecord.CreateImmutableBinding(name, true)
+    }
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-forinofloopevaluation ForInOfLoopEvaluation form alg {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `let` `[`] LeftHandSideExpression[?Yield, ?Await] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` LeftHandSideExpression `in` Expression `)` Statement"]
+  vars [labelSet, keyResult]
+  steps {
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation([], child 5 |Expression|, ~enumerate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |LeftHandSideExpression|, child 5 |Statement|, keyResult, ~enumerate~, ~assignment~, labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forinofloopevaluation#1 ForInOfLoopEvaluation form alg {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` `var` ForBinding `in` Expression `)` Statement"]
+  vars [labelSet, keyResult]
+  steps {
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation([], child 5 |Expression|, ~enumerate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |ForBinding|, child 5 |Statement|, keyResult, ~enumerate~, ~var-binding~, labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forinofloopevaluation#2 ForInOfLoopEvaluation form alg {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` ForDeclaration[?Yield, ?Await, ~Using] `in` Expression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` ForDeclaration `in` Expression `)` Statement"]
+  vars [labelSet, keyResult]
+  steps {
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation(sdo BoundNames(child 5 |ForDeclaration|), child 5 |Expression|, ~enumerate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |ForDeclaration|, child 5 |Statement|, keyResult, ~enumerate~, ~lexical-binding~, labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forinofloopevaluation#3 ForInOfLoopEvaluation form alg {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` [lookahead ∉ { `let`, `async` `of` }] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` LeftHandSideExpression `of` AssignmentExpression `)` Statement"]
+  vars [labelSet, keyResult]
+  steps {
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation([], child 5 |AssignmentExpression|, ~iterate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |LeftHandSideExpression|, child 5 |Statement|, keyResult, ~iterate~, ~assignment~, labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forinofloopevaluation#4 ForInOfLoopEvaluation form alg {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` `var` ForBinding `of` AssignmentExpression `)` Statement"]
+  vars [labelSet, keyResult]
+  steps {
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation([], child 5 |AssignmentExpression|, ~iterate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |ForBinding|, child 5 |Statement|, keyResult, ~iterate~, ~var-binding~, labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forinofloopevaluation#5 ForInOfLoopEvaluation form alg {
+  prods [p"Syntactic - ForInOfStatement : `for` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["ForInOfStatement : `for` `(` ForDeclaration `of` AssignmentExpression `)` Statement"]
+  vars [labelSet, keyResult]
+  steps {
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation(sdo BoundNames(child 5 |ForDeclaration|), child 5 |AssignmentExpression|, ~iterate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |ForDeclaration|, child 5 |Statement|, keyResult, ~iterate~, ~lexical-binding~, labelSet)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forinofloopevaluation#6 ForInOfLoopEvaluation form alg {
+  prods [p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `let`] LeftHandSideExpression[?Yield, ?Await] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForInOfStatement : `for` `await` `(` LeftHandSideExpression `of` AssignmentExpression `)` Statement\n        "]
+  vars [labelSet, keyResult]
+  steps {
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation([], child 5 |AssignmentExpression|, ~async-iterate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |LeftHandSideExpression|, child 5 |Statement|, keyResult, ~iterate~, ~assignment~, labelSet, ~async~)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forinofloopevaluation#7 ForInOfLoopEvaluation form alg {
+  prods [p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` `var` ForBinding[?Yield, ?Await, +Pattern] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForInOfStatement : `for` `await` `(` `var` ForBinding `of` AssignmentExpression `)` Statement\n        "]
+  vars [labelSet, keyResult]
+  steps {
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation([], child 5 |AssignmentExpression|, ~async-iterate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |ForBinding|, child 5 |Statement|, keyResult, ~iterate~, ~var-binding~, labelSet, ~async~)
+  }
+}
+
+sdo_row @sec-runtime-semantics-forinofloopevaluation#8 ForInOfLoopEvaluation form alg {
+  prods [p"Syntactic - ForInOfStatement : [+Await] `for` `await` `(` [lookahead != `using` `of`] ForDeclaration[?Yield, ?Await, +Using] `of` AssignmentExpression[+In, ?Yield, ?Await] `)` Statement[?Yield, ?Await, ?Return]"]
+  keys ["\n          ForInOfStatement : `for` `await` `(` ForDeclaration `of` AssignmentExpression `)` Statement\n        "]
+  vars [labelSet, keyResult]
+  steps {
+    let keyResult = ? @sec-runtime-semantics-forinofheadevaluation(sdo BoundNames(child 5 |ForDeclaration|), child 5 |AssignmentExpression|, ~async-iterate~)
+    return ? @sec-runtime-semantics-forin-div-ofbodyevaluation-lhs-stmt-iterator-lhskind-labelset(child 5 |ForDeclaration|, child 5 |Statement|, keyResult, ~iterate~, ~lexical-binding~, labelSet, ~async~)
+  }
+}
+
+sdo_row @sec-for-in-and-for-of-statements-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - BindingIdentifier : Identifier", p"Syntactic - BindingIdentifier : `yield`", p"Syntactic - BindingIdentifier : `await`"]
+  keys ["\n          BindingIdentifier :\n            Identifier\n            `yield`\n            `await`\n        "]
+  vars [name]
+  steps {
+    let name = sdo StringValue(child 6 |BindingIdentifier|)
+    return ? @sec-resolvebinding(name)
+  }
+}
+
+sdo_row @sec-continue-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ContinueStatement : `continue` `;`"]
+  keys ["ContinueStatement : `continue` `;`"]
+  vars []
+  steps {
+    return record #"Completion Record" { [[Type]]: ~continue~, [[Value]]: ~empty~, [[Target]]: ~empty~ }
+  }
+}
+
+sdo_row @sec-continue-statement-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - ContinueStatement : `continue` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`"]
+  keys ["ContinueStatement : `continue` LabelIdentifier `;`"]
+  vars [label]
+  steps {
+    let label = sdo StringValue(child 5 |LabelIdentifier|)
+    return record #"Completion Record" { [[Type]]: ~continue~, [[Value]]: ~empty~, [[Target]]: label }
+  }
+}
+
+sdo_row @sec-break-statement-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - BreakStatement : `break` `;`"]
+  keys ["BreakStatement : `break` `;`"]
+  vars []
+  steps {
+    return record #"Completion Record" { [[Type]]: ~break~, [[Value]]: ~empty~, [[Target]]: ~empty~ }
+  }
+}
+
+sdo_row @sec-break-statement-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - BreakStatement : `break` [no LineTerminator here] LabelIdentifier[?Yield, ?Await] `;`"]
+  keys ["BreakStatement : `break` LabelIdentifier `;`"]
+  vars [label]
+  steps {
+    let label = sdo StringValue(child 5 |LabelIdentifier|)
+    return record #"Completion Record" { [[Type]]: ~break~, [[Value]]: ~empty~, [[Target]]: label }
+  }
+}
+

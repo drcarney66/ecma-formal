@@ -52,8 +52,8 @@ def heapBlockBytes (h : @& Array (Cell F)) : Nat :=
   | none => false
 
 /-- The set-up with a table's entries. -/
-def Setup.ofTable (tab : Engine.Accel.Rows.Table F) (Q : Prog') (H : Host F) (rd : ErratumId → Reading) (chk : Bool) : Setup :=
-  { X := { prog := Q, H, rd, chk }
+def Setup.ofTable (tab : Engine.Accel.Rows.Table F) (Q : Prog') (H : Host F) (chk : Bool) : Setup :=
+  { X := { prog := Q, H, chk }
     A := { alg := tab.alg, sdo := tab.sdo, prim := tab.prim, loop := tab.loop } }
 
 /-- A power too large to form: its operands' exact power is past `Engine.Model.MathVal.maxBits` bits
@@ -91,7 +91,7 @@ def parseExhausted (X : Ctx F) (c : Cfg F) : Bool :=
       | [.ref a, .nt k ps, .bool strict, .bool json, .bool _] => match F.heapGet c.s.heap a with
         | some (.list cps _) => match cps.mapM (fun | .math m => some m | _ => none) with
           | some src =>
-            Engine.isParseExhausted X.rd ⟨annexB, strict, json, k == Ecma.Grammar.NT.Module.ctorIdx⟩ src k ps
+            Engine.isParseExhausted ⟨annexB, strict, json, k == Ecma.Grammar.NT.Module.ctorIdx⟩ src k ps
           | none => false
         | _ => false
       | _ => false
@@ -100,7 +100,7 @@ def parseExhausted (X : Ctx F) (c : Cfg F) : Bool :=
         | some (.list cps _) =>
           match cps.mapM (fun | .math m => if Prims.Strings.isPoint (M := F) m then some m else none | _ => none) with
           | some src =>
-            Engine.isParseExhausted (fun _ => .literal) ⟨{}, false, false, false⟩ src Ecma.Grammar.NT.JSONText.ctorIdx []
+            Engine.isParseExhausted ⟨{}, false, false, false⟩ src Ecma.Grammar.NT.JSONText.ctorIdx []
           | none => false
         | _ => false
       | _ => false
@@ -108,7 +108,7 @@ def parseExhausted (X : Ctx F) (c : Cfg F) : Bool :=
       | [.nt k _, .node n] => match (parseCxOf (M := F) annexB n) c.s with
         | .ok cx _ =>
           let src := if k == F.nodeNt n then asIfSource (M := F) n else F.nodeSource n
-          Engine.isParseExhausted X.rd cx src k (coverArgs (X.P.params k) n)
+          Engine.isParseExhausted cx src k (coverArgs (X.P.params k) n)
         | _ => false
       | _ => false
     else false
@@ -138,11 +138,6 @@ def stepA (E : Setup) (c : Cfg F) : Out F :=
   if tooBig || blockTooBig E c then .inr (.stop .implLimit) else
   match c.ctl with
   | .invoke (.alg a vs) => alg a vs
-  | .invoke (.phrase p nd vs) => match X.P.phrase p with
-    | .alg a => match nd, X.P.alg a with
-      | some _, some _ => alg a vs
-      | _, _ => step X c
-    | _ => step X c
   | .invoke (.sdo s nd vs) =>
     if s == Known.sdoEarlyErrors then step X c else
     match E.A.sdo s nd vs with

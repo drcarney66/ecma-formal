@@ -28,27 +28,18 @@ deriving instance Lean.ToExpr for Ecma.RelOp
 deriving instance Lean.ToExpr for Ecma.Machine.Leaf
 deriving instance Lean.ToExpr for Ecma.Machine.CallK
 deriving instance Lean.ToExpr for Ecma.Machine.OnK
-deriving instance Lean.ToExpr for Ecma.Reading
 deriving instance Lean.ToExpr for Ecma.Stop
 deriving instance Lean.ToExpr for Ecma.Machine.Op
 deriving instance Lean.ToExpr for Ecma.Machine.Iter
 deriving instance Lean.ToExpr for Ecma.Machine.Ins
 deriving instance Lean.ToExpr for Ecma.AlgKind
 deriving instance Lean.ToExpr for Ecma.Callee
-deriving instance Lean.ToExpr for Ecma.Article
-deriving instance Lean.ToExpr for Ecma.Attr
-deriving instance Lean.ToExpr for Ecma.XrefForm
-deriving instance Lean.ToExpr for Ecma.Xref
-deriving instance Lean.ToExpr for Ecma.Channel
-deriving instance Lean.ToExpr for Ecma.AltForm
 deriving instance Lean.ToExpr for Ecma.Conj
-deriving instance Lean.ToExpr for Ecma.ConnForm
-deriving instance Lean.ToExpr for Ecma.ListForm
-deriving instance Lean.ToExpr for Ecma.Expr, Ecma.Pred, Ecma.Cond, Ecma.TyExpr, Ecma.Hole, Ecma.Part
+deriving instance Lean.ToExpr for Ecma.Expr, Ecma.Pred, Ecma.Cond, Ecma.TyExpr
 deriving instance Lean.ToExpr for Ecma.Param
 deriving instance Lean.ToExpr for Ecma.Header
 deriving instance Lean.ToExpr for Ecma.Place
-deriving instance Lean.ToExpr for Ecma.Body, Ecma.Stmt, Ecma.Node, Ecma.Arm
+deriving instance Lean.ToExpr for Ecma.Body, Ecma.Stmt, Ecma.Arm
 deriving instance Lean.ToExpr for Ecma.CloKind
 deriving instance Lean.ToExpr for Ecma.CloLit
 deriving instance Lean.ToExpr for Ecma.Alg

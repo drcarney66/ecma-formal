@@ -48,7 +48,7 @@ inductive Fin (M : Model) where
   | setBlockVal (a : M.Addr) (j : M.Math)
   | br (t e : Code)
   | assert
-  | assertAt (r : Option ErratumId)
+  | assertAlways
   /-- `Assert: If c, then d.`: `c`'s answer, then `d` asserted -/
   | assertIf (d : Op)
   | ctxPush
@@ -143,14 +143,6 @@ inductive Kont (M : Model) where
 inductive Kind where
   | steps (rc boundary used : Bool)
   | eval
-  /-- the body of erratum `r`'s site under its literal reading -/
-  | erratum (r : ErratumId) (sort : Bool)
-
-/-- A stop as it leaves a frame of kind `k` (`Machine.Kind.label`). -/
-def Kind.label : Kind → Stop → Stop
-  | .erratum r _, .assertFailed => .erratum r
-  | .erratum r true, .sortError => .erratum r
-  | _, q => q
 
 /-- A frame: the algorithm (an SDO row's id, a closure's owner), its Parse Node, slots, step path and
 continuations (innermost first), and for an Abstract Closure's steps the closure literal's index. -/

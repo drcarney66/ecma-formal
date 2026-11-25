@@ -57,12 +57,12 @@ def asIfSource (n : M.Node) : M.Seq M.Math :=
     let s := M.seqPush s c
     if fs.any (·.2 == i + 1) then M.seqPush s (M.ofNat 125) else s) M.seqNil
 
-/-- §5.1.2: the parse of `n`'s source with goal `k` under the readings `rd`, a new parser invocation
+/-- §5.1.2: the parse of `n`'s source with goal `k`, a new parser invocation
 in the context of the one that made `n`; once per `n` and `k` that gives a node, the covered node being
 unique for a given cover: the node the model gives from the cover itself (`Model.cover`), else the parse
 of the cover's source text. With `k` `n`'s own nonterminal, B.3.3's processing as an |IfStatement|: the
 parse of the source `asIfSource n`. -/
-def reparse (rd : ErratumId → Reading) (annexB : Grammar.AnnexB.Set) (ps : List ParamId) (n : M.Node) (k : NtId) :
+def reparse (annexB : Grammar.AnnexB.Set) (ps : List ParamId) (n : M.Node) (k : NtId) :
     Run M (Option (Option M.Node)) := do
   match (← Run.get).covered.find? (fun (c, k', _) => k' == k && Val.same (.node c) (.node n)) with
   | some (_, _, r) => return some (some r)
@@ -70,17 +70,17 @@ def reparse (rd : ErratumId → Reading) (annexB : Grammar.AnnexB.Set) (ps : Lis
     let cx ← parseCxOf annexB n
     let st ← newParse cx ((← Run.get).directParses.contains (M.nodeStamp n))
     (fun s => .ok () { s with covers := (st, n) :: s.covers } : Run M Unit)
-    let r ← withRoot (match (if k == M.nodeNt n then none else M.cover rd cx st n k (coverArgs ps n)) with
+    let r ← withRoot (match (if k == M.nodeNt n then none else M.cover cx st n k (coverArgs ps n)) with
       | some c => some (some c)
-      | none => M.parse rd cx st (if k == M.nodeNt n then asIfSource n else M.nodeSource n) k (coverArgs ps n))
+      | none => M.parse cx st (if k == M.nodeNt n then asIfSource n else M.nodeSource n) k (coverArgs ps n))
     if let some (some c) := r then
       (fun s => .ok () { s with covered := (n, k, c) :: s.covered } : Run M Unit)
     return r
 
-/-- §5.1.2 ParseGoal(text, goal) under the readings `rd`, and ParseGoal(text, goal, strict, json[, direct]):
+/-- §5.1.2 ParseGoal(text, goal), and ParseGoal(text, goal, strict, json[, direct]):
 a new parser invocation over a List of code points, strict from outside, for ParseJSON and of eval code
 processed by a direct eval as given, within a |Module| when the goal is |Module|. -/
-def parseGoal (rd : ErratumId → Reading) (annexB : Grammar.AnnexB.Set) (vs : List (Val M)) : Run M (Val M) :=
+def parseGoal (annexB : Grammar.AnnexB.Set) (vs : List (Val M)) : Run M (Val M) :=
   match (match vs with
     | [l, g] => [l, g, .bool false, .bool false, .bool false]
     | [l, g, s, j] => [l, g, s, j, .bool false]
@@ -94,7 +94,7 @@ def parseGoal (rd : ErratumId → Reading) (annexB : Grammar.AnnexB.Set) (vs : L
       | some cps => do
         let cx : ParseCx := ⟨annexB, strict, json, k == Grammar.NT.Module.ctorIdx⟩
         let st ← newParse cx direct
-        match ← withRoot (M.parse rd cx st cps k ps) with
+        match ← withRoot (M.parse cx st cps k ps) with
         | some (some n) => return .node n
         | some none => return .enum Known.eEmpty
         | none => Run.stop .residue
@@ -102,8 +102,8 @@ def parseGoal (rd : ErratumId → Reading) (annexB : Grammar.AnnexB.Set) (vs : L
     | _ => Run.stop .sortError
   | _ => Run.stop .sortError
 
-/-- IsJSONText(cps): whether the List of code points cps derives from json.emu's |JSONText|, a new
-parser invocation in no context (no erratum touches that grammar). -/
+/-- IsJSONText(cps): whether the List of code points cps derives from the JSON grammar's |JSONText|, a new
+parser invocation in no context. -/
 def isJSONText (vs : List (Val M)) : Run M (Val M) :=
   match vs with
   | [l] => do
@@ -114,7 +114,7 @@ def isJSONText (vs : List (Val M)) : Run M (Val M) :=
     | some cps => do
       let cx : ParseCx := ⟨{}, false, false, false⟩
       let st ← newParse cx
-      match M.parse (fun _ => .literal) cx st cps Grammar.NT.JSONText.ctorIdx [] with
+      match M.parse cx st cps Grammar.NT.JSONText.ctorIdx [] with
       | some r => return .bool r.isSome
       | none => Run.stop .residue
     | none => Run.stop .sortError

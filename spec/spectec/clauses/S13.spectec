@@ -1,0 +1,2399 @@
+-- ECMA-262 SpecTec Clauses: S13
+
+def @sec-isvalidregularexpressionliteral "IsValidRegularExpressionLiteral" (kind ao params [literal : |RegularExpressionLiteral|] -> Boolean) vars [literal, flags, u, v, patternText, stringValue, i, parseResult] {
+  let flags = sdo FlagText(literal)
+  if flags sat @ph-points-other-than(data choice 1, [code "d", code "g", code "i", code "m", code "s", code "u", code "v", code "y"]) -> return false
+  if flags sat @ph-point-more-than-once() -> return false
+  if_else flags sat $Contains(code "u") { let u = true } else { let u = false }
+  if_else flags sat $Contains(code "v") { let v = true } else { let v = false }
+  let patternText = sdo BodyText(literal)
+  if u is val {false} and v is val {false} {
+    let stringValue = @sec-codepointstostring(patternText)
+    set var patternText = $ListNew()
+    for_range i incl 0 .. excl $StrLen(?stringValue) {
+      perform $Append($UnitOrPointOf(data choice 0, $NumericValue($UnitAt(?i, ?stringValue))), ?patternText)
+    }
+  }
+  let parseResult = @sec-parsepattern(patternText, u, v)
+  if parseResult is ty {#"Parse Node"} -> return true
+  return false
+}
+
+def @sec-templatestring "TemplateString" (kind ao params [templateToken : |NoSubstitutionTemplate| | |TemplateHead| | |TemplateMiddle| | |TemplateTail|, escapes : val(~raw~) | val(~cooked~)] -> String | val(undefined)) vars [templateToken, escapes] {
+  if escapes is val {~raw~} -> return sdo TRV(templateToken)
+  return sdo TV(templateToken)
+}
+
+def @sec-gettemplateobject "GetTemplateObject" (kind ao params [templateLiteral : #"Parse Node"] -> Array) vars [templateLiteral, #"realm", templateRegistry, element, rawStrings, cookedStrings, count, template, rawObj, index, propertyKey, cookedValue, rawValue] {
+  let #"realm" = $CurrentRealm()
+  let templateRegistry = #"realm"[[TemplateMap]]
+  for_each element in templateRegistry {
+    if element[[Site]] sat @ph-same-as(data sort #"Parse Node", ?templateLiteral) {
+      return element[[Array]]
+    }
+  }
+  let rawStrings = sdo TemplateStrings(templateLiteral; ~raw~)
+  assert rawStrings is ty {list<String>}
+  let cookedStrings = sdo TemplateStrings(templateLiteral; ~cooked~)
+  let count = $ListLen(@ph-the-list(?cookedStrings))
+  assert count <= 2 ^ 32 - 1
+  let template = ! @sec-arraycreate(count)
+  let rawObj = ! @sec-arraycreate(count)
+  let index = 0
+  repeat_while index < count {
+    let propertyKey = ! @sec-tostring($𝔽(index))
+    let cookedValue = cookedStrings[index]
+    perform ! @sec-definepropertyorthrow(template, propertyKey, record PropertyDescriptor { [[Value]]: cookedValue, [[Writable]]: false, [[Enumerable]]: true, [[Configurable]]: false })
+    let rawValue = @ph-the-string(data choice 0, rawStrings[index])
+    perform ! @sec-definepropertyorthrow(rawObj, propertyKey, record PropertyDescriptor { [[Value]]: rawValue, [[Writable]]: false, [[Enumerable]]: true, [[Configurable]]: false })
+    set var index = index + 1
+  }
+  perform ! @sec-setintegritylevel(rawObj, ~frozen~)
+  perform ! @sec-definepropertyorthrow(template, "raw", record PropertyDescriptor { [[Value]]: rawObj, [[Writable]]: false, [[Enumerable]]: false, [[Configurable]]: false })
+  perform ! @sec-setintegritylevel(template, ~frozen~)
+  perform $Append(record Record { [[Site]]: templateLiteral, [[Array]]: template }, #"realm"[[TemplateMap]])
+  return template
+}
+
+def @sec-evaluate-property-access-with-expression-key "EvaluatePropertyAccessWithExpressionKey" (kind ao params [baseValue : #"ECMAScript language value", expr : |Expression|, strict : Boolean] -> completion<#"Reference Record"> | #"abrupt completion") vars [baseValue, expr, strict, propertyNameRef, propertyNameValue] {
+  let propertyNameRef = ? sdo Evaluation(expr)
+  let propertyNameValue = ? @sec-getvalue(propertyNameRef)
+  note "In most cases, ToPropertyKey will be performed on _propertyNameValue_ immediately after this step. However, in the case of `a[b] = c`, it will not be performed until after evaluation of `c`."
+  return record #"Reference Record" { [[Base]]: baseValue, [[ReferencedName]]: propertyNameValue, [[Strict]]: strict, [[ThisValue]]: ~empty~ }
+}
+
+def @sec-evaluate-property-access-with-identifier-key "EvaluatePropertyAccessWithIdentifierKey" (kind ao params [baseValue : #"ECMAScript language value", identifierName : |IdentifierName|, strict : Boolean] -> #"Reference Record") vars [baseValue, identifierName, strict, propertyNameString] {
+  let propertyNameString = sdo StringValue(identifierName)
+  return record #"Reference Record" { [[Base]]: baseValue, [[ReferencedName]]: propertyNameString, [[Strict]]: strict, [[ThisValue]]: ~empty~ }
+}
+
+def @sec-evaluatenew "EvaluateNew" (kind ao params [constructExpr : |NewExpression| | |MemberExpression|, argumentsNode : val(~empty~) | |Arguments|] -> completion<Object> | #"abrupt completion") vars [constructExpr, argumentsNode, #"ref", ctor, argList] {
+  let #"ref" = ? sdo Evaluation(constructExpr)
+  let ctor = ? @sec-getvalue(#"ref")
+  if argumentsNode is val {~empty~} {
+    let argList = $ListNew()
+  }
+  else {
+    let argList = ? sdo ArgumentListEvaluation(argumentsNode)
+  }
+  if @sec-isconstructor(ctor) is val {false} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-construct(ctor, argList)
+}
+
+def @sec-evaluatecall "EvaluateCall" (kind ao params [func : #"ECMAScript language value", thisValueRef : #"ECMAScript language value" | #"Reference Record", argumentListNode : #"Parse Node", tailPosition : Boolean] -> completion<#"ECMAScript language value"> | #"abrupt completion") vars [func, thisValueRef, argumentListNode, tailPosition, thisValue, refEnv, argList] {
+  if thisValueRef is ty {#"Reference Record"} {
+    if @sec-ispropertyreference(thisValueRef) is val {true} {
+      let thisValue = @sec-getthisvalue(thisValueRef)
+    }
+    else {
+      let refEnv = thisValueRef[[Base]]
+      assert refEnv is ty {#"Environment Record"}
+      let thisValue = refEnv.WithBaseObject()
+    }
+  }
+  else {
+    let thisValue = undefined
+  }
+  let argList = ? sdo ArgumentListEvaluation(argumentListNode)
+  if func is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if @sec-iscallable(func) is val {false} -> throw @ph-new-error([[TypeError]])
+  if tailPosition is val {true} -> perform @sec-preparefortailcall()
+  return ? @sec-call(func, thisValue, argList)
+}
+
+def @sec-getsuperconstructor "GetSuperConstructor" (kind ao params [] -> Object | val(null)) vars [envRecord, activeFunc, superCtor] {
+  let envRecord = @sec-getthisenvironment()
+  assert envRecord is ty {#"Function Environment Record"}
+  let activeFunc = envRecord[[FunctionObject]]
+  assert activeFunc is ty {#"ECMAScript function object"}
+  let superCtor = ! activeFunc[[GetPrototypeOf]]()
+  return superCtor
+}
+
+def @sec-makesuperpropertyreference "MakeSuperPropertyReference" (kind ao params [actualThis : #"ECMAScript language value", propertyKey : #"ECMAScript language value", strict : Boolean] -> #"Super Reference Record") vars [actualThis, propertyKey, strict, envRecord, baseValue] {
+  let envRecord = @sec-getthisenvironment()
+  assert envRecord.HasSuperBinding() is val {true}
+  assert envRecord is ty {#"Function Environment Record"}
+  let baseValue = @sec-getsuperbase(envRecord)
+  return record #"Reference Record" { [[Base]]: baseValue, [[ReferencedName]]: propertyKey, [[Strict]]: strict, [[ThisValue]]: actualThis }
+}
+
+def @sec-evaluate-import-call "EvaluateImportCall" (kind ao params [specifierExpr : #"Parse Node", optionsExpr : #"Parse Node" opt] -> completion<Promise> | #"abrupt completion") vars [specifierExpr, optionsExpr, referrer, specifierRef, specifier, optionsRef, options, promiseCapability, specifierString, attrs, attrsObj, entries, entry, key, value, #"rest", sorted, least, a, moduleRequest] {
+  let referrer = @sec-getactivescriptormodule()
+  if referrer is val {null} -> set var referrer = $CurrentRealm()
+  let specifierRef = ? sdo Evaluation(specifierExpr)
+  let specifier = ? @sec-getvalue(specifierRef)
+  if optionsExpr sat $Present() {
+    let optionsRef = ? sdo Evaluation(optionsExpr)
+    let options = ? @sec-getvalue(optionsRef)
+  }
+  else {
+    let options = undefined
+  }
+  let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  let specifierString = @sec-completion-ao(@sec-tostring(specifier))
+  block {
+    assert specifierString is ty {#"Completion Record"}
+    if specifierString is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [specifierString[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var specifierString = ! specifierString
+  }
+  let attrs = $ListNew()
+  if options is not val {undefined} {
+    if options is not ty {Object} {
+      perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
+      return promiseCapability[[Promise]]
+    }
+    let attrsObj = @sec-completion-ao(@sec-get-o-p(options, "with"))
+    block {
+      assert attrsObj is ty {#"Completion Record"}
+      if attrsObj is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [attrsObj[[Value]]])
+        return promiseCapability[[Promise]]
+      }
+      set var attrsObj = ! attrsObj
+    }
+    if attrsObj is not val {undefined} {
+      if attrsObj is not ty {Object} {
+        perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
+        return promiseCapability[[Promise]]
+      }
+      let entries = @sec-completion-ao(@sec-enumerableownproperties(attrsObj, ~key+value~))
+      block {
+        assert entries is ty {#"Completion Record"}
+        if entries is ty {#"abrupt completion"} {
+          perform ? @sec-call(promiseCapability[[Reject]], undefined, [entries[[Value]]])
+          return promiseCapability[[Promise]]
+        }
+        set var entries = ! entries
+      }
+      for_each entry in entries {
+        let key = ! @sec-get-o-p(entry, "0")
+        let value = ! @sec-get-o-p(entry, "1")
+        if key is ty {String} {
+          if value is not ty {String} {
+            perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
+            return promiseCapability[[Promise]]
+          }
+          perform $Append(record #"ImportAttribute Record" { [[Key]]: key, [[Value]]: value }, ?attrs)
+        }
+      }
+    }
+    if @sec-AllImportAttributesSupported(attrs) is val {false} {
+      perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
+      return promiseCapability[[Promise]]
+    }
+    let #"rest" = $Copy(?attrs)
+    let sorted = $ListNew()
+    repeat_while #"rest" fails $IsEmpty() {
+      let least = $ListElem(data choice 1, ?#"rest")
+      for_each a in #"rest" {
+        if ! @sec-islessthan(a[[Key]], least[[Key]], true) is val {true} -> set var least = a
+      }
+      perform $Append(?least, ?sorted)
+      perform $RemoveElem(?least, ?#"rest")
+    }
+    set var attrs = sorted
+  }
+  let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: specifierString, [[Attributes]]: attrs })
+  perform @sec-HostLoadImportedModule(referrer, moduleRequest, ~empty~, promiseCapability)
+  return promiseCapability[[Promise]]
+}
+
+def @sec-ContinueDynamicImport "ContinueDynamicImport" (kind ao params [promiseCapability : #"PromiseCapability Record", moduleCompletion : completion<#"Module Record"> | #"throw completion"] -> val(~unused~)) vars [promiseCapability, moduleCompletion, module, loadPromise, rejectedClosure, reason, onRejected, linkAndEvaluateClosure, #"link", evaluatePromise, fulfilledClosure, namespace, onFulfilled, linkAndEvaluate] {
+  if moduleCompletion is ty {#"abrupt completion"} {
+    perform ! @sec-call(promiseCapability[[Reject]], undefined, [moduleCompletion[[Value]]])
+    return ~unused~
+  }
+  let module = moduleCompletion[[Value]]
+  let loadPromise = module.LoadRequestedModules()
+  let rejectedClosure = closure 0
+  let onRejected = @sec-createbuiltinfunction(rejectedClosure, 1, "", [])
+  let linkAndEvaluateClosure = closure 1
+  let linkAndEvaluate = @sec-createbuiltinfunction(linkAndEvaluateClosure, 0, "", [])
+  perform @sec-performpromisethen(loadPromise, linkAndEvaluate, onRejected)
+  return ~unused~
+  closure abstract params [reason] captures [promiseCapability] {
+    perform ! @sec-call(promiseCapability[[Reject]], undefined, [reason])
+    return @sec-normalcompletion(undefined)
+  }
+  closure abstract params none captures [module, promiseCapability, onRejected] {
+    let #"link" = @sec-completion-ao(module.Link())
+    if #"link" is ty {#"abrupt completion"} {
+      perform ! @sec-call(promiseCapability[[Reject]], undefined, [#"link"[[Value]]])
+      return @sec-normalcompletion(undefined)
+    }
+    let evaluatePromise = module.Evaluate()
+    let fulfilledClosure = closure 2
+    let onFulfilled = @sec-createbuiltinfunction(fulfilledClosure, 0, "", [])
+    perform @sec-performpromisethen(evaluatePromise, onFulfilled, onRejected)
+    return ~unused~
+  }
+  closure abstract params none captures [module, promiseCapability] {
+    let namespace = @sec-getmodulenamespace(module)
+    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [namespace])
+    return @sec-normalcompletion(undefined)
+  }
+}
+
+def @sec-instanceofoperator "InstanceofOperator" (kind ao params [value : #"ECMAScript language value", target : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [value, target, instOfHandler] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let instOfHandler = ? @sec-getmethod(target, $WellKnownSymbol("Symbol.hasInstance"))
+  if instOfHandler is not val {undefined} {
+    return @sec-toboolean(? @sec-call(instOfHandler, target, [value]))
+  }
+  if @sec-iscallable(target) is val {false} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-ordinaryhasinstance(target, value)
+}
+
+def @sec-applystringornumericbinaryoperator "ApplyStringOrNumericBinaryOperator" (kind ao params [leftValue : #"ECMAScript language value", opText : doc "**, *, /, %, +, -, <<, >>, >>>, &, ^, or |", rightValue : #"ECMAScript language value"] -> completion<String | BigInt | Number> | #"throw completion") vars [leftValue, opText, rightValue, leftPrimitive, rightPrimitive, leftString, rightString, leftNumber, rightNumber, operation] {
+  if opText is val {code "+"} {
+    let leftPrimitive = ? @sec-toprimitive(leftValue)
+    let rightPrimitive = ? @sec-toprimitive(rightValue)
+    if leftPrimitive is ty {String} or rightPrimitive is ty {String} {
+      let leftString = ? @sec-tostring(leftPrimitive)
+      let rightString = ? @sec-tostring(rightPrimitive)
+      if $StringTooLarge($StrLen(?leftString) + $StrLen(?rightString)) is val {true} -> throw @ph-new-error([[RangeError]])
+      return $"string-concatenation"(leftString, rightString)
+    }
+    set var leftValue = leftPrimitive
+    set var rightValue = rightPrimitive
+  }
+  note "At this point, it must be a numeric operation."
+  let leftNumber = ? @sec-tonumeric(leftValue)
+  let rightNumber = ? @sec-tonumeric(rightValue)
+  if @sec-sametype(leftNumber, rightNumber) is val {false} -> throw @ph-new-error([[TypeError]])
+  if leftNumber is ty {BigInt} {
+    if opText is val {code "**"} -> return ? @sec-numeric-types-bigint-exponentiate(leftNumber, rightNumber)
+    if opText is val {code "/"} -> return ? @sec-numeric-types-bigint-divide(leftNumber, rightNumber)
+    if opText is val {code "%"} -> return ? @sec-numeric-types-bigint-remainder(leftNumber, rightNumber)
+    if opText is val {code ">>>"} -> return ? @sec-numeric-types-bigint-unsignedRightShift(leftNumber, rightNumber)
+    let operation = $TableAssociated(table t"sec-applystringornumericbinaryoperator-table-0", ?opText)
+  }
+  else {
+    assert leftNumber is ty {Number}
+    let operation = $TableAssociated(table t"sec-applystringornumericbinaryoperator-table-1", ?opText)
+  }
+  return operation(leftNumber, rightNumber)
+}
+
+def @sec-evaluatestringornumericbinaryexpression "EvaluateStringOrNumericBinaryExpression" (kind ao params [leftOperand : #"Parse Node", opText : doc "**, *, /, %, +, -, <<, >>, >>>, &, ^, or |", rightOperand : #"Parse Node"] -> completion<String | BigInt | Number> | #"abrupt completion") vars [leftOperand, opText, rightOperand, leftRef, leftValue, rightRef, rightValue] {
+  let leftRef = ? sdo Evaluation(leftOperand)
+  let leftValue = ? @sec-getvalue(leftRef)
+  let rightRef = ? sdo Evaluation(rightOperand)
+  let rightValue = ? @sec-getvalue(rightRef)
+  return ? @sec-applystringornumericbinaryoperator(leftValue, opText, rightValue)
+}
+
+sdo_row @sec-static-semantics-stringvalue StringValue form alg {
+  prods [p"Lexical - IdentifierName :: IdentifierStart", p"Lexical - IdentifierName :: IdentifierName IdentifierPart"]
+  keys ["\n        IdentifierName ::\n          IdentifierStart\n          IdentifierName IdentifierPart\n      "]
+  vars [nameUnescaped]
+  steps {
+    let nameUnescaped = sdo IdentifierCodePoints(child 6 |IdentifierName|)
+    return @sec-codepointstostring(nameUnescaped)
+  }
+}
+
+sdo_row @sec-static-semantics-stringvalue#1 StringValue form alg {
+  prods [p"Syntactic - IdentifierReference : [~Yield] `yield`", p"Syntactic - BindingIdentifier : `yield`", p"Syntactic - LabelIdentifier : [~Yield] `yield`"]
+  keys ["\n        IdentifierReference : `yield`\n\n        BindingIdentifier : `yield`\n\n        LabelIdentifier : `yield`\n      "]
+  vars []
+  steps {
+    return "yield"
+  }
+}
+
+sdo_row @sec-static-semantics-stringvalue#2 StringValue form alg {
+  prods [p"Syntactic - IdentifierReference : [~Await] `await`", p"Syntactic - BindingIdentifier : `await`", p"Syntactic - LabelIdentifier : [~Await] `await`"]
+  keys ["\n        IdentifierReference : `await`\n\n        BindingIdentifier : `await`\n\n        LabelIdentifier : `await`\n      "]
+  vars []
+  steps {
+    return "await"
+  }
+}
+
+sdo_row @sec-static-semantics-stringvalue#3 StringValue form alg {
+  prods [p"Syntactic - Identifier : IdentifierName but not ReservedWord"]
+  keys ["Identifier : IdentifierName but not ReservedWord"]
+  vars []
+  steps {
+    return sdo StringValue(child 5 |IdentifierName|)
+  }
+}
+
+sdo_row @sec-static-semantics-stringvalue#4 StringValue form alg {
+  prods [p"Lexical - PrivateIdentifier :: `#` IdentifierName"]
+  keys ["\n        PrivateIdentifier ::\n          `#` IdentifierName\n      "]
+  vars []
+  steps {
+    return $"string-concatenation"(cu(35, "0023", "NUMBER SIGN"), sdo StringValue(child 5 |IdentifierName|))
+  }
+}
+
+sdo_row @sec-static-semantics-stringvalue#5 StringValue form alg {
+  prods [p"Syntactic - ModuleExportName : StringLiteral"]
+  keys ["\n        ModuleExportName : StringLiteral\n      "]
+  vars []
+  steps {
+    return sdo SV(child 5 |StringLiteral|)
+  }
+}
+
+sdo_row @sec-identifiers-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - IdentifierReference : Identifier"]
+  keys ["IdentifierReference : Identifier"]
+  vars []
+  steps {
+    return ? @sec-resolvebinding(sdo StringValue(child 5 |Identifier|))
+  }
+}
+
+sdo_row @sec-identifiers-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - IdentifierReference : [~Yield] `yield`"]
+  keys ["IdentifierReference : `yield`"]
+  vars []
+  steps {
+    return ? @sec-resolvebinding("yield")
+  }
+}
+
+sdo_row @sec-identifiers-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - IdentifierReference : [~Await] `await`"]
+  keys ["IdentifierReference : `await`"]
+  vars []
+  steps {
+    return ? @sec-resolvebinding("await")
+  }
+}
+
+sdo_row @sec-relational-operators-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `<` ShiftExpression[?Yield, ?Await]"]
+  keys ["RelationalExpression : RelationalExpression `&lt;` ShiftExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue, result]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |ShiftExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    let result = ? @sec-islessthan(leftValue, rightValue, true)
+    if result is val {undefined} -> return false
+    return result
+  }
+}
+
+sdo_row @sec-relational-operators-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `>` ShiftExpression[?Yield, ?Await]"]
+  keys ["RelationalExpression : RelationalExpression `&gt;` ShiftExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue, result]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |ShiftExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    let result = ? @sec-islessthan(rightValue, leftValue, false)
+    if result is val {undefined} -> return false
+    return result
+  }
+}
+
+sdo_row @sec-relational-operators-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `<=` ShiftExpression[?Yield, ?Await]"]
+  keys ["RelationalExpression : RelationalExpression `&lt;=` ShiftExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue, result]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |ShiftExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    let result = ? @sec-islessthan(rightValue, leftValue, false)
+    if result is val {true; undefined} -> return false
+    return true
+  }
+}
+
+sdo_row @sec-relational-operators-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `>=` ShiftExpression[?Yield, ?Await]"]
+  keys ["RelationalExpression : RelationalExpression `&gt;=` ShiftExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue, result]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |ShiftExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    let result = ? @sec-islessthan(leftValue, rightValue, true)
+    if result is val {true; undefined} -> return false
+    return true
+  }
+}
+
+sdo_row @sec-relational-operators-runtime-semantics-evaluation#4 Evaluation form alg {
+  prods [p"Syntactic - RelationalExpression : RelationalExpression[?In, ?Yield, ?Await] `instanceof` ShiftExpression[?Yield, ?Await]"]
+  keys ["RelationalExpression : RelationalExpression `instanceof` ShiftExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |ShiftExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    return ? @sec-instanceofoperator(leftValue, rightValue)
+  }
+}
+
+sdo_row @sec-relational-operators-runtime-semantics-evaluation#5 Evaluation form alg {
+  prods [p"Syntactic - RelationalExpression : [+In] RelationalExpression[+In, ?Yield, ?Await] `in` ShiftExpression[?Yield, ?Await]"]
+  keys ["RelationalExpression : RelationalExpression `in` ShiftExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |ShiftExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    if rightValue is not ty {Object} -> throw @ph-new-error([[TypeError]])
+    return ? @sec-hasproperty(rightValue, ? @sec-topropertykey(leftValue))
+  }
+}
+
+sdo_row @sec-relational-operators-runtime-semantics-evaluation#6 Evaluation form alg {
+  prods [p"Syntactic - RelationalExpression : [+In] PrivateIdentifier `in` ShiftExpression[?Yield, ?Await]"]
+  keys ["RelationalExpression : PrivateIdentifier `in` ShiftExpression"]
+  vars [privateIdentifier, rightRef, rightValue, privateEnv, privateName]
+  steps {
+    let privateIdentifier = sdo StringValue(child 5 |PrivateIdentifier|)
+    let rightRef = ? sdo Evaluation(child 5 |ShiftExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    if rightValue is not ty {Object} -> throw @ph-new-error([[TypeError]])
+    let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+    assert privateEnv is not val {null}
+    let privateName = @sec-resolve-private-identifier(privateEnv, privateIdentifier)
+    if @sec-privateelementfind(rightValue, privateName) is val {~empty~} -> return false
+    return true
+  }
+}
+
+sdo_row @sec-equality-operators-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `==` RelationalExpression[?In, ?Yield, ?Await]"]
+  keys ["EqualityExpression : EqualityExpression `==` RelationalExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |EqualityExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    return ? @sec-islooselyequal(rightValue, leftValue)
+  }
+}
+
+sdo_row @sec-equality-operators-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `!=` RelationalExpression[?In, ?Yield, ?Await]"]
+  keys ["EqualityExpression : EqualityExpression `!=` RelationalExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue, result]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |EqualityExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    let result = ? @sec-islooselyequal(rightValue, leftValue)
+    if result is val {true} -> return false
+    return true
+  }
+}
+
+sdo_row @sec-equality-operators-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `===` RelationalExpression[?In, ?Yield, ?Await]"]
+  keys ["EqualityExpression : EqualityExpression `===` RelationalExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |EqualityExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    return @sec-isstrictlyequal(rightValue, leftValue)
+  }
+}
+
+sdo_row @sec-equality-operators-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic - EqualityExpression : EqualityExpression[?In, ?Yield, ?Await] `!==` RelationalExpression[?In, ?Yield, ?Await]"]
+  keys ["EqualityExpression : EqualityExpression `!==` RelationalExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue, result]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |EqualityExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |RelationalExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    let result = @sec-isstrictlyequal(rightValue, leftValue)
+    if result is val {true} -> return false
+    return true
+  }
+}
+
+sdo_row @sec-binary-bitwise-operators-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - BitwiseANDExpression : BitwiseANDExpression[?In, ?Yield, ?Await] `&` EqualityExpression[?In, ?Yield, ?Await]"]
+  keys ["BitwiseANDExpression : BitwiseANDExpression `&amp;` EqualityExpression"]
+  vars []
+  steps {
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |BitwiseANDExpression|, code "&", child 5 |EqualityExpression|)
+  }
+}
+
+sdo_row @sec-binary-bitwise-operators-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - BitwiseXORExpression : BitwiseXORExpression[?In, ?Yield, ?Await] `^` BitwiseANDExpression[?In, ?Yield, ?Await]"]
+  keys ["BitwiseXORExpression : BitwiseXORExpression `^` BitwiseANDExpression"]
+  vars []
+  steps {
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |BitwiseXORExpression|, code "^", child 5 |BitwiseANDExpression|)
+  }
+}
+
+sdo_row @sec-binary-bitwise-operators-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - BitwiseORExpression : BitwiseORExpression[?In, ?Yield, ?Await] `|` BitwiseXORExpression[?In, ?Yield, ?Await]"]
+  keys ["BitwiseORExpression : BitwiseORExpression `|` BitwiseXORExpression"]
+  vars []
+  steps {
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |BitwiseORExpression|, code "|", child 5 |BitwiseXORExpression|)
+  }
+}
+
+sdo_row @sec-binary-logical-operators-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - LogicalANDExpression : LogicalANDExpression[?In, ?Yield, ?Await] `&&` BitwiseORExpression[?In, ?Yield, ?Await]"]
+  keys ["LogicalANDExpression : LogicalANDExpression `&amp;&amp;` BitwiseORExpression"]
+  vars [leftRef, leftValue, rightRef]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |LogicalANDExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    if @sec-toboolean(leftValue) is val {false} -> return leftValue
+    let rightRef = ? sdo Evaluation(child 5 |BitwiseORExpression|)
+    return ? @sec-getvalue(rightRef)
+  }
+}
+
+sdo_row @sec-binary-logical-operators-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - LogicalORExpression : LogicalORExpression[?In, ?Yield, ?Await] `||` LogicalANDExpression[?In, ?Yield, ?Await]"]
+  keys ["LogicalORExpression : LogicalORExpression `||` LogicalANDExpression"]
+  vars [leftRef, leftValue, rightRef]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |LogicalORExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    if @sec-toboolean(leftValue) is val {true} -> return leftValue
+    let rightRef = ? sdo Evaluation(child 5 |LogicalANDExpression|)
+    return ? @sec-getvalue(rightRef)
+  }
+}
+
+sdo_row @sec-binary-logical-operators-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - CoalesceExpression : CoalesceExpressionHead[?In, ?Yield, ?Await] `??` BitwiseORExpression[?In, ?Yield, ?Await]"]
+  keys ["CoalesceExpression : CoalesceExpressionHead `??` BitwiseORExpression"]
+  vars [leftRef, leftValue, rightRef]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |CoalesceExpressionHead|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    if leftValue is neither val {undefined; null} -> return leftValue
+    let rightRef = ? sdo Evaluation(child 5 |BitwiseORExpression|)
+    return ? @sec-getvalue(rightRef)
+  }
+}
+
+sdo_row @sec-conditional-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ConditionalExpression : ShortCircuitExpression[?In, ?Yield, ?Await] `?` AssignmentExpression[+In, ?Yield, ?Await] `:` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["ConditionalExpression : ShortCircuitExpression `?` AssignmentExpression `:` AssignmentExpression"]
+  vars [leftRef, leftValue, trueRef, falseRef]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |ShortCircuitExpression|)
+    let leftValue = @sec-toboolean(? @sec-getvalue(leftRef))
+    if leftValue is val {true} {
+      let trueRef = ? sdo Evaluation(child 0 |AssignmentExpression|)
+      return ? @sec-getvalue(trueRef)
+    }
+    let falseRef = ? sdo Evaluation(child 1 |AssignmentExpression|)
+    return ? @sec-getvalue(falseRef)
+  }
+}
+
+sdo_row @sec-assignment-operators-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `=` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["AssignmentExpression : LeftHandSideExpression `=` AssignmentExpression"]
+  vars [leftRef, lhs, rightValue, rightRef, assignmentPattern]
+  steps {
+    if child 5 |LeftHandSideExpression| is neither ty {|ObjectLiteral|; |ArrayLiteral|} {
+      let leftRef = ? sdo Evaluation(child 5 |LeftHandSideExpression|)
+      if sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is val {~web-compat~} -> throw @ph-new-error([[ReferenceError]])
+      if @sec-isanonymousfunctiondefinition(child 5 |AssignmentExpression|) is val {true} and sdo IsIdentifierRef(child 5 |LeftHandSideExpression|) is val {true} {
+        let lhs = sdo StringValue(child 5 |LeftHandSideExpression|)
+        let rightValue = ? sdo NamedEvaluation(child 5 |AssignmentExpression|; lhs)
+      }
+      else {
+        let rightRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+        let rightValue = ? @sec-getvalue(rightRef)
+      }
+      perform ? @sec-putvalue(leftRef, rightValue)
+      return rightValue
+    }
+    let assignmentPattern = $CoveredBy(|AssignmentPattern|, child 5 |LeftHandSideExpression|)
+    let rightRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    perform ? sdo DestructuringAssignmentEvaluation(assignmentPattern; rightValue)
+    return rightValue
+  }
+}
+
+sdo_row @sec-assignment-operators-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] AssignmentOperator AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["AssignmentExpression : LeftHandSideExpression AssignmentOperator AssignmentExpression"]
+  vars [leftRef, leftValue, rightRef, rightValue, assignmentOpText, opText, result]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |LeftHandSideExpression|)
+    if sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is val {~web-compat~} -> throw @ph-new-error([[ReferenceError]])
+    let leftValue = ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let rightValue = ? @sec-getvalue(rightRef)
+    let assignmentOpText = $SourceText(child 5 |AssignmentOperator|)
+    let opText = $TableAssociated(table t"sec-assignment-operators-runtime-semantics-evaluation-table-0", ?assignmentOpText)
+    let result = ? @sec-applystringornumericbinaryoperator(leftValue, opText, rightValue)
+    perform ? @sec-putvalue(leftRef, result)
+    return result
+  }
+}
+
+sdo_row @sec-assignment-operators-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `&&=` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["AssignmentExpression : LeftHandSideExpression `&amp;&amp;=` AssignmentExpression"]
+  vars [leftRef, leftValue, lhs, rightValue, rightRef]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |LeftHandSideExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    if @sec-toboolean(leftValue) is val {false} -> return leftValue
+    if @sec-isanonymousfunctiondefinition(child 5 |AssignmentExpression|) is val {true} and sdo IsIdentifierRef(child 5 |LeftHandSideExpression|) is val {true} {
+      let lhs = sdo StringValue(child 5 |LeftHandSideExpression|)
+      let rightValue = ? sdo NamedEvaluation(child 5 |AssignmentExpression|; lhs)
+    }
+    else {
+      let rightRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+      let rightValue = ? @sec-getvalue(rightRef)
+    }
+    perform ? @sec-putvalue(leftRef, rightValue)
+    return rightValue
+  }
+}
+
+sdo_row @sec-assignment-operators-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `||=` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["AssignmentExpression : LeftHandSideExpression `||=` AssignmentExpression"]
+  vars [leftRef, leftValue, lhs, rightValue, rightRef]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |LeftHandSideExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    if @sec-toboolean(leftValue) is val {true} -> return leftValue
+    if @sec-isanonymousfunctiondefinition(child 5 |AssignmentExpression|) is val {true} and sdo IsIdentifierRef(child 5 |LeftHandSideExpression|) is val {true} {
+      let lhs = sdo StringValue(child 5 |LeftHandSideExpression|)
+      let rightValue = ? sdo NamedEvaluation(child 5 |AssignmentExpression|; lhs)
+    }
+    else {
+      let rightRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+      let rightValue = ? @sec-getvalue(rightRef)
+    }
+    perform ? @sec-putvalue(leftRef, rightValue)
+    return rightValue
+  }
+}
+
+sdo_row @sec-assignment-operators-runtime-semantics-evaluation#4 Evaluation form alg {
+  prods [p"Syntactic - AssignmentExpression : LeftHandSideExpression[?Yield, ?Await] `??=` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["AssignmentExpression : LeftHandSideExpression `??=` AssignmentExpression"]
+  vars [leftRef, leftValue, lhs, rightValue, rightRef]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |LeftHandSideExpression|)
+    let leftValue = ? @sec-getvalue(leftRef)
+    if leftValue is neither val {undefined; null} -> return leftValue
+    if @sec-isanonymousfunctiondefinition(child 5 |AssignmentExpression|) is val {true} and sdo IsIdentifierRef(child 5 |LeftHandSideExpression|) is val {true} {
+      let lhs = sdo StringValue(child 5 |LeftHandSideExpression|)
+      let rightValue = ? sdo NamedEvaluation(child 5 |AssignmentExpression|; lhs)
+    }
+    else {
+      let rightRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+      let rightValue = ? @sec-getvalue(rightRef)
+    }
+    perform ? @sec-putvalue(leftRef, rightValue)
+    return rightValue
+  }
+}
+
+sdo_row @sec-runtime-semantics-destructuringassignmentevaluation DestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - ObjectAssignmentPattern : `{` `}`"]
+  keys ["ObjectAssignmentPattern : `{` `}`"]
+  vars [value]
+  steps {
+    perform ? @sec-requireobjectcoercible(value)
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-destructuringassignmentevaluation#1 DestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 0 ObjectAssignmentPattern : `{` AssignmentPropertyList[?Yield, ?Await] `,`? `}`", p"Syntactic 1 ObjectAssignmentPattern : `{` AssignmentPropertyList[?Yield, ?Await] `,`? `}`"]
+  keys ["ObjectAssignmentPattern : `{` AssignmentPropertyList `,`? `}`"]
+  vars [value]
+  steps {
+    perform ? @sec-requireobjectcoercible(value)
+    perform ? sdo PropertyDestructuringAssignmentEvaluation(child 5 |AssignmentPropertyList|; value)
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-destructuringassignmentevaluation#2 DestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - ObjectAssignmentPattern : `{` AssignmentRestProperty[?Yield, ?Await] `}`"]
+  keys ["ObjectAssignmentPattern : `{` AssignmentRestProperty `}`"]
+  vars [value, excludedNames]
+  steps {
+    perform ? @sec-requireobjectcoercible(value)
+    let excludedNames = $ListNew()
+    return ? sdo RestDestructuringAssignmentEvaluation(child 5 |AssignmentRestProperty|; value, excludedNames)
+  }
+}
+
+sdo_row @sec-runtime-semantics-destructuringassignmentevaluation#3 DestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - ObjectAssignmentPattern : `{` AssignmentPropertyList[?Yield, ?Await] `,` AssignmentRestProperty[?Yield, ?Await] `}`"]
+  keys ["ObjectAssignmentPattern : `{` AssignmentPropertyList `,` AssignmentRestProperty `}`"]
+  vars [value, excludedNames]
+  steps {
+    perform ? @sec-requireobjectcoercible(value)
+    let excludedNames = ? sdo PropertyDestructuringAssignmentEvaluation(child 5 |AssignmentPropertyList|; value)
+    return ? sdo RestDestructuringAssignmentEvaluation(child 5 |AssignmentRestProperty|; value, excludedNames)
+  }
+}
+
+sdo_row @sec-runtime-semantics-destructuringassignmentevaluation#4 DestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 00 ArrayAssignmentPattern : `[` Elision? AssignmentRestElement[?Yield, ?Await]? `]`"]
+  keys ["ArrayAssignmentPattern : `[` `]`"]
+  vars [value, iteratorRecord]
+  steps {
+    let iteratorRecord = ? @sec-getiterator(value, ~sync~)
+    return ? @sec-iteratorclose(iteratorRecord, @sec-normalcompletion(~unused~))
+  }
+}
+
+sdo_row @sec-runtime-semantics-destructuringassignmentevaluation#5 DestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 10 ArrayAssignmentPattern : `[` Elision? AssignmentRestElement[?Yield, ?Await]? `]`"]
+  keys ["ArrayAssignmentPattern : `[` Elision `]`"]
+  vars [value, iteratorRecord, result]
+  steps {
+    let iteratorRecord = ? @sec-getiterator(value, ~sync~)
+    let result = @sec-completion-ao(sdo IteratorDestructuringAssignmentEvaluation(child 5 |Elision|; iteratorRecord))
+    if iteratorRecord[[Done]] is val {false} -> return ? @sec-iteratorclose(iteratorRecord, result)
+    return result
+  }
+}
+
+sdo_row @sec-runtime-semantics-destructuringassignmentevaluation#6 DestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 01 ArrayAssignmentPattern : `[` Elision? AssignmentRestElement[?Yield, ?Await]? `]`", p"Syntactic 11 ArrayAssignmentPattern : `[` Elision? AssignmentRestElement[?Yield, ?Await]? `]`"]
+  keys ["ArrayAssignmentPattern : `[` Elision? AssignmentRestElement `]`"]
+  vars [value, iteratorRecord, status, result]
+  steps {
+    let iteratorRecord = ? @sec-getiterator(value, ~sync~)
+    if child 5 |Elision| sat $Present() {
+      let status = @sec-completion-ao(sdo IteratorDestructuringAssignmentEvaluation(child 5 |Elision|; iteratorRecord))
+      if status is ty {#"abrupt completion"} {
+        assert iteratorRecord[[Done]] is val {true}
+        return ? status
+      }
+    }
+    let result = @sec-completion-ao(sdo IteratorDestructuringAssignmentEvaluation(child 5 |AssignmentRestElement|; iteratorRecord))
+    if iteratorRecord[[Done]] is val {false} -> return ? @sec-iteratorclose(iteratorRecord, result)
+    return result
+  }
+}
+
+sdo_row @sec-runtime-semantics-destructuringassignmentevaluation#7 DestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `]`"]
+  keys ["ArrayAssignmentPattern : `[` AssignmentElementList `]`"]
+  vars [value, iteratorRecord, result]
+  steps {
+    let iteratorRecord = ? @sec-getiterator(value, ~sync~)
+    let result = @sec-completion-ao(sdo IteratorDestructuringAssignmentEvaluation(child 5 |AssignmentElementList|; iteratorRecord))
+    if iteratorRecord[[Done]] is val {false} -> return ? @sec-iteratorclose(iteratorRecord, result)
+    return result
+  }
+}
+
+sdo_row @sec-runtime-semantics-destructuringassignmentevaluation#8 DestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 00 ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `,` Elision? AssignmentRestElement[?Yield, ?Await]? `]`", p"Syntactic 01 ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `,` Elision? AssignmentRestElement[?Yield, ?Await]? `]`", p"Syntactic 10 ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `,` Elision? AssignmentRestElement[?Yield, ?Await]? `]`", p"Syntactic 11 ArrayAssignmentPattern : `[` AssignmentElementList[?Yield, ?Await] `,` Elision? AssignmentRestElement[?Yield, ?Await]? `]`"]
+  keys ["ArrayAssignmentPattern : `[` AssignmentElementList `,` Elision? AssignmentRestElement? `]`"]
+  vars [value, iteratorRecord, status]
+  steps {
+    let iteratorRecord = ? @sec-getiterator(value, ~sync~)
+    let status = @sec-completion-ao(sdo IteratorDestructuringAssignmentEvaluation(child 5 |AssignmentElementList|; iteratorRecord))
+    if status is ty {#"abrupt completion"} {
+      if iteratorRecord[[Done]] is val {false} -> return ? @sec-iteratorclose(iteratorRecord, status)
+      return ? status
+    }
+    if child 5 |Elision| sat $Present() {
+      set var status = @sec-completion-ao(sdo IteratorDestructuringAssignmentEvaluation(child 5 |Elision|; iteratorRecord))
+      if status is ty {#"abrupt completion"} {
+        assert iteratorRecord[[Done]] is val {true}
+        return ? status
+      }
+    }
+    if child 5 |AssignmentRestElement| sat $Present() {
+      set var status = @sec-completion-ao(sdo IteratorDestructuringAssignmentEvaluation(child 5 |AssignmentRestElement|; iteratorRecord))
+    }
+    if iteratorRecord[[Done]] is val {false} -> return ? @sec-iteratorclose(iteratorRecord, status)
+    return ? status
+  }
+}
+
+sdo_row @sec-runtime-semantics-propertydestructuringassignmentevaluation PropertyDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - AssignmentPropertyList : AssignmentPropertyList[?Yield, ?Await] `,` AssignmentProperty[?Yield, ?Await]"]
+  keys ["AssignmentPropertyList : AssignmentPropertyList `,` AssignmentProperty"]
+  vars [value, propertyNames, nextNames]
+  steps {
+    let propertyNames = ? sdo PropertyDestructuringAssignmentEvaluation(child 5 |AssignmentPropertyList|; value)
+    let nextNames = ? sdo PropertyDestructuringAssignmentEvaluation(child 5 |AssignmentProperty|; value)
+    return $ListConcat([propertyNames, nextNames])
+  }
+}
+
+sdo_row @sec-runtime-semantics-propertydestructuringassignmentevaluation#1 PropertyDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 0 AssignmentProperty : IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 AssignmentProperty : IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["AssignmentProperty : IdentifierReference Initializer?"]
+  vars [value, propertyName, leftRef, defaultValue]
+  steps {
+    let propertyName = sdo StringValue(child 5 |IdentifierReference|)
+    let leftRef = ? @sec-resolvebinding(propertyName)
+    set var value = ? @sec-getv(value, propertyName)
+    if child 5 |Initializer| sat $Present() and value is val {undefined} {
+      if @sec-isanonymousfunctiondefinition(child 5 |Initializer|) is val {true} {
+        set var value = ? sdo NamedEvaluation(child 5 |Initializer|; propertyName)
+      }
+      else {
+        let defaultValue = ? sdo Evaluation(child 5 |Initializer|)
+        set var value = ? @sec-getvalue(defaultValue)
+      }
+    }
+    perform ? @sec-putvalue(leftRef, value)
+    return [propertyName]
+  }
+}
+
+sdo_row @sec-runtime-semantics-propertydestructuringassignmentevaluation#2 PropertyDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - AssignmentProperty : PropertyName[?Yield, ?Await] `:` AssignmentElement[?Yield, ?Await]"]
+  keys ["AssignmentProperty : PropertyName `:` AssignmentElement"]
+  vars [value, name]
+  steps {
+    let name = ? sdo Evaluation(child 5 |PropertyName|)
+    perform ? sdo KeyedDestructuringAssignmentEvaluation(child 5 |AssignmentElement|; value, name)
+    return [name]
+  }
+}
+
+sdo_row @sec-runtime-semantics-restdestructuringassignmentevaluation RestDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - AssignmentRestProperty : `...` DestructuringAssignmentTarget[?Yield, ?Await]"]
+  keys ["AssignmentRestProperty : `...` DestructuringAssignmentTarget"]
+  vars [value, excludedNames, leftRef, restObj]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |DestructuringAssignmentTarget|)
+    let restObj = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+    perform ? @sec-copydataproperties(restObj, value, excludedNames)
+    return ? @sec-putvalue(leftRef, restObj)
+  }
+}
+
+sdo_row @sec-runtime-semantics-iteratordestructuringassignmentevaluation IteratorDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - AssignmentElementList : AssignmentElisionElement[?Yield, ?Await]"]
+  keys ["AssignmentElementList : AssignmentElisionElement"]
+  vars [iteratorRecord]
+  steps {
+    return ? sdo IteratorDestructuringAssignmentEvaluation(child 5 |AssignmentElisionElement|; iteratorRecord)
+  }
+}
+
+sdo_row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#1 IteratorDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - AssignmentElementList : AssignmentElementList[?Yield, ?Await] `,` AssignmentElisionElement[?Yield, ?Await]"]
+  keys ["AssignmentElementList : AssignmentElementList `,` AssignmentElisionElement"]
+  vars [iteratorRecord]
+  steps {
+    perform ? sdo IteratorDestructuringAssignmentEvaluation(child 5 |AssignmentElementList|; iteratorRecord)
+    return ? sdo IteratorDestructuringAssignmentEvaluation(child 5 |AssignmentElisionElement|; iteratorRecord)
+  }
+}
+
+sdo_row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#2 IteratorDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 0 AssignmentElisionElement : Elision? AssignmentElement[?Yield, ?Await]"]
+  keys ["AssignmentElisionElement : AssignmentElement"]
+  vars [iteratorRecord]
+  steps {
+    return ? sdo IteratorDestructuringAssignmentEvaluation(child 5 |AssignmentElement|; iteratorRecord)
+  }
+}
+
+sdo_row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#3 IteratorDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 1 AssignmentElisionElement : Elision? AssignmentElement[?Yield, ?Await]"]
+  keys ["AssignmentElisionElement : Elision AssignmentElement"]
+  vars [iteratorRecord]
+  steps {
+    perform ? sdo IteratorDestructuringAssignmentEvaluation(child 5 |Elision|; iteratorRecord)
+    return ? sdo IteratorDestructuringAssignmentEvaluation(child 5 |AssignmentElement|; iteratorRecord)
+  }
+}
+
+sdo_row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#4 IteratorDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - Elision : `,`"]
+  keys ["Elision : `,`"]
+  vars [iteratorRecord]
+  steps {
+    if iteratorRecord[[Done]] is val {false} {
+      perform ? @sec-iteratorstep(iteratorRecord)
+    }
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#5 IteratorDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - Elision : Elision `,`"]
+  keys ["Elision : Elision `,`"]
+  vars [iteratorRecord]
+  steps {
+    perform ? sdo IteratorDestructuringAssignmentEvaluation(child 5 |Elision|; iteratorRecord)
+    if iteratorRecord[[Done]] is val {false} {
+      perform ? @sec-iteratorstep(iteratorRecord)
+    }
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#6 IteratorDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 0 AssignmentElement : DestructuringAssignmentTarget[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 AssignmentElement : DestructuringAssignmentTarget[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["AssignmentElement : DestructuringAssignmentTarget Initializer?"]
+  vars [iteratorRecord, leftRef, value, next, target, defaultValue, nestedAssignmentPattern]
+  steps {
+    if child 5 |DestructuringAssignmentTarget| is neither ty {|ObjectLiteral|; |ArrayLiteral|} {
+      let leftRef = ? sdo Evaluation(child 5 |DestructuringAssignmentTarget|)
+    }
+    let value = undefined
+    if iteratorRecord[[Done]] is val {false} {
+      let next = ? @sec-iteratorstepvalue(iteratorRecord)
+      if next is not val {~done~} {
+        set var value = next
+      }
+    }
+    if child 5 |Initializer| sat $Present() and value is val {undefined} {
+      if @sec-isanonymousfunctiondefinition(child 5 |Initializer|) is val {true} and sdo IsIdentifierRef(child 5 |DestructuringAssignmentTarget|) is val {true} {
+        let target = sdo StringValue(child 5 |DestructuringAssignmentTarget|)
+        set var value = ? sdo NamedEvaluation(child 5 |Initializer|; target)
+      }
+      else {
+        let defaultValue = ? sdo Evaluation(child 5 |Initializer|)
+        set var value = ? @sec-getvalue(defaultValue)
+      }
+    }
+    if child 5 |DestructuringAssignmentTarget| is ty {|ObjectLiteral|; |ArrayLiteral|} {
+      let nestedAssignmentPattern = $CoveredBy(|AssignmentPattern|, child 5 |DestructuringAssignmentTarget|)
+      return ? sdo DestructuringAssignmentEvaluation(nestedAssignmentPattern; value)
+    }
+    return ? @sec-putvalue(leftRef, value)
+  }
+}
+
+sdo_row @sec-runtime-semantics-iteratordestructuringassignmentevaluation#7 IteratorDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic - AssignmentRestElement : `...` DestructuringAssignmentTarget[?Yield, ?Await]"]
+  keys ["AssignmentRestElement : `...` DestructuringAssignmentTarget"]
+  vars [iteratorRecord, leftRef, array, n, next, nestedAssignmentPattern]
+  steps {
+    if child 5 |DestructuringAssignmentTarget| is neither ty {|ObjectLiteral|; |ArrayLiteral|} {
+      let leftRef = ? sdo Evaluation(child 5 |DestructuringAssignmentTarget|)
+    }
+    let array = ! @sec-arraycreate(0)
+    let n = 0
+    repeat_while iteratorRecord[[Done]] is val {false} {
+      let next = ? @sec-iteratorstepvalue(iteratorRecord)
+      if next is not val {~done~} {
+        perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(n)), next)
+        set var n = n + 1
+      }
+    }
+    if child 5 |DestructuringAssignmentTarget| is neither ty {|ObjectLiteral|; |ArrayLiteral|} {
+      return ? @sec-putvalue(leftRef, array)
+    }
+    let nestedAssignmentPattern = $CoveredBy(|AssignmentPattern|, child 5 |DestructuringAssignmentTarget|)
+    return ? sdo DestructuringAssignmentEvaluation(nestedAssignmentPattern; array)
+  }
+}
+
+sdo_row @sec-runtime-semantics-keyeddestructuringassignmentevaluation KeyedDestructuringAssignmentEvaluation form alg {
+  prods [p"Syntactic 0 AssignmentElement : DestructuringAssignmentTarget[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?", p"Syntactic 1 AssignmentElement : DestructuringAssignmentTarget[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]?"]
+  keys ["AssignmentElement : DestructuringAssignmentTarget Initializer?"]
+  vars [value, propertyName, leftRef, target, rhsValue, defaultValue, assignmentPattern]
+  steps {
+    if child 5 |DestructuringAssignmentTarget| is neither ty {|ObjectLiteral|; |ArrayLiteral|} {
+      let leftRef = ? sdo Evaluation(child 5 |DestructuringAssignmentTarget|)
+    }
+    set var value = ? @sec-getv(value, propertyName)
+    if child 5 |Initializer| sat $Present() and value is val {undefined} {
+      if @sec-isanonymousfunctiondefinition(child 5 |Initializer|) is val {true} and sdo IsIdentifierRef(child 5 |DestructuringAssignmentTarget|) is val {true} {
+        let target = sdo StringValue(child 5 |DestructuringAssignmentTarget|)
+        let rhsValue = ? sdo NamedEvaluation(child 5 |Initializer|; target)
+      }
+      else {
+        let defaultValue = ? sdo Evaluation(child 5 |Initializer|)
+        let rhsValue = ? @sec-getvalue(defaultValue)
+      }
+    }
+    else {
+      let rhsValue = value
+    }
+    if child 5 |DestructuringAssignmentTarget| is ty {|ObjectLiteral|; |ArrayLiteral|} {
+      let assignmentPattern = $CoveredBy(|AssignmentPattern|, child 5 |DestructuringAssignmentTarget|)
+      return ? sdo DestructuringAssignmentEvaluation(assignmentPattern; rhsValue)
+    }
+    return ? @sec-putvalue(leftRef, rhsValue)
+  }
+}
+
+sdo_row @sec-comma-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - Expression : Expression[?In, ?Yield, ?Await] `,` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["Expression : Expression `,` AssignmentExpression"]
+  vars [leftRef, rightRef]
+  steps {
+    let leftRef = ? sdo Evaluation(child 5 |Expression|)
+    perform ? @sec-getvalue(leftRef)
+    let rightRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    return ? @sec-getvalue(rightRef)
+  }
+}
+
+sdo_row @sec-this-keyword-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - PrimaryExpression : `this`"]
+  keys ["PrimaryExpression : `this`"]
+  vars []
+  steps {
+    return ? @sec-resolvethisbinding()
+  }
+}
+
+sdo_row @sec-literals-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - Literal : NullLiteral"]
+  keys ["Literal : NullLiteral"]
+  vars []
+  steps {
+    return null
+  }
+}
+
+sdo_row @sec-literals-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - Literal : BooleanLiteral"]
+  keys ["Literal : BooleanLiteral"]
+  vars []
+  steps {
+    if child 5 |BooleanLiteral| is val {@ph-token(term "false")} -> return false
+    if child 5 |BooleanLiteral| is val {@ph-token(term "true")} -> return true
+  }
+}
+
+sdo_row @sec-literals-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - Literal : NumericLiteral"]
+  keys ["Literal : NumericLiteral"]
+  vars []
+  steps {
+    return @ph-numeric-value-defined(child 5 |NumericLiteral|, clause @sec-literals-numeric-literals)
+  }
+}
+
+sdo_row @sec-literals-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic - Literal : StringLiteral"]
+  keys ["Literal : StringLiteral"]
+  vars []
+  steps {
+    return @ph-sv-defined(child 5 |StringLiteral|, clause @sec-static-semantics-sv)
+  }
+}
+
+sdo_row @sec-runtime-semantics-arrayaccumulation ArrayAccumulation form alg {
+  prods [p"Syntactic - Elision : `,`"]
+  keys ["Elision : `,`"]
+  vars [array, nextIndex, length]
+  steps {
+    let length = nextIndex + 1
+    perform ? @sec-set-o-p-v-throw(array, "length", $𝔽(length), true)
+    note "The above step throws if _length_ exceeds 2<sup>32</sup> - 1."
+    return length
+  }
+}
+
+sdo_row @sec-runtime-semantics-arrayaccumulation#1 ArrayAccumulation form alg {
+  prods [p"Syntactic - Elision : Elision `,`"]
+  keys ["Elision : Elision `,`"]
+  vars [array, nextIndex]
+  steps {
+    return ? sdo ArrayAccumulation(child 5 |Elision|; array, (nextIndex + 1))
+  }
+}
+
+sdo_row @sec-runtime-semantics-arrayaccumulation#2 ArrayAccumulation form alg {
+  prods [p"Syntactic 0 ElementList : Elision? AssignmentExpression[+In, ?Yield, ?Await]", p"Syntactic 1 ElementList : Elision? AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["ElementList : Elision? AssignmentExpression"]
+  vars [array, nextIndex, initResult, initValue]
+  steps {
+    if child 5 |Elision| sat $Present() {
+      set var nextIndex = ? sdo ArrayAccumulation(child 5 |Elision|; array, nextIndex)
+    }
+    let initResult = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let initValue = ? @sec-getvalue(initResult)
+    perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(nextIndex)), initValue)
+    return nextIndex + 1
+  }
+}
+
+sdo_row @sec-runtime-semantics-arrayaccumulation#3 ArrayAccumulation form alg {
+  prods [p"Syntactic 0 ElementList : Elision? SpreadElement[?Yield, ?Await]", p"Syntactic 1 ElementList : Elision? SpreadElement[?Yield, ?Await]"]
+  keys ["ElementList : Elision? SpreadElement"]
+  vars [array, nextIndex]
+  steps {
+    if child 5 |Elision| sat $Present() {
+      set var nextIndex = ? sdo ArrayAccumulation(child 5 |Elision|; array, nextIndex)
+    }
+    return ? sdo ArrayAccumulation(child 5 |SpreadElement|; array, nextIndex)
+  }
+}
+
+sdo_row @sec-runtime-semantics-arrayaccumulation#4 ArrayAccumulation form alg {
+  prods [p"Syntactic 0 ElementList : ElementList[?Yield, ?Await] `,` Elision? AssignmentExpression[+In, ?Yield, ?Await]", p"Syntactic 1 ElementList : ElementList[?Yield, ?Await] `,` Elision? AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["ElementList : ElementList `,` Elision? AssignmentExpression"]
+  vars [array, nextIndex, initResult, initValue]
+  steps {
+    set var nextIndex = ? sdo ArrayAccumulation(child 3 |ElementList|; array, nextIndex)
+    if child 5 |Elision| sat $Present() {
+      set var nextIndex = ? sdo ArrayAccumulation(child 5 |Elision|; array, nextIndex)
+    }
+    let initResult = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let initValue = ? @sec-getvalue(initResult)
+    perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(nextIndex)), initValue)
+    return nextIndex + 1
+  }
+}
+
+sdo_row @sec-runtime-semantics-arrayaccumulation#5 ArrayAccumulation form alg {
+  prods [p"Syntactic 0 ElementList : ElementList[?Yield, ?Await] `,` Elision? SpreadElement[?Yield, ?Await]", p"Syntactic 1 ElementList : ElementList[?Yield, ?Await] `,` Elision? SpreadElement[?Yield, ?Await]"]
+  keys ["ElementList : ElementList `,` Elision? SpreadElement"]
+  vars [array, nextIndex]
+  steps {
+    set var nextIndex = ? sdo ArrayAccumulation(child 3 |ElementList|; array, nextIndex)
+    if child 5 |Elision| sat $Present() {
+      set var nextIndex = ? sdo ArrayAccumulation(child 5 |Elision|; array, nextIndex)
+    }
+    return ? sdo ArrayAccumulation(child 5 |SpreadElement|; array, nextIndex)
+  }
+}
+
+sdo_row @sec-runtime-semantics-arrayaccumulation#6 ArrayAccumulation form alg {
+  prods [p"Syntactic - SpreadElement : `...` AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["SpreadElement : `...` AssignmentExpression"]
+  vars [array, nextIndex, spreadRef, spreadObj, iteratorRecord, next]
+  steps {
+    let spreadRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let spreadObj = ? @sec-getvalue(spreadRef)
+    let iteratorRecord = ? @sec-getiterator(spreadObj, ~sync~)
+    repeat {
+      let next = ? @sec-iteratorstepvalue(iteratorRecord)
+      if next is val {~done~} -> return nextIndex
+      perform ! @sec-createdatapropertyorthrow(array, ! @sec-tostring($𝔽(nextIndex)), next)
+      set var nextIndex = nextIndex + 1
+    }
+  }
+}
+
+sdo_row @sec-array-initializer-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic 0 ArrayLiteral : `[` Elision? `]`", p"Syntactic 1 ArrayLiteral : `[` Elision? `]`"]
+  keys ["ArrayLiteral : `[` Elision? `]`"]
+  vars [array]
+  steps {
+    let array = ! @sec-arraycreate(0)
+    if child 5 |Elision| sat $Present() {
+      perform ? sdo ArrayAccumulation(child 5 |Elision|; array, 0)
+    }
+    return array
+  }
+}
+
+sdo_row @sec-array-initializer-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - ArrayLiteral : `[` ElementList[?Yield, ?Await] `]`"]
+  keys ["ArrayLiteral : `[` ElementList `]`"]
+  vars [array]
+  steps {
+    let array = ! @sec-arraycreate(0)
+    perform ? sdo ArrayAccumulation(child 5 |ElementList|; array, 0)
+    return array
+  }
+}
+
+sdo_row @sec-array-initializer-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic 0 ArrayLiteral : `[` ElementList[?Yield, ?Await] `,` Elision? `]`", p"Syntactic 1 ArrayLiteral : `[` ElementList[?Yield, ?Await] `,` Elision? `]`"]
+  keys ["ArrayLiteral : `[` ElementList `,` Elision? `]`"]
+  vars [array, nextIndex]
+  steps {
+    let array = ! @sec-arraycreate(0)
+    let nextIndex = ? sdo ArrayAccumulation(child 5 |ElementList|; array, 0)
+    if child 5 |Elision| sat $Present() {
+      perform ? sdo ArrayAccumulation(child 5 |Elision|; array, nextIndex)
+    }
+    return array
+  }
+}
+
+sdo_row @sec-static-semantics-iscomputedpropertykey IsComputedPropertyKey form alg {
+  prods [p"Syntactic - PropertyName : LiteralPropertyName"]
+  keys ["PropertyName : LiteralPropertyName"]
+  vars []
+  steps {
+    return false
+  }
+}
+
+sdo_row @sec-static-semantics-iscomputedpropertykey#1 IsComputedPropertyKey form alg {
+  prods [p"Syntactic - PropertyName : ComputedPropertyName[?Yield, ?Await]"]
+  keys ["PropertyName : ComputedPropertyName"]
+  vars []
+  steps {
+    return true
+  }
+}
+
+sdo_row @sec-static-semantics-propertydefinitionnodes PropertyDefinitionNodes form alg {
+  prods [p"Syntactic - ObjectLiteral : `{` `}`"]
+  keys ["ObjectLiteral : `{` `}`"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-static-semantics-propertydefinitionnodes#1 PropertyDefinitionNodes form alg {
+  prods [p"Syntactic - PropertyDefinitionList : PropertyDefinition[?Yield, ?Await]"]
+  keys ["PropertyDefinitionList : PropertyDefinition"]
+  vars []
+  steps {
+    return [child 5 |PropertyDefinition|]
+  }
+}
+
+sdo_row @sec-static-semantics-propertydefinitionnodes#2 PropertyDefinitionNodes form alg {
+  prods [p"Syntactic - PropertyDefinitionList : PropertyDefinitionList[?Yield, ?Await] `,` PropertyDefinition[?Yield, ?Await]"]
+  keys ["PropertyDefinitionList : PropertyDefinitionList `,` PropertyDefinition"]
+  vars [head]
+  steps {
+    let head = sdo PropertyDefinitionNodes(child 3 |PropertyDefinitionList|)
+    return $ListConcat([head, [child 5 |PropertyDefinition|]])
+  }
+}
+
+sdo_row @sec-static-semantics-propertynamelist PropertyNameList form alg {
+  prods [p"Syntactic - PropertyDefinitionList : PropertyDefinition[?Yield, ?Await]"]
+  keys ["PropertyDefinitionList : PropertyDefinition"]
+  vars [propertyName]
+  steps {
+    let propertyName = sdo PropName(child 5 |PropertyDefinition|)
+    if propertyName is val {~empty~} -> return $ListNew()
+    return [propertyName]
+  }
+}
+
+sdo_row @sec-static-semantics-propertynamelist#1 PropertyNameList form alg {
+  prods [p"Syntactic - PropertyDefinitionList : PropertyDefinitionList[?Yield, ?Await] `,` PropertyDefinition[?Yield, ?Await]"]
+  keys ["PropertyDefinitionList : PropertyDefinitionList `,` PropertyDefinition"]
+  vars [#"list", propertyName]
+  steps {
+    let #"list" = sdo PropertyNameList(child 5 |PropertyDefinitionList|)
+    let propertyName = sdo PropName(child 5 |PropertyDefinition|)
+    if propertyName is val {~empty~} -> return #"list"
+    return $ListConcat([#"list", [propertyName]])
+  }
+}
+
+sdo_row @sec-object-initializer-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ObjectLiteral : `{` `}`"]
+  keys ["ObjectLiteral : `{` `}`"]
+  vars []
+  steps {
+    return @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  }
+}
+
+sdo_row @sec-object-initializer-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic 0 ObjectLiteral : `{` PropertyDefinitionList[?Yield, ?Await] `,`? `}`", p"Syntactic 1 ObjectLiteral : `{` PropertyDefinitionList[?Yield, ?Await] `,`? `}`"]
+  keys ["ObjectLiteral : `{` PropertyDefinitionList `,`? `}`"]
+  vars [#"obj"]
+  steps {
+    let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+    perform ? sdo PropertyDefinitionEvaluation(child 5 |PropertyDefinitionList|; #"obj")
+    return #"obj"
+  }
+}
+
+sdo_row @sec-object-initializer-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - LiteralPropertyName : IdentifierName"]
+  keys ["LiteralPropertyName : IdentifierName"]
+  vars []
+  steps {
+    return sdo StringValue(child 5 |IdentifierName|)
+  }
+}
+
+sdo_row @sec-object-initializer-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic - LiteralPropertyName : StringLiteral"]
+  keys ["LiteralPropertyName : StringLiteral"]
+  vars []
+  steps {
+    return sdo SV(child 5 |StringLiteral|)
+  }
+}
+
+sdo_row @sec-object-initializer-runtime-semantics-evaluation#4 Evaluation form alg {
+  prods [p"Syntactic - LiteralPropertyName : NumericLiteral"]
+  keys ["LiteralPropertyName : NumericLiteral"]
+  vars [number]
+  steps {
+    let number = sdo NumericValue(child 5 |NumericLiteral|)
+    return ! @sec-tostring(number)
+  }
+}
+
+sdo_row @sec-object-initializer-runtime-semantics-evaluation#5 Evaluation form alg {
+  prods [p"Syntactic - ComputedPropertyName : `[` AssignmentExpression[+In, ?Yield, ?Await] `]`"]
+  keys ["ComputedPropertyName : `[` AssignmentExpression `]`"]
+  vars [exprValue, propertyName]
+  steps {
+    let exprValue = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let propertyName = ? @sec-getvalue(exprValue)
+    return ? @sec-topropertykey(propertyName)
+  }
+}
+
+sdo_row @sec-runtime-semantics-propertydefinitionevaluation PropertyDefinitionEvaluation form alg {
+  prods [p"Syntactic - PropertyDefinitionList : PropertyDefinitionList[?Yield, ?Await] `,` PropertyDefinition[?Yield, ?Await]"]
+  keys ["PropertyDefinitionList : PropertyDefinitionList `,` PropertyDefinition"]
+  vars [#"obj"]
+  steps {
+    perform ? sdo PropertyDefinitionEvaluation(child 5 |PropertyDefinitionList|; #"obj")
+    perform ? sdo PropertyDefinitionEvaluation(child 5 |PropertyDefinition|; #"obj")
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-propertydefinitionevaluation#1 PropertyDefinitionEvaluation form alg {
+  prods [p"Syntactic - PropertyDefinition : `...` AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["PropertyDefinition : `...` AssignmentExpression"]
+  vars [#"obj", exprValue, fromValue, excludedNames]
+  steps {
+    let exprValue = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let fromValue = ? @sec-getvalue(exprValue)
+    let excludedNames = $ListNew()
+    perform ? @sec-copydataproperties(#"obj", fromValue, excludedNames)
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-propertydefinitionevaluation#2 PropertyDefinitionEvaluation form alg {
+  prods [p"Syntactic - PropertyDefinition : IdentifierReference[?Yield, ?Await]"]
+  keys ["PropertyDefinition : IdentifierReference"]
+  vars [#"obj", propertyName, exprValue, propertyValue]
+  steps {
+    let propertyName = sdo StringValue(child 5 |IdentifierReference|)
+    let exprValue = ? sdo Evaluation(child 5 |IdentifierReference|)
+    let propertyValue = ? @sec-getvalue(exprValue)
+    assert #"obj" is ty {pred(sat @spec-copy-2(data choice 1, data choice 0))}
+    perform ! @sec-createdatapropertyorthrow(#"obj", propertyName, propertyValue)
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-propertydefinitionevaluation#3 PropertyDefinitionEvaluation form alg {
+  prods [p"Syntactic - PropertyDefinition : PropertyName[?Yield, ?Await] `:` AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["PropertyDefinition : PropertyName `:` AssignmentExpression"]
+  vars [#"obj", propertyKey, isProtoSetter, propertyValue, exprValueRef]
+  steps {
+    let propertyKey = ? sdo Evaluation(child 5 |PropertyName|)
+    if call_at @ph-this-nt(|PropertyDefinition|) sat @ph-in-json-evaluated-script() {
+      let isProtoSetter = false
+    }
+    else_if propertyKey is val {"__proto__"} and sdo IsComputedPropertyKey(child 5 |PropertyName|) is val {false} {
+      let isProtoSetter = true
+    }
+    else {
+      let isProtoSetter = false
+    }
+    if @sec-isanonymousfunctiondefinition(child 5 |AssignmentExpression|) is val {true} and isProtoSetter is val {false} {
+      let propertyValue = ? sdo NamedEvaluation(child 5 |AssignmentExpression|; propertyKey)
+    }
+    else {
+      let exprValueRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+      let propertyValue = ? @sec-getvalue(exprValueRef)
+    }
+    if isProtoSetter is val {true} {
+      if propertyValue is ty {Object} or propertyValue is val {null} {
+        perform ! #"obj"[[SetPrototypeOf]](propertyValue)
+      }
+      return ~unused~
+    }
+    assert #"obj" is ty {pred(sat @spec-copy-2(data choice 1, data choice 0))}
+    perform ! @sec-createdatapropertyorthrow(#"obj", propertyKey, propertyValue)
+    return ~unused~
+  }
+}
+
+sdo_row @sec-runtime-semantics-propertydefinitionevaluation#4 PropertyDefinitionEvaluation form alg {
+  prods [p"Syntactic - PropertyDefinition : MethodDefinition[?Yield, ?Await]"]
+  keys ["PropertyDefinition : MethodDefinition"]
+  vars [#"obj", result]
+  steps {
+    let result = ? sdo MethodDefinitionEvaluation(child 5 |MethodDefinition|; #"obj", true)
+    assert result is val {~empty~}
+    return ~unused~
+  }
+}
+
+sdo_row @sec-regular-expression-literals-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - PrimaryExpression : RegularExpressionLiteral"]
+  keys ["PrimaryExpression : RegularExpressionLiteral"]
+  vars [pattern, flags]
+  steps {
+    let pattern = @sec-codepointstostring(sdo BodyText(child 5 |RegularExpressionLiteral|))
+    let flags = @sec-codepointstostring(sdo FlagText(child 5 |RegularExpressionLiteral|))
+    return ! @sec-regexpcreate(pattern, flags)
+  }
+}
+
+sdo_row @sec-static-semantics-templatestrings TemplateStrings form alg {
+  prods [p"Syntactic - TemplateLiteral : NoSubstitutionTemplate"]
+  keys ["TemplateLiteral : NoSubstitutionTemplate"]
+  vars [escapes]
+  steps {
+    return [@sec-templatestring(child 5 |NoSubstitutionTemplate|, escapes)]
+  }
+}
+
+sdo_row @sec-static-semantics-templatestrings#1 TemplateStrings form alg {
+  prods [p"Syntactic - SubstitutionTemplate : TemplateHead Expression[+In, ?Yield, ?Await] TemplateSpans[?Yield, ?Await]"]
+  keys ["SubstitutionTemplate : TemplateHead Expression TemplateSpans"]
+  vars [escapes, head, tail]
+  steps {
+    let head = [@sec-templatestring(child 5 |TemplateHead|, escapes)]
+    let tail = sdo TemplateStrings(child 5 |TemplateSpans|; escapes)
+    return $ListConcat([head, tail])
+  }
+}
+
+sdo_row @sec-static-semantics-templatestrings#2 TemplateStrings form alg {
+  prods [p"Syntactic - TemplateSpans : TemplateTail"]
+  keys ["TemplateSpans : TemplateTail"]
+  vars [escapes]
+  steps {
+    return [@sec-templatestring(child 5 |TemplateTail|, escapes)]
+  }
+}
+
+sdo_row @sec-static-semantics-templatestrings#3 TemplateStrings form alg {
+  prods [p"Syntactic - TemplateSpans : TemplateMiddleList[?Yield, ?Await] TemplateTail"]
+  keys ["TemplateSpans : TemplateMiddleList TemplateTail"]
+  vars [escapes, middle, tail]
+  steps {
+    let middle = sdo TemplateStrings(child 5 |TemplateMiddleList|; escapes)
+    let tail = [@sec-templatestring(child 5 |TemplateTail|, escapes)]
+    return $ListConcat([middle, tail])
+  }
+}
+
+sdo_row @sec-static-semantics-templatestrings#4 TemplateStrings form alg {
+  prods [p"Syntactic - TemplateMiddleList : TemplateMiddle Expression[+In, ?Yield, ?Await]"]
+  keys ["TemplateMiddleList : TemplateMiddle Expression"]
+  vars [escapes]
+  steps {
+    return [@sec-templatestring(child 5 |TemplateMiddle|, escapes)]
+  }
+}
+
+sdo_row @sec-static-semantics-templatestrings#5 TemplateStrings form alg {
+  prods [p"Syntactic - TemplateMiddleList : TemplateMiddleList[?Yield, ?Await] TemplateMiddle Expression[+In, ?Yield, ?Await]"]
+  keys ["TemplateMiddleList : TemplateMiddleList TemplateMiddle Expression"]
+  vars [escapes, front, last]
+  steps {
+    let front = sdo TemplateStrings(child 5 |TemplateMiddleList|; escapes)
+    let last = [@sec-templatestring(child 5 |TemplateMiddle|, escapes)]
+    return $ListConcat([front, last])
+  }
+}
+
+sdo_row @sec-runtime-semantics-substitutionevaluation SubstitutionEvaluation form alg {
+  prods [p"Syntactic - TemplateSpans : TemplateTail"]
+  keys ["TemplateSpans : TemplateTail"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-runtime-semantics-substitutionevaluation#1 SubstitutionEvaluation form alg {
+  prods [p"Syntactic - TemplateSpans : TemplateMiddleList[?Yield, ?Await] TemplateTail"]
+  keys ["TemplateSpans : TemplateMiddleList TemplateTail"]
+  vars []
+  steps {
+    return ? sdo SubstitutionEvaluation(child 5 |TemplateMiddleList|)
+  }
+}
+
+sdo_row @sec-runtime-semantics-substitutionevaluation#2 SubstitutionEvaluation form alg {
+  prods [p"Syntactic - TemplateMiddleList : TemplateMiddle Expression[+In, ?Yield, ?Await]"]
+  keys ["TemplateMiddleList : TemplateMiddle Expression"]
+  vars [subRef, sub]
+  steps {
+    let subRef = ? sdo Evaluation(child 5 |Expression|)
+    let sub = ? @sec-getvalue(subRef)
+    return [sub]
+  }
+}
+
+sdo_row @sec-runtime-semantics-substitutionevaluation#3 SubstitutionEvaluation form alg {
+  prods [p"Syntactic - TemplateMiddleList : TemplateMiddleList[?Yield, ?Await] TemplateMiddle Expression[+In, ?Yield, ?Await]"]
+  keys ["TemplateMiddleList : TemplateMiddleList TemplateMiddle Expression"]
+  vars [preceding, nextRef, next]
+  steps {
+    let preceding = ? sdo SubstitutionEvaluation(child 5 |TemplateMiddleList|)
+    let nextRef = ? sdo Evaluation(child 5 |Expression|)
+    let next = ? @sec-getvalue(nextRef)
+    return $ListConcat([preceding, [next]])
+  }
+}
+
+sdo_row @sec-template-literals-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - TemplateLiteral : NoSubstitutionTemplate"]
+  keys ["TemplateLiteral : NoSubstitutionTemplate"]
+  vars []
+  steps {
+    return @ph-tv-defined(child 5 |NoSubstitutionTemplate|, clause @sec-template-literal-lexical-components)
+  }
+}
+
+sdo_row @sec-template-literals-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - SubstitutionTemplate : TemplateHead Expression[+In, ?Yield, ?Await] TemplateSpans[?Yield, ?Await]"]
+  keys ["SubstitutionTemplate : TemplateHead Expression TemplateSpans"]
+  vars [head, subRef, sub, middle, tail]
+  steps {
+    let head = @ph-tv-defined(child 5 |TemplateHead|, clause @sec-template-literal-lexical-components)
+    let subRef = ? sdo Evaluation(child 5 |Expression|)
+    let sub = ? @sec-getvalue(subRef)
+    let middle = ? @sec-tostring(sub)
+    let tail = ? sdo Evaluation(child 5 |TemplateSpans|)
+    return $"string-concatenation"(head, middle, tail)
+  }
+}
+
+sdo_row @sec-template-literals-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - TemplateSpans : TemplateTail"]
+  keys ["TemplateSpans : TemplateTail"]
+  vars []
+  steps {
+    return @ph-tv-defined(child 5 |TemplateTail|, clause @sec-template-literal-lexical-components)
+  }
+}
+
+sdo_row @sec-template-literals-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic - TemplateSpans : TemplateMiddleList[?Yield, ?Await] TemplateTail"]
+  keys ["TemplateSpans : TemplateMiddleList TemplateTail"]
+  vars [head, tail]
+  steps {
+    let head = ? sdo Evaluation(child 5 |TemplateMiddleList|)
+    let tail = @ph-tv-defined(child 5 |TemplateTail|, clause @sec-template-literal-lexical-components)
+    return $"string-concatenation"(head, tail)
+  }
+}
+
+sdo_row @sec-template-literals-runtime-semantics-evaluation#4 Evaluation form alg {
+  prods [p"Syntactic - TemplateMiddleList : TemplateMiddle Expression[+In, ?Yield, ?Await]"]
+  keys ["TemplateMiddleList : TemplateMiddle Expression"]
+  vars [head, subRef, sub, middle]
+  steps {
+    let head = @ph-tv-defined(child 5 |TemplateMiddle|, clause @sec-template-literal-lexical-components)
+    let subRef = ? sdo Evaluation(child 5 |Expression|)
+    let sub = ? @sec-getvalue(subRef)
+    let middle = ? @sec-tostring(sub)
+    return $"string-concatenation"(head, middle)
+  }
+}
+
+sdo_row @sec-template-literals-runtime-semantics-evaluation#5 Evaluation form alg {
+  prods [p"Syntactic - TemplateMiddleList : TemplateMiddleList[?Yield, ?Await] TemplateMiddle Expression[+In, ?Yield, ?Await]"]
+  keys ["TemplateMiddleList : TemplateMiddleList TemplateMiddle Expression"]
+  vars [#"rest", middle, subRef, sub, last]
+  steps {
+    let #"rest" = ? sdo Evaluation(child 5 |TemplateMiddleList|)
+    let middle = @ph-tv-defined(child 5 |TemplateMiddle|, clause @sec-template-literal-lexical-components)
+    let subRef = ? sdo Evaluation(child 5 |Expression|)
+    let sub = ? @sec-getvalue(subRef)
+    let last = ? @sec-tostring(sub)
+    return $"string-concatenation"(#"rest", middle, last)
+  }
+}
+
+sdo_row @sec-grouping-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]"]
+  keys ["PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList"]
+  vars [expr]
+  steps {
+    let expr = $CoveredBy(|ParenthesizedExpression|, child 5 |CoverParenthesizedExpressionAndArrowParameterList|)
+    return ? sdo Evaluation(expr)
+  }
+}
+
+sdo_row @sec-grouping-operator-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - ParenthesizedExpression : `(` Expression[+In, ?Yield, ?Await] `)`"]
+  keys ["ParenthesizedExpression : `(` Expression `)`"]
+  vars []
+  steps {
+    return ? sdo Evaluation(child 5 |Expression|)
+  }
+}
+
+sdo_row @sec-property-accessors-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`"]
+  keys ["MemberExpression : MemberExpression `[` Expression `]`"]
+  vars [baseRef, baseValue, strict]
+  steps {
+    let baseRef = ? sdo Evaluation(child 5 |MemberExpression|)
+    let baseValue = ? @sec-getvalue(baseRef)
+    let strict = @sec-isstrict(call_at @ph-this-nt(|MemberExpression|))
+    return ? @sec-evaluate-property-access-with-expression-key(baseValue, child 5 |Expression|, strict)
+  }
+}
+
+sdo_row @sec-property-accessors-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` IdentifierName"]
+  keys ["MemberExpression : MemberExpression `.` IdentifierName"]
+  vars [baseRef, baseValue, strict]
+  steps {
+    let baseRef = ? sdo Evaluation(child 5 |MemberExpression|)
+    let baseValue = ? @sec-getvalue(baseRef)
+    let strict = @sec-isstrict(call_at @ph-this-nt(|MemberExpression|))
+    return @sec-evaluate-property-access-with-identifier-key(baseValue, child 5 |IdentifierName|, strict)
+  }
+}
+
+sdo_row @sec-property-accessors-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] `.` PrivateIdentifier"]
+  keys ["MemberExpression : MemberExpression `.` PrivateIdentifier"]
+  vars [baseRef, baseValue, fieldNameString]
+  steps {
+    let baseRef = ? sdo Evaluation(child 5 |MemberExpression|)
+    let baseValue = ? @sec-getvalue(baseRef)
+    let fieldNameString = sdo StringValue(child 5 |PrivateIdentifier|)
+    return @sec-makeprivatereference(baseValue, fieldNameString)
+  }
+}
+
+sdo_row @sec-property-accessors-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`"]
+  keys ["CallExpression : CallExpression `[` Expression `]`"]
+  vars [baseRef, baseValue, strict]
+  steps {
+    let baseRef = ? sdo Evaluation(child 5 |CallExpression|)
+    let baseValue = ? @sec-getvalue(baseRef)
+    let strict = @sec-isstrict(call_at @ph-this-nt(|CallExpression|))
+    return ? @sec-evaluate-property-access-with-expression-key(baseValue, child 5 |Expression|, strict)
+  }
+}
+
+sdo_row @sec-property-accessors-runtime-semantics-evaluation#4 Evaluation form alg {
+  prods [p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] `.` IdentifierName"]
+  keys ["CallExpression : CallExpression `.` IdentifierName"]
+  vars [baseRef, baseValue, strict]
+  steps {
+    let baseRef = ? sdo Evaluation(child 5 |CallExpression|)
+    let baseValue = ? @sec-getvalue(baseRef)
+    let strict = @sec-isstrict(call_at @ph-this-nt(|CallExpression|))
+    return @sec-evaluate-property-access-with-identifier-key(baseValue, child 5 |IdentifierName|, strict)
+  }
+}
+
+sdo_row @sec-property-accessors-runtime-semantics-evaluation#5 Evaluation form alg {
+  prods [p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] `.` PrivateIdentifier"]
+  keys ["CallExpression : CallExpression `.` PrivateIdentifier"]
+  vars [baseRef, baseValue, fieldNameString]
+  steps {
+    let baseRef = ? sdo Evaluation(child 5 |CallExpression|)
+    let baseValue = ? @sec-getvalue(baseRef)
+    let fieldNameString = sdo StringValue(child 5 |PrivateIdentifier|)
+    return @sec-makeprivatereference(baseValue, fieldNameString)
+  }
+}
+
+sdo_row @sec-new-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - NewExpression : `new` NewExpression[?Yield, ?Await]"]
+  keys ["NewExpression : `new` NewExpression"]
+  vars []
+  steps {
+    return ? @sec-evaluatenew(child 5 |NewExpression|, ~empty~)
+  }
+}
+
+sdo_row @sec-new-operator-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - MemberExpression : `new` MemberExpression[?Yield, ?Await] Arguments[?Yield, ?Await]"]
+  keys ["MemberExpression : `new` MemberExpression Arguments"]
+  vars []
+  steps {
+    return ? @sec-evaluatenew(child 5 |MemberExpression|, child 5 |Arguments|)
+  }
+}
+
+sdo_row @sec-function-calls-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - CallExpression : CoverCallExpressionAndAsyncArrowHead[?Yield, ?Await]"]
+  keys ["CallExpression : CoverCallExpressionAndAsyncArrowHead"]
+  vars [expr, memberExpr, args, #"ref", func, argList, evalArg, strictCaller, thisCall, tailCall]
+  steps {
+    let expr = $CoveredBy(|CallMemberExpression|, child 5 |CoverCallExpressionAndAsyncArrowHead|)
+    let memberExpr = $ChildOf(|MemberExpression|, ?expr)
+    let args = $ChildOf(|Arguments|, ?expr)
+    let #"ref" = ? sdo Evaluation(memberExpr)
+    let func = ? @sec-getvalue(#"ref")
+    if #"ref" is ty {#"Reference Record"} and @sec-ispropertyreference(#"ref") is val {false} and #"ref"[[ReferencedName]] is val {"eval"} {
+      if @sec-samevalue(func, intrinsic [[eval]]) is val {true} {
+        let argList = ? sdo ArgumentListEvaluation(args)
+        if argList sat @ph-has-no-elements() -> return undefined
+        let evalArg = $ListElem(data choice 1, ?argList)
+        if_else @sec-isstrict(call_at @ph-this-nt(|CallExpression|)) is val {true} { let strictCaller = true } else { let strictCaller = false }
+        return ? @sec-performeval(evalArg, strictCaller, ~direct-eval~)
+      }
+    }
+    let thisCall = call_at @ph-this-nt(|CallExpression|)
+    let tailCall = @sec-isintailposition(thisCall)
+    return ? @sec-evaluatecall(func, #"ref", args, tailCall)
+  }
+}
+
+sdo_row @sec-function-calls-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] Arguments[?Yield, ?Await]"]
+  keys ["CallExpression : CallExpression Arguments"]
+  vars [#"ref", func, thisCall, tailCall]
+  steps {
+    let #"ref" = ? sdo Evaluation(child 5 |CallExpression|)
+    let func = ? @sec-getvalue(#"ref")
+    let thisCall = call_at @ph-this-nt(|CallExpression|)
+    let tailCall = @sec-isintailposition(thisCall)
+    return ? @sec-evaluatecall(func, #"ref", child 5 |Arguments|, tailCall)
+  }
+}
+
+sdo_row @sec-super-keyword-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - SuperProperty : `super` `[` Expression[+In, ?Yield, ?Await] `]`"]
+  keys ["SuperProperty : `super` `[` Expression `]`"]
+  vars [envRecord, actualThis, propertyNameRef, propertyNameValue, strict]
+  steps {
+    let envRecord = @sec-getthisenvironment()
+    let actualThis = ? envRecord.GetThisBinding()
+    let propertyNameRef = ? sdo Evaluation(child 5 |Expression|)
+    let propertyNameValue = ? @sec-getvalue(propertyNameRef)
+    let strict = @sec-isstrict(call_at @ph-this-nt(|SuperProperty|))
+    note "In most cases, ToPropertyKey will be performed on _propertyNameValue_ immediately after this step. However, in the case of `super[b] = c`, it will not be performed until after evaluation of `c`."
+    return @sec-makesuperpropertyreference(actualThis, propertyNameValue, strict)
+  }
+}
+
+sdo_row @sec-super-keyword-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - SuperProperty : `super` `.` IdentifierName"]
+  keys ["SuperProperty : `super` `.` IdentifierName"]
+  vars [envRecord, actualThis, propertyKey, strict]
+  steps {
+    let envRecord = @sec-getthisenvironment()
+    let actualThis = ? envRecord.GetThisBinding()
+    let propertyKey = sdo StringValue(child 5 |IdentifierName|)
+    let strict = @sec-isstrict(call_at @ph-this-nt(|SuperProperty|))
+    return @sec-makesuperpropertyreference(actualThis, propertyKey, strict)
+  }
+}
+
+sdo_row @sec-super-keyword-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - SuperCall : `super` Arguments[?Yield, ?Await]"]
+  keys ["SuperCall : `super` Arguments"]
+  vars [newTarget, superCtor, argList, result, thisER, funcObj]
+  steps {
+    let newTarget = @sec-getnewtarget()
+    assert newTarget is ty {constructor}
+    let superCtor = @sec-getsuperconstructor()
+    let argList = ? sdo ArgumentListEvaluation(child 5 |Arguments|)
+    if @sec-isconstructor(superCtor) is val {false} -> throw @ph-new-error([[TypeError]])
+    let result = ? @sec-construct(superCtor, argList, newTarget)
+    let thisER = @sec-getthisenvironment()
+    assert thisER is ty {#"Function Environment Record"}
+    perform ? @sec-bindthisvalue(thisER, result)
+    let funcObj = thisER[[FunctionObject]]
+    assert funcObj is ty {#"ECMAScript function object"}
+    perform ? @sec-initializeinstanceelements(result, funcObj)
+    return result
+  }
+}
+
+sdo_row @sec-runtime-semantics-argumentlistevaluation ArgumentListEvaluation form alg {
+  prods [p"Syntactic - Arguments : `(` `)`"]
+  keys ["Arguments : `(` `)`"]
+  vars []
+  steps {
+    return $ListNew()
+  }
+}
+
+sdo_row @sec-runtime-semantics-argumentlistevaluation#1 ArgumentListEvaluation form alg {
+  prods [p"Syntactic - ArgumentList : AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["ArgumentList : AssignmentExpression"]
+  vars [#"ref", arg]
+  steps {
+    let #"ref" = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let arg = ? @sec-getvalue(#"ref")
+    return [arg]
+  }
+}
+
+sdo_row @sec-runtime-semantics-argumentlistevaluation#2 ArgumentListEvaluation form alg {
+  prods [p"Syntactic - ArgumentList : `...` AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["ArgumentList : `...` AssignmentExpression"]
+  vars [#"list", spreadRef, spreadObj, iteratorRecord, next]
+  steps {
+    let #"list" = $ListNew()
+    let spreadRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let spreadObj = ? @sec-getvalue(spreadRef)
+    let iteratorRecord = ? @sec-getiterator(spreadObj, ~sync~)
+    repeat {
+      let next = ? @sec-iteratorstepvalue(iteratorRecord)
+      if next is val {~done~} -> return #"list"
+      perform $Append(?next, ?#"list")
+    }
+  }
+}
+
+sdo_row @sec-runtime-semantics-argumentlistevaluation#3 ArgumentListEvaluation form alg {
+  prods [p"Syntactic - ArgumentList : ArgumentList[?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["ArgumentList : ArgumentList `,` AssignmentExpression"]
+  vars [precedingArgs, #"ref", arg]
+  steps {
+    let precedingArgs = ? sdo ArgumentListEvaluation(child 5 |ArgumentList|)
+    let #"ref" = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let arg = ? @sec-getvalue(#"ref")
+    return $ListConcat([precedingArgs, [arg]])
+  }
+}
+
+sdo_row @sec-runtime-semantics-argumentlistevaluation#4 ArgumentListEvaluation form alg {
+  prods [p"Syntactic - ArgumentList : ArgumentList[?Yield, ?Await] `,` `...` AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["ArgumentList : ArgumentList `,` `...` AssignmentExpression"]
+  vars [precedingArgs, spreadRef, iteratorRecord, next]
+  steps {
+    let precedingArgs = ? sdo ArgumentListEvaluation(child 5 |ArgumentList|)
+    let spreadRef = ? sdo Evaluation(child 5 |AssignmentExpression|)
+    let iteratorRecord = ? @sec-getiterator(? @sec-getvalue(spreadRef), ~sync~)
+    repeat {
+      let next = ? @sec-iteratorstepvalue(iteratorRecord)
+      if next is val {~done~} -> return precedingArgs
+      perform $Append(?next, ?precedingArgs)
+    }
+  }
+}
+
+sdo_row @sec-runtime-semantics-argumentlistevaluation#5 ArgumentListEvaluation form alg {
+  prods [p"Syntactic - TemplateLiteral : NoSubstitutionTemplate"]
+  keys ["TemplateLiteral : NoSubstitutionTemplate"]
+  vars [templateLiteral, siteObj]
+  steps {
+    let templateLiteral = call_at @ph-this-nt(|TemplateLiteral|)
+    let siteObj = @sec-gettemplateobject(templateLiteral)
+    return [siteObj]
+  }
+}
+
+sdo_row @sec-runtime-semantics-argumentlistevaluation#6 ArgumentListEvaluation form alg {
+  prods [p"Syntactic - TemplateLiteral : SubstitutionTemplate[?Yield, ?Await]"]
+  keys ["TemplateLiteral : SubstitutionTemplate"]
+  vars [templateLiteral, siteObj, remaining]
+  steps {
+    let templateLiteral = call_at @ph-this-nt(|TemplateLiteral|)
+    let siteObj = @sec-gettemplateobject(templateLiteral)
+    let remaining = ? sdo ArgumentListEvaluation(child 5 |SubstitutionTemplate|)
+    return $ListConcat([[siteObj], remaining])
+  }
+}
+
+sdo_row @sec-runtime-semantics-argumentlistevaluation#7 ArgumentListEvaluation form alg {
+  prods [p"Syntactic - SubstitutionTemplate : TemplateHead Expression[+In, ?Yield, ?Await] TemplateSpans[?Yield, ?Await]"]
+  keys ["SubstitutionTemplate : TemplateHead Expression TemplateSpans"]
+  vars [firstSubRef, firstSub, restSub]
+  steps {
+    let firstSubRef = ? sdo Evaluation(child 5 |Expression|)
+    let firstSub = ? @sec-getvalue(firstSubRef)
+    let restSub = ? sdo SubstitutionEvaluation(child 5 |TemplateSpans|)
+    assert restSub is ty {sort [#"possibly empty"] List}
+    return $ListConcat([[firstSub], restSub])
+  }
+}
+
+sdo_row @sec-optional-chaining-evaluation Evaluation form alg {
+  prods [p"Syntactic - OptionalExpression : MemberExpression[?Yield, ?Await] OptionalChain[?Yield, ?Await]"]
+  keys ["\n          OptionalExpression :\n            MemberExpression OptionalChain\n        "]
+  vars [baseRef, baseValue]
+  steps {
+    let baseRef = ? sdo Evaluation(child 5 |MemberExpression|)
+    let baseValue = ? @sec-getvalue(baseRef)
+    if baseValue is val {undefined; null} {
+      return undefined
+    }
+    return ? sdo ChainEvaluation(child 5 |OptionalChain|; baseValue, baseRef)
+  }
+}
+
+sdo_row @sec-optional-chaining-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - OptionalExpression : CallExpression[?Yield, ?Await] OptionalChain[?Yield, ?Await]"]
+  keys ["\n          OptionalExpression :\n            CallExpression OptionalChain\n        "]
+  vars [baseRef, baseValue]
+  steps {
+    let baseRef = ? sdo Evaluation(child 5 |CallExpression|)
+    let baseValue = ? @sec-getvalue(baseRef)
+    if baseValue is val {undefined; null} {
+      return undefined
+    }
+    return ? sdo ChainEvaluation(child 5 |OptionalChain|; baseValue, baseRef)
+  }
+}
+
+sdo_row @sec-optional-chaining-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic - OptionalExpression : OptionalExpression[?Yield, ?Await] OptionalChain[?Yield, ?Await]"]
+  keys ["\n          OptionalExpression :\n            OptionalExpression OptionalChain\n        "]
+  vars [baseRef, baseValue]
+  steps {
+    let baseRef = ? sdo Evaluation(child 5 |OptionalExpression|)
+    let baseValue = ? @sec-getvalue(baseRef)
+    if baseValue is val {undefined; null} {
+      return undefined
+    }
+    return ? sdo ChainEvaluation(child 5 |OptionalChain|; baseValue, baseRef)
+  }
+}
+
+sdo_row @sec-optional-chaining-chain-evaluation ChainEvaluation form alg {
+  prods [p"Syntactic - OptionalChain : `?.` Arguments[?Yield, ?Await]"]
+  keys ["OptionalChain : `?.` Arguments"]
+  vars [baseValue, baseRef, thisChain, tailCall]
+  steps {
+    let thisChain = call_at @ph-this-nt(|OptionalChain|)
+    let tailCall = @sec-isintailposition(thisChain)
+    return ? @sec-evaluatecall(baseValue, baseRef, child 5 |Arguments|, tailCall)
+  }
+}
+
+sdo_row @sec-optional-chaining-chain-evaluation#1 ChainEvaluation form alg {
+  prods [p"Syntactic - OptionalChain : `?.` `[` Expression[+In, ?Yield, ?Await] `]`"]
+  keys ["OptionalChain : `?.` `[` Expression `]`"]
+  vars [baseValue, baseRef, strict]
+  steps {
+    let strict = @sec-isstrict(call_at @ph-this-nt(|OptionalChain|))
+    return ? @sec-evaluate-property-access-with-expression-key(baseValue, child 5 |Expression|, strict)
+  }
+}
+
+sdo_row @sec-optional-chaining-chain-evaluation#2 ChainEvaluation form alg {
+  prods [p"Syntactic - OptionalChain : `?.` IdentifierName"]
+  keys ["OptionalChain : `?.` IdentifierName"]
+  vars [baseValue, baseRef, strict]
+  steps {
+    let strict = @sec-isstrict(call_at @ph-this-nt(|OptionalChain|))
+    return @sec-evaluate-property-access-with-identifier-key(baseValue, child 5 |IdentifierName|, strict)
+  }
+}
+
+sdo_row @sec-optional-chaining-chain-evaluation#3 ChainEvaluation form alg {
+  prods [p"Syntactic - OptionalChain : `?.` PrivateIdentifier"]
+  keys ["OptionalChain : `?.` PrivateIdentifier"]
+  vars [baseValue, baseRef, fieldNameString]
+  steps {
+    let fieldNameString = sdo StringValue(child 5 |PrivateIdentifier|)
+    return @sec-makeprivatereference(baseValue, fieldNameString)
+  }
+}
+
+sdo_row @sec-optional-chaining-chain-evaluation#4 ChainEvaluation form alg {
+  prods [p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] Arguments[?Yield, ?Await]"]
+  keys ["OptionalChain : OptionalChain Arguments"]
+  vars [baseValue, baseRef, optionalChain, newRef, newValue, thisChain, tailCall]
+  steps {
+    let optionalChain = child 5 |OptionalChain|
+    let newRef = ? sdo ChainEvaluation(optionalChain; baseValue, baseRef)
+    let newValue = ? @sec-getvalue(newRef)
+    let thisChain = call_at @ph-this-nt(|OptionalChain|)
+    let tailCall = @sec-isintailposition(thisChain)
+    return ? @sec-evaluatecall(newValue, newRef, child 5 |Arguments|, tailCall)
+  }
+}
+
+sdo_row @sec-optional-chaining-chain-evaluation#5 ChainEvaluation form alg {
+  prods [p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `[` Expression[+In, ?Yield, ?Await] `]`"]
+  keys ["OptionalChain : OptionalChain `[` Expression `]`"]
+  vars [baseValue, baseRef, optionalChain, newRef, newValue, strict]
+  steps {
+    let optionalChain = child 5 |OptionalChain|
+    let newRef = ? sdo ChainEvaluation(optionalChain; baseValue, baseRef)
+    let newValue = ? @sec-getvalue(newRef)
+    let strict = @sec-isstrict(call_at @ph-this-nt(|OptionalChain|))
+    return ? @sec-evaluate-property-access-with-expression-key(newValue, child 5 |Expression|, strict)
+  }
+}
+
+sdo_row @sec-optional-chaining-chain-evaluation#6 ChainEvaluation form alg {
+  prods [p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `.` IdentifierName"]
+  keys ["OptionalChain : OptionalChain `.` IdentifierName"]
+  vars [baseValue, baseRef, optionalChain, newRef, newValue, strict]
+  steps {
+    let optionalChain = child 5 |OptionalChain|
+    let newRef = ? sdo ChainEvaluation(optionalChain; baseValue, baseRef)
+    let newValue = ? @sec-getvalue(newRef)
+    let strict = @sec-isstrict(call_at @ph-this-nt(|OptionalChain|))
+    return @sec-evaluate-property-access-with-identifier-key(newValue, child 5 |IdentifierName|, strict)
+  }
+}
+
+sdo_row @sec-optional-chaining-chain-evaluation#7 ChainEvaluation form alg {
+  prods [p"Syntactic - OptionalChain : OptionalChain[?Yield, ?Await] `.` PrivateIdentifier"]
+  keys ["OptionalChain : OptionalChain `.` PrivateIdentifier"]
+  vars [baseValue, baseRef, optionalChain, newRef, newValue, fieldNameString]
+  steps {
+    let optionalChain = child 5 |OptionalChain|
+    let newRef = ? sdo ChainEvaluation(optionalChain; baseValue, baseRef)
+    let newValue = ? @sec-getvalue(newRef)
+    let fieldNameString = sdo StringValue(child 5 |PrivateIdentifier|)
+    return @sec-makeprivatereference(newValue, fieldNameString)
+  }
+}
+
+sdo_row @sec-import-call-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
+  keys ["ImportCall : `import` `(` AssignmentExpression `,`? `)`"]
+  vars []
+  steps {
+    return ? @sec-evaluate-import-call(child 5 |AssignmentExpression|)
+  }
+}
+
+sdo_row @sec-import-call-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic 0 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCall : `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
+  keys ["ImportCall : `import` `(` AssignmentExpression `,` AssignmentExpression `,`? `)`"]
+  vars []
+  steps {
+    return ? @sec-evaluate-import-call(child 0 |AssignmentExpression|, child 1 |AssignmentExpression|)
+  }
+}
+
+sdo_row @sec-tagged-templates-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - MemberExpression : MemberExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]"]
+  keys ["MemberExpression : MemberExpression TemplateLiteral"]
+  vars [tagRef, tagFunc, thisCall, tailCall]
+  steps {
+    let tagRef = ? sdo Evaluation(child 5 |MemberExpression|)
+    let tagFunc = ? @sec-getvalue(tagRef)
+    let thisCall = call_at @ph-this-nt(|MemberExpression|)
+    let tailCall = @sec-isintailposition(thisCall)
+    return ? @sec-evaluatecall(tagFunc, tagRef, child 5 |TemplateLiteral|, tailCall)
+  }
+}
+
+sdo_row @sec-tagged-templates-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - CallExpression : CallExpression[?Yield, ?Await] TemplateLiteral[?Yield, ?Await, +Tagged]"]
+  keys ["CallExpression : CallExpression TemplateLiteral"]
+  vars [tagRef, tagFunc, thisCall, tailCall]
+  steps {
+    let tagRef = ? sdo Evaluation(child 5 |CallExpression|)
+    let tagFunc = ? @sec-getvalue(tagRef)
+    let thisCall = call_at @ph-this-nt(|CallExpression|)
+    let tailCall = @sec-isintailposition(thisCall)
+    return ? @sec-evaluatecall(tagFunc, tagRef, child 5 |TemplateLiteral|, tailCall)
+  }
+}
+
+sdo_row @sec-meta-properties-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - NewTarget : `new` `.` `target`"]
+  keys ["NewTarget : `new` `.` `target`"]
+  vars []
+  steps {
+    return @sec-getnewtarget()
+  }
+}
+
+sdo_row @sec-meta-properties-runtime-semantics-evaluation#1 Evaluation form alg {
+  prods [p"Syntactic - ImportMeta : `import` `.` `meta`"]
+  keys ["ImportMeta : `import` `.` `meta`"]
+  vars [module, importMeta, importMetaValues, entry]
+  steps {
+    let module = @sec-getactivescriptormodule()
+    assert module is ty {#"Source Text Module Record"}
+    let importMeta = module[[ImportMeta]]
+    if importMeta is val {~empty~} {
+      set var importMeta = @sec-ordinaryobjectcreate(null)
+      let importMetaValues = @sec-hostgetimportmetaproperties(module)
+      for_each_rec [[[Key]], [[Value]]] entry in importMetaValues {
+        perform ! @sec-createdatapropertyorthrow(importMeta, entry[[Key]], entry[[Value]])
+      }
+      perform @sec-hostfinalizeimportmeta(importMeta, module)
+      set field module[[ImportMeta]] = importMeta
+      return importMeta
+    }
+    assert importMeta is ty {Object}
+    return importMeta
+  }
+}
+
+sdo_row @sec-postfix-increment-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UpdateExpression : LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `++`"]
+  keys ["UpdateExpression : LeftHandSideExpression `++`"]
+  vars [lhs, oldValue, newValue]
+  steps {
+    let lhs = ? sdo Evaluation(child 5 |LeftHandSideExpression|)
+    if sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is val {~web-compat~} -> throw @ph-new-error([[ReferenceError]])
+    let oldValue = ? @sec-tonumeric(? @sec-getvalue(lhs))
+    if oldValue is ty {Number} {
+      let newValue = @sec-numeric-types-number-add(oldValue, num_f(1))
+    }
+    else {
+      assert oldValue is ty {BigInt}
+      let newValue = @sec-numeric-types-bigint-add(oldValue, num_z(1))
+    }
+    perform ? @sec-putvalue(lhs, newValue)
+    return oldValue
+  }
+}
+
+sdo_row @sec-postfix-decrement-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UpdateExpression : LeftHandSideExpression[?Yield, ?Await] [no LineTerminator here] `--`"]
+  keys ["UpdateExpression : LeftHandSideExpression `--`"]
+  vars [lhs, oldValue, newValue]
+  steps {
+    let lhs = ? sdo Evaluation(child 5 |LeftHandSideExpression|)
+    if sdo AssignmentTargetType(child 5 |LeftHandSideExpression|) is val {~web-compat~} -> throw @ph-new-error([[ReferenceError]])
+    let oldValue = ? @sec-tonumeric(? @sec-getvalue(lhs))
+    if oldValue is ty {Number} {
+      let newValue = @sec-numeric-types-number-subtract(oldValue, num_f(1))
+    }
+    else {
+      assert oldValue is ty {BigInt}
+      let newValue = @sec-numeric-types-bigint-subtract(oldValue, num_z(1))
+    }
+    perform ? @sec-putvalue(lhs, newValue)
+    return oldValue
+  }
+}
+
+sdo_row @sec-prefix-increment-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UpdateExpression : `++` UnaryExpression[?Yield, ?Await]"]
+  keys ["UpdateExpression : `++` UnaryExpression"]
+  vars [expr, oldValue, newValue]
+  steps {
+    let expr = ? sdo Evaluation(child 5 |UnaryExpression|)
+    if sdo AssignmentTargetType(child 5 |UnaryExpression|) is val {~web-compat~} -> throw @ph-new-error([[ReferenceError]])
+    let oldValue = ? @sec-tonumeric(? @sec-getvalue(expr))
+    if oldValue is ty {Number} {
+      let newValue = @sec-numeric-types-number-add(oldValue, num_f(1))
+    }
+    else {
+      assert oldValue is ty {BigInt}
+      let newValue = @sec-numeric-types-bigint-add(oldValue, num_z(1))
+    }
+    perform ? @sec-putvalue(expr, newValue)
+    return newValue
+  }
+}
+
+sdo_row @sec-prefix-decrement-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UpdateExpression : `--` UnaryExpression[?Yield, ?Await]"]
+  keys ["UpdateExpression : `--` UnaryExpression"]
+  vars [expr, oldValue, newValue]
+  steps {
+    let expr = ? sdo Evaluation(child 5 |UnaryExpression|)
+    if sdo AssignmentTargetType(child 5 |UnaryExpression|) is val {~web-compat~} -> throw @ph-new-error([[ReferenceError]])
+    let oldValue = ? @sec-tonumeric(? @sec-getvalue(expr))
+    if oldValue is ty {Number} {
+      let newValue = @sec-numeric-types-number-subtract(oldValue, num_f(1))
+    }
+    else {
+      assert oldValue is ty {BigInt}
+      let newValue = @sec-numeric-types-bigint-subtract(oldValue, num_z(1))
+    }
+    perform ? @sec-putvalue(expr, newValue)
+    return newValue
+  }
+}
+
+sdo_row @sec-delete-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UnaryExpression : `delete` UnaryExpression[?Yield, ?Await]"]
+  keys ["UnaryExpression : `delete` UnaryExpression"]
+  vars [#"ref", baseObj, deleteStatus, base]
+  steps {
+    let #"ref" = ? sdo Evaluation(child 5 |UnaryExpression|)
+    if #"ref" is not ty {#"Reference Record"} -> return true
+    if @sec-isunresolvablereference(#"ref") is val {true} {
+      assert #"ref"[[Strict]] is val {false}
+      return true
+    }
+    if @sec-ispropertyreference(#"ref") is val {true} {
+      assert @sec-isprivatereference(#"ref") is val {false}
+      if @sec-issuperreference(#"ref") is val {true} -> throw @ph-new-error([[ReferenceError]])
+      let baseObj = ? @sec-toobject(#"ref"[[Base]])
+      if #"ref"[[ReferencedName]] is not ty {#"property key"} {
+        set field #"ref"[[ReferencedName]] = ? @sec-topropertykey(#"ref"[[ReferencedName]])
+      }
+      let deleteStatus = ? baseObj[[Delete]](#"ref"[[ReferencedName]])
+      if deleteStatus is val {false} and #"ref"[[Strict]] is val {true} -> throw @ph-new-error([[TypeError]])
+      return deleteStatus
+    }
+    let base = #"ref"[[Base]]
+    assert base is ty {#"Environment Record"}
+    return ? base.DeleteBinding(#"ref"[[ReferencedName]])
+  }
+}
+
+sdo_row @sec-void-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UnaryExpression : `void` UnaryExpression[?Yield, ?Await]"]
+  keys ["UnaryExpression : `void` UnaryExpression"]
+  vars [expr]
+  steps {
+    let expr = ? sdo Evaluation(child 5 |UnaryExpression|)
+    perform ? @sec-getvalue(expr)
+    return undefined
+  }
+}
+
+sdo_row @sec-typeof-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UnaryExpression : `typeof` UnaryExpression[?Yield, ?Await]"]
+  keys ["UnaryExpression : `typeof` UnaryExpression"]
+  vars [value]
+  steps {
+    let value = ? sdo Evaluation(child 5 |UnaryExpression|)
+    if value is ty {#"Reference Record"} {
+      if @sec-isunresolvablereference(value) is val {true} -> return "undefined"
+    }
+    set var value = ? @sec-getvalue(value)
+    if value is val {undefined} -> return "undefined"
+    if value is val {null} -> return "object"
+    if value is ty {String} -> return "string"
+    if value is ty {Symbol} -> return "symbol"
+    if value is ty {Boolean} -> return "boolean"
+    if value is ty {Number} -> return "number"
+    if value is ty {BigInt} -> return "bigint"
+    assert value is ty {Object}
+    if expr $"the host is a web browser"(data choice 0, clause @sec-IsHTMLDDA-internal-slot) {
+      if value sat $HasSlot([[IsHTMLDDA]]) -> return "undefined"
+    }
+    if value sat $HasMethod([[Call]]) -> return "function"
+    return "object"
+  }
+}
+
+sdo_row @sec-unary-plus-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UnaryExpression : `+` UnaryExpression[?Yield, ?Await]"]
+  keys ["UnaryExpression : `+` UnaryExpression"]
+  vars [expr]
+  steps {
+    let expr = ? sdo Evaluation(child 5 |UnaryExpression|)
+    return ? @sec-tonumber(? @sec-getvalue(expr))
+  }
+}
+
+sdo_row @sec-unary-minus-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UnaryExpression : `-` UnaryExpression[?Yield, ?Await]"]
+  keys ["UnaryExpression : `-` UnaryExpression"]
+  vars [expr, oldValue]
+  steps {
+    let expr = ? sdo Evaluation(child 5 |UnaryExpression|)
+    let oldValue = ? @sec-tonumeric(? @sec-getvalue(expr))
+    if oldValue is ty {Number} -> return @sec-numeric-types-number-unaryMinus(oldValue)
+    assert oldValue is ty {BigInt}
+    return @sec-numeric-types-bigint-unaryMinus(oldValue)
+  }
+}
+
+sdo_row @sec-bitwise-not-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UnaryExpression : `~` UnaryExpression[?Yield, ?Await]"]
+  keys ["UnaryExpression : `~` UnaryExpression"]
+  vars [expr, oldValue]
+  steps {
+    let expr = ? sdo Evaluation(child 5 |UnaryExpression|)
+    let oldValue = ? @sec-tonumeric(? @sec-getvalue(expr))
+    if oldValue is ty {Number} -> return @sec-numeric-types-number-bitwiseNOT(oldValue)
+    assert oldValue is ty {BigInt}
+    return @sec-numeric-types-bigint-bitwiseNOT(oldValue)
+  }
+}
+
+sdo_row @sec-logical-not-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - UnaryExpression : `!` UnaryExpression[?Yield, ?Await]"]
+  keys ["UnaryExpression : `!` UnaryExpression"]
+  vars [expr, oldValue]
+  steps {
+    let expr = ? sdo Evaluation(child 5 |UnaryExpression|)
+    let oldValue = @sec-toboolean(? @sec-getvalue(expr))
+    if oldValue is val {true} -> return false
+    return true
+  }
+}
+
+sdo_row @sec-exp-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ExponentiationExpression : UpdateExpression[?Yield, ?Await] `**` ExponentiationExpression[?Yield, ?Await]"]
+  keys ["\n        ExponentiationExpression : UpdateExpression `**` ExponentiationExpression\n      "]
+  vars []
+  steps {
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |UpdateExpression|, code "**", child 5 |ExponentiationExpression|)
+  }
+}
+
+sdo_row @sec-multiplicative-operators-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - MultiplicativeExpression : MultiplicativeExpression[?Yield, ?Await] MultiplicativeOperator ExponentiationExpression[?Yield, ?Await]"]
+  keys ["MultiplicativeExpression : MultiplicativeExpression MultiplicativeOperator ExponentiationExpression"]
+  vars [opText]
+  steps {
+    let opText = $SourceText(child 5 |MultiplicativeOperator|)
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |MultiplicativeExpression|, opText, child 5 |ExponentiationExpression|)
+  }
+}
+
+sdo_row @sec-addition-operator-plus-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - AdditiveExpression : AdditiveExpression[?Yield, ?Await] `+` MultiplicativeExpression[?Yield, ?Await]"]
+  keys ["AdditiveExpression : AdditiveExpression `+` MultiplicativeExpression"]
+  vars []
+  steps {
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |AdditiveExpression|, code "+", child 5 |MultiplicativeExpression|)
+  }
+}
+
+sdo_row @sec-subtraction-operator-minus-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - AdditiveExpression : AdditiveExpression[?Yield, ?Await] `-` MultiplicativeExpression[?Yield, ?Await]"]
+  keys ["AdditiveExpression : AdditiveExpression `-` MultiplicativeExpression"]
+  vars []
+  steps {
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |AdditiveExpression|, code "-", child 5 |MultiplicativeExpression|)
+  }
+}
+
+sdo_row @sec-left-shift-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ShiftExpression : ShiftExpression[?Yield, ?Await] `<<` AdditiveExpression[?Yield, ?Await]"]
+  keys ["ShiftExpression : ShiftExpression `&lt;&lt;` AdditiveExpression"]
+  vars []
+  steps {
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |ShiftExpression|, code "<<", child 5 |AdditiveExpression|)
+  }
+}
+
+sdo_row @sec-signed-right-shift-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ShiftExpression : ShiftExpression[?Yield, ?Await] `>>` AdditiveExpression[?Yield, ?Await]"]
+  keys ["ShiftExpression : ShiftExpression `&gt;&gt;` AdditiveExpression"]
+  vars []
+  steps {
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |ShiftExpression|, code ">>", child 5 |AdditiveExpression|)
+  }
+}
+
+sdo_row @sec-unsigned-right-shift-operator-runtime-semantics-evaluation Evaluation form alg {
+  prods [p"Syntactic - ShiftExpression : ShiftExpression[?Yield, ?Await] `>>>` AdditiveExpression[?Yield, ?Await]"]
+  keys ["ShiftExpression : ShiftExpression `&gt;&gt;&gt;` AdditiveExpression"]
+  vars []
+  steps {
+    return ? @sec-evaluatestringornumericbinaryexpression(child 5 |ShiftExpression|, code ">>>", child 5 |AdditiveExpression|)
+  }
+}
+

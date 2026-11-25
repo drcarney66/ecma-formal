@@ -48,8 +48,6 @@ deriving instance DecidableEq for Ecma.Machine.CallK
 
 deriving instance DecidableEq for Ecma.Machine.OnK
 
-deriving instance DecidableEq for Ecma.Reading
-
 deriving instance DecidableEq for Ecma.Stop
 
 mutual
@@ -102,12 +100,6 @@ def Ecma.Machine.Op.eqB : Ecma.Machine.Op → Ecma.Machine.Op → Bool
   | .all a1 a2, b => match b with
     | .all b1 b2 => Ecma.Machine.Op.eqB a1 b1 && Ecma.Machine.Op.eqB a2 b2
     | _ => false
-  | .erratum a1 a2 a3, b => match b with
-    | .erratum b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Machine.Op.eqB a3 b3
-    | _ => false
-  | .readings a1 a2 a3, b => match b with
-    | .readings b1 b2 b3 => EqB.eqB a1 b1 && Ecma.Machine.Op.eqB a2 b2 && Ecma.Machine.Op.eqB_LPReadingOp a3 b3
-    | _ => false
   | .stop a1, b => match b with
     | .stop b1 => EqB.eqB a1 b1
     | _ => false
@@ -118,14 +110,6 @@ def Ecma.Machine.Op.eqB : Ecma.Machine.Op → Ecma.Machine.Op → Bool
 def Ecma.Machine.Op.eqB_LOp : (List Ecma.Machine.Op) → (List Ecma.Machine.Op) → Bool
   | [], [] => true
   | a :: as, b :: bs => Ecma.Machine.Op.eqB a b && Ecma.Machine.Op.eqB_LOp as bs
-  | _, _ => false
-
-def Ecma.Machine.Op.eqB_PReadingOp : (Ecma.Reading × Ecma.Machine.Op) → (Ecma.Reading × Ecma.Machine.Op) → Bool
-  | (a1, a2), (b1, b2) => EqB.eqB a1 b1 && Ecma.Machine.Op.eqB a2 b2
-
-def Ecma.Machine.Op.eqB_LPReadingOp : (List (Ecma.Reading × Ecma.Machine.Op)) → (List (Ecma.Reading × Ecma.Machine.Op)) → Bool
-  | [], [] => true
-  | a :: as, b :: bs => Ecma.Machine.Op.eqB_PReadingOp a b && Ecma.Machine.Op.eqB_LPReadingOp as bs
   | _, _ => false
 end
 
@@ -267,28 +251,6 @@ theorem Ecma.Machine.Op.eqB_sound : ∀ a b : Ecma.Machine.Op, Ecma.Machine.Op.e
       subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
-  | .erratum a1 a2 a3, b, h => by
-    unfold Ecma.Machine.Op.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := Ecma.Machine.Op.eqB_sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .readings a1 a2 a3, b, h => by
-    unfold Ecma.Machine.Op.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Machine.Op.eqB_sound _ _ h2
-      have e3 := Ecma.Machine.Op.eqB_LPReadingOp_sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
   | .stop a1, b, h => by
     unfold Ecma.Machine.Op.eqB at h
     split at h
@@ -316,26 +278,6 @@ theorem Ecma.Machine.Op.eqB_LOp_sound : ∀ a b : (List Ecma.Machine.Op), Ecma.M
     subst e1 e2
     rfl
   | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Machine.Op.eqB_LOp] at h
-
-theorem Ecma.Machine.Op.eqB_PReadingOp_sound : ∀ a b : (Ecma.Reading × Ecma.Machine.Op), Ecma.Machine.Op.eqB_PReadingOp a b = true → a = b
-  | (_, _), (_, _), h => by
-    simp only [Ecma.Machine.Op.eqB_PReadingOp, Bool.and_eq_true] at h
-    obtain ⟨h1, h2⟩ := h
-    have e1 := EqB.sound _ _ h1
-    have e2 := Ecma.Machine.Op.eqB_sound _ _ h2
-    subst e1 e2
-    rfl
-
-theorem Ecma.Machine.Op.eqB_LPReadingOp_sound : ∀ a b : (List (Ecma.Reading × Ecma.Machine.Op)), Ecma.Machine.Op.eqB_LPReadingOp a b = true → a = b
-  | [], [], _ => rfl
-  | _ :: _, _ :: _, h => by
-    simp only [Ecma.Machine.Op.eqB_LPReadingOp, Bool.and_eq_true] at h
-    obtain ⟨h1, h2⟩ := h
-    have e1 := Ecma.Machine.Op.eqB_PReadingOp_sound _ _ h1
-    have e2 := Ecma.Machine.Op.eqB_LPReadingOp_sound _ _ h2
-    subst e1 e2
-    rfl
-  | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Machine.Op.eqB_LPReadingOp] at h
 end
 
 instance : EqB Ecma.Machine.Op := ⟨Ecma.Machine.Op.eqB, Ecma.Machine.Op.eqB_sound⟩
@@ -493,8 +435,8 @@ def Ecma.Machine.Ins.eqB : Ecma.Machine.Ins → Ecma.Machine.Ins → Bool
   | .assert a1, b => match b with
     | .assert b1 => EqB.eqB a1 b1
     | _ => false
-  | .assertAt a1 a2, b => match b with
-    | .assertAt b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
+  | .assertAlways a1, b => match b with
+    | .assertAlways b1 => EqB.eqB a1 b1
     | _ => false
   | .assertIf a1 a2, b => match b with
     | .assertIf b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
@@ -514,15 +456,6 @@ def Ecma.Machine.Ins.eqB : Ecma.Machine.Ins → Ecma.Machine.Ins → Bool
   | .transfer a1 a2 a3, b => match b with
     | .transfer b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3
     | _ => false
-  | .readings a1 a2 a3, b => match b with
-    | .readings b1 b2 b3 => EqB.eqB a1 b1 && Ecma.Machine.Ins.eqB_LIns a2 b2 && Ecma.Machine.Ins.eqB_LPReadingLIns a3 b3
-    | _ => false
-  | .reading a1 a2, b => match b with
-    | .reading b1 b2 => EqB.eqB a1 b1 && Ecma.Machine.Ins.eqB_LIns a2 b2
-    | _ => false
-  | .byReading a1 a2 a3, b => match b with
-    | .byReading b1 b2 b3 => EqB.eqB a1 b1 && Ecma.Machine.Ins.eqB_LIns a2 b2 && Ecma.Machine.Ins.eqB_LPReadingLIns a3 b3
-    | _ => false
   | .cover a1 a2 a3 a4, b => match b with
     | .cover b1 b2 b3 b4 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4
     | _ => false
@@ -536,14 +469,6 @@ def Ecma.Machine.Ins.eqB : Ecma.Machine.Ins → Ecma.Machine.Ins → Bool
 def Ecma.Machine.Ins.eqB_LIns : (List Ecma.Machine.Ins) → (List Ecma.Machine.Ins) → Bool
   | [], [] => true
   | a :: as, b :: bs => Ecma.Machine.Ins.eqB a b && Ecma.Machine.Ins.eqB_LIns as bs
-  | _, _ => false
-
-def Ecma.Machine.Ins.eqB_PReadingLIns : (Ecma.Reading × (List Ecma.Machine.Ins)) → (Ecma.Reading × (List Ecma.Machine.Ins)) → Bool
-  | (a1, a2), (b1, b2) => EqB.eqB a1 b1 && Ecma.Machine.Ins.eqB_LIns a2 b2
-
-def Ecma.Machine.Ins.eqB_LPReadingLIns : (List (Ecma.Reading × (List Ecma.Machine.Ins))) → (List (Ecma.Reading × (List Ecma.Machine.Ins))) → Bool
-  | [], [] => true
-  | a :: as, b :: bs => Ecma.Machine.Ins.eqB_PReadingLIns a b && Ecma.Machine.Ins.eqB_LPReadingLIns as bs
   | _, _ => false
 end
 
@@ -637,14 +562,12 @@ theorem Ecma.Machine.Ins.eqB_sound : ∀ a b : Ecma.Machine.Ins, Ecma.Machine.In
       subst e1
       rfl
     · exact absurd h Bool.false_ne_true
-  | .assertAt a1 a2, b, h => by
+  | .assertAlways a1, b, h => by
     unfold Ecma.Machine.Ins.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
+    · have h1 := h
       have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
   | .assertIf a1 a2, b, h => by
@@ -704,38 +627,6 @@ theorem Ecma.Machine.Ins.eqB_sound : ∀ a b : Ecma.Machine.Ins, Ecma.Machine.In
       subst e1 e2 e3
       rfl
     · exact absurd h Bool.false_ne_true
-  | .readings a1 a2 a3, b, h => by
-    unfold Ecma.Machine.Ins.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Machine.Ins.eqB_LIns_sound _ _ h2
-      have e3 := Ecma.Machine.Ins.eqB_LPReadingLIns_sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .reading a1 a2, b, h => by
-    unfold Ecma.Machine.Ins.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Machine.Ins.eqB_LIns_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .byReading a1 a2 a3, b, h => by
-    unfold Ecma.Machine.Ins.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Machine.Ins.eqB_LIns_sound _ _ h2
-      have e3 := Ecma.Machine.Ins.eqB_LPReadingLIns_sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
   | .cover a1 a2 a3 a4, b, h => by
     unfold Ecma.Machine.Ins.eqB at h
     split at h
@@ -775,26 +666,6 @@ theorem Ecma.Machine.Ins.eqB_LIns_sound : ∀ a b : (List Ecma.Machine.Ins), Ecm
     subst e1 e2
     rfl
   | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Machine.Ins.eqB_LIns] at h
-
-theorem Ecma.Machine.Ins.eqB_PReadingLIns_sound : ∀ a b : (Ecma.Reading × (List Ecma.Machine.Ins)), Ecma.Machine.Ins.eqB_PReadingLIns a b = true → a = b
-  | (_, _), (_, _), h => by
-    simp only [Ecma.Machine.Ins.eqB_PReadingLIns, Bool.and_eq_true] at h
-    obtain ⟨h1, h2⟩ := h
-    have e1 := EqB.sound _ _ h1
-    have e2 := Ecma.Machine.Ins.eqB_LIns_sound _ _ h2
-    subst e1 e2
-    rfl
-
-theorem Ecma.Machine.Ins.eqB_LPReadingLIns_sound : ∀ a b : (List (Ecma.Reading × (List Ecma.Machine.Ins))), Ecma.Machine.Ins.eqB_LPReadingLIns a b = true → a = b
-  | [], [], _ => rfl
-  | _ :: _, _ :: _, h => by
-    simp only [Ecma.Machine.Ins.eqB_LPReadingLIns, Bool.and_eq_true] at h
-    obtain ⟨h1, h2⟩ := h
-    have e1 := Ecma.Machine.Ins.eqB_PReadingLIns_sound _ _ h1
-    have e2 := Ecma.Machine.Ins.eqB_LPReadingLIns_sound _ _ h2
-    subst e1 e2
-    rfl
-  | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Machine.Ins.eqB_LPReadingLIns] at h
 end
 
 instance : EqB Ecma.Machine.Ins := ⟨Ecma.Machine.Ins.eqB, Ecma.Machine.Ins.eqB_sound⟩
@@ -803,23 +674,7 @@ deriving instance DecidableEq for Ecma.AlgKind
 
 deriving instance DecidableEq for Ecma.Callee
 
-deriving instance DecidableEq for Ecma.Article
-
-deriving instance DecidableEq for Ecma.Attr
-
-deriving instance DecidableEq for Ecma.XrefForm
-
-deriving instance DecidableEq for Ecma.Xref
-
-deriving instance DecidableEq for Ecma.Channel
-
-deriving instance DecidableEq for Ecma.AltForm
-
 deriving instance DecidableEq for Ecma.Conj
-
-deriving instance DecidableEq for Ecma.ConnForm
-
-deriving instance DecidableEq for Ecma.ListForm
 
 mutual
 def Ecma.Expr.eqB : Ecma.Expr → Ecma.Expr → Bool
@@ -847,8 +702,8 @@ def Ecma.Expr.eqB : Ecma.Expr → Ecma.Expr → Bool
   | .nt a1 a2, b => match b with
     | .nt b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
     | _ => false
-  | .prod a1 a2, b => match b with
-    | .prod b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
+  | .prod a1, b => match b with
+    | .prod b1 => EqB.eqB a1 b1
     | _ => false
   | .codeUnit a1 a2 a3, b => match b with
     | .codeUnit b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3
@@ -856,8 +711,8 @@ def Ecma.Expr.eqB : Ecma.Expr → Ecma.Expr → Bool
   | .codePoint a1 a2 a3, b => match b with
     | .codePoint b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3
     | _ => false
-  | .code a1 a2, b => match b with
-    | .code b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
+  | .code a1, b => match b with
+    | .code b1 => EqB.eqB a1 b1
     | _ => false
   | .term a1, b => match b with
     | .term b1 => EqB.eqB a1 b1
@@ -868,11 +723,11 @@ def Ecma.Expr.eqB : Ecma.Expr → Ecma.Expr → Bool
   | .callAt a1 a2, b => match b with
     | .callAt b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LExpr a2 b2
     | _ => false
-  | .sdo a1 a2 a3 a4, b => match b with
-    | .sdo b1 b2 b3 b4 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Expr.eqB a3 b3 && Ecma.Expr.eqB_LExpr a4 b4
+  | .sdo a1 a2 a3, b => match b with
+    | .sdo b1 b2 b3 => EqB.eqB a1 b1 && Ecma.Expr.eqB a2 b2 && Ecma.Expr.eqB_LExpr a3 b3
     | _ => false
-  | .component a1 a2 a3, b => match b with
-    | .component b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Expr.eqB a3 b3
+  | .component a1 a2, b => match b with
+    | .component b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB a2 b2
     | _ => false
   | .field a1 a2, b => match b with
     | .field b1 b2 => Ecma.Expr.eqB a1 b1 && EqB.eqB a2 b2
@@ -895,12 +750,6 @@ def Ecma.Expr.eqB : Ecma.Expr → Ecma.Expr → Bool
   | .bang a1, b => match b with
     | .bang b1 => Ecma.Expr.eqB a1 b1
     | _ => false
-  | .bangAt a1 a2, b => match b with
-    | .bangAt b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB a2 b2
-    | _ => false
-  | .erratum a1 a2 a3, b => match b with
-    | .erratum b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Expr.eqB a3 b3
-    | _ => false
   | .un a1 a2, b => match b with
     | .un b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB a2 b2
     | _ => false
@@ -913,8 +762,8 @@ def Ecma.Expr.eqB : Ecma.Expr → Ecma.Expr → Bool
   | .list a1, b => match b with
     | .list b1 => Ecma.Expr.eqB_LExpr a1 b1
     | _ => false
-  | .record a1 a2 a3, b => match b with
-    | .record b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Expr.eqB_LPNatExpr a3 b3
+  | .record a1 a2, b => match b with
+    | .record b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LPNatExpr a2 b2
     | _ => false
   | .resumedWith a1, b => match b with
     | .resumedWith b1 => Ecma.Expr.eqB a1 b1
@@ -922,20 +771,17 @@ def Ecma.Expr.eqB : Ecma.Expr → Ecma.Expr → Bool
   | .thisNode, b => match b with
     | .thisNode => true
     | _ => false
-  | .child a1 a2 a3, b => match b with
-    | .child b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3
+  | .child a1 a2, b => match b with
+    | .child b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
     | _ => false
-  | .childOf a1 a2 a3, b => match b with
-    | .childOf b1 b2 b3 => Ecma.Expr.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3
+  | .childOf a1 a2, b => match b with
+    | .childOf b1 b2 => Ecma.Expr.eqB a1 b1 && EqB.eqB a2 b2
     | _ => false
-  | .thisValue a1, b => match b with
-    | .thisValue b1 => EqB.eqB a1 b1
+  | .thisValue, b => match b with
+    | .thisValue => true
     | _ => false
   | .newTarget, b => match b with
     | .newTarget => true
-    | _ => false
-  | .annot a1 a2, b => match b with
-    | .annot b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB a2 b2
     | _ => false
   | .xref a1, b => match b with
     | .xref b1 => EqB.eqB a1 b1
@@ -943,23 +789,14 @@ def Ecma.Expr.eqB : Ecma.Expr → Ecma.Expr → Bool
   | .closure a1, b => match b with
     | .closure b1 => EqB.eqB a1 b1
     | _ => false
-  | .table a1 a2, b => match b with
-    | .table b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
+  | .table a1, b => match b with
+    | .table b1 => EqB.eqB a1 b1
     | _ => false
-  | .definition a1 a2, b => match b with
-    | .definition b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
+  | .definition a1, b => match b with
+    | .definition b1 => EqB.eqB a1 b1
     | _ => false
-  | .tableStep a1 a2 a3, b => match b with
-    | .tableStep b1 b2 b3 => EqB.eqB a1 b1 && Ecma.Expr.eqB a2 b2 && EqB.eqB a3 b3
-    | _ => false
-  | .extreme a1 a2 a3 a4, b => match b with
-    | .extreme b1 b2 b3 b4 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.TyExpr.eqB a3 b3 && Ecma.Cond.eqB a4 b4
-    | _ => false
-  | .phrase a1 a2, b => match b with
-    | .phrase b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LHole a2 b2
-    | _ => false
-  | .prose a1 a2, b => match b with
-    | .prose b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LPart a2 b2
+  | .tableStep a1 a2, b => match b with
+    | .tableStep b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB a2 b2
     | _ => false
   | .bnd a1, b => match b with
     | .bnd b1 => EqB.eqB a1 b1
@@ -978,9 +815,6 @@ def Ecma.Pred.eqB : Ecma.Pred → Ecma.Pred → Bool
   | .isTy a1 a2 a3, b => match b with
     | .isTy b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Expr.eqB_LTyExpr a3 b3
     | _ => false
-  | .phrase a1 a2, b => match b with
-    | .phrase b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LHole a2 b2
-    | _ => false
   | .call a1 a2 a3, b => match b with
     | .call b1 b2 b3 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LExpr a2 b2 && EqB.eqB a3 b3
     | _ => false
@@ -992,23 +826,17 @@ def Ecma.Cond.eqB : Ecma.Cond → Ecma.Cond → Bool
   | .rel a1 a2 a3, b => match b with
     | .rel b1 b2 b3 => EqB.eqB a1 b1 && Ecma.Expr.eqB a2 b2 && Ecma.Expr.eqB a3 b3
     | _ => false
-  | .and a1 a2, b => match b with
-    | .and b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LCond a2 b2
+  | .and a1, b => match b with
+    | .and b1 => Ecma.Expr.eqB_LCond a1 b1
     | _ => false
-  | .or a1 a2, b => match b with
-    | .or b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LCond a2 b2
+  | .or a1, b => match b with
+    | .or b1 => Ecma.Expr.eqB_LCond a1 b1
     | _ => false
   | .paren a1, b => match b with
     | .paren b1 => Ecma.Cond.eqB a1 b1
     | _ => false
   | .alg a1, b => match b with
     | .alg b1 => EqB.eqB a1 b1
-    | _ => false
-  | .phrase a1 a2, b => match b with
-    | .phrase b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LHole a2 b2
-    | _ => false
-  | .prose a1 a2, b => match b with
-    | .prose b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LPart a2 b2
     | _ => false
   | .expr a1, b => match b with
     | .expr b1 => Ecma.Expr.eqB a1 b1
@@ -1018,14 +846,23 @@ def Ecma.Cond.eqB : Ecma.Cond → Ecma.Cond → Bool
     | _ => false
 
 def Ecma.TyExpr.eqB : Ecma.TyExpr → Ecma.TyExpr → Bool
-  | .sort a1 a2 a3 a4, b => match b with
-    | .sort b1 b2 b3 b4 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4
+  | .sort a1 a2, b => match b with
+    | .sort b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
     | _ => false
-  | .listOf a1 a2, b => match b with
-    | .listOf b1 b2 => EqB.eqB a1 b1 && Ecma.TyExpr.eqB a2 b2
+  | .listOf a1, b => match b with
+    | .listOf b1 => Ecma.TyExpr.eqB a1 b1
     | _ => false
-  | .union a1 a2 a3, b => match b with
-    | .union b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Expr.eqB_LTyExpr a3 b3
+  | .seqOf a1, b => match b with
+    | .seqOf b1 => Ecma.TyExpr.eqB a1 b1
+    | _ => false
+  | .butNot a1 a2, b => match b with
+    | .butNot b1 b2 => Ecma.TyExpr.eqB a1 b1 && Ecma.TyExpr.eqB a2 b2
+    | _ => false
+  | .doc a1, b => match b with
+    | .doc b1 => EqB.eqB a1 b1
+    | _ => false
+  | .union a1, b => match b with
+    | .union b1 => Ecma.Expr.eqB_LTyExpr a1 b1
     | _ => false
   | .completion a1, b => match b with
     | .completion b1 => Ecma.Expr.eqB_OTyExpr a1 b1
@@ -1036,11 +873,11 @@ def Ecma.TyExpr.eqB : Ecma.TyExpr → Ecma.TyExpr → Bool
   | .value a1, b => match b with
     | .value b1 => Ecma.Expr.eqB a1 b1
     | _ => false
-  | .var a1 a2, b => match b with
-    | .var b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
+  | .var a1, b => match b with
+    | .var b1 => EqB.eqB a1 b1
     | _ => false
-  | .nt a1 a2 a3, b => match b with
-    | .nt b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3
+  | .nt a1, b => match b with
+    | .nt b1 => EqB.eqB a1 b1
     | _ => false
   | .record a1, b => match b with
     | .record b1 => Ecma.Expr.eqB_LPNatTyExpr a1 b1
@@ -1048,51 +885,8 @@ def Ecma.TyExpr.eqB : Ecma.TyExpr → Ecma.TyExpr → Bool
   | .that a1 a2 a3, b => match b with
     | .that b1 b2 b3 => Ecma.TyExpr.eqB a1 b1 && Ecma.Pred.eqB a2 b2 && Ecma.Expr.eqB_LPConjPred a3 b3
     | _ => false
-  | .phrase a1 a2, b => match b with
-    | .phrase b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LHole a2 b2
-    | _ => false
-  | .prose a1, b => match b with
-    | .prose b1 => Ecma.Expr.eqB_LPart a1 b1
-    | _ => false
   | .pred a1, b => match b with
     | .pred b1 => Ecma.Pred.eqB a1 b1
-    | _ => false
-
-def Ecma.Hole.eqB : Ecma.Hole → Ecma.Hole → Bool
-  | .e a1, b => match b with
-    | .e b1 => Ecma.Expr.eqB a1 b1
-    | _ => false
-  | .c a1, b => match b with
-    | .c b1 => Ecma.Cond.eqB a1 b1
-    | _ => false
-  | .t a1, b => match b with
-    | .t b1 => Ecma.TyExpr.eqB a1 b1
-    | _ => false
-  | .b a1, b => match b with
-    | .b b1 => EqB.eqB a1 b1
-    | _ => false
-  | .bc a1 a2, b => match b with
-    | .bc b1 b2 => EqB.eqB a1 b1 && Ecma.Cond.eqB a2 b2
-    | _ => false
-  | .w a1, b => match b with
-    | .w b1 => EqB.eqB a1 b1
-    | _ => false
-  | .l a1 a2, b => match b with
-    | .l b1 b2 => EqB.eqB a1 b1 && Ecma.Expr.eqB_LExpr a2 b2
-    | _ => false
-  | .text a1, b => match b with
-    | .text b1 => EqB.eqB a1 b1
-    | _ => false
-  | .field a1, b => match b with
-    | .field b1 => EqB.eqB a1 b1
-    | _ => false
-
-def Ecma.Part.eqB : Ecma.Part → Ecma.Part → Bool
-  | .text a1, b => match b with
-    | .text b1 => EqB.eqB a1 b1
-    | _ => false
-  | .hole a1, b => match b with
-    | .hole b1 => Ecma.Hole.eqB a1 b1
     | _ => false
 
 def Ecma.Expr.eqB_LExpr : (List Ecma.Expr) → (List Ecma.Expr) → Bool
@@ -1106,16 +900,6 @@ def Ecma.Expr.eqB_PNatExpr : (Nat × Ecma.Expr) → (Nat × Ecma.Expr) → Bool
 def Ecma.Expr.eqB_LPNatExpr : (List (Nat × Ecma.Expr)) → (List (Nat × Ecma.Expr)) → Bool
   | [], [] => true
   | a :: as, b :: bs => Ecma.Expr.eqB_PNatExpr a b && Ecma.Expr.eqB_LPNatExpr as bs
-  | _, _ => false
-
-def Ecma.Expr.eqB_LHole : (List Ecma.Hole) → (List Ecma.Hole) → Bool
-  | [], [] => true
-  | a :: as, b :: bs => Ecma.Hole.eqB a b && Ecma.Expr.eqB_LHole as bs
-  | _, _ => false
-
-def Ecma.Expr.eqB_LPart : (List Ecma.Part) → (List Ecma.Part) → Bool
-  | [], [] => true
-  | a :: as, b :: bs => Ecma.Part.eqB a b && Ecma.Expr.eqB_LPart as bs
   | _, _ => false
 
 def Ecma.Expr.eqB_LTyExpr : (List Ecma.TyExpr) → (List Ecma.TyExpr) → Bool
@@ -1220,14 +1004,12 @@ theorem Ecma.Expr.eqB_sound : ∀ a b : Ecma.Expr, Ecma.Expr.eqB a b = true → 
       subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
-  | .prod a1 a2, b, h => by
+  | .prod a1, b, h => by
     unfold Ecma.Expr.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
+    · have h1 := h
       have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
   | .codeUnit a1 a2 a3, b, h => by
@@ -1252,14 +1034,12 @@ theorem Ecma.Expr.eqB_sound : ∀ a b : Ecma.Expr, Ecma.Expr.eqB a b = true → 
       subst e1 e2 e3
       rfl
     · exact absurd h Bool.false_ne_true
-  | .code a1 a2, b, h => by
+  | .code a1, b, h => by
     unfold Ecma.Expr.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
+    · have h1 := h
       have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
   | .term a1, b, h => by
@@ -1290,27 +1070,25 @@ theorem Ecma.Expr.eqB_sound : ∀ a b : Ecma.Expr, Ecma.Expr.eqB a b = true → 
       subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
-  | .sdo a1 a2 a3 a4, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := Ecma.Expr.eqB_sound _ _ h3
-      have e4 := Ecma.Expr.eqB_LExpr_sound _ _ h4
-      subst e1 e2 e3 e4
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .component a1 a2 a3, b, h => by
+  | .sdo a1 a2 a3, b, h => by
     unfold Ecma.Expr.eqB at h
     split at h
     · simp only [Bool.and_eq_true] at h
       obtain ⟨⟨h1, h2⟩, h3⟩ := h
       have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := Ecma.Expr.eqB_sound _ _ h3
+      have e2 := Ecma.Expr.eqB_sound _ _ h2
+      have e3 := Ecma.Expr.eqB_LExpr_sound _ _ h3
       subst e1 e2 e3
+      rfl
+    · exact absurd h Bool.false_ne_true
+  | .component a1 a2, b, h => by
+    unfold Ecma.Expr.eqB at h
+    split at h
+    · simp only [Bool.and_eq_true] at h
+      obtain ⟨h1, h2⟩ := h
+      have e1 := EqB.sound _ _ h1
+      have e2 := Ecma.Expr.eqB_sound _ _ h2
+      subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
   | .field a1 a2, b, h => by
@@ -1381,27 +1159,6 @@ theorem Ecma.Expr.eqB_sound : ∀ a b : Ecma.Expr, Ecma.Expr.eqB a b = true → 
       subst e1
       rfl
     · exact absurd h Bool.false_ne_true
-  | .bangAt a1 a2, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .erratum a1 a2 a3, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := Ecma.Expr.eqB_sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
   | .un a1 a2, b, h => by
     unfold Ecma.Expr.eqB at h
     split at h
@@ -1439,15 +1196,14 @@ theorem Ecma.Expr.eqB_sound : ∀ a b : Ecma.Expr, Ecma.Expr.eqB a b = true → 
       subst e1
       rfl
     · exact absurd h Bool.false_ne_true
-  | .record a1 a2 a3, b, h => by
+  | .record a1 a2, b, h => by
     unfold Ecma.Expr.eqB at h
     split at h
     · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
+      obtain ⟨h1, h2⟩ := h
       have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := Ecma.Expr.eqB_LPNatExpr_sound _ _ h3
-      subst e1 e2 e3
+      have e2 := Ecma.Expr.eqB_LPNatExpr_sound _ _ h2
+      subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
   | .resumedWith a1, b, h => by
@@ -1463,50 +1219,35 @@ theorem Ecma.Expr.eqB_sound : ∀ a b : Ecma.Expr, Ecma.Expr.eqB a b = true → 
     split at h
     · rfl
     · exact absurd h Bool.false_ne_true
-  | .child a1 a2 a3, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := EqB.sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .childOf a1 a2 a3, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := Ecma.Expr.eqB_sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := EqB.sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .thisValue a1, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := EqB.sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .newTarget, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · rfl
-    · exact absurd h Bool.false_ne_true
-  | .annot a1 a2, b, h => by
+  | .child a1 a2, b, h => by
     unfold Ecma.Expr.eqB at h
     split at h
     · simp only [Bool.and_eq_true] at h
       obtain ⟨h1, h2⟩ := h
       have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_sound _ _ h2
+      have e2 := EqB.sound _ _ h2
       subst e1 e2
       rfl
+    · exact absurd h Bool.false_ne_true
+  | .childOf a1 a2, b, h => by
+    unfold Ecma.Expr.eqB at h
+    split at h
+    · simp only [Bool.and_eq_true] at h
+      obtain ⟨h1, h2⟩ := h
+      have e1 := Ecma.Expr.eqB_sound _ _ h1
+      have e2 := EqB.sound _ _ h2
+      subst e1 e2
+      rfl
+    · exact absurd h Bool.false_ne_true
+  | .thisValue, b, h => by
+    unfold Ecma.Expr.eqB at h
+    split at h
+    · rfl
+    · exact absurd h Bool.false_ne_true
+  | .newTarget, b, h => by
+    unfold Ecma.Expr.eqB at h
+    split at h
+    · rfl
     · exact absurd h Bool.false_ne_true
   | .xref a1, b, h => by
     unfold Ecma.Expr.eqB at h
@@ -1524,66 +1265,29 @@ theorem Ecma.Expr.eqB_sound : ∀ a b : Ecma.Expr, Ecma.Expr.eqB a b = true → 
       subst e1
       rfl
     · exact absurd h Bool.false_ne_true
-  | .table a1 a2, b, h => by
+  | .table a1, b, h => by
+    unfold Ecma.Expr.eqB at h
+    split at h
+    · have h1 := h
+      have e1 := EqB.sound _ _ h1
+      subst e1
+      rfl
+    · exact absurd h Bool.false_ne_true
+  | .definition a1, b, h => by
+    unfold Ecma.Expr.eqB at h
+    split at h
+    · have h1 := h
+      have e1 := EqB.sound _ _ h1
+      subst e1
+      rfl
+    · exact absurd h Bool.false_ne_true
+  | .tableStep a1 a2, b, h => by
     unfold Ecma.Expr.eqB at h
     split at h
     · simp only [Bool.and_eq_true] at h
       obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .definition a1 a2, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .tableStep a1 a2 a3, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
       have e1 := EqB.sound _ _ h1
       have e2 := Ecma.Expr.eqB_sound _ _ h2
-      have e3 := EqB.sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .extreme a1 a2 a3 a4, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := Ecma.TyExpr.eqB_sound _ _ h3
-      have e4 := Ecma.Cond.eqB_sound _ _ h4
-      subst e1 e2 e3 e4
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .phrase a1 a2, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_LHole_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .prose a1 a2, b, h => by
-    unfold Ecma.Expr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_LPart_sound _ _ h2
       subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
@@ -1635,16 +1339,6 @@ theorem Ecma.Pred.eqB_sound : ∀ a b : Ecma.Pred, Ecma.Pred.eqB a b = true → 
       subst e1 e2 e3
       rfl
     · exact absurd h Bool.false_ne_true
-  | .phrase a1 a2, b, h => by
-    unfold Ecma.Pred.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_LHole_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
   | .call a1 a2 a3, b, h => by
     unfold Ecma.Pred.eqB at h
     split at h
@@ -1680,24 +1374,20 @@ theorem Ecma.Cond.eqB_sound : ∀ a b : Ecma.Cond, Ecma.Cond.eqB a b = true → 
       subst e1 e2 e3
       rfl
     · exact absurd h Bool.false_ne_true
-  | .and a1 a2, b, h => by
+  | .and a1, b, h => by
     unfold Ecma.Cond.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_LCond_sound _ _ h2
-      subst e1 e2
+    · have h1 := h
+      have e1 := Ecma.Expr.eqB_LCond_sound _ _ h1
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
-  | .or a1 a2, b, h => by
+  | .or a1, b, h => by
     unfold Ecma.Cond.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_LCond_sound _ _ h2
-      subst e1 e2
+    · have h1 := h
+      have e1 := Ecma.Expr.eqB_LCond_sound _ _ h1
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
   | .paren a1, b, h => by
@@ -1714,26 +1404,6 @@ theorem Ecma.Cond.eqB_sound : ∀ a b : Ecma.Cond, Ecma.Cond.eqB a b = true → 
     · have h1 := h
       have e1 := EqB.sound _ _ h1
       subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .phrase a1 a2, b, h => by
-    unfold Ecma.Cond.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_LHole_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .prose a1 a2, b, h => by
-    unfold Ecma.Cond.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_LPart_sound _ _ h2
-      subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
   | .expr a1, b, h => by
@@ -1754,37 +1424,56 @@ theorem Ecma.Cond.eqB_sound : ∀ a b : Ecma.Cond, Ecma.Cond.eqB a b = true → 
     · exact absurd h Bool.false_ne_true
 
 theorem Ecma.TyExpr.eqB_sound : ∀ a b : Ecma.TyExpr, Ecma.TyExpr.eqB a b = true → a = b
-  | .sort a1 a2 a3 a4, b, h => by
-    unfold Ecma.TyExpr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := EqB.sound _ _ h3
-      have e4 := EqB.sound _ _ h4
-      subst e1 e2 e3 e4
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .listOf a1 a2, b, h => by
+  | .sort a1 a2, b, h => by
     unfold Ecma.TyExpr.eqB at h
     split at h
     · simp only [Bool.and_eq_true] at h
       obtain ⟨h1, h2⟩ := h
       have e1 := EqB.sound _ _ h1
+      have e2 := EqB.sound _ _ h2
+      subst e1 e2
+      rfl
+    · exact absurd h Bool.false_ne_true
+  | .listOf a1, b, h => by
+    unfold Ecma.TyExpr.eqB at h
+    split at h
+    · have h1 := h
+      have e1 := Ecma.TyExpr.eqB_sound _ _ h1
+      subst e1
+      rfl
+    · exact absurd h Bool.false_ne_true
+  | .seqOf a1, b, h => by
+    unfold Ecma.TyExpr.eqB at h
+    split at h
+    · have h1 := h
+      have e1 := Ecma.TyExpr.eqB_sound _ _ h1
+      subst e1
+      rfl
+    · exact absurd h Bool.false_ne_true
+  | .butNot a1 a2, b, h => by
+    unfold Ecma.TyExpr.eqB at h
+    split at h
+    · simp only [Bool.and_eq_true] at h
+      obtain ⟨h1, h2⟩ := h
+      have e1 := Ecma.TyExpr.eqB_sound _ _ h1
       have e2 := Ecma.TyExpr.eqB_sound _ _ h2
       subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
-  | .union a1 a2 a3, b, h => by
+  | .doc a1, b, h => by
     unfold Ecma.TyExpr.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
+    · have h1 := h
       have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := Ecma.Expr.eqB_LTyExpr_sound _ _ h3
-      subst e1 e2 e3
+      subst e1
+      rfl
+    · exact absurd h Bool.false_ne_true
+  | .union a1, b, h => by
+    unfold Ecma.TyExpr.eqB at h
+    split at h
+    · have h1 := h
+      have e1 := Ecma.Expr.eqB_LTyExpr_sound _ _ h1
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
   | .completion a1, b, h => by
@@ -1814,25 +1503,20 @@ theorem Ecma.TyExpr.eqB_sound : ∀ a b : Ecma.TyExpr, Ecma.TyExpr.eqB a b = tru
       subst e1
       rfl
     · exact absurd h Bool.false_ne_true
-  | .var a1 a2, b, h => by
+  | .var a1, b, h => by
     unfold Ecma.TyExpr.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
+    · have h1 := h
       have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
-  | .nt a1 a2 a3, b, h => by
+  | .nt a1, b, h => by
     unfold Ecma.TyExpr.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
+    · have h1 := h
       have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := EqB.sound _ _ h3
-      subst e1 e2 e3
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
   | .record a1, b, h => by
@@ -1854,125 +1538,11 @@ theorem Ecma.TyExpr.eqB_sound : ∀ a b : Ecma.TyExpr, Ecma.TyExpr.eqB a b = tru
       subst e1 e2 e3
       rfl
     · exact absurd h Bool.false_ne_true
-  | .phrase a1 a2, b, h => by
-    unfold Ecma.TyExpr.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_LHole_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .prose a1, b, h => by
-    unfold Ecma.TyExpr.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := Ecma.Expr.eqB_LPart_sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
   | .pred a1, b, h => by
     unfold Ecma.TyExpr.eqB at h
     split at h
     · have h1 := h
       have e1 := Ecma.Pred.eqB_sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-
-theorem Ecma.Hole.eqB_sound : ∀ a b : Ecma.Hole, Ecma.Hole.eqB a b = true → a = b
-  | .e a1, b, h => by
-    unfold Ecma.Hole.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := Ecma.Expr.eqB_sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .c a1, b, h => by
-    unfold Ecma.Hole.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := Ecma.Cond.eqB_sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .t a1, b, h => by
-    unfold Ecma.Hole.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := Ecma.TyExpr.eqB_sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .b a1, b, h => by
-    unfold Ecma.Hole.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := EqB.sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .bc a1 a2, b, h => by
-    unfold Ecma.Hole.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Cond.eqB_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .w a1, b, h => by
-    unfold Ecma.Hole.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := EqB.sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .l a1 a2, b, h => by
-    unfold Ecma.Hole.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Expr.eqB_LExpr_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .text a1, b, h => by
-    unfold Ecma.Hole.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := EqB.sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .field a1, b, h => by
-    unfold Ecma.Hole.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := EqB.sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-
-theorem Ecma.Part.eqB_sound : ∀ a b : Ecma.Part, Ecma.Part.eqB a b = true → a = b
-  | .text a1, b, h => by
-    unfold Ecma.Part.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := EqB.sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .hole a1, b, h => by
-    unfold Ecma.Part.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := Ecma.Hole.eqB_sound _ _ h1
       subst e1
       rfl
     · exact absurd h Bool.false_ne_true
@@ -2007,28 +1577,6 @@ theorem Ecma.Expr.eqB_LPNatExpr_sound : ∀ a b : (List (Nat × Ecma.Expr)), Ecm
     subst e1 e2
     rfl
   | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Expr.eqB_LPNatExpr] at h
-
-theorem Ecma.Expr.eqB_LHole_sound : ∀ a b : (List Ecma.Hole), Ecma.Expr.eqB_LHole a b = true → a = b
-  | [], [], _ => rfl
-  | _ :: _, _ :: _, h => by
-    simp only [Ecma.Expr.eqB_LHole, Bool.and_eq_true] at h
-    obtain ⟨h1, h2⟩ := h
-    have e1 := Ecma.Hole.eqB_sound _ _ h1
-    have e2 := Ecma.Expr.eqB_LHole_sound _ _ h2
-    subst e1 e2
-    rfl
-  | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Expr.eqB_LHole] at h
-
-theorem Ecma.Expr.eqB_LPart_sound : ∀ a b : (List Ecma.Part), Ecma.Expr.eqB_LPart a b = true → a = b
-  | [], [], _ => rfl
-  | _ :: _, _ :: _, h => by
-    simp only [Ecma.Expr.eqB_LPart, Bool.and_eq_true] at h
-    obtain ⟨h1, h2⟩ := h
-    have e1 := Ecma.Part.eqB_sound _ _ h1
-    have e2 := Ecma.Expr.eqB_LPart_sound _ _ h2
-    subst e1 e2
-    rfl
-  | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Expr.eqB_LPart] at h
 
 theorem Ecma.Expr.eqB_LTyExpr_sound : ∀ a b : (List Ecma.TyExpr), Ecma.Expr.eqB_LTyExpr a b = true → a = b
   | [], [], _ => rfl
@@ -2106,8 +1654,6 @@ instance : EqB Ecma.Expr := ⟨Ecma.Expr.eqB, Ecma.Expr.eqB_sound⟩
 instance : EqB Ecma.Pred := ⟨Ecma.Pred.eqB, Ecma.Pred.eqB_sound⟩
 instance : EqB Ecma.Cond := ⟨Ecma.Cond.eqB, Ecma.Cond.eqB_sound⟩
 instance : EqB Ecma.TyExpr := ⟨Ecma.TyExpr.eqB, Ecma.TyExpr.eqB_sound⟩
-instance : EqB Ecma.Hole := ⟨Ecma.Hole.eqB, Ecma.Hole.eqB_sound⟩
-instance : EqB Ecma.Part := ⟨Ecma.Part.eqB, Ecma.Part.eqB_sound⟩
 
 def Ecma.Param.eqB : Ecma.Param → Ecma.Param → Bool
   | .mk a1 a2 a3 a4, .mk b1 b2 b3 b4 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4
@@ -2128,20 +1674,19 @@ theorem Ecma.Param.eqB_sound : ∀ a b : Ecma.Param, Ecma.Param.eqB a b = true �
 instance : EqB Ecma.Param := ⟨Ecma.Param.eqB, Ecma.Param.eqB_sound⟩
 
 def Ecma.Header.eqB : Ecma.Header → Ecma.Header → Bool
-  | .mk a1 a2 a3 a4 a5, .mk b1 b2 b3 b4 b5 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && EqB.eqB a5 b5
+  | .mk a1 a2 a3 a4, .mk b1 b2 b3 b4 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4
 
 theorem Ecma.Header.eqB_sound : ∀ a b : Ecma.Header, Ecma.Header.eqB a b = true → a = b
-  | .mk a1 a2 a3 a4 a5, .mk b1 b2 b3 b4 b5, h => by
+  | .mk a1 a2 a3 a4, .mk b1 b2 b3 b4, h => by
     unfold Ecma.Header.eqB at h
     dsimp only at h
     simp only [Bool.and_eq_true] at h
-    obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := h
+    obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
     have e1 := EqB.sound _ _ h1
     have e2 := EqB.sound _ _ h2
     have e3 := EqB.sound _ _ h3
     have e4 := EqB.sound _ _ h4
-    have e5 := EqB.sound _ _ h5
-    subst e1 e2 e3 e4 e5
+    subst e1 e2 e3 e4
     rfl
 
 instance : EqB Ecma.Header := ⟨Ecma.Header.eqB, Ecma.Header.eqB_sound⟩
@@ -2196,15 +1741,12 @@ def Ecma.Body.eqB : Ecma.Body → Ecma.Body → Bool
     | .inline b1 => Ecma.Stmt.eqB a1 b1
     | _ => false
   | .block a1, b => match b with
-    | .block b1 => Ecma.Body.eqB_LNode a1 b1
+    | .block b1 => Ecma.Body.eqB_LStmt a1 b1
     | _ => false
 
 def Ecma.Stmt.eqB : Ecma.Stmt → Ecma.Stmt → Bool
   | .let_ a1 a2, b => match b with
     | .let_ b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
-    | _ => false
-  | .letMany a1 a2 a3, b => match b with
-    | .letMany b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3
     | _ => false
   | .set a1 a2, b => match b with
     | .set b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
@@ -2224,17 +1766,14 @@ def Ecma.Stmt.eqB : Ecma.Stmt → Ecma.Stmt → Bool
   | .assert a1, b => match b with
     | .assert b1 => EqB.eqB a1 b1
     | _ => false
-  | .assertAt a1 a2, b => match b with
-    | .assertAt b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
+  | .assertAlways a1, b => match b with
+    | .assertAlways b1 => EqB.eqB a1 b1
     | _ => false
   | .assertIf a1 a2, b => match b with
     | .assertIf b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
     | _ => false
   | .unreachable a1, b => match b with
     | .unreachable b1 => EqB.eqB a1 b1
-    | _ => false
-  | .throwErr a1, b => match b with
-    | .throwErr b1 => EqB.eqB a1 b1
     | _ => false
   | .throwVal a1, b => match b with
     | .throwVal b1 => EqB.eqB a1 b1
@@ -2243,13 +1782,13 @@ def Ecma.Stmt.eqB : Ecma.Stmt → Ecma.Stmt → Bool
     | .note b1 => EqB.eqB a1 b1
     | _ => false
   | .repeat_ a1, b => match b with
-    | .repeat_ b1 => Ecma.Body.eqB_LNode a1 b1
+    | .repeat_ b1 => Ecma.Body.eqB_LStmt a1 b1
     | _ => false
   | .repeatWhile a1 a2, b => match b with
-    | .repeatWhile b1 b2 => EqB.eqB a1 b1 && Ecma.Body.eqB_LNode a2 b2
+    | .repeatWhile b1 b2 => EqB.eqB a1 b1 && Ecma.Body.eqB_LStmt a2 b2
     | _ => false
   | .repeatUntil a1 a2, b => match b with
-    | .repeatUntil b1 b2 => EqB.eqB a1 b1 && Ecma.Body.eqB_LNode a2 b2
+    | .repeatUntil b1 b2 => EqB.eqB a1 b1 && Ecma.Body.eqB_LStmt a2 b2
     | _ => false
   | .forEach a1 a2 a3 a4 a5, b => match b with
     | .forEach b1 b2 b3 b4 b5 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && Ecma.Body.eqB a5 b5
@@ -2259,12 +1798,6 @@ def Ecma.Stmt.eqB : Ecma.Stmt → Ecma.Stmt → Bool
     | _ => false
   | .forRange a1 a2 a3 a4 a5 a6 a7, b => match b with
     | .forRange b1 b2 b3 b4 b5 b6 b7 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && EqB.eqB a5 b5 && EqB.eqB a6 b6 && Ecma.Body.eqB a7 b7
-    | _ => false
-  | .mutate a1 a2, b => match b with
-    | .mutate b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
-    | _ => false
-  | .forSuchThat a1 a2 a3 a4 a5, b => match b with
-    | .forSuchThat b1 b2 b3 b4 b5 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && Ecma.Body.eqB a5 b5
     | _ => false
   | .forKeys a1 a2 a3 a4 a5, b => match b with
     | .forKeys b1 b2 b3 b4 b5 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && Ecma.Body.eqB a5 b5
@@ -2279,10 +1812,7 @@ def Ecma.Stmt.eqB : Ecma.Stmt → Ecma.Stmt → Bool
     | .forChildrenOf b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Body.eqB a3 b3
     | _ => false
   | .repeatN a1 a2, b => match b with
-    | .repeatN b1 b2 => EqB.eqB a1 b1 && Ecma.Body.eqB_LNode a2 b2
-    | _ => false
-  | .retSee a1 a2, b => match b with
-    | .retSee b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
+    | .repeatN b1 b2 => EqB.eqB a1 b1 && Ecma.Body.eqB_LStmt a2 b2
     | _ => false
   | .suspend a1 a2, b => match b with
     | .suspend b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
@@ -2299,8 +1829,8 @@ def Ecma.Stmt.eqB : Ecma.Stmt → Ecma.Stmt → Bool
   | .resumeTop, b => match b with
     | .resumeTop => true
     | _ => false
-  | .resumeLet a1 a2 a3 a4, b => match b with
-    | .resumeLet b1 b2 b3 b4 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4
+  | .resumeLet a1 a2 a3, b => match b with
+    | .resumeLet b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3
     | _ => false
   | .resume a1 a2, b => match b with
     | .resume b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
@@ -2308,40 +1838,16 @@ def Ecma.Stmt.eqB : Ecma.Stmt → Ecma.Stmt → Bool
   | .setCodeState a1 a2, b => match b with
     | .setCodeState b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
     | _ => false
-  | .readings a1 a2 a3, b => match b with
-    | .readings b1 b2 b3 => EqB.eqB a1 b1 && Ecma.Stmt.eqB a2 b2 && Ecma.Body.eqB_LPReadingLNode a3 b3
+  | .block a1, b => match b with
+    | .block b1 => Ecma.Body.eqB_LStmt a1 b1
     | _ => false
-  | .findSuchThat a1 a2 a3 a4 a5, b => match b with
-    | .findSuchThat b1 b2 b3 b4 b5 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && Ecma.Stmt.eqB a5 b5
-    | _ => false
-  | .letSuchThat a1 a2 a3, b => match b with
-    | .letSuchThat b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3
-    | _ => false
-  | .macro a1 a2, b => match b with
-    | .macro b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
-    | _ => false
-  | .phrase a1 a2, b => match b with
-    | .phrase b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
-    | _ => false
-  | .prose a1 a2, b => match b with
-    | .prose b1 b2 => EqB.eqB a1 b1 && EqB.eqB a2 b2
-    | _ => false
-  | .withSteps a1 a2, b => match b with
-    | .withSteps b1 b2 => Ecma.Stmt.eqB a1 b1 && Ecma.Body.eqB_LNode a2 b2
-    | _ => false
-  | .expanded a1 a2 a3, b => match b with
-    | .expanded b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Body.eqB_LNode a3 b3
-    | _ => false
-
-def Ecma.Node.eqB : Ecma.Node → Ecma.Node → Bool
-  | .mk a1 a2, .mk b1 b2 => EqB.eqB a1 b1 && Ecma.Stmt.eqB a2 b2
 
 def Ecma.Arm.eqB : Ecma.Arm → Ecma.Arm → Bool
-  | .mk a1 a2 a3, .mk b1 b2 b3 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && Ecma.Body.eqB a3 b3
+  | .mk a1 a2, .mk b1 b2 => EqB.eqB a1 b1 && Ecma.Body.eqB a2 b2
 
-def Ecma.Body.eqB_LNode : (List Ecma.Node) → (List Ecma.Node) → Bool
+def Ecma.Body.eqB_LStmt : (List Ecma.Stmt) → (List Ecma.Stmt) → Bool
   | [], [] => true
-  | a :: as, b :: bs => Ecma.Node.eqB a b && Ecma.Body.eqB_LNode as bs
+  | a :: as, b :: bs => Ecma.Stmt.eqB a b && Ecma.Body.eqB_LStmt as bs
   | _, _ => false
 
 def Ecma.Body.eqB_LArm : (List Ecma.Arm) → (List Ecma.Arm) → Bool
@@ -2352,14 +1858,6 @@ def Ecma.Body.eqB_LArm : (List Ecma.Arm) → (List Ecma.Arm) → Bool
 def Ecma.Body.eqB_OArm : (Option Ecma.Arm) → (Option Ecma.Arm) → Bool
   | none, none => true
   | some a, some b => Ecma.Arm.eqB a b
-  | _, _ => false
-
-def Ecma.Body.eqB_PReadingLNode : (Ecma.Reading × (List Ecma.Node)) → (Ecma.Reading × (List Ecma.Node)) → Bool
-  | (a1, a2), (b1, b2) => EqB.eqB a1 b1 && Ecma.Body.eqB_LNode a2 b2
-
-def Ecma.Body.eqB_LPReadingLNode : (List (Ecma.Reading × (List Ecma.Node))) → (List (Ecma.Reading × (List Ecma.Node))) → Bool
-  | [], [] => true
-  | a :: as, b :: bs => Ecma.Body.eqB_PReadingLNode a b && Ecma.Body.eqB_LPReadingLNode as bs
   | _, _ => false
 end
 
@@ -2377,7 +1875,7 @@ theorem Ecma.Body.eqB_sound : ∀ a b : Ecma.Body, Ecma.Body.eqB a b = true → 
     unfold Ecma.Body.eqB at h
     split at h
     · have h1 := h
-      have e1 := Ecma.Body.eqB_LNode_sound _ _ h1
+      have e1 := Ecma.Body.eqB_LStmt_sound _ _ h1
       subst e1
       rfl
     · exact absurd h Bool.false_ne_true
@@ -2391,17 +1889,6 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
       have e1 := EqB.sound _ _ h1
       have e2 := EqB.sound _ _ h2
       subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .letMany a1 a2 a3, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := EqB.sound _ _ h3
-      subst e1 e2 e3
       rfl
     · exact absurd h Bool.false_ne_true
   | .set a1 a2, b, h => by
@@ -2461,14 +1948,12 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
       subst e1
       rfl
     · exact absurd h Bool.false_ne_true
-  | .assertAt a1 a2, b, h => by
+  | .assertAlways a1, b, h => by
     unfold Ecma.Stmt.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
+    · have h1 := h
       have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
   | .assertIf a1 a2, b, h => by
@@ -2482,14 +1967,6 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
       rfl
     · exact absurd h Bool.false_ne_true
   | .unreachable a1, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · have h1 := h
-      have e1 := EqB.sound _ _ h1
-      subst e1
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .throwErr a1, b, h => by
     unfold Ecma.Stmt.eqB at h
     split at h
     · have h1 := h
@@ -2517,7 +1994,7 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
     unfold Ecma.Stmt.eqB at h
     split at h
     · have h1 := h
-      have e1 := Ecma.Body.eqB_LNode_sound _ _ h1
+      have e1 := Ecma.Body.eqB_LStmt_sound _ _ h1
       subst e1
       rfl
     · exact absurd h Bool.false_ne_true
@@ -2527,7 +2004,7 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
     · simp only [Bool.and_eq_true] at h
       obtain ⟨h1, h2⟩ := h
       have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Body.eqB_LNode_sound _ _ h2
+      have e2 := Ecma.Body.eqB_LStmt_sound _ _ h2
       subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
@@ -2537,7 +2014,7 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
     · simp only [Bool.and_eq_true] at h
       obtain ⟨h1, h2⟩ := h
       have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Body.eqB_LNode_sound _ _ h2
+      have e2 := Ecma.Body.eqB_LStmt_sound _ _ h2
       subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
@@ -2579,29 +2056,6 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
       have e6 := EqB.sound _ _ h6
       have e7 := Ecma.Body.eqB_sound _ _ h7
       subst e1 e2 e3 e4 e5 e6 e7
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .mutate a1 a2, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .forSuchThat a1 a2 a3 a4 a5, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := EqB.sound _ _ h3
-      have e4 := EqB.sound _ _ h4
-      have e5 := Ecma.Body.eqB_sound _ _ h5
-      subst e1 e2 e3 e4 e5
       rfl
     · exact absurd h Bool.false_ne_true
   | .forKeys a1 a2 a3 a4 a5, b, h => by
@@ -2655,17 +2109,7 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
     · simp only [Bool.and_eq_true] at h
       obtain ⟨h1, h2⟩ := h
       have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Body.eqB_LNode_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .retSee a1 a2, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
+      have e2 := Ecma.Body.eqB_LStmt_sound _ _ h2
       subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
@@ -2714,16 +2158,15 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
     split at h
     · rfl
     · exact absurd h Bool.false_ne_true
-  | .resumeLet a1 a2 a3 a4, b, h => by
+  | .resumeLet a1 a2 a3, b, h => by
     unfold Ecma.Stmt.eqB at h
     split at h
     · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
+      obtain ⟨⟨h1, h2⟩, h3⟩ := h
       have e1 := EqB.sound _ _ h1
       have e2 := EqB.sound _ _ h2
       have e3 := EqB.sound _ _ h3
-      have e4 := EqB.sound _ _ h4
-      subst e1 e2 e3 e4
+      subst e1 e2 e3
       rfl
     · exact absurd h Bool.false_ne_true
   | .resume a1 a2, b, h => by
@@ -2746,124 +2189,35 @@ theorem Ecma.Stmt.eqB_sound : ∀ a b : Ecma.Stmt, Ecma.Stmt.eqB a b = true → 
       subst e1 e2
       rfl
     · exact absurd h Bool.false_ne_true
-  | .readings a1 a2 a3, b, h => by
+  | .block a1, b, h => by
     unfold Ecma.Stmt.eqB at h
     split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := Ecma.Stmt.eqB_sound _ _ h2
-      have e3 := Ecma.Body.eqB_LPReadingLNode_sound _ _ h3
-      subst e1 e2 e3
+    · have h1 := h
+      have e1 := Ecma.Body.eqB_LStmt_sound _ _ h1
+      subst e1
       rfl
     · exact absurd h Bool.false_ne_true
-  | .findSuchThat a1 a2 a3 a4 a5, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := EqB.sound _ _ h3
-      have e4 := EqB.sound _ _ h4
-      have e5 := Ecma.Stmt.eqB_sound _ _ h5
-      subst e1 e2 e3 e4 e5
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .letSuchThat a1 a2 a3, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := EqB.sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .macro a1 a2, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .phrase a1 a2, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .prose a1 a2, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .withSteps a1 a2, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨h1, h2⟩ := h
-      have e1 := Ecma.Stmt.eqB_sound _ _ h1
-      have e2 := Ecma.Body.eqB_LNode_sound _ _ h2
-      subst e1 e2
-      rfl
-    · exact absurd h Bool.false_ne_true
-  | .expanded a1 a2 a3, b, h => by
-    unfold Ecma.Stmt.eqB at h
-    split at h
-    · simp only [Bool.and_eq_true] at h
-      obtain ⟨⟨h1, h2⟩, h3⟩ := h
-      have e1 := EqB.sound _ _ h1
-      have e2 := EqB.sound _ _ h2
-      have e3 := Ecma.Body.eqB_LNode_sound _ _ h3
-      subst e1 e2 e3
-      rfl
-    · exact absurd h Bool.false_ne_true
-
-theorem Ecma.Node.eqB_sound : ∀ a b : Ecma.Node, Ecma.Node.eqB a b = true → a = b
-  | .mk a1 a2, .mk b1 b2, h => by
-    unfold Ecma.Node.eqB at h
-    simp only [Bool.and_eq_true] at h
-    obtain ⟨h1, h2⟩ := h
-    have e1 := EqB.sound _ _ h1
-    have e2 := Ecma.Stmt.eqB_sound _ _ h2
-    subst e1 e2
-    rfl
 
 theorem Ecma.Arm.eqB_sound : ∀ a b : Ecma.Arm, Ecma.Arm.eqB a b = true → a = b
-  | .mk a1 a2 a3, .mk b1 b2 b3, h => by
+  | .mk a1 a2, .mk b1 b2, h => by
     unfold Ecma.Arm.eqB at h
     simp only [Bool.and_eq_true] at h
-    obtain ⟨⟨h1, h2⟩, h3⟩ := h
-    have e1 := EqB.sound _ _ h1
-    have e2 := EqB.sound _ _ h2
-    have e3 := Ecma.Body.eqB_sound _ _ h3
-    subst e1 e2 e3
-    rfl
-
-theorem Ecma.Body.eqB_LNode_sound : ∀ a b : (List Ecma.Node), Ecma.Body.eqB_LNode a b = true → a = b
-  | [], [], _ => rfl
-  | _ :: _, _ :: _, h => by
-    simp only [Ecma.Body.eqB_LNode, Bool.and_eq_true] at h
     obtain ⟨h1, h2⟩ := h
-    have e1 := Ecma.Node.eqB_sound _ _ h1
-    have e2 := Ecma.Body.eqB_LNode_sound _ _ h2
+    have e1 := EqB.sound _ _ h1
+    have e2 := Ecma.Body.eqB_sound _ _ h2
     subst e1 e2
     rfl
-  | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Body.eqB_LNode] at h
+
+theorem Ecma.Body.eqB_LStmt_sound : ∀ a b : (List Ecma.Stmt), Ecma.Body.eqB_LStmt a b = true → a = b
+  | [], [], _ => rfl
+  | _ :: _, _ :: _, h => by
+    simp only [Ecma.Body.eqB_LStmt, Bool.and_eq_true] at h
+    obtain ⟨h1, h2⟩ := h
+    have e1 := Ecma.Stmt.eqB_sound _ _ h1
+    have e2 := Ecma.Body.eqB_LStmt_sound _ _ h2
+    subst e1 e2
+    rfl
+  | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Body.eqB_LStmt] at h
 
 theorem Ecma.Body.eqB_LArm_sound : ∀ a b : (List Ecma.Arm), Ecma.Body.eqB_LArm a b = true → a = b
   | [], [], _ => rfl
@@ -2884,31 +2238,10 @@ theorem Ecma.Body.eqB_OArm_sound : ∀ a b : (Option Ecma.Arm), Ecma.Body.eqB_OA
     subst e1
     rfl
   | none, some _, h | some _, none, h => by simp [Ecma.Body.eqB_OArm] at h
-
-theorem Ecma.Body.eqB_PReadingLNode_sound : ∀ a b : (Ecma.Reading × (List Ecma.Node)), Ecma.Body.eqB_PReadingLNode a b = true → a = b
-  | (_, _), (_, _), h => by
-    simp only [Ecma.Body.eqB_PReadingLNode, Bool.and_eq_true] at h
-    obtain ⟨h1, h2⟩ := h
-    have e1 := EqB.sound _ _ h1
-    have e2 := Ecma.Body.eqB_LNode_sound _ _ h2
-    subst e1 e2
-    rfl
-
-theorem Ecma.Body.eqB_LPReadingLNode_sound : ∀ a b : (List (Ecma.Reading × (List Ecma.Node))), Ecma.Body.eqB_LPReadingLNode a b = true → a = b
-  | [], [], _ => rfl
-  | _ :: _, _ :: _, h => by
-    simp only [Ecma.Body.eqB_LPReadingLNode, Bool.and_eq_true] at h
-    obtain ⟨h1, h2⟩ := h
-    have e1 := Ecma.Body.eqB_PReadingLNode_sound _ _ h1
-    have e2 := Ecma.Body.eqB_LPReadingLNode_sound _ _ h2
-    subst e1 e2
-    rfl
-  | [], _ :: _, h | _ :: _, [], h => by simp [Ecma.Body.eqB_LPReadingLNode] at h
 end
 
 instance : EqB Ecma.Body := ⟨Ecma.Body.eqB, Ecma.Body.eqB_sound⟩
 instance : EqB Ecma.Stmt := ⟨Ecma.Stmt.eqB, Ecma.Stmt.eqB_sound⟩
-instance : EqB Ecma.Node := ⟨Ecma.Node.eqB, Ecma.Node.eqB_sound⟩
 instance : EqB Ecma.Arm := ⟨Ecma.Arm.eqB, Ecma.Arm.eqB_sound⟩
 
 deriving instance DecidableEq for Ecma.CloKind
@@ -2934,23 +2267,21 @@ theorem Ecma.CloLit.eqB_sound : ∀ a b : Ecma.CloLit, Ecma.CloLit.eqB a b = tru
 instance : EqB Ecma.CloLit := ⟨Ecma.CloLit.eqB, Ecma.CloLit.eqB_sound⟩
 
 def Ecma.Alg.eqB : Ecma.Alg → Ecma.Alg → Bool
-  | .mk a1 a2 a3 a4 a5 a6 a7 a8, .mk b1 b2 b3 b4 b5 b6 b7 b8 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && EqB.eqB a5 b5 && EqB.eqB a6 b6 && EqB.eqB a7 b7 && EqB.eqB a8 b8
+  | .mk a1 a2 a3 a4 a5 a6, .mk b1 b2 b3 b4 b5 b6 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && EqB.eqB a5 b5 && EqB.eqB a6 b6
 
 theorem Ecma.Alg.eqB_sound : ∀ a b : Ecma.Alg, Ecma.Alg.eqB a b = true → a = b
-  | .mk a1 a2 a3 a4 a5 a6 a7 a8, .mk b1 b2 b3 b4 b5 b6 b7 b8, h => by
+  | .mk a1 a2 a3 a4 a5 a6, .mk b1 b2 b3 b4 b5 b6, h => by
     unfold Ecma.Alg.eqB at h
     dsimp only at h
     simp only [Bool.and_eq_true] at h
-    obtain ⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩ := h
+    obtain ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩ := h
     have e1 := EqB.sound _ _ h1
     have e2 := EqB.sound _ _ h2
     have e3 := EqB.sound _ _ h3
     have e4 := EqB.sound _ _ h4
     have e5 := EqB.sound _ _ h5
     have e6 := EqB.sound _ _ h6
-    have e7 := EqB.sound _ _ h7
-    have e8 := EqB.sound _ _ h8
-    subst e1 e2 e3 e4 e5 e6 e7 e8
+    subst e1 e2 e3 e4 e5 e6
     rfl
 
 instance : EqB Ecma.Alg := ⟨Ecma.Alg.eqB, Ecma.Alg.eqB_sound⟩
@@ -2958,14 +2289,14 @@ instance : EqB Ecma.Alg := ⟨Ecma.Alg.eqB, Ecma.Alg.eqB_sound⟩
 deriving instance DecidableEq for Ecma.RowForm
 
 def Ecma.SdoRow.eqB : Ecma.SdoRow → Ecma.SdoRow → Bool
-  | .mk a1 a2 a3 a4 a5 a6 a7 a8 a9 a10, .mk b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && EqB.eqB a5 b5 && EqB.eqB a6 b6 && EqB.eqB a7 b7 && EqB.eqB a8 b8 && EqB.eqB a9 b9 && EqB.eqB a10 b10
+  | .mk a1 a2 a3 a4 a5 a6 a7 a8 a9, .mk b1 b2 b3 b4 b5 b6 b7 b8 b9 => EqB.eqB a1 b1 && EqB.eqB a2 b2 && EqB.eqB a3 b3 && EqB.eqB a4 b4 && EqB.eqB a5 b5 && EqB.eqB a6 b6 && EqB.eqB a7 b7 && EqB.eqB a8 b8 && EqB.eqB a9 b9
 
 theorem Ecma.SdoRow.eqB_sound : ∀ a b : Ecma.SdoRow, Ecma.SdoRow.eqB a b = true → a = b
-  | .mk a1 a2 a3 a4 a5 a6 a7 a8 a9 a10, .mk b1 b2 b3 b4 b5 b6 b7 b8 b9 b10, h => by
+  | .mk a1 a2 a3 a4 a5 a6 a7 a8 a9, .mk b1 b2 b3 b4 b5 b6 b7 b8 b9, h => by
     unfold Ecma.SdoRow.eqB at h
     dsimp only at h
     simp only [Bool.and_eq_true] at h
-    obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩ := h
+    obtain ⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩ := h
     have e1 := EqB.sound _ _ h1
     have e2 := EqB.sound _ _ h2
     have e3 := EqB.sound _ _ h3
@@ -2975,8 +2306,7 @@ theorem Ecma.SdoRow.eqB_sound : ∀ a b : Ecma.SdoRow, Ecma.SdoRow.eqB a b = tru
     have e7 := EqB.sound _ _ h7
     have e8 := EqB.sound _ _ h8
     have e9 := EqB.sound _ _ h9
-    have e10 := EqB.sound _ _ h10
-    subst e1 e2 e3 e4 e5 e6 e7 e8 e9 e10
+    subst e1 e2 e3 e4 e5 e6 e7 e8 e9
     rfl
 
 instance : EqB Ecma.SdoRow := ⟨Ecma.SdoRow.eqB, Ecma.SdoRow.eqB_sound⟩

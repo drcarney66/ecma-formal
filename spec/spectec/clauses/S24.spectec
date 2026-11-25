@@ -1,0 +1,764 @@
+-- ECMA-262 SpecTec Clauses: S24
+
+def @sec-map-iterable "Map" (kind builtin params [iterable opt]) vars [#"this value", NewTarget, iterable, map, adder] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let map = ? @sec-ordinarycreatefromconstructor(new_target, "%Map.prototype%", [[[MapData]]])
+  set field map[[MapData]] = $ListNew()
+  if iterable is val {undefined; null} -> return map
+  let adder = ? @sec-get-o-p(map, "set")
+  if @sec-iscallable(adder) is val {false} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-add-entries-from-iterable(map, iterable, adder)
+}
+
+def @sec-add-entries-from-iterable "AddEntriesFromIterable" (kind ao params [target : Object, iterable : butnot(#"ECMAScript language value", val(undefined) | val(null)), adder : #"function object"] -> completion<Object> | #"throw completion") vars [target, iterable, adder, iteratorRecord, next, error, key, value, status] {
+  let iteratorRecord = ? @sec-getiterator(iterable, ~sync~)
+  repeat {
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} -> return target
+    if next is not ty {Object} {
+      let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+      return ? @sec-iteratorclose(iteratorRecord, error)
+    }
+    let key = @sec-completion-ao(@sec-get-o-p(next, "0"))
+    block {
+      assert key is ty {#"Completion Record"}
+      if key is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iteratorRecord, key)
+      set var key = ! key
+    }
+    let value = @sec-completion-ao(@sec-get-o-p(next, "1"))
+    block {
+      assert value is ty {#"Completion Record"}
+      if value is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iteratorRecord, value)
+      set var value = ! value
+    }
+    let status = @sec-completion-ao(@sec-call(adder, target, [key, value]))
+    block {
+      assert status is ty {#"Completion Record"}
+      if status is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iteratorRecord, status)
+      set var status = ! status
+    }
+  }
+}
+
+def @sec-map.groupby "Map.groupBy" (kind builtin params [items, callback]) vars [#"this value", NewTarget, items, callback, groups, map, group, elements, entry] {
+  let groups = ? @sec-groupby(items, callback, ~collection~)
+  let map = ! @sec-construct(intrinsic [[Map]])
+  for_each_rec [[[Key]], [[Elements]]] group in groups {
+    let elements = @sec-createarrayfromlist(group[[Elements]])
+    let entry = record Record { [[Key]]: group[[Key]], [[Value]]: elements }
+    perform $Append(?entry, map[[MapData]])
+  }
+  return map
+}
+
+def @sec-get-map-%symbol.species% "get Map [ %Symbol.species% ]" (kind builtin params []) vars [#"this value", NewTarget] {
+  return this_value
+}
+
+def @sec-map.prototype.clear "Map.prototype.clear" (kind builtin params []) vars [#"this value", NewTarget, map, entry] {
+  let map = this_value
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  for_each_rec [[[Key]], [[Value]]] entry in map[[MapData]] {
+    set field entry[[Key]] = ~empty~
+    set field entry[[Value]] = ~empty~
+  }
+  return undefined
+}
+
+def @sec-map.prototype.delete "Map.prototype.delete" (kind builtin params [key]) vars [#"this value", NewTarget, key, map, entry] {
+  let map = this_value
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  set var key = @sec-canonicalizekeyedcollectionkey(key)
+  for_each_rec [[[Key]], [[Value]]] entry in map[[MapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} {
+      set field entry[[Key]] = ~empty~
+      set field entry[[Value]] = ~empty~
+      return true
+    }
+  }
+  return false
+}
+
+def @sec-map.prototype.entries "Map.prototype.entries" (kind builtin params []) vars [#"this value", NewTarget, map] {
+  let map = this_value
+  return ? @sec-createmapiterator(map, ~key+value~)
+}
+
+def @sec-map.prototype.foreach "Map.prototype.forEach" (kind builtin params [callback, thisArg opt]) vars [#"this value", NewTarget, callback, thisArg, map, entries, entriesCount, index, entry] {
+  let map = this_value
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  if @sec-iscallable(callback) is val {false} -> throw @ph-new-error([[TypeError]])
+  let entries = map[[MapData]]
+  let entriesCount = $ListLen(?entries)
+  let index = 0
+  repeat_while index < entriesCount {
+    let entry = entries[index]
+    set var index = index + 1
+    if entry[[Key]] is not val {~empty~} {
+      perform ? @sec-call(callback, thisArg, [entry[[Value]], entry[[Key]], map])
+      note "The number of elements in _entries_ may have increased during execution of _callback_."
+      set var entriesCount = $ListLen(?entries)
+    }
+  }
+  return undefined
+}
+
+def @sec-map.prototype.get "Map.prototype.get" (kind builtin params [key]) vars [#"this value", NewTarget, key, map, entry] {
+  let map = this_value
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  set var key = @sec-canonicalizekeyedcollectionkey(key)
+  for_each_rec [[[Key]], [[Value]]] entry in map[[MapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} -> return entry[[Value]]
+  }
+  return undefined
+}
+
+def @sec-map.prototype.getorinsert "Map.prototype.getOrInsert" (kind builtin params [key, value]) vars [#"this value", NewTarget, key, value, map, entry] {
+  let map = this_value
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  set var key = @sec-canonicalizekeyedcollectionkey(key)
+  for_each_rec [[[Key]], [[Value]]] entry in map[[MapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} -> return entry[[Value]]
+  }
+  let entry = record Record { [[Key]]: key, [[Value]]: value }
+  perform $Append(?entry, map[[MapData]])
+  return value
+}
+
+def @sec-map.prototype.getorinsertcomputed "Map.prototype.getOrInsertComputed" (kind builtin params [key, callback]) vars [#"this value", NewTarget, key, callback, map, entry, value] {
+  let map = this_value
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  if @sec-iscallable(callback) is val {false} -> throw @ph-new-error([[TypeError]])
+  set var key = @sec-canonicalizekeyedcollectionkey(key)
+  for_each_rec [[[Key]], [[Value]]] entry in map[[MapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} -> return entry[[Value]]
+  }
+  let value = ? @sec-call(callback, undefined, [key])
+  note "The Map may have been modified during execution of _callback_."
+  for_each_rec [[[Key]], [[Value]]] entry in map[[MapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} {
+      set field entry[[Value]] = value
+      return value
+    }
+  }
+  let entry = record Record { [[Key]]: key, [[Value]]: value }
+  perform $Append(?entry, map[[MapData]])
+  return value
+}
+
+def @sec-map.prototype.has "Map.prototype.has" (kind builtin params [key]) vars [#"this value", NewTarget, key, map, entry] {
+  let map = this_value
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  set var key = @sec-canonicalizekeyedcollectionkey(key)
+  for_each_rec [[[Key]], [[Value]]] entry in map[[MapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} -> return true
+  }
+  return false
+}
+
+def @sec-map.prototype.keys "Map.prototype.keys" (kind builtin params []) vars [#"this value", NewTarget, map] {
+  let map = this_value
+  return ? @sec-createmapiterator(map, ~key~)
+}
+
+def @sec-map.prototype.set "Map.prototype.set" (kind builtin params [key, value]) vars [#"this value", NewTarget, key, value, map, entry] {
+  let map = this_value
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  set var key = @sec-canonicalizekeyedcollectionkey(key)
+  for_each_rec [[[Key]], [[Value]]] entry in map[[MapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} {
+      set field entry[[Value]] = value
+      return map
+    }
+  }
+  let entry = record Record { [[Key]]: key, [[Value]]: value }
+  perform $Append(?entry, map[[MapData]])
+  return map
+}
+
+def @sec-get-map.prototype.size "get Map.prototype.size" (kind builtin params []) vars [#"this value", NewTarget, map, count, entry] {
+  let map = this_value
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  let count = 0
+  for_each_rec [[[Key]], [[Value]]] entry in map[[MapData]] {
+    if entry[[Key]] is not val {~empty~} -> set var count = count + 1
+  }
+  return $𝔽(count)
+}
+
+def @sec-map.prototype.values "Map.prototype.values" (kind builtin params []) vars [#"this value", NewTarget, map] {
+  let map = this_value
+  return ? @sec-createmapiterator(map, ~value~)
+}
+
+def @sec-createmapiterator "CreateMapIterator" (kind ao params [map : #"ECMAScript language value", #"kind" : val(~key+value~) | val(~key~) | val(~value~)] -> completion<Generator> | #"throw completion") vars [map, #"kind", #"closure", entries, index, entriesCount, entry, result] {
+  perform ? @sec-requireinternalslot(map, [[MapData]])
+  let #"closure" = closure 0
+  return @sec-createiteratorfromclosure(#"closure", "%MapIteratorPrototype%", intrinsic [[MapIteratorPrototype]])
+  closure abstract params none captures [map, #"kind"] {
+    let entries = map[[MapData]]
+    let index = 0
+    let entriesCount = $ListLen(?entries)
+    repeat_while index < entriesCount {
+      let entry = entries[index]
+      set var index = index + 1
+      if entry[[Key]] is not val {~empty~} {
+        if #"kind" is val {~key~} {
+          let result = entry[[Key]]
+        }
+        else_if #"kind" is val {~value~} {
+          let result = entry[[Value]]
+        }
+        else {
+          assert #"kind" is val {~key+value~}
+          let result = @sec-createarrayfromlist([entry[[Key]], entry[[Value]]])
+        }
+        perform ? @sec-generatoryield(@sec-createiterresultobject(result, false))
+        note "The number of elements in _entries_ may have increased while execution of this abstract operation was paused by GeneratorYield."
+        set var entriesCount = $ListLen(?entries)
+      }
+    }
+    return @sec-normalcompletion(~unused~)
+  }
+}
+
+def @sec-%mapiteratorprototype%.next "%MapIteratorPrototype%.next" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-generatorresume(this_value, ~empty~, "%MapIteratorPrototype%")
+}
+
+def @sec-getsetrecord "GetSetRecord" (kind ao params [#"obj" : #"ECMAScript language value"] -> completion<#"Set Record"> | #"throw completion") vars [#"obj", rawSize, numberSize, intSize, has, #"keys"] {
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let rawSize = ? @sec-get-o-p(#"obj", "size")
+  let numberSize = ? @sec-tonumber(rawSize)
+  note "If _rawSize_ is *undefined*, then _numberSize_ will be *NaN*."
+  if numberSize is val {nan} -> throw @ph-new-error([[TypeError]])
+  let intSize = ! @sec-tointegerorinfinity(numberSize)
+  if intSize < 0 -> throw @ph-new-error([[RangeError]])
+  let has = ? @sec-get-o-p(#"obj", "has")
+  if @sec-iscallable(has) is val {false} -> throw @ph-new-error([[TypeError]])
+  let #"keys" = ? @sec-get-o-p(#"obj", "keys")
+  if @sec-iscallable(#"keys") is val {false} -> throw @ph-new-error([[TypeError]])
+  return @ph-new-record(record #"Set Record" { [[SetObject]]: #"obj", [[Size]]: intSize, [[Has]]: has, [[Keys]]: #"keys" })
+}
+
+def @sec-setdatahas "SetDataHas" (kind ao params [setData : list<#"ECMAScript language value" | val(~empty~)>, value : #"ECMAScript language value"] -> Boolean) vars [setData, value] {
+  if @sec-setdataindex(setData, value) is val {~not-found~} -> return false
+  return true
+}
+
+def @sec-setdataindex "SetDataIndex" (kind ao params [setData : list<#"ECMAScript language value" | val(~empty~)>, value : #"ECMAScript language value"] -> sort [#"non-negative"] integer | val(~not-found~)) vars [setData, value, size, index, element] {
+  set var value = @sec-canonicalizekeyedcollectionkey(value)
+  let size = $ListLen(?setData)
+  let index = 0
+  repeat_while index < size {
+    let element = setData[index]
+    if element is not val {~empty~} and element is val {value} {
+      return index
+    }
+    set var index = index + 1
+  }
+  return ~not-found~
+}
+
+def @sec-setdatasize "SetDataSize" (kind ao params [setData : list<#"ECMAScript language value" | val(~empty~)>] -> sort [#"non-negative"] integer) vars [setData, count, element] {
+  let count = 0
+  for_each element in setData {
+    if element is not val {~empty~} -> set var count = count + 1
+  }
+  return count
+}
+
+def @sec-set-iterable "Set" (kind builtin params [iterable opt]) vars [#"this value", NewTarget, iterable, #"set", adder, iteratorRecord, next, status] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let #"set" = ? @sec-ordinarycreatefromconstructor(new_target, "%Set.prototype%", [[[SetData]]])
+  set field #"set"[[SetData]] = $ListNew()
+  if iterable is val {undefined; null} -> return #"set"
+  let adder = ? @sec-get-o-p(#"set", "add")
+  if @sec-iscallable(adder) is val {false} -> throw @ph-new-error([[TypeError]])
+  let iteratorRecord = ? @sec-getiterator(iterable, ~sync~)
+  repeat {
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} -> return #"set"
+    let status = @sec-completion-ao(@sec-call(adder, #"set", [next]))
+    block {
+      assert status is ty {#"Completion Record"}
+      if status is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iteratorRecord, status)
+      set var status = ! status
+    }
+  }
+}
+
+def @sec-get-set-%symbol.species% "get Set [ %Symbol.species% ]" (kind builtin params []) vars [#"this value", NewTarget] {
+  return this_value
+}
+
+def @sec-set.prototype.add "Set.prototype.add" (kind builtin params [value]) vars [#"this value", NewTarget, value, #"set", entry] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  set var value = @sec-canonicalizekeyedcollectionkey(value)
+  for_each entry in #"set"[[SetData]] {
+    if entry is not val {~empty~} and @sec-samevalue(entry, value) is val {true} {
+      return #"set"
+    }
+  }
+  perform $Append(?value, #"set"[[SetData]])
+  return #"set"
+}
+
+def @sec-set.prototype.clear "Set.prototype.clear" (kind builtin params []) vars [#"this value", NewTarget, #"set", entry] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  for_each entry in #"set"[[SetData]] {
+    perform $ReplaceElem(#"set"[[SetData]], ?entry, ~empty~)
+  }
+  return undefined
+}
+
+def @sec-set.prototype.delete "Set.prototype.delete" (kind builtin params [value]) vars [#"this value", NewTarget, value, #"set", entry] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  set var value = @sec-canonicalizekeyedcollectionkey(value)
+  for_each entry in #"set"[[SetData]] {
+    if entry is not val {~empty~} and @sec-samevalue(entry, value) is val {true} {
+      perform $ReplaceElem(#"set"[[SetData]], ?entry, ~empty~)
+      return true
+    }
+  }
+  return false
+}
+
+def @sec-set.prototype.difference "Set.prototype.difference" (kind builtin params [other]) vars [#"this value", NewTarget, other, #"set", otherRecord, resultSetData, thisSize, index, entry, inOther, keysIterator, next, valueIndex, result] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  let otherRecord = ? @sec-getsetrecord(other)
+  let resultSetData = $Copy(#"set"[[SetData]])
+  if @sec-setdatasize(#"set"[[SetData]]) <= otherRecord[[Size]] {
+    let thisSize = $ListLen(#"set"[[SetData]])
+    let index = 0
+    repeat_while index < thisSize {
+      let entry = resultSetData[index]
+      if entry is not val {~empty~} {
+        let inOther = @sec-toboolean(? @sec-call(otherRecord[[Has]], otherRecord[[SetObject]], [entry]))
+        if inOther is val {true} {
+          set expr resultSetData[index] = ~empty~
+        }
+      }
+      set var index = index + 1
+    }
+  }
+  else {
+    let keysIterator = ? @sec-getiteratorfrommethod(otherRecord[[SetObject]], otherRecord[[Keys]])
+    let next = ~not-started~
+    repeat_while next is not val {~done~} {
+      set var next = ? @sec-iteratorstepvalue(keysIterator)
+      if next is not val {~done~} {
+        set var next = @sec-canonicalizekeyedcollectionkey(next)
+        let valueIndex = @sec-setdataindex(resultSetData, next)
+        if valueIndex is not val {~not-found~} {
+          set expr resultSetData[valueIndex] = ~empty~
+        }
+      }
+    }
+  }
+  let result = @sec-ordinaryobjectcreate(intrinsic [[Set.prototype]], [[[SetData]]])
+  set field result[[SetData]] = resultSetData
+  return result
+}
+
+def @sec-set.prototype.entries "Set.prototype.entries" (kind builtin params []) vars [#"this value", NewTarget, #"set"] {
+  let #"set" = this_value
+  return ? @sec-createsetiterator(#"set", ~key+value~)
+}
+
+def @sec-set.prototype.foreach "Set.prototype.forEach" (kind builtin params [callback, thisArg opt]) vars [#"this value", NewTarget, callback, thisArg, #"set", entries, entriesCount, index, entry] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  if @sec-iscallable(callback) is val {false} -> throw @ph-new-error([[TypeError]])
+  let entries = #"set"[[SetData]]
+  let entriesCount = $ListLen(?entries)
+  let index = 0
+  repeat_while index < entriesCount {
+    let entry = entries[index]
+    set var index = index + 1
+    if entry is not val {~empty~} {
+      perform ? @sec-call(callback, thisArg, [entry, entry, #"set"])
+      note "The number of elements in _entries_ may have increased during execution of _callback_."
+      set var entriesCount = $ListLen(?entries)
+    }
+  }
+  return undefined
+}
+
+def @sec-set.prototype.has "Set.prototype.has" (kind builtin params [value]) vars [#"this value", NewTarget, value, #"set", entry] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  set var value = @sec-canonicalizekeyedcollectionkey(value)
+  for_each entry in #"set"[[SetData]] {
+    if entry is not val {~empty~} and @sec-samevalue(entry, value) is val {true} -> return true
+  }
+  return false
+}
+
+def @sec-set.prototype.intersection "Set.prototype.intersection" (kind builtin params [other]) vars [#"this value", NewTarget, other, #"set", otherRecord, resultSetData, thisSize, index, entry, inOther, keysIterator, next, inThis, result] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  let otherRecord = ? @sec-getsetrecord(other)
+  let resultSetData = $ListNew()
+  if @sec-setdatasize(#"set"[[SetData]]) <= otherRecord[[Size]] {
+    let thisSize = $ListLen(#"set"[[SetData]])
+    let index = 0
+    repeat_while index < thisSize {
+      let entry = #"set"[[SetData]][index]
+      set var index = index + 1
+      if entry is not val {~empty~} {
+        let inOther = @sec-toboolean(? @sec-call(otherRecord[[Has]], otherRecord[[SetObject]], [entry]))
+        if inOther is val {true} {
+          note "It is possible for earlier calls to _otherRecord_.[[Has]] to remove and re-add an element of _set_.[[SetData]], which can cause the same element to be visited twice during this iteration."
+          if @sec-setdatahas(resultSetData, entry) is val {false} {
+            perform $Append(?entry, ?resultSetData)
+          }
+        }
+        note "The number of elements in _set_.[[SetData]] may have increased during execution of _otherRecord_.[[Has]]."
+        set var thisSize = $ListLen(#"set"[[SetData]])
+      }
+    }
+  }
+  else {
+    let keysIterator = ? @sec-getiteratorfrommethod(otherRecord[[SetObject]], otherRecord[[Keys]])
+    let next = ~not-started~
+    repeat_while next is not val {~done~} {
+      set var next = ? @sec-iteratorstepvalue(keysIterator)
+      if next is not val {~done~} {
+        set var next = @sec-canonicalizekeyedcollectionkey(next)
+        let inThis = @sec-setdatahas(#"set"[[SetData]], next)
+        if inThis is val {true} {
+          note "Because _other_ is an arbitrary object, it is possible for its *\"keys\"* iterator to produce the same value more than once."
+          if @sec-setdatahas(resultSetData, next) is val {false} {
+            perform $Append(?next, ?resultSetData)
+          }
+        }
+      }
+    }
+  }
+  let result = @sec-ordinaryobjectcreate(intrinsic [[Set.prototype]], [[[SetData]]])
+  set field result[[SetData]] = resultSetData
+  return result
+}
+
+def @sec-set.prototype.isdisjointfrom "Set.prototype.isDisjointFrom" (kind builtin params [other]) vars [#"this value", NewTarget, other, #"set", otherRecord, thisSize, index, entry, inOther, keysIterator, next] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  let otherRecord = ? @sec-getsetrecord(other)
+  if @sec-setdatasize(#"set"[[SetData]]) <= otherRecord[[Size]] {
+    let thisSize = $ListLen(#"set"[[SetData]])
+    let index = 0
+    repeat_while index < thisSize {
+      let entry = #"set"[[SetData]][index]
+      set var index = index + 1
+      if entry is not val {~empty~} {
+        let inOther = @sec-toboolean(? @sec-call(otherRecord[[Has]], otherRecord[[SetObject]], [entry]))
+        if inOther is val {true} -> return false
+        note "The number of elements in _set_.[[SetData]] may have increased during execution of _otherRecord_.[[Has]]."
+        set var thisSize = $ListLen(#"set"[[SetData]])
+      }
+    }
+  }
+  else {
+    let keysIterator = ? @sec-getiteratorfrommethod(otherRecord[[SetObject]], otherRecord[[Keys]])
+    let next = ~not-started~
+    repeat_while next is not val {~done~} {
+      set var next = ? @sec-iteratorstepvalue(keysIterator)
+      if next is not val {~done~} {
+        if @sec-setdatahas(#"set"[[SetData]], next) is val {true} {
+          perform ? @sec-iteratorclose(keysIterator, @sec-normalcompletion(~unused~))
+          return false
+        }
+      }
+    }
+  }
+  return true
+}
+
+def @sec-set.prototype.issubsetof "Set.prototype.isSubsetOf" (kind builtin params [other]) vars [#"this value", NewTarget, other, #"set", otherRecord, thisSize, index, entry, inOther] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  let otherRecord = ? @sec-getsetrecord(other)
+  if @sec-setdatasize(#"set"[[SetData]]) > otherRecord[[Size]] -> return false
+  let thisSize = $ListLen(#"set"[[SetData]])
+  let index = 0
+  repeat_while index < thisSize {
+    let entry = #"set"[[SetData]][index]
+    set var index = index + 1
+    if entry is not val {~empty~} {
+      let inOther = @sec-toboolean(? @sec-call(otherRecord[[Has]], otherRecord[[SetObject]], [entry]))
+      if inOther is val {false} -> return false
+      note "The number of elements in _set_.[[SetData]] may have increased during execution of _otherRecord_.[[Has]]."
+      set var thisSize = $ListLen(#"set"[[SetData]])
+    }
+  }
+  return true
+}
+
+def @sec-set.prototype.issupersetof "Set.prototype.isSupersetOf" (kind builtin params [other]) vars [#"this value", NewTarget, other, #"set", otherRecord, keysIterator, next] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  let otherRecord = ? @sec-getsetrecord(other)
+  if @sec-setdatasize(#"set"[[SetData]]) < otherRecord[[Size]] -> return false
+  let keysIterator = ? @sec-getiteratorfrommethod(otherRecord[[SetObject]], otherRecord[[Keys]])
+  let next = ~not-started~
+  repeat_while next is not val {~done~} {
+    set var next = ? @sec-iteratorstepvalue(keysIterator)
+    if next is not val {~done~} {
+      if @sec-setdatahas(#"set"[[SetData]], next) is val {false} {
+        perform ? @sec-iteratorclose(keysIterator, @sec-normalcompletion(~unused~))
+        return false
+      }
+    }
+  }
+  return true
+}
+
+def @sec-get-set.prototype.size "get Set.prototype.size" (kind builtin params []) vars [#"this value", NewTarget, #"set", size] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  let size = @sec-setdatasize(#"set"[[SetData]])
+  return $𝔽(size)
+}
+
+def @sec-set.prototype.symmetricdifference "Set.prototype.symmetricDifference" (kind builtin params [other]) vars [#"this value", NewTarget, other, #"set", otherRecord, keysIterator, resultSetData, next, resultIndex, alreadyInResult, result] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  let otherRecord = ? @sec-getsetrecord(other)
+  let keysIterator = ? @sec-getiteratorfrommethod(otherRecord[[SetObject]], otherRecord[[Keys]])
+  let resultSetData = $Copy(#"set"[[SetData]])
+  let next = ~not-started~
+  repeat_while next is not val {~done~} {
+    set var next = ? @sec-iteratorstepvalue(keysIterator)
+    if next is not val {~done~} {
+      set var next = @sec-canonicalizekeyedcollectionkey(next)
+      let resultIndex = @sec-setdataindex(resultSetData, next)
+      if_else resultIndex is val {~not-found~} { let alreadyInResult = false } else { let alreadyInResult = true }
+      if @sec-setdatahas(#"set"[[SetData]], next) is val {true} {
+        if alreadyInResult is val {true} -> set expr resultSetData[resultIndex] = ~empty~
+      }
+      else {
+        if alreadyInResult is val {false} -> perform $Append(?next, ?resultSetData)
+      }
+    }
+  }
+  let result = @sec-ordinaryobjectcreate(intrinsic [[Set.prototype]], [[[SetData]]])
+  set field result[[SetData]] = resultSetData
+  return result
+}
+
+def @sec-set.prototype.union "Set.prototype.union" (kind builtin params [other]) vars [#"this value", NewTarget, other, #"set", otherRecord, keysIterator, resultSetData, next, result] {
+  let #"set" = this_value
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  let otherRecord = ? @sec-getsetrecord(other)
+  let keysIterator = ? @sec-getiteratorfrommethod(otherRecord[[SetObject]], otherRecord[[Keys]])
+  let resultSetData = $Copy(#"set"[[SetData]])
+  let next = ~not-started~
+  repeat_while next is not val {~done~} {
+    set var next = ? @sec-iteratorstepvalue(keysIterator)
+    if next is not val {~done~} {
+      set var next = @sec-canonicalizekeyedcollectionkey(next)
+      if @sec-setdatahas(resultSetData, next) is val {false} {
+        perform $Append(?next, ?resultSetData)
+      }
+    }
+  }
+  let result = @sec-ordinaryobjectcreate(intrinsic [[Set.prototype]], [[[SetData]]])
+  set field result[[SetData]] = resultSetData
+  return result
+}
+
+def @sec-set.prototype.values "Set.prototype.values" (kind builtin params []) vars [#"this value", NewTarget, #"set"] {
+  let #"set" = this_value
+  return ? @sec-createsetiterator(#"set", ~value~)
+}
+
+def @sec-createsetiterator "CreateSetIterator" (kind ao params [#"set" : #"ECMAScript language value", #"kind" : val(~key+value~) | val(~value~)] -> completion<Generator> | #"throw completion") vars [#"set", #"kind", #"closure", index, entries, entriesCount, entry, result] {
+  perform ? @sec-requireinternalslot(#"set", [[SetData]])
+  let #"closure" = closure 0
+  return @sec-createiteratorfromclosure(#"closure", "%SetIteratorPrototype%", intrinsic [[SetIteratorPrototype]])
+  closure abstract params none captures [#"set", #"kind"] {
+    let index = 0
+    let entries = #"set"[[SetData]]
+    let entriesCount = $ListLen(?entries)
+    repeat_while index < entriesCount {
+      let entry = entries[index]
+      set var index = index + 1
+      if entry is not val {~empty~} {
+        if #"kind" is val {~key+value~} {
+          let result = @sec-createarrayfromlist([entry, entry])
+          perform ? @sec-generatoryield(@sec-createiterresultobject(result, false))
+        }
+        else {
+          assert #"kind" is val {~value~}
+          perform ? @sec-generatoryield(@sec-createiterresultobject(entry, false))
+        }
+        note "The number of elements in _entries_ may have increased while execution of this abstract operation was paused by GeneratorYield."
+        set var entriesCount = $ListLen(?entries)
+      }
+    }
+    return @sec-normalcompletion(~unused~)
+  }
+}
+
+def @sec-%setiteratorprototype%.next "%SetIteratorPrototype%.next" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-generatorresume(this_value, ~empty~, "%SetIteratorPrototype%")
+}
+
+def @sec-weakmap-iterable "WeakMap" (kind builtin params [iterable opt]) vars [#"this value", NewTarget, iterable, map, adder] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let map = ? @sec-ordinarycreatefromconstructor(new_target, "%WeakMap.prototype%", [[[WeakMapData]]])
+  set field map[[WeakMapData]] = $ListNew()
+  if iterable is val {undefined; null} -> return map
+  let adder = ? @sec-get-o-p(map, "set")
+  if @sec-iscallable(adder) is val {false} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-add-entries-from-iterable(map, iterable, adder)
+}
+
+def @sec-weakmap.prototype.delete "WeakMap.prototype.delete" (kind builtin params [key]) vars [#"this value", NewTarget, key, weakMap, entry] {
+  let weakMap = this_value
+  perform ? @sec-requireinternalslot(weakMap, [[WeakMapData]])
+  if @sec-canbeheldweakly(key) is val {false} -> return false
+  for_each_rec [[[Key]], [[Value]]] entry in weakMap[[WeakMapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} {
+      set field entry[[Key]] = ~empty~
+      set field entry[[Value]] = ~empty~
+      return true
+    }
+  }
+  return false
+}
+
+def @sec-weakmap.prototype.get "WeakMap.prototype.get" (kind builtin params [key]) vars [#"this value", NewTarget, key, weakMap, entry] {
+  let weakMap = this_value
+  perform ? @sec-requireinternalslot(weakMap, [[WeakMapData]])
+  if @sec-canbeheldweakly(key) is val {false} -> return undefined
+  for_each_rec [[[Key]], [[Value]]] entry in weakMap[[WeakMapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} -> return entry[[Value]]
+  }
+  return undefined
+}
+
+def @sec-weakmap.prototype.getorinsert "WeakMap.prototype.getOrInsert" (kind builtin params [key, value]) vars [#"this value", NewTarget, key, value, weakMap, entry] {
+  let weakMap = this_value
+  perform ? @sec-requireinternalslot(weakMap, [[WeakMapData]])
+  if @sec-canbeheldweakly(key) is val {false} -> throw @ph-new-error([[TypeError]])
+  for_each_rec [[[Key]], [[Value]]] entry in weakMap[[WeakMapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} -> return entry[[Value]]
+  }
+  let entry = record Record { [[Key]]: key, [[Value]]: value }
+  perform $Append(?entry, weakMap[[WeakMapData]])
+  return value
+}
+
+def @sec-weakmap.prototype.getorinsertcomputed "WeakMap.prototype.getOrInsertComputed" (kind builtin params [key, callback]) vars [#"this value", NewTarget, key, callback, weakMap, entry, value] {
+  let weakMap = this_value
+  perform ? @sec-requireinternalslot(weakMap, [[WeakMapData]])
+  if @sec-canbeheldweakly(key) is val {false} -> throw @ph-new-error([[TypeError]])
+  if @sec-iscallable(callback) is val {false} -> throw @ph-new-error([[TypeError]])
+  for_each_rec [[[Key]], [[Value]]] entry in weakMap[[WeakMapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} -> return entry[[Value]]
+  }
+  let value = ? @sec-call(callback, undefined, [key])
+  note "The WeakMap may have been modified during execution of _callback_."
+  for_each_rec [[[Key]], [[Value]]] entry in weakMap[[WeakMapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} {
+      set field entry[[Value]] = value
+      return value
+    }
+  }
+  let entry = record Record { [[Key]]: key, [[Value]]: value }
+  perform $Append(?entry, weakMap[[WeakMapData]])
+  return value
+}
+
+def @sec-weakmap.prototype.has "WeakMap.prototype.has" (kind builtin params [key]) vars [#"this value", NewTarget, key, weakMap, entry] {
+  let weakMap = this_value
+  perform ? @sec-requireinternalslot(weakMap, [[WeakMapData]])
+  if @sec-canbeheldweakly(key) is val {false} -> return false
+  for_each_rec [[[Key]], [[Value]]] entry in weakMap[[WeakMapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} -> return true
+  }
+  return false
+}
+
+def @sec-weakmap.prototype.set "WeakMap.prototype.set" (kind builtin params [key, value]) vars [#"this value", NewTarget, key, value, weakMap, entry] {
+  let weakMap = this_value
+  perform ? @sec-requireinternalslot(weakMap, [[WeakMapData]])
+  if @sec-canbeheldweakly(key) is val {false} -> throw @ph-new-error([[TypeError]])
+  for_each_rec [[[Key]], [[Value]]] entry in weakMap[[WeakMapData]] {
+    if entry[[Key]] is not val {~empty~} and @sec-samevalue(entry[[Key]], key) is val {true} {
+      set field entry[[Value]] = value
+      return weakMap
+    }
+  }
+  let entry = record Record { [[Key]]: key, [[Value]]: value }
+  perform $Append(?entry, weakMap[[WeakMapData]])
+  return weakMap
+}
+
+def @sec-weakset-iterable "WeakSet" (kind builtin params [iterable opt]) vars [#"this value", NewTarget, iterable, #"set", adder, iteratorRecord, next, status] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let #"set" = ? @sec-ordinarycreatefromconstructor(new_target, "%WeakSet.prototype%", [[[WeakSetData]]])
+  set field #"set"[[WeakSetData]] = $ListNew()
+  if iterable is val {undefined; null} -> return #"set"
+  let adder = ? @sec-get-o-p(#"set", "add")
+  if @sec-iscallable(adder) is val {false} -> throw @ph-new-error([[TypeError]])
+  let iteratorRecord = ? @sec-getiterator(iterable, ~sync~)
+  repeat {
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} -> return #"set"
+    let status = @sec-completion-ao(@sec-call(adder, #"set", [next]))
+    block {
+      assert status is ty {#"Completion Record"}
+      if status is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iteratorRecord, status)
+      set var status = ! status
+    }
+  }
+}
+
+def @sec-weakset.prototype.add "WeakSet.prototype.add" (kind builtin params [value]) vars [#"this value", NewTarget, value, weakSet, entry] {
+  let weakSet = this_value
+  perform ? @sec-requireinternalslot(weakSet, [[WeakSetData]])
+  if @sec-canbeheldweakly(value) is val {false} -> throw @ph-new-error([[TypeError]])
+  for_each entry in weakSet[[WeakSetData]] {
+    if entry is not val {~empty~} and @sec-samevalue(entry, value) is val {true} {
+      return weakSet
+    }
+  }
+  perform $Append(?value, weakSet[[WeakSetData]])
+  return weakSet
+}
+
+def @sec-weakset.prototype.delete "WeakSet.prototype.delete" (kind builtin params [value]) vars [#"this value", NewTarget, value, weakSet, entry] {
+  let weakSet = this_value
+  perform ? @sec-requireinternalslot(weakSet, [[WeakSetData]])
+  if @sec-canbeheldweakly(value) is val {false} -> return false
+  for_each entry in weakSet[[WeakSetData]] {
+    if entry is not val {~empty~} and @sec-samevalue(entry, value) is val {true} {
+      perform $ReplaceElem(weakSet[[WeakSetData]], ?entry, ~empty~)
+      return true
+    }
+  }
+  return false
+}
+
+def @sec-weakset.prototype.has "WeakSet.prototype.has" (kind builtin params [value]) vars [#"this value", NewTarget, value, weakSet, entry] {
+  let weakSet = this_value
+  perform ? @sec-requireinternalslot(weakSet, [[WeakSetData]])
+  if @sec-canbeheldweakly(value) is val {false} -> return false
+  for_each entry in weakSet[[WeakSetData]] {
+    if entry is not val {~empty~} and @sec-samevalue(entry, value) is val {true} -> return true
+  }
+  return false
+}
+
+def @sec-canonicalizekeyedcollectionkey "CanonicalizeKeyedCollectionKey" (kind ao params [key : #"ECMAScript language value"] -> #"ECMAScript language value") vars [key] {
+  if key is val {num_f(-0)} -> return num_f(+0)
+  return key
+}
+

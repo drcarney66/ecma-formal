@@ -1,0 +1,1759 @@
+-- ECMA-262 SpecTec Clauses: S10
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof "[[GetPrototypeOf]]" (kind internal_method recv #"obj" : sort [ordinary] object params [] -> completion<Object | val(null)>) vars [#"obj"] {
+  return @sec-ordinarygetprototypeof(#"obj")
+}
+
+def @sec-ordinarygetprototypeof "OrdinaryGetPrototypeOf" (kind ao params [#"obj" : Object] -> Object | val(null)) vars [#"obj"] {
+  return #"obj"[[Prototype]]
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-setprototypeof-v "[[SetPrototypeOf]]" (kind internal_method recv #"obj" : sort [ordinary] object params [proto : Object | val(null)] -> completion<Boolean>) vars [#"obj", proto] {
+  return @sec-ordinarysetprototypeof(#"obj", proto)
+}
+
+def @sec-ordinarysetprototypeof "OrdinarySetPrototypeOf" (kind ao params [#"obj" : Object, proto : Object | val(null)] -> Boolean) vars [#"obj", proto, current, extensible, cursor, done] {
+  let current = #"obj"[[Prototype]]
+  if @sec-samevalue(proto, current) is val {true} -> return true
+  let extensible = #"obj"[[Extensible]]
+  if extensible is val {false} -> return false
+  let cursor = proto
+  let done = false
+  repeat_while done is val {false} {
+    if cursor is val {null} {
+      set var done = true
+    }
+    else_if @sec-samevalue(cursor, #"obj") is val {true} {
+      return false
+    }
+    else {
+      if expr not $IsOrdinaryMethod(cursor[[GetPrototypeOf]], clause @sec-ordinary-object-internal-methods-and-internal-slots-getprototypeof) -> set var done = true
+      else -> set var cursor = cursor[[Prototype]]
+    }
+  }
+  set field #"obj"[[Prototype]] = proto
+  return true
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-isextensible "[[IsExtensible]]" (kind internal_method recv #"obj" : sort [ordinary] object params [] -> completion<Boolean>) vars [#"obj"] {
+  return @sec-ordinaryisextensible(#"obj")
+}
+
+def @sec-ordinaryisextensible "OrdinaryIsExtensible" (kind ao params [#"obj" : Object] -> Boolean) vars [#"obj"] {
+  return #"obj"[[Extensible]]
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-preventextensions "[[PreventExtensions]]" (kind internal_method recv #"obj" : sort [ordinary] object params [] -> completion<val(true)>) vars [#"obj"] {
+  return @sec-ordinarypreventextensions(#"obj")
+}
+
+def @sec-ordinarypreventextensions "OrdinaryPreventExtensions" (kind ao params [#"obj" : Object] -> val(true)) vars [#"obj"] {
+  set field #"obj"[[Extensible]] = false
+  return true
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-getownproperty-p "[[GetOwnProperty]]" (kind internal_method recv #"obj" : sort [ordinary] object params [propertyKey : #"property key"] -> completion<#"Property Descriptor" | val(undefined)>) vars [#"obj", propertyKey] {
+  return @sec-ordinarygetownproperty(#"obj", propertyKey)
+}
+
+def @sec-ordinarygetownproperty "OrdinaryGetOwnProperty" (kind ao params [#"obj" : Object, propertyKey : #"property key"] -> #"Property Descriptor" | val(undefined)) vars [#"obj", propertyKey, propertyDesc, ownProperty] {
+  if expr not $OwnPropertyHas(#"obj", ?propertyKey) -> return undefined
+  let propertyDesc = $NewRecord(data sort #"Property Descriptor")
+  let ownProperty = $OwnPropertyLookup(?#"obj", ?propertyKey)
+  if ownProperty is ty {#"data property"} {
+    set field propertyDesc[[Value]] = $AttrValue(?ownProperty, [[Value]])
+    set field propertyDesc[[Writable]] = $AttrValue(?ownProperty, [[Writable]])
+  }
+  else {
+    assert ownProperty is ty {#"accessor property"}
+    set field propertyDesc[[Getter]] = $AttrValue(?ownProperty, [[Getter]])
+    set field propertyDesc[[Setter]] = $AttrValue(?ownProperty, [[Setter]])
+  }
+  set field propertyDesc[[Enumerable]] = $AttrValue(?ownProperty, [[Enumerable]])
+  set field propertyDesc[[Configurable]] = $AttrValue(?ownProperty, [[Configurable]])
+  return propertyDesc
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-defineownproperty-p-desc "[[DefineOwnProperty]]" (kind internal_method recv #"obj" : sort [ordinary] object params [propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, propertyDesc] {
+  return ? @sec-ordinarydefineownproperty(#"obj", propertyKey, propertyDesc)
+}
+
+def @sec-ordinarydefineownproperty "OrdinaryDefineOwnProperty" (kind ao params [#"obj" : Object, propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, propertyDesc, current, extensible] {
+  let current = ? #"obj"[[GetOwnProperty]](propertyKey)
+  let extensible = ? @sec-isextensible-o(#"obj")
+  return @sec-validateandapplypropertydescriptor(#"obj", propertyKey, extensible, propertyDesc, current)
+}
+
+def @sec-iscompatiblepropertydescriptor "IsCompatiblePropertyDescriptor" (kind ao params [extensible : Boolean, propertyDesc : #"Property Descriptor", current : #"Property Descriptor" | val(undefined)] -> Boolean) vars [extensible, propertyDesc, current] {
+  return @sec-validateandapplypropertydescriptor(undefined, "", extensible, propertyDesc, current)
+}
+
+def @sec-validateandapplypropertydescriptor "ValidateAndApplyPropertyDescriptor" (kind ao params [#"obj" : Object | val(undefined), propertyKey : #"property key", extensible : Boolean, propertyDesc : #"Property Descriptor", current : #"Property Descriptor" | val(undefined)] -> Boolean) vars [#"obj", propertyKey, extensible, propertyDesc, current, configurable, enumerable, fieldName] {
+  assert propertyKey is ty {#"property key"}
+  if current is val {undefined} {
+    if extensible is val {false} -> return false
+    if #"obj" is val {undefined} -> return true
+    if @sec-isaccessordescriptor(propertyDesc) is val {true} {
+      perform $OwnPropertyCreate(?#"obj", ?propertyKey, ?propertyDesc, ~accessor~)
+    }
+    else {
+      perform $OwnPropertyCreate(?#"obj", ?propertyKey, ?propertyDesc, ~data~)
+    }
+    return true
+  }
+  assert current is ty {sort [fully, populated] #"Property Descriptor"}
+  if expr $HasNoFields(?propertyDesc) -> return true
+  if current[[Configurable]] is val {false} {
+    if propertyDesc sat $HasField([[Configurable]]) and propertyDesc[[Configurable]] is val {true} -> return false
+    if propertyDesc sat $HasField([[Enumerable]]) and propertyDesc[[Enumerable]] is not val {current[[Enumerable]]} -> return false
+    if @sec-isgenericdescriptor(propertyDesc) is val {false} and @sec-isaccessordescriptor(propertyDesc) is not val {@sec-isaccessordescriptor(current)} -> return false
+    if @sec-isaccessordescriptor(current) is val {true} {
+      if propertyDesc sat $HasField([[Getter]]) and @sec-samevalue(propertyDesc[[Getter]], current[[Getter]]) is val {false} -> return false
+      if propertyDesc sat $HasField([[Setter]]) and @sec-samevalue(propertyDesc[[Setter]], current[[Setter]]) is val {false} -> return false
+    }
+    else_if current[[Writable]] is val {false} {
+      if propertyDesc sat $HasField([[Writable]]) and propertyDesc[[Writable]] is val {true} -> return false
+      note "SameValue returns *true* for *NaN* values which may be distinguishable by other means. Returning here ensures that any existing property of _obj_ remains unmodified."
+      if propertyDesc sat $HasField([[Value]]) -> return @sec-samevalue(propertyDesc[[Value]], current[[Value]])
+    }
+  }
+  if #"obj" is not val {undefined} {
+    if @sec-isdatadescriptor(current) is val {true} and @sec-isaccessordescriptor(propertyDesc) is val {true} {
+      if_else propertyDesc sat $HasField([[Configurable]]) { let configurable = propertyDesc[[Configurable]] } else { let configurable = current[[Configurable]] }
+      if_else propertyDesc sat $HasField([[Enumerable]]) { let enumerable = propertyDesc[[Enumerable]] } else { let enumerable = current[[Enumerable]] }
+      perform $OwnPropertyReplace(?#"obj", ?propertyKey, ?propertyDesc, ~accessor~, ?configurable, ?enumerable)
+    }
+    else_if @sec-isaccessordescriptor(current) is val {true} and @sec-isdatadescriptor(propertyDesc) is val {true} {
+      if_else propertyDesc sat $HasField([[Configurable]]) { let configurable = propertyDesc[[Configurable]] } else { let configurable = current[[Configurable]] }
+      if_else propertyDesc sat $HasField([[Enumerable]]) { let enumerable = propertyDesc[[Enumerable]] } else { let enumerable = current[[Enumerable]] }
+      perform $OwnPropertyReplace(?#"obj", ?propertyKey, ?propertyDesc, ~data~, ?configurable, ?enumerable)
+    }
+    else {
+      perform $OwnPropertySetAttribute(?#"obj", ?propertyKey, ?propertyDesc)
+    }
+  }
+  return true
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-hasproperty-p "[[HasProperty]]" (kind internal_method recv #"obj" : sort [ordinary] object params [propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey] {
+  return ? @sec-ordinaryhasproperty(#"obj", propertyKey)
+}
+
+def @sec-ordinaryhasproperty "OrdinaryHasProperty" (kind ao params [#"obj" : Object, propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, hasOwn, parent] {
+  let hasOwn = ? #"obj"[[GetOwnProperty]](propertyKey)
+  if hasOwn is not val {undefined} -> return true
+  let parent = ? #"obj"[[GetPrototypeOf]]()
+  if parent is not val {null} {
+    return ? parent[[HasProperty]](propertyKey)
+  }
+  return false
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-get-p-receiver "[[Get]]" (kind internal_method recv #"obj" : sort [ordinary] object params [propertyKey : #"property key", receiver : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", propertyKey, receiver] {
+  return ? @sec-ordinaryget(#"obj", propertyKey, receiver)
+}
+
+def @sec-ordinaryget "OrdinaryGet" (kind ao params [#"obj" : Object, propertyKey : #"property key", receiver : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", propertyKey, receiver, propertyDesc, parent, getter] {
+  let propertyDesc = ? #"obj"[[GetOwnProperty]](propertyKey)
+  if propertyDesc is val {undefined} {
+    let parent = ? #"obj"[[GetPrototypeOf]]()
+    if parent is val {null} -> return undefined
+    return ? parent[[Get]](propertyKey, receiver)
+  }
+  if @sec-isdatadescriptor(propertyDesc) is val {true} -> return propertyDesc[[Value]]
+  assert @sec-isaccessordescriptor(propertyDesc) is val {true}
+  let getter = propertyDesc[[Getter]]
+  if getter is val {undefined} -> return undefined
+  return ? @sec-call(getter, receiver)
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-set-p-v-receiver "[[Set]]" (kind internal_method recv #"obj" : sort [ordinary] object params [propertyKey : #"property key", value : #"ECMAScript language value", receiver : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, value, receiver] {
+  return ? @sec-ordinaryset(#"obj", propertyKey, value, receiver)
+}
+
+def @sec-ordinaryset "OrdinarySet" (kind ao params [#"obj" : Object, propertyKey : #"property key", value : #"ECMAScript language value", receiver : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, value, receiver, ownDesc] {
+  let ownDesc = ? #"obj"[[GetOwnProperty]](propertyKey)
+  return ? @sec-ordinarysetwithowndescriptor(#"obj", propertyKey, value, receiver, ownDesc)
+}
+
+def @sec-ordinarysetwithowndescriptor "OrdinarySetWithOwnDescriptor" (kind ao params [#"obj" : Object, propertyKey : #"property key", value : #"ECMAScript language value", receiver : #"ECMAScript language value", ownDesc : #"Property Descriptor" | val(undefined)] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, value, receiver, ownDesc, parent, existingDesc, valueDesc, setter] {
+  if ownDesc is val {undefined} {
+    let parent = ? #"obj"[[GetPrototypeOf]]()
+    if parent is not val {null} -> return ? parent[[Set]](propertyKey, value, receiver)
+    set var ownDesc = record PropertyDescriptor { [[Value]]: undefined, [[Writable]]: true, [[Enumerable]]: true, [[Configurable]]: true }
+  }
+  if @sec-isdatadescriptor(ownDesc) is val {true} {
+    if ownDesc[[Writable]] is val {false} -> return false
+    if receiver is not ty {Object} -> return false
+    let existingDesc = ? receiver[[GetOwnProperty]](propertyKey)
+    if existingDesc is val {undefined} {
+      assert pass "_ does not currently have a property _"
+      return ? @sec-createdataproperty(receiver, propertyKey, value)
+    }
+    if @sec-isaccessordescriptor(existingDesc) is val {true} -> return false
+    if existingDesc[[Writable]] is val {false} -> return false
+    let valueDesc = record PropertyDescriptor { [[Value]]: value }
+    return ? receiver[[DefineOwnProperty]](propertyKey, valueDesc)
+  }
+  assert @sec-isaccessordescriptor(ownDesc) is val {true}
+  let setter = ownDesc[[Setter]]
+  if setter is val {undefined} -> return false
+  perform ? @sec-call(setter, receiver, [value])
+  return true
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-delete-p "[[Delete]]" (kind internal_method recv #"obj" : sort [ordinary] object params [propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey] {
+  return ? @sec-ordinarydelete(#"obj", propertyKey)
+}
+
+def @sec-ordinarydelete "OrdinaryDelete" (kind ao params [#"obj" : Object, propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, propertyDesc] {
+  let propertyDesc = ? #"obj"[[GetOwnProperty]](propertyKey)
+  if propertyDesc is val {undefined} -> return true
+  if propertyDesc[[Configurable]] is val {true} {
+    perform $OwnPropertyRemove(?#"obj", ?propertyKey)
+    return true
+  }
+  return false
+}
+
+def @sec-ordinary-object-internal-methods-and-internal-slots-ownpropertykeys "[[OwnPropertyKeys]]" (kind internal_method recv #"obj" : sort [ordinary] object params [] -> completion<list<#"property key">>) vars [#"obj"] {
+  return @sec-ordinaryownpropertykeys(#"obj")
+}
+
+def @sec-ordinaryownpropertykeys "OrdinaryOwnPropertyKeys" (kind ao params [#"obj" : Object] -> list<#"property key">) vars [#"obj", #"keys", propertyKey] {
+  let #"keys" = $ListNew()
+  for_keys propertyKey of #"obj" where propertyKey is ty {#"array index"} order 0 {
+    perform $Append(?propertyKey, ?#"keys")
+  }
+  for_keys propertyKey of #"obj" where propertyKey is ty {String} and propertyKey is not ty {#"array index"} order 1 {
+    perform $Append(?propertyKey, ?#"keys")
+  }
+  for_keys propertyKey of #"obj" where propertyKey is ty {Symbol} order 1 {
+    perform $Append(?propertyKey, ?#"keys")
+  }
+  return #"keys"
+}
+
+def @sec-ordinaryobjectcreate "OrdinaryObjectCreate" (kind ao params [proto : Object | val(null), additionalInternalSlotsList : doc "a List of names of internal slots" opt] -> Object) vars [proto, additionalInternalSlotsList, internalSlotsList, #"obj"] {
+  let internalSlotsList = [[[Prototype]], [[Extensible]]]
+  if additionalInternalSlotsList sat $Present() -> set var internalSlotsList = $ListConcat([internalSlotsList, additionalInternalSlotsList])
+  let #"obj" = @sec-makebasicobject(internalSlotsList)
+  set field #"obj"[[Prototype]] = proto
+  return #"obj"
+}
+
+def @sec-ordinarycreatefromconstructor "OrdinaryCreateFromConstructor" (kind ao params [ctor : #"function object", intrinsicDefaultProto : String, internalSlotsList : doc "a List of names of internal slots" opt] -> completion<Object> | #"throw completion") vars [ctor, intrinsicDefaultProto, internalSlotsList, proto, #"slots"] {
+  assert $IsIntrinsicName(intrinsicDefaultProto) is val {true}
+  assert pass "The corresponding object must be an intrinsic that is intended to be used as the [[Prototype]] value of an object"
+  let proto = ? @sec-getprototypefromconstructor(ctor, intrinsicDefaultProto)
+  if internalSlotsList sat $Present() -> let #"slots" = internalSlotsList
+  else -> let #"slots" = $ListNew()
+  return @sec-ordinaryobjectcreate(proto, #"slots")
+}
+
+def @sec-getprototypefromconstructor "GetPrototypeFromConstructor" (kind ao params [ctor : #"function object", intrinsicDefaultProto : String] -> completion<Object> | #"throw completion") vars [ctor, intrinsicDefaultProto, proto, #"realm"] {
+  assert $IsIntrinsicName(intrinsicDefaultProto) is val {true}
+  assert pass "The corresponding object must be an intrinsic that is intended to be used as the [[Prototype]] value of an object"
+  let proto = ? @sec-get-o-p(ctor, "prototype")
+  if proto is ty {Object} -> return proto
+  note "A fallback value obtained from _ctor_'s realm is independent of the running execution context."
+  let #"realm" = ? @sec-getfunctionrealm(ctor)
+  return $RealmIntrinsic(#"realm", intrinsicDefaultProto)
+}
+
+def @sec-requireinternalslot "RequireInternalSlot" (kind ao params [#"obj" : #"ECMAScript language value", internalSlot : #"internal slot name"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", internalSlot] {
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if #"obj" fails $HasSlot(?internalSlot) -> throw @ph-new-error([[TypeError]])
+  return ~unused~
+}
+
+def @sec-ecmascript-function-objects-call-thisargument-argumentslist "[[Call]]" (kind internal_method recv func : #"ECMAScript function object" params [thisArg : #"ECMAScript language value", argList : list<#"ECMAScript language value">] -> completion<#"ECMAScript language value"> | #"throw completion") vars [func, thisArg, argList, callerContext, calleeContext, error, result] {
+  let callerContext = $Running()
+  let calleeContext = @sec-prepareforordinarycall(func, undefined)
+  assert calleeContext sat @ph-is-now($Running())
+  if func[[IsClassConstructor]] is val {true} {
+    let error = @ph-new-error(err [[TypeError]])
+    note "_error_ is created in _calleeContext_ with _func_'s associated Realm Record."
+    remove_restore calleeContext with callerContext
+    throw error
+  }
+  perform @sec-ordinarycallbindthis(func, calleeContext, thisArg)
+  let result = @sec-completion-ao(@sec-ordinarycallevaluatebody(func, argList))
+  remove_restore calleeContext with callerContext
+  if result is ty {#"throw completion"} -> return ? result
+  assert result is ty {#"return completion"}
+  return result[[Value]]
+}
+
+def @sec-prepareforordinarycall "PrepareForOrdinaryCall" (kind ao params [func : #"ECMAScript function object", newTarget : Object | val(undefined)] -> #"execution context") vars [func, newTarget, callerContext, calleeContext, calleeRealm, localEnv] {
+  let callerContext = $Running()
+  let calleeContext = $NewRecord(data sort #"ECMAScript code execution context")
+  set expr component [[Function]] of calleeContext = func
+  let calleeRealm = func[[Realm]]
+  set expr component [[Realm]] of calleeContext = calleeRealm
+  set expr component [[ScriptOrModule]] of calleeContext = func[[ScriptOrModule]]
+  let localEnv = @sec-newfunctionenvironment(func, newTarget)
+  set expr component [[LexicalEnvironment]] of calleeContext = localEnv
+  set expr component [[VariableEnvironment]] of calleeContext = localEnv
+  set expr component [[PrivateEnvironment]] of calleeContext = func[[PrivateEnvironment]]
+  if callerContext fails $IsSuspended() -> suspend callerContext kind 0
+  push calleeContext kind 0
+  note "Any exception objects produced after this point are associated with _calleeRealm_."
+  return calleeContext
+}
+
+def @sec-ordinarycallbindthis "OrdinaryCallBindThis" (kind ao params [func : #"ECMAScript function object", calleeContext : #"execution context", thisArg : #"ECMAScript language value"] -> val(~unused~)) vars [func, calleeContext, thisArg, thisMode, calleeRealm, localEnv, thisValue, globalEnv] {
+  let thisMode = func[[ThisMode]]
+  if thisMode is val {~lexical~} -> return ~unused~
+  let calleeRealm = func[[Realm]]
+  let localEnv = component [[LexicalEnvironment]] of calleeContext
+  if thisMode is val {~strict~} {
+    let thisValue = thisArg
+  }
+  else {
+    if thisArg is val {undefined; null} {
+      let globalEnv = calleeRealm[[GlobalEnv]]
+      assert globalEnv is ty {#"Global Environment Record"}
+      let thisValue = globalEnv[[GlobalThisValue]]
+    }
+    else {
+      let thisValue = ! @sec-toobject(thisArg)
+      note "ToObject produces wrapper objects using _calleeRealm_."
+    }
+  }
+  assert localEnv is ty {#"Function Environment Record"}
+  assert localEnv[[ThisBindingStatus]] is not val {~initialized~}
+  perform ! @sec-bindthisvalue(localEnv, thisValue)
+  return ~unused~
+}
+
+def @sec-ordinarycallevaluatebody "OrdinaryCallEvaluateBody" (kind ao params [func : #"ECMAScript function object", argList : list<#"ECMAScript language value">] -> #"return completion" | #"throw completion") vars [func, argList] {
+  return ? sdo EvaluateBody(func[[ECMAScriptCode]]; func, argList)
+}
+
+def @sec-ecmascript-function-objects-construct-argumentslist-newtarget "[[Construct]]" (kind internal_method recv func : #"ECMAScript function object" params [argList : list<#"ECMAScript language value">, newTarget : constructor] -> completion<Object> | #"throw completion") vars [func, argList, newTarget, callerContext, #"kind", thisArg, calleeContext, initializeResult, ctorEnv, result, thisBinding] {
+  let callerContext = $Running()
+  let #"kind" = func[[ConstructorKind]]
+  if #"kind" is val {~base~} {
+    let thisArg = ? @sec-ordinarycreatefromconstructor(newTarget, "%Object.prototype%")
+  }
+  let calleeContext = @sec-prepareforordinarycall(func, newTarget)
+  assert calleeContext sat @ph-is-now($Running())
+  if #"kind" is val {~base~} {
+    perform @sec-ordinarycallbindthis(func, calleeContext, thisArg)
+    let initializeResult = @sec-completion-ao(@sec-initializeinstanceelements(thisArg, func))
+    if initializeResult is ty {#"abrupt completion"} {
+      remove_restore calleeContext with callerContext
+      return ? initializeResult
+    }
+  }
+  let ctorEnv = component [[LexicalEnvironment]] of calleeContext
+  let result = @sec-completion-ao(@sec-ordinarycallevaluatebody(func, argList))
+  remove_restore calleeContext with callerContext
+  if result is ty {#"throw completion"} -> return ? result
+  assert result is ty {#"return completion"}
+  if result[[Value]] is ty {Object} -> return result[[Value]]
+  if #"kind" is val {~base~} -> return thisArg
+  if result[[Value]] is not val {undefined} -> throw @ph-new-error([[TypeError]])
+  let thisBinding = ? ctorEnv.GetThisBinding()
+  assert thisBinding is ty {Object}
+  return thisBinding
+}
+
+def @sec-ordinaryfunctioncreate "OrdinaryFunctionCreate" (kind ao params [proto : Object, sourceText : seq<#"Unicode code point">, paramList : #"Parse Node", body : #"Parse Node", thisMode : val(~lexical-this~) | val(~non-lexical-this~), envRecord : #"Environment Record", privateEnv : #"PrivateEnvironment Record" | val(null)] -> #"ECMAScript function object") vars [proto, sourceText, paramList, body, thisMode, envRecord, privateEnv, internalSlotsList, func, strict, length] {
+  let internalSlotsList = $SlotsListed(table t"table-internal-slots-of-ecmascript-function-objects")
+  let func = @sec-ordinaryobjectcreate(proto, internalSlotsList)
+  set field func[[Call]] = ref @sec-ecmascript-function-objects-call-thisargument-argumentslist
+  set field func[[SourceText]] = sourceText
+  set field func[[FormalParameters]] = paramList
+  set field func[[ECMAScriptCode]] = body
+  let strict = @sec-isstrict(body)
+  set field func[[Strict]] = strict
+  if thisMode is val {~lexical-this~} -> set field func[[ThisMode]] = ~lexical~
+  else_if strict is val {true} -> set field func[[ThisMode]] = ~strict~
+  else -> set field func[[ThisMode]] = ~global~
+  set field func[[IsClassConstructor]] = false
+  set field func[[Environment]] = envRecord
+  set field func[[PrivateEnvironment]] = privateEnv
+  set field func[[ScriptOrModule]] = @sec-getactivescriptormodule()
+  set field func[[Realm]] = $CurrentRealm()
+  set field func[[HomeObject]] = undefined
+  set field func[[Fields]] = $ListNew()
+  set field func[[PrivateMethods]] = $ListNew()
+  set field func[[ClassFieldInitializerName]] = ~empty~
+  let length = sdo ExpectedArgumentCount(paramList)
+  perform @sec-setfunctionlength(func, length)
+  return func
+}
+
+def @sec-addrestrictedfunctionproperties "AddRestrictedFunctionProperties" (kind ao params [func : #"function object", #"realm" : #"Realm Record"] -> val(~unused~)) vars [func, #"realm", thrower] {
+  assert #"realm"[[Intrinsics]] sat $HasField([[%ThrowTypeError%]]) and #"realm"[[Intrinsics]][[%ThrowTypeError%]] is ty {Object}
+  let thrower = #"realm"[[Intrinsics]][[%ThrowTypeError%]]
+  perform ! @sec-definepropertyorthrow(func, "caller", record PropertyDescriptor { [[Getter]]: thrower, [[Setter]]: thrower, [[Enumerable]]: false, [[Configurable]]: true })
+  perform ! @sec-definepropertyorthrow(func, "arguments", record PropertyDescriptor { [[Getter]]: thrower, [[Setter]]: thrower, [[Enumerable]]: false, [[Configurable]]: true })
+  return ~unused~
+}
+
+def @sec-%throwtypeerror% "%ThrowTypeError%" (kind builtin params []) vars [#"this value", NewTarget] {
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-makeconstructor "MakeConstructor" (kind ao params [func : #"ECMAScript function object" | sort [#"built-in"] #"function object", writableProto : Boolean opt, proto : Object opt] -> val(~unused~)) vars [func, writableProto, proto] {
+  if func is ty {#"ECMAScript function object"} {
+    assert @sec-isconstructor(func) is val {false}
+    assert func is ty {sort [extensible] object} and expr not $OwnPropertyHas(func, "prototype")
+    set field func[[Construct]] = ref @sec-ecmascript-function-objects-construct-argumentslist-newtarget
+  }
+  else {
+    set field func[[Construct]] = ref @sec-built-in-function-objects-construct-argumentslist-newtarget
+  }
+  set field func[[ConstructorKind]] = ~base~
+  if writableProto fails $Present() -> set var writableProto = true
+  if proto fails $Present() {
+    set var proto = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+    perform ! @sec-definepropertyorthrow(proto, "constructor", record PropertyDescriptor { [[Value]]: func, [[Writable]]: writableProto, [[Enumerable]]: false, [[Configurable]]: true })
+  }
+  perform ! @sec-definepropertyorthrow(func, "prototype", record PropertyDescriptor { [[Value]]: proto, [[Writable]]: writableProto, [[Enumerable]]: false, [[Configurable]]: false })
+  return ~unused~
+}
+
+def @sec-makeclassconstructor "MakeClassConstructor" (kind ao params [func : #"ECMAScript function object"] -> val(~unused~)) vars [func] {
+  assert func[[IsClassConstructor]] is val {false}
+  set field func[[IsClassConstructor]] = true
+  return ~unused~
+}
+
+def @sec-makemethod "MakeMethod" (kind ao params [func : #"ECMAScript function object", homeObj : Object] -> val(~unused~)) vars [func, homeObj] {
+  assert homeObj is ty {sort [ordinary] object}
+  set field func[[HomeObject]] = homeObj
+  return ~unused~
+}
+
+def @sec-definemethodproperty "DefineMethodProperty" (kind ao params [homeObj : Object, name : #"property key" | #"Private Name", #"closure" : #"function object", enumerable : Boolean] -> completion<PrivateElement | val(~empty~)> | #"abrupt completion") vars [homeObj, name, #"closure", enumerable, propertyDesc] {
+  assert homeObj is ty {sort [extensible, ordinary] object}
+  if name is ty {#"Private Name"} -> return record PrivateElement { [[Key]]: name, [[Kind]]: ~method~, [[Value]]: #"closure" }
+  let propertyDesc = record PropertyDescriptor { [[Value]]: #"closure", [[Writable]]: true, [[Enumerable]]: enumerable, [[Configurable]]: true }
+  perform ? @sec-definepropertyorthrow(homeObj, name, propertyDesc)
+  note "DefinePropertyOrThrow only returns an abrupt completion when attempting to define a class static method whose _name_ is *\"prototype\"*."
+  return ~empty~
+}
+
+def @sec-setfunctionname "SetFunctionName" (kind ao params [func : #"function object", name : #"property key" | #"Private Name", prefix : String opt] -> val(~unused~)) vars [func, name, prefix, description, initialName, prefixedName] {
+  assert func is ty {sort [extensible] object} and expr not $OwnPropertyHas(func, "name")
+  if name is ty {Symbol} {
+    let description = name[[Description]]
+    if description is val {undefined} -> set var name = $"the empty String"()
+    else -> set var name = $"string-concatenation"("[", description, "]")
+  }
+  else_if name is ty {#"Private Name"} {
+    set var name = name[[Description]]
+  }
+  let initialName = name
+  if prefix sat $Present() {
+    let prefixedName = $"string-concatenation"(prefix, $CodeUnit(cu(32, "0020", "SPACE")), name)
+    set var initialName = prefixedName
+    set var initialName = $"implementation-defined choice"(?name, ?prefixedName)
+    set var name = prefixedName
+  }
+  if func sat $HasSlot([[InitialName]]) -> set field func[[InitialName]] = initialName
+  perform ! @sec-definepropertyorthrow(func, "name", record PropertyDescriptor { [[Value]]: name, [[Writable]]: false, [[Enumerable]]: false, [[Configurable]]: true })
+  return ~unused~
+}
+
+def @sec-setfunctionlength "SetFunctionLength" (kind ao params [func : #"function object", length : sort [#"non-negative"] integer | val(math(+∞))] -> val(~unused~)) vars [func, length] {
+  assert func is ty {sort [extensible] object} and expr not $OwnPropertyHas(func, "length")
+  perform ! @sec-definepropertyorthrow(func, "length", record PropertyDescriptor { [[Value]]: $𝔽(length), [[Writable]]: false, [[Enumerable]]: false, [[Configurable]]: true })
+  return ~unused~
+}
+
+def @sec-functiondeclarationinstantiation "FunctionDeclarationInstantiation" (kind ao params [func : #"ECMAScript function object", argList : list<#"ECMAScript language value">] -> completion<val(~unused~)> | #"throw completion") vars [func, argList, calleeContext, #"code", strict, formals, paramNames, hasDuplicates, simpleParamList, hasParamExprs, variableNames, variableDecls, lexicalNames, funcNames, funcsToInitialize, variableDecl, funcName, argumentsObjNeeded, envRecord, calleeEnv, paramName, alreadyDeclared, argumentsObj, paramBindings, iteratorRecord, usedEnv, instantiatedVariableNames, name, variableEnv, initialValue, lexicalEnv, funcDecl, x, funcEnv, blockEnv, funcObj, lexicalDecls, lexicalDecl, privateEnv] {
+  let calleeContext = $Running()
+  let #"code" = func[[ECMAScriptCode]]
+  let strict = func[[Strict]]
+  let formals = func[[FormalParameters]]
+  let paramNames = sdo BoundNames(formals)
+  if_else paramNames sat @ph-any-duplicate-entries(data choice 0) { let hasDuplicates = true } else { let hasDuplicates = false }
+  let simpleParamList = sdo IsSimpleParameterList(formals)
+  let hasParamExprs = sdo ContainsExpression(formals)
+  let variableNames = sdo VarDeclaredNames(#"code")
+  let variableDecls = sdo VarScopedDeclarations(#"code")
+  let lexicalNames = sdo LexicallyDeclaredNames(#"code")
+  let funcNames = $ListNew()
+  let funcsToInitialize = $ListNew()
+  for_each variableDecl rev in variableDecls {
+    if variableDecl sat @spec-copy-0(data choice 0, data choice 0, data choice 0) {
+      assert variableDecl is ty {|FunctionDeclaration|; |GeneratorDeclaration|; |AsyncFunctionDeclaration|; |AsyncGeneratorDeclaration|}
+      let funcName = $ListElem(data choice 0, sdo BoundNames(variableDecl))
+      if funcNames fails $Contains(?funcName) {
+        perform $Insert(?funcName, ?funcNames)
+        note "If there are multiple function declarations for the same name, the last declaration is used."
+        perform $Insert(?variableDecl, ?funcsToInitialize)
+      }
+    }
+  }
+  let argumentsObjNeeded = true
+  if func[[ThisMode]] is val {~lexical~} {
+    note "Arrow functions never have an arguments object."
+    set var argumentsObjNeeded = false
+  }
+  else_if paramNames sat $Contains("arguments") {
+    set var argumentsObjNeeded = false
+  }
+  else_if hasParamExprs is val {false} {
+    if funcNames sat $Contains("arguments") or lexicalNames sat $Contains("arguments") {
+      set var argumentsObjNeeded = false
+    }
+  }
+  if strict is val {true} or hasParamExprs is val {false} {
+    note "Only a single Environment Record is needed for the parameters, since calls to `eval` in strict mode code cannot create new bindings which are visible outside of the `eval`."
+    let envRecord = component [[LexicalEnvironment]] of calleeContext
+  }
+  else {
+    note "A separate Environment Record is needed to ensure that bindings created by direct eval calls in the formal parameter list are outside the environment where parameters are declared."
+    let calleeEnv = component [[LexicalEnvironment]] of calleeContext
+    let envRecord = @sec-newdeclarativeenvironment(calleeEnv)
+    assert component [[VariableEnvironment]] of calleeContext is val {calleeEnv}
+    set expr component [[LexicalEnvironment]] of calleeContext = envRecord
+  }
+  for_each paramName : String in paramNames {
+    let alreadyDeclared = ! envRecord.HasBinding(paramName)
+    note "Early errors ensure that duplicate parameter names can only occur in non-strict functions that do not have parameter default values or rest parameters."
+    if alreadyDeclared is val {false} {
+      perform ! envRecord.CreateMutableBinding(paramName, false)
+      if hasDuplicates is val {true} {
+        perform ! envRecord.InitializeBinding(paramName, undefined)
+      }
+    }
+  }
+  if argumentsObjNeeded is val {true} {
+    if strict is val {true} or simpleParamList is val {false} {
+      let argumentsObj = @sec-createunmappedargumentsobject(argList)
+    }
+    else {
+      note "A mapped argument object is only provided for non-strict functions that don't have a rest parameter, any parameter default value initializers, or any destructured parameters."
+      let argumentsObj = @sec-createmappedargumentsobject(func, formals, argList, envRecord)
+    }
+    if strict is val {true} {
+      perform ! envRecord.CreateImmutableBinding("arguments", false)
+      note "In strict mode code early errors prevent attempting to assign to this binding, so its mutability is not observable."
+    }
+    else {
+      perform ! envRecord.CreateMutableBinding("arguments", false)
+    }
+    perform ! envRecord.InitializeBinding("arguments", argumentsObj)
+    let paramBindings = $ListConcat([paramNames, ["arguments"]])
+  }
+  else {
+    let paramBindings = paramNames
+  }
+  let iteratorRecord = @sec-createlistiteratorRecord(argList)
+  if hasDuplicates is val {true} {
+    let usedEnv = undefined
+  }
+  else {
+    let usedEnv = envRecord
+  }
+  note "The following step cannot return a ReturnCompletion because the only way such a completion can arise in expression position is by use of |YieldExpression|, which is forbidden in parameter lists by Early Error rules in <emu-xref href=\"#sec-generator-function-definitions-static-semantics-early-errors\"></emu-xref> and <emu-xref href=\"#sec-async-generator-function-definitions-static-semantics-early-errors\"></emu-xref>."
+  perform ? sdo IteratorBindingInitialization(formals; iteratorRecord, usedEnv)
+  if hasParamExprs is val {false} {
+    note "Only a single Environment Record is needed for the parameters and top-level vars."
+    let instantiatedVariableNames = $Copy(@ph-the-list(?paramBindings))
+    for_each name in variableNames {
+      if instantiatedVariableNames fails $Contains(?name) {
+        perform $Append(?name, ?instantiatedVariableNames)
+        perform ! envRecord.CreateMutableBinding(name, false)
+        perform ! envRecord.InitializeBinding(name, undefined)
+      }
+    }
+    let variableEnv = envRecord
+  }
+  else {
+    note "A separate Environment Record is needed to ensure that closures created by expressions in the formal parameter list do not have visibility of declarations in the function body."
+    let variableEnv = @sec-newdeclarativeenvironment(envRecord)
+    set expr component [[VariableEnvironment]] of calleeContext = variableEnv
+    let instantiatedVariableNames = $ListNew()
+    for_each name in variableNames {
+      if instantiatedVariableNames fails $Contains(?name) {
+        perform $Append(?name, ?instantiatedVariableNames)
+        perform ! variableEnv.CreateMutableBinding(name, false)
+        if paramBindings fails $Contains(?name) or funcNames sat $Contains(?name) {
+          let initialValue = undefined
+        }
+        else {
+          let initialValue = ! envRecord.GetBindingValue(name, false)
+        }
+        perform ! variableEnv.InitializeBinding(name, initialValue)
+        note "A var with the same name as a formal parameter initially has the same value as the corresponding initialized parameter."
+      }
+    }
+  }
+  if strict is val {true} {
+    let lexicalEnv = variableEnv
+  }
+  else {
+    if expr $"the host is a web browser"(data choice 0, clause @sec-block-level-function-declarations-web-legacy-compatibility-semantics) {
+      for_each funcDecl in @ph-annexb-foreach(|FunctionDeclaration|, ?funcDecl, |StatementList|, [|Block|, |CaseClause|, |DefaultClause|], ?x, ?#"code", ?x) {
+        let funcName = sdo StringValue($ChildOf(|BindingIdentifier|, ?funcDecl))
+        if expr @ph-annexb-replacing(|FunctionDeclaration|, ?funcDecl, |VariableStatement|, ?funcName, |BindingIdentifier|, ?func) and paramNames fails $Contains(?funcName) {
+          note "A var binding for _funcName_ is only instantiated here if it is neither a VarDeclaredName, the name of a formal parameter, or another |FunctionDeclaration|."
+          if instantiatedVariableNames fails $Contains(?funcName) and funcName is not val {"arguments"} {
+            perform ! variableEnv.CreateMutableBinding(funcName, false)
+            perform ! variableEnv.InitializeBinding(funcName, undefined)
+            perform $Append(?funcName, ?instantiatedVariableNames)
+          }
+          perform @ph-annexb-evaluated(|FunctionDeclaration|, ?funcDecl, |FunctionDeclaration|, clause @sec-function-definitions-runtime-semantics-evaluation, closure 0)
+        }
+      }
+    }
+    let lexicalEnv = @sec-newdeclarativeenvironment(variableEnv)
+    note "Non-strict functions use a separate Environment Record for top-level lexical declarations so that a direct eval can determine whether any var scoped declarations introduced by the eval code conflict with pre-existing top-level lexically scoped declarations. This is not needed for strict functions because a strict direct eval always places all declarations into a new Environment Record."
+  }
+  set expr component [[LexicalEnvironment]] of calleeContext = lexicalEnv
+  let lexicalDecls = sdo LexicallyScopedDeclarations(#"code")
+  for_each lexicalDecl in lexicalDecls {
+    note "A lexically declared name cannot be the same as a function/generator declaration, formal parameter, or a var name. Lexically declared names are only instantiated here but not initialized."
+    for_each name in sdo BoundNames(lexicalDecl) {
+      if sdo IsConstantDeclaration(lexicalDecl) is val {true} {
+        perform ! lexicalEnv.CreateImmutableBinding(name, true)
+      }
+      else {
+        perform ! lexicalEnv.CreateMutableBinding(name, false)
+      }
+    }
+  }
+  let privateEnv = component [[PrivateEnvironment]] of calleeContext
+  for_each funcDecl : #"Parse Node" in funcsToInitialize {
+    let funcName = $ListElem(data choice 0, sdo BoundNames(funcDecl))
+    let funcObj = sdo InstantiateFunctionDeclaration(funcDecl; lexicalEnv, privateEnv)
+    perform ! variableEnv.SetMutableBinding(funcName, funcObj, false)
+  }
+  return ~unused~
+  closure abstract params none captures [funcName] {
+    let funcEnv = $Component($Running(), [[VariableEnvironment]])
+    let blockEnv = $Component($Running(), [[LexicalEnvironment]])
+    let funcObj = ! blockEnv.GetBindingValue(funcName, false)
+    perform ! funcEnv.SetMutableBinding(funcName, funcObj, false)
+    return ~unused~
+  }
+}
+
+def @sec-built-in-function-objects-call-thisargument-argumentslist "[[Call]]" (kind internal_method recv func : sort [#"built-in"] #"function object" params [thisArg : #"ECMAScript language value", argList : list<#"ECMAScript language value">] -> completion<#"ECMAScript language value"> | #"throw completion") vars [func, thisArg, argList] {
+  return ? @sec-builtincallorconstruct(func, thisArg, argList, undefined)
+}
+
+def @sec-built-in-function-objects-construct-argumentslist-newtarget "[[Construct]]" (kind internal_method recv func : sort [#"built-in"] #"function object" params [argList : list<#"ECMAScript language value">, newTarget : constructor] -> completion<Object> | #"throw completion") vars [func, argList, newTarget, result] {
+  let result = ? @sec-builtincallorconstruct(func, ~uninitialized~, argList, newTarget)
+  assert result is ty {Object}
+  return result
+}
+
+def @sec-builtincallorconstruct "BuiltinCallOrConstruct" (kind ao params [func : sort [#"built-in"] #"function object", thisArg : #"ECMAScript language value" | val(~uninitialized~), argList : list<#"ECMAScript language value">, newTarget : constructor | val(undefined)] -> completion<#"ECMAScript language value"> | #"throw completion") vars [func, thisArg, argList, newTarget, callerContext, calleeContext, calleeRealm, promiseCapability, resultsClosure, result] {
+  let callerContext = $Running()
+  if callerContext fails $IsSuspended() -> suspend callerContext kind 0
+  let calleeContext = $NewRecord(data sort #"execution context")
+  set expr component [[Function]] of calleeContext = func
+  let calleeRealm = func[[Realm]]
+  set expr component [[Realm]] of calleeContext = calleeRealm
+  set expr component [[ScriptOrModule]] of calleeContext = null
+  perform $HostInitializeBuiltinContext(?calleeContext)
+  push calleeContext kind 0
+  if func[[Async]] is val {true} {
+    let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+    let resultsClosure = closure 0
+    perform @sec-async-functions-abstract-operations-async-function-start(promiseCapability, resultsClosure)
+    remove_restore calleeContext with callerContext
+    return promiseCapability[[Promise]]
+  }
+  let result = $EvaluateBuiltin(?func, ?thisArg, ?argList, ?newTarget)
+  note "If _func_ is defined in this document, “the specification of _func_” is the behaviour specified for it via algorithm steps or other means."
+  remove_restore calleeContext with callerContext
+  return ? result
+  closure abstract params none captures [func, thisArg, argList, newTarget] {
+    let result = $EvaluateBuiltin(?func, ?thisArg, ?argList, ?newTarget)
+    note "If _func_ is defined in this document, “the specification of _func_” is the behaviour specified for it via algorithm steps or other means."
+    if result is ty {#"normal completion"} -> return @sec-returncompletion(result[[Value]])
+    return ? result
+  }
+}
+
+def @sec-createbuiltinfunction "CreateBuiltinFunction" (kind ao params [behaviour : doc "an Abstract Closure, a set of algorithm steps, or some other definition of a function's behaviour provided in this specification", length : sort [#"non-negative"] integer | val(math(+∞)), name : #"property key" | #"Private Name", additionalInternalSlotsList : doc "a List of names of internal slots", #"realm" : #"Realm Record" opt, proto : Object | val(null) opt, prefix : String opt, async : Boolean opt] -> sort [#"built-in"] #"function object") vars [behaviour, length, name, additionalInternalSlotsList, #"realm", proto, prefix, async, internalSlotsList, func] {
+  if #"realm" fails $Present() -> set var #"realm" = $CurrentRealm()
+  if proto fails $Present() -> set var proto = #"realm"[[Intrinsics]][[%Function.prototype%]]
+  if async fails $Present() -> set var async = false
+  let internalSlotsList = $BuiltinFunctionSlots()
+  perform @ph-append-elements(?additionalInternalSlotsList, ?internalSlotsList)
+  let func = @ph-new-builtin-function(?behaviour, ?behaviour, ?internalSlotsList)
+  set field func[[Async]] = async
+  set field func[[Prototype]] = proto
+  set field func[[Extensible]] = true
+  set field func[[Realm]] = #"realm"
+  set field func[[InitialName]] = null
+  perform @sec-setfunctionlength(func, length)
+  if prefix fails $Present() {
+    perform @sec-setfunctionname(func, name)
+  }
+  else {
+    perform @sec-setfunctionname(func, name, prefix)
+  }
+  return func
+}
+
+def @sec-bound-function-exotic-objects-call-thisargument-argumentslist "[[Call]]" (kind internal_method recv func : #"bound function exotic object" params [thisArg : #"ECMAScript language value", argList : list<#"ECMAScript language value">] -> completion<#"ECMAScript language value"> | #"throw completion") vars [func, thisArg, argList, target, boundThis, boundArgs, args] {
+  let target = func[[BoundTargetFunction]]
+  let boundThis = func[[BoundThis]]
+  let boundArgs = func[[BoundArguments]]
+  let args = $ListConcat([boundArgs, argList])
+  return ? @sec-call(target, boundThis, args)
+}
+
+def @sec-bound-function-exotic-objects-construct-argumentslist-newtarget "[[Construct]]" (kind internal_method recv func : #"bound function exotic object" params [argList : list<#"ECMAScript language value">, newTarget : constructor] -> completion<Object> | #"throw completion") vars [func, argList, newTarget, target, boundArgs, args] {
+  let target = func[[BoundTargetFunction]]
+  assert @sec-isconstructor(target) is val {true}
+  let boundArgs = func[[BoundArguments]]
+  let args = $ListConcat([boundArgs, argList])
+  if @sec-samevalue(func, newTarget) is val {true} -> set var newTarget = target
+  return ? @sec-construct(target, args, newTarget)
+}
+
+def @sec-boundfunctioncreate "BoundFunctionCreate" (kind ao params [targetFunc : #"function object", boundThis : #"ECMAScript language value", boundArgs : list<#"ECMAScript language value">] -> completion<#"function object"> | #"throw completion") vars [targetFunc, boundThis, boundArgs, proto, internalSlotsList, #"obj"] {
+  let proto = ? targetFunc[[GetPrototypeOf]]()
+  let internalSlotsList = $ListConcat([[[[Prototype]], [[Extensible]]], $SlotsListed(table t"table-internal-slots-of-bound-function-exotic-objects")])
+  let #"obj" = @sec-makebasicobject(internalSlotsList)
+  set field #"obj"[[Prototype]] = proto
+  set field #"obj"[[Call]] = ref @sec-bound-function-exotic-objects-call-thisargument-argumentslist
+  if @sec-isconstructor(targetFunc) is val {true} {
+    set field #"obj"[[Construct]] = ref @sec-bound-function-exotic-objects-construct-argumentslist-newtarget
+  }
+  set field #"obj"[[BoundTargetFunction]] = targetFunc
+  set field #"obj"[[BoundThis]] = boundThis
+  set field #"obj"[[BoundArguments]] = boundArgs
+  return #"obj"
+}
+
+def @sec-array-exotic-objects-defineownproperty-p-desc "[[DefineOwnProperty]]" (kind internal_method recv array : #"Array exotic object" params [propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [array, propertyKey, propertyDesc, lengthDesc, length, index, succeeded] {
+  if propertyKey is val {"length"} -> return ? @sec-arraysetlength(array, propertyDesc)
+  if propertyKey is ty {#"array index"} {
+    let lengthDesc = @sec-ordinarygetownproperty(array, "length")
+    assert lengthDesc is not val {undefined}
+    assert @sec-isdatadescriptor(lengthDesc) is val {true}
+    assert lengthDesc[[Configurable]] is val {false}
+    let length = lengthDesc[[Value]]
+    assert length is ty {sort [#"non-negative"] #"integral Number"}
+    let index = ! @sec-touint32(propertyKey)
+    if index >= length and lengthDesc[[Writable]] is val {false} -> return false
+    let succeeded = ! @sec-ordinarydefineownproperty(array, propertyKey, propertyDesc)
+    if succeeded is val {false} -> return false
+    if index >= length {
+      set field lengthDesc[[Value]] = index + num_f(1)
+      set var succeeded = ! @sec-ordinarydefineownproperty(array, "length", lengthDesc)
+      assert succeeded is val {true}
+    }
+    return true
+  }
+  return ? @sec-ordinarydefineownproperty(array, propertyKey, propertyDesc)
+}
+
+def @sec-arraycreate "ArrayCreate" (kind ao params [length : sort [#"non-negative"] integer, proto : Object opt] -> completion<#"Array exotic object"> | #"throw completion") vars [length, proto, array] {
+  if length > 2 ^ 32 - 1 -> throw @ph-new-error([[RangeError]])
+  if proto fails $Present() -> set var proto = intrinsic [[Array.prototype]]
+  let array = @sec-makebasicobject([[[Prototype]], [[Extensible]]])
+  set field array[[Prototype]] = proto
+  set field array[[DefineOwnProperty]] = ref @sec-array-exotic-objects-defineownproperty-p-desc
+  perform ! @sec-ordinarydefineownproperty(array, "length", record PropertyDescriptor { [[Value]]: $𝔽(length), [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+  return array
+}
+
+def @sec-arrayspeciescreate "ArraySpeciesCreate" (kind ao params [originalArray : Object, length : sort [#"non-negative"] integer] -> completion<Object> | #"throw completion") vars [originalArray, length, isArray, ctor, thisRealm, ctorRealm] {
+  let isArray = ? @sec-isarray(originalArray)
+  if isArray is val {false} -> return ? @sec-arraycreate(length)
+  let ctor = ? @sec-get-o-p(originalArray, "constructor")
+  if @sec-isconstructor(ctor) is val {true} {
+    let thisRealm = $CurrentRealm()
+    let ctorRealm = ? @sec-getfunctionrealm(ctor)
+    if expr @ph-not-same-tn(?thisRealm, ?ctorRealm, data sort #"Realm Record") {
+      if @sec-samevalue(ctor, ctorRealm[[Intrinsics]][[%Array%]]) is val {true} -> set var ctor = undefined
+    }
+  }
+  if ctor is ty {Object} {
+    set var ctor = ? @sec-get-o-p(ctor, $WellKnownSymbol("Symbol.species"))
+    if ctor is val {null} -> set var ctor = undefined
+  }
+  if ctor is val {undefined} -> return ? @sec-arraycreate(length)
+  if @sec-isconstructor(ctor) is val {false} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-construct(ctor, [$𝔽(length)])
+}
+
+def @sec-arraysetlength "ArraySetLength" (kind ao params [array : Array, propertyDesc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [array, propertyDesc, newLengthDesc, newLength, numberLength, oldLengthDesc, oldLength, newWritable, succeeded, propertyKey, deleteSucceeded] {
+  if propertyDesc fails $HasField([[Value]]) {
+    return ! @sec-ordinarydefineownproperty(array, "length", propertyDesc)
+  }
+  let newLengthDesc = $Copy(?propertyDesc)
+  let newLength = ? @sec-touint32(propertyDesc[[Value]])
+  let numberLength = ? @sec-tonumber(propertyDesc[[Value]])
+  if @sec-samevaluezero(newLength, numberLength) is val {false} -> throw @ph-new-error([[RangeError]])
+  set field newLengthDesc[[Value]] = newLength
+  let oldLengthDesc = @sec-ordinarygetownproperty(array, "length")
+  assert oldLengthDesc is not val {undefined}
+  assert @sec-isdatadescriptor(oldLengthDesc) is val {true}
+  assert oldLengthDesc[[Configurable]] is val {false}
+  let oldLength = oldLengthDesc[[Value]]
+  if newLength >= oldLength {
+    return ! @sec-ordinarydefineownproperty(array, "length", newLengthDesc)
+  }
+  if oldLengthDesc[[Writable]] is val {false} -> return false
+  if newLengthDesc fails $HasField([[Writable]]) or newLengthDesc[[Writable]] is val {true} {
+    let newWritable = true
+  }
+  else {
+    note "Setting the [[Writable]] attribute to *false* is deferred in case any elements cannot be deleted."
+    let newWritable = false
+    set field newLengthDesc[[Writable]] = true
+  }
+  let succeeded = ! @sec-ordinarydefineownproperty(array, "length", newLengthDesc)
+  if succeeded is val {false} -> return false
+  for_keys propertyKey of array where propertyKey is ty {#"array index"} and ! @sec-touint32(propertyKey) >= newLength order 2 {
+    let deleteSucceeded = ! array[[Delete]](propertyKey)
+    if deleteSucceeded is val {false} {
+      set field newLengthDesc[[Value]] = ! @sec-touint32(propertyKey) + num_f(1)
+      if newWritable is val {false} -> set field newLengthDesc[[Writable]] = false
+      perform ! @sec-ordinarydefineownproperty(array, "length", newLengthDesc)
+      return false
+    }
+  }
+  if newWritable is val {false} {
+    set var succeeded = ! @sec-ordinarydefineownproperty(array, "length", record PropertyDescriptor { [[Writable]]: false })
+    assert succeeded is val {true}
+  }
+  return true
+}
+
+def @sec-string-exotic-objects-getownproperty-p "[[GetOwnProperty]]" (kind internal_method recv string : #"String exotic object" params [propertyKey : #"property key"] -> completion<#"Property Descriptor" | val(undefined)>) vars [string, propertyKey, propertyDesc] {
+  let propertyDesc = @sec-ordinarygetownproperty(string, propertyKey)
+  if propertyDesc is not val {undefined} -> return propertyDesc
+  return @sec-stringgetownproperty(string, propertyKey)
+}
+
+def @sec-string-exotic-objects-defineownproperty-p-desc "[[DefineOwnProperty]].2" (kind internal_method recv string : #"String exotic object" params [propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean>) vars [string, propertyKey, propertyDesc, stringDesc, extensible] {
+  let stringDesc = @sec-stringgetownproperty(string, propertyKey)
+  if stringDesc is not val {undefined} {
+    let extensible = string[[Extensible]]
+    return @sec-iscompatiblepropertydescriptor(extensible, propertyDesc, stringDesc)
+  }
+  return ! @sec-ordinarydefineownproperty(string, propertyKey, propertyDesc)
+}
+
+def @sec-string-exotic-objects-ownpropertykeys "[[OwnPropertyKeys]]" (kind internal_method recv #"obj" : #"String exotic object" params [] -> completion<list<#"property key">>) vars [#"obj", #"keys", string, length, i, propertyKey] {
+  let #"keys" = $ListNew()
+  let string = #"obj"[[StringData]]
+  assert string is ty {String}
+  let length = $StrLen(?string)
+  for_range i incl 0 .. excl length {
+    perform $Append(! @sec-tostring($𝔽(i)), ?#"keys")
+  }
+  for_keys propertyKey of #"obj" where propertyKey is ty {#"array index"} and ! @sec-tointegerorinfinity(propertyKey) >= length order 0 {
+    perform $Append(?propertyKey, ?#"keys")
+  }
+  for_keys propertyKey of #"obj" where propertyKey is ty {String} and propertyKey is not ty {#"array index"} order 1 {
+    perform $Append(?propertyKey, ?#"keys")
+  }
+  for_keys propertyKey of #"obj" where propertyKey is ty {Symbol} order 1 {
+    perform $Append(?propertyKey, ?#"keys")
+  }
+  return #"keys"
+}
+
+def @sec-stringcreate "StringCreate" (kind ao params [value : String, proto : Object] -> #"String exotic object") vars [value, proto, string, length] {
+  let string = @sec-makebasicobject([[[Prototype]], [[Extensible]], [[StringData]]])
+  set field string[[Prototype]] = proto
+  set field string[[StringData]] = value
+  set field string[[GetOwnProperty]] = ref @sec-string-exotic-objects-getownproperty-p
+  set field string[[DefineOwnProperty]] = ref @sec-string-exotic-objects-defineownproperty-p-desc
+  set field string[[OwnPropertyKeys]] = ref @sec-string-exotic-objects-ownpropertykeys
+  let length = $StrLen(?value)
+  perform ! @sec-definepropertyorthrow(string, "length", record PropertyDescriptor { [[Value]]: $𝔽(length), [[Writable]]: false, [[Enumerable]]: false, [[Configurable]]: false })
+  return string
+}
+
+def @sec-stringgetownproperty "StringGetOwnProperty" (kind ao params [string : #"String exotic object", propertyKey : #"property key"] -> #"Property Descriptor" | val(undefined)) vars [string, propertyKey, numericIndex, stringData, length, resultString] {
+  if propertyKey is not ty {String} -> return undefined
+  let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+  if numericIndex is not ty {#"integral Number"} -> return undefined
+  if numericIndex is val {num_f(-0)} or numericIndex < num_f(-0) -> return undefined
+  let stringData = string[[StringData]]
+  assert stringData is ty {String}
+  let length = $StrLen(?stringData)
+  if $ℝ(numericIndex) >= length -> return undefined
+  let resultString = $Substring(?stringData, $ℝ(numericIndex), $ℝ(numericIndex) + 1)
+  return record PropertyDescriptor { [[Value]]: resultString, [[Writable]]: false, [[Enumerable]]: true, [[Configurable]]: false }
+}
+
+def @sec-arguments-exotic-objects-getownproperty-p "[[GetOwnProperty]].2" (kind internal_method recv args : #"arguments exotic object" params [propertyKey : #"property key"] -> completion<#"Property Descriptor" | val(undefined)>) vars [args, propertyKey, propertyDesc, map, isMapped] {
+  let propertyDesc = @sec-ordinarygetownproperty(args, propertyKey)
+  if propertyDesc is val {undefined} -> return undefined
+  let map = args[[ParameterMap]]
+  let isMapped = ! @sec-hasownproperty(map, propertyKey)
+  if isMapped is val {true} {
+    set field propertyDesc[[Value]] = ! @sec-get-o-p(map, propertyKey)
+  }
+  return propertyDesc
+}
+
+def @sec-arguments-exotic-objects-defineownproperty-p-desc "[[DefineOwnProperty]].3" (kind internal_method recv args : #"arguments exotic object" params [propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean>) vars [args, propertyKey, propertyDesc, map, isMapped, newArgDesc, allowed] {
+  let map = args[[ParameterMap]]
+  let isMapped = ! @sec-hasownproperty(map, propertyKey)
+  let newArgDesc = propertyDesc
+  if isMapped is val {true} and @sec-isdatadescriptor(propertyDesc) is val {true} {
+    if propertyDesc fails $HasField([[Value]]) and propertyDesc sat $HasField([[Writable]]) and propertyDesc[[Writable]] is val {false} {
+      set var newArgDesc = $Copy(?propertyDesc)
+      set field newArgDesc[[Value]] = ! @sec-get-o-p(map, propertyKey)
+    }
+  }
+  let allowed = ! @sec-ordinarydefineownproperty(args, propertyKey, newArgDesc)
+  if allowed is val {false} -> return false
+  if isMapped is val {true} {
+    if @sec-isaccessordescriptor(propertyDesc) is val {true} {
+      perform ! map[[Delete]](propertyKey)
+    }
+    else {
+      if propertyDesc sat $HasField([[Value]]) {
+        assert pass "The following Set will succeed, since formal parameters mapped by arguments objects are always writable"
+        perform ! @sec-set-o-p-v-throw(map, propertyKey, propertyDesc[[Value]], false)
+      }
+      if propertyDesc sat $HasField([[Writable]]) and propertyDesc[[Writable]] is val {false} {
+        perform ! map[[Delete]](propertyKey)
+      }
+    }
+  }
+  return true
+}
+
+def @sec-arguments-exotic-objects-get-p-receiver "[[Get]]" (kind internal_method recv args : #"arguments exotic object" params [propertyKey : #"property key", receiver : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [args, propertyKey, receiver, map, isMapped] {
+  let map = args[[ParameterMap]]
+  let isMapped = ! @sec-hasownproperty(map, propertyKey)
+  if isMapped is val {false} -> return ? @sec-ordinaryget(args, propertyKey, receiver)
+  assert expr $OwnPropertyHas(map, ?propertyKey)
+  return ! @sec-get-o-p(map, propertyKey)
+}
+
+def @sec-arguments-exotic-objects-set-p-v-receiver "[[Set]]" (kind internal_method recv args : #"arguments exotic object" params [propertyKey : #"property key", value : #"ECMAScript language value", receiver : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [args, propertyKey, value, receiver, isMapped, map] {
+  if @sec-samevalue(args, receiver) is val {false} {
+    let isMapped = false
+  }
+  else {
+    let map = args[[ParameterMap]]
+    let isMapped = ! @sec-hasownproperty(map, propertyKey)
+  }
+  if isMapped is val {true} {
+    assert pass "The following Set will succeed, since formal parameters mapped by arguments objects are always writable"
+    perform ! @sec-set-o-p-v-throw(map, propertyKey, value, false)
+  }
+  return ? @sec-ordinaryset(args, propertyKey, value, receiver)
+}
+
+def @sec-arguments-exotic-objects-delete-p "[[Delete]]" (kind internal_method recv args : #"arguments exotic object" params [propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [args, propertyKey, map, isMapped, result] {
+  let map = args[[ParameterMap]]
+  let isMapped = ! @sec-hasownproperty(map, propertyKey)
+  let result = ? @sec-ordinarydelete(args, propertyKey)
+  if result is val {true} and isMapped is val {true} {
+    perform ! map[[Delete]](propertyKey)
+  }
+  return result
+}
+
+def @sec-createunmappedargumentsobject "CreateUnmappedArgumentsObject" (kind ao params [argList : list<#"ECMAScript language value">] -> sort [ordinary] object) vars [argList, length, #"obj", index, value] {
+  let length = $ListLen(?argList)
+  let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]], [[[ParameterMap]]])
+  set field #"obj"[[ParameterMap]] = undefined
+  perform ! @sec-definepropertyorthrow(#"obj", "length", record PropertyDescriptor { [[Value]]: $𝔽(length), [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: true })
+  let index = 0
+  repeat_while index < length {
+    let value = argList[index]
+    perform ! @sec-createdatapropertyorthrow(#"obj", ! @sec-tostring($𝔽(index)), value)
+    set var index = index + 1
+  }
+  perform ! @sec-definepropertyorthrow(#"obj", $WellKnownSymbol("Symbol.iterator"), record PropertyDescriptor { [[Value]]: intrinsic [[Array.prototype.values]], [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: true })
+  perform ! @sec-definepropertyorthrow(#"obj", "callee", record PropertyDescriptor { [[Getter]]: intrinsic [[ThrowTypeError]], [[Setter]]: intrinsic [[ThrowTypeError]], [[Enumerable]]: false, [[Configurable]]: false })
+  return #"obj"
+}
+
+def @sec-createmappedargumentsobject "CreateMappedArgumentsObject" (kind ao params [func : #"ECMAScript function object", formals : #"Parse Node", argList : list<#"ECMAScript language value">, envRecord : #"Environment Record"] -> #"arguments exotic object") vars [func, formals, argList, envRecord, length, #"obj", map, paramNames, paramCount, index, value, mappedNames, name, getter, setter] {
+  assert sdo IsSimpleParameterList(formals) is val {true}
+  let length = $ListLen(?argList)
+  let #"obj" = @sec-makebasicobject([[[Prototype]], [[Extensible]], [[ParameterMap]]])
+  set field #"obj"[[GetOwnProperty]] = ref @sec-arguments-exotic-objects-getownproperty-p
+  set field #"obj"[[DefineOwnProperty]] = ref @sec-arguments-exotic-objects-defineownproperty-p-desc
+  set field #"obj"[[Get]] = ref @sec-arguments-exotic-objects-get-p-receiver
+  set field #"obj"[[Set]] = ref @sec-arguments-exotic-objects-set-p-v-receiver
+  set field #"obj"[[Delete]] = ref @sec-arguments-exotic-objects-delete-p
+  set field #"obj"[[Prototype]] = intrinsic [[Object.prototype]]
+  let map = @sec-ordinaryobjectcreate(null)
+  set field #"obj"[[ParameterMap]] = map
+  let paramNames = sdo BoundNames(formals)
+  let paramCount = $ListLen(?paramNames)
+  let index = 0
+  repeat_while index < length {
+    let value = argList[index]
+    perform ! @sec-createdatapropertyorthrow(#"obj", ! @sec-tostring($𝔽(index)), value)
+    set var index = index + 1
+  }
+  perform ! @sec-definepropertyorthrow(#"obj", "length", record PropertyDescriptor { [[Value]]: $𝔽(length), [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: true })
+  let mappedNames = $ListNew()
+  set var index = paramCount - 1
+  repeat_while index >= 0 {
+    let name = paramNames[index]
+    if mappedNames fails $Contains(?name) {
+      perform $Append(?name, ?mappedNames)
+      if index < length {
+        let getter = @sec-makearggetter(name, envRecord)
+        let setter = @sec-makeargsetter(name, envRecord)
+        perform ! map[[DefineOwnProperty]](! @sec-tostring($𝔽(index)), record PropertyDescriptor { [[Setter]]: setter, [[Getter]]: getter, [[Enumerable]]: false, [[Configurable]]: true })
+      }
+    }
+    set var index = index - 1
+  }
+  perform ! @sec-definepropertyorthrow(#"obj", $WellKnownSymbol("Symbol.iterator"), record PropertyDescriptor { [[Value]]: intrinsic [[Array.prototype.values]], [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: true })
+  perform ! @sec-definepropertyorthrow(#"obj", "callee", record PropertyDescriptor { [[Value]]: func, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: true })
+  return #"obj"
+}
+
+def @sec-makearggetter "MakeArgGetter" (kind ao params [name : String, envRecord : #"Environment Record"] -> #"function object") vars [name, envRecord, getterClosure, getter] {
+  let getterClosure = closure 0
+  let getter = @sec-createbuiltinfunction(getterClosure, 0, "", [])
+  note "_getter_ is never directly accessible to ECMAScript code."
+  return getter
+  closure abstract params none captures [name, envRecord] {
+    return @sec-normalcompletion(! envRecord.GetBindingValue(name, false))
+  }
+}
+
+def @sec-makeargsetter "MakeArgSetter" (kind ao params [name : String, envRecord : #"Environment Record"] -> #"function object") vars [name, envRecord, setterClosure, value, setter] {
+  let setterClosure = closure 0
+  let setter = @sec-createbuiltinfunction(setterClosure, 1, "", [])
+  note "_setter_ is never directly accessible to ECMAScript code."
+  return setter
+  closure abstract params [value] captures [name, envRecord] {
+    return @sec-normalcompletion(! envRecord.SetMutableBinding(name, value, false))
+  }
+}
+
+def @sec-typedarray-preventextensions "[[PreventExtensions]]" (kind internal_method recv #"obj" : TypedArray params [] -> completion<Boolean>) vars [#"obj"] {
+  note "The extensibility-related invariants specified in <emu-xref href=\"#sec-invariants-of-the-essential-internal-methods\"></emu-xref> do not allow this method to return *true* when _obj_ can gain (or lose and then regain) properties, which might occur for properties with integer index names when its underlying buffer is resized."
+  if @sec-istypedarrayfixedlength(#"obj") is val {false} -> return false
+  return @sec-ordinarypreventextensions(#"obj")
+}
+
+def @sec-typedarray-getownproperty "[[GetOwnProperty]].3" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key"] -> completion<#"Property Descriptor" | val(undefined)>) vars [#"obj", propertyKey, numericIndex, value] {
+  if propertyKey is ty {String} {
+    let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+    if numericIndex is not val {undefined} {
+      let value = @sec-typedarraygetelement(#"obj", numericIndex)
+      if value is val {undefined} -> return undefined
+      return record PropertyDescriptor { [[Value]]: value, [[Writable]]: true, [[Enumerable]]: true, [[Configurable]]: true }
+    }
+  }
+  return @sec-ordinarygetownproperty(#"obj", propertyKey)
+}
+
+def @sec-typedarray-hasproperty "[[HasProperty]]" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, numericIndex] {
+  if propertyKey is ty {String} {
+    let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+    if numericIndex is not val {undefined} -> return @sec-isvalidintegerindex(#"obj", numericIndex)
+  }
+  return ? @sec-ordinaryhasproperty(#"obj", propertyKey)
+}
+
+def @sec-typedarray-defineownproperty "[[DefineOwnProperty]].4" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, propertyDesc, numericIndex] {
+  if propertyKey is ty {String} {
+    let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+    if numericIndex is not val {undefined} {
+      if @sec-isvalidintegerindex(#"obj", numericIndex) is val {false} -> return false
+      if propertyDesc sat $HasField([[Configurable]]) and propertyDesc[[Configurable]] is val {false} -> return false
+      if propertyDesc sat $HasField([[Enumerable]]) and propertyDesc[[Enumerable]] is val {false} -> return false
+      if @sec-isaccessordescriptor(propertyDesc) is val {true} -> return false
+      if propertyDesc sat $HasField([[Writable]]) and propertyDesc[[Writable]] is val {false} -> return false
+      if propertyDesc sat $HasField([[Value]]) -> perform ? @sec-typedarraysetelement(#"obj", numericIndex, propertyDesc[[Value]])
+      return true
+    }
+  }
+  return ! @sec-ordinarydefineownproperty(#"obj", propertyKey, propertyDesc)
+}
+
+def @sec-typedarray-get "[[Get]].2" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key", receiver : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", propertyKey, receiver, numericIndex] {
+  if propertyKey is ty {String} {
+    let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+    if numericIndex is not val {undefined} {
+      return @sec-typedarraygetelement(#"obj", numericIndex)
+    }
+  }
+  return ? @sec-ordinaryget(#"obj", propertyKey, receiver)
+}
+
+def @sec-typedarray-set "[[Set]].2" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key", value : #"ECMAScript language value", receiver : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, value, receiver, numericIndex] {
+  if propertyKey is ty {String} {
+    let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+    if numericIndex is not val {undefined} {
+      if @sec-samevalue(#"obj", receiver) is val {true} {
+        perform ? @sec-typedarraysetelement(#"obj", numericIndex, value)
+        return true
+      }
+      if @sec-isvalidintegerindex(#"obj", numericIndex) is val {false} -> return true
+    }
+  }
+  return ? @sec-ordinaryset(#"obj", propertyKey, value, receiver)
+}
+
+def @sec-typedarray-delete "[[Delete]].2" (kind internal_method recv #"obj" : TypedArray params [propertyKey : #"property key"] -> completion<Boolean>) vars [#"obj", propertyKey, numericIndex] {
+  if propertyKey is ty {String} {
+    let numericIndex = @sec-canonicalnumericindexstring(propertyKey)
+    if numericIndex is not val {undefined} {
+      if @sec-isvalidintegerindex(#"obj", numericIndex) is val {false} -> return true
+      return false
+    }
+  }
+  return ! @sec-ordinarydelete(#"obj", propertyKey)
+}
+
+def @sec-typedarray-ownpropertykeys "[[OwnPropertyKeys]].2" (kind internal_method recv #"obj" : TypedArray params [] -> completion<list<#"property key">>) vars [#"obj", taRecord, #"keys", length, i, propertyKey] {
+  let taRecord = @sec-maketypedarraywithbufferwitnessrecord(#"obj", ~seq-cst~)
+  let #"keys" = $ListNew()
+  if @sec-istypedarrayoutofbounds(taRecord) is val {false} {
+    let length = @sec-typedarraylength(taRecord)
+    for_range i incl 0 .. excl length {
+      perform $Append(! @sec-tostring($𝔽(i)), ?#"keys")
+    }
+  }
+  for_keys propertyKey of #"obj" where propertyKey is ty {String} and propertyKey is not ty {#"integer index"} order 1 {
+    perform $Append(?propertyKey, ?#"keys")
+  }
+  for_keys propertyKey of #"obj" where propertyKey is ty {Symbol} order 1 {
+    perform $Append(?propertyKey, ?#"keys")
+  }
+  return #"keys"
+}
+
+def @sec-maketypedarraywithbufferwitnessrecord "MakeTypedArrayWithBufferWitnessRecord" (kind ao params [#"obj" : TypedArray, #"order" : val(~seq-cst~) | val(~unordered~)] -> #"TypedArray With Buffer Witness Record") vars [#"obj", #"order", buffer, byteLength] {
+  let buffer = #"obj"[[ViewedArrayBuffer]]
+  if @sec-isdetachedbuffer(buffer) is val {true} {
+    let byteLength = ~detached~
+  }
+  else {
+    let byteLength = @sec-arraybufferbytelength(buffer, #"order")
+  }
+  return record #"TypedArray With Buffer Witness Record" { [[Object]]: #"obj", [[CachedBufferByteLength]]: byteLength }
+}
+
+def @sec-typedarraycreate "TypedArrayCreate" (kind ao params [proto : Object] -> TypedArray) vars [proto, internalSlotsList, ta] {
+  let internalSlotsList = [[[Prototype]], [[Extensible]], [[ViewedArrayBuffer]], [[TypedArrayName]], [[ContentType]], [[ByteLength]], [[ByteOffset]], [[ArrayLength]]]
+  let ta = @sec-makebasicobject(internalSlotsList)
+  set field ta[[PreventExtensions]] = ref @sec-typedarray-preventextensions
+  set field ta[[GetOwnProperty]] = ref @sec-typedarray-getownproperty
+  set field ta[[HasProperty]] = ref @sec-typedarray-hasproperty
+  set field ta[[DefineOwnProperty]] = ref @sec-typedarray-defineownproperty
+  set field ta[[Get]] = ref @sec-typedarray-get
+  set field ta[[Set]] = ref @sec-typedarray-set
+  set field ta[[Delete]] = ref @sec-typedarray-delete
+  set field ta[[OwnPropertyKeys]] = ref @sec-typedarray-ownpropertykeys
+  set field ta[[Prototype]] = proto
+  return ta
+}
+
+def @sec-typedarraybytelength "TypedArrayByteLength" (kind ao params [taRecord : #"TypedArray With Buffer Witness Record"] -> sort [#"non-negative"] integer) vars [taRecord, #"obj", length, elementSize] {
+  assert @sec-istypedarrayoutofbounds(taRecord) is val {false}
+  let #"obj" = taRecord[[Object]]
+  if #"obj"[[ByteLength]] is not val {~auto~} -> return #"obj"[[ByteLength]]
+  let length = @sec-typedarraylength(taRecord)
+  let elementSize = @sec-typedarrayelementsize(#"obj")
+  note "The returned byte length is always an integer multiple of _elementSize_, even when the underlying buffer has been resized to a non-integer multiple."
+  return length * elementSize
+}
+
+def @sec-typedarraylength "TypedArrayLength" (kind ao params [taRecord : #"TypedArray With Buffer Witness Record"] -> sort [#"non-negative"] integer) vars [taRecord, #"obj", byteOffset, elementSize, byteLength] {
+  assert @sec-istypedarrayoutofbounds(taRecord) is val {false}
+  let #"obj" = taRecord[[Object]]
+  if #"obj"[[ArrayLength]] is not val {~auto~} -> return #"obj"[[ArrayLength]]
+  assert @sec-isfixedlengtharraybuffer(#"obj"[[ViewedArrayBuffer]]) is val {false}
+  let byteOffset = #"obj"[[ByteOffset]]
+  let elementSize = @sec-typedarrayelementsize(#"obj")
+  let byteLength = taRecord[[CachedBufferByteLength]]
+  assert byteLength is not val {~detached~}
+  return $floor((byteLength - byteOffset) / elementSize)
+}
+
+def @sec-istypedarrayoutofbounds "IsTypedArrayOutOfBounds" (kind ao params [taRecord : #"TypedArray With Buffer Witness Record"] -> Boolean) vars [taRecord, #"obj", bufferByteLength, byteOffsetStart, byteOffsetEnd, elementSize, arrayByteLength] {
+  let #"obj" = taRecord[[Object]]
+  let bufferByteLength = taRecord[[CachedBufferByteLength]]
+  if @sec-isdetachedbuffer(#"obj"[[ViewedArrayBuffer]]) is val {true} {
+    assert bufferByteLength is val {~detached~}
+    return true
+  }
+  assert bufferByteLength is ty {sort [#"non-negative"] integer}
+  let byteOffsetStart = #"obj"[[ByteOffset]]
+  if #"obj"[[ArrayLength]] is val {~auto~} {
+    let byteOffsetEnd = bufferByteLength
+  }
+  else {
+    let elementSize = @sec-typedarrayelementsize(#"obj")
+    let arrayByteLength = #"obj"[[ArrayLength]] * elementSize
+    let byteOffsetEnd = byteOffsetStart + arrayByteLength
+  }
+  note "A 0-length TypedArray whose [[ByteOffset]] is _bufferByteLength_ is not considered out-of-bounds."
+  if byteOffsetStart > bufferByteLength or byteOffsetEnd > bufferByteLength -> return true
+  return false
+}
+
+def @sec-istypedarrayfixedlength "IsTypedArrayFixedLength" (kind ao params [#"obj" : TypedArray] -> Boolean) vars [#"obj", buffer] {
+  if #"obj"[[ArrayLength]] is val {~auto~} -> return false
+  let buffer = #"obj"[[ViewedArrayBuffer]]
+  if @sec-isfixedlengtharraybuffer(buffer) is val {false} and @sec-issharedarraybuffer(buffer) is val {false} -> return false
+  return true
+}
+
+def @sec-isvalidintegerindex "IsValidIntegerIndex" (kind ao params [#"obj" : TypedArray, index : Number] -> Boolean) vars [#"obj", index, taRecord, length] {
+  if @sec-isdetachedbuffer(#"obj"[[ViewedArrayBuffer]]) is val {true} -> return false
+  if index is not ty {#"integral Number"} -> return false
+  if index is val {num_f(-0)} or index < num_f(-0) -> return false
+  let taRecord = @sec-maketypedarraywithbufferwitnessrecord(#"obj", ~unordered~)
+  note "Bounds checking is not a synchronizing operation when _obj_'s backing buffer is a growable SharedArrayBuffer."
+  if @sec-istypedarrayoutofbounds(taRecord) is val {true} -> return false
+  let length = @sec-typedarraylength(taRecord)
+  if $ℝ(index) >= length -> return false
+  return true
+}
+
+def @sec-typedarraygetelement "TypedArrayGetElement" (kind ao params [#"obj" : TypedArray, index : Number] -> Number | BigInt | val(undefined)) vars [#"obj", index, offset, elementSize, byteIndexInBuffer, elementType] {
+  if @sec-isvalidintegerindex(#"obj", index) is val {false} -> return undefined
+  let offset = #"obj"[[ByteOffset]]
+  let elementSize = @sec-typedarrayelementsize(#"obj")
+  let byteIndexInBuffer = ($ℝ(index) * elementSize) + offset
+  let elementType = @sec-typedarrayelementtype(#"obj")
+  return @sec-getvaluefrombuffer(#"obj"[[ViewedArrayBuffer]], byteIndexInBuffer, elementType, true, ~unordered~)
+}
+
+def @sec-typedarraysetelement "TypedArraySetElement" (kind ao params [#"obj" : TypedArray, index : Number, value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", index, value, number, offset, elementSize, byteIndexInBuffer, elementType] {
+  if #"obj"[[ContentType]] is val {~bigint~} -> let number = ? @sec-tobigint(value)
+  else -> let number = ? @sec-tonumber(value)
+  if @sec-isvalidintegerindex(#"obj", index) is val {true} {
+    let offset = #"obj"[[ByteOffset]]
+    let elementSize = @sec-typedarrayelementsize(#"obj")
+    let byteIndexInBuffer = ($ℝ(index) * elementSize) + offset
+    let elementType = @sec-typedarrayelementtype(#"obj")
+    perform @sec-setvalueinbuffer(#"obj"[[ViewedArrayBuffer]], byteIndexInBuffer, elementType, number, true, ~unordered~)
+  }
+  return ~unused~
+}
+
+def @sec-isarraybufferviewoutofbounds "IsArrayBufferViewOutOfBounds" (kind ao params [#"obj" : TypedArray | DataView] -> Boolean) vars [#"obj", viewRecord, taRecord] {
+  if #"obj" sat $HasSlot([[DataView]]) {
+    let viewRecord = @sec-makedataviewwithbufferwitnessrecord(#"obj", ~seq-cst~)
+    return @sec-isviewoutofbounds(viewRecord)
+  }
+  let taRecord = @sec-maketypedarraywithbufferwitnessrecord(#"obj", ~seq-cst~)
+  return @sec-istypedarrayoutofbounds(taRecord)
+}
+
+def @sec-module-namespace-exotic-objects-getprototypeof "[[GetPrototypeOf]]" (kind internal_method params [] -> completion<val(null)>) vars [] {
+  return null
+}
+
+def @sec-module-namespace-exotic-objects-setprototypeof-v "[[SetPrototypeOf]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [proto : Object | val(null)] -> completion<Boolean>) vars [#"obj", proto] {
+  return ! @sec-set-immutable-prototype(#"obj", proto)
+}
+
+def @sec-module-namespace-exotic-objects-isextensible "[[IsExtensible]]" (kind internal_method params [] -> completion<val(false)>) vars [] {
+  return false
+}
+
+def @sec-module-namespace-exotic-objects-preventextensions "[[PreventExtensions]]" (kind internal_method params [] -> completion<val(true)>) vars [] {
+  return true
+}
+
+def @sec-module-namespace-exotic-objects-getownproperty-p "[[GetOwnProperty]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key"] -> completion<#"Property Descriptor" | val(undefined)> | #"throw completion") vars [#"obj", propertyKey, exports, value] {
+  if propertyKey is ty {Symbol} -> return @sec-ordinarygetownproperty(#"obj", propertyKey)
+  let exports = #"obj"[[Exports]]
+  if exports fails $Contains(?propertyKey) -> return undefined
+  let value = ? #"obj"[[Get]](propertyKey, #"obj")
+  return record PropertyDescriptor { [[Value]]: value, [[Writable]]: true, [[Enumerable]]: true, [[Configurable]]: false }
+}
+
+def @sec-module-namespace-exotic-objects-defineownproperty-p-desc "[[DefineOwnProperty]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, propertyDesc, current] {
+  if propertyKey is ty {Symbol} -> return ! @sec-ordinarydefineownproperty(#"obj", propertyKey, propertyDesc)
+  let current = ? #"obj"[[GetOwnProperty]](propertyKey)
+  if current is val {undefined} -> return false
+  if propertyDesc sat $HasField([[Configurable]]) and propertyDesc[[Configurable]] is val {true} -> return false
+  if propertyDesc sat $HasField([[Enumerable]]) and propertyDesc[[Enumerable]] is val {false} -> return false
+  if @sec-isaccessordescriptor(propertyDesc) is val {true} -> return false
+  if propertyDesc sat $HasField([[Writable]]) and propertyDesc[[Writable]] is val {false} -> return false
+  if propertyDesc sat $HasField([[Value]]) -> return @sec-samevalue(propertyDesc[[Value]], current[[Value]])
+  return true
+}
+
+def @sec-module-namespace-exotic-objects-hasproperty-p "[[HasProperty]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key"] -> completion<Boolean>) vars [#"obj", propertyKey, exports] {
+  if propertyKey is ty {Symbol} -> return ! @sec-ordinaryhasproperty(#"obj", propertyKey)
+  let exports = #"obj"[[Exports]]
+  if exports sat $Contains(?propertyKey) -> return true
+  return false
+}
+
+def @sec-module-namespace-exotic-objects-get-p-receiver "[[Get]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key", receiver : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", propertyKey, receiver, exports, module, binding, targetModule, targetEnv] {
+  if propertyKey is ty {Symbol} {
+    return ! @sec-ordinaryget(#"obj", propertyKey, receiver)
+  }
+  let exports = #"obj"[[Exports]]
+  if exports fails $Contains(?propertyKey) -> return undefined
+  let module = #"obj"[[Module]]
+  let binding = module.ResolveExport(propertyKey)
+  assert binding is ty {#"ResolvedBinding Record"}
+  let targetModule = binding[[Module]]
+  assert targetModule is not val {undefined}
+  if binding[[BindingName]] is val {~namespace~} {
+    return @sec-getmodulenamespace(targetModule)
+  }
+  let targetEnv = targetModule[[Environment]]
+  if targetEnv is val {~empty~} -> throw @ph-new-error([[ReferenceError]])
+  return ? targetEnv.GetBindingValue(binding[[BindingName]], true)
+}
+
+def @sec-module-namespace-exotic-objects-set-p-v-receiver "[[Set]]" (kind internal_method params [propertyKey : #"property key", value : #"ECMAScript language value", receiver : #"ECMAScript language value"] -> completion<val(false)>) vars [propertyKey, value, receiver] {
+  return false
+}
+
+def @sec-module-namespace-exotic-objects-delete-p "[[Delete]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [propertyKey : #"property key"] -> completion<Boolean>) vars [#"obj", propertyKey, exports] {
+  if propertyKey is ty {Symbol} {
+    return ! @sec-ordinarydelete(#"obj", propertyKey)
+  }
+  let exports = #"obj"[[Exports]]
+  if exports sat $Contains(?propertyKey) -> return false
+  return true
+}
+
+def @sec-module-namespace-exotic-objects-ownpropertykeys "[[OwnPropertyKeys]]" (kind internal_method recv #"obj" : #"module namespace exotic object" params [] -> completion<list<#"property key">>) vars [#"obj", exports, symbolKeys] {
+  let exports = #"obj"[[Exports]]
+  let symbolKeys = @sec-ordinaryownpropertykeys(#"obj")
+  return $ListConcat([exports, symbolKeys])
+}
+
+def @sec-modulenamespacecreate "ModuleNamespaceCreate" (kind ao params [module : #"Module Record", exports : list<String>] -> #"module namespace exotic object") vars [module, exports, internalSlotsList, namespace, sortedExports, p] {
+  assert module[[Namespace]] is val {~empty~}
+  let internalSlotsList = $SlotsListed(table t"table-internal-slots-of-module-namespace-exotic-objects")
+  let namespace = @sec-makebasicobject(internalSlotsList)
+  perform @ph-set-methods(?namespace, data choice 1, data choice 1, clause @sec-module-namespace-exotic-objects)
+  set field namespace[[Module]] = module
+  let sortedExports = @ph-elements-lexicographic(?exports)
+  set field namespace[[Exports]] = sortedExports
+  for_each p : Record in $PropertyOrder(namespace, $ClauseProperties(namespace, clause @sec-module-namespace-objects)) {
+    perform $OwnPropertyCreate(namespace, p[[Key]], record PropertyDescriptor { [[Value]]: p[[Value]], [[Writable]]: p[[Writable]], [[Enumerable]]: p[[Enumerable]], [[Configurable]]: p[[Configurable]] }, ~data~)
+  }
+  set field module[[Namespace]] = namespace
+  return namespace
+}
+
+def @sec-immutable-prototype-exotic-objects-setprototypeof-v "[[SetPrototypeOf]].2" (kind internal_method recv #"obj" : sort [immutable] #"prototype exotic object" params [proto : Object | val(null)] -> completion<Boolean> | #"throw completion") vars [#"obj", proto] {
+  return ? @sec-set-immutable-prototype(#"obj", proto)
+}
+
+def @sec-set-immutable-prototype "SetImmutablePrototype" (kind ao params [#"obj" : Object, proto : Object | val(null)] -> completion<Boolean> | #"throw completion") vars [#"obj", proto, current] {
+  let current = ? #"obj"[[GetPrototypeOf]]()
+  if @sec-samevalue(proto, current) is val {true} -> return true
+  return false
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-getprototypeof "[[GetPrototypeOf]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [] -> completion<Object | val(null)> | #"throw completion") vars [#"obj", target, handler, trap, handlerProto, extensibleTarget, targetProto] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "getPrototypeOf")
+  if trap is val {undefined} {
+    return ? target[[GetPrototypeOf]]()
+  }
+  let handlerProto = ? @sec-call(trap, handler, [target])
+  if handlerProto is not ty {Object} and handlerProto is not val {null} -> throw @ph-new-error([[TypeError]])
+  let extensibleTarget = ? @sec-isextensible-o(target)
+  if extensibleTarget is val {true} -> return handlerProto
+  let targetProto = ? target[[GetPrototypeOf]]()
+  if @sec-samevalue(handlerProto, targetProto) is val {false} -> throw @ph-new-error([[TypeError]])
+  return handlerProto
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-setprototypeof-v "[[SetPrototypeOf]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [proto : Object | val(null)] -> completion<Boolean> | #"throw completion") vars [#"obj", proto, target, handler, trap, boolTrapResult, extensibleTarget, targetProto] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "setPrototypeOf")
+  if trap is val {undefined} {
+    return ? target[[SetPrototypeOf]](proto)
+  }
+  let boolTrapResult = @sec-toboolean(? @sec-call(trap, handler, [target, proto]))
+  if boolTrapResult is val {false} -> return false
+  let extensibleTarget = ? @sec-isextensible-o(target)
+  if extensibleTarget is val {true} -> return true
+  let targetProto = ? target[[GetPrototypeOf]]()
+  if @sec-samevalue(proto, targetProto) is val {false} -> throw @ph-new-error([[TypeError]])
+  return true
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-isextensible "[[IsExtensible]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [] -> completion<Boolean> | #"throw completion") vars [#"obj", target, handler, trap, boolTrapResult, targetResult] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "isExtensible")
+  if trap is val {undefined} {
+    return ? @sec-isextensible-o(target)
+  }
+  let boolTrapResult = @sec-toboolean(? @sec-call(trap, handler, [target]))
+  let targetResult = ? @sec-isextensible-o(target)
+  if boolTrapResult is not val {targetResult} -> throw @ph-new-error([[TypeError]])
+  return boolTrapResult
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-preventextensions "[[PreventExtensions]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [] -> completion<Boolean> | #"throw completion") vars [#"obj", target, handler, trap, boolTrapResult, extensibleTarget] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "preventExtensions")
+  if trap is val {undefined} {
+    return ? target[[PreventExtensions]]()
+  }
+  let boolTrapResult = @sec-toboolean(? @sec-call(trap, handler, [target]))
+  if boolTrapResult is val {true} {
+    let extensibleTarget = ? @sec-isextensible-o(target)
+    if extensibleTarget is val {true} -> throw @ph-new-error([[TypeError]])
+  }
+  return boolTrapResult
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-getownproperty-p "[[GetOwnProperty]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [propertyKey : #"property key"] -> completion<#"Property Descriptor" | val(undefined)> | #"throw completion") vars [#"obj", propertyKey, target, handler, trap, trapResultObj, targetDesc, extensibleTarget, resultDesc, valid] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "getOwnPropertyDescriptor")
+  if trap is val {undefined} {
+    return ? target[[GetOwnProperty]](propertyKey)
+  }
+  let trapResultObj = ? @sec-call(trap, handler, [target, propertyKey])
+  if trapResultObj is not ty {Object} and trapResultObj is not val {undefined} -> throw @ph-new-error([[TypeError]])
+  let targetDesc = ? target[[GetOwnProperty]](propertyKey)
+  if trapResultObj is val {undefined} {
+    if targetDesc is val {undefined} -> return undefined
+    if targetDesc[[Configurable]] is val {false} -> throw @ph-new-error([[TypeError]])
+    let extensibleTarget = ? @sec-isextensible-o(target)
+    if extensibleTarget is val {false} -> throw @ph-new-error([[TypeError]])
+    return undefined
+  }
+  let extensibleTarget = ? @sec-isextensible-o(target)
+  let resultDesc = ? @sec-topropertydescriptor(trapResultObj)
+  perform @sec-completepropertydescriptor(resultDesc)
+  let valid = @sec-iscompatiblepropertydescriptor(extensibleTarget, resultDesc, targetDesc)
+  if valid is val {false} -> throw @ph-new-error([[TypeError]])
+  if resultDesc[[Configurable]] is val {false} {
+    if targetDesc is val {undefined} or targetDesc[[Configurable]] is val {true} {
+      throw @ph-new-error([[TypeError]])
+    }
+    if resultDesc sat $HasField([[Writable]]) and resultDesc[[Writable]] is val {false} {
+      assert targetDesc sat $HasField([[Writable]])
+      if targetDesc[[Writable]] is val {true} -> throw @ph-new-error([[TypeError]])
+    }
+  }
+  return resultDesc
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-defineownproperty-p-desc "[[DefineOwnProperty]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [propertyKey : #"property key", propertyDesc : #"Property Descriptor"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, propertyDesc, target, handler, trap, propertyDescObj, boolTrapResult, targetDesc, extensibleTarget, settingConfigurableFalse] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "defineProperty")
+  if trap is val {undefined} {
+    return ? target[[DefineOwnProperty]](propertyKey, propertyDesc)
+  }
+  let propertyDescObj = @sec-frompropertydescriptor(propertyDesc)
+  let boolTrapResult = @sec-toboolean(? @sec-call(trap, handler, [target, propertyKey, propertyDescObj]))
+  if boolTrapResult is val {false} -> return false
+  let targetDesc = ? target[[GetOwnProperty]](propertyKey)
+  let extensibleTarget = ? @sec-isextensible-o(target)
+  if propertyDesc sat $HasField([[Configurable]]) and propertyDesc[[Configurable]] is val {false} {
+    let settingConfigurableFalse = true
+  }
+  else {
+    let settingConfigurableFalse = false
+  }
+  if targetDesc is val {undefined} {
+    if extensibleTarget is val {false} -> throw @ph-new-error([[TypeError]])
+    if settingConfigurableFalse is val {true} -> throw @ph-new-error([[TypeError]])
+  }
+  else {
+    if @sec-iscompatiblepropertydescriptor(extensibleTarget, propertyDesc, targetDesc) is val {false} -> throw @ph-new-error([[TypeError]])
+    if settingConfigurableFalse is val {true} and targetDesc[[Configurable]] is val {true} -> throw @ph-new-error([[TypeError]])
+    if @sec-isdatadescriptor(targetDesc) is val {true} and targetDesc[[Configurable]] is val {false} and targetDesc[[Writable]] is val {true} {
+      if propertyDesc sat $HasField([[Writable]]) and propertyDesc[[Writable]] is val {false} -> throw @ph-new-error([[TypeError]])
+    }
+  }
+  return true
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-hasproperty-p "[[HasProperty]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, target, handler, trap, boolTrapResult, targetDesc, extensibleTarget] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "has")
+  if trap is val {undefined} {
+    return ? target[[HasProperty]](propertyKey)
+  }
+  let boolTrapResult = @sec-toboolean(? @sec-call(trap, handler, [target, propertyKey]))
+  if boolTrapResult is val {false} {
+    let targetDesc = ? target[[GetOwnProperty]](propertyKey)
+    if targetDesc is not val {undefined} {
+      if targetDesc[[Configurable]] is val {false} -> throw @ph-new-error([[TypeError]])
+      let extensibleTarget = ? @sec-isextensible-o(target)
+      if extensibleTarget is val {false} -> throw @ph-new-error([[TypeError]])
+    }
+  }
+  return boolTrapResult
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver "[[Get]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [propertyKey : #"property key", receiver : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", propertyKey, receiver, target, handler, trap, trapResult, targetDesc] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "get")
+  if trap is val {undefined} {
+    return ? target[[Get]](propertyKey, receiver)
+  }
+  let trapResult = ? @sec-call(trap, handler, [target, propertyKey, receiver])
+  let targetDesc = ? target[[GetOwnProperty]](propertyKey)
+  if targetDesc is not val {undefined} and targetDesc[[Configurable]] is val {false} {
+    if @sec-isdatadescriptor(targetDesc) is val {true} and targetDesc[[Writable]] is val {false} {
+      if @sec-samevalue(trapResult, targetDesc[[Value]]) is val {false} -> throw @ph-new-error([[TypeError]])
+    }
+    if @sec-isaccessordescriptor(targetDesc) is val {true} and targetDesc[[Getter]] is val {undefined} {
+      if trapResult is not val {undefined} -> throw @ph-new-error([[TypeError]])
+    }
+  }
+  return trapResult
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-set-p-v-receiver "[[Set]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [propertyKey : #"property key", value : #"ECMAScript language value", receiver : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, value, receiver, target, handler, trap, boolTrapResult, targetDesc] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "set")
+  if trap is val {undefined} {
+    return ? target[[Set]](propertyKey, value, receiver)
+  }
+  let boolTrapResult = @sec-toboolean(? @sec-call(trap, handler, [target, propertyKey, value, receiver]))
+  if boolTrapResult is val {false} -> return false
+  let targetDesc = ? target[[GetOwnProperty]](propertyKey)
+  if targetDesc is not val {undefined} and targetDesc[[Configurable]] is val {false} {
+    if @sec-isdatadescriptor(targetDesc) is val {true} and targetDesc[[Writable]] is val {false} {
+      if @sec-samevalue(value, targetDesc[[Value]]) is val {false} -> throw @ph-new-error([[TypeError]])
+    }
+    if @sec-isaccessordescriptor(targetDesc) is val {true} {
+      if targetDesc[[Setter]] is val {undefined} -> throw @ph-new-error([[TypeError]])
+    }
+  }
+  return true
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-delete-p "[[Delete]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [propertyKey : #"property key"] -> completion<Boolean> | #"throw completion") vars [#"obj", propertyKey, target, handler, trap, boolTrapResult, targetDesc, extensibleTarget] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "deleteProperty")
+  if trap is val {undefined} {
+    return ? target[[Delete]](propertyKey)
+  }
+  let boolTrapResult = @sec-toboolean(? @sec-call(trap, handler, [target, propertyKey]))
+  if boolTrapResult is val {false} -> return false
+  let targetDesc = ? target[[GetOwnProperty]](propertyKey)
+  if targetDesc is val {undefined} -> return true
+  if targetDesc[[Configurable]] is val {false} -> throw @ph-new-error([[TypeError]])
+  let extensibleTarget = ? @sec-isextensible-o(target)
+  if extensibleTarget is val {false} -> throw @ph-new-error([[TypeError]])
+  return true
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-ownpropertykeys "[[OwnPropertyKeys]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [] -> completion<list<#"property key">> | #"throw completion") vars [#"obj", target, handler, trap, trapResultArray, trapResult, extensibleTarget, targetKeys, targetConfigurableKeys, targetNonconfigurableKeys, key, propertyDesc, uncheckedResultKeys] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "ownKeys")
+  if trap is val {undefined} {
+    return ? target[[OwnPropertyKeys]]()
+  }
+  let trapResultArray = ? @sec-call(trap, handler, [target])
+  let trapResult = ? @sec-createlistfromarraylike(trapResultArray, ~property-key~)
+  if trapResult sat @ph-duplicate-entries(data choice 0) -> throw @ph-new-error([[TypeError]])
+  let extensibleTarget = ? @sec-isextensible-o(target)
+  let targetKeys = ? target[[OwnPropertyKeys]]()
+  assert targetKeys is ty {list<#"property key">}
+  assert targetKeys sat @ph-no-duplicate-entries(data choice 1)
+  let targetConfigurableKeys = $ListNew()
+  let targetNonconfigurableKeys = $ListNew()
+  for_each key in targetKeys {
+    let propertyDesc = ? target[[GetOwnProperty]](key)
+    if propertyDesc is not val {undefined} and propertyDesc[[Configurable]] is val {false} {
+      perform $Append(?key, ?targetNonconfigurableKeys)
+    }
+    else {
+      perform $Append(?key, ?targetConfigurableKeys)
+    }
+  }
+  if extensibleTarget is val {true} and targetNonconfigurableKeys sat $IsEmpty() {
+    return trapResult
+  }
+  let uncheckedResultKeys = @ph-list-whose-elements([@ph-elements-of(?trapResult)])
+  for_each key in targetNonconfigurableKeys {
+    if uncheckedResultKeys fails $Contains(?key) -> throw @ph-new-error([[TypeError]])
+    perform $RemoveElem(?key, ?uncheckedResultKeys)
+  }
+  if extensibleTarget is val {true} -> return trapResult
+  for_each key in targetConfigurableKeys {
+    if uncheckedResultKeys fails $Contains(?key) -> throw @ph-new-error([[TypeError]])
+    perform $RemoveElem(?key, ?uncheckedResultKeys)
+  }
+  if uncheckedResultKeys fails $IsEmpty() -> throw @ph-new-error([[TypeError]])
+  return trapResult
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-call-thisargument-argumentslist "[[Call]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [thisArg : #"ECMAScript language value", argList : list<#"ECMAScript language value">] -> completion<#"ECMAScript language value"> | #"throw completion") vars [#"obj", thisArg, argList, target, handler, trap, argArray] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "apply")
+  if trap is val {undefined} {
+    return ? @sec-call(target, thisArg, argList)
+  }
+  let argArray = @sec-createarrayfromlist(argList)
+  return ? @sec-call(trap, handler, [target, thisArg, argArray])
+}
+
+def @sec-proxy-object-internal-methods-and-internal-slots-construct-argumentslist-newtarget "[[Construct]]" (kind internal_method recv #"obj" : #"Proxy exotic object" params [argList : list<#"ECMAScript language value">, newTarget : constructor] -> completion<Object> | #"throw completion") vars [#"obj", argList, newTarget, target, handler, trap, argArray, newObj] {
+  perform ? @sec-validatenonrevokedproxy(#"obj")
+  let target = #"obj"[[ProxyTarget]]
+  assert @sec-isconstructor(target) is val {true}
+  let handler = #"obj"[[ProxyHandler]]
+  assert handler is ty {Object}
+  let trap = ? @sec-getmethod(handler, "construct")
+  if trap is val {undefined} {
+    return ? @sec-construct(target, argList, newTarget)
+  }
+  let argArray = @sec-createarrayfromlist(argList)
+  let newObj = ? @sec-call(trap, handler, [target, argArray, newTarget])
+  if newObj is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return newObj
+}
+
+def @sec-validatenonrevokedproxy "ValidateNonRevokedProxy" (kind ao params [proxy : #"Proxy exotic object"] -> completion<val(~unused~)> | #"throw completion") vars [proxy] {
+  if proxy[[ProxyTarget]] is val {null} -> throw @ph-new-error([[TypeError]])
+  assert proxy[[ProxyHandler]] is not val {null}
+  return ~unused~
+}
+
+def @sec-proxycreate "ProxyCreate" (kind ao params [target : #"ECMAScript language value", handler : #"ECMAScript language value"] -> completion<#"Proxy exotic object"> | #"throw completion") vars [target, handler, proxy] {
+  if target is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  if handler is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let proxy = @sec-makebasicobject([[[ProxyHandler]], [[ProxyTarget]]])
+  perform @ph-set-methods(?proxy, data choice 0, data choice 1, clause @sec-proxy-object-internal-methods-and-internal-slots)
+  if @sec-iscallable(target) is val {true} {
+    set field proxy[[Call]] = ref @sec-proxy-object-internal-methods-and-internal-slots-call-thisargument-argumentslist
+    if @sec-isconstructor(target) is val {true} {
+      set field proxy[[Construct]] = ref @sec-proxy-object-internal-methods-and-internal-slots-construct-argumentslist-newtarget
+    }
+  }
+  set field proxy[[ProxyTarget]] = target
+  set field proxy[[ProxyHandler]] = handler
+  return proxy
+}
+
+sdo_row @sec-runtime-semantics-evaluatebody EvaluateBody form alg {
+  prods [p"Syntactic - FunctionBody : FunctionStatementList[?Yield, ?Await]"]
+  keys ["FunctionBody : FunctionStatementList"]
+  vars [func, argList]
+  steps {
+    return ? sdo EvaluateFunctionBody(child 6 |FunctionBody|; func, argList)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluatebody#1 EvaluateBody form alg {
+  prods [p"Syntactic - ConciseBody : [lookahead != `{`] ExpressionBody[?In, ~Await]"]
+  keys ["ConciseBody : ExpressionBody"]
+  vars [func, argList]
+  steps {
+    return ? sdo EvaluateConciseBody(child 6 |ConciseBody|; func, argList)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluatebody#2 EvaluateBody form alg {
+  prods [p"Syntactic - GeneratorBody : FunctionBody[+Yield, ~Await]"]
+  keys ["GeneratorBody : FunctionBody"]
+  vars [func, argList]
+  steps {
+    return ? sdo EvaluateGeneratorBody(child 6 |GeneratorBody|; func, argList)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluatebody#3 EvaluateBody form alg {
+  prods [p"Syntactic - AsyncGeneratorBody : FunctionBody[+Yield, +Await]"]
+  keys ["\n          AsyncGeneratorBody : FunctionBody\n        "]
+  vars [func, argList]
+  steps {
+    return ? sdo EvaluateAsyncGeneratorBody(child 6 |AsyncGeneratorBody|; func, argList)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluatebody#4 EvaluateBody form alg {
+  prods [p"Syntactic - AsyncFunctionBody : FunctionBody[~Yield, +Await]"]
+  keys ["\n          AsyncFunctionBody : FunctionBody\n        "]
+  vars [func, argList]
+  steps {
+    return ? sdo EvaluateAsyncFunctionBody(child 6 |AsyncFunctionBody|; func, argList)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluatebody#5 EvaluateBody form alg {
+  prods [p"Syntactic - AsyncConciseBody : [lookahead != `{`] ExpressionBody[?In, +Await]"]
+  keys ["\n          AsyncConciseBody : ExpressionBody\n        "]
+  vars [func, argList]
+  steps {
+    return ? sdo EvaluateAsyncConciseBody(child 6 |AsyncConciseBody|; func, argList)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluatebody#6 EvaluateBody form alg {
+  prods [p"Syntactic - Initializer : `=` AssignmentExpression[?In, ?Yield, ?Await]"]
+  keys ["\n          Initializer :\n            `=` AssignmentExpression\n        "]
+  vars [func, argList, value, rhs]
+  steps {
+    assert argList sat $IsEmpty()
+    assert func[[ClassFieldInitializerName]] is not val {~empty~}
+    if @sec-isanonymousfunctiondefinition(child 5 |AssignmentExpression|) is val {true} {
+      let value = ? sdo NamedEvaluation(child 6 |Initializer|; func[[ClassFieldInitializerName]])
+    }
+    else {
+      let rhs = ? sdo Evaluation(child 5 |AssignmentExpression|)
+      let value = ? @sec-getvalue(rhs)
+    }
+    return @sec-returncompletion(value)
+  }
+}
+
+sdo_row @sec-runtime-semantics-evaluatebody#7 EvaluateBody form alg {
+  prods [p"Syntactic - ClassStaticBlockBody : ClassStaticBlockStatementList"]
+  keys ["\n          ClassStaticBlockBody : ClassStaticBlockStatementList\n        "]
+  vars [func, argList]
+  steps {
+    assert argList sat $IsEmpty()
+    return ? sdo EvaluateClassStaticBlockBody(child 6 |ClassStaticBlockBody|; func)
+  }
+}
+

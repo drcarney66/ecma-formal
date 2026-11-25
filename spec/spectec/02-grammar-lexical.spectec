@@ -1,0 +1,581 @@
+grammar lexical
+
+rule lexical |SourceCharacter| [] :: {
+  | > anyCodePoint
+}
+
+rule lexical |InputElementDiv| [] :: {
+  | |WhiteSpace|
+  | |LineTerminator|
+  | |Comment|
+  | |CommonToken|
+  | |DivPunctuator|
+  | |RightBracePunctuator|
+}
+
+rule lexical |InputElementRegExp| [] :: {
+  | |WhiteSpace|
+  | |LineTerminator|
+  | |Comment|
+  | |CommonToken|
+  | |RightBracePunctuator|
+  | |RegularExpressionLiteral|
+}
+
+rule lexical |InputElementRegExpOrTemplateTail| [] :: {
+  | |WhiteSpace|
+  | |LineTerminator|
+  | |Comment|
+  | |CommonToken|
+  | |RegularExpressionLiteral|
+  | |TemplateSubstitutionTail|
+}
+
+rule lexical |InputElementTemplateTail| [] :: {
+  | |WhiteSpace|
+  | |LineTerminator|
+  | |Comment|
+  | |CommonToken|
+  | |DivPunctuator|
+  | |TemplateSubstitutionTail|
+}
+
+rule lexical |InputElementHashbangOrRegExp| [] :: {
+  | |WhiteSpace|
+  | |LineTerminator|
+  | |Comment|
+  | |CommonToken|
+  | |HashbangComment|
+  | |RegularExpressionLiteral|
+}
+
+rule lexical |WhiteSpace| [] :: {
+  | cp TAB
+  | cp VT
+  | cp FF
+  | cp ZWNBSP
+  | cp USP
+}
+
+rule lexical |LineTerminator| [] :: {
+  | cp LF
+  | cp CR
+  | cp LS
+  | cp PS
+}
+
+rule lexical |LineTerminatorSequence| [] :: {
+  | cp LF
+  | cp CR [lookahead != cp LF]
+  | cp LS
+  | cp PS
+  | cp CR cp LF
+}
+
+rule lexical |Comment| [] :: {
+  | |MultiLineComment|
+  | |SingleLineComment|
+}
+
+rule lexical |MultiLineComment| [] :: {
+  | "/*" |MultiLineCommentChars|? "*/"
+}
+
+rule lexical |MultiLineCommentChars| [] :: {
+  | |MultiLineNotAsteriskChar| |MultiLineCommentChars|?
+  | "*" |PostAsteriskCommentChars|?
+}
+
+rule lexical |PostAsteriskCommentChars| [] :: {
+  | |MultiLineNotForwardSlashOrAsteriskChar| |MultiLineCommentChars|?
+  | "*" |PostAsteriskCommentChars|?
+}
+
+rule lexical |MultiLineNotAsteriskChar| [] :: {
+  | |SourceCharacter| butnot "*"
+}
+
+rule lexical |MultiLineNotForwardSlashOrAsteriskChar| [] :: {
+  | |SourceCharacter| butnot one_of or ["/", "*"]
+}
+
+rule lexical |SingleLineComment| [] :: {
+  | "//" |SingleLineCommentChars|?
+}
+
+rule lexical |SingleLineCommentChars| [] :: {
+  | |SingleLineCommentChar| |SingleLineCommentChars|?
+}
+
+rule lexical |SingleLineCommentChar| [] :: {
+  | |SourceCharacter| butnot |LineTerminator|
+}
+
+rule lexical |HashbangComment| [] :: {
+  | "#!" |SingleLineCommentChars|?
+}
+
+rule lexical |CommonToken| [] :: {
+  | |IdentifierName|
+  | |PrivateIdentifier|
+  | |Punctuator|
+  | |NumericLiteral|
+  | |StringLiteral|
+  | |Template|
+}
+
+rule lexical |PrivateIdentifier| [] :: {
+  | "#" |IdentifierName|
+}
+
+rule lexical |IdentifierName| [] :: {
+  | |IdentifierStart|
+  | |IdentifierName| |IdentifierPart|
+}
+
+rule lexical |IdentifierStart| [] :: {
+  | |IdentifierStartChar|
+  | "\\" |UnicodeEscapeSequence|
+}
+
+rule lexical |IdentifierPart| [] :: {
+  | |IdentifierPartChar|
+  | "\\" |UnicodeEscapeSequence|
+}
+
+rule lexical |IdentifierStartChar| [] :: {
+  | |UnicodeIDStart|
+  | "$"
+  | "_"
+}
+
+rule lexical |IdentifierPartChar| [] :: {
+  | |UnicodeIDContinue|
+  | "$"
+}
+
+rule lexical |AsciiLetter| [] :: one_of {
+  row ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+  row ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+}
+
+rule lexical |UnicodeIDStart| [] :: {
+  | > idStart
+}
+
+rule lexical |UnicodeIDContinue| [] :: {
+  | > idContinue
+}
+
+rule lexical |ReservedWord| [] :: one_of {
+  row ["await"]
+  row ["break"]
+  row ["case", "catch", "class", "const", "continue"]
+  row ["debugger", "default", "delete", "do"]
+  row ["else", "enum", "export", "extends"]
+  row ["false", "finally", "for", "function"]
+  row ["if", "import", "in", "instanceof"]
+  row ["new", "null"]
+  row ["return"]
+  row ["super", "switch"]
+  row ["this", "throw", "true", "try", "typeof"]
+  row ["var", "void"]
+  row ["while", "with"]
+  row ["yield"]
+}
+
+rule lexical |Punctuator| [] :: {
+  | |OptionalChainingPunctuator|
+  | |OtherPunctuator|
+}
+
+rule lexical |OptionalChainingPunctuator| [] :: {
+  | "?." [lookahead not_in |DecimalDigit|]
+}
+
+rule lexical |OtherPunctuator| [] :: one_of {
+  row ["{", "(", ")", "[", "]"]
+  row [".", "...", ";", ","]
+  row ["<", ">", "<=", ">="]
+  row ["==", "!=", "===", "!=="]
+  row ["+", "-", "*", "%", "**"]
+  row ["++", "--"]
+  row ["<<", ">>", ">>>"]
+  row ["&", "|", "^"]
+  row ["!", "~"]
+  row ["&&", "||", "??"]
+  row ["?", ":"]
+  row ["=", "+=", "-=", "*=", "%=", "**=", "<<=", ">>=", ">>>=", "&=", "|=", "^="]
+  row ["&&=", "||=", "??="]
+  row ["=>"]
+}
+
+rule lexical |DivPunctuator| [] :: {
+  | "/"
+  | "/="
+}
+
+rule lexical |RightBracePunctuator| [] :: {
+  | "}"
+}
+
+rule lexical |NullLiteral| [] :: {
+  | "null"
+}
+
+rule lexical |BooleanLiteral| [] :: {
+  | "true"
+  | "false"
+}
+
+rule lexical |NumericLiteralSeparator| [] :: {
+  | "_"
+}
+
+rule lexical |NumericLiteral| [] :: {
+  | |DecimalLiteral|
+  | |DecimalBigIntegerLiteral|
+  | |NonDecimalIntegerLiteral[+Sep]|
+  | |NonDecimalIntegerLiteral[+Sep]| |BigIntLiteralSuffix|
+  | |LegacyOctalIntegerLiteral|
+}
+
+rule lexical |DecimalBigIntegerLiteral| [] :: {
+  | "0" |BigIntLiteralSuffix|
+  | |NonZeroDigit| |DecimalDigits[+Sep]|? |BigIntLiteralSuffix|
+  | |NonZeroDigit| |NumericLiteralSeparator| |DecimalDigits[+Sep]| |BigIntLiteralSuffix|
+}
+
+rule lexical |NonDecimalIntegerLiteral| [Sep] :: {
+  | |BinaryIntegerLiteral[?Sep]|
+  | |OctalIntegerLiteral[?Sep]|
+  | |HexIntegerLiteral[?Sep]|
+}
+
+rule lexical |BigIntLiteralSuffix| [] :: {
+  | "n"
+}
+
+rule lexical |DecimalLiteral| [] :: {
+  | |DecimalIntegerLiteral| "." |DecimalDigits[+Sep]|? |ExponentPart[+Sep]|?
+  | "." |DecimalDigits[+Sep]| |ExponentPart[+Sep]|?
+  | |DecimalIntegerLiteral| |ExponentPart[+Sep]|?
+}
+
+rule lexical |DecimalIntegerLiteral| [] :: {
+  | |DecimalDigit|
+  | |NonZeroDigit| |NumericLiteralSeparator|? |DecimalDigits[+Sep]|
+  | |NonOctalDecimalIntegerLiteral|
+}
+
+rule lexical |DecimalDigits| [Sep] :: {
+  | |DecimalDigit|
+  | |DecimalDigits[?Sep]| |DecimalDigit|
+  | [+Sep] |DecimalDigits[+Sep]| |NumericLiteralSeparator| |DecimalDigit|
+}
+
+rule lexical |DecimalDigit| [] :: one_of {
+  row ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+}
+
+rule lexical |NonZeroDigit| [] :: one_of {
+  row ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+}
+
+rule lexical |ExponentPart| [Sep] :: {
+  | |ExponentIndicator| |SignedInteger[?Sep]|
+}
+
+rule lexical |ExponentIndicator| [] :: one_of {
+  row ["e", "E"]
+}
+
+rule lexical |SignedInteger| [Sep] :: {
+  | |DecimalDigits[?Sep]|
+  | "+" |DecimalDigits[?Sep]|
+  | "-" |DecimalDigits[?Sep]|
+}
+
+rule lexical |BinaryIntegerLiteral| [Sep] :: {
+  | "0b" |BinaryDigits[?Sep]|
+  | "0B" |BinaryDigits[?Sep]|
+}
+
+rule lexical |BinaryDigits| [Sep] :: {
+  | |BinaryDigit|
+  | |BinaryDigits[?Sep]| |BinaryDigit|
+  | [+Sep] |BinaryDigits[+Sep]| |NumericLiteralSeparator| |BinaryDigit|
+}
+
+rule lexical |BinaryDigit| [] :: one_of {
+  row ["0", "1"]
+}
+
+rule lexical |OctalIntegerLiteral| [Sep] :: {
+  | "0o" |OctalDigits[?Sep]|
+  | "0O" |OctalDigits[?Sep]|
+}
+
+rule lexical |OctalDigits| [Sep] :: {
+  | |OctalDigit|
+  | |OctalDigits[?Sep]| |OctalDigit|
+  | [+Sep] |OctalDigits[+Sep]| |NumericLiteralSeparator| |OctalDigit|
+}
+
+rule lexical |LegacyOctalIntegerLiteral| [] :: {
+  | "0" |OctalDigit|
+  | |LegacyOctalIntegerLiteral| |OctalDigit|
+}
+
+rule lexical |NonOctalDecimalIntegerLiteral| [] :: {
+  | "0" |LegacyOctalLikeDecimalDigits|? |NonOctalDigit|
+  | |NonOctalDecimalIntegerLiteral| |DecimalDigit|
+}
+
+rule lexical |LegacyOctalLikeDecimalDigits| [] :: {
+  | |OctalDigit|
+  | |LegacyOctalLikeDecimalDigits| |OctalDigit|
+}
+
+rule lexical |OctalDigit| [] :: one_of {
+  row ["0", "1", "2", "3", "4", "5", "6", "7"]
+}
+
+rule lexical |NonOctalDigit| [] :: one_of {
+  row ["8", "9"]
+}
+
+rule lexical |HexIntegerLiteral| [Sep] :: {
+  | "0x" |HexDigits[?Sep]|
+  | "0X" |HexDigits[?Sep]|
+}
+
+rule lexical |HexDigits| [Sep] :: {
+  | |HexDigit|
+  | |HexDigits[?Sep]| |HexDigit|
+  | [+Sep] |HexDigits[+Sep]| |NumericLiteralSeparator| |HexDigit|
+}
+
+rule lexical |HexDigit| [] :: one_of {
+  row ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "A", "B", "C", "D", "E", "F"]
+}
+
+rule lexical |StringLiteral| [] :: {
+  | "\"" |DoubleStringCharacters|? "\""
+  | "'" |SingleStringCharacters|? "'"
+}
+
+rule lexical |DoubleStringCharacters| [] :: {
+  | |DoubleStringCharacter| |DoubleStringCharacters|?
+}
+
+rule lexical |SingleStringCharacters| [] :: {
+  | |SingleStringCharacter| |SingleStringCharacters|?
+}
+
+rule lexical |DoubleStringCharacter| [] :: {
+  | |SourceCharacter| butnot one_of or ["\"", "\\", |LineTerminator|]
+  | cp LS
+  | cp PS
+  | "\\" |EscapeSequence|
+  | |LineContinuation|
+}
+
+rule lexical |SingleStringCharacter| [] :: {
+  | |SourceCharacter| butnot one_of or ["'", "\\", |LineTerminator|]
+  | cp LS
+  | cp PS
+  | "\\" |EscapeSequence|
+  | |LineContinuation|
+}
+
+rule lexical |LineContinuation| [] :: {
+  | "\\" |LineTerminatorSequence|
+}
+
+rule lexical |EscapeSequence| [] :: {
+  | |CharacterEscapeSequence|
+  | "0" [lookahead not_in |DecimalDigit|]
+  | |LegacyOctalEscapeSequence|
+  | |NonOctalDecimalEscapeSequence|
+  | |HexEscapeSequence|
+  | |UnicodeEscapeSequence|
+}
+
+rule lexical |CharacterEscapeSequence| [] :: {
+  | |SingleEscapeCharacter|
+  | |NonEscapeCharacter|
+}
+
+rule lexical |SingleEscapeCharacter| [] :: one_of {
+  row ["'", "\"", "\\", "b", "f", "n", "r", "t", "v"]
+}
+
+rule lexical |NonEscapeCharacter| [] :: {
+  | |SourceCharacter| butnot one_of or [|EscapeCharacter|, |LineTerminator|]
+}
+
+rule lexical |EscapeCharacter| [] :: {
+  | |SingleEscapeCharacter|
+  | |DecimalDigit|
+  | "x"
+  | "u"
+}
+
+rule lexical |LegacyOctalEscapeSequence| [] :: {
+  | "0" [lookahead in { "8", "9" }]
+  | |NonZeroOctalDigit| [lookahead not_in |OctalDigit|]
+  | |ZeroToThree| |OctalDigit| [lookahead not_in |OctalDigit|]
+  | |FourToSeven| |OctalDigit|
+  | |ZeroToThree| |OctalDigit| |OctalDigit|
+}
+
+rule lexical |NonZeroOctalDigit| [] :: {
+  | |OctalDigit| butnot "0"
+}
+
+rule lexical |ZeroToThree| [] :: one_of {
+  row ["0", "1", "2", "3"]
+}
+
+rule lexical |FourToSeven| [] :: one_of {
+  row ["4", "5", "6", "7"]
+}
+
+rule lexical |NonOctalDecimalEscapeSequence| [] :: one_of {
+  row ["8", "9"]
+}
+
+rule lexical |HexEscapeSequence| [] :: {
+  | "x" |HexDigit| |HexDigit|
+}
+
+rule lexical |UnicodeEscapeSequence| [] :: {
+  | "u" |Hex4Digits|
+  | "u{" |CodePoint| "}"
+}
+
+rule lexical |Hex4Digits| [] :: {
+  | |HexDigit| |HexDigit| |HexDigit| |HexDigit|
+}
+
+rule lexical |RegularExpressionLiteral| [] :: {
+  | "/" |RegularExpressionBody| "/" |RegularExpressionFlags|
+}
+
+rule lexical |RegularExpressionBody| [] :: {
+  | |RegularExpressionFirstChar| |RegularExpressionChars|
+}
+
+rule lexical |RegularExpressionChars| [] :: {
+  | [empty]
+  | |RegularExpressionChars| |RegularExpressionChar|
+}
+
+rule lexical |RegularExpressionFirstChar| [] :: {
+  | |RegularExpressionNonTerminator| butnot one_of or ["*", "\\", "/", "["]
+  | |RegularExpressionBackslashSequence|
+  | |RegularExpressionClass|
+}
+
+rule lexical |RegularExpressionChar| [] :: {
+  | |RegularExpressionNonTerminator| butnot one_of or ["\\", "/", "["]
+  | |RegularExpressionBackslashSequence|
+  | |RegularExpressionClass|
+}
+
+rule lexical |RegularExpressionBackslashSequence| [] :: {
+  | "\\" |RegularExpressionNonTerminator|
+}
+
+rule lexical |RegularExpressionNonTerminator| [] :: {
+  | |SourceCharacter| butnot |LineTerminator|
+}
+
+rule lexical |RegularExpressionClass| [] :: {
+  | "[" |RegularExpressionClassChars| "]"
+}
+
+rule lexical |RegularExpressionClassChars| [] :: {
+  | [empty]
+  | |RegularExpressionClassChars| |RegularExpressionClassChar|
+}
+
+rule lexical |RegularExpressionClassChar| [] :: {
+  | |RegularExpressionNonTerminator| butnot one_of or ["]", "\\"]
+  | |RegularExpressionBackslashSequence|
+}
+
+rule lexical |RegularExpressionFlags| [] :: {
+  | [empty]
+  | |RegularExpressionFlags| |IdentifierPartChar|
+}
+
+rule lexical |Template| [] :: {
+  | |NoSubstitutionTemplate|
+  | |TemplateHead|
+}
+
+rule lexical |NoSubstitutionTemplate| [] :: {
+  | "`" |TemplateCharacters|? "`"
+}
+
+rule lexical |TemplateHead| [] :: {
+  | "`" |TemplateCharacters|? "${"
+}
+
+rule lexical |TemplateSubstitutionTail| [] :: {
+  | |TemplateMiddle|
+  | |TemplateTail|
+}
+
+rule lexical |TemplateMiddle| [] :: {
+  | "}" |TemplateCharacters|? "${"
+}
+
+rule lexical |TemplateTail| [] :: {
+  | "}" |TemplateCharacters|? "`"
+}
+
+rule lexical |TemplateCharacters| [] :: {
+  | |TemplateCharacter| |TemplateCharacters|?
+}
+
+rule lexical |TemplateCharacter| [] :: {
+  | "$" [lookahead != "{"]
+  | "\\" |TemplateEscapeSequence|
+  | "\\" |NotEscapeSequence|
+  | |LineContinuation|
+  | |LineTerminatorSequence|
+  | |SourceCharacter| butnot one_of or ["`", "\\", "$", |LineTerminator|]
+}
+
+rule lexical |TemplateEscapeSequence| [] :: {
+  | |CharacterEscapeSequence|
+  | "0" [lookahead not_in |DecimalDigit|]
+  | |HexEscapeSequence|
+  | |UnicodeEscapeSequence|
+}
+
+rule lexical |NotEscapeSequence| [] :: {
+  | "0" |DecimalDigit|
+  | |DecimalDigit| butnot "0"
+  | "x" [lookahead not_in |HexDigit|]
+  | "x" |HexDigit| [lookahead not_in |HexDigit|]
+  | "u" [lookahead not_in |HexDigit|] [lookahead != "{"]
+  | "u" |HexDigit| [lookahead not_in |HexDigit|]
+  | "u" |HexDigit| |HexDigit| [lookahead not_in |HexDigit|]
+  | "u" |HexDigit| |HexDigit| |HexDigit| [lookahead not_in |HexDigit|]
+  | "u" "{" [lookahead not_in |HexDigit|]
+  | "u" "{" |NotCodePoint| [lookahead not_in |HexDigit|]
+  | "u" "{" |CodePoint| [lookahead not_in |HexDigit|] [lookahead != "}"]
+}
+
+rule lexical |NotCodePoint| [] :: {
+  | |HexDigits[~Sep]| [onlyIf mvAbove10FFFF]
+}
+
+rule lexical |CodePoint| [] :: {
+  | |HexDigits[~Sep]| [onlyIf mvAtMost10FFFF]
+}
+

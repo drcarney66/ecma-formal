@@ -1,0 +1,634 @@
+-- ECMA-262 SpecTec Clauses: S09
+
+def @sec-declarative-environment-records-hasbinding-n "HasBinding" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [name : String] -> completion<Boolean>) vars [envRecord, name] {
+  if envRecord sat @ph-has-binding(?name) -> return true
+  return false
+}
+
+def @sec-declarative-environment-records-createmutablebinding-n-d "CreateMutableBinding" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [name : String, deletable : Boolean] -> completion<val(~unused~)>) vars [envRecord, name, deletable] {
+  assert envRecord sat @ph-not-has-binding(data choice 0, ?name)
+  perform $AddBinding(envRecord, name, record Record { [[Value]]: ~empty~, [[Mutable]]: true, [[Initialized]]: false, [[Strict]]: false, [[Deletable]]: deletable })
+  return ~unused~
+}
+
+def @sec-declarative-environment-records-createimmutablebinding-n-s "CreateImmutableBinding" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [name : String, strict : Boolean] -> completion<val(~unused~)>) vars [envRecord, name, strict] {
+  assert envRecord sat @ph-not-has-binding(data choice 0, ?name)
+  perform $AddBinding(envRecord, name, record Record { [[Value]]: ~empty~, [[Mutable]]: false, [[Initialized]]: false, [[Strict]]: strict, [[Deletable]]: false })
+  return ~unused~
+}
+
+def @sec-declarative-environment-records-initializebinding-n-v "InitializeBinding" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [name : String, value : #"ECMAScript language value"] -> completion<val(~unused~)>) vars [envRecord, name, value] {
+  assert envRecord sat @ph-has-binding(?name)
+  assert $BindingFor(envRecord, name) is ty {sort [uninitialized] binding}
+  set field $BindingFor(envRecord, name)[[Value]] = value
+  set field $BindingFor(envRecord, name)[[Initialized]] = true
+  return ~unused~
+}
+
+def @sec-declarative-environment-records-setmutablebinding-n-v-s "SetMutableBinding" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [name : String, value : #"ECMAScript language value", strict : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, value, strict] {
+  if envRecord sat @ph-not-has-binding(data choice 1, ?name) {
+    if strict is val {true} -> throw @ph-new-error([[ReferenceError]])
+    perform ! envRecord.CreateMutableBinding(name, true)
+    perform ! envRecord.InitializeBinding(name, value)
+    return ~unused~
+  }
+  if @ph-binding-for(?name, ?envRecord) is ty {sort [strict] binding} -> set var strict = true
+  if @ph-binding-for(?name, ?envRecord) sat @ph-not-yet-initialized() {
+    throw @ph-new-error([[ReferenceError]])
+  }
+  else_if @ph-binding-for(?name, ?envRecord) is ty {sort [mutable] binding} {
+    set field $BindingFor(envRecord, name)[[Value]] = value
+  }
+  else {
+    assert $BindingFor(envRecord, name)[[Mutable]] is val {false}
+    if strict is val {true} -> throw @ph-new-error([[TypeError]])
+  }
+  return ~unused~
+}
+
+def @sec-declarative-environment-records-getbindingvalue-n-s "GetBindingValue" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [name : String, strict : Boolean] -> completion<#"ECMAScript language value"> | #"throw completion") vars [envRecord, name, strict] {
+  assert envRecord sat @ph-has-binding(?name)
+  if @ph-binding-for(?name, ?envRecord) is ty {sort [uninitialized] binding} -> throw @ph-new-error([[ReferenceError]])
+  return @ph-bound-value(?name, ?envRecord)
+}
+
+def @sec-declarative-environment-records-deletebinding-n "DeleteBinding" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [name : String] -> completion<Boolean>) vars [envRecord, name] {
+  assert envRecord sat @ph-has-binding(?name)
+  if $BindingFor(envRecord, name)[[Deletable]] is val {false} -> return false
+  perform $RemoveBinding(envRecord, name)
+  return true
+}
+
+def @sec-declarative-environment-records-hasthisbinding "HasThisBinding" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [] -> val(false)) vars [envRecord] {
+  return false
+}
+
+def @sec-declarative-environment-records-hassuperbinding "HasSuperBinding" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [] -> val(false)) vars [envRecord] {
+  return false
+}
+
+def @sec-declarative-environment-records-withbaseobject "WithBaseObject" (kind concrete_method recv envRecord : #"Declarative Environment Record" params [] -> val(undefined)) vars [envRecord] {
+  return undefined
+}
+
+def @sec-object-environment-records-hasbinding-n "HasBinding.2" (kind concrete_method recv envRecord : #"Object Environment Record" params [name : String] -> completion<Boolean> | #"throw completion") vars [envRecord, name, bindingObj, foundBinding, unscopables, blocked] {
+  let bindingObj = envRecord[[BindingObject]]
+  let foundBinding = ? @sec-hasproperty(bindingObj, name)
+  if foundBinding is val {false} -> return false
+  if envRecord[[IsWithEnvironment]] is val {false} -> return true
+  let unscopables = ? @sec-get-o-p(bindingObj, $WellKnownSymbol("Symbol.unscopables"))
+  if unscopables is ty {Object} {
+    let blocked = @sec-toboolean(? @sec-get-o-p(unscopables, name))
+    if blocked is val {true} -> return false
+  }
+  return true
+}
+
+def @sec-object-environment-records-createmutablebinding-n-d "CreateMutableBinding.2" (kind concrete_method recv envRecord : #"Object Environment Record" params [name : String, deletable : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, deletable, bindingObj] {
+  let bindingObj = envRecord[[BindingObject]]
+  perform ? @sec-definepropertyorthrow(bindingObj, name, record PropertyDescriptor { [[Value]]: undefined, [[Writable]]: true, [[Enumerable]]: true, [[Configurable]]: deletable })
+  return ~unused~
+}
+
+def @sec-object-environment-records-initializebinding-n-v "InitializeBinding.2" (kind concrete_method recv envRecord : #"Object Environment Record" params [name : String, value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, value] {
+  perform ? envRecord.SetMutableBinding(name, value, false)
+  return ~unused~
+}
+
+def @sec-object-environment-records-setmutablebinding-n-v-s "SetMutableBinding.2" (kind concrete_method recv envRecord : #"Object Environment Record" params [name : String, value : #"ECMAScript language value", strict : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, value, strict, bindingObj, stillExists] {
+  let bindingObj = envRecord[[BindingObject]]
+  let stillExists = ? @sec-hasproperty(bindingObj, name)
+  if stillExists is val {false} and strict is val {true} -> throw @ph-new-error([[ReferenceError]])
+  perform ? @sec-set-o-p-v-throw(bindingObj, name, value, strict)
+  return ~unused~
+}
+
+def @sec-object-environment-records-getbindingvalue-n-s "GetBindingValue.2" (kind concrete_method recv envRecord : #"Object Environment Record" params [name : String, strict : Boolean] -> completion<#"ECMAScript language value"> | #"throw completion") vars [envRecord, name, strict, bindingObj, value] {
+  let bindingObj = envRecord[[BindingObject]]
+  let value = ? @sec-hasproperty(bindingObj, name)
+  if value is val {false} {
+    if strict is val {false} -> return undefined
+    throw @ph-new-error([[ReferenceError]])
+  }
+  return ? @sec-get-o-p(bindingObj, name)
+}
+
+def @sec-object-environment-records-deletebinding-n "DeleteBinding.2" (kind concrete_method recv envRecord : #"Object Environment Record" params [name : String] -> completion<Boolean> | #"throw completion") vars [envRecord, name, bindingObj] {
+  let bindingObj = envRecord[[BindingObject]]
+  return ? bindingObj[[Delete]](name)
+}
+
+def @sec-object-environment-records-hasthisbinding "HasThisBinding.2" (kind concrete_method recv envRecord : #"Object Environment Record" params [] -> val(false)) vars [envRecord] {
+  return false
+}
+
+def @sec-object-environment-records-hassuperbinding "HasSuperBinding.2" (kind concrete_method recv envRecord : #"Object Environment Record" params [] -> val(false)) vars [envRecord] {
+  return false
+}
+
+def @sec-object-environment-records-withbaseobject "WithBaseObject.2" (kind concrete_method recv envRecord : #"Object Environment Record" params [] -> Object | val(undefined)) vars [envRecord] {
+  if envRecord[[IsWithEnvironment]] is val {true} -> return envRecord[[BindingObject]]
+  return undefined
+}
+
+def @sec-bindthisvalue "BindThisValue" (kind ao params [envRecord : #"Function Environment Record", value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, value] {
+  assert envRecord[[ThisBindingStatus]] is not val {~lexical~}
+  if envRecord[[ThisBindingStatus]] is val {~initialized~} -> throw @ph-new-error([[ReferenceError]])
+  set field envRecord[[ThisValue]] = value
+  set field envRecord[[ThisBindingStatus]] = ~initialized~
+  return ~unused~
+}
+
+def @sec-function-environment-records-hasthisbinding "HasThisBinding.3" (kind concrete_method recv envRecord : #"Function Environment Record" params [] -> Boolean) vars [envRecord] {
+  if envRecord[[ThisBindingStatus]] is val {~lexical~} -> return false
+  return true
+}
+
+def @sec-function-environment-records-getthisbinding "GetThisBinding" (kind concrete_method recv envRecord : #"Function Environment Record" params [] -> completion<#"ECMAScript language value"> | #"throw completion") vars [envRecord] {
+  assert envRecord[[ThisBindingStatus]] is not val {~lexical~}
+  if envRecord[[ThisBindingStatus]] is val {~uninitialized~} -> throw @ph-new-error([[ReferenceError]])
+  return envRecord[[ThisValue]]
+}
+
+def @sec-function-environment-records-hassuperbinding "HasSuperBinding.3" (kind concrete_method recv envRecord : #"Function Environment Record" params [] -> Boolean) vars [envRecord] {
+  if envRecord[[ThisBindingStatus]] is val {~lexical~} -> return false
+  if envRecord[[FunctionObject]][[HomeObject]] is val {undefined} -> return false
+  return true
+}
+
+def @sec-getsuperbase "GetSuperBase" (kind ao params [envRecord : #"Function Environment Record"] -> Object | val(null) | val(undefined)) vars [envRecord, home] {
+  let home = envRecord[[FunctionObject]][[HomeObject]]
+  if home is val {undefined} -> return undefined
+  assert home is ty {sort [ordinary] object}
+  return ! home[[GetPrototypeOf]]()
+}
+
+def @sec-global-environment-records-hasbinding-n "HasBinding.3" (kind concrete_method recv envRecord : #"Global Environment Record" params [name : String] -> completion<Boolean> | #"throw completion") vars [envRecord, name, declRecord, objRecord] {
+  let declRecord = envRecord[[DeclarativeRecord]]
+  if ! declRecord.HasBinding(name) is val {true} -> return true
+  let objRecord = envRecord[[ObjectRecord]]
+  return ? objRecord.HasBinding(name)
+}
+
+def @sec-global-environment-records-createmutablebinding-n-d "CreateMutableBinding.3" (kind concrete_method recv envRecord : #"Global Environment Record" params [name : String, deletable : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, deletable, declRecord] {
+  let declRecord = envRecord[[DeclarativeRecord]]
+  if ! declRecord.HasBinding(name) is val {true} -> throw @ph-new-error([[TypeError]])
+  return ! declRecord.CreateMutableBinding(name, deletable)
+}
+
+def @sec-global-environment-records-createimmutablebinding-n-s "CreateImmutableBinding.2" (kind concrete_method recv envRecord : #"Global Environment Record" params [name : String, strict : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, strict, declRecord] {
+  let declRecord = envRecord[[DeclarativeRecord]]
+  if ! declRecord.HasBinding(name) is val {true} -> throw @ph-new-error([[TypeError]])
+  return ! declRecord.CreateImmutableBinding(name, strict)
+}
+
+def @sec-global-environment-records-initializebinding-n-v "InitializeBinding.3" (kind concrete_method recv envRecord : #"Global Environment Record" params [name : String, value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, value, declRecord, objRecord] {
+  let declRecord = envRecord[[DeclarativeRecord]]
+  if ! declRecord.HasBinding(name) is val {true} {
+    return ! declRecord.InitializeBinding(name, value)
+  }
+  assert declRecord sat @ph-not-has-binding(data choice 1, ?name)
+  let objRecord = envRecord[[ObjectRecord]]
+  return ? objRecord.InitializeBinding(name, value)
+}
+
+def @sec-global-environment-records-setmutablebinding-n-v-s "SetMutableBinding.3" (kind concrete_method recv envRecord : #"Global Environment Record" params [name : String, value : #"ECMAScript language value", strict : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, value, strict, declRecord, objRecord] {
+  let declRecord = envRecord[[DeclarativeRecord]]
+  if ! declRecord.HasBinding(name) is val {true} {
+    return ? declRecord.SetMutableBinding(name, value, strict)
+  }
+  let objRecord = envRecord[[ObjectRecord]]
+  return ? objRecord.SetMutableBinding(name, value, strict)
+}
+
+def @sec-global-environment-records-getbindingvalue-n-s "GetBindingValue.3" (kind concrete_method recv envRecord : #"Global Environment Record" params [name : String, strict : Boolean] -> completion<#"ECMAScript language value"> | #"throw completion") vars [envRecord, name, strict, declRecord, objRecord] {
+  let declRecord = envRecord[[DeclarativeRecord]]
+  if ! declRecord.HasBinding(name) is val {true} {
+    return ? declRecord.GetBindingValue(name, strict)
+  }
+  let objRecord = envRecord[[ObjectRecord]]
+  return ? objRecord.GetBindingValue(name, strict)
+}
+
+def @sec-global-environment-records-deletebinding-n "DeleteBinding.3" (kind concrete_method recv envRecord : #"Global Environment Record" params [name : String] -> completion<Boolean> | #"throw completion") vars [envRecord, name, declRecord, objRecord, globalObj, existingProperty] {
+  let declRecord = envRecord[[DeclarativeRecord]]
+  if ! declRecord.HasBinding(name) is val {true} {
+    return ! declRecord.DeleteBinding(name)
+  }
+  let objRecord = envRecord[[ObjectRecord]]
+  let globalObj = objRecord[[BindingObject]]
+  let existingProperty = ? @sec-hasownproperty(globalObj, name)
+  if existingProperty is val {true} {
+    return ? objRecord.DeleteBinding(name)
+  }
+  return true
+}
+
+def @sec-global-environment-records-hasthisbinding "HasThisBinding.4" (kind concrete_method recv envRecord : #"Global Environment Record" params [] -> val(true)) vars [envRecord] {
+  return true
+}
+
+def @sec-global-environment-records-getthisbinding "GetThisBinding.2" (kind concrete_method recv envRecord : #"Global Environment Record" params [] -> completion<Object>) vars [envRecord] {
+  return envRecord[[GlobalThisValue]]
+}
+
+def @sec-global-environment-records-hassuperbinding "HasSuperBinding.4" (kind concrete_method recv envRecord : #"Global Environment Record" params [] -> val(false)) vars [envRecord] {
+  return false
+}
+
+def @sec-global-environment-records-withbaseobject "WithBaseObject.3" (kind concrete_method recv envRecord : #"Global Environment Record" params [] -> val(undefined)) vars [envRecord] {
+  return undefined
+}
+
+def @sec-haslexicaldeclaration "HasLexicalDeclaration" (kind ao params [envRecord : #"Global Environment Record", name : String] -> Boolean) vars [envRecord, name, declRecord] {
+  let declRecord = envRecord[[DeclarativeRecord]]
+  return ! declRecord.HasBinding(name)
+}
+
+def @sec-hasrestrictedglobalproperty "HasRestrictedGlobalProperty" (kind ao params [envRecord : #"Global Environment Record", name : String] -> completion<Boolean> | #"throw completion") vars [envRecord, name, objRecord, globalObj, existingProperty] {
+  let objRecord = envRecord[[ObjectRecord]]
+  let globalObj = objRecord[[BindingObject]]
+  let existingProperty = ? globalObj[[GetOwnProperty]](name)
+  if existingProperty is val {undefined} -> return false
+  if existingProperty[[Configurable]] is val {true} -> return false
+  return true
+}
+
+def @sec-candeclareglobalvar "CanDeclareGlobalVar" (kind ao params [envRecord : #"Global Environment Record", name : String] -> completion<Boolean> | #"throw completion") vars [envRecord, name, objRecord, globalObj, hasProperty] {
+  let objRecord = envRecord[[ObjectRecord]]
+  let globalObj = objRecord[[BindingObject]]
+  let hasProperty = ? @sec-hasownproperty(globalObj, name)
+  if hasProperty is val {true} -> return true
+  return ? @sec-isextensible-o(globalObj)
+}
+
+def @sec-candeclareglobalfunction "CanDeclareGlobalFunction" (kind ao params [envRecord : #"Global Environment Record", name : String] -> completion<Boolean> | #"throw completion") vars [envRecord, name, objRecord, globalObj, existingProperty] {
+  let objRecord = envRecord[[ObjectRecord]]
+  let globalObj = objRecord[[BindingObject]]
+  let existingProperty = ? globalObj[[GetOwnProperty]](name)
+  if existingProperty is val {undefined} -> return ? @sec-isextensible-o(globalObj)
+  if existingProperty[[Configurable]] is val {true} -> return true
+  if @sec-isdatadescriptor(existingProperty) is val {true} and existingProperty sat @ph-has-attribute-values(record { [[Writable]]: true, [[Enumerable]]: true }) -> return true
+  return false
+}
+
+def @sec-createglobalvarbinding "CreateGlobalVarBinding" (kind ao params [envRecord : #"Global Environment Record", name : String, deletable : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, deletable, objRecord, globalObj, hasProperty, extensible] {
+  let objRecord = envRecord[[ObjectRecord]]
+  let globalObj = objRecord[[BindingObject]]
+  let hasProperty = ? @sec-hasownproperty(globalObj, name)
+  let extensible = ? @sec-isextensible-o(globalObj)
+  if hasProperty is val {false} and extensible is val {true} {
+    perform ? objRecord.CreateMutableBinding(name, deletable)
+    perform ? objRecord.InitializeBinding(name, undefined)
+  }
+  return ~unused~
+}
+
+def @sec-createglobalfunctionbinding "CreateGlobalFunctionBinding" (kind ao params [envRecord : #"Global Environment Record", name : String, value : #"ECMAScript function object", deletable : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [envRecord, name, value, deletable, objRecord, globalObj, existingProperty, propertyDesc] {
+  let objRecord = envRecord[[ObjectRecord]]
+  let globalObj = objRecord[[BindingObject]]
+  let existingProperty = ? globalObj[[GetOwnProperty]](name)
+  if existingProperty is val {undefined} or existingProperty[[Configurable]] is val {true} {
+    let propertyDesc = record PropertyDescriptor { [[Value]]: value, [[Writable]]: true, [[Enumerable]]: true, [[Configurable]]: deletable }
+  }
+  else {
+    let propertyDesc = record PropertyDescriptor { [[Value]]: value }
+  }
+  perform ? @sec-definepropertyorthrow(globalObj, name, propertyDesc)
+  perform ? @sec-set-o-p-v-throw(globalObj, name, value, false)
+  return ~unused~
+}
+
+def @sec-module-environment-records-getbindingvalue-n-s "GetBindingValue.4" (kind concrete_method recv envRecord : #"Module Environment Record" params [name : String, strict : Boolean] -> completion<#"ECMAScript language value"> | #"throw completion") vars [envRecord, name, strict, module, targetName, targetEnv] {
+  assert strict is val {true}
+  assert envRecord sat @ph-has-binding(?name)
+  if $BindingFor(envRecord, name) is ty {sort [indirect] binding} {
+    let module = $BindingFor(envRecord, name)[[Module]]
+    let targetName = $BindingFor(envRecord, name)[[BindingName]]
+    let targetEnv = module[[Environment]]
+    if targetEnv is val {~empty~} -> throw @ph-new-error([[ReferenceError]])
+    return ? targetEnv.GetBindingValue(targetName, true)
+  }
+  if @ph-binding-for(?name, ?envRecord) is ty {sort [uninitialized] binding} -> throw @ph-new-error([[ReferenceError]])
+  return @ph-bound-value(?name, ?envRecord)
+}
+
+def @sec-module-environment-records-hasthisbinding "HasThisBinding.5" (kind concrete_method recv envRecord : #"Module Environment Record" params [] -> val(true)) vars [envRecord] {
+  return true
+}
+
+def @sec-module-environment-records-getthisbinding "GetThisBinding.3" (kind concrete_method recv envRecord : #"Module Environment Record" params [] -> completion<val(undefined)>) vars [envRecord] {
+  return undefined
+}
+
+def @sec-createimportbinding "CreateImportBinding" (kind ao params [envRecord : #"Module Environment Record", name : String, targetModule : #"Module Record", targetName : String] -> val(~unused~)) vars [envRecord, name, targetModule, targetName] {
+  assert envRecord sat @ph-not-has-binding(data choice 0, ?name)
+  assert pass "When _.[[Environment]] is instantiated, it will have a direct binding for _"
+  perform $AddBinding(envRecord, name, record Record { [[Value]]: ~empty~, [[Mutable]]: false, [[Initialized]]: true, [[Strict]]: false, [[Deletable]]: false, [[Module]]: targetModule, [[BindingName]]: targetName })
+  return ~unused~
+}
+
+def @sec-getidentifierreference "GetIdentifierReference" (kind ao params [envRecord : #"Environment Record" | val(null), name : String, strict : Boolean] -> completion<#"Reference Record"> | #"throw completion") vars [envRecord, name, strict, exists, outer] {
+  if envRecord is val {null} {
+    return record #"Reference Record" { [[Base]]: ~unresolvable~, [[ReferencedName]]: name, [[Strict]]: strict, [[ThisValue]]: ~empty~ }
+  }
+  let exists = ? envRecord.HasBinding(name)
+  if exists is val {true} {
+    return record #"Reference Record" { [[Base]]: envRecord, [[ReferencedName]]: name, [[Strict]]: strict, [[ThisValue]]: ~empty~ }
+  }
+  let outer = envRecord[[OuterEnv]]
+  return ? @sec-getidentifierreference(outer, name, strict)
+}
+
+def @sec-newdeclarativeenvironment "NewDeclarativeEnvironment" (kind ao params [outerEnv : #"Environment Record" | val(null)] -> #"Declarative Environment Record") vars [outerEnv, envRecord] {
+  let envRecord = @ph-env-empty(data sort #"Declarative Environment Record")
+  set field envRecord[[OuterEnv]] = outerEnv
+  set field envRecord[[DisposableResourceStack]] = $ListNew()
+  return envRecord
+}
+
+def @sec-newobjectenvironment "NewObjectEnvironment" (kind ao params [#"obj" : Object, isWithEnv : Boolean, outerEnv : #"Environment Record" | val(null)] -> #"Object Environment Record") vars [#"obj", isWithEnv, outerEnv, envRecord] {
+  let envRecord = $NewRecord(data sort #"Object Environment Record")
+  set field envRecord[[BindingObject]] = #"obj"
+  set field envRecord[[IsWithEnvironment]] = isWithEnv
+  set field envRecord[[OuterEnv]] = outerEnv
+  return envRecord
+}
+
+def @sec-newfunctionenvironment "NewFunctionEnvironment" (kind ao params [func : #"ECMAScript function object", newTarget : Object | val(undefined)] -> #"Function Environment Record") vars [func, newTarget, envRecord] {
+  let envRecord = @ph-env-empty(data sort #"Function Environment Record")
+  set field envRecord[[FunctionObject]] = func
+  if func[[ThisMode]] is val {~lexical~} -> set field envRecord[[ThisBindingStatus]] = ~lexical~
+  else -> set field envRecord[[ThisBindingStatus]] = ~uninitialized~
+  set field envRecord[[NewTarget]] = newTarget
+  set field envRecord[[OuterEnv]] = func[[Environment]]
+  set field envRecord[[DisposableResourceStack]] = $ListNew()
+  return envRecord
+}
+
+def @sec-newglobalenvironment "NewGlobalEnvironment" (kind ao params [#"obj" : Object, thisValue : Object] -> #"Global Environment Record") vars [#"obj", thisValue, objRecord, declRecord, envRecord] {
+  let objRecord = @sec-newobjectenvironment(#"obj", false, null)
+  let declRecord = @sec-newdeclarativeenvironment(null)
+  let envRecord = $NewRecord(data sort #"Global Environment Record")
+  set field envRecord[[ObjectRecord]] = objRecord
+  set field envRecord[[GlobalThisValue]] = thisValue
+  set field envRecord[[DeclarativeRecord]] = declRecord
+  set field envRecord[[OuterEnv]] = null
+  return envRecord
+}
+
+def @sec-newmoduleenvironment "NewModuleEnvironment" (kind ao params [outerEnv : #"Global Environment Record"] -> #"Module Environment Record") vars [outerEnv, envRecord] {
+  let envRecord = @ph-env-empty(data sort #"Module Environment Record")
+  set field envRecord[[OuterEnv]] = outerEnv
+  set field envRecord[[DisposableResourceStack]] = $ListNew()
+  return envRecord
+}
+
+def @sec-newprivateenvironment "NewPrivateEnvironment" (kind ao params [outerPrivateEnv : #"PrivateEnvironment Record" | val(null)] -> #"PrivateEnvironment Record") vars [outerPrivateEnv, names] {
+  let names = $ListNew()
+  return record #"PrivateEnvironment Record" { [[OuterPrivateEnvironment]]: outerPrivateEnv, [[Names]]: names }
+}
+
+def @sec-resolve-private-identifier "ResolvePrivateIdentifier" (kind ao params [privateEnv : #"PrivateEnvironment Record", identifier : String] -> #"Private Name") vars [privateEnv, identifier, names, privateName, outerPrivateEnv] {
+  let names = privateEnv[[Names]]
+  for_each privateName : #"Private Name" in names {
+    if privateName[[Description]] is val {identifier} {
+      return privateName
+    }
+  }
+  let outerPrivateEnv = privateEnv[[OuterPrivateEnvironment]]
+  assert outerPrivateEnv is not val {null}
+  return @sec-resolve-private-identifier(outerPrivateEnv, identifier)
+}
+
+def @sec-initializehostdefinedrealm "InitializeHostDefinedRealm" (kind ao params [] -> completion<val(~unused~)> | #"throw completion") vars [#"realm", newContext, global, thisValue] {
+  let #"realm" = $NewRecord(data sort #"Realm Record")
+  perform @sec-createintrinsics(#"realm")
+  perform $HostExtendIntrinsics(#"realm")
+  set field #"realm"[[AgentSignifier]] = @sec-agentsignifier()
+  set field #"realm"[[TemplateMap]] = $ListNew()
+  set field #"realm"[[LoadedModules]] = $ListNew()
+  let newContext = $NewRecord(data sort #"execution context")
+  set expr component [[Function]] of newContext = null
+  set expr component [[Realm]] of newContext = #"realm"
+  set expr component [[ScriptOrModule]] of newContext = null
+  push newContext kind 0
+  let global = $HostGlobalObject(#"realm")
+  if global is val {~empty~} -> set var global = @sec-ordinaryobjectcreate(#"realm"[[Intrinsics]][[%Object.prototype%]])
+  let thisValue = $HostThisValue(#"realm")
+  if thisValue is val {~empty~} -> set var thisValue = global
+  set field #"realm"[[GlobalObject]] = global
+  set field #"realm"[[GlobalEnv]] = @sec-newglobalenvironment(global, thisValue)
+  perform ? @sec-setdefaultglobalbindings(#"realm")
+  perform $HostGlobalProperties(#"realm", global)
+  return ~unused~
+}
+
+def @sec-createintrinsics "CreateIntrinsics" (kind ao params [realmRecord : #"Realm Record"] -> val(~unused~)) vars [realmRecord, #"steps", length, name, #"slots", proto, async, entries, objects, entry, #"obj", #"slot", la, na, p] {
+  set field realmRecord[[Intrinsics]] = $NewRecord(data sort Record)
+  let entries = $IntrinsicObjects()
+  let objects = $ListNew()
+  for_each entry : Record in entries {
+    if_else entry[[Prototype]] is val {null} { let proto = null } else { let proto = objects[entry[[Prototype]]] }
+    if entry[[Behaviour]] is not val {~empty~} {
+      if_else entry[[Prefix]] is val {~empty~} { let #"obj" = @sec-createbuiltinfunction(entry[[Behaviour]], entry[[Length]], entry[[Name]], entry[[Slots]], realmRecord, proto) } else { let #"obj" = @sec-createbuiltinfunction(entry[[Behaviour]], entry[[Length]], entry[[Name]], entry[[Slots]], realmRecord, proto, entry[[Prefix]]) }
+      set field #"obj"[[Async]] = entry[[Async]]
+      if entry[[Constructor]] is val {true} -> set field #"obj"[[Construct]] = ref @sec-built-in-function-objects-construct-argumentslist-newtarget
+    }
+    else {
+      let #"obj" = @sec-ordinaryobjectcreate(proto, entry[[Slots]])
+      if entry[[Exotic]] is val {clause @sec-array-exotic-objects} {
+        set field #"obj"[[DefineOwnProperty]] = ref @sec-array-exotic-objects-defineownproperty-p-desc
+      }
+      else_if entry[[Exotic]] is val {clause @sec-string-exotic-objects} {
+        set field #"obj"[[GetOwnProperty]] = ref @sec-string-exotic-objects-getownproperty-p
+        set field #"obj"[[DefineOwnProperty]] = ref @sec-string-exotic-objects-defineownproperty-p-desc
+        set field #"obj"[[OwnPropertyKeys]] = ref @sec-string-exotic-objects-ownpropertykeys
+      }
+      else_if entry[[Exotic]] is val {clause @sec-immutable-prototype-exotic-objects} {
+        set field #"obj"[[SetPrototypeOf]] = ref @sec-immutable-prototype-exotic-objects-setprototypeof-v
+      }
+    }
+    for_each #"slot" : Record in entry[[SlotValues]] {
+      perform $SetFieldNamed(#"obj", #"slot"[[Name]], #"slot"[[Value]])
+    }
+    for_each name in entry[[Names]] {
+      perform $SetFieldNamed(realmRecord[[Intrinsics]], name, #"obj")
+    }
+    perform $Append(?#"obj", ?objects)
+  }
+  for_each entry : Record in entries {
+    let #"obj" = objects[entry[[Index]]]
+    if entry[[Behaviour]] is not val {~empty~} {
+      let la = entry[[LengthAttributes]]
+      perform ! @sec-definepropertyorthrow(#"obj", "length", record PropertyDescriptor { [[Writable]]: la[[Writable]], [[Enumerable]]: la[[Enumerable]], [[Configurable]]: la[[Configurable]] })
+      let na = entry[[NameAttributes]]
+      perform ! @sec-definepropertyorthrow(#"obj", "name", record PropertyDescriptor { [[Writable]]: na[[Writable]], [[Enumerable]]: na[[Enumerable]], [[Configurable]]: na[[Configurable]] })
+    }
+    for_each p : Record in $PropertyOrder(#"obj", entry[[Properties]]) {
+      if @formal-propertyprovided(p) is val {true} -> perform $OwnPropertyCreate(#"obj", p[[Key]], @formal-intrinsicpropertydescriptor(p, objects), p[[Kind]])
+    }
+    set field #"obj"[[Extensible]] = entry[[Extensible]]
+  }
+  perform @sec-addrestrictedfunctionproperties(realmRecord[[Intrinsics]][[%Function.prototype%]], realmRecord)
+  return ~unused~
+}
+
+def @sec-setdefaultglobalbindings "SetDefaultGlobalBindings" (kind ao params [realmRecord : #"Realm Record"] -> completion<val(~unused~)> | #"throw completion") vars [realmRecord, global, name, propertyDesc, p, value] {
+  let global = realmRecord[[GlobalObject]]
+  for_each p : Record in $PropertyOrder(global, $ClauseProperties(global, clause @sec-global-object)) {
+    if @formal-propertyprovided(p) is val {true} {
+      let name = p[[Key]]
+      if p[[Intrinsic]] is not val {~empty~} {
+        let value = $RealmIntrinsic(realmRecord, p[[Intrinsic]])
+      }
+      else_if p[[GlobalThis]] is val {true} {
+        let value = realmRecord[[GlobalEnv]][[GlobalThisValue]]
+      }
+      else {
+        let value = p[[Value]]
+      }
+      let propertyDesc = record PropertyDescriptor { [[Value]]: value, [[Writable]]: p[[Writable]], [[Enumerable]]: p[[Enumerable]], [[Configurable]]: p[[Configurable]] }
+      perform ? @sec-definepropertyorthrow(global, name, propertyDesc)
+    }
+  }
+  return ~unused~
+}
+
+def @sec-getactivescriptormodule "GetActiveScriptOrModule" (kind ao params [] -> #"Script Record" | #"Module Record" | val(null)) vars [executionContext] {
+  if expr $StackEmpty() -> return null
+  let executionContext = $TopmostScriptOrModuleContext()
+  if executionContext is val {~empty~} -> return null
+  return $Component(?executionContext, [[ScriptOrModule]])
+}
+
+def @sec-resolvebinding "ResolveBinding" (kind ao params [name : String, envRecord : #"Environment Record" | val(undefined) opt] -> completion<#"Reference Record"> | #"throw completion") vars [name, envRecord, strict] {
+  if envRecord fails $Present() or envRecord is val {undefined} {
+    set var envRecord = $Component($Running(), [[LexicalEnvironment]])
+  }
+  assert envRecord is ty {#"Environment Record"}
+  let strict = @sec-isstrict($CurrentProduction())
+  return ? @sec-getidentifierreference(envRecord, name, strict)
+}
+
+def @sec-getthisenvironment "GetThisEnvironment" (kind ao params [] -> #"Environment Record") vars [envRecord, exists, outer] {
+  let envRecord = $Component($Running(), [[LexicalEnvironment]])
+  repeat {
+    let exists = envRecord.HasThisBinding()
+    if exists is val {true} -> return envRecord
+    let outer = envRecord[[OuterEnv]]
+    assert outer is not val {null}
+    set var envRecord = outer
+  }
+}
+
+def @sec-resolvethisbinding "ResolveThisBinding" (kind ao params [] -> completion<#"ECMAScript language value"> | #"throw completion") vars [envRecord] {
+  let envRecord = @sec-getthisenvironment()
+  return ? envRecord.GetThisBinding()
+}
+
+def @sec-getnewtarget "GetNewTarget" (kind ao params [] -> Object | val(undefined)) vars [envRecord] {
+  let envRecord = @sec-getthisenvironment()
+  assert envRecord sat $HasField([[NewTarget]])
+  return envRecord[[NewTarget]]
+}
+
+def @sec-getglobalobject "GetGlobalObject" (kind ao params [] -> Object) vars [currentRealm] {
+  let currentRealm = $CurrentRealm()
+  return currentRealm[[GlobalObject]]
+}
+
+def @sec-runsuspendedcontext "RunSuspendedContext" (kind ao params [context : #"execution context", completionRecord : #"Completion Record"] -> completion<#"ECMAScript language value" | val(~unused~)> | #"abrupt completion") vars [context, completionRecord, callerContext, result] {
+  let callerContext = $Running()
+  suspend callerContext kind 0
+  push context kind 0
+  resume_let context with completionRecord -> result
+  assert $OnContextStack(context) is val {false} and callerContext is val {$Running()}
+  return @sec-completion-ao(result)
+}
+
+def @sec-runcallercontext "RunCallerContext" (kind ao params [value : #"ECMAScript language value" | val(~empty~)] -> #"Completion Record") vars [value, genContext, callerContext, result] {
+  let genContext = $Running()
+  remove genContext kind 0
+  let callerContext = $Running()
+  resume callerContext with @sec-normalcompletion(value)
+  note "The above step transfers control to _callerContext_ and pauses. The only way for it to un-pause and have control proceed to the subsequent steps in this algorithm is for _genContext_ to be resumed again, which might never happen."
+  assert genContext is val {$Running()}
+  let result = resumed_with(genContext)
+  return @sec-completion-ao(result)
+}
+
+def @sec-hostmakejobcallback "HostMakeJobCallback" (kind host_defined params [callback : #"function object"] -> #"JobCallback Record") vars [callback] {
+  return record #"JobCallback Record" { [[Callback]]: callback, [[HostDefined]]: $HostJobCallbackData(callback) }
+}
+
+def @sec-hostcalljobcallback "HostCallJobCallback" (kind host_defined params [jobCallback : #"JobCallback Record", thisValue : #"ECMAScript language value", argList : list<#"ECMAScript language value">] -> completion<#"ECMAScript language value"> | #"throw completion") vars [jobCallback, thisValue, argList, result] {
+  assert @sec-iscallable(jobCallback[[Callback]]) is val {true}
+  perform $HostPrepareCallJobCallback(jobCallback)
+  let result = @sec-completion-ao(@sec-call(jobCallback[[Callback]], thisValue, argList))
+  perform $HostCleanupCallJobCallback(jobCallback)
+  return ? result
+}
+
+def @sec-agentsignifier "AgentSignifier" (kind ao params [] -> #"agent signifier") vars [agentRecord] {
+  let agentRecord = $AgentRecord()
+  return agentRecord[[Signifier]]
+}
+
+def @sec-agentcansuspend "AgentCanSuspend" (kind ao params [] -> Boolean) vars [agentRecord] {
+  let agentRecord = $AgentRecord()
+  return agentRecord[[CanBlock]]
+}
+
+def @sec-IncrementModuleAsyncEvaluationCount "IncrementModuleAsyncEvaluationCount" (kind ao params [] -> sort [#"non-negative"] integer) vars [agentRecord, count] {
+  let agentRecord = $AgentRecord()
+  let count = agentRecord[[ModuleAsyncEvaluationCount]]
+  set field agentRecord[[ModuleAsyncEvaluationCount]] = count + 1
+  return count
+}
+
+def @sec-weakref-execution "sec-weakref-execution" (kind untyped params []) vars [value, objSet, #"ref", finalizationRegistry, cell, enqueueCleanup, map, entry, #"set"] {
+  for_each value in objSet {
+    perform $""()
+    perform $""()
+    perform $""()
+    perform $""()
+  }
+}
+
+def @sec-host-cleanup-finalization-registry "HostEnqueueFinalizationRegistryCleanupJob" (kind host_defined params [finalizationRegistry : FinalizationRegistry] -> val(~unused~)) vars [finalizationRegistry, cleanupResult] {
+  let cleanupResult = @sec-completion-ao(@sec-cleanup-finalization-registry(finalizationRegistry))
+  if cleanupResult is ty {#"abrupt completion"} -> perform $HostReportCleanupError(cleanupResult)
+  return ~unused~
+}
+
+def @sec-clear-kept-objects "ClearKeptObjects" (kind ao params [] -> val(~unused~)) vars [agentRecord] {
+  let agentRecord = $AgentRecord()
+  set field agentRecord[[KeptAlive]] = $ListNew()
+  return ~unused~
+}
+
+def @sec-addtokeptobjects "AddToKeptObjects" (kind ao params [value : Object | Symbol] -> val(~unused~)) vars [value, agentRecord] {
+  let agentRecord = $AgentRecord()
+  perform $Append(?value, agentRecord[[KeptAlive]])
+  return ~unused~
+}
+
+def @sec-cleanup-finalization-registry "CleanupFinalizationRegistry" (kind ao params [finalizationRegistry : FinalizationRegistry] -> completion<val(~unused~)> | #"throw completion") vars [finalizationRegistry, callback, cell] {
+  assert finalizationRegistry sat $HasSlots([[[Cells]], [[CleanupCallback]]])
+  let callback = finalizationRegistry[[CleanupCallback]]
+  let cell = $MayCleanup(finalizationRegistry)
+  repeat_while cell is not val {~empty~} {
+    perform $RemoveElem(?cell, finalizationRegistry[[Cells]])
+    perform ? @sec-hostcalljobcallback(callback, undefined, [cell[[HeldValue]]])
+    set var cell = $MayCleanup(finalizationRegistry)
+  }
+  return ~unused~
+}
+
+def @sec-canbeheldweakly "CanBeHeldWeakly" (kind ao params [arg : #"ECMAScript language value"] -> Boolean) vars [arg] {
+  if arg is ty {Object} -> return true
+  if arg is ty {Symbol} and @sec-keyforsymbol(arg) is val {undefined} -> return true
+  return false
+}
+

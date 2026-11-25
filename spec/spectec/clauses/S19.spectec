@@ -1,0 +1,481 @@
+-- ECMA-262 SpecTec Clauses: S19
+
+def @sec-eval-x "eval" (kind builtin params [source]) vars [#"this value", NewTarget, source] {
+  return ? @sec-performeval(source, false, ~indirect-eval~)
+}
+
+def @sec-performeval "PerformEval" (kind ao params [source : #"ECMAScript language value", strictCaller : Boolean, direct : val(~direct-eval~) | val(~indirect-eval~)] -> completion<#"ECMAScript language value"> | #"throw completion") vars [source, strictCaller, direct, sourceString, evalRealm, inFunc, inMethod, inDerivedCtor, inClassFieldInitializer, thisEnvRecord, func, classFieldInitializerName, script, body, directEval, strictEval, runningContext, lexicalEnv, variableEnv, privateEnv, evalContext, result] {
+  assert direct is val {~direct-eval~} or strictCaller is val {false}
+  if_else source is ty {Object} { let sourceString = @sec-hostgetcodeforeval(source) } else { let sourceString = source }
+  if sourceString is not ty {String} -> return source
+  let evalRealm = $CurrentRealm()
+  note "In the case of a direct eval, _evalRealm_ is the realm of both the caller of `eval` and of the `eval` function itself."
+  perform ? @sec-hostensurecancompilestrings(evalRealm, [], sourceString, sourceString, direct, [], source)
+  let inFunc = false
+  let inMethod = false
+  let inDerivedCtor = false
+  let inClassFieldInitializer = false
+  if direct is val {~direct-eval~} {
+    let thisEnvRecord = @sec-getthisenvironment()
+    if thisEnvRecord is ty {#"Function Environment Record"} {
+      let func = thisEnvRecord[[FunctionObject]]
+      set var inFunc = true
+      set var inMethod = thisEnvRecord.HasSuperBinding()
+      if func[[ConstructorKind]] is val {~derived~} -> set var inDerivedCtor = true
+      let classFieldInitializerName = func[[ClassFieldInitializerName]]
+      if classFieldInitializerName is not val {~empty~} -> set var inClassFieldInitializer = true
+    }
+  }
+  if_else direct is val {~direct-eval~} { let directEval = true } else { let directEval = false }
+  let script = @formal-parsetextin(sourceString, |Script|, strictCaller, false, directEval)
+  if script is ty {list<error>} -> throw @ph-new-error([[SyntaxError]])
+  if @ph-contains(?script, |ScriptBody|) is val {false} -> return undefined
+  let body = $ChildOf(|ScriptBody|, ?script)
+  if inFunc is val {false} and expr @ph-contains-cond(?body, |NewTarget|) -> throw @ph-new-error([[SyntaxError]])
+  if inMethod is val {false} and expr @ph-contains-cond(?body, |SuperProperty|) -> throw @ph-new-error([[SyntaxError]])
+  if inDerivedCtor is val {false} and expr @ph-contains-cond(?body, |SuperCall|) -> throw @ph-new-error([[SyntaxError]])
+  if inClassFieldInitializer is val {true} and sdo ContainsArguments(body) is val {true} -> throw @ph-new-error([[SyntaxError]])
+  if strictCaller is val {true} -> let strictEval = true
+  else -> let strictEval = sdo ScriptIsStrict(script)
+  let runningContext = $Running()
+  note "If _direct_ is ~direct-eval~, _runningContext_ will be the execution context that performed the direct eval. If _direct_ is ~indirect-eval~, _runningContext_ will be the execution context for the invocation of the `eval` function."
+  if direct is val {~direct-eval~} {
+    let lexicalEnv = @sec-newdeclarativeenvironment($Component(?runningContext, [[LexicalEnvironment]]))
+    let variableEnv = $Component(?runningContext, [[VariableEnvironment]])
+    let privateEnv = $Component(?runningContext, [[PrivateEnvironment]])
+  }
+  else {
+    let lexicalEnv = @sec-newdeclarativeenvironment(evalRealm[[GlobalEnv]])
+    let variableEnv = evalRealm[[GlobalEnv]]
+    let privateEnv = null
+  }
+  if strictEval is val {true} -> set var variableEnv = lexicalEnv
+  if runningContext fails $IsSuspended() -> suspend runningContext kind 0
+  let evalContext = $NewRecord(data sort #"ECMAScript code execution context")
+  set field evalContext[[Function]] = null
+  set field evalContext[[Realm]] = evalRealm
+  set field evalContext[[ScriptOrModule]] = $Component(?runningContext, [[ScriptOrModule]])
+  set field evalContext[[VariableEnvironment]] = variableEnv
+  set field evalContext[[LexicalEnvironment]] = lexicalEnv
+  set field evalContext[[PrivateEnvironment]] = privateEnv
+  push evalContext kind 0
+  let result = @sec-completion-ao(@sec-evaldeclarationinstantiation(body, variableEnv, lexicalEnv, privateEnv, strictEval))
+  if result is ty {#"normal completion"} {
+    set var result = @sec-completion-ao(sdo Evaluation(body))
+  }
+  if result is ty {#"normal completion"} and result[[Value]] is val {~empty~} {
+    set var result = @sec-normalcompletion(undefined)
+  }
+  suspend evalContext kind 1
+  resume_top
+  return ? result
+}
+
+def @sec-hostensurecancompilestrings "HostEnsureCanCompileStrings" (kind host_defined params [calleeRealm : #"Realm Record", paramStrings : list<String>, bodyString : String, codeString : String, compilationType : val(~direct-eval~) | val(~indirect-eval~) | val(~function~), paramArgs : list<#"ECMAScript language value">, bodyArg : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [calleeRealm, paramStrings, bodyString, codeString, compilationType, paramArgs, bodyArg] {
+  return ~unused~
+}
+
+def @sec-evaldeclarationinstantiation "EvalDeclarationInstantiation" (kind ao params [body : |ScriptBody|, variableEnv : #"Environment Record", lexicalEnv : #"Declarative Environment Record", privateEnv : #"PrivateEnvironment Record" | val(null), strict : Boolean] -> completion<val(~unused~)> | #"throw completion") vars [body, variableEnv, lexicalEnv, privateEnv, strict, variableNames, variableDecls, name, thisEnv, privateIdentifiers, pointer, binding, funcsToInitialize, declaredFuncNames, variableDecl, funcName, funcDefinable, declaredVariableNames, variableDefinable, declaredFuncOrVariableNames, funcDecl, x, bindingExists, globalEnv, blockEnv, funcObj, lexicalDecls, lexicalDecl, variableName] {
+  let variableNames = sdo VarDeclaredNames(body)
+  let variableDecls = sdo VarScopedDeclarations(body)
+  if strict is val {false} {
+    if variableEnv is ty {#"Global Environment Record"} {
+      for_each name in variableNames {
+        if @sec-haslexicaldeclaration(variableEnv, name) is val {true} -> throw @ph-new-error([[SyntaxError]])
+        note "`eval` will not create a global var declaration that would be shadowed by a global lexical declaration."
+      }
+    }
+    let thisEnv = lexicalEnv
+    assert pass "The following loop will terminate"
+    repeat_while expr @ph-not-same-tn(?thisEnv, ?variableEnv, data sort #"Environment Record") {
+      if thisEnv is not ty {#"Object Environment Record"} {
+        note "The environment of with statements cannot contain any lexical declaration so it doesn't need to be checked for var/let hoisting conflicts."
+        for_each name in variableNames {
+          if ! thisEnv.HasBinding(name) is val {true} {
+            if expr $"the host is a web browser"(data choice 0, clause @sec-variablestatements-in-catch-blocks) {
+              if thisEnv sat @ph-not-env-for(data choice 0, |Catch|) -> throw @ph-new-error([[SyntaxError]])
+            }
+            else {
+              throw @ph-new-error([[SyntaxError]])
+            }
+          }
+          note "A direct eval will not hoist var declaration over a like-named lexical declaration."
+        }
+      }
+      set var thisEnv = thisEnv[[OuterEnv]]
+    }
+  }
+  let privateIdentifiers = $ListNew()
+  let pointer = privateEnv
+  repeat_while pointer is not val {null} {
+    for_each binding : #"Private Name" in pointer[[Names]] {
+      if privateIdentifiers fails $Contains(binding[[Description]]) -> perform $Append(binding[[Description]], ?privateIdentifiers)
+    }
+    set var pointer = pointer[[OuterPrivateEnvironment]]
+  }
+  if sdo AllPrivateIdentifiersValid(body; privateIdentifiers) is val {false} -> throw @ph-new-error([[SyntaxError]])
+  let funcsToInitialize = $ListNew()
+  let declaredFuncNames = $ListNew()
+  for_each variableDecl rev in variableDecls {
+    if variableDecl is not ty {|VariableDeclaration|; |ForBinding|; |BindingIdentifier|} {
+      assert variableDecl is ty {|FunctionDeclaration|; |GeneratorDeclaration|; |AsyncFunctionDeclaration|; |AsyncGeneratorDeclaration|}
+      note "If there are multiple function declarations for the same name, the last declaration is used."
+      let funcName = $ListElem(data choice 0, sdo BoundNames(variableDecl))
+      if declaredFuncNames fails $Contains(?funcName) {
+        if variableEnv is ty {#"Global Environment Record"} {
+          let funcDefinable = ? @sec-candeclareglobalfunction(variableEnv, funcName)
+          if funcDefinable is val {false} -> throw @ph-new-error([[TypeError]])
+        }
+        perform $Append(?funcName, ?declaredFuncNames)
+        perform $Insert(?variableDecl, ?funcsToInitialize)
+      }
+    }
+  }
+  let declaredVariableNames = $ListNew()
+  for_each variableDecl in variableDecls {
+    if variableDecl is ty {|VariableDeclaration|; |ForBinding|; |BindingIdentifier|} {
+      for_each name : String in sdo BoundNames(variableDecl) {
+        if declaredFuncNames fails $Contains(?name) {
+          if variableEnv is ty {#"Global Environment Record"} {
+            let variableDefinable = ? @sec-candeclareglobalvar(variableEnv, name)
+            if variableDefinable is val {false} -> throw @ph-new-error([[TypeError]])
+          }
+          if declaredVariableNames fails $Contains(?name) {
+            perform $Append(?name, ?declaredVariableNames)
+          }
+        }
+      }
+    }
+  }
+  if strict is val {false} and expr $"the host is a web browser"(data choice 0, clause @sec-block-level-function-declarations-web-legacy-compatibility-semantics) {
+    let declaredFuncOrVariableNames = $ListConcat([declaredFuncNames, declaredVariableNames])
+    for_each funcDecl in @ph-annexb-foreach(|FunctionDeclaration|, ?funcDecl, |StatementList|, [|Block|, |CaseClause|, |DefaultClause|], ?x, ?body, ?x) {
+      let funcName = sdo StringValue($ChildOf(|BindingIdentifier|, ?funcDecl))
+      if expr @ph-annexb-replacing(|FunctionDeclaration|, ?funcDecl, |VariableStatement|, ?funcName, |BindingIdentifier|, ?body) {
+        let bindingExists = false
+        set var thisEnv = lexicalEnv
+        assert pass "The following loop will terminate"
+        repeat_while thisEnv is not val {variableEnv} {
+          if thisEnv is not ty {#"Object Environment Record"} {
+            if ! thisEnv.HasBinding(funcName) is val {true} {
+              if expr $"the host is a web browser"(data choice 0, clause @sec-variablestatements-in-catch-blocks) {
+                if thisEnv sat @ph-not-env-for(data choice 0, |Catch|) -> set var bindingExists = true
+              }
+              else {
+                set var bindingExists = true
+              }
+            }
+          }
+          set var thisEnv = thisEnv[[OuterEnv]]
+        }
+        if bindingExists is val {false} and variableEnv is ty {#"Global Environment Record"} {
+          if @sec-haslexicaldeclaration(variableEnv, funcName) is val {false} {
+            let funcDefinable = ? @sec-candeclareglobalvar(variableEnv, funcName)
+          }
+          else {
+            let funcDefinable = false
+          }
+        }
+        else {
+          let funcDefinable = true
+        }
+        if bindingExists is val {false} and funcDefinable is val {true} {
+          if declaredFuncOrVariableNames fails $Contains(?funcName) {
+            if variableEnv is ty {#"Global Environment Record"} {
+              perform ? @sec-createglobalvarbinding(variableEnv, funcName, true)
+            }
+            else {
+              set var bindingExists = ! variableEnv.HasBinding(funcName)
+              if bindingExists is val {false} {
+                perform ! variableEnv.CreateMutableBinding(funcName, true)
+                perform ! variableEnv.InitializeBinding(funcName, undefined)
+              }
+            }
+            perform $Append(?funcName, ?declaredFuncOrVariableNames)
+          }
+          perform @ph-annexb-evaluated(|FunctionDeclaration|, ?funcDecl, |FunctionDeclaration|, clause @sec-function-definitions-runtime-semantics-evaluation, closure 0)
+        }
+      }
+    }
+  }
+  note "No abnormal terminations occur after this algorithm step unless _variableEnv_ is a Global Environment Record and the global object is a Proxy exotic object."
+  let lexicalDecls = sdo LexicallyScopedDeclarations(body)
+  for_each lexicalDecl in lexicalDecls {
+    note "Lexically declared names are only instantiated here but not initialized."
+    for_each name in sdo BoundNames(lexicalDecl) {
+      if sdo IsConstantDeclaration(lexicalDecl) is val {true} {
+        perform ! lexicalEnv.CreateImmutableBinding(name, true)
+      }
+      else {
+        perform ! lexicalEnv.CreateMutableBinding(name, false)
+      }
+    }
+  }
+  for_each funcDecl : #"Parse Node" in funcsToInitialize {
+    let funcName = $ListElem(data choice 0, sdo BoundNames(funcDecl))
+    let funcObj = sdo InstantiateFunctionDeclaration(funcDecl; lexicalEnv, privateEnv)
+    if variableEnv is ty {#"Global Environment Record"} {
+      perform ? @sec-createglobalfunctionbinding(variableEnv, funcName, funcObj, true)
+    }
+    else {
+      let bindingExists = ! variableEnv.HasBinding(funcName)
+      if bindingExists is val {false} {
+        note "The following invocation cannot return an abrupt completion because of the validation preceding step <emu-xref href=\"#step-evaldeclarationinstantiation-post-validation\"></emu-xref>."
+        perform ! variableEnv.CreateMutableBinding(funcName, true)
+        perform ! variableEnv.InitializeBinding(funcName, funcObj)
+      }
+      else {
+        perform ! variableEnv.SetMutableBinding(funcName, funcObj, false)
+      }
+    }
+  }
+  for_each variableName : String in declaredVariableNames {
+    if variableEnv is ty {#"Global Environment Record"} {
+      perform ? @sec-createglobalvarbinding(variableEnv, variableName, true)
+    }
+    else {
+      let bindingExists = ! variableEnv.HasBinding(variableName)
+      if bindingExists is val {false} {
+        note "The following invocation cannot return an abrupt completion because of the validation preceding step <emu-xref href=\"#step-evaldeclarationinstantiation-post-validation\"></emu-xref>."
+        perform ! variableEnv.CreateMutableBinding(variableName, true)
+        perform ! variableEnv.InitializeBinding(variableName, undefined)
+      }
+    }
+  }
+  return ~unused~
+  closure abstract params none captures [funcName] {
+    let globalEnv = $Component($Running(), [[VariableEnvironment]])
+    let blockEnv = $Component($Running(), [[LexicalEnvironment]])
+    let funcObj = ! blockEnv.GetBindingValue(funcName, false)
+    perform ? globalEnv.SetMutableBinding(funcName, funcObj, false)
+    return ~unused~
+  }
+}
+
+def @sec-isfinite-number "isFinite" (kind builtin params [value]) vars [#"this value", NewTarget, value, number] {
+  let number = ? @sec-tonumber(value)
+  if number is ty {sort [finite] Number} -> return true
+  return false
+}
+
+def @sec-isnan-number "isNaN" (kind builtin params [value]) vars [#"this value", NewTarget, value, number] {
+  let number = ? @sec-tonumber(value)
+  if number is val {nan} -> return true
+  return false
+}
+
+def @sec-parsefloat-string "parseFloat" (kind builtin params [string]) vars [#"this value", NewTarget, string, inputString, trimmedString, trimmed, trimmedPrefix, len, i, sign, end, hasDigits, done, u, dot, fracStart, exp, j, es, expStart, parsedNumber] {
+  let inputString = ? @sec-tostring(string)
+  let trimmedString = ! @sec-trimstring(inputString, ~start~)
+  let trimmed = @sec-stringtocodepoints(trimmedString)
+  let len = $StrLen(?trimmedString)
+  let i = 0
+  if i < len {
+    let sign = $NumericValue($UnitAt(?i, ?trimmedString))
+    if sign == math(hex(43, "002B")) or sign == math(hex(45, "002D")) -> set var i = i + 1
+  }
+  let end = 0
+  if i + 8 <= len and $Substring(?trimmedString, ?i, i + 8) is val {"Infinity"} {
+    set var end = i + 8
+  }
+  else {
+    let hasDigits = false
+    let done = false
+    repeat_while i < len and done is val {false} {
+      let u = $NumericValue($UnitAt(?i, ?trimmedString))
+      if u sat $InInterval(math(hex(48, "0030")), math(hex(57, "0039"))) {
+        set var hasDigits = true
+        set var i = i + 1
+      }
+      else {
+        set var done = true
+      }
+    }
+    if i < len {
+      let dot = $NumericValue($UnitAt(?i, ?trimmedString))
+      if dot == math(hex(46, "002E")) {
+        set var i = i + 1
+        let fracStart = i
+        set var done = false
+        repeat_while i < len and done is val {false} {
+          let u = $NumericValue($UnitAt(?i, ?trimmedString))
+          if_else u sat $InInterval(math(hex(48, "0030")), math(hex(57, "0039"))) { set var i = i + 1 } else { set var done = true }
+        }
+        if i > fracStart -> set var hasDigits = true
+      }
+    }
+    if hasDigits is val {false} -> return nan
+    set var end = i
+    if i < len {
+      let exp = $NumericValue($UnitAt(?i, ?trimmedString))
+      if exp == math(hex(101, "0065")) or exp == math(hex(69, "0045")) {
+        let j = i + 1
+        if j < len {
+          let es = $NumericValue($UnitAt(?j, ?trimmedString))
+          if es == math(hex(43, "002B")) or es == math(hex(45, "002D")) -> set var j = j + 1
+        }
+        let expStart = j
+        set var done = false
+        repeat_while j < len and done is val {false} {
+          let u = $NumericValue($UnitAt(?j, ?trimmedString))
+          if_else u sat $InInterval(math(hex(48, "0030")), math(hex(57, "0039"))) { set var j = j + 1 } else { set var done = true }
+        }
+        if j > expStart -> set var end = j
+      }
+    }
+  }
+  let trimmedPrefix = @sec-stringtocodepoints($Substring(?trimmedString, 0, ?end))
+  let parsedNumber = @sec-parsetext(trimmedPrefix, |StrDecimalLiteral|)
+  assert parsedNumber is ty {#"Parse Node"}
+  return sdo StringNumericValue(parsedNumber)
+}
+
+def @sec-parseint-string-radix "parseInt" (kind builtin params [string, radix]) vars [#"this value", NewTarget, string, radix, inputString, radixMV, trimmedString, sign, end, i, d, numberString, mathInt, q] {
+  let inputString = ? @sec-tostring(string)
+  let radixMV = $ℝ(? @sec-toint32(radix))
+  if radixMV != 0 and radixMV fails $InInterval(2, 36) -> return nan
+  let trimmedString = ! @sec-trimstring(inputString, ~start~)
+  if trimmedString is val {$"the empty String"()} -> return nan
+  let sign = 1
+  if $FirstUnit(?trimmedString) is val {$CodeUnit(cu(45, "002D", "HYPHEN-MINUS"))} {
+    set var sign = math(-1)
+    set var trimmedString = $Substring(?trimmedString, 1, data absent)
+  }
+  else_if $FirstUnit(?trimmedString) is val {$CodeUnit(cu(43, "002B", "PLUS SIGN"))} {
+    set var trimmedString = $Substring(?trimmedString, 1, data absent)
+  }
+  if radixMV == 0 or radixMV == 16 {
+    if $StrLen(?trimmedString) >= 2 and $Substring(?trimmedString, 0, 2) is val {"0x"; "0X"} {
+      set var trimmedString = $Substring(?trimmedString, 2, data absent)
+      set var radixMV = 16
+    }
+  }
+  if radixMV == 0 -> set var radixMV = 10
+  let end = $StrLen(?trimmedString)
+  for_range i incl 0 .. excl $StrLen(?trimmedString) desc {
+    let d = @formal-radixdigitvalue($UnitAt(?i, ?trimmedString))
+    if d is val {~empty~} -> set var end = i
+    else_if d >= radixMV -> set var end = i
+  }
+  let numberString = $Substring(?trimmedString, 0, ?end)
+  if numberString sat $IsEmpty() -> return nan
+  let mathInt = 0
+  for_range i incl 0 .. excl $StrLen(?numberString) {
+    let d = @formal-radixdigitvalue($UnitAt(?i, ?numberString))
+    set var mathInt = mathInt * radixMV + d
+  }
+  if radixMV == 10 and mathInt >= 10 ^ 20 {
+    let q = 10 ^ {$DecimalExponent(mathInt) - 19}
+    set var mathInt = $"implementation-defined choice"(?mathInt, $floor(mathInt / q) * q)
+  }
+  if radixMV is not val {2; 4; 8; 10; 16; 32} -> set var mathInt = $ApproxInteger(mathInt)
+  if sign == math(-1) and mathInt == 0 -> return num_f(-0)
+  return $𝔽(sign * mathInt)
+}
+
+def @sec-decodeuri-encodeduri "decodeURI" (kind builtin params [encodedURI]) vars [#"this value", NewTarget, encodedURI, uriString, preserveEscapeSet] {
+  let uriString = ? @sec-tostring(encodedURI)
+  let preserveEscapeSet = ";/?:@&=+$,#"
+  return ? @sec-decode(uriString, preserveEscapeSet)
+}
+
+def @sec-decodeuricomponent-encodeduricomponent "decodeURIComponent" (kind builtin params [encodedURIComponent]) vars [#"this value", NewTarget, encodedURIComponent, componentString, preserveEscapeSet] {
+  let componentString = ? @sec-tostring(encodedURIComponent)
+  let preserveEscapeSet = $"the empty String"()
+  return ? @sec-decode(componentString, preserveEscapeSet)
+}
+
+def @sec-encodeuri-uri "encodeURI" (kind builtin params [uri]) vars [#"this value", NewTarget, uri, uriString, extraUnescaped] {
+  let uriString = ? @sec-tostring(uri)
+  let extraUnescaped = ";/?:@&=+$,#"
+  return ? @sec-encode(uriString, extraUnescaped)
+}
+
+def @sec-encodeuricomponent-uricomponent "encodeURIComponent" (kind builtin params [uriComponent]) vars [#"this value", NewTarget, uriComponent, componentString, extraUnescaped] {
+  let componentString = ? @sec-tostring(uriComponent)
+  let extraUnescaped = $"the empty String"()
+  return ? @sec-encode(componentString, extraUnescaped)
+}
+
+def @sec-encode "Encode" (kind ao params [string : String, extraUnescaped : String] -> completion<String> | #"throw completion") vars [string, extraUnescaped, length, result, alwaysUnescaped, unescapedSet, k, codeUnit, codePoint, octets, octet, #"hex"] {
+  let length = $StrLen(?string)
+  let result = $"the empty String"()
+  let alwaysUnescaped = $"string-concatenation"(@ph-ascii-word-characters(), "-.!~*'()")
+  let unescapedSet = $"string-concatenation"(alwaysUnescaped, extraUnescaped)
+  let k = 0
+  repeat_while k < length {
+    let codeUnit = $UnitAt(?k, ?string)
+    if unescapedSet sat $Contains(?codeUnit) {
+      set var k = k + 1
+      set var result = $"string-concatenation"(result, codeUnit)
+    }
+    else {
+      let codePoint = @sec-codepointat(string, k)
+      if codePoint[[IsUnpairedSurrogate]] is val {true} -> throw @ph-new-error([[URIError]])
+      set var k = k + codePoint[[CodeUnitCount]]
+      let octets = @ph-utf8-encode(codePoint[[CodePoint]])
+      for_each octet in octets {
+        let #"hex" = @ph-upper-hex(?octet)
+        set var result = $"string-concatenation"(result, "%", @sec-stringpad(#"hex", 2, "0", ~start~))
+      }
+    }
+  }
+  return result
+}
+
+def @sec-decode "Decode" (kind ao params [string : String, preserveEscapeSet : String] -> completion<String> | #"throw completion") vars [string, preserveEscapeSet, length, result, k, codeUnit, segment, escape, firstOctet, n, asciiChar, octets, j, continuationByte, codePoint] {
+  let length = $StrLen(?string)
+  let result = $"the empty String"()
+  let k = 0
+  repeat_while k < length {
+    let codeUnit = $UnitAt(?k, ?string)
+    let segment = codeUnit
+    if codeUnit is val {$CodeUnit(cu(37, "0025", "PERCENT SIGN"))} {
+      if k + 3 > length -> throw @ph-new-error([[URIError]])
+      let escape = $Substring(?string, ?k, k + 3)
+      let firstOctet = @sec-parsehexoctet(string, k + 1)
+      if firstOctet is not ty {integer} -> throw @ph-new-error([[URIError]])
+      set var k = k + 2
+      let n = @ph-leading-one-bits(?firstOctet)
+      if n == 0 {
+        let asciiChar = $UnitOrPointOf(data choice 1, ?firstOctet)
+        if_else preserveEscapeSet sat $Contains(?asciiChar) { set var segment = escape } else { set var segment = asciiChar }
+      }
+      else {
+        if n == 1 or n > 4 -> throw @ph-new-error([[URIError]])
+        let octets = [firstOctet]
+        let j = 1
+        repeat_while j < n {
+          set var k = k + 1
+          if k + 3 > length -> throw @ph-new-error([[URIError]])
+          if $UnitAt(?k, ?string) is not val {$CodeUnit(cu(37, "0025", "PERCENT SIGN"))} -> throw @ph-new-error([[URIError]])
+          let continuationByte = @sec-parsehexoctet(string, k + 1)
+          if continuationByte is not ty {integer} -> throw @ph-new-error([[URIError]])
+          perform $Append(?continuationByte, ?octets)
+          set var k = k + 2
+          set var j = j + 1
+        }
+        assert $ListLen(?octets) is val {n}
+        if octets sat @ph-not-valid-utf8() -> throw @ph-new-error([[URIError]])
+        let codePoint = @ph-utf8-decode(?octets)
+        set var segment = @sec-utf16encodecodepoint(codePoint)
+      }
+    }
+    set var result = $"string-concatenation"(result, segment)
+    set var k = k + 1
+  }
+  return result
+}
+
+def @sec-parsehexoctet "ParseHexOctet" (kind ao params [string : String, position : sort [#"non-negative"] integer] -> sort [#"non-negative"] integer | pred(sat @ph-type-syntax-errors())) vars [string, position, length, hexDigits, d0, d1, parseResult, n] {
+  let length = $StrLen(?string)
+  assert position + 2 <= length
+  let d0 = @formal-radixdigitvalue($UnitAt(?position, ?string))
+  let d1 = @formal-radixdigitvalue($UnitAt(position + 1, ?string))
+  if d0 is not val {~empty~} and d1 is not val {~empty~} and d0 < 16 and d1 < 16 -> return 16 * d0 + d1
+  let hexDigits = $Substring(?string, ?position, position + 2)
+  let parseResult = @sec-parsetext(hexDigits, |HexDigits[~Sep]|)
+  assert parseResult is not ty {#"Parse Node"}
+  return parseResult
+}
+

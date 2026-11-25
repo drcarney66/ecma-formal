@@ -19,7 +19,7 @@ namespace Engine.Machine
 
 open Ecma Ecma.Machine
 
-variable (H : Host F) (rd : ErratumId → Reading) (chk : Bool)
+variable (H : Host F) (chk : Bool)
 
 /-! ## StringToCodePoints's loop -/
 
@@ -44,7 +44,7 @@ def stcpSt (st : State F) (cs : Array (Val F)) (rs : Array (Cell F)) : State F :
 /-- The loop's end and the return, where the position is not below the size. -/
 theorem stcp_end (st : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (s : Array UInt16)
     (p : Nat) (cs : Array (Val F)) (rs : Array (Cell F)) (v4 : Val F) (q : List Nat) (r : Nat) (hp : ¬ p < s.size) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨stcpSt st cs rs,
+    Steps (Ctx.spec Engine.P' H chk) ⟨stcpSt st cs rs,
         ⟨a, nd, #[.str s, .ref st.heap.size, .math (.int s.size), .math (.int p), v4], .steps false true true, q,
           [.seq [.site [5], .ret (.var 1)]], none⟩ :: fs, .loop .round (stcpLoop r)⟩
       ⟨stcpSt st cs rs, fs, .val (.ref st.heap.size)⟩ := by
@@ -56,7 +56,7 @@ theorem stcp_end (st : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F
 open Engine.Accel in
 theorem stcp_loop [PinsHold] (st : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (s : Array UInt16) :
     ∀ (k p : Nat) (cs : Array (Val F)) (rs : Array (Cell F)) (v4 : Val F) (q : List Nat) (r : Nat), s.size - p ≤ k →
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨stcpSt st cs rs,
+    Steps (Ctx.spec Engine.P' H chk) ⟨stcpSt st cs rs,
         ⟨a, nd, #[.str s, .ref st.heap.size, .math (.int s.size), .math (.int p), v4], .steps false true true, q,
           [.seq [.site [5], .ret (.var 1)]], none⟩ :: fs, .loop .round (stcpLoop r)⟩
       ⟨stcpSt st (scanCps s k p cs rs).1 (scanCps s k p cs rs).2, fs, .val (.ref st.heap.size)⟩ := by
@@ -65,7 +65,7 @@ theorem stcp_loop [PinsHold] (st : State F) (fs : List (Frame F)) (a : AlgId) (n
   | zero =>
     intro p cs rs v4 q r hk
     simp only [scanCps]
-    exact stcp_end H rd chk st fs a nd s p cs rs v4 q r (by omega)
+    exact stcp_end H chk st fs a nd s p cs rs v4 q r (by omega)
   | succ k ih =>
     intro p cs rs v4 q r hk
     by_cases hp : p < s.size
@@ -76,7 +76,7 @@ theorem stcp_loop [PinsHold] (st : State F) (fs : List (Frame F)) (a : AlgId) (n
       gsteps
       refine Steps.valBool true (by mdecide) ?_
       gsteps
-      refine Steps.trans (cpa_steps H rd chk _ _ s p hp) ?_
+      refine Steps.trans (cpa_steps H chk _ _ s p hp) ?_
       rw [ht]
       gsteps
       refine Steps.next (step_field _ _ _ _ _ _ _ _ _ _ _ _ _ (cpRec_cp _ _ t (heap_push_get _ _))) ?_
@@ -95,18 +95,18 @@ theorem stcp_loop [PinsHold] (st : State F) (fs : List (Frame F)) (a : AlgId) (n
       rw [e] at h
       exact h
     · simp only [scanCps, hp, ↓reduceIte]
-      exact stcp_end H rd chk st fs a nd s p cs rs v4 q r hp
+      exact stcp_end H chk st fs a nd s p cs rs v4 q r hp
 
 open Engine.Accel in
 /-- StringToCodePoints's steps at a String: a new List of its code points, then CodePointAt's Records. -/
 theorem stcp_steps [PinsHold] (st : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (s : Array UInt16) :
-    Steps (Ctx.spec Engine.P' H rd chk)
+    Steps (Ctx.spec Engine.P' H chk)
       ⟨st, ⟨a, nd, #[.str s, .unbound, .unbound, .unbound, .unbound], .steps false true true, [], [], none⟩ :: fs,
         .code stcpCode⟩
       ⟨stcpSt st (scanCps s s.size 0 #[] #[]).1 (scanCps s s.size 0 #[] #[]).2, fs, .val (.ref st.heap.size)⟩ := by
   iterate 22 gstep
   simp only [Bool.false_eq_true, ↓reduceIte]
-  have h := stcp_loop H rd chk st fs a nd s s.size 0 #[] #[] .unbound [4] (0 + 1) (by omega)
+  have h := stcp_loop H chk st fs a nd s s.size 0 #[] #[] .unbound [4] (0 + 1) (by omega)
   unfold stcpSt at h ⊢
   exact h
 
@@ -115,11 +115,11 @@ open Engine.Accel in
 transition enters the algorithm's frame. -/
 theorem stcp_row [PinsHold] (c : Cfg F) (vs : List (Val F))
     (r : Run F (Option (Val F))) (nd : Option F.Node) (he : stcpEntry vs = some r)
-    (hstep : step (Ctx.spec Engine.P' H rd chk) c =
-      enterAlg (Ctx.spec Engine.P' H rd chk) c stcpAlg nd (stcpAlg.args vs) stcpAlg.header.rc true true) :
-    Sim (Ctx.spec Engine.P' H rd chk) c (bindR c r fun o c => match o with
+    (hstep : step (Ctx.spec Engine.P' H chk) c =
+      enterAlg (Ctx.spec Engine.P' H chk) c stcpAlg nd (stcpAlg.args vs) stcpAlg.header.rc true true) :
+    Sim (Ctx.spec Engine.P' H chk) c (bindR c r fun o c => match o with
       | some v => c.to (.val v)
-      | none => step (Ctx.spec Engine.P' H rd chk) c) := by
+      | none => step (Ctx.spec Engine.P' H chk) c) := by
   unfold stcpEntry at he
   split at he
   · rename_i s
@@ -128,19 +128,19 @@ theorem stcp_row [PinsHold] (c : Cfg F) (vs : List (Val F))
       obtain ⟨st, fs, ctl⟩ := c
       show Steps _ _ _
       refine Steps.next hstep ?_
-      have hcode : (Ctx.spec Engine.P' H rd chk).algCode stcpAlg.id = stcpCode := by
+      have hcode : (Ctx.spec Engine.P' H chk).algCode stcpAlg.id = stcpCode := by
         show (Engine.P'.alg ⟨573, 0⟩).getD _ = _
         rw [stcpCode_pin]; rfl
       rw [hcode]
-      exact stcp_steps H rd chk st fs _ nd s
+      exact stcp_steps H chk st fs _ nd s
     · cases he
   · cases he
 
 open Engine.Accel in
 /-- StringToCodePoints's row. -/
-theorem stcp_algRow [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bool) :
-    AlgRow (Ctx.spec Engine.P' H rd chk) ⟨573, 0⟩ Engine.Accel.stcpEntry :=
-  ⟨stcpAlg, stcpAlg_pin, fun c vs r nd he hstep => stcp_row H rd chk c vs r nd he hstep⟩
+theorem stcp_algRow [PinsHold] (H : Host F) (chk : Bool) :
+    AlgRow (Ctx.spec Engine.P' H chk) ⟨573, 0⟩ Engine.Accel.stcpEntry :=
+  ⟨stcpAlg, stcpAlg_pin, fun c vs r nd he hstep => stcp_row H chk c vs r nd he hstep⟩
 
 end Engine.Machine
 

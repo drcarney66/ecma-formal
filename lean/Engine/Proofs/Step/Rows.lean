@@ -24,19 +24,19 @@ namespace Engine.Machine
 open Ecma Ecma.Machine Engine.Accel Engine.Accel.Table
 
 /-- The exact algorithms' rows. -/
-theorem exactRows_ok [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bool) :
-    ∀ row ∈ exactRows, RowAlgOk (Ctx.spec Engine.P' H rd chk) row := by
+theorem exactRows_ok [PinsHold] (H : Host F) (chk : Bool) :
+    ∀ row ∈ exactRows, RowAlgOk (Ctx.spec Engine.P' H chk) row := by
   intro row hrow
   simp only [exactRows, List.mem_cons, List.not_mem_nil, or_false] at hrow
   rcases hrow with rfl | rfl | rfl
-  · exact isWrite_algRow H rd chk
-  · exact stcp_algRow H rd chk
-  · exact gsi_algRow H rd chk
+  · exact isWrite_algRow H chk
+  · exact stcp_algRow H chk
+  · exact gsi_algRow H chk
 
 /-- Contains' and ComputedPropertyContains' rows. -/
-theorem contains_sdoRows [PinsHold] (H : Host F) (rd : ErratumId → Reading) (chk : Bool) :
-    SdoRowOk (Ctx.spec Engine.P' H rd chk) 23 (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab rd 23) ∧
-    SdoRowOk (Ctx.spec Engine.P' H rd chk) 24 (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab rd 24) :=
-  contains_sdoRow H rd chk containsRows_true
+theorem contains_sdoRows [PinsHold] (H : Host F) (chk : Bool) :
+    SdoRowOk (Ctx.spec Engine.P' H chk) 23 (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab 23) ∧
+    SdoRowOk (Ctx.spec Engine.P' H chk) 24 (Contains.accelSdo (Engine.Machine.facts Engine.P'.P).tab 24) :=
+  contains_sdoRow H chk containsRows_true
 
 end Engine.Machine

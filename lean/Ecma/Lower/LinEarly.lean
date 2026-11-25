@@ -31,21 +31,15 @@ def tupNil : Op := .leaf .tuple []
 def tupAdd (acc : Slot) (e : Op) : Ins := .let_ acc (.leaf .tupCat [.var acc, e])
 
 mutual
-/-- Whether a sentence says a child must cover a nonterminal, under any condition or reading. -/
+/-- Whether a sentence says a child must cover a nonterminal, under any condition. -/
 def _root_.Ecma.EarlySentence.hasCover : EarlySentence → Bool
   | .mustCover .. => true
   | .ifInline _ s => s.hasCover
-  | .layout _ ss => EarlySentence.hasCoverAll ss
-  | .readings _ lit alts => EarlySentence.hasCoverAll lit || EarlySentence.hasCoverAlts alts
   | _ => false
 
 def _root_.Ecma.EarlySentence.hasCoverAll : List EarlySentence → Bool
   | [] => false
   | s :: ss => s.hasCover || EarlySentence.hasCoverAll ss
-
-def _root_.Ecma.EarlySentence.hasCoverAlts : List (Reading × List EarlySentence) → Bool
-  | [] => false
-  | (_, ss) :: rest => EarlySentence.hasCoverAll ss || EarlySentence.hasCoverAlts rest
 end
 
 /-- Whether row `r` is a must-cover rule. -/
@@ -63,7 +57,7 @@ def linSent : EarlySentence → Code
   | .syntaxErrorIns c d =>
     [.br (linC cx c) [.br browser [.br (linC cx d) [tupAdd acc (.leaf .tuple [err])] []]
       [tupAdd acc (.leaf .tuple [err])]] []]
-  | .mustCover p (.nt _ k _) => [.cover acc (linE cx p) k err]
+  | .mustCover p (.nt k) => [.cover acc (linE cx p) k err]
   | .mustCover p _ => [.eval (linE cx p), .stop .sortError]
   | .rulesApplied ps _ => [tupAdd acc (.call (.earlyOwn ps) [])]
   | .ifInline c s => [.br (linC cx c) (linSent s) []]
@@ -71,36 +65,22 @@ def linSent : EarlySentence → Code
     [.loop (some x) (.each (linE cx l) false) []
       [.br (.bind (.var x) (linT cx t)) [.br (linC cx c) [tupAdd acc (.leaf .tuple [err])] []] []]]
   | .info _ | .notApplied _ _ => []
-  | .layout _ ss => linSents ss
-  | .readings e lit alts => Ins.ofSentReadings e (linSents lit) (linSentAlts alts)
   | .stmt _ => [.stop .residue]
 
 def linSents : List EarlySentence → Code
   | [] => []
   | s :: ss => linSent s ++ linSents ss
-
-def linSentAlts : List (Reading × List EarlySentence) → List (Reading × Code)
-  | [] => []
-  | (q, ss) :: rest => (q, linSents ss) :: linSentAlts rest
 end
 end
 
 section
 variable (cx : Cx)
 
-mutual
 /-- The conditions of a row's `This rule is not applied if …` sentences, in order. -/
 def notApplied : List EarlySentence → List Op
   | [] => []
   | .notApplied c _ :: ss => linC cx c :: notApplied ss
-  | .layout _ ls :: ss => notApplied ls ++ notApplied ss
-  | .readings e lit alts :: ss => Op.ofReadings e (.or (notApplied lit)) (notAppliedAlts alts) :: notApplied ss
   | _ :: ss => notApplied ss
-
-def notAppliedAlts : List (Reading × List EarlySentence) → List (Reading × Op)
-  | [] => []
-  | (q, ss) :: rest => (q, .or (notApplied ss)) :: notAppliedAlts rest
-end
 
 mutual
 /-- Whether a sentence says the bound subject, a child of the node, must cover a nonterminal; none: it says so
@@ -108,10 +88,6 @@ of no child, and evaluates nothing. -/
 def covSent : EarlySentence → Option Op
   | .mustCover p _ => some (.leaf .sameNode [linE cx p, .bound])
   | .ifInline k s => some (.and [linC cx k, (covSent s).getD (.const (.val .false))])
-  | .layout _ ss => match covSents ss with
-    | [] => none
-    | os => some (.or os)
-  | .readings e lit alts => some (Op.ofReadings e (.or (covSents lit)) (covAlts alts))
   | _ => none
 
 def covSents : List EarlySentence → List Op
@@ -119,15 +95,11 @@ def covSents : List EarlySentence → List Op
   | s :: ss => match covSent s with
     | some o => o :: covSents ss
     | none => covSents ss
-
-def covAlts : List (Reading × List EarlySentence) → List (Reading × Op)
-  | [] => []
-  | (q, ss) :: rest => (q, .or (covSents ss)) :: covAlts rest
 end
 end
 
 /-- A new *SyntaxError* object. -/
-def newSyntaxError (P : Prog) : Op := .call (.phrase Known.phNewError) [.const (.fieldName P.syntaxError)]
+def newSyntaxError (P : Prog) : Op := .call (.alg Known.algNewError) [.const (.fieldName P.syntaxError)]
 
 /-- Whether the host supports B.1.2 (regular expression patterns). -/
 def supportsRegExpPatterns (P : Prog) : Op :=

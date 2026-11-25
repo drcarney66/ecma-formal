@@ -255,7 +255,7 @@ def leftRec (n : NT) (ps : List Param) (e : Eff) : Bool :=
 
 /-- The alternatives of `n` in effect under `ps`. -/
 def altsUnder (n : NT) (ps : List Param) : List Eff :=
-  ((effAlts A.g A.rd A.cx n.ctorIdx).getD []).filter (·.alt.guard.all (Guard.holds ps))
+  ((effAlts A.g A.cx n.ctorIdx).getD []).filter (·.alt.guard.all (Guard.holds ps))
 
 /-- B.1.2's order: the first alternative of `n` under `ps` that derives some span from `i`, the
 derivations read by `rec` (the search without commitment); memoized. -/
@@ -459,7 +459,7 @@ per search. -/
 def fwdOf (rd : NT → List Param → Nat → SM T Ends) (n : NT) (ps : List Param) (i : Nat) (e : Eff) :
     SM T Fwd := do
   if !leftRec n ps e then return ⟨← forward A rd e.rule.lhs e.idx ps i e.alt.rhs, none⟩
-  let c := (key A true n ps i, e.wg.ctorIdx, e.idx, e.fresh)
+  let c := (key A true n ps i, e.wg.ctorIdx, e.idx)
   if let some (sets, prov) := (← get).fwd[c]? then return ⟨sets, some prov⟩
   let sets ← forward A rd e.rule.lhs e.idx ps i e.alt.rhs
   let prov ← provOf A rd e.rule.lhs e.idx ps e.alt.rhs sets
@@ -487,7 +487,7 @@ def build (B : Builder N) (size D stamp : Nat) : Nat → NT → List Param → N
   | 0, _, _, _, _ => throw .depth
   | d + 1, n, ps, i, j => do
     let rd := finalEnds A size D
-    let some es := effAlts A.g A.rd A.cx n.ctorIdx | throw (.check "no rule to build")
+    let some es := effAlts A.g A.cx n.ctorIdx | throw (.check "no rule to build")
     let found ← pick A rd (finalEndsAt A size false D) n ps i j es
     let some (e, fw) := found | throw (.check "no alternative derives a found span")
     let (a, idx, r) := (e.alt, e.idx, e.rule)
@@ -531,7 +531,7 @@ def build (B : Builder N) (size D stamp : Nat) : Nat → NT → List Param → N
         unless before.mem cur do throw (.check "no split for a zero-width item")
         pieces := .zero :: pieces
     unless cur == i do throw (.check "no split at the start")
-    let some p := effId A.rd e mask | throw (.check "no production id")
+    let some p := effId e mask | throw (.check "no production id")
     mk B A stamp p ps i j pieces
 
 end Engine.Parse.Search

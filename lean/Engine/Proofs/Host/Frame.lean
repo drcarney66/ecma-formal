@@ -45,7 +45,7 @@ theorem normalEnum_state (n : String) (t : State Impl) (r : Val Impl) (s' : Stat
 /-- The names of [[Extensible]] and [[Prototype]]. -/
 theorem fields_ext_proto :
     Gen.fields[Known.fExtensible]? = some "Extensible" ∧ Gen.fields[Known.fPrototype]? = some "Prototype" := by
-  simp only [← Array.getElem?_toList]; unfold Gen.fields; rw [Array.toList_append, Array.toList_append]; decide +kernel
+  decide +kernel
 
 /-- An ArrayBuffer's data slots, which HostResizeArrayBuffer resizes. -/
 def bufferField (f : FieldId) : Prop :=

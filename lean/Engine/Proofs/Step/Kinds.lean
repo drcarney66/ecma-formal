@@ -55,12 +55,6 @@ structure Sound (E : Setup) (R : Cfg F → Prop) : Prop where
     Sim E.X c (bindR c r fun o c => match o with
       | some v => c.to (.val v)
       | none => step E.X c)
-  /-- the same at a phrase that is the algorithm -/
-  phrase : ∀ c p n a vs r, R c → c.ctl = .invoke (.phrase p (some n) vs) → E.X.P.phrase p = .alg a →
-    (E.X.P.alg a).isSome → E.A.alg a vs = some r →
-    Sim E.X c (bindR c r fun o c => match o with
-      | some v => c.to (.val v)
-      | none => step E.X c)
   /-- an SDO's shortcut -/
   sdo : ∀ c s nd vs r, R c → c.ctl = .invoke (.sdo s nd vs) → s ≠ Known.sdoEarlyErrors → E.A.sdo s nd vs = some r →
     Sim E.X c (leafV c r)
@@ -83,17 +77,6 @@ theorem stepA_sim (E : Setup) (R : Cfg F → Prop) (h : Sound E R) (c : Cfg F) (
     dsimp only
     split
     · exact h.alg c a vs _ hc heq ‹_›
-    · exact Sim.step _ _
-  · rename_i p nd vs heq
-    split
-    · split
-      · rename_i a ha _ _ n u _
-        dsimp only
-        split
-        · subst_vars
-          exact h.phrase c p _ a vs _ hc heq ha (by simp [*]) ‹_›
-        · exact Sim.step _ _
-      · exact Sim.step _ _
     · exact Sim.step _ _
   · rename_i s nd vs heq
     split

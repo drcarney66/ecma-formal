@@ -3,15 +3,8 @@
 version = 4
 
 [[package]]
-name = "jsgrammar"
+name = "spectec"
 version = "0.1.0"
-
-[[package]]
-name = "spec-gen"
-version = "0.1.0"
-dependencies = [
- "jsgrammar",
-]
 
 [[package]]
 name = "test262-runner"

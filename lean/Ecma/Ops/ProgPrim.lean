@@ -90,12 +90,12 @@ EvaluateBuiltin by the function's [[Behaviour]] (a clause without an algorithm b
 def progPrim (P : Prog) (H : Host M) (q : PrimId) (xs : List (Val M)) : Option (Run M (Val M)) :=
   if q == Known.pCoveredBy then some (match xs with
     | [.nt k _, .node n] => do
-      match ← reparse D.reading (← D.annexB) (P.params k) n k with
+      match ← reparse (← D.annexB) (P.params k) n k with
       | some (some c) => return .node c
       | some none => Run.stop .assertFailed
       | none => Run.stop .residue
     | _ => Run.stop .sortError)
-  else if q == Known.pParseGoal then some (do parseGoal D.reading (← D.annexB) (xs.map Val.used))
+  else if q == Known.pParseGoal then some (do parseGoal (← D.annexB) (xs.map Val.used))
   else if q == Known.pInstanceOf then match xs with
     | [.node n, .clause c] => some (match P.clauseProds c with
       | some ps => return .bool (ps.contains (M.nodeProd n))

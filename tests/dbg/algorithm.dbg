@@ -1,6 +1,6 @@
 // specAlgorithm: an algorithm's or SDO row's listing, at any phase (here before launch, before
 // configurationDone and at a pause). EvaluateCall's steps with an If's arms after it; the
-// DebuggerStatement's Evaluation row with its erratum's reading under step 1, numbered within it;
+// DebuggerStatement's Evaluation row under SpecTec;
 // ExpressionStatement's row by sec-id and idx at a pause; a name of many algorithms and an unknown
 // sec-id refused.
 {"send": {"command": "initialize"}}
@@ -11,12 +11,12 @@
 {"send": {"command": "launch", "arguments": {"program": "${program}"}}}
 {"expect": {"type": "response", "command": "launch", "success": true}}
 {"send": {"command": "specAlgorithm", "arguments": {"secId": "sec-debugger-statement-runtime-semantics-evaluation"}}}
-{"expect": {"type": "response", "command": "specAlgorithm", "success": true, "body": {"name": "Evaluation", "secId": "sec-debugger-statement-runtime-semantics-evaluation", "idx": 0, "kind": "row", "production": "DebuggerStatement : `debugger` `;`", "params": [], "steps": [{"path": "1", "text": "If an implementation-defined debugging facility is available and enabled, then", "depth": 0, "steps": [{"path": "1.a", "depth": 1}, {"path": "1.b", "depth": 1}, {"path": "1", "reading": "definition-sec-debugger-statement-runtime-semantics-evaluation-1/sec-debugger-statement-runtime-semantics-evaluation@1/definition", "text": "If DebuggerEnabled() is true, then", "depth": 1, "steps": [{"path": "1.a", "reading": "definition-sec-debugger-statement-runtime-semantics-evaluation-1/sec-debugger-statement-runtime-semantics-evaluation@1/definition", "text": "Perform DebuggerAction().", "depth": 2}, {"path": "1.b"}]}]}, {"path": "2", "text": "Return empty.", "depth": 0}]}}}
+{"expect": {"type": "response", "command": "specAlgorithm", "success": true, "body": {"name": "Evaluation", "secId": "sec-debugger-statement-runtime-semantics-evaluation", "idx": 0, "kind": "row", "production": "DebuggerStatement : `debugger` `;`", "params": [], "steps": [{"path": "1", "text": "If DebuggerEnabled() is true, then", "depth": 0, "steps": [{"path": "1.a", "text": "Perform DebuggerAction().", "depth": 1}, {"path": "1.b", "text": "Return NewRecord(implementation-defined Completion Record).", "depth": 1}]}, {"path": "2", "text": "Return empty.", "depth": 0}]}}}
 {"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["debugger"]}}}
 {"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true}}
 {"send": {"command": "configurationDone"}}
 {"expect": {"type": "response", "command": "configurationDone", "success": true}}
-{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "secId": "sec-debugger-statement-runtime-semantics-evaluation", "idx": 0, "path": "1", "text": "If an implementation-defined debugging facility is available and enabled, then"}}}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "spec": {"alg": "Evaluation", "secId": "sec-debugger-statement-runtime-semantics-evaluation", "idx": 0, "path": "1", "text": "If DebuggerEnabled() is true, then"}}}}
 {"send": {"command": "specAlgorithm", "arguments": {"secId": "sec-expression-statement-runtime-semantics-evaluation", "idx": 0}}}
 {"expect": {"type": "response", "command": "specAlgorithm", "success": true, "body": {"name": "Evaluation", "kind": "row", "production": "ExpressionStatement : Expression `;`", "steps": [{"path": "1", "text": "Let exprRef be ? Evaluation of |Expression|.", "depth": 0}, {"path": "2", "text": "Return ? GetValue(exprRef).", "depth": 0}]}}}
 {"send": {"command": "specAlgorithm", "arguments": {"alg": "Evaluation"}}}

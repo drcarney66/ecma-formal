@@ -1,0 +1,124 @@
+grammar json
+
+rule json |JSONText| [] :: {
+  | |JSONElement|
+}
+
+rule json |JSONElement| [] :: {
+  | |JSONWhiteSpace|? |JSONValue| |JSONWhiteSpace|?
+}
+
+rule json |JSONWhiteSpace| [] :: {
+  | |JSONWhiteSpaceCharacter| |JSONWhiteSpace|?
+}
+
+rule json |JSONWhiteSpaceCharacter| [] :: one_of {
+  row [cp TAB, cp LF, cp CR, " "]
+}
+
+rule json |JSONValue| [] :: {
+  | |JSONObject|
+  | |JSONArray|
+  | |JSONNumber|
+  | |JSONString|
+  | "true"
+  | "false"
+  | "null"
+}
+
+rule json |JSONObject| [] :: {
+  | "{" |JSONWhiteSpace|? "}"
+  | "{" |JSONMembers| "}"
+}
+
+rule json |JSONMembers| [] :: {
+  | |JSONMember|
+  | |JSONMember| "," |JSONMembers|
+}
+
+rule json |JSONMember| [] :: {
+  | |JSONWhiteSpace|? |JSONString| |JSONWhiteSpace|? ":" |JSONElement|
+}
+
+rule json |JSONArray| [] :: {
+  | "[" |JSONWhiteSpace|? "]"
+  | "[" |JSONElements| "]"
+}
+
+rule json |JSONElements| [] :: {
+  | |JSONElement|
+  | |JSONElement| "," |JSONElements|
+}
+
+rule json |JSONNumber| [] :: {
+  | "-"? |JSONInteger| |JSONFraction|? |JSONExponent|?
+}
+
+rule json |JSONInteger| [] :: {
+  | "0"
+  | |JSONNonZeroDigit| |JSONDigits|?
+}
+
+rule json |JSONDigits| [] :: {
+  | |JSONDigit| |JSONDigits|?
+}
+
+rule json |JSONDigit| [] :: one_of {
+  row ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+}
+
+rule json |JSONNonZeroDigit| [] :: one_of {
+  row ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+}
+
+rule json |JSONFraction| [] :: {
+  | "." |JSONDigits|
+}
+
+rule json |JSONExponent| [] :: {
+  | |JSONExponentIndicator| |JSONSign|? |JSONDigits|
+}
+
+rule json |JSONExponentIndicator| [] :: one_of {
+  row ["e", "E"]
+}
+
+rule json |JSONSign| [] :: one_of {
+  row ["+", "-"]
+}
+
+rule json |JSONString| [] :: {
+  | "\"" |JSONStringCharacters|? "\""
+}
+
+rule json |JSONStringCharacters| [] :: {
+  | |JSONStringCharacter| |JSONStringCharacters|?
+}
+
+rule json |JSONStringCharacter| [] :: {
+  | |JSONCodePoint| butnot one_of or ["\"", "\\", |JSONControlCharacter|]
+  | "\\" |JSONEscape|
+}
+
+rule json |JSONEscape| [] :: {
+  | |JSONSingleEscapeCharacter|
+  | "u" |JSONHexDigit| |JSONHexDigit| |JSONHexDigit| |JSONHexDigit|
+}
+
+rule json |JSONSingleEscapeCharacter| [] :: one_of {
+  row ["\"", "\\", "/", "b", "f", "n", "r", "t"]
+}
+
+rule json |JSONHexDigit| [] :: one_of {
+  row ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "A", "B", "C", "D", "E", "F"]
+}
+
+rule json |JSONControlCharacter| [] :: one_of {
+  row ["\u{0}", "\u{1}", "\u{2}", "\u{3}", "\u{4}", "\u{5}", "\u{6}", "\u{7}", "\u{8}", "\t", "\n", "\u{b}", "\u{c}", "\r", "\u{e}", "\u{f}"]
+  row ["\u{10}", "\u{11}", "\u{12}", "\u{13}", "\u{14}", "\u{15}", "\u{16}", "\u{17}", "\u{18}", "\u{19}", "\u{1a}", "\u{1b}", "\u{1c}", "\u{1d}", "\u{1e}", "\u{1f}"]
+}
+
+rule json |JSONCodePoint| [] :: {
+  | > anyCodePoint
+}
+

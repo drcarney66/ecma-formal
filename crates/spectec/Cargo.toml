@@ -1,0 +1,5 @@
+[package]
+name = "spectec"
+version = "0.1.0"
+edition = "2021"
+description = "ECMA-262 SpecTec parser, roundtripper, prose renderer, and Lean generator"

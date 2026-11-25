@@ -1,0 +1,691 @@
+-- ECMA-262 SpecTec Clauses: S06
+
+def @sec-stringindexof "StringIndexOf" (kind ao params [string : String, searchValue : String, fromIndex : sort [#"non-negative"] integer] -> sort [#"non-negative"] integer | val(~not-found~)) vars [string, searchValue, fromIndex, length, searchLength, i, candidate] {
+  let length = $StrLen(?string)
+  if searchValue is val {$"the empty String"()} and fromIndex <= length -> return fromIndex
+  let searchLength = $StrLen(?searchValue)
+  for_range i incl fromIndex .. incl length - searchLength {
+    let candidate = $Substring(?string, ?i, i + searchLength)
+    if candidate is val {searchValue} -> return i
+  }
+  return ~not-found~
+}
+
+def @sec-stringlastindexof "StringLastIndexOf" (kind ao params [string : String, searchValue : String, fromIndex : sort [#"non-negative"] integer] -> sort [#"non-negative"] integer | val(~not-found~)) vars [string, searchValue, fromIndex, length, searchLength, i, candidate] {
+  let length = $StrLen(?string)
+  let searchLength = $StrLen(?searchValue)
+  assert fromIndex + searchLength <= length
+  for_range i incl 0 .. incl fromIndex desc {
+    let candidate = $Substring(?string, ?i, i + searchLength)
+    if candidate is val {searchValue} -> return i
+  }
+  return ~not-found~
+}
+
+def @sec-numeric-types-number-unaryMinus "Number::unaryMinus" (kind numeric_method params [number : Number] -> Number) vars [number] {
+  if number is val {nan} -> return nan
+  if number is val {num_f(+0)} -> return num_f(-0)
+  if number is val {num_f(-0)} -> return num_f(+0)
+  if number is val {num_f(+∞)} -> return num_f(-∞)
+  if number is val {num_f(-∞)} -> return num_f(+∞)
+  return $𝔽(neg $ℝ(number))
+}
+
+def @sec-numeric-types-number-bitwiseNOT "Number::bitwiseNOT" (kind numeric_method params [number : Number] -> #"integral Number") vars [number, oldValue] {
+  let oldValue = ! @sec-toint32(number)
+  return $𝔽(neg $ℝ(oldValue) - 1)
+}
+
+def @sec-numeric-types-number-exponentiate "Number::exponentiate" (kind numeric_method params [base : Number, exponent : Number] -> Number) vars [base, exponent] {
+  if exponent is val {nan} -> return nan
+  if exponent is val {num_f(+0); num_f(-0)} -> return num_f(1)
+  if base is val {nan} -> return nan
+  if base is val {num_f(+∞)} {
+    if exponent > num_f(+0) -> return num_f(+∞)
+    return num_f(+0)
+  }
+  if base is val {num_f(-∞)} {
+    if exponent > num_f(+0) {
+      if exponent is ty {sort [odd] #"integral Number"} -> return num_f(-∞)
+      return num_f(+∞)
+    }
+    if exponent is ty {sort [odd] #"integral Number"} -> return num_f(-0)
+    return num_f(+0)
+  }
+  if base is val {num_f(+0)} {
+    if exponent > num_f(+0) -> return num_f(+0)
+    return num_f(+∞)
+  }
+  if base is val {num_f(-0)} {
+    if exponent > num_f(+0) {
+      if exponent is ty {sort [odd] #"integral Number"} -> return num_f(-0)
+      return num_f(+0)
+    }
+    if exponent is ty {sort [odd] #"integral Number"} -> return num_f(-∞)
+    return num_f(+∞)
+  }
+  assert base is ty {sort [#"non-zero", finite] Number}
+  if exponent is val {num_f(+∞)} {
+    if $abs($ℝ(base)) > 1 -> return num_f(+∞)
+    if $abs($ℝ(base)) == 1 -> return nan
+    return num_f(+0)
+  }
+  if exponent is val {num_f(-∞)} {
+    if $abs($ℝ(base)) > 1 -> return num_f(+0)
+    if $abs($ℝ(base)) == 1 -> return nan
+    return num_f(+∞)
+  }
+  assert exponent is ty {sort [#"non-zero", finite] Number}
+  if base < num_f(-0) and exponent is not ty {#"integral Number"} -> return nan
+  return $ApproxPower(base, exponent)
+}
+
+def @sec-numeric-types-number-multiply "Number::multiply" (kind numeric_method params [x : Number, y : Number] -> Number) vars [x, y] {
+  if x is val {nan} or y is val {nan} -> return nan
+  if x is val {num_f(+∞); num_f(-∞)} {
+    if y is val {num_f(+0); num_f(-0)} -> return nan
+    if y > num_f(+0) -> return x
+    return neg x
+  }
+  if y is val {num_f(+∞); num_f(-∞)} {
+    if x is val {num_f(+0); num_f(-0)} -> return nan
+    if x > num_f(+0) -> return y
+    return neg y
+  }
+  if x is val {num_f(-0)} {
+    if y is val {num_f(-0)} or y < num_f(-0) -> return num_f(+0)
+    return num_f(-0)
+  }
+  if y is val {num_f(-0)} {
+    if x < num_f(-0) -> return num_f(+0)
+    return num_f(-0)
+  }
+  if x is val {num_f(+0)} and y < num_f(-0) -> return num_f(-0)
+  if y is val {num_f(+0)} and x < num_f(-0) -> return num_f(-0)
+  return $𝔽($ℝ(x) * $ℝ(y))
+}
+
+def @sec-numeric-types-number-divide "Number::divide" (kind numeric_method params [x : Number, y : Number] -> Number) vars [x, y] {
+  if x is val {nan} or y is val {nan} -> return nan
+  if x is val {num_f(+∞); num_f(-∞)} {
+    if y is val {num_f(+∞); num_f(-∞)} -> return nan
+    if y is val {num_f(+0)} or y > num_f(+0) -> return x
+    return neg x
+  }
+  if y is val {num_f(+∞)} {
+    if x is val {num_f(+0)} or x > num_f(+0) -> return num_f(+0)
+    return num_f(-0)
+  }
+  if y is val {num_f(-∞)} {
+    if x is val {num_f(+0)} or x > num_f(+0) -> return num_f(-0)
+    return num_f(+0)
+  }
+  if x is val {num_f(+0); num_f(-0)} {
+    if y is val {num_f(+0); num_f(-0)} -> return nan
+    if y > num_f(+0) -> return x
+    return neg x
+  }
+  if y is val {num_f(+0)} {
+    if x > num_f(+0) -> return num_f(+∞)
+    return num_f(-∞)
+  }
+  if y is val {num_f(-0)} {
+    if x > num_f(+0) -> return num_f(-∞)
+    return num_f(+∞)
+  }
+  return $𝔽($ℝ(x) / $ℝ(y))
+}
+
+def @sec-numeric-types-number-remainder "Number::remainder" (kind numeric_method params [numerator : Number, denominator : Number] -> Number) vars [numerator, denominator, quotient, truncatedQuotient, remainder] {
+  if numerator is val {nan} or denominator is val {nan} -> return nan
+  if numerator is val {num_f(+∞); num_f(-∞)} -> return nan
+  if denominator is val {num_f(+∞); num_f(-∞)} -> return numerator
+  if denominator is val {num_f(+0); num_f(-0)} -> return nan
+  if numerator is val {num_f(+0); num_f(-0)} -> return numerator
+  assert expr @ph-nonzero-finite-numbers([numerator, denominator])
+  let quotient = $ℝ(numerator) / $ℝ(denominator)
+  let truncatedQuotient = $truncate(quotient)
+  let remainder = $ℝ(numerator) - ($ℝ(denominator) * truncatedQuotient)
+  if remainder == 0 and numerator < num_f(-0) -> return num_f(-0)
+  return $𝔽(remainder)
+}
+
+def @sec-numeric-types-number-add "Number::add" (kind numeric_method params [x : Number, y : Number] -> Number) vars [x, y] {
+  if x is val {nan} or y is val {nan} -> return nan
+  if x is val {num_f(+∞)} and y is val {num_f(-∞)} -> return nan
+  if x is val {num_f(-∞)} and y is val {num_f(+∞)} -> return nan
+  if x is val {num_f(+∞); num_f(-∞)} -> return x
+  if y is val {num_f(+∞); num_f(-∞)} -> return y
+  assert expr @ph-finite-numbers([x, y])
+  if x is val {num_f(-0)} and y is val {num_f(-0)} -> return num_f(-0)
+  return $𝔽($ℝ(x) + $ℝ(y))
+}
+
+def @sec-numeric-types-number-subtract "Number::subtract" (kind numeric_method params [x : Number, y : Number] -> Number) vars [x, y] {
+  return @sec-numeric-types-number-add(x, @sec-numeric-types-number-unaryMinus(y))
+}
+
+def @sec-numeric-types-number-leftShift "Number::leftShift" (kind numeric_method params [x : Number, y : Number] -> #"integral Number") vars [x, y, leftNumber, rightNumber, shiftCount] {
+  let leftNumber = ! @sec-toint32(x)
+  let rightNumber = ! @sec-touint32(y)
+  let shiftCount = $ℝ(rightNumber) modulo 32
+  return $𝔽(@sec-tofixedsizeinteger($ℝ(leftNumber) * 2 ^ shiftCount, ~signed~, 32))
+}
+
+def @sec-numeric-types-number-signedRightShift "Number::signedRightShift" (kind numeric_method params [x : Number, y : Number] -> #"integral Number") vars [x, y, leftNumber, rightNumber, shiftCount] {
+  let leftNumber = ! @sec-toint32(x)
+  let rightNumber = ! @sec-touint32(y)
+  let shiftCount = $ℝ(rightNumber) modulo 32
+  return $𝔽($floor($ℝ(leftNumber) / 2 ^ shiftCount))
+}
+
+def @sec-numeric-types-number-unsignedRightShift "Number::unsignedRightShift" (kind numeric_method params [x : Number, y : Number] -> #"integral Number") vars [x, y, leftNumber, rightNumber, shiftCount] {
+  let leftNumber = ! @sec-touint32(x)
+  let rightNumber = ! @sec-touint32(y)
+  let shiftCount = $ℝ(rightNumber) modulo 32
+  return $𝔽($floor($ℝ(leftNumber) / 2 ^ shiftCount))
+}
+
+def @sec-numeric-types-number-lessThan "Number::lessThan" (kind numeric_method params [x : Number, y : Number] -> Boolean | val(undefined)) vars [x, y] {
+  if x is val {nan} -> return undefined
+  if y is val {nan} -> return undefined
+  if x is val {y} -> return false
+  if x is val {num_f(+0)} and y is val {num_f(-0)} -> return false
+  if x is val {num_f(-0)} and y is val {num_f(+0)} -> return false
+  if x is val {num_f(+∞)} -> return false
+  if y is val {num_f(+∞)} -> return true
+  if y is val {num_f(-∞)} -> return false
+  if x is val {num_f(-∞)} -> return true
+  assert expr @ph-finite-numbers([x, y])
+  if $ℝ(x) < $ℝ(y) -> return true
+  return false
+}
+
+def @sec-numeric-types-number-equal "Number::equal" (kind numeric_method params [x : Number, y : Number] -> Boolean) vars [x, y] {
+  if x is val {nan} -> return false
+  if y is val {nan} -> return false
+  if x is val {y} -> return true
+  if x is val {num_f(+0)} and y is val {num_f(-0)} -> return true
+  if x is val {num_f(-0)} and y is val {num_f(+0)} -> return true
+  return false
+}
+
+def @sec-numeric-types-number-sameValue "Number::sameValue" (kind numeric_method params [x : Number, y : Number] -> Boolean) vars [x, y] {
+  if x is val {nan} and y is val {nan} -> return true
+  if x is val {num_f(+0)} and y is val {num_f(-0)} -> return false
+  if x is val {num_f(-0)} and y is val {num_f(+0)} -> return false
+  if x is val {y} -> return true
+  return false
+}
+
+def @sec-numeric-types-number-sameValueZero "Number::sameValueZero" (kind numeric_method params [x : Number, y : Number] -> Boolean) vars [x, y] {
+  if x is val {nan} and y is val {nan} -> return true
+  if x is val {num_f(+0)} and y is val {num_f(-0)} -> return true
+  if x is val {num_f(-0)} and y is val {num_f(+0)} -> return true
+  if x is val {y} -> return true
+  return false
+}
+
+def @sec-numberbitwiseop "NumberBitwiseOp" (kind ao params [#"op" : doc "&, ^, or |", x : Number, y : Number] -> #"integral Number") vars [#"op", x, y, leftNumber, rightNumber, leftBits, rightBits, result] {
+  let leftNumber = ! @sec-toint32(x)
+  let rightNumber = ! @sec-toint32(y)
+  let leftBits = @ph-bit-string-32($ℝ(leftNumber))
+  let rightBits = @ph-bit-string-32($ℝ(rightNumber))
+  if #"op" is val {code "&"} {
+    let result = $Bitwise(data choice 0, ?leftBits, ?rightBits)
+  }
+  else_if #"op" is val {code "^"} {
+    let result = $Bitwise(data choice 1, ?leftBits, ?rightBits)
+  }
+  else {
+    assert #"op" is val {code "|"}
+    let result = $Bitwise(data choice 2, ?leftBits, ?rightBits)
+  }
+  return $NumberFor(@ph-integer-of-bit-string-32(?result))
+}
+
+def @sec-numeric-types-number-bitwiseAND "Number::bitwiseAND" (kind numeric_method params [x : Number, y : Number] -> #"integral Number") vars [x, y] {
+  return @sec-numberbitwiseop(code "&", x, y)
+}
+
+def @sec-numeric-types-number-bitwiseXOR "Number::bitwiseXOR" (kind numeric_method params [x : Number, y : Number] -> #"integral Number") vars [x, y] {
+  return @sec-numberbitwiseop(code "^", x, y)
+}
+
+def @sec-numeric-types-number-bitwiseOR "Number::bitwiseOR" (kind numeric_method params [x : Number, y : Number] -> #"integral Number") vars [x, y] {
+  return @sec-numberbitwiseop(code "|", x, y)
+}
+
+def @sec-numeric-types-number-tostring "Number::toString" (kind numeric_method params [x : Number, radix : interval integer [2, 36]] -> String) vars [x, radix, n, k, s, exponentSign] {
+  if x is val {nan} -> return "NaN"
+  if x is val {num_f(+0); num_f(-0)} -> return "0"
+  if x < num_f(-0) -> return $"string-concatenation"("-", @sec-numeric-types-number-tostring(neg x, radix))
+  if x is val {num_f(+∞)} -> return "Infinity"
+  let n = $NumberDigitsExponent(x, radix)
+  let k = $NumberDigitsCount(x, radix)
+  let s = $NumberDigitsSignificand(x, radix)
+  if radix != 10 or n sat $InInterval(math(-5), 21) {
+    if n >= k {
+      return $"string-concatenation"(@ph-code-units-of(@ph-k-digits(?k, @ph-representation-radix(?s, ?radix))), @ph-occurrences-of(n - k, $CodeUnit(cu(48, "0030", "DIGIT ZERO"))))
+    }
+    if n > 0 {
+      return $"string-concatenation"(@ph-code-units-of(@ph-most-significant-k-digits(?n, @ph-representation-radix(?s, ?radix))), $CodeUnit(cu(46, "002E", "FULL STOP")), @ph-code-units-of(@ph-remaining-k-digits(k - n, @ph-representation-radix(?s, ?radix))))
+    }
+    assert n <= 0
+    return $"string-concatenation"($CodeUnit(cu(48, "0030", "DIGIT ZERO")), $CodeUnit(cu(46, "002E", "FULL STOP")), @ph-occurrences-of(neg n, $CodeUnit(cu(48, "0030", "DIGIT ZERO"))), @ph-code-units-of(@ph-k-digits(?k, @ph-representation-radix(?s, ?radix))))
+  }
+  note "In this case, the input will be represented using scientific E notation, such as `1.2e+3`."
+  assert radix is val {10}
+  if n < 0 {
+    let exponentSign = $CodeUnit(cu(45, "002D", "HYPHEN-MINUS"))
+  }
+  else {
+    let exponentSign = $CodeUnit(cu(43, "002B", "PLUS SIGN"))
+  }
+  if k == 1 {
+    return $"string-concatenation"(@ph-code-unit-of(@ph-single-digit(?s)), $CodeUnit(cu(101, "0065", "LATIN SMALL LETTER E")), exponentSign, @ph-code-units-of(@ph-decimal-representation($abs(n - 1))))
+  }
+  return $"string-concatenation"(@ph-code-unit-of(@ph-most-significant-digit(@ph-decimal-representation(?s))), $CodeUnit(cu(46, "002E", "FULL STOP")), @ph-code-units-of(@ph-remaining-k-digits(k - 1, @ph-decimal-representation(?s))), $CodeUnit(cu(101, "0065", "LATIN SMALL LETTER E")), exponentSign, @ph-code-units-of(@ph-decimal-representation($abs(n - 1))))
+}
+
+def @sec-numeric-types-number-tostring#1 "Number::toString.2" (kind numeric_method params [x : Number, radix : interval integer [2, 36]] -> String) vars [x, radix, n, k, s] {
+  perform $""()
+}
+
+def @sec-numeric-types-bigint-unaryMinus "BigInt::unaryMinus" (kind numeric_method params [bigint : BigInt] -> BigInt) vars [bigint] {
+  if bigint == num_z(0) -> return num_z(0)
+  return neg bigint
+}
+
+def @sec-numeric-types-bigint-bitwiseNOT "BigInt::bitwiseNOT" (kind numeric_method params [bigint : BigInt] -> BigInt) vars [bigint] {
+  return neg bigint - num_z(1)
+}
+
+def @sec-numeric-types-bigint-exponentiate "BigInt::exponentiate" (kind numeric_method params [base : BigInt, exponent : BigInt] -> completion<BigInt> | #"throw completion") vars [base, exponent] {
+  if exponent < num_z(0) -> throw @ph-new-error([[RangeError]])
+  if base == num_z(0) and exponent == num_z(0) -> return num_z(1)
+  if $BigIntTooLarge("exponentiate", base, exponent) is val {true} -> throw @ph-new-error([[RangeError]])
+  return @ph-raised-to-the-power(?base, ?exponent)
+}
+
+def @sec-numeric-types-bigint-multiply "BigInt::multiply" (kind numeric_method params [x : BigInt, y : BigInt] -> BigInt) vars [x, y] {
+  if $BigIntTooLarge("multiply", x, y) is val {true} -> throw @ph-new-error([[RangeError]])
+  return x * y
+}
+
+def @sec-numeric-types-bigint-divide "BigInt::divide" (kind numeric_method params [x : BigInt, y : BigInt] -> completion<BigInt> | #"throw completion") vars [x, y, quotient] {
+  if y == num_z(0) -> throw @ph-new-error([[RangeError]])
+  let quotient = $ℝ(x) / $ℝ(y)
+  return $ℤ($truncate(quotient))
+}
+
+def @sec-numeric-types-bigint-remainder "BigInt::remainder" (kind numeric_method params [numerator : BigInt, denominator : BigInt] -> completion<BigInt> | #"throw completion") vars [numerator, denominator, quotient, truncatedQuotient] {
+  if denominator == num_z(0) -> throw @ph-new-error([[RangeError]])
+  if numerator == num_z(0) -> return num_z(0)
+  let quotient = $ℝ(numerator) / $ℝ(denominator)
+  let truncatedQuotient = $ℤ($truncate(quotient))
+  return numerator - (denominator * truncatedQuotient)
+}
+
+def @sec-numeric-types-bigint-add "BigInt::add" (kind numeric_method params [x : BigInt, y : BigInt] -> BigInt) vars [x, y] {
+  if $BigIntTooLarge("add", x, y) is val {true} -> throw @ph-new-error([[RangeError]])
+  return x + y
+}
+
+def @sec-numeric-types-bigint-subtract "BigInt::subtract" (kind numeric_method params [x : BigInt, y : BigInt] -> BigInt) vars [x, y] {
+  if $BigIntTooLarge("subtract", x, y) is val {true} -> throw @ph-new-error([[RangeError]])
+  return x - y
+}
+
+def @sec-numeric-types-bigint-leftShift "BigInt::leftShift" (kind numeric_method params [x : BigInt, y : BigInt] -> BigInt) vars [x, y, bound] {
+  if y < num_z(0) {
+    if x is val {num_z(0)} -> return num_z(0)
+    let bound = 4 * ($DecimalExponent($abs($ℝ(x))) + 1)
+    if neg $ℝ(y) >= bound {
+      if x > num_z(0) -> return num_z(0)
+      return num_z(-1)
+    }
+    return $ℤ($floor($ℝ(x) / 2 ^ neg $ℝ(y)))
+  }
+  if x is val {num_z(0)} or y is val {num_z(0)} -> return x
+  if $BigIntTooLarge("leftShift", x, y) is val {true} -> throw @ph-new-error([[RangeError]])
+  return x * num_z(2) ^ y
+}
+
+def @sec-numeric-types-bigint-signedRightShift "BigInt::signedRightShift" (kind numeric_method params [x : BigInt, y : BigInt] -> BigInt) vars [x, y] {
+  return @sec-numeric-types-bigint-leftShift(x, neg y)
+}
+
+def @sec-numeric-types-bigint-unsignedRightShift "BigInt::unsignedRightShift" (kind numeric_method params [x : BigInt, y : BigInt] -> #"throw completion") vars [x, y] {
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-numeric-types-bigint-lessThan "BigInt::lessThan" (kind numeric_method params [x : BigInt, y : BigInt] -> Boolean) vars [x, y] {
+  if $ℝ(x) < $ℝ(y) -> return true
+  return false
+}
+
+def @sec-numeric-types-bigint-equal "BigInt::equal" (kind numeric_method params [x : BigInt, y : BigInt] -> Boolean) vars [x, y] {
+  if $ℝ(x) == $ℝ(y) -> return true
+  return false
+}
+
+def @sec-bigintbitwiseop "BigIntBitwiseOp" (kind ao params [#"op" : doc "&, ^, or |", x : BigInt, y : BigInt] -> BigInt) vars [#"op", x, y, result, shift, xBit, yBit, resultBit, signBit] {
+  set var x = $ℝ(x)
+  set var y = $ℝ(y)
+  let result = 0
+  let shift = 0
+  repeat_until (x == 0 or x == math(-1)) and (y == 0 or y == math(-1)) {
+    let xBit = x modulo 2
+    let yBit = y modulo 2
+    if #"op" is val {code "&"} {
+      let resultBit = $Bitwise(data choice 0, ?xBit, ?yBit)
+    }
+    else_if #"op" is val {code "^"} {
+      let resultBit = $Bitwise(data choice 1, ?xBit, ?yBit)
+    }
+    else {
+      assert #"op" is val {code "|"}
+      let resultBit = $Bitwise(data choice 2, ?xBit, ?yBit)
+    }
+    set var result = result + 2 ^ shift * resultBit
+    set var shift = shift + 1
+    set var x = (x - xBit) / 2
+    set var y = (y - yBit) / 2
+  }
+  if #"op" is val {code "&"} {
+    let signBit = $Bitwise(data choice 0, (x modulo 2), (y modulo 2))
+  }
+  else_if #"op" is val {code "^"} {
+    let signBit = $Bitwise(data choice 1, (x modulo 2), (y modulo 2))
+  }
+  else {
+    assert #"op" is val {code "|"}
+    let signBit = $Bitwise(data choice 2, (x modulo 2), (y modulo 2))
+  }
+  if signBit != 0 {
+    set var result = result - 2 ^ shift
+    note "This extends the sign."
+  }
+  return $BigIntFor(?result)
+}
+
+def @sec-numeric-types-bigint-bitwiseAND "BigInt::bitwiseAND" (kind numeric_method params [x : BigInt, y : BigInt] -> BigInt) vars [x, y] {
+  return @sec-bigintbitwiseop(code "&", x, y)
+}
+
+def @sec-numeric-types-bigint-bitwiseXOR "BigInt::bitwiseXOR" (kind numeric_method params [x : BigInt, y : BigInt] -> BigInt) vars [x, y] {
+  return @sec-bigintbitwiseop(code "^", x, y)
+}
+
+def @sec-numeric-types-bigint-bitwiseOR "BigInt::bitwiseOR" (kind numeric_method params [x : BigInt, y : BigInt] -> BigInt) vars [x, y] {
+  return @sec-bigintbitwiseop(code "|", x, y)
+}
+
+def @sec-numeric-types-bigint-tostring "BigInt::toString" (kind numeric_method params [x : BigInt, radix : interval integer [2, 36]] -> String) vars [x, radix] {
+  if x < num_z(0) -> return $"string-concatenation"("-", @sec-numeric-types-bigint-tostring(neg x, radix))
+  return $StrOfUnits(@ph-representation-radix(?x, ?radix))
+}
+
+def @sec-normalcompletion "NormalCompletion" (kind ao params [value : butnot(pred(sat @ph-type-anything()), #"Completion Record")] -> #"normal completion") vars [value] {
+  return record #"Completion Record" { [[Type]]: ~normal~, [[Value]]: value, [[Target]]: ~empty~ }
+}
+
+def @sec-throwcompletion "ThrowCompletion" (kind ao params [value : #"ECMAScript language value"] -> #"throw completion") vars [value] {
+  return record #"Completion Record" { [[Type]]: ~throw~, [[Value]]: value, [[Target]]: ~empty~ }
+}
+
+def @sec-returncompletion "ReturnCompletion" (kind ao params [value : #"ECMAScript language value"] -> #"return completion") vars [value] {
+  return record #"Completion Record" { [[Type]]: ~return~, [[Value]]: value, [[Target]]: ~empty~ }
+}
+
+def @sec-updateempty "UpdateEmpty" (kind ao params [completionRecord : #"Completion Record", value : butnot(pred(sat @ph-type-anything()), #"Completion Record")] -> #"Completion Record") vars [completionRecord, value] {
+  assert_if completionRecord is ty {#"return completion"; #"throw completion"} then completionRecord[[Value]] is not val {~empty~}
+  if completionRecord[[Value]] is not val {~empty~} -> return ? completionRecord
+  return record #"Completion Record" { [[Type]]: completionRecord[[Type]], [[Value]]: value, [[Target]]: completionRecord[[Target]] }
+}
+
+def @sec-ispropertyreference "IsPropertyReference" (kind ao params [refRecord : #"Reference Record"] -> Boolean) vars [refRecord] {
+  if refRecord[[Base]] is val {~unresolvable~} -> return false
+  if refRecord[[Base]] is ty {#"Environment Record"} -> return false
+  return true
+}
+
+def @sec-isunresolvablereference "IsUnresolvableReference" (kind ao params [refRecord : #"Reference Record"] -> Boolean) vars [refRecord] {
+  if refRecord[[Base]] is val {~unresolvable~} -> return true
+  return false
+}
+
+def @sec-issuperreference "IsSuperReference" (kind ao params [refRecord : #"Reference Record"] -> Boolean) vars [refRecord] {
+  if refRecord[[ThisValue]] is val {~empty~} -> return false
+  return true
+}
+
+def @sec-isprivatereference "IsPrivateReference" (kind ao params [refRecord : #"Reference Record"] -> Boolean) vars [refRecord] {
+  if refRecord[[ReferencedName]] is ty {#"Private Name"} -> return true
+  return false
+}
+
+def @sec-getvalue "GetValue" (kind ao params [refRecord : #"Reference Record" | #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"abrupt completion") vars [refRecord, baseObj, base] {
+  if refRecord is not ty {#"Reference Record"} -> return refRecord
+  if @sec-isunresolvablereference(refRecord) is val {true} -> throw @ph-new-error([[ReferenceError]])
+  if @sec-ispropertyreference(refRecord) is val {true} {
+    let baseObj = ? @sec-toobject(refRecord[[Base]])
+    if @sec-isprivatereference(refRecord) is val {true} {
+      return ? @sec-privateget(baseObj, refRecord[[ReferencedName]])
+    }
+    if refRecord[[ReferencedName]] is not ty {#"property key"} {
+      set field refRecord[[ReferencedName]] = ? @sec-topropertykey(refRecord[[ReferencedName]])
+    }
+    return ? baseObj[[Get]](refRecord[[ReferencedName]], @sec-getthisvalue(refRecord))
+  }
+  let base = refRecord[[Base]]
+  assert base is ty {#"Environment Record"}
+  return ? base.GetBindingValue(refRecord[[ReferencedName]], refRecord[[Strict]])
+}
+
+def @sec-putvalue "PutValue" (kind ao params [refRecord : #"Reference Record" | #"ECMAScript language value", value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"abrupt completion") vars [refRecord, value, globalObj, baseObj, succeeded, base] {
+  if refRecord is not ty {#"Reference Record"} -> throw @ph-new-error([[ReferenceError]])
+  if @sec-isunresolvablereference(refRecord) is val {true} {
+    if refRecord[[Strict]] is val {true} -> throw @ph-new-error([[ReferenceError]])
+    let globalObj = @sec-getglobalobject()
+    perform ? @sec-set-o-p-v-throw(globalObj, refRecord[[ReferencedName]], value, false)
+    return ~unused~
+  }
+  if @sec-ispropertyreference(refRecord) is val {true} {
+    let baseObj = ? @sec-toobject(refRecord[[Base]])
+    if @sec-isprivatereference(refRecord) is val {true} {
+      return ? @sec-privateset(baseObj, refRecord[[ReferencedName]], value)
+    }
+    if refRecord[[ReferencedName]] is not ty {#"property key"} {
+      set field refRecord[[ReferencedName]] = ? @sec-topropertykey(refRecord[[ReferencedName]])
+    }
+    let succeeded = ? baseObj[[Set]](refRecord[[ReferencedName]], value, @sec-getthisvalue(refRecord))
+    if succeeded is val {false} and refRecord[[Strict]] is val {true} -> throw @ph-new-error([[TypeError]])
+    return ~unused~
+  }
+  let base = refRecord[[Base]]
+  assert base is ty {#"Environment Record"}
+  return ? base.SetMutableBinding(refRecord[[ReferencedName]], value, refRecord[[Strict]])
+}
+
+def @sec-getthisvalue "GetThisValue" (kind ao params [refRecord : #"Reference Record"] -> #"ECMAScript language value") vars [refRecord] {
+  assert @sec-ispropertyreference(refRecord) is val {true}
+  if @sec-issuperreference(refRecord) is val {true} -> return refRecord[[ThisValue]]
+  return refRecord[[Base]]
+}
+
+def @sec-initializereferencedbinding "InitializeReferencedBinding" (kind ao params [refRecord : #"Reference Record", value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"abrupt completion") vars [refRecord, value, base] {
+  assert @sec-isunresolvablereference(refRecord) is val {false}
+  let base = refRecord[[Base]]
+  assert base is ty {#"Environment Record"}
+  return ? base.InitializeBinding(refRecord[[ReferencedName]], value)
+}
+
+def @sec-makeprivatereference "MakePrivateReference" (kind ao params [baseValue : #"ECMAScript language value", privateIdentifier : String] -> #"Reference Record") vars [baseValue, privateIdentifier, privateEnv, privateName] {
+  let privateEnv = $Component($Running(), [[PrivateEnvironment]])
+  assert privateEnv is not val {null}
+  let privateName = @sec-resolve-private-identifier(privateEnv, privateIdentifier)
+  return record #"Reference Record" { [[Base]]: baseValue, [[ReferencedName]]: privateName, [[Strict]]: true, [[ThisValue]]: ~empty~ }
+}
+
+def @sec-isaccessordescriptor "IsAccessorDescriptor" (kind ao params [propertyDesc : #"Property Descriptor"] -> Boolean) vars [propertyDesc] {
+  if propertyDesc sat $HasField([[Getter]]) -> return true
+  if propertyDesc sat $HasField([[Setter]]) -> return true
+  return false
+}
+
+def @sec-isdatadescriptor "IsDataDescriptor" (kind ao params [propertyDesc : #"Property Descriptor"] -> Boolean) vars [propertyDesc] {
+  if propertyDesc sat $HasField([[Value]]) -> return true
+  if propertyDesc sat $HasField([[Writable]]) -> return true
+  return false
+}
+
+def @sec-isgenericdescriptor "IsGenericDescriptor" (kind ao params [propertyDesc : #"Property Descriptor"] -> Boolean) vars [propertyDesc] {
+  if @sec-isaccessordescriptor(propertyDesc) is val {true} -> return false
+  if @sec-isdatadescriptor(propertyDesc) is val {true} -> return false
+  return true
+}
+
+def @sec-frompropertydescriptor "FromPropertyDescriptor" (kind ao params [propertyDesc : #"Property Descriptor" | val(undefined)] -> Object | val(undefined)) vars [propertyDesc, #"obj"] {
+  if propertyDesc is val {undefined} -> return undefined
+  let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  assert #"obj" is ty {pred(sat @spec-copy-1(data choice 1, data choice 0))}
+  if propertyDesc sat $HasField([[Value]]) {
+    perform ! @sec-createdatapropertyorthrow(#"obj", "value", propertyDesc[[Value]])
+  }
+  if propertyDesc sat $HasField([[Writable]]) {
+    perform ! @sec-createdatapropertyorthrow(#"obj", "writable", propertyDesc[[Writable]])
+  }
+  if propertyDesc sat $HasField([[Getter]]) {
+    perform ! @sec-createdatapropertyorthrow(#"obj", "get", propertyDesc[[Getter]])
+  }
+  if propertyDesc sat $HasField([[Setter]]) {
+    perform ! @sec-createdatapropertyorthrow(#"obj", "set", propertyDesc[[Setter]])
+  }
+  if propertyDesc sat $HasField([[Enumerable]]) {
+    perform ! @sec-createdatapropertyorthrow(#"obj", "enumerable", propertyDesc[[Enumerable]])
+  }
+  if propertyDesc sat $HasField([[Configurable]]) {
+    perform ! @sec-createdatapropertyorthrow(#"obj", "configurable", propertyDesc[[Configurable]])
+  }
+  return #"obj"
+}
+
+def @sec-topropertydescriptor "ToPropertyDescriptor" (kind ao params [#"obj" : #"ECMAScript language value"] -> completion<#"Property Descriptor"> | #"throw completion") vars [#"obj", propertyDesc, hasEnumerable, enumerable, hasConfigurable, configurable, hasValue, value, hasWritable, writable, hasGet, getter, hasSet, setter] {
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let propertyDesc = $NewRecord(data sort #"Property Descriptor")
+  let hasEnumerable = ? @sec-hasproperty(#"obj", "enumerable")
+  if hasEnumerable is val {true} {
+    let enumerable = @sec-toboolean(? @sec-get-o-p(#"obj", "enumerable"))
+    set field propertyDesc[[Enumerable]] = enumerable
+  }
+  let hasConfigurable = ? @sec-hasproperty(#"obj", "configurable")
+  if hasConfigurable is val {true} {
+    let configurable = @sec-toboolean(? @sec-get-o-p(#"obj", "configurable"))
+    set field propertyDesc[[Configurable]] = configurable
+  }
+  let hasValue = ? @sec-hasproperty(#"obj", "value")
+  if hasValue is val {true} {
+    let value = ? @sec-get-o-p(#"obj", "value")
+    set field propertyDesc[[Value]] = value
+  }
+  let hasWritable = ? @sec-hasproperty(#"obj", "writable")
+  if hasWritable is val {true} {
+    let writable = @sec-toboolean(? @sec-get-o-p(#"obj", "writable"))
+    set field propertyDesc[[Writable]] = writable
+  }
+  let hasGet = ? @sec-hasproperty(#"obj", "get")
+  if hasGet is val {true} {
+    let getter = ? @sec-get-o-p(#"obj", "get")
+    if @sec-iscallable(getter) is val {false} and getter is not val {undefined} -> throw @ph-new-error([[TypeError]])
+    set field propertyDesc[[Getter]] = getter
+  }
+  let hasSet = ? @sec-hasproperty(#"obj", "set")
+  if hasSet is val {true} {
+    let setter = ? @sec-get-o-p(#"obj", "set")
+    if @sec-iscallable(setter) is val {false} and setter is not val {undefined} -> throw @ph-new-error([[TypeError]])
+    set field propertyDesc[[Setter]] = setter
+  }
+  if propertyDesc sat $HasField([[Getter]]) or propertyDesc sat $HasField([[Setter]]) {
+    if propertyDesc sat $HasField([[Value]]) or propertyDesc sat $HasField([[Writable]]) -> throw @ph-new-error([[TypeError]])
+  }
+  return propertyDesc
+}
+
+def @sec-completepropertydescriptor "CompletePropertyDescriptor" (kind ao params [propertyDesc : #"Property Descriptor"] -> val(~unused~)) vars [propertyDesc, like] {
+  let like = record Record { [[Value]]: undefined, [[Writable]]: false, [[Getter]]: undefined, [[Setter]]: undefined, [[Enumerable]]: false, [[Configurable]]: false }
+  if @sec-isgenericdescriptor(propertyDesc) is val {true} or @sec-isdatadescriptor(propertyDesc) is val {true} {
+    if propertyDesc fails $HasField([[Value]]) -> set field propertyDesc[[Value]] = like[[Value]]
+    if propertyDesc fails $HasField([[Writable]]) -> set field propertyDesc[[Writable]] = like[[Writable]]
+  }
+  else {
+    if propertyDesc fails $HasField([[Getter]]) -> set field propertyDesc[[Getter]] = like[[Getter]]
+    if propertyDesc fails $HasField([[Setter]]) -> set field propertyDesc[[Setter]] = like[[Setter]]
+  }
+  if propertyDesc fails $HasField([[Enumerable]]) -> set field propertyDesc[[Enumerable]] = like[[Enumerable]]
+  if propertyDesc fails $HasField([[Configurable]]) -> set field propertyDesc[[Configurable]] = like[[Configurable]]
+  return ~unused~
+}
+
+def @sec-createbytedatablock "CreateByteDataBlock" (kind ao params [size : sort [#"non-negative"] integer] -> completion<#"Data Block"> | #"throw completion") vars [size, dataBlock] {
+  if size > 2 ^ 53 - 1 -> throw @ph-new-error([[RangeError]])
+  if $CanAllocate(size, false) is val {false} -> throw @ph-new-error([[RangeError]])
+  let dataBlock = @ph-new-data-block(?size)
+  perform $SetAllBytes(dataBlock, 0)
+  return dataBlock
+}
+
+def @sec-createsharedbytedatablock "CreateSharedByteDataBlock" (kind ao params [size : sort [#"non-negative"] integer] -> completion<#"Shared Data Block"> | #"throw completion") vars [size, dataBlock, agentRecord, execution, eventsRecord, zero, index] {
+  if $CanAllocate(size, true) is val {false} -> throw @ph-new-error([[RangeError]])
+  let dataBlock = $DesignateShared(@ph-new-data-block(?size))
+  let agentRecord = $AgentRecord()
+  let execution = agentRecord[[CandidateExecution]]
+  let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+  let zero = [0]
+  for_index index of dataBlock {
+    perform $Append(record WriteSharedMemory { [[Order]]: ~init~, [[NoTear]]: true, [[Block]]: dataBlock, [[ByteIndex]]: index, [[ElementSize]]: 1, [[Payload]]: zero }, eventsRecord[[EventList]])
+  }
+  return dataBlock
+}
+
+def @sec-copydatablockbytes "CopyDataBlockBytes" (kind ao params [toBlock : #"Data Block" | #"Shared Data Block", toIndex : sort [#"non-negative"] integer, fromBlock : #"Data Block" | #"Shared Data Block", fromIndex : sort [#"non-negative"] integer, count : sort [#"non-negative"] integer] -> val(~unused~)) vars [toBlock, toIndex, fromBlock, fromIndex, count, fromSize, toSize, agentRecord, execution, eventsRecord, bytes, readEvent] {
+  assert fromBlock is not val {toBlock}
+  let fromSize = $Count(data choice 3, ?fromBlock)
+  assert fromIndex + count <= fromSize
+  let toSize = $Count(data choice 3, ?toBlock)
+  assert toIndex + count <= toSize
+  repeat_while count > 0 {
+    if fromBlock is ty {#"Shared Data Block"} {
+      let agentRecord = $AgentRecord()
+      let execution = agentRecord[[CandidateExecution]]
+      let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+      if $ListLen(execution[[EventsRecords]]) is val {1} {
+        let bytes = @formal-singleagentreadbytes(execution, eventsRecord, fromBlock, fromIndex, 1)
+      }
+      else {
+        if $EnteredCriticalSections() sat $IsEmpty() -> perform @formal-agent-interleave()
+        let bytes = @formal-choosesharedbytes(execution, eventsRecord, fromBlock, fromIndex, 1)
+      }
+      note "In implementations, _bytes_ is the result of a non-atomic read instruction on the underlying hardware. The nondeterminism is a semantic prescription of the memory model to describe observable behaviour of hardware with weak consistency."
+      let readEvent = record ReadSharedMemory { [[Order]]: ~unordered~, [[NoTear]]: true, [[Block]]: fromBlock, [[ByteIndex]]: fromIndex, [[ElementSize]]: 1 }
+      perform $Append(?readEvent, eventsRecord[[EventList]])
+      perform $Append(record #"Chosen Value Record" { [[Event]]: readEvent, [[ChosenValue]]: bytes }, execution[[ChosenValues]])
+      if toBlock is ty {#"Shared Data Block"} {
+        perform $Append(record WriteSharedMemory { [[Order]]: ~unordered~, [[NoTear]]: true, [[Block]]: toBlock, [[ByteIndex]]: toIndex, [[ElementSize]]: 1, [[Payload]]: bytes }, eventsRecord[[EventList]])
+      }
+      else {
+        set expr toBlock[toIndex] = bytes[0]
+      }
+    }
+    else {
+      assert toBlock is not ty {#"Shared Data Block"}
+      set expr toBlock[toIndex] = fromBlock[fromIndex]
+    }
+    set var toIndex = toIndex + 1
+    set var fromIndex = fromIndex + 1
+    set var count = count - 1
+  }
+  return ~unused~
+}
+

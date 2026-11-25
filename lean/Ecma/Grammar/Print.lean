@@ -151,15 +151,4 @@ def Rule.render (sp : Bool) (r : Rule) : List String :=
     | .alts as => as.map fun a => "  " ++ a.renderLabeled sp
     | .oneOf rows => rows.map fun row => "  " ++ " ".intercalate (row.map (Terminal.render sp))
 
-/-- A block's text exactly as spec.html has it between its tags: a newline,
-its rules spelled and indented by `indent`, a blank line between them, a
-formatter comment before those of `fmtIgnore`, and the closing tag's
-indentation. -/
-def Block.printExact (b : Block) : String :=
-  let ind := "".pushn ' ' b.indent
-  let rule := fun (r : Rule) (k : Nat) =>
-    (if b.fmtIgnore.contains k then ind ++ "// emu-format ignore\n" else "") ++
-    String.join ((r.render true).map fun l => ind ++ l ++ "\n")
-  "\n" ++ "\n".intercalate (b.rules.zipIdx.map fun (r, k) => rule r k) ++ "".pushn ' ' (b.indent - 2)
-
 end Ecma.Grammar

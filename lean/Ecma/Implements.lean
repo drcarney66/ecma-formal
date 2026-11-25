@@ -18,9 +18,7 @@ values obey the model's laws, its host obeys the host's laws, and each transitio
 the specification's machine reaches is some transitions of that machine. Its every run is then a run of the
 specification's machine.
 
-Both machines run under the readings of the errata (`rd`) and whether Asserts are checked, and the statement is of
-every `rd`. A definition reading, the overlay's one reading of prose steps, is no choice: the program's code holds
-its steps (`Ins.reading`), and `rd` is asked only at an erratum.
+Both machines run under whether Asserts are checked.
 -/
 
 namespace Ecma
@@ -33,17 +31,17 @@ none (sec-conformance: an implementation "may provide additional types, values, 
 functions beyond those described in this specification"). -/
 def Spec.program (extras : AlgId → Option Alg) : Prog' := Prog'.of (Spec.src.expanded extras)
 
-/-- An implementation over the model `M`: its own algorithms, its host, and its transition under the errata's
-readings and whether Asserts are checked. A transition may take many of the specification's steps at once, or
+/-- An implementation over the model `M`: its own algorithms, its host, and its transition under
+whether Asserts are checked. A transition may take many of the specification's steps at once, or
 compute one differently. -/
 structure Implementation (M : Model) where
   extras : AlgId → Option Alg
   host : Host M
-  step : (ErratumId → Reading) → Bool → Cfg M → Out M
+  step : Bool → Cfg M → Out M
 
 /-- The specification's machine for `I`: the specification's program with `I`'s algorithms, and `I`'s host. -/
-def Implementation.spec (I : Implementation M) (rd : ErratumId → Reading) (chk : Bool) : Ctx M :=
-  Ctx.spec (Spec.program I.extras) I.host rd chk
+def Implementation.spec (I : Implementation M) (chk : Bool) : Ctx M :=
+  Ctx.spec (Spec.program I.extras) I.host chk
 
 /-- The configurations the machine `X` reaches: from a call in a state with no suspended execution context, by its
 transitions, and by a further call from the state a run ended in, whatever else of that state the host changed
@@ -55,10 +53,10 @@ inductive Reached (X : Ctx M) : Cfg M → Prop where
       Reached X c → Ends X c (.ok v s) → s'.frames = s.frames → Reached X (start s' k)
 
 /-- A run of `I` from `c` that ends with `f`. -/
-inductive Implementation.Runs (I : Implementation M) (rd : ErratumId → Reading) (chk : Bool) :
+inductive Implementation.Runs (I : Implementation M) (chk : Bool) :
     Cfg M → Final M → Prop where
-  | ends {c : Cfg M} {f : Final M} : I.step rd chk c = .inr f → I.Runs rd chk c f
-  | step {c c' : Cfg M} {f : Final M} : I.step rd chk c = .inl c' → I.Runs rd chk c' f → I.Runs rd chk c f
+  | ends {c : Cfg M} {f : Final M} : I.step chk c = .inr f → I.Runs chk c f
+  | step {c c' : Cfg M} {f : Final M} : I.step chk c = .inl c' → I.Runs chk c' f → I.Runs chk c f
 
 /-- `I` implements the specification. -/
 structure Implements (I : Implementation M) : Prop where
@@ -69,9 +67,9 @@ structure Implements (I : Implementation M) : Prop where
   /-- each transition it takes from a configuration the specification's machine reaches is some transitions of
   that machine, and where it ends, that machine's run ends so; or it gives up at a limit of its own (it never
   answers otherwise than the specification) -/
-  step : ∀ rd chk c, Reached (I.spec rd chk) c →
-    match I.step rd chk c with
-    | .inl c' => Steps (I.spec rd chk) c c'
-    | .inr f => Runs (I.spec rd chk) c f ∨ f = .stop .implLimit
+  step : ∀ chk c, Reached (I.spec chk) c →
+    match I.step chk c with
+    | .inl c' => Steps (I.spec chk) c c'
+    | .inr f => Runs (I.spec chk) c f ∨ f = .stop .implLimit
 
 end Ecma

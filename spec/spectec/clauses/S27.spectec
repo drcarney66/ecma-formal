@@ -1,0 +1,2188 @@
+-- ECMA-262 SpecTec Clauses: S27
+
+def @sec-%iteratorhelperprototype%.next "%IteratorHelperPrototype%.next" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-generatorresume(this_value, undefined, "Iterator Helper")
+}
+
+def @sec-%iteratorhelperprototype%.return "%IteratorHelperPrototype%.return" (kind builtin params []) vars [#"this value", NewTarget, #"obj", #"completion"] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[UnderlyingIterators]])
+  assert #"obj" sat $HasSlot([[GeneratorState]])
+  if #"obj"[[GeneratorState]] is val {~suspended-start~} {
+    set field #"obj"[[GeneratorState]] = ~completed~
+    note "Once a generator enters the completed state it never leaves it and its associated execution context is never resumed. Any execution state associated with _obj_ can be discarded at this point."
+    perform ? @sec-iteratorcloseall(#"obj"[[UnderlyingIterators]], @sec-normalcompletion(~unused~))
+    return @sec-createiterresultobject(undefined, true)
+  }
+  let #"completion" = @sec-returncompletion(undefined)
+  return ? @sec-generatorresumeabrupt(#"obj", #"completion", "Iterator Helper")
+}
+
+def @sec-iterator "Iterator" (kind builtin params []) vars [#"this value", NewTarget] {
+  if new_target is val {undefined; $ActiveFunction()} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-ordinarycreatefromconstructor(new_target, "%Iterator.prototype%")
+}
+
+def @sec-iterator.concat "Iterator.concat" (kind builtin params [items rest]) vars [#"this value", NewTarget, items, iterables, item, #"method", #"closure", iterable, iterator, iteratorRecord, innerAlive, innerValue, #"completion", gen] {
+  let iterables = $ListNew()
+  for_each item in items {
+    if item is not ty {Object} -> throw @ph-new-error([[TypeError]])
+    let #"method" = ? @sec-getmethod(item, $WellKnownSymbol("Symbol.iterator"))
+    if #"method" is val {undefined} -> throw @ph-new-error([[TypeError]])
+    perform $Append(record Record { [[OpenMethod]]: #"method", [[Iterable]]: item }, ?iterables)
+  }
+  let #"closure" = closure 0
+  let gen = @sec-createiteratorfromclosure(#"closure", "Iterator Helper", intrinsic [[IteratorHelperPrototype]], [[[UnderlyingIterators]]])
+  set field gen[[UnderlyingIterators]] = $ListNew()
+  return gen
+  closure abstract params none captures [iterables] {
+    for_each iterable : Record in iterables {
+      let iterator = ? @sec-call(iterable[[OpenMethod]], iterable[[Iterable]])
+      if iterator is not ty {Object} -> throw @ph-new-error([[TypeError]])
+      let iteratorRecord = ? @sec-getiteratordirect(iterator)
+      let innerAlive = true
+      repeat_while innerAlive is val {true} {
+        let innerValue = ? @sec-iteratorstepvalue(iteratorRecord)
+        if innerValue is val {~done~} {
+          set var innerAlive = false
+        }
+        else {
+          let #"completion" = @sec-completion-ao(@sec-yield(innerValue))
+          if #"completion" is ty {#"abrupt completion"} {
+            return ? @sec-iteratorclose(iteratorRecord, #"completion")
+          }
+        }
+      }
+    }
+    return @sec-returncompletion(undefined)
+  }
+}
+
+def @sec-iterator.from "Iterator.from" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj", iteratorRecord, hasInstance, wrapper] {
+  let iteratorRecord = ? @sec-getiteratorflattenable(#"obj", ~iterate-string-primitives~)
+  let hasInstance = ? @sec-ordinaryhasinstance(intrinsic [[Iterator]], iteratorRecord[[Iterator]])
+  if hasInstance is val {true} {
+    return iteratorRecord[[Iterator]]
+  }
+  let wrapper = @sec-ordinaryobjectcreate(intrinsic [[WrapForValidIteratorPrototype]], [[[Iterated]]])
+  set field wrapper[[Iterated]] = iteratorRecord
+  return wrapper
+}
+
+def @sec-%wrapforvaliditeratorprototype%.next "%WrapForValidIteratorPrototype%.next" (kind builtin params []) vars [#"this value", NewTarget, #"obj", iteratorRecord] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[Iterated]])
+  let iteratorRecord = #"obj"[[Iterated]]
+  return ? @sec-call(iteratorRecord[[NextMethod]], iteratorRecord[[Iterator]])
+}
+
+def @sec-%wrapforvaliditeratorprototype%.return "%WrapForValidIteratorPrototype%.return" (kind builtin params []) vars [#"this value", NewTarget, #"obj", iterator, returnMethod] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[Iterated]])
+  let iterator = #"obj"[[Iterated]][[Iterator]]
+  assert iterator is ty {Object}
+  let returnMethod = ? @sec-getmethod(iterator, "return")
+  if returnMethod is val {undefined} {
+    return @sec-createiterresultobject(undefined, true)
+  }
+  return ? @sec-call(returnMethod, iterator)
+}
+
+def @sec-iterator.zip "Iterator.zip" (kind builtin params [iterables, options opt]) vars [#"this value", NewTarget, iterables, options, mode, paddingOption, iters, padding, inputIter, next, iter, needClosing, iterCount, paddingIter, usingIterator, #"completion", finishResults, results] {
+  if iterables is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  set var options = ? @sec-getoptionsobject(options)
+  let mode = ? @sec-get-o-p(options, "mode")
+  if mode is val {undefined} -> set var mode = "shortest"
+  if mode is not val {"shortest"; "longest"; "strict"} -> throw @ph-new-error([[TypeError]])
+  let paddingOption = undefined
+  if mode is val {"longest"} {
+    set var paddingOption = ? @sec-get-o-p(options, "padding")
+    if paddingOption is not val {undefined} and paddingOption is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  }
+  let iters = $ListNew()
+  let padding = $ListNew()
+  let inputIter = ? @sec-getiterator(iterables, ~sync~)
+  let next = ~not-started~
+  repeat_while next is not val {~done~} {
+    set var next = @sec-completion-ao(@sec-iteratorstepvalue(inputIter))
+    block {
+      assert next is ty {#"Completion Record"}
+      if next is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iters, next)
+      set var next = ! next
+    }
+    if next is not val {~done~} {
+      let iter = @sec-completion-ao(@sec-getiteratorflattenable(next, ~reject-primitives~))
+      let needClosing = $ListConcat([[inputIter], iters])
+      block {
+        assert iter is ty {#"Completion Record"}
+        if iter is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(needClosing, iter)
+        set var iter = ! iter
+      }
+      perform $Append(?iter, ?iters)
+    }
+  }
+  let iterCount = $ListLen(?iters)
+  if mode is val {"longest"} {
+    if paddingOption is val {undefined} {
+      repeat_n iterCount {
+        perform $Append(undefined, ?padding)
+      }
+    }
+    else {
+      let paddingIter = @sec-completion-ao(@sec-getiterator(paddingOption, ~sync~))
+      block {
+        assert paddingIter is ty {#"Completion Record"}
+        if paddingIter is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iters, paddingIter)
+        set var paddingIter = ! paddingIter
+      }
+      let usingIterator = true
+      repeat_n iterCount {
+        if usingIterator is val {true} {
+          set var next = @sec-completion-ao(@sec-iteratorstepvalue(paddingIter))
+          block {
+            assert next is ty {#"Completion Record"}
+            if next is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iters, next)
+            set var next = ! next
+          }
+          if next is val {~done~} {
+            set var usingIterator = false
+          }
+          else {
+            perform $Append(?next, ?padding)
+          }
+        }
+        if usingIterator is val {false} -> perform $Append(undefined, ?padding)
+      }
+      if usingIterator is val {true} {
+        let #"completion" = @sec-completion-ao(@sec-iteratorclose(paddingIter, @sec-normalcompletion(~unused~)))
+        block {
+          assert #"completion" is ty {#"Completion Record"}
+          if #"completion" is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iters, #"completion")
+          set var #"completion" = ! #"completion"
+        }
+      }
+    }
+  }
+  let finishResults = closure 0
+  return @sec-iteratorzip(iters, mode, padding, finishResults)
+  closure abstract params [results] captures [] {
+    return @sec-createarrayfromlist(results)
+  }
+}
+
+def @sec-iterator.zipkeyed "Iterator.zipKeyed" (kind builtin params [iterables, options opt]) vars [#"this value", NewTarget, iterables, options, mode, paddingOption, iters, padding, allKeys, #"keys", key, propertyDesc, value, iter, iterCount, finishResults, results, #"obj", i] {
+  if iterables is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  set var options = ? @sec-getoptionsobject(options)
+  let mode = ? @sec-get-o-p(options, "mode")
+  if mode is val {undefined} -> set var mode = "shortest"
+  if mode is not val {"shortest"; "longest"; "strict"} -> throw @ph-new-error([[TypeError]])
+  let paddingOption = undefined
+  if mode is val {"longest"} {
+    set var paddingOption = ? @sec-get-o-p(options, "padding")
+    if paddingOption is not val {undefined} and paddingOption is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  }
+  let iters = $ListNew()
+  let padding = $ListNew()
+  let allKeys = ? iterables[[OwnPropertyKeys]]()
+  let #"keys" = $ListNew()
+  for_each key in allKeys {
+    let propertyDesc = @sec-completion-ao(iterables[[GetOwnProperty]](key))
+    block {
+      assert propertyDesc is ty {#"Completion Record"}
+      if propertyDesc is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iters, propertyDesc)
+      set var propertyDesc = ! propertyDesc
+    }
+    if propertyDesc is not val {undefined} and propertyDesc[[Enumerable]] is val {true} {
+      let value = @sec-completion-ao(@sec-get-o-p(iterables, key))
+      block {
+        assert value is ty {#"Completion Record"}
+        if value is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iters, value)
+        set var value = ! value
+      }
+      if value is not val {undefined} {
+        perform $Append(?key, ?#"keys")
+        let iter = @sec-completion-ao(@sec-getiteratorflattenable(value, ~reject-primitives~))
+        block {
+          assert iter is ty {#"Completion Record"}
+          if iter is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iters, iter)
+          set var iter = ! iter
+        }
+        perform $Append(?iter, ?iters)
+      }
+    }
+  }
+  let iterCount = $ListLen(?iters)
+  if mode is val {"longest"} {
+    if paddingOption is val {undefined} {
+      repeat_n iterCount {
+        perform $Append(undefined, ?padding)
+      }
+    }
+    else {
+      for_each key in #"keys" {
+        let value = @sec-completion-ao(@sec-get-o-p(paddingOption, key))
+        block {
+          assert value is ty {#"Completion Record"}
+          if value is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(iters, value)
+          set var value = ! value
+        }
+        perform $Append(?value, ?padding)
+      }
+    }
+  }
+  let finishResults = closure 0
+  return @sec-iteratorzip(iters, mode, padding, finishResults)
+  closure abstract params [results] captures [#"keys", iterCount] {
+    let #"obj" = @sec-ordinaryobjectcreate(null)
+    for_range i incl 0 .. excl iterCount {
+      perform ! @sec-createdatapropertyorthrow(#"obj", #"keys"[i], results[i])
+    }
+    return #"obj"
+  }
+}
+
+def @sec-get-iterator.prototype.constructor "get Iterator.prototype.constructor" (kind builtin params []) vars [#"this value", NewTarget] {
+  return intrinsic [[Iterator]]
+}
+
+def @sec-set-iterator.prototype.constructor "set Iterator.prototype.constructor" (kind builtin params [v]) vars [#"this value", NewTarget, v] {
+  perform ? @sec-SetterThatIgnoresPrototypeProperties(this_value, intrinsic [[Iterator.prototype]], "constructor", v)
+  return undefined
+}
+
+def @sec-iterator.prototype.drop "Iterator.prototype.drop" (kind builtin params [limit]) vars [#"this value", NewTarget, limit, #"obj", iterated, numberLimit, error, intLimit, #"closure", remaining, next, value, #"completion", result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  let numberLimit = @sec-completion-ao(@sec-tonumber(limit))
+  block {
+    assert numberLimit is ty {#"Completion Record"}
+    if numberLimit is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, numberLimit)
+    set var numberLimit = ! numberLimit
+  }
+  if numberLimit is val {nan} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  if numberLimit sat $IsFinite() and numberLimit > $𝔽(2 ^ 53 - 1) {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  let intLimit = ! @sec-tointegerorinfinity(numberLimit)
+  if intLimit < 0 {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let #"closure" = closure 0
+  let result = @sec-createiteratorfromclosure(#"closure", "Iterator Helper", intrinsic [[IteratorHelperPrototype]], [[[UnderlyingIterators]]])
+  set field result[[UnderlyingIterators]] = [iterated]
+  return result
+  closure abstract params none captures [iterated, intLimit] {
+    let remaining = $𝔽(intLimit)
+    repeat_while remaining > num_f(+0) {
+      set var remaining = remaining - num_f(1)
+      let next = ? @sec-iteratorstep(iterated)
+      if next is val {~done~} -> return @sec-returncompletion(undefined)
+    }
+    repeat {
+      let value = ? @sec-iteratorstepvalue(iterated)
+      if value is val {~done~} -> return @sec-returncompletion(undefined)
+      let #"completion" = @sec-completion-ao(@sec-yield(value))
+      block {
+        assert #"completion" is ty {#"Completion Record"}
+        if #"completion" is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, #"completion")
+        set var #"completion" = ! #"completion"
+      }
+    }
+  }
+}
+
+def @sec-iterator.prototype.every "Iterator.prototype.every" (kind builtin params [predicate]) vars [#"this value", NewTarget, predicate, #"obj", iterated, error, counter, value, result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if @sec-iscallable(predicate) is val {false} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let counter = num_f(+0)
+  repeat {
+    let value = ? @sec-iteratorstepvalue(iterated)
+    if value is val {~done~} -> return true
+    let result = @sec-completion-ao(@sec-call(predicate, undefined, [value, counter]))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, result)
+      set var result = ! result
+    }
+    if @sec-toboolean(result) is val {false} -> return ? @sec-iteratorclose(iterated, @sec-normalcompletion(false))
+    note "The following step will not change _counter_ once it reaches *2<sup>53</sup>*<sub>𝔽</sub>."
+    set var counter = counter + num_f(1)
+  }
+}
+
+def @sec-iterator.prototype.filter "Iterator.prototype.filter" (kind builtin params [predicate]) vars [#"this value", NewTarget, predicate, #"obj", iterated, error, #"closure", counter, value, selected, #"completion", result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if @sec-iscallable(predicate) is val {false} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let #"closure" = closure 0
+  let result = @sec-createiteratorfromclosure(#"closure", "Iterator Helper", intrinsic [[IteratorHelperPrototype]], [[[UnderlyingIterators]]])
+  set field result[[UnderlyingIterators]] = [iterated]
+  return result
+  closure abstract params none captures [iterated, predicate] {
+    let counter = num_f(+0)
+    repeat {
+      let value = ? @sec-iteratorstepvalue(iterated)
+      if value is val {~done~} -> return @sec-returncompletion(undefined)
+      let selected = @sec-completion-ao(@sec-call(predicate, undefined, [value, counter]))
+      block {
+        assert selected is ty {#"Completion Record"}
+        if selected is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, selected)
+        set var selected = ! selected
+      }
+      if @sec-toboolean(selected) is val {true} {
+        let #"completion" = @sec-completion-ao(@sec-yield(value))
+        block {
+          assert #"completion" is ty {#"Completion Record"}
+          if #"completion" is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, #"completion")
+          set var #"completion" = ! #"completion"
+        }
+      }
+      note "The following step will not change _counter_ once it reaches *2<sup>53</sup>*<sub>𝔽</sub>."
+      set var counter = counter + num_f(1)
+    }
+  }
+}
+
+def @sec-iterator.prototype.find "Iterator.prototype.find" (kind builtin params [predicate]) vars [#"this value", NewTarget, predicate, #"obj", iterated, error, counter, value, result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if @sec-iscallable(predicate) is val {false} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let counter = num_f(+0)
+  repeat {
+    let value = ? @sec-iteratorstepvalue(iterated)
+    if value is val {~done~} -> return undefined
+    let result = @sec-completion-ao(@sec-call(predicate, undefined, [value, counter]))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, result)
+      set var result = ! result
+    }
+    if @sec-toboolean(result) is val {true} -> return ? @sec-iteratorclose(iterated, @sec-normalcompletion(value))
+    note "The following step will not change _counter_ once it reaches *2<sup>53</sup>*<sub>𝔽</sub>."
+    set var counter = counter + num_f(1)
+  }
+}
+
+def @sec-iterator.prototype.flatmap "Iterator.prototype.flatMap" (kind builtin params [mapper]) vars [#"this value", NewTarget, mapper, #"obj", iterated, error, #"closure", counter, value, mapped, innerIterator, innerAlive, innerValue, #"completion", backupCompletion, result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if @sec-iscallable(mapper) is val {false} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let #"closure" = closure 0
+  let result = @sec-createiteratorfromclosure(#"closure", "Iterator Helper", intrinsic [[IteratorHelperPrototype]], [[[UnderlyingIterators]]])
+  set field result[[UnderlyingIterators]] = [iterated]
+  return result
+  closure abstract params none captures [iterated, mapper] {
+    let counter = num_f(+0)
+    repeat {
+      let value = ? @sec-iteratorstepvalue(iterated)
+      if value is val {~done~} -> return @sec-returncompletion(undefined)
+      let mapped = @sec-completion-ao(@sec-call(mapper, undefined, [value, counter]))
+      block {
+        assert mapped is ty {#"Completion Record"}
+        if mapped is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, mapped)
+        set var mapped = ! mapped
+      }
+      let innerIterator = @sec-completion-ao(@sec-getiteratorflattenable(mapped, ~reject-primitives~))
+      block {
+        assert innerIterator is ty {#"Completion Record"}
+        if innerIterator is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, innerIterator)
+        set var innerIterator = ! innerIterator
+      }
+      let innerAlive = true
+      repeat_while innerAlive is val {true} {
+        let innerValue = @sec-completion-ao(@sec-iteratorstepvalue(innerIterator))
+        block {
+          assert innerValue is ty {#"Completion Record"}
+          if innerValue is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, innerValue)
+          set var innerValue = ! innerValue
+        }
+        if innerValue is val {~done~} {
+          set var innerAlive = false
+        }
+        else {
+          let #"completion" = @sec-completion-ao(@sec-yield(innerValue))
+          if #"completion" is ty {#"abrupt completion"} {
+            let backupCompletion = @sec-completion-ao(@sec-iteratorclose(innerIterator, #"completion"))
+            block {
+              assert backupCompletion is ty {#"Completion Record"}
+              if backupCompletion is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, backupCompletion)
+              set var backupCompletion = ! backupCompletion
+            }
+            return ? @sec-iteratorclose(iterated, #"completion")
+          }
+        }
+      }
+      note "The following step will not change _counter_ once it reaches *2<sup>53</sup>*<sub>𝔽</sub>."
+      set var counter = counter + num_f(1)
+    }
+  }
+}
+
+def @sec-iterator.prototype.foreach "Iterator.prototype.forEach" (kind builtin params [procedure]) vars [#"this value", NewTarget, procedure, #"obj", iterated, error, counter, value, result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if @sec-iscallable(procedure) is val {false} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let counter = num_f(+0)
+  repeat {
+    let value = ? @sec-iteratorstepvalue(iterated)
+    if value is val {~done~} -> return undefined
+    let result = @sec-completion-ao(@sec-call(procedure, undefined, [value, counter]))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, result)
+      set var result = ! result
+    }
+    note "The following step will not change _counter_ once it reaches *2<sup>53</sup>*<sub>𝔽</sub>."
+    set var counter = counter + num_f(1)
+  }
+}
+
+def @sec-iterator.prototype.map "Iterator.prototype.map" (kind builtin params [mapper]) vars [#"this value", NewTarget, mapper, #"obj", iterated, error, #"closure", counter, value, mapped, #"completion", result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if @sec-iscallable(mapper) is val {false} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let #"closure" = closure 0
+  let result = @sec-createiteratorfromclosure(#"closure", "Iterator Helper", intrinsic [[IteratorHelperPrototype]], [[[UnderlyingIterators]]])
+  set field result[[UnderlyingIterators]] = [iterated]
+  return result
+  closure abstract params none captures [iterated, mapper] {
+    let counter = num_f(+0)
+    repeat {
+      let value = ? @sec-iteratorstepvalue(iterated)
+      if value is val {~done~} -> return @sec-returncompletion(undefined)
+      let mapped = @sec-completion-ao(@sec-call(mapper, undefined, [value, counter]))
+      block {
+        assert mapped is ty {#"Completion Record"}
+        if mapped is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, mapped)
+        set var mapped = ! mapped
+      }
+      let #"completion" = @sec-completion-ao(@sec-yield(mapped))
+      block {
+        assert #"completion" is ty {#"Completion Record"}
+        if #"completion" is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, #"completion")
+        set var #"completion" = ! #"completion"
+      }
+      note "The following step will not change _counter_ once it reaches *2<sup>53</sup>*<sub>𝔽</sub>."
+      set var counter = counter + num_f(1)
+    }
+  }
+}
+
+def @sec-iterator.prototype.reduce "Iterator.prototype.reduce" (kind builtin params [reducer, initialValue opt]) vars [#"this value", NewTarget, reducer, initialValue, #"obj", iterated, error, accumulator, counter, value, result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if @sec-iscallable(reducer) is val {false} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  if initialValue fails $Present() {
+    let accumulator = ? @sec-iteratorstepvalue(iterated)
+    if accumulator is val {~done~} -> throw @ph-new-error([[TypeError]])
+    let counter = num_f(1)
+  }
+  else {
+    let accumulator = initialValue
+    let counter = num_f(+0)
+  }
+  repeat {
+    let value = ? @sec-iteratorstepvalue(iterated)
+    if value is val {~done~} -> return accumulator
+    let result = @sec-completion-ao(@sec-call(reducer, undefined, [accumulator, value, counter]))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, result)
+      set var result = ! result
+    }
+    set var accumulator = result
+    note "The following step will not change _counter_ once it reaches *2<sup>53</sup>*<sub>𝔽</sub>."
+    set var counter = counter + num_f(1)
+  }
+}
+
+def @sec-iterator.prototype.some "Iterator.prototype.some" (kind builtin params [predicate]) vars [#"this value", NewTarget, predicate, #"obj", iterated, error, counter, value, result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  if @sec-iscallable(predicate) is val {false} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let counter = num_f(+0)
+  repeat {
+    let value = ? @sec-iteratorstepvalue(iterated)
+    if value is val {~done~} -> return false
+    let result = @sec-completion-ao(@sec-call(predicate, undefined, [value, counter]))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, result)
+      set var result = ! result
+    }
+    if @sec-toboolean(result) is val {true} -> return ? @sec-iteratorclose(iterated, @sec-normalcompletion(true))
+    note "The following step will not change _counter_ once it reaches *2<sup>53</sup>*<sub>𝔽</sub>."
+    set var counter = counter + num_f(1)
+  }
+}
+
+def @sec-iterator.prototype.take "Iterator.prototype.take" (kind builtin params [limit]) vars [#"this value", NewTarget, limit, #"obj", iterated, numberLimit, error, intLimit, #"closure", remaining, value, #"completion", result] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = record #"Iterator Record" { [[Iterator]]: #"obj", [[NextMethod]]: undefined, [[Done]]: false }
+  let numberLimit = @sec-completion-ao(@sec-tonumber(limit))
+  block {
+    assert numberLimit is ty {#"Completion Record"}
+    if numberLimit is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, numberLimit)
+    set var numberLimit = ! numberLimit
+  }
+  if numberLimit is val {nan} {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  if numberLimit sat $IsFinite() and numberLimit > $𝔽(2 ^ 53 - 1) {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  let intLimit = ! @sec-tointegerorinfinity(numberLimit)
+  if intLimit < 0 {
+    let error = @sec-throwcompletion(@ph-new-error(err [[RangeError]]))
+    return ? @sec-iteratorclose(iterated, error)
+  }
+  set var iterated = ? @sec-getiteratordirect(#"obj")
+  let #"closure" = closure 0
+  let result = @sec-createiteratorfromclosure(#"closure", "Iterator Helper", intrinsic [[IteratorHelperPrototype]], [[[UnderlyingIterators]]])
+  set field result[[UnderlyingIterators]] = [iterated]
+  return result
+  closure abstract params none captures [iterated, intLimit] {
+    let remaining = $𝔽(intLimit)
+    repeat {
+      if remaining is val {num_f(+0)} {
+        return ? @sec-iteratorclose(iterated, @sec-returncompletion(undefined))
+      }
+      set var remaining = remaining - num_f(1)
+      let value = ? @sec-iteratorstepvalue(iterated)
+      if value is val {~done~} -> return @sec-returncompletion(undefined)
+      let #"completion" = @sec-completion-ao(@sec-yield(value))
+      block {
+        assert #"completion" is ty {#"Completion Record"}
+        if #"completion" is ty {#"abrupt completion"} -> return ? @sec-iteratorclose(iterated, #"completion")
+        set var #"completion" = ! #"completion"
+      }
+    }
+  }
+}
+
+def @sec-iterator.prototype.toarray "Iterator.prototype.toArray" (kind builtin params []) vars [#"this value", NewTarget, #"obj", iterated, items, value] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iterated = ? @sec-getiteratordirect(#"obj")
+  let items = $ListNew()
+  repeat {
+    let value = ? @sec-iteratorstepvalue(iterated)
+    if value is val {~done~} -> return @sec-createarrayfromlist(items)
+    perform $Append(?value, ?items)
+  }
+}
+
+def @sec-iterator.prototype-%symbol.dispose% "Iterator.prototype [ %Symbol.dispose% ]" (kind builtin params []) vars [#"this value", NewTarget, #"obj", #"return"] {
+  let #"obj" = this_value
+  let #"return" = ? @sec-getmethod(#"obj", "return")
+  if #"return" is not val {undefined} {
+    perform ? @sec-call(#"return", #"obj")
+  }
+  return undefined
+}
+
+def @sec-iterator.prototype-%symbol.iterator% "Iterator.prototype [ %Symbol.iterator% ]" (kind builtin params []) vars [#"this value", NewTarget] {
+  return this_value
+}
+
+def @sec-get-iterator.prototype-%symbol.tostringtag% "get Iterator.prototype [ %Symbol.toStringTag% ]" (kind builtin params []) vars [#"this value", NewTarget] {
+  return "Iterator"
+}
+
+def @sec-set-iterator.prototype-%symbol.tostringtag% "set Iterator.prototype [ %Symbol.toStringTag% ]" (kind builtin params [v]) vars [#"this value", NewTarget, v] {
+  perform ? @sec-SetterThatIgnoresPrototypeProperties(this_value, intrinsic [[Iterator.prototype]], $WellKnownSymbol("Symbol.toStringTag"), v)
+  return undefined
+}
+
+def @sec-iteratorzip "IteratorZip" (kind ao params [iters : list<#"Iterator Record">, mode : val("shortest") | val("longest") | val("strict"), padding : list<#"ECMAScript language value">, finishResults : doc "an Abstract Closure that takes a List of ECMAScript language values and returns an ECMAScript language value"] -> Generator) vars [iters, mode, padding, finishResults, iterCount, openIters, #"closure", results, i, iter, result, k, open, #"completion", gen] {
+  let iterCount = $ListLen(?iters)
+  let openIters = $Copy(?iters)
+  let #"closure" = closure 0
+  let gen = @sec-createiteratorfromclosure(#"closure", "Iterator Helper", intrinsic [[IteratorHelperPrototype]], [[[UnderlyingIterators]]])
+  set field gen[[UnderlyingIterators]] = openIters
+  return gen
+  closure abstract params none captures [iters, iterCount, openIters, mode, padding, finishResults] {
+    if iterCount == 0 -> return @sec-returncompletion(undefined)
+    repeat {
+      let results = $ListNew()
+      assert openIters fails $IsEmpty()
+      for_range i incl 0 .. excl iterCount {
+        let iter = iters[i]
+        if iter is val {null} {
+          assert mode is val {"longest"}
+          let result = padding[i]
+        }
+        else {
+          let result = @sec-completion-ao(@sec-iteratorstepvalue(iter))
+          if result is ty {#"abrupt completion"} {
+            perform $RemoveElem(?iter, ?openIters)
+            return ? @sec-iteratorcloseall(openIters, result)
+          }
+          set var result = ! result
+          if result is val {~done~} {
+            perform $RemoveElem(?iter, ?openIters)
+            if mode is val {"shortest"} {
+              return ? @sec-iteratorcloseall(openIters, @sec-returncompletion(undefined))
+            }
+            else_if mode is val {"strict"} {
+              if i != 0 {
+                return ? @sec-iteratorcloseall(openIters, @sec-throwcompletion(@ph-new-error(err [[TypeError]])))
+              }
+              for_range k incl 1 .. excl iterCount {
+                assert iters[k] is not val {null}
+                let open = @sec-completion-ao(@sec-iteratorstep(iters[k]))
+                if open is ty {#"abrupt completion"} {
+                  perform $RemoveElem(iters[k], ?openIters)
+                  return ? @sec-iteratorcloseall(openIters, open)
+                }
+                set var open = ! open
+                if open is val {~done~} {
+                  perform $RemoveElem(iters[k], ?openIters)
+                }
+                else {
+                  return ? @sec-iteratorcloseall(openIters, @sec-throwcompletion(@ph-new-error(err [[TypeError]])))
+                }
+              }
+              return @sec-returncompletion(undefined)
+            }
+            else {
+              assert mode is val {"longest"}
+              if openIters sat $IsEmpty() -> return @sec-returncompletion(undefined)
+              set expr iters[i] = null
+              set var result = padding[i]
+            }
+          }
+        }
+        perform $Append(?result, ?results)
+      }
+      set var results = finishResults(results)
+      let #"completion" = @sec-completion-ao(@sec-yield(results))
+      block {
+        assert #"completion" is ty {#"Completion Record"}
+        if #"completion" is ty {#"abrupt completion"} -> return ? @sec-iteratorcloseall(openIters, #"completion")
+        set var #"completion" = ! #"completion"
+      }
+    }
+  }
+}
+
+def @sec-%asynciteratorprototype%-%symbol.asyncdispose% "%AsyncIteratorPrototype% [ %Symbol.asyncDispose% ]" (kind builtin params []) vars [#"this value", NewTarget, #"obj", promiseCapability, #"return", result, resultWrapper, unwrap, onFulfilled] {
+  let #"obj" = this_value
+  let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  let #"return" = @sec-completion-ao(@sec-getmethod(#"obj", "return"))
+  block {
+    assert #"return" is ty {#"Completion Record"}
+    if #"return" is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [#"return"[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var #"return" = ! #"return"
+  }
+  if #"return" is val {undefined} {
+    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [undefined])
+  }
+  else {
+    let result = @sec-completion-ao(@sec-call(#"return", #"obj", []))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+        return promiseCapability[[Promise]]
+      }
+      set var result = ! result
+    }
+    let resultWrapper = @sec-completion-ao(@sec-promise-resolve(intrinsic [[Promise]], result))
+    block {
+      assert resultWrapper is ty {#"Completion Record"}
+      if resultWrapper is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [resultWrapper[[Value]]])
+        return promiseCapability[[Promise]]
+      }
+      set var resultWrapper = ! resultWrapper
+    }
+    let unwrap = closure 0
+    let onFulfilled = @sec-createbuiltinfunction(unwrap, 1, "", [])
+    perform @sec-performpromisethen(resultWrapper, onFulfilled, undefined, promiseCapability)
+  }
+  return promiseCapability[[Promise]]
+  closure abstract params none captures [] {
+    return undefined
+  }
+}
+
+def @sec-%asynciteratorprototype%-%symbol.asynciterator% "%AsyncIteratorPrototype% [ %Symbol.asyncIterator% ]" (kind builtin params []) vars [#"this value", NewTarget] {
+  return this_value
+}
+
+def @sec-createasyncfromsynciterator "CreateAsyncFromSyncIterator" (kind ao params [syncIteratorRecord : #"Iterator Record"] -> #"Iterator Record") vars [syncIteratorRecord, asyncIterator, nextMethod, iteratorRecord] {
+  let asyncIterator = @sec-ordinaryobjectcreate(intrinsic [[AsyncFromSyncIteratorPrototype]], [[[SyncIteratorRecord]]])
+  set field asyncIterator[[SyncIteratorRecord]] = syncIteratorRecord
+  let nextMethod = ! @sec-get-o-p(asyncIterator, "next")
+  let iteratorRecord = record #"Iterator Record" { [[Iterator]]: asyncIterator, [[NextMethod]]: nextMethod, [[Done]]: false }
+  return iteratorRecord
+}
+
+def @sec-%asyncfromsynciteratorprototype%.next "%AsyncFromSyncIteratorPrototype%.next" (kind builtin params [value opt]) vars [#"this value", NewTarget, value, #"obj", promiseCapability, syncIteratorRecord, result] {
+  let #"obj" = this_value
+  assert #"obj" is ty {Object that sat $HasSlot([[SyncIteratorRecord]])}
+  let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  let syncIteratorRecord = #"obj"[[SyncIteratorRecord]]
+  if value sat $Present() {
+    let result = @sec-completion-ao(@sec-iteratornext(syncIteratorRecord, value))
+  }
+  else {
+    let result = @sec-completion-ao(@sec-iteratornext(syncIteratorRecord))
+  }
+  block {
+    assert result is ty {#"Completion Record"}
+    if result is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var result = ! result
+  }
+  return @sec-asyncfromsynciteratorcontinuation(result, promiseCapability, syncIteratorRecord, true)
+}
+
+def @sec-%asyncfromsynciteratorprototype%.return "%AsyncFromSyncIteratorPrototype%.return" (kind builtin params [value opt]) vars [#"this value", NewTarget, value, #"obj", promiseCapability, syncIteratorRecord, syncIterator, #"return", iteratorResult, result] {
+  let #"obj" = this_value
+  assert #"obj" is ty {Object that sat $HasSlot([[SyncIteratorRecord]])}
+  let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  let syncIteratorRecord = #"obj"[[SyncIteratorRecord]]
+  let syncIterator = syncIteratorRecord[[Iterator]]
+  let #"return" = @sec-completion-ao(@sec-getmethod(syncIterator, "return"))
+  block {
+    assert #"return" is ty {#"Completion Record"}
+    if #"return" is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [#"return"[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var #"return" = ! #"return"
+  }
+  if #"return" is val {undefined} {
+    let iteratorResult = @sec-createiterresultobject(value, true)
+    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [iteratorResult])
+    return promiseCapability[[Promise]]
+  }
+  if value sat $Present() {
+    let result = @sec-completion-ao(@sec-call(#"return", syncIterator, [value]))
+  }
+  else {
+    let result = @sec-completion-ao(@sec-call(#"return", syncIterator))
+  }
+  block {
+    assert result is ty {#"Completion Record"}
+    if result is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var result = ! result
+  }
+  if result is not ty {Object} {
+    perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
+    return promiseCapability[[Promise]]
+  }
+  return @sec-asyncfromsynciteratorcontinuation(result, promiseCapability, syncIteratorRecord, false)
+}
+
+def @sec-%asyncfromsynciteratorprototype%.throw "%AsyncFromSyncIteratorPrototype%.throw" (kind builtin params [value opt]) vars [#"this value", NewTarget, value, #"obj", promiseCapability, syncIteratorRecord, syncIterator, #"throw", closeCompletion, result] {
+  let #"obj" = this_value
+  assert #"obj" is ty {Object that sat $HasSlot([[SyncIteratorRecord]])}
+  let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  let syncIteratorRecord = #"obj"[[SyncIteratorRecord]]
+  let syncIterator = syncIteratorRecord[[Iterator]]
+  let #"throw" = @sec-completion-ao(@sec-getmethod(syncIterator, "throw"))
+  block {
+    assert #"throw" is ty {#"Completion Record"}
+    if #"throw" is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [#"throw"[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var #"throw" = ! #"throw"
+  }
+  if #"throw" is val {undefined} {
+    note "If _syncIterator_ does not have a `throw` method, close it to give it a chance to clean up before we reject the capability."
+    let closeCompletion = @sec-normalcompletion(~empty~)
+    let result = @sec-completion-ao(@sec-iteratorclose(syncIteratorRecord, closeCompletion))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+        return promiseCapability[[Promise]]
+      }
+      set var result = ! result
+    }
+    note "The next step throws a *TypeError* to indicate that there was a protocol violation: _syncIterator_ does not have a `throw` method."
+    note "If closing _syncIterator_ does not throw then the result of that operation is ignored, even if it yields a rejected promise."
+    perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
+    return promiseCapability[[Promise]]
+  }
+  if value sat $Present() {
+    let result = @sec-completion-ao(@sec-call(#"throw", syncIterator, [value]))
+  }
+  else {
+    let result = @sec-completion-ao(@sec-call(#"throw", syncIterator))
+  }
+  block {
+    assert result is ty {#"Completion Record"}
+    if result is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var result = ! result
+  }
+  if result is not ty {Object} {
+    perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
+    return promiseCapability[[Promise]]
+  }
+  return @sec-asyncfromsynciteratorcontinuation(result, promiseCapability, syncIteratorRecord, true)
+}
+
+def @sec-asyncfromsynciteratorcontinuation "AsyncFromSyncIteratorContinuation" (kind ao params [result : Object, promiseCapability : doc "a PromiseCapability Record for an intrinsic %Promise%", syncIteratorRecord : #"Iterator Record", closeOnRejection : Boolean] -> Promise) vars [result, promiseCapability, syncIteratorRecord, closeOnRejection, done, value, valueWrapper, unwrap, onFulfilled, onRejected, closeIterator, error] {
+  note "Because _promiseCapability_ is derived from the intrinsic %Promise%, the calls to _promiseCapability_.[[Reject]] entailed by the use IfAbruptRejectPromise below are guaranteed not to throw."
+  let done = @sec-completion-ao(@sec-iteratorcomplete(result))
+  block {
+    assert done is ty {#"Completion Record"}
+    if done is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [done[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var done = ! done
+  }
+  let value = @sec-completion-ao(@sec-iteratorvalue(result))
+  block {
+    assert value is ty {#"Completion Record"}
+    if value is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [value[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var value = ! value
+  }
+  let valueWrapper = @sec-completion-ao(@sec-promise-resolve(intrinsic [[Promise]], value))
+  if valueWrapper is ty {#"abrupt completion"} and done is val {false} and closeOnRejection is val {true} {
+    set var valueWrapper = @sec-completion-ao(@sec-iteratorclose(syncIteratorRecord, valueWrapper))
+  }
+  block {
+    assert valueWrapper is ty {#"Completion Record"}
+    if valueWrapper is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [valueWrapper[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var valueWrapper = ! valueWrapper
+  }
+  let unwrap = closure 0
+  let onFulfilled = @sec-createbuiltinfunction(unwrap, 1, "", [])
+  note "_onFulfilled_ is used when processing the *\"value\"* property of an IteratorResult object in order to wait for its value if it is a promise and re-package the result in a new “unwrapped” IteratorResult object."
+  if done is val {true} or closeOnRejection is val {false} {
+    let onRejected = undefined
+  }
+  else {
+    let closeIterator = closure 1
+    let onRejected = @sec-createbuiltinfunction(closeIterator, 1, "", [])
+    note "_onRejected_ is used to close the Iterator when the *\"value\"* property of an IteratorResult object it yields is a rejected promise."
+  }
+  perform @sec-performpromisethen(valueWrapper, onFulfilled, onRejected, promiseCapability)
+  return promiseCapability[[Promise]]
+  closure abstract params [value] captures [done] {
+    return @sec-createiterresultobject(value, done)
+  }
+  closure abstract params [error] captures [syncIteratorRecord] {
+    return ? @sec-iteratorclose(syncIteratorRecord, @sec-throwcompletion(error))
+  }
+}
+
+def @sec-disposablestack "DisposableStack" (kind builtin params []) vars [#"this value", NewTarget, disposableStack] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let disposableStack = ? @sec-ordinarycreatefromconstructor(new_target, "%DisposableStack.prototype%", [[[DisposableState]], [[DisposableResourceStack]]])
+  set field disposableStack[[DisposableState]] = ~pending~
+  set field disposableStack[[DisposableResourceStack]] = $ListNew()
+  return disposableStack
+}
+
+def @sec-disposablestack.prototype.adopt "DisposableStack.prototype.adopt" (kind builtin params [value, onDispose]) vars [#"this value", NewTarget, value, onDispose, disposableStack, #"closure", func] {
+  let disposableStack = this_value
+  perform ? @sec-requireinternalslot(disposableStack, [[DisposableState]])
+  if disposableStack[[DisposableState]] is val {~disposed~} -> throw @ph-new-error([[ReferenceError]])
+  if @sec-iscallable(onDispose) is val {false} -> throw @ph-new-error([[TypeError]])
+  let #"closure" = closure 0
+  let func = @sec-createbuiltinfunction(#"closure", 0, "", [])
+  perform ! @sec-adddisposableresource(disposableStack[[DisposableResourceStack]], undefined, ~sync-dispose~, func)
+  return value
+  closure abstract params none captures [value, onDispose] {
+    return ? @sec-call(onDispose, undefined, [value])
+  }
+}
+
+def @sec-disposablestack.prototype.defer "DisposableStack.prototype.defer" (kind builtin params [onDispose]) vars [#"this value", NewTarget, onDispose, disposableStack] {
+  let disposableStack = this_value
+  perform ? @sec-requireinternalslot(disposableStack, [[DisposableState]])
+  if disposableStack[[DisposableState]] is val {~disposed~} -> throw @ph-new-error([[ReferenceError]])
+  if @sec-iscallable(onDispose) is val {false} -> throw @ph-new-error([[TypeError]])
+  perform ! @sec-adddisposableresource(disposableStack[[DisposableResourceStack]], undefined, ~sync-dispose~, onDispose)
+  return undefined
+}
+
+def @sec-disposablestack.prototype.dispose "DisposableStack.prototype.dispose" (kind builtin params []) vars [#"this value", NewTarget, disposableStack] {
+  let disposableStack = this_value
+  perform ? @sec-requireinternalslot(disposableStack, [[DisposableState]])
+  if disposableStack[[DisposableState]] is val {~disposed~} -> return undefined
+  set field disposableStack[[DisposableState]] = ~disposed~
+  return ? @sec-disposeresources(disposableStack[[DisposableResourceStack]], @sec-normalcompletion(undefined))
+}
+
+def @sec-get-disposablestack.prototype.disposed "get DisposableStack.prototype.disposed" (kind builtin params []) vars [#"this value", NewTarget, disposableStack] {
+  let disposableStack = this_value
+  perform ? @sec-requireinternalslot(disposableStack, [[DisposableState]])
+  if disposableStack[[DisposableState]] is val {~disposed~} -> return true
+  return false
+}
+
+def @sec-disposablestack.prototype.move "DisposableStack.prototype.move" (kind builtin params []) vars [#"this value", NewTarget, disposableStack, newDisposableStack] {
+  let disposableStack = this_value
+  perform ? @sec-requireinternalslot(disposableStack, [[DisposableState]])
+  if disposableStack[[DisposableState]] is val {~disposed~} -> throw @ph-new-error([[ReferenceError]])
+  let newDisposableStack = @sec-ordinaryobjectcreate(intrinsic [[DisposableStack.prototype]], [[[DisposableState]], [[DisposableResourceStack]]])
+  set field newDisposableStack[[DisposableState]] = ~pending~
+  set field newDisposableStack[[DisposableResourceStack]] = disposableStack[[DisposableResourceStack]]
+  set field disposableStack[[DisposableResourceStack]] = $ListNew()
+  set field disposableStack[[DisposableState]] = ~disposed~
+  return newDisposableStack
+}
+
+def @sec-disposablestack.prototype.use "DisposableStack.prototype.use" (kind builtin params [value]) vars [#"this value", NewTarget, value, disposableStack] {
+  let disposableStack = this_value
+  perform ? @sec-requireinternalslot(disposableStack, [[DisposableState]])
+  if disposableStack[[DisposableState]] is val {~disposed~} -> throw @ph-new-error([[ReferenceError]])
+  perform ? @sec-adddisposableresource(disposableStack[[DisposableResourceStack]], value, ~sync-dispose~)
+  return value
+}
+
+def @sec-asyncdisposablestack "AsyncDisposableStack" (kind builtin params []) vars [#"this value", NewTarget, asyncDisposableStack] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let asyncDisposableStack = ? @sec-ordinarycreatefromconstructor(new_target, "%AsyncDisposableStack.prototype%", [[[AsyncDisposableState]], [[DisposableResourceStack]]])
+  set field asyncDisposableStack[[AsyncDisposableState]] = ~pending~
+  set field asyncDisposableStack[[DisposableResourceStack]] = $ListNew()
+  return asyncDisposableStack
+}
+
+def @sec-asyncdisposablestack.prototype.adopt "AsyncDisposableStack.prototype.adopt" (kind builtin params [value, onDisposeAsync]) vars [#"this value", NewTarget, value, onDisposeAsync, asyncDisposableStack, #"closure", func] {
+  let asyncDisposableStack = this_value
+  perform ? @sec-requireinternalslot(asyncDisposableStack, [[AsyncDisposableState]])
+  if asyncDisposableStack[[AsyncDisposableState]] is val {~disposed~} -> throw @ph-new-error([[ReferenceError]])
+  if @sec-iscallable(onDisposeAsync) is val {false} -> throw @ph-new-error([[TypeError]])
+  let #"closure" = closure 0
+  let func = @sec-createbuiltinfunction(#"closure", 0, "", [])
+  perform ! @sec-adddisposableresource(asyncDisposableStack[[DisposableResourceStack]], undefined, ~async-dispose~, func)
+  return value
+  closure abstract params none captures [value, onDisposeAsync] {
+    return ? @sec-call(onDisposeAsync, undefined, [value])
+  }
+}
+
+def @sec-asyncdisposablestack.prototype.defer "AsyncDisposableStack.prototype.defer" (kind builtin params [onDisposeAsync]) vars [#"this value", NewTarget, onDisposeAsync, asyncDisposableStack] {
+  let asyncDisposableStack = this_value
+  perform ? @sec-requireinternalslot(asyncDisposableStack, [[AsyncDisposableState]])
+  if asyncDisposableStack[[AsyncDisposableState]] is val {~disposed~} -> throw @ph-new-error([[ReferenceError]])
+  if @sec-iscallable(onDisposeAsync) is val {false} -> throw @ph-new-error([[TypeError]])
+  perform ! @sec-adddisposableresource(asyncDisposableStack[[DisposableResourceStack]], undefined, ~async-dispose~, onDisposeAsync)
+  return undefined
+}
+
+def @sec-asyncdisposablestack.prototype.disposeAsync "AsyncDisposableStack.prototype.disposeAsync" (kind builtin params []) vars [#"this value", NewTarget, asyncDisposableStack] {
+  let asyncDisposableStack = this_value
+  perform ? @sec-requireinternalslot(asyncDisposableStack, [[AsyncDisposableState]])
+  if asyncDisposableStack[[AsyncDisposableState]] is val {~disposed~} -> return undefined
+  set field asyncDisposableStack[[AsyncDisposableState]] = ~disposed~
+  return ? @sec-disposeresources(asyncDisposableStack[[DisposableResourceStack]], @sec-normalcompletion(undefined))
+}
+
+def @sec-get-asyncdisposablestack.prototype.disposed "get AsyncDisposableStack.prototype.disposed" (kind builtin params []) vars [#"this value", NewTarget, asyncDisposableStack] {
+  let asyncDisposableStack = this_value
+  perform ? @sec-requireinternalslot(asyncDisposableStack, [[AsyncDisposableState]])
+  if asyncDisposableStack[[AsyncDisposableState]] is val {~disposed~} -> return true
+  return false
+}
+
+def @sec-asyncdisposablestack.prototype.move "AsyncDisposableStack.prototype.move" (kind builtin params []) vars [#"this value", NewTarget, asyncDisposableStack, newAsyncDisposableStack] {
+  let asyncDisposableStack = this_value
+  perform ? @sec-requireinternalslot(asyncDisposableStack, [[AsyncDisposableState]])
+  if asyncDisposableStack[[AsyncDisposableState]] is val {~disposed~} -> throw @ph-new-error([[ReferenceError]])
+  let newAsyncDisposableStack = @sec-ordinaryobjectcreate(intrinsic [[AsyncDisposableStack.prototype]], [[[AsyncDisposableState]], [[DisposableResourceStack]]])
+  set field newAsyncDisposableStack[[AsyncDisposableState]] = ~pending~
+  set field newAsyncDisposableStack[[DisposableResourceStack]] = asyncDisposableStack[[DisposableResourceStack]]
+  set field asyncDisposableStack[[DisposableResourceStack]] = $ListNew()
+  set field asyncDisposableStack[[AsyncDisposableState]] = ~disposed~
+  return newAsyncDisposableStack
+}
+
+def @sec-asyncdisposablestack.prototype.use "AsyncDisposableStack.prototype.use" (kind builtin params [value]) vars [#"this value", NewTarget, value, asyncDisposableStack] {
+  let asyncDisposableStack = this_value
+  perform ? @sec-requireinternalslot(asyncDisposableStack, [[AsyncDisposableState]])
+  if asyncDisposableStack[[AsyncDisposableState]] is val {~disposed~} -> throw @ph-new-error([[ReferenceError]])
+  perform ? @sec-adddisposableresource(asyncDisposableStack[[DisposableResourceStack]], value, ~async-dispose~)
+  return value
+}
+
+def @sec-ifabruptrejectpromise "IfAbruptRejectPromise" (kind untyped params [value, capability]) vars [value, capability] {
+  block {
+    assert value is ty {#"Completion Record"}
+    if value is ty {#"abrupt completion"} {
+      perform ? @sec-call(capability[[Reject]], undefined, [value[[Value]]])
+      return capability[[Promise]]
+    }
+    set var value = ! value
+  }
+}
+
+def @sec-ifabruptrejectpromise#1 "IfAbruptRejectPromise.2" (kind untyped params [value, capability]) vars [value, capability] {
+  assert value is ty {#"Completion Record"}
+  if value is ty {#"abrupt completion"} {
+    perform ? @sec-call(capability[[Reject]], undefined, [value[[Value]]])
+    return capability[[Promise]]
+  }
+  set var value = ! value
+}
+
+def @sec-createresolvingfunctions "CreateResolvingFunctions" (kind ao params [toResolve : Promise] -> record { [[Resolve]]: #"function object", [[Reject]]: #"function object" }) vars [toResolve, promiseOrEmpty, resolveSteps, resolution, promise, selfResolutionError, #"then", thenAction, thenJobCallback, job, resolve, rejectSteps, reason, reject] {
+  let promiseOrEmpty = record Record { [[Value]]: toResolve }
+  let resolveSteps = closure 0
+  let resolve = @sec-createbuiltinfunction(resolveSteps, 1, "", [])
+  let rejectSteps = closure 1
+  let reject = @sec-createbuiltinfunction(rejectSteps, 1, "", [])
+  return record Record { [[Resolve]]: resolve, [[Reject]]: reject }
+  closure abstract params [resolution] captures [promiseOrEmpty] {
+    if promiseOrEmpty[[Value]] is val {~empty~} -> return undefined
+    let promise = promiseOrEmpty[[Value]]
+    set field promiseOrEmpty[[Value]] = ~empty~
+    if @sec-samevalue(resolution, promise) is val {true} {
+      let selfResolutionError = @ph-new-error(err [[TypeError]])
+      perform @sec-rejectpromise(promise, selfResolutionError)
+      return undefined
+    }
+    if resolution is not ty {Object} {
+      perform @sec-fulfillpromise(promise, resolution)
+      return undefined
+    }
+    let #"then" = @sec-completion-ao(@sec-get-o-p(resolution, "then"))
+    if #"then" is ty {#"abrupt completion"} {
+      perform @sec-rejectpromise(promise, #"then"[[Value]])
+      return undefined
+    }
+    let thenAction = #"then"[[Value]]
+    if @sec-iscallable(thenAction) is val {false} {
+      perform @sec-fulfillpromise(promise, resolution)
+      return undefined
+    }
+    let thenJobCallback = @sec-hostmakejobcallback(thenAction)
+    let job = @sec-newpromiseresolvethenablejob(promise, resolution, thenJobCallback)
+    perform @sec-hostenqueuepromisejob(job[[Job]], job[[Realm]])
+    return undefined
+  }
+  closure abstract params [reason] captures [promiseOrEmpty] {
+    if promiseOrEmpty[[Value]] is val {~empty~} -> return undefined
+    let promise = promiseOrEmpty[[Value]]
+    set field promiseOrEmpty[[Value]] = ~empty~
+    perform @sec-rejectpromise(promise, reason)
+    return undefined
+  }
+}
+
+def @sec-fulfillpromise "FulfillPromise" (kind ao params [promise : Promise, value : #"ECMAScript language value"] -> val(~unused~)) vars [promise, value, reactions] {
+  assert promise[[PromiseState]] is val {~pending~}
+  let reactions = promise[[PromiseFulfillReactions]]
+  set field promise[[PromiseResult]] = value
+  set field promise[[PromiseFulfillReactions]] = undefined
+  set field promise[[PromiseRejectReactions]] = undefined
+  set field promise[[PromiseState]] = ~fulfilled~
+  perform @sec-triggerpromisereactions(reactions, value)
+  return ~unused~
+}
+
+def @sec-newpromisecapability "NewPromiseCapability" (kind ao params [ctor : #"ECMAScript language value"] -> completion<#"PromiseCapability Record"> | #"throw completion") vars [ctor, resolvingFuncs, executorClosure, resolve, reject, executor, promise] {
+  if @sec-isconstructor(ctor) is val {false} -> throw @ph-new-error([[TypeError]])
+  note "_ctor_ is assumed to be a constructor function that supports the parameter conventions of the Promise constructor (see <emu-xref href=\"#sec-promise-executor\"></emu-xref>)."
+  let resolvingFuncs = record Record { [[Resolve]]: undefined, [[Reject]]: undefined }
+  let executorClosure = closure 0
+  let executor = @sec-createbuiltinfunction(executorClosure, 2, "", [])
+  let promise = ? @sec-construct(ctor, [executor])
+  if @sec-iscallable(resolvingFuncs[[Resolve]]) is val {false} -> throw @ph-new-error([[TypeError]])
+  if @sec-iscallable(resolvingFuncs[[Reject]]) is val {false} -> throw @ph-new-error([[TypeError]])
+  return record #"PromiseCapability Record" { [[Promise]]: promise, [[Resolve]]: resolvingFuncs[[Resolve]], [[Reject]]: resolvingFuncs[[Reject]] }
+  closure abstract params [resolve, reject] captures [resolvingFuncs] {
+    if resolvingFuncs[[Resolve]] is not val {undefined} -> throw @ph-new-error([[TypeError]])
+    if resolvingFuncs[[Reject]] is not val {undefined} -> throw @ph-new-error([[TypeError]])
+    set field resolvingFuncs[[Resolve]] = resolve
+    set field resolvingFuncs[[Reject]] = reject
+    return @sec-normalcompletion(undefined)
+  }
+}
+
+def @sec-ispromise "IsPromise" (kind ao params [arg : #"ECMAScript language value"] -> Boolean) vars [arg] {
+  if arg is not ty {Object} -> return false
+  if arg fails $HasSlot([[PromiseState]]) -> return false
+  return true
+}
+
+def @sec-rejectpromise "RejectPromise" (kind ao params [promise : Promise, reason : #"ECMAScript language value"] -> val(~unused~)) vars [promise, reason, reactions] {
+  assert promise[[PromiseState]] is val {~pending~}
+  let reactions = promise[[PromiseRejectReactions]]
+  set field promise[[PromiseResult]] = reason
+  set field promise[[PromiseFulfillReactions]] = undefined
+  set field promise[[PromiseRejectReactions]] = undefined
+  set field promise[[PromiseState]] = ~rejected~
+  if promise[[PromiseIsHandled]] is val {false} -> perform @sec-host-promise-rejection-tracker(promise, "reject")
+  perform @sec-triggerpromisereactions(reactions, reason)
+  return ~unused~
+}
+
+def @sec-triggerpromisereactions "TriggerPromiseReactions" (kind ao params [reactions : list<#"PromiseReaction Record">, arg : #"ECMAScript language value"] -> val(~unused~)) vars [reactions, arg, reaction, job] {
+  for_each reaction in reactions {
+    let job = @sec-newpromisereactionjob(reaction, arg)
+    perform @sec-hostenqueuepromisejob(job[[Job]], job[[Realm]])
+  }
+  return ~unused~
+}
+
+def @sec-newpromisereactionjob "NewPromiseReactionJob" (kind ao params [reaction : #"PromiseReaction Record", arg : #"ECMAScript language value"] -> record { [[Job]]: #"Job Abstract Closure", [[Realm]]: #"Realm Record" | val(null) }) vars [reaction, arg, job, promiseCapability, type, handler, handlerResult, settleResult, handlerRealm, getHandlerRealmResult] {
+  let job = closure 0
+  let handlerRealm = null
+  if reaction[[Handler]] is not val {~empty~} {
+    let getHandlerRealmResult = @sec-completion-ao(@sec-getfunctionrealm(reaction[[Handler]][[Callback]]))
+    if getHandlerRealmResult is ty {#"normal completion"} -> set var handlerRealm = getHandlerRealmResult[[Value]]
+    else -> set var handlerRealm = $CurrentRealm()
+    note "_handlerRealm_ is never *null* unless the handler is *undefined*. When the handler is a revoked Proxy and no ECMAScript code runs, _handlerRealm_ is used to create error objects."
+  }
+  return record Record { [[Job]]: job, [[Realm]]: handlerRealm }
+  closure job params none captures [reaction, arg] {
+    let promiseCapability = reaction[[Capability]]
+    let type = reaction[[Type]]
+    let handler = reaction[[Handler]]
+    if handler is val {~empty~} {
+      if type is val {~fulfill~} {
+        let handlerResult = @sec-normalcompletion(arg)
+      }
+      else {
+        assert type is val {~reject~}
+        let handlerResult = @sec-throwcompletion(arg)
+      }
+    }
+    else {
+      let handlerResult = @sec-completion-ao(@sec-hostcalljobcallback(handler, undefined, [arg]))
+    }
+    if promiseCapability is val {undefined} {
+      assert handlerResult is not ty {#"abrupt completion"}
+      return ~empty~
+    }
+    assert promiseCapability is ty {#"PromiseCapability Record"}
+    if handlerResult is ty {#"abrupt completion"} {
+      return ? @sec-call(promiseCapability[[Reject]], undefined, [handlerResult[[Value]]])
+    }
+    return ? @sec-call(promiseCapability[[Resolve]], undefined, [handlerResult[[Value]]])
+  }
+}
+
+def @sec-newpromiseresolvethenablejob "NewPromiseResolveThenableJob" (kind ao params [promiseToResolve : Promise, thenable : Object, #"then" : #"JobCallback Record"] -> record { [[Job]]: #"Job Abstract Closure", [[Realm]]: #"Realm Record" }) vars [promiseToResolve, thenable, #"then", job, resolvingFuncs, thenCallResult, getThenRealmResult, thenRealm] {
+  let job = closure 0
+  let getThenRealmResult = @sec-completion-ao(@sec-getfunctionrealm(#"then"[[Callback]]))
+  if getThenRealmResult is ty {#"normal completion"} -> let thenRealm = getThenRealmResult[[Value]]
+  else -> let thenRealm = $CurrentRealm()
+  note "_thenRealm_ is never *null*. When _then_.[[Callback]] is a revoked Proxy and no code runs, _thenRealm_ is used to create error objects."
+  return record Record { [[Job]]: job, [[Realm]]: thenRealm }
+  closure job params none captures [promiseToResolve, thenable, #"then"] {
+    let resolvingFuncs = @sec-createresolvingfunctions(promiseToResolve)
+    let thenCallResult = @sec-completion-ao(@sec-hostcalljobcallback(#"then", thenable, [resolvingFuncs[[Resolve]], resolvingFuncs[[Reject]]]))
+    if thenCallResult is ty {#"abrupt completion"} {
+      return ! @sec-call(resolvingFuncs[[Reject]], undefined, [thenCallResult[[Value]]])
+    }
+    return ! thenCallResult
+  }
+}
+
+def @sec-promise-executor "Promise" (kind builtin params [executor]) vars [#"this value", NewTarget, executor, promise, resolvingFuncs, #"completion"] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  if @sec-iscallable(executor) is val {false} -> throw @ph-new-error([[TypeError]])
+  let promise = ? @sec-ordinarycreatefromconstructor(new_target, "%Promise.prototype%", [[[PromiseState]], [[PromiseResult]], [[PromiseFulfillReactions]], [[PromiseRejectReactions]], [[PromiseIsHandled]]])
+  set field promise[[PromiseState]] = ~pending~
+  set field promise[[PromiseResult]] = ~empty~
+  set field promise[[PromiseFulfillReactions]] = $ListNew()
+  set field promise[[PromiseRejectReactions]] = $ListNew()
+  set field promise[[PromiseIsHandled]] = false
+  let resolvingFuncs = @sec-createresolvingfunctions(promise)
+  let #"completion" = @sec-completion-ao(@sec-call(executor, undefined, [resolvingFuncs[[Resolve]], resolvingFuncs[[Reject]]]))
+  if #"completion" is ty {#"abrupt completion"} {
+    perform ! @sec-call(resolvingFuncs[[Reject]], undefined, [#"completion"[[Value]]])
+  }
+  return promise
+}
+
+def @sec-promise.all "Promise.all" (kind builtin params [iterable]) vars [#"this value", NewTarget, iterable, ctor, promiseCapability, promiseResolve, iteratorRecord, result] {
+  let ctor = this_value
+  let promiseCapability = ? @sec-newpromisecapability(ctor)
+  let promiseResolve = @sec-completion-ao(@sec-getpromiseresolve(ctor))
+  block {
+    assert promiseResolve is ty {#"Completion Record"}
+    if promiseResolve is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [promiseResolve[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var promiseResolve = ! promiseResolve
+  }
+  let iteratorRecord = @sec-completion-ao(@sec-getiterator(iterable, ~sync~))
+  block {
+    assert iteratorRecord is ty {#"Completion Record"}
+    if iteratorRecord is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [iteratorRecord[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var iteratorRecord = ! iteratorRecord
+  }
+  let result = @sec-completion-ao(@sec-performpromiseall(iteratorRecord, ctor, promiseCapability, promiseResolve))
+  if result is ty {#"abrupt completion"} {
+    if iteratorRecord[[Done]] is val {false} -> set var result = @sec-completion-ao(@sec-iteratorclose(iteratorRecord, result))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+        return promiseCapability[[Promise]]
+      }
+      set var result = ! result
+    }
+  }
+  return ! result
+}
+
+def @sec-getpromiseresolve "GetPromiseResolve" (kind ao params [promiseCtor : constructor] -> completion<#"function object"> | #"throw completion") vars [promiseCtor, promiseResolve] {
+  let promiseResolve = ? @sec-get-o-p(promiseCtor, "resolve")
+  if @sec-iscallable(promiseResolve) is val {false} -> throw @ph-new-error([[TypeError]])
+  return promiseResolve
+}
+
+def @sec-performpromiseall "PerformPromiseAll" (kind ao params [iteratorRecord : #"Iterator Record", ctor : constructor, resultCapability : #"PromiseCapability Record", promiseResolve : #"function object"] -> completion<Object> | #"throw completion") vars [iteratorRecord, ctor, resultCapability, promiseResolve, values, remainingElementsCount, index, next, valuesArray, nextPromise, fulfilledSteps, value, activeFunc, thisIndex, onFulfilled] {
+  let values = $ListNew()
+  note "_remainingElementsCount_ starts at 1 instead of 0 to ensure _resultCapability_.[[Resolve]] is only called once, even in the presence of a misbehaving *\"then\"* which calls the passed callback before the input iterator is exhausted."
+  let remainingElementsCount = record Record { [[Value]]: 1 }
+  let index = 0
+  repeat {
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} {
+      set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] - 1
+      if remainingElementsCount[[Value]] == 0 {
+        let valuesArray = @sec-createarrayfromlist(values)
+        perform ? @sec-call(resultCapability[[Resolve]], undefined, [valuesArray])
+      }
+      return resultCapability[[Promise]]
+    }
+    perform $Append(undefined, ?values)
+    let nextPromise = ? @sec-call(promiseResolve, ctor, [next])
+    let fulfilledSteps = closure 0
+    let onFulfilled = @sec-createbuiltinfunction(fulfilledSteps, 1, "", [[[AlreadyCalled]], [[Index]]])
+    set field onFulfilled[[AlreadyCalled]] = false
+    set field onFulfilled[[Index]] = index
+    set var index = index + 1
+    set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] + 1
+    perform ? @sec-invoke(nextPromise, "then", [onFulfilled, resultCapability[[Reject]]])
+  }
+  closure abstract params [value] captures [values, resultCapability, remainingElementsCount] {
+    let activeFunc = $ActiveFunction()
+    if activeFunc[[AlreadyCalled]] is val {true} -> return undefined
+    set field activeFunc[[AlreadyCalled]] = true
+    let thisIndex = activeFunc[[Index]]
+    set expr values[thisIndex] = value
+    set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] - 1
+    if remainingElementsCount[[Value]] == 0 {
+      let valuesArray = @sec-createarrayfromlist(values)
+      return ? @sec-call(resultCapability[[Resolve]], undefined, [valuesArray])
+    }
+    return undefined
+  }
+}
+
+def @sec-promise.allsettled "Promise.allSettled" (kind builtin params [iterable]) vars [#"this value", NewTarget, iterable, ctor, promiseCapability, promiseResolve, iteratorRecord, result] {
+  let ctor = this_value
+  let promiseCapability = ? @sec-newpromisecapability(ctor)
+  let promiseResolve = @sec-completion-ao(@sec-getpromiseresolve(ctor))
+  block {
+    assert promiseResolve is ty {#"Completion Record"}
+    if promiseResolve is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [promiseResolve[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var promiseResolve = ! promiseResolve
+  }
+  let iteratorRecord = @sec-completion-ao(@sec-getiterator(iterable, ~sync~))
+  block {
+    assert iteratorRecord is ty {#"Completion Record"}
+    if iteratorRecord is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [iteratorRecord[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var iteratorRecord = ! iteratorRecord
+  }
+  let result = @sec-completion-ao(@sec-performpromiseallsettled(iteratorRecord, ctor, promiseCapability, promiseResolve))
+  if result is ty {#"abrupt completion"} {
+    if iteratorRecord[[Done]] is val {false} -> set var result = @sec-completion-ao(@sec-iteratorclose(iteratorRecord, result))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+        return promiseCapability[[Promise]]
+      }
+      set var result = ! result
+    }
+  }
+  return ! result
+}
+
+def @sec-performpromiseallsettled "PerformPromiseAllSettled" (kind ao params [iteratorRecord : #"Iterator Record", ctor : constructor, resultCapability : #"PromiseCapability Record", promiseResolve : #"function object"] -> completion<Object> | #"throw completion") vars [iteratorRecord, ctor, resultCapability, promiseResolve, values, remainingElementsCount, index, next, valuesArray, nextPromise, alreadyCalled, fulfilledSteps, value, activeFunc, #"obj", thisIndex, onFulfilled, rejectedSteps, error, onRejected] {
+  let values = $ListNew()
+  note "_remainingElementsCount_ starts at 1 instead of 0 to ensure _resultCapability_.[[Resolve]] is only called once, even in the presence of a misbehaving *\"then\"* which calls one of the passed callbacks before the input iterator is exhausted."
+  let remainingElementsCount = record Record { [[Value]]: 1 }
+  let index = 0
+  repeat {
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} {
+      set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] - 1
+      if remainingElementsCount[[Value]] == 0 {
+        let valuesArray = @sec-createarrayfromlist(values)
+        perform ? @sec-call(resultCapability[[Resolve]], undefined, [valuesArray])
+      }
+      return resultCapability[[Promise]]
+    }
+    perform $Append(undefined, ?values)
+    let nextPromise = ? @sec-call(promiseResolve, ctor, [next])
+    let alreadyCalled = record Record { [[Value]]: false }
+    let fulfilledSteps = closure 0
+    let onFulfilled = @sec-createbuiltinfunction(fulfilledSteps, 1, "", [[[AlreadyCalled]], [[Index]]])
+    set field onFulfilled[[AlreadyCalled]] = alreadyCalled
+    set field onFulfilled[[Index]] = index
+    let rejectedSteps = closure 1
+    let onRejected = @sec-createbuiltinfunction(rejectedSteps, 1, "", [[[AlreadyCalled]], [[Index]]])
+    set field onRejected[[AlreadyCalled]] = alreadyCalled
+    set field onRejected[[Index]] = index
+    set var index = index + 1
+    set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] + 1
+    perform ? @sec-invoke(nextPromise, "then", [onFulfilled, onRejected])
+  }
+  closure abstract params [value] captures [values, resultCapability, remainingElementsCount] {
+    let activeFunc = $ActiveFunction()
+    if activeFunc[[AlreadyCalled]][[Value]] is val {true} -> return undefined
+    set field activeFunc[[AlreadyCalled]][[Value]] = true
+    let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+    perform ! @sec-createdatapropertyorthrow(#"obj", "status", "fulfilled")
+    perform ! @sec-createdatapropertyorthrow(#"obj", "value", value)
+    let thisIndex = activeFunc[[Index]]
+    set expr values[thisIndex] = #"obj"
+    set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] - 1
+    if remainingElementsCount[[Value]] == 0 {
+      let valuesArray = @sec-createarrayfromlist(values)
+      return ? @sec-call(resultCapability[[Resolve]], undefined, [valuesArray])
+    }
+    return undefined
+  }
+  closure abstract params [error] captures [values, resultCapability, remainingElementsCount] {
+    let activeFunc = $ActiveFunction()
+    if activeFunc[[AlreadyCalled]][[Value]] is val {true} -> return undefined
+    set field activeFunc[[AlreadyCalled]][[Value]] = true
+    let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+    perform ! @sec-createdatapropertyorthrow(#"obj", "status", "rejected")
+    perform ! @sec-createdatapropertyorthrow(#"obj", "reason", error)
+    let thisIndex = activeFunc[[Index]]
+    set expr values[thisIndex] = #"obj"
+    set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] - 1
+    if remainingElementsCount[[Value]] == 0 {
+      let valuesArray = @sec-createarrayfromlist(values)
+      return ? @sec-call(resultCapability[[Resolve]], undefined, [valuesArray])
+    }
+    return undefined
+  }
+}
+
+def @sec-promise.any "Promise.any" (kind builtin params [iterable]) vars [#"this value", NewTarget, iterable, ctor, promiseCapability, promiseResolve, iteratorRecord, result] {
+  let ctor = this_value
+  let promiseCapability = ? @sec-newpromisecapability(ctor)
+  let promiseResolve = @sec-completion-ao(@sec-getpromiseresolve(ctor))
+  block {
+    assert promiseResolve is ty {#"Completion Record"}
+    if promiseResolve is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [promiseResolve[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var promiseResolve = ! promiseResolve
+  }
+  let iteratorRecord = @sec-completion-ao(@sec-getiterator(iterable, ~sync~))
+  block {
+    assert iteratorRecord is ty {#"Completion Record"}
+    if iteratorRecord is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [iteratorRecord[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var iteratorRecord = ! iteratorRecord
+  }
+  let result = @sec-completion-ao(@sec-performpromiseany(iteratorRecord, ctor, promiseCapability, promiseResolve))
+  if result is ty {#"abrupt completion"} {
+    if iteratorRecord[[Done]] is val {false} -> set var result = @sec-completion-ao(@sec-iteratorclose(iteratorRecord, result))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+        return promiseCapability[[Promise]]
+      }
+      set var result = ! result
+    }
+  }
+  return ! result
+}
+
+def @sec-performpromiseany "PerformPromiseAny" (kind ao params [iteratorRecord : #"Iterator Record", ctor : constructor, resultCapability : #"PromiseCapability Record", promiseResolve : #"function object"] -> completion<Object> | #"throw completion") vars [iteratorRecord, ctor, resultCapability, promiseResolve, errors, remainingElementsCount, index, next, aggregateError, nextPromise, rejectedSteps, error, activeFunc, thisIndex, onRejected] {
+  let errors = $ListNew()
+  note "_remainingElementsCount_ starts at 1 instead of 0 to ensure _resultCapability_.[[Reject]] is only called once, even in the presence of a misbehaving *\"then\"* which calls the passed callback before the input iterator is exhausted."
+  let remainingElementsCount = record Record { [[Value]]: 1 }
+  let index = 0
+  repeat {
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} {
+      set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] - 1
+      if remainingElementsCount[[Value]] == 0 {
+        let aggregateError = @ph-new-error(err [[AggregateError]])
+        perform ! @sec-definepropertyorthrow(aggregateError, "errors", record PropertyDescriptor { [[Configurable]]: true, [[Enumerable]]: false, [[Writable]]: true, [[Value]]: @sec-createarrayfromlist(errors) })
+        perform ? @sec-call(resultCapability[[Reject]], undefined, [aggregateError])
+      }
+      return resultCapability[[Promise]]
+    }
+    perform $Append(undefined, ?errors)
+    let nextPromise = ? @sec-call(promiseResolve, ctor, [next])
+    let rejectedSteps = closure 0
+    let onRejected = @sec-createbuiltinfunction(rejectedSteps, 1, "", [[[AlreadyCalled]], [[Index]]])
+    set field onRejected[[AlreadyCalled]] = false
+    set field onRejected[[Index]] = index
+    set var index = index + 1
+    set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] + 1
+    perform ? @sec-invoke(nextPromise, "then", [resultCapability[[Resolve]], onRejected])
+  }
+  closure abstract params [error] captures [errors, resultCapability, remainingElementsCount] {
+    let activeFunc = $ActiveFunction()
+    if activeFunc[[AlreadyCalled]] is val {true} -> return undefined
+    set field activeFunc[[AlreadyCalled]] = true
+    let thisIndex = activeFunc[[Index]]
+    set expr errors[thisIndex] = error
+    set field remainingElementsCount[[Value]] = remainingElementsCount[[Value]] - 1
+    if remainingElementsCount[[Value]] == 0 {
+      let aggregateError = @ph-new-error(err [[AggregateError]])
+      perform ! @sec-definepropertyorthrow(aggregateError, "errors", record PropertyDescriptor { [[Configurable]]: true, [[Enumerable]]: false, [[Writable]]: true, [[Value]]: @sec-createarrayfromlist(errors) })
+      return ? @sec-call(resultCapability[[Reject]], undefined, [aggregateError])
+    }
+    return undefined
+  }
+}
+
+def @sec-promise.race "Promise.race" (kind builtin params [iterable]) vars [#"this value", NewTarget, iterable, ctor, promiseCapability, promiseResolve, iteratorRecord, result] {
+  let ctor = this_value
+  let promiseCapability = ? @sec-newpromisecapability(ctor)
+  let promiseResolve = @sec-completion-ao(@sec-getpromiseresolve(ctor))
+  block {
+    assert promiseResolve is ty {#"Completion Record"}
+    if promiseResolve is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [promiseResolve[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var promiseResolve = ! promiseResolve
+  }
+  let iteratorRecord = @sec-completion-ao(@sec-getiterator(iterable, ~sync~))
+  block {
+    assert iteratorRecord is ty {#"Completion Record"}
+    if iteratorRecord is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [iteratorRecord[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var iteratorRecord = ! iteratorRecord
+  }
+  let result = @sec-completion-ao(@sec-performpromiserace(iteratorRecord, ctor, promiseCapability, promiseResolve))
+  if result is ty {#"abrupt completion"} {
+    if iteratorRecord[[Done]] is val {false} -> set var result = @sec-completion-ao(@sec-iteratorclose(iteratorRecord, result))
+    block {
+      assert result is ty {#"Completion Record"}
+      if result is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+        return promiseCapability[[Promise]]
+      }
+      set var result = ! result
+    }
+  }
+  return ! result
+}
+
+def @sec-performpromiserace "PerformPromiseRace" (kind ao params [iteratorRecord : #"Iterator Record", ctor : constructor, resultCapability : #"PromiseCapability Record", promiseResolve : #"function object"] -> completion<Object> | #"throw completion") vars [iteratorRecord, ctor, resultCapability, promiseResolve, next, nextPromise] {
+  repeat {
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} {
+      return resultCapability[[Promise]]
+    }
+    let nextPromise = ? @sec-call(promiseResolve, ctor, [next])
+    perform ? @sec-invoke(nextPromise, "then", [resultCapability[[Resolve]], resultCapability[[Reject]]])
+  }
+}
+
+def @sec-promise.reject "Promise.reject" (kind builtin params [reason]) vars [#"this value", NewTarget, reason, ctor, promiseCapability] {
+  let ctor = this_value
+  let promiseCapability = ? @sec-newpromisecapability(ctor)
+  perform ? @sec-call(promiseCapability[[Reject]], undefined, [reason])
+  return promiseCapability[[Promise]]
+}
+
+def @sec-promise.resolve "Promise.resolve" (kind builtin params [resolution]) vars [#"this value", NewTarget, resolution, ctor] {
+  let ctor = this_value
+  if ctor is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-promise-resolve(ctor, resolution)
+}
+
+def @sec-promise-resolve "PromiseResolve" (kind ao params [ctor : Object, resolution : #"ECMAScript language value"] -> completion<Object> | #"throw completion") vars [ctor, resolution, resolutionCtor, promiseCapability] {
+  if @sec-ispromise(resolution) is val {true} {
+    let resolutionCtor = ? @sec-get-o-p(resolution, "constructor")
+    if @sec-samevalue(resolutionCtor, ctor) is val {true} -> return resolution
+  }
+  let promiseCapability = ? @sec-newpromisecapability(ctor)
+  perform ? @sec-call(promiseCapability[[Resolve]], undefined, [resolution])
+  return promiseCapability[[Promise]]
+}
+
+def @sec-promise.try "Promise.try" (kind builtin params [callback, args rest]) vars [#"this value", NewTarget, callback, args, ctor, status, promiseCapability] {
+  let ctor = this_value
+  if ctor is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let status = @sec-completion-ao(@sec-call(callback, undefined, args))
+  if status is ty {#"abrupt completion"} {
+    let promiseCapability = ? @sec-newpromisecapability(ctor)
+    perform ? @sec-call(promiseCapability[[Reject]], undefined, [status[[Value]]])
+    return promiseCapability[[Promise]]
+  }
+  else {
+    return ? @sec-promise-resolve(ctor, ! status)
+  }
+}
+
+def @sec-promise.withResolvers "Promise.withResolvers" (kind builtin params []) vars [#"this value", NewTarget, ctor, promiseCapability, #"obj"] {
+  let ctor = this_value
+  let promiseCapability = ? @sec-newpromisecapability(ctor)
+  let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  perform ! @sec-createdatapropertyorthrow(#"obj", "promise", promiseCapability[[Promise]])
+  perform ! @sec-createdatapropertyorthrow(#"obj", "resolve", promiseCapability[[Resolve]])
+  perform ! @sec-createdatapropertyorthrow(#"obj", "reject", promiseCapability[[Reject]])
+  return #"obj"
+}
+
+def @sec-get-promise-%symbol.species% "get Promise [ %Symbol.species% ]" (kind builtin params []) vars [#"this value", NewTarget] {
+  return this_value
+}
+
+def @sec-promise.prototype.catch "Promise.prototype.catch" (kind builtin params [onRejected]) vars [#"this value", NewTarget, onRejected, promise] {
+  let promise = this_value
+  return ? @sec-invoke(promise, "then", [undefined, onRejected])
+}
+
+def @sec-promise.prototype.finally "Promise.prototype.finally" (kind builtin params [onFinally]) vars [#"this value", NewTarget, onFinally, promise, ctor, thenFinally, catchFinally, thenFinallyClosure, value, result, p, returnValue, valueThunk, catchFinallyClosure, reason, throwReason, thrower] {
+  let promise = this_value
+  if promise is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let ctor = ? @sec-speciesconstructor(promise, intrinsic [[Promise]])
+  assert @sec-isconstructor(ctor) is val {true}
+  if @sec-iscallable(onFinally) is val {false} {
+    let thenFinally = onFinally
+    let catchFinally = onFinally
+  }
+  else {
+    let thenFinallyClosure = closure 0
+    let thenFinally = @sec-createbuiltinfunction(thenFinallyClosure, 1, "", [])
+    let catchFinallyClosure = closure 2
+    let catchFinally = @sec-createbuiltinfunction(catchFinallyClosure, 1, "", [])
+  }
+  return ? @sec-invoke(promise, "then", [thenFinally, catchFinally])
+  closure abstract params [value] captures [onFinally, ctor] {
+    let result = ? @sec-call(onFinally, undefined)
+    let p = ? @sec-promise-resolve(ctor, result)
+    let returnValue = closure 1
+    let valueThunk = @sec-createbuiltinfunction(returnValue, 0, "", [])
+    return ? @sec-invoke(p, "then", [valueThunk])
+  }
+  closure abstract params none captures [value] {
+    return @sec-normalcompletion(value)
+  }
+  closure abstract params [reason] captures [onFinally, ctor] {
+    let result = ? @sec-call(onFinally, undefined)
+    let p = ? @sec-promise-resolve(ctor, result)
+    let throwReason = closure 3
+    let thrower = @sec-createbuiltinfunction(throwReason, 0, "", [])
+    return ? @sec-invoke(p, "then", [thrower])
+  }
+  closure abstract params none captures [reason] {
+    throw reason
+  }
+}
+
+def @sec-promise.prototype.then "Promise.prototype.then" (kind builtin params [onFulfilled, onRejected]) vars [#"this value", NewTarget, onFulfilled, onRejected, promise, ctor, resultCapability] {
+  let promise = this_value
+  if @sec-ispromise(promise) is val {false} -> throw @ph-new-error([[TypeError]])
+  let ctor = ? @sec-speciesconstructor(promise, intrinsic [[Promise]])
+  let resultCapability = ? @sec-newpromisecapability(ctor)
+  return @sec-performpromisethen(promise, onFulfilled, onRejected, resultCapability)
+}
+
+def @sec-performpromisethen "PerformPromiseThen" (kind ao params [promise : Promise, onFulfilled : #"ECMAScript language value", onRejected : #"ECMAScript language value", resultCapability : #"PromiseCapability Record" opt] -> Object | val(undefined)) vars [promise, onFulfilled, onRejected, resultCapability, onFulfilledJobCallback, onRejectedJobCallback, fulfillReaction, rejectReaction, value, fulfillJob, reason, rejectJob] {
+  assert @sec-ispromise(promise) is val {true}
+  if resultCapability fails $Present() {
+    set var resultCapability = undefined
+  }
+  if @sec-iscallable(onFulfilled) is val {false} {
+    let onFulfilledJobCallback = ~empty~
+  }
+  else {
+    let onFulfilledJobCallback = @sec-hostmakejobcallback(onFulfilled)
+  }
+  if @sec-iscallable(onRejected) is val {false} {
+    let onRejectedJobCallback = ~empty~
+  }
+  else {
+    let onRejectedJobCallback = @sec-hostmakejobcallback(onRejected)
+  }
+  let fulfillReaction = record #"PromiseReaction Record" { [[Capability]]: resultCapability, [[Type]]: ~fulfill~, [[Handler]]: onFulfilledJobCallback }
+  let rejectReaction = record #"PromiseReaction Record" { [[Capability]]: resultCapability, [[Type]]: ~reject~, [[Handler]]: onRejectedJobCallback }
+  if promise[[PromiseState]] is val {~pending~} {
+    perform $Append(?fulfillReaction, promise[[PromiseFulfillReactions]])
+    perform $Append(?rejectReaction, promise[[PromiseRejectReactions]])
+  }
+  else_if promise[[PromiseState]] is val {~fulfilled~} {
+    let value = promise[[PromiseResult]]
+    let fulfillJob = @sec-newpromisereactionjob(fulfillReaction, value)
+    perform @sec-hostenqueuepromisejob(fulfillJob[[Job]], fulfillJob[[Realm]])
+  }
+  else {
+    assert promise[[PromiseState]] is val {~rejected~}
+    let reason = promise[[PromiseResult]]
+    if promise[[PromiseIsHandled]] is val {false} -> perform @sec-host-promise-rejection-tracker(promise, "handle")
+    let rejectJob = @sec-newpromisereactionjob(rejectReaction, reason)
+    perform @sec-hostenqueuepromisejob(rejectJob[[Job]], rejectJob[[Realm]])
+  }
+  set field promise[[PromiseIsHandled]] = true
+  if resultCapability is val {undefined} -> return undefined
+  return resultCapability[[Promise]]
+}
+
+def @sec-generatorfunction "GeneratorFunction" (kind builtin params [paramArgs rest, bodyArg]) vars [#"this value", NewTarget, paramArgs, bodyArg, activeFunc] {
+  let activeFunc = $ActiveFunction()
+  if bodyArg fails $Present() -> set var bodyArg = $"the empty String"()
+  return ? @sec-createdynamicfunction(activeFunc, new_target, ~generator~, paramArgs, bodyArg)
+}
+
+def @sec-asyncgeneratorfunction "AsyncGeneratorFunction" (kind builtin params [paramArgs rest, bodyArg]) vars [#"this value", NewTarget, paramArgs, bodyArg, activeFunc] {
+  let activeFunc = $ActiveFunction()
+  if bodyArg fails $Present() -> set var bodyArg = $"the empty String"()
+  return ? @sec-createdynamicfunction(activeFunc, new_target, ~async-generator~, paramArgs, bodyArg)
+}
+
+def @sec-generator.prototype.next "%GeneratorPrototype%.next" (kind builtin params [value]) vars [#"this value", NewTarget, value] {
+  return ? @sec-generatorresume(this_value, value, ~empty~)
+}
+
+def @sec-generator.prototype.return "%GeneratorPrototype%.return" (kind builtin params [value]) vars [#"this value", NewTarget, value, gen, #"completion"] {
+  let gen = this_value
+  let #"completion" = @sec-returncompletion(value)
+  return ? @sec-generatorresumeabrupt(gen, #"completion", ~empty~)
+}
+
+def @sec-generator.prototype.throw "%GeneratorPrototype%.throw" (kind builtin params [exception]) vars [#"this value", NewTarget, exception, gen, #"completion"] {
+  let gen = this_value
+  let #"completion" = @sec-throwcompletion(exception)
+  return ? @sec-generatorresumeabrupt(gen, #"completion", ~empty~)
+}
+
+def @sec-generatorstart "GeneratorStart" (kind ao params [gen : Generator, genBody : |FunctionBody| | pred(sat @ph-type-header-closure-no-params())] -> val(~unused~)) vars [gen, genBody, genContext, #"closure", acGenContext, acGen, result, resumption, resultValue, callerContext] {
+  assert gen[[GeneratorState]] is val {~suspended-start~}
+  let genContext = $Running()
+  set field genContext[[Generator]] = gen
+  let #"closure" = closure 0
+  set_code_state genContext to #"closure"
+  set field gen[[GeneratorContext]] = genContext
+  return ~unused~
+  closure abstract params none captures [genBody] {
+    let acGenContext = $Running()
+    let acGen = $Component(?acGenContext, [[Generator]])
+    if genBody is ty {#"Parse Node"} {
+      let result = @sec-completion-ao(sdo Evaluation(genBody))
+    }
+    else {
+      assert genBody is ty {pred(sat @ph-type-closure-no-params())}
+      let result = @sec-completion-ao(genBody())
+    }
+    assert result is ty {#"normal completion"; #"return completion"; #"throw completion"}
+    remove acGenContext kind 0
+    set field acGen[[GeneratorState]] = ~completed~
+    note "Once a generator enters the ~completed~ state it never leaves it and its associated execution context is never resumed. Any execution state associated with _acGen_ can be discarded at this point."
+    if result is ty {#"throw completion"} {
+      let resumption = result
+    }
+    else {
+      if result is ty {#"normal completion"} {
+        let resultValue = undefined
+      }
+      else_if result is ty {#"return completion"} {
+        let resultValue = result[[Value]]
+      }
+      let resumption = @sec-normalcompletion(@sec-createiterresultobject(resultValue, true))
+    }
+    let callerContext = $Running()
+    resume callerContext with resumption
+    unreachable 0
+  }
+}
+
+def @sec-generatorvalidate "GeneratorValidate" (kind ao params [gen : #"ECMAScript language value", genBrand : String | val(~empty~)] -> completion<val(~suspended-start~) | val(~suspended-yield~) | val(~completed~)> | #"throw completion") vars [gen, genBrand, state] {
+  perform ? @sec-requireinternalslot(gen, [[GeneratorState]])
+  perform ? @sec-requireinternalslot(gen, [[GeneratorBrand]])
+  if gen[[GeneratorBrand]] is not val {genBrand} -> throw @ph-new-error([[TypeError]])
+  assert gen sat $HasSlot([[GeneratorContext]])
+  let state = gen[[GeneratorState]]
+  if state is val {~executing~} -> throw @ph-new-error([[TypeError]])
+  return state
+}
+
+def @sec-generatorresume "GeneratorResume" (kind ao params [gen : #"ECMAScript language value", value : #"ECMAScript language value" | val(~empty~), genBrand : String | val(~empty~)] -> completion<#"ECMAScript language value"> | #"throw completion") vars [gen, value, genBrand, state, genContext] {
+  let state = ? @sec-generatorvalidate(gen, genBrand)
+  if state is val {~completed~} -> return @sec-createiterresultobject(undefined, true)
+  assert state is val {~suspended-start~; ~suspended-yield~}
+  let genContext = gen[[GeneratorContext]]
+  set field gen[[GeneratorState]] = ~executing~
+  return ? @sec-runsuspendedcontext(genContext, @sec-normalcompletion(value))
+}
+
+def @sec-generatorresumeabrupt "GeneratorResumeAbrupt" (kind ao params [gen : #"ECMAScript language value", abruptCompletion : #"return completion" | #"throw completion", genBrand : String | val(~empty~)] -> completion<#"ECMAScript language value"> | #"throw completion") vars [gen, abruptCompletion, genBrand, state, genContext] {
+  let state = ? @sec-generatorvalidate(gen, genBrand)
+  if state is val {~suspended-start~} {
+    set field gen[[GeneratorState]] = ~completed~
+    note "Once a generator enters the ~completed~ state it never leaves it and its associated execution context is never resumed. Any execution state associated with _gen_ can be discarded at this point."
+    set var state = ~completed~
+  }
+  if state is val {~completed~} {
+    if abruptCompletion is ty {#"return completion"} {
+      return @sec-createiterresultobject(abruptCompletion[[Value]], true)
+    }
+    return ? abruptCompletion
+  }
+  assert state is val {~suspended-yield~}
+  let genContext = gen[[GeneratorContext]]
+  set field gen[[GeneratorState]] = ~executing~
+  return ? @sec-runsuspendedcontext(genContext, abruptCompletion)
+}
+
+def @sec-getgeneratorkind "GetGeneratorKind" (kind ao params [] -> val(~non-generator~) | val(~sync~) | val(~async~)) vars [genContext, gen] {
+  let genContext = $Running()
+  if genContext fails $HasField([[Generator]]) -> return ~non-generator~
+  let gen = $Component(?genContext, [[Generator]])
+  if gen sat $HasSlot([[AsyncGeneratorState]]) -> return ~async~
+  return ~sync~
+}
+
+def @sec-generatoryield "GeneratorYield" (kind ao params [iteratorResult : Object that sat @ph-type-conforms-iterator-result()] -> completion<#"ECMAScript language value"> | #"abrupt completion") vars [iteratorResult, genContext, gen] {
+  let genContext = $Running()
+  assert genContext sat @ph-generator-context()
+  let gen = $Component(?genContext, [[Generator]])
+  assert @sec-getgeneratorkind() is val {~sync~}
+  set field gen[[GeneratorState]] = ~suspended-yield~
+  return ? @sec-runcallercontext(iteratorResult)
+}
+
+def @sec-yield "Yield" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"abrupt completion") vars [arg, genKind] {
+  let genKind = @sec-getgeneratorkind()
+  if genKind is val {~async~} -> return ? @sec-asyncgeneratoryield(? @await(arg))
+  return ? @sec-generatoryield(@sec-createiterresultobject(arg, false))
+}
+
+def @sec-createiteratorfromclosure "CreateIteratorFromClosure" (kind ao params [#"closure" : pred(sat @ph-type-header-closure-no-params()), genBrand : String | val(~empty~), genProto : Object, extraSlots : doc "a List of names of internal slots" opt] -> Generator) vars [#"closure", genBrand, genProto, extraSlots, internalSlotsList, gen, callerContext, calleeContext] {
+  note "_closure_ can contain uses of the Yield operation to yield an IteratorResult object."
+  if extraSlots fails $Present() -> set var extraSlots = $ListNew()
+  let internalSlotsList = $ListConcat([extraSlots, [[[GeneratorState]], [[GeneratorContext]], [[GeneratorBrand]]]])
+  let gen = @sec-ordinaryobjectcreate(genProto, internalSlotsList)
+  set field gen[[GeneratorBrand]] = genBrand
+  set field gen[[GeneratorState]] = ~suspended-start~
+  let callerContext = $Running()
+  let calleeContext = $NewRecord(data sort #"execution context")
+  set expr component [[Function]] of calleeContext = null
+  set expr component [[Realm]] of calleeContext = $CurrentRealm()
+  set expr component [[ScriptOrModule]] of calleeContext = $Component(?callerContext, [[ScriptOrModule]])
+  if callerContext fails $IsSuspended() -> suspend callerContext kind 0
+  push calleeContext kind 0
+  perform @sec-generatorstart(gen, #"closure")
+  remove_restore calleeContext with callerContext
+  return gen
+}
+
+def @sec-asyncgenerator-prototype-next "%AsyncGeneratorPrototype%.next" (kind builtin params [value]) vars [#"this value", NewTarget, value, gen, promiseCapability, result, state, iteratorResult, #"completion"] {
+  let gen = this_value
+  let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  let result = @sec-completion-ao(@sec-asyncgeneratorvalidate(gen, ~empty~))
+  block {
+    assert result is ty {#"Completion Record"}
+    if result is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var result = ! result
+  }
+  let state = gen[[AsyncGeneratorState]]
+  if state is val {~completed~} {
+    let iteratorResult = @sec-createiterresultobject(undefined, true)
+    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [iteratorResult])
+    return promiseCapability[[Promise]]
+  }
+  let #"completion" = @sec-normalcompletion(value)
+  perform @sec-asyncgeneratorenqueue(gen, #"completion", promiseCapability)
+  if state is val {~suspended-start~; ~suspended-yield~} {
+    perform @sec-asyncgeneratorresume(gen, #"completion")
+  }
+  else {
+    assert state is val {~executing~; ~draining-queue~}
+  }
+  return promiseCapability[[Promise]]
+}
+
+def @sec-asyncgenerator-prototype-return "%AsyncGeneratorPrototype%.return" (kind builtin params [value]) vars [#"this value", NewTarget, value, gen, promiseCapability, result, #"completion", state] {
+  let gen = this_value
+  let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  let result = @sec-completion-ao(@sec-asyncgeneratorvalidate(gen, ~empty~))
+  block {
+    assert result is ty {#"Completion Record"}
+    if result is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var result = ! result
+  }
+  let #"completion" = @sec-returncompletion(value)
+  perform @sec-asyncgeneratorenqueue(gen, #"completion", promiseCapability)
+  let state = gen[[AsyncGeneratorState]]
+  if state is val {~suspended-start~; ~completed~} {
+    set field gen[[AsyncGeneratorState]] = ~draining-queue~
+    perform @sec-asyncgeneratorawaitreturn(gen)
+  }
+  else_if state is val {~suspended-yield~} {
+    perform @sec-asyncgeneratorresume(gen, #"completion")
+  }
+  else {
+    assert state is val {~executing~; ~draining-queue~}
+  }
+  return promiseCapability[[Promise]]
+}
+
+def @sec-asyncgenerator-prototype-throw "%AsyncGeneratorPrototype%.throw" (kind builtin params [exception]) vars [#"this value", NewTarget, exception, gen, promiseCapability, result, state, #"completion"] {
+  let gen = this_value
+  let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  let result = @sec-completion-ao(@sec-asyncgeneratorvalidate(gen, ~empty~))
+  block {
+    assert result is ty {#"Completion Record"}
+    if result is ty {#"abrupt completion"} {
+      perform ? @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+      return promiseCapability[[Promise]]
+    }
+    set var result = ! result
+  }
+  let state = gen[[AsyncGeneratorState]]
+  if state is val {~suspended-start~} {
+    set field gen[[AsyncGeneratorState]] = ~completed~
+    set var state = ~completed~
+  }
+  if state is val {~completed~} {
+    perform ! @sec-call(promiseCapability[[Reject]], undefined, [exception])
+    return promiseCapability[[Promise]]
+  }
+  let #"completion" = @sec-throwcompletion(exception)
+  perform @sec-asyncgeneratorenqueue(gen, #"completion", promiseCapability)
+  if state is val {~suspended-yield~} {
+    perform @sec-asyncgeneratorresume(gen, #"completion")
+  }
+  else {
+    assert state is val {~executing~; ~draining-queue~}
+  }
+  return promiseCapability[[Promise]]
+}
+
+def @sec-asyncgeneratorstart "AsyncGeneratorStart" (kind ao params [gen : AsyncGenerator, genBody : |FunctionBody| | pred(sat @ph-type-header-closure-no-params())] -> val(~unused~)) vars [gen, genBody, genContext, #"closure", acGenContext, acGen, result, callerContext] {
+  assert gen[[AsyncGeneratorState]] is val {~suspended-start~}
+  let genContext = $Running()
+  set field genContext[[Generator]] = gen
+  let #"closure" = closure 0
+  set_code_state genContext to #"closure"
+  set field gen[[AsyncGeneratorContext]] = genContext
+  set field gen[[AsyncGeneratorQueue]] = $ListNew()
+  return ~unused~
+  closure abstract params none captures [genBody] {
+    let acGenContext = $Running()
+    let acGen = $Component(?acGenContext, [[Generator]])
+    if genBody is ty {#"Parse Node"} {
+      let result = @sec-completion-ao(sdo Evaluation(genBody))
+    }
+    else {
+      assert genBody is ty {pred(sat @ph-type-closure-no-params())}
+      let result = @sec-completion-ao(genBody())
+    }
+    assert result is ty {#"normal completion"; #"return completion"; #"throw completion"}
+    remove acGenContext kind 0
+    set field acGen[[AsyncGeneratorState]] = ~draining-queue~
+    if result is ty {#"normal completion"} -> set var result = @sec-normalcompletion(undefined)
+    if result is ty {#"return completion"} -> set var result = @sec-normalcompletion(result[[Value]])
+    perform @sec-asyncgeneratorcompletestep(acGen, result, true)
+    perform @sec-asyncgeneratordrainqueue(acGen)
+    let callerContext = $Running()
+    resume callerContext with @sec-normalcompletion(undefined)
+    unreachable 0
+  }
+}
+
+def @sec-asyncgeneratorvalidate "AsyncGeneratorValidate" (kind ao params [gen : #"ECMAScript language value", genBrand : String | val(~empty~)] -> completion<val(~unused~)> | #"throw completion") vars [gen, genBrand] {
+  perform ? @sec-requireinternalslot(gen, [[AsyncGeneratorContext]])
+  perform ? @sec-requireinternalslot(gen, [[AsyncGeneratorState]])
+  perform ? @sec-requireinternalslot(gen, [[AsyncGeneratorQueue]])
+  if gen[[GeneratorBrand]] is not val {genBrand} -> throw @ph-new-error([[TypeError]])
+  return ~unused~
+}
+
+def @sec-asyncgeneratorenqueue "AsyncGeneratorEnqueue" (kind ao params [gen : AsyncGenerator, #"completion" : #"Completion Record", promiseCapability : #"PromiseCapability Record"] -> val(~unused~)) vars [gen, #"completion", promiseCapability, request] {
+  let request = record AsyncGeneratorRequest { [[Completion]]: #"completion", [[Capability]]: promiseCapability }
+  perform $Append(?request, gen[[AsyncGeneratorQueue]])
+  return ~unused~
+}
+
+def @sec-asyncgeneratorcompletestep "AsyncGeneratorCompleteStep" (kind ao params [gen : AsyncGenerator, #"completion" : #"Completion Record", done : Boolean, #"realm" : #"Realm Record" opt] -> val(~unused~)) vars [gen, #"completion", done, #"realm", next, promiseCapability, value, oldRealm, iteratorResult] {
+  assert gen[[AsyncGeneratorQueue]] fails $IsEmpty()
+  let next = $ListElem(data choice 1, gen[[AsyncGeneratorQueue]])
+  perform $RemoveFirst(gen[[AsyncGeneratorQueue]])
+  let promiseCapability = next[[Capability]]
+  let value = #"completion"[[Value]]
+  if #"completion" is ty {#"throw completion"} {
+    perform ! @sec-call(promiseCapability[[Reject]], undefined, [value])
+  }
+  else {
+    assert #"completion" is ty {#"normal completion"}
+    if #"realm" sat $Present() {
+      let oldRealm = $Component($Running(), [[Realm]])
+      set field $Running()[[Realm]] = #"realm"
+      let iteratorResult = @sec-createiterresultobject(value, done)
+      set field $Running()[[Realm]] = oldRealm
+    }
+    else {
+      let iteratorResult = @sec-createiterresultobject(value, done)
+    }
+    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [iteratorResult])
+  }
+  return ~unused~
+}
+
+def @sec-asyncgeneratorresume "AsyncGeneratorResume" (kind ao params [gen : AsyncGenerator, #"completion" : #"Completion Record"] -> val(~unused~)) vars [gen, #"completion", genContext] {
+  assert gen[[AsyncGeneratorState]] is val {~suspended-start~; ~suspended-yield~}
+  let genContext = gen[[AsyncGeneratorContext]]
+  set field gen[[AsyncGeneratorState]] = ~executing~
+  perform ! @sec-runsuspendedcontext(genContext, #"completion")
+  return ~unused~
+}
+
+def @sec-asyncgeneratorunwrapyieldresumption "AsyncGeneratorUnwrapYieldResumption" (kind ao params [resumptionValue : #"Completion Record"] -> completion<#"ECMAScript language value"> | #"abrupt completion") vars [resumptionValue, awaited] {
+  if resumptionValue is not ty {#"return completion"} -> return ? resumptionValue
+  let awaited = @sec-completion-ao(@await(resumptionValue[[Value]]))
+  if awaited is ty {#"throw completion"} -> return ? awaited
+  assert awaited is ty {#"normal completion"}
+  return @sec-returncompletion(awaited[[Value]])
+}
+
+def @sec-asyncgeneratoryield "AsyncGeneratorYield" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"ECMAScript language value"> | #"abrupt completion") vars [arg, genContext, gen, #"completion", previousContext, previousRealm, queue, toYield, resumptionValue] {
+  let genContext = $Running()
+  assert genContext sat @ph-generator-context()
+  let gen = $Component(?genContext, [[Generator]])
+  assert @sec-getgeneratorkind() is val {~async~}
+  let #"completion" = @sec-normalcompletion(arg)
+  assert $ContextBelowTop() is not val {~empty~}
+  let previousContext = @ph-second-to-top-context()
+  let previousRealm = $Component(?previousContext, [[Realm]])
+  perform @sec-asyncgeneratorcompletestep(gen, #"completion", false, previousRealm)
+  let queue = gen[[AsyncGeneratorQueue]]
+  if queue fails $IsEmpty() {
+    note "Execution continues without suspending the generator."
+    let toYield = $ListElem(data choice 1, ?queue)
+    let resumptionValue = @sec-completion-ao(toYield[[Completion]])
+    return ? @sec-asyncgeneratorunwrapyieldresumption(resumptionValue)
+  }
+  set field gen[[AsyncGeneratorState]] = ~suspended-yield~
+  let resumptionValue = @sec-completion-ao(@sec-runcallercontext(undefined))
+  return ? @sec-asyncgeneratorunwrapyieldresumption(resumptionValue)
+}
+
+def @sec-asyncgeneratorawaitreturn "AsyncGeneratorAwaitReturn" (kind ao params [gen : AsyncGenerator] -> val(~unused~)) vars [gen, queue, next, #"completion", promiseCompletion, promise, fulfilledClosure, value, result, onFulfilled, rejectedClosure, reason, onRejected] {
+  assert gen[[AsyncGeneratorState]] is val {~draining-queue~}
+  let queue = gen[[AsyncGeneratorQueue]]
+  assert queue fails $IsEmpty()
+  let next = $ListElem(data choice 1, ?queue)
+  let #"completion" = @sec-completion-ao(next[[Completion]])
+  assert #"completion" is ty {#"return completion"}
+  let promiseCompletion = @sec-completion-ao(@sec-promise-resolve(intrinsic [[Promise]], #"completion"[[Value]]))
+  if promiseCompletion is ty {#"abrupt completion"} {
+    perform @sec-asyncgeneratorcompletestep(gen, promiseCompletion, true)
+    perform @sec-asyncgeneratordrainqueue(gen)
+    return ~unused~
+  }
+  assert promiseCompletion is ty {#"normal completion"}
+  let promise = promiseCompletion[[Value]]
+  let fulfilledClosure = closure 0
+  let onFulfilled = @sec-createbuiltinfunction(fulfilledClosure, 1, "", [])
+  let rejectedClosure = closure 1
+  let onRejected = @sec-createbuiltinfunction(rejectedClosure, 1, "", [])
+  perform @sec-performpromisethen(promise, onFulfilled, onRejected)
+  return ~unused~
+  closure abstract params [value] captures [gen] {
+    assert gen[[AsyncGeneratorState]] is val {~draining-queue~}
+    let result = @sec-normalcompletion(value)
+    perform @sec-asyncgeneratorcompletestep(gen, result, true)
+    perform @sec-asyncgeneratordrainqueue(gen)
+    return @sec-normalcompletion(undefined)
+  }
+  closure abstract params [reason] captures [gen] {
+    assert gen[[AsyncGeneratorState]] is val {~draining-queue~}
+    let result = @sec-throwcompletion(reason)
+    perform @sec-asyncgeneratorcompletestep(gen, result, true)
+    perform @sec-asyncgeneratordrainqueue(gen)
+    return @sec-normalcompletion(undefined)
+  }
+}
+
+def @sec-asyncgeneratordrainqueue "AsyncGeneratorDrainQueue" (kind ao params [gen : AsyncGenerator] -> val(~unused~)) vars [gen, queue, next, #"completion"] {
+  assert gen[[AsyncGeneratorState]] is val {~draining-queue~}
+  let queue = gen[[AsyncGeneratorQueue]]
+  repeat_while queue fails $IsEmpty() {
+    let next = $ListElem(data choice 1, ?queue)
+    let #"completion" = @sec-completion-ao(next[[Completion]])
+    if #"completion" is ty {#"return completion"} {
+      perform @sec-asyncgeneratorawaitreturn(gen)
+      return ~unused~
+    }
+    if #"completion" is ty {#"normal completion"} {
+      set var #"completion" = @sec-normalcompletion(undefined)
+    }
+    perform @sec-asyncgeneratorcompletestep(gen, #"completion", true)
+  }
+  set field gen[[AsyncGeneratorState]] = ~completed~
+  return ~unused~
+}
+
+def @sec-async-function-constructor-arguments "AsyncFunction" (kind builtin params [paramArgs rest, bodyArg]) vars [#"this value", NewTarget, paramArgs, bodyArg, activeFunc] {
+  let activeFunc = $ActiveFunction()
+  if bodyArg fails $Present() -> set var bodyArg = $"the empty String"()
+  return ? @sec-createdynamicfunction(activeFunc, new_target, ~async~, paramArgs, bodyArg)
+}
+
+def @sec-async-functions-abstract-operations-async-function-start "AsyncFunctionStart" (kind ao params [promiseCapability : #"PromiseCapability Record", asyncFuncBody : |FunctionBody| | |ExpressionBody| | pred(sat @ph-type-header-closure-no-params())] -> val(~unused~)) vars [promiseCapability, asyncFuncBody, runningContext, asyncContext] {
+  let runningContext = $Running()
+  let asyncContext = $Copy(?runningContext)
+  note "Copying the execution state is required for AsyncBlockStart to resume its execution. It is ill-defined to resume a currently executing context."
+  perform @sec-asyncblockstart(promiseCapability, asyncFuncBody, asyncContext)
+  return ~unused~
+}
+
+def @sec-asyncblockstart "AsyncBlockStart" (kind ao params [promiseCapability : #"PromiseCapability Record", asyncBody : #"Parse Node" | pred(sat @ph-type-header-closure-no-params()), asyncContext : #"execution context"] -> val(~unused~)) vars [promiseCapability, asyncBody, asyncContext, #"closure", acAsyncContext, result, callerContext] {
+  let #"closure" = closure 0
+  set_code_state asyncContext to #"closure"
+  let result = ! @sec-runsuspendedcontext(asyncContext, @sec-normalcompletion(~empty~))
+  assert result is val {~unused~; ~empty~}
+  note "The possible sources of _result_ values are Await or, if the async function doesn't await anything, step <emu-xref href=\"#step-asyncblockstart-return-undefined\"></emu-xref> above."
+  return ~unused~
+  closure abstract params none captures [promiseCapability, asyncBody] {
+    let acAsyncContext = $Running()
+    if asyncBody is ty {#"Parse Node"} {
+      let result = @sec-completion-ao(sdo Evaluation(asyncBody))
+    }
+    else {
+      assert asyncBody is ty {pred(sat @ph-type-closure-no-params())}
+      let result = @sec-completion-ao(asyncBody())
+    }
+    assert result is ty {#"normal completion"; #"return completion"; #"throw completion"}
+    remove acAsyncContext kind 0
+    if result is ty {#"normal completion"} {
+      perform ! @sec-call(promiseCapability[[Resolve]], undefined, [undefined])
+    }
+    else_if result is ty {#"return completion"} {
+      perform ! @sec-call(promiseCapability[[Resolve]], undefined, [result[[Value]]])
+    }
+    else {
+      assert result is ty {#"throw completion"}
+      perform ! @sec-call(promiseCapability[[Reject]], undefined, [result[[Value]]])
+    }
+    let callerContext = $Running()
+    resume callerContext with @sec-normalcompletion(~unused~)
+    unreachable 0
+  }
+}
+
+def @await "Await" (kind ao params [arg : #"ECMAScript language value"] -> completion<#"ECMAScript language value" | val(~empty~)> | #"throw completion") vars [arg, asyncContext, promise, fulfilledClosure, value, onFulfilled, rejectedClosure, reason, onRejected] {
+  let asyncContext = $Running()
+  let promise = ? @sec-promise-resolve(intrinsic [[Promise]], arg)
+  let fulfilledClosure = closure 0
+  let onFulfilled = @sec-createbuiltinfunction(fulfilledClosure, 1, "", [])
+  let rejectedClosure = closure 1
+  let onRejected = @sec-createbuiltinfunction(rejectedClosure, 1, "", [])
+  perform @sec-performpromisethen(promise, onFulfilled, onRejected)
+  return ? @sec-runcallercontext(~empty~)
+  closure abstract params [value] captures [asyncContext] {
+    perform @sec-completion-ao(@sec-runsuspendedcontext(asyncContext, @sec-normalcompletion(value)))
+    note "The Completion Record returned by RunSuspendedContext is intentionally ignored."
+    return @sec-normalcompletion(undefined)
+  }
+  closure abstract params [reason] captures [asyncContext] {
+    perform @sec-completion-ao(@sec-runsuspendedcontext(asyncContext, @sec-throwcompletion(reason)))
+    note "The Completion Record returned by RunSuspendedContext is intentionally ignored."
+    return @sec-normalcompletion(undefined)
+  }
+}
+

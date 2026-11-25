@@ -26,7 +26,7 @@ line each ("hole 2 of 3 of a call to ToNumber", "seq: step 3 next", ...).
 namespace Debugger.Machine
 
 open Ecma Ecma.Machine
-open Engine.Machine (pathText levelText plainText ownLine stepLabel readingKey closS closC)
+open Engine.Machine (pathText levelText plainText ownLine stepLabel closS closC)
 
 abbrev F := Engine.Impl
 
@@ -96,51 +96,43 @@ def baseNames : Names :=
 
 /-- The steps nested one level in a step (its block, loop body, nested steps, or a closure it
 defines), where a path may go on. -/
-def childLists (cs : Array CloLit) : Stmt → List (List Node)
+def childLists (cs : Array CloLit) : Stmt → List (List Stmt)
   | .if_ _ (.block ss) _ _ => [ss]
   | .ifElse _ s1 s2 => childLists cs s1 ++ childLists cs s2
-  | .repeat_ b | .repeatWhile _ b | .repeatUntil _ b | .repeatN _ b => [b]
+  | .repeat_ b | .repeatWhile _ b | .repeatUntil _ b | .repeatN _ b | .block b => [b]
   | .forEach _ _ _ _ (.block b) | .forEachRec _ _ _ (.block b) | .forRange _ _ _ _ _ _ (.block b)
-  | .forSuchThat _ _ _ _ (.block b) | .forKeys _ _ _ _ (.block b) | .forIndex _ _ (.block b)
+  | .forKeys _ _ _ _ (.block b) | .forIndex _ _ (.block b)
   | .forChildren _ (.block b) | .forChildrenOf _ _ (.block b) => [b]
-  | .readings _ lit _ => childLists cs lit
-  | .findSuchThat _ _ _ _ fail => childLists cs fail
-  | .expanded _ _ ns => [ns]
-  | .withSteps _ ns => [ns]
   | .let_ _ (.closure k) | .perform (.closure k) | .set _ (.closure k) | .ret (some (.closure k)) =>
     (cs[k]?.map (·.body)).toList
   | _ => []
 
 /-- The arms an `If` step numbers after itself. -/
 def armsOf : Stmt → List Arm
-  | .if_ _ _ arms els | .readings _ (.if_ _ _ arms els) _ => arms ++ els.toList
+  | .if_ _ _ arms els => arms ++ els.toList
   | _ => []
 
-/-- The step or `Else` arm at a path (outermost first) among `ns`; `0 :: e` after a step of
-erratum `e`'s readings goes on in the reading `rd e`. -/
-partial def findStep (cs : Array CloLit) (rd : ErratumId → Reading) (ns : List Node) : List Nat → Option (Node ⊕ Arm)
+/-- The step or `Else` arm at a path (outermost first) among `ns`. -/
+partial def findStep (cs : Array CloLit) (ns : List Stmt) : List Nat → Option (Stmt ⊕ Arm)
   | [] => none
   | k :: rest =>
-    let rec go (i : Nat) : List Node → Option (Node ⊕ Arm)
+    let rec go (i : Nat) : List Stmt → Option (Stmt ⊕ Arm)
       | [] => none
-      | n@(.mk _ s) :: r =>
+      | s :: r =>
         if k == i then
-          if rest.isEmpty then some (.inl n)
-          else match s, rest with
-            | .readings e _ alts, 0 :: e' :: rest' =>
-              if e == e' then (Reading.pick rd e alts).bind fun (_, ns) => findStep cs rd ns rest' else none
-            | _, _ => (childLists cs s).findSome? fun ns => findStep cs rd ns rest
-        else if k < i + width n then match (armsOf s)[k - i - 1]? with
-          | some a@(.mk _ _ b) =>
+          if rest.isEmpty then some (.inl s)
+          else (childLists cs s).findSome? fun ns => findStep cs ns rest
+        else if k < i + width s then match (armsOf s)[k - i - 1]? with
+          | some a@(.mk _ b) =>
             if rest.isEmpty then some (.inr a) else match b with
-              | .block ss => findStep cs rd ss rest
+              | .block ss => findStep cs ss rest
               | .inline _ => none
           | none => none
-        else go (i + width n) r
+        else go (i + width s) r
     go 1 ns
 
 /-- A frame's algorithm or SDO row (a node-less closure frame's row): its variables, closures and steps. -/
-def frameCode (P : Prog) (f : Frame F) : Array String × Array CloLit × List Node :=
+def frameCode (P : Prog) (f : Frame F) : Array String × Array CloLit × List Stmt :=
   match f.node.bind fun _ => rowTable.get? (f.alg.clause, f.alg.idx), P.alg f.alg with
   | some r, _ => (r.vars, r.closures, r.body)
   | none, some g => (g.vars, g.closures, g.body)
@@ -149,10 +141,10 @@ def frameCode (P : Prog) (f : Frame F) : Array String × Array CloLit × List No
     | none => (#[], #[], [])
 
 /-- The text of the step at a frame's path. -/
-def frameText (P : Prog) (rd : ErratumId → Reading) (f : Frame F) : String :=
+def frameText (P : Prog) (f : Frame F) : String :=
   let (vars, cs, body) := frameCode P f
   let pc : Print.Ctx := { d := Ecma.Gen.decls, vars, cl := cs, clos := cs.map fun _ => "", depth := 0 }
-  match findStep cs rd body f.path.reverse with
+  match findStep cs body f.path.reverse with
   | some (.inl n) => plainText (ownLine (Print.node pc n))
   | some (.inr a) => plainText (ownLine (Print.arm pc a))
   | none => ""
@@ -160,7 +152,7 @@ def frameText (P : Prog) (rd : ErratumId → Reading) (f : Frame F) : String :=
 def algTable : Std.HashMap (Nat × Nat) Alg := allAlgs.foldl (fun m g => m.insert (g.id.clause, g.id.idx) g) {}
 
 /-- A frame's source algorithm or SDO row, as its listing has it (`frameCode`'s choice). -/
-def srcCode (f : Frame F) : Option (Array String × Array CloLit × List Node) :=
+def srcCode (f : Frame F) : Option (Array String × Array CloLit × List Stmt) :=
   let row := (rowTable.get? (f.alg.clause, f.alg.idx)).map fun r => (r.vars, r.closures, r.body)
   match f.node.bind fun _ => row, (algTable.get? (f.alg.clause, f.alg.idx)).map fun g => (g.vars, g.closures, g.body) with
   | some r, _ => some r
@@ -169,8 +161,8 @@ def srcCode (f : Frame F) : Option (Array String × Array CloLit × List Node) :
 
 /-- A step `Prog.expandSuch` adds (its slot `t`): `some true` for a site's `Let t be …` (its `If` next),
 `some false` for a consequent's `Let x be t[0]`. -/
-def addedStep (t : Option Slot) : Node → Option Bool
-  | .mk _ (.let_ x e) => t.bind fun t =>
+def addedStep (t : Option Slot) : Stmt → Option Bool
+  | .let_ x e => t.bind fun t =>
     if x == t then some true else match e with
       | .index (.var y) _ => if y == t then some false else none
       | _ => none
@@ -180,82 +172,74 @@ def addedStep (t : Option Slot) : Node → Option Bool
 (closures `ecs`, `expandSuch`'s slot `t`) as a path (innermost first) among the source steps `ss` (closures
 `scs`) numbered from `j` under `up`. An added step maps to its site, an `Else if` site's steps to its arms, and
 a step with no source counterpart to its nearest step that has one. -/
-partial def srcPath (ecs scs : Array CloLit) (t : Option Slot) (rd : ErratumId → Reading) :
-    List Node → List Node → Nat → List Nat → List Nat → List Nat
+partial def srcPath (ecs scs : Array CloLit) (t : Option Slot) :
+    List Stmt → List Stmt → Nat → List Nat → List Nat → List Nat
   | _, _, _, up, [] => up
   | es, ss, j, up, k :: rest =>
-    let rec go (i j : Nat) : List Node → List Node → List Nat
+    let rec go (i j : Nat) : List Stmt → List Stmt → List Nat
       | [], _ => up
-      | n@(.mk _ s) :: r, ss =>
-        let added := addedStep t n
-        if k < i + width n then match added, ss with
+      | s :: r, ss =>
+        let added := addedStep t s
+        if k < i + width s then match added, ss with
           | some true, _ :: _ => j :: up
           | some _, _ | none, [] => up
-          | none, .mk _ s' :: _ =>
+          | none, s' :: _ =>
             let p := j :: up
             if k == i then
-              if rest.isEmpty then p else match s, s', rest with
-                | .readings e _ alts, .readings e' _ alts', 0 :: e2 :: rest' =>
-                  match Reading.pick rd e alts, Reading.pick rd e alts' with
-                  | some (_, ens), some (_, sns) =>
-                    if e == e2 && e' == e then srcPath ecs scs t rd ens sns 1 (e :: 0 :: p) rest' else p
-                  | _, _ => p
-                | _, _, _ =>
-                  let ek := childLists ecs s
-                  let sk := childLists scs s'
-                  if ek.length != sk.length then p else
-                  match (ek.zip sk).find? fun (el, _) => (findStep ecs rd el rest).isSome with
-                  | some (el, sl) => srcPath ecs scs t rd el sl 1 p rest
-                  | none => p
+              if rest.isEmpty then p else
+                let ek := childLists ecs s
+                let sk := childLists scs s'
+                if ek.length != sk.length then p else
+                match (ek.zip sk).find? fun (el, _) => (findStep ecs el rest).isSome with
+                | some (el, sl) => srcPath ecs scs t el sl 1 p rest
+                | none => p
             else
               let a := k - i - 1
               match (armsOf s)[a]?, (armsOf s')[a]? with
-              | some (.mk _ c b), some (.mk _ c' b') =>
+              | some (.mk c b), some (.mk c' b') =>
                 let q := (j + 1 + a) :: up
                 if rest.isEmpty then q else match c, c', b, b' with
                   | some _, some _, .block ns, .block ns' | none, none, .block ns, .block ns' =>
-                    srcPath ecs scs t rd ns ns' 1 q rest
+                    srcPath ecs scs t ns ns' 1 q rest
                   | none, some c', .block ns, _ =>
-                    srcPath ecs scs t rd ns [.mk [] (.if_ c' b' ((armsOf s').drop (a + 1)) none)] (j + 1 + a) up rest
+                    srcPath ecs scs t ns [.if_ c' b' ((armsOf s').drop (a + 1)) none] (j + 1 + a) up rest
                   | _, _, _, _ => q
               | _, _ => p
         else match added, ss with
-          | some _, _ => go (i + width n) j r ss
+          | some _, _ => go (i + width s) j r ss
           | none, [] => up
-          | none, m :: ss' => go (i + width n) (j + width m) r ss'
+          | none, m :: ss' => go (i + width s) (j + width m) r ss'
     go 1 j es ss
 
 /-- The source step (path innermost first, and text as its listing prints it) of path `p` (innermost first) in the
 expanded code `e`, the source code being `src` (each: variables, closures, steps). -/
-def srcStepIn (rd : ErratumId → Reading) (e src : Array String × Array CloLit × List Node) (p : List Nat) :
+def srcStepIn (e src : Array String × Array CloLit × List Stmt) (p : List Nat) :
     List Nat × String :=
   let (vars, cs, body) := src
   let t := if vars.size < e.1.size then some vars.size else none
-  let sp := srcPath e.2.1 cs t rd e.2.2 body 1 [] p.reverse
+  let sp := srcPath e.2.1 cs t e.2.2 body 1 [] p.reverse
   let pc : Print.Ctx := { d := Ecma.Gen.decls, vars, cl := cs, clos := cs.map fun _ => "", depth := 0 }
-  (sp, match findStep cs rd body sp.reverse with
+  (sp, match findStep cs body sp.reverse with
     | some (.inl n) => plainText (ownLine (Print.node pc n))
     | some (.inr a) => plainText (ownLine (Print.arm pc a))
     | none => "")
 
 /-- A frame's step as its source listing has it (`srcStepIn`); a frame with no source code, its own (`frameText`). -/
-def srcStep (P : Prog) (rd : ErratumId → Reading) (f : Frame F) : List Nat × String :=
+def srcStep (P : Prog) (f : Frame F) : List Nat × String :=
   match srcCode f with
-  | some src => srcStepIn rd (frameCode P f) src f.path
-  | none => (f.path, frameText P rd f)
+  | some src => srcStepIn (frameCode P f) src f.path
+  | none => (f.path, frameText P f)
 
 def kindText : Kind → String
   | .steps .. => "steps"
   | .eval => "eval"
-  | .erratum .. => "erratum"
 
 /-- A `steps` frame's flags: a Completion Record header (`rc`), an algorithm boundary, uses see
-the result; an erratum frame's: its erratum, and `sort` when its sort errors stop as it. -/
+the result. -/
 def kindFlags : Kind → List String
   | .steps rc boundary used =>
     (if rc then ["rc"] else []) ++ (if boundary then ["boundary"] else []) ++ (if used then ["used"] else [])
   | .eval => []
-  | .erratum r sort => [Ecma.Gen.errataIds.getD r "?"] ++ (if sort then ["sort"] else [])
 
 /-! The machine's detail: the control and the continuations. -/
 
@@ -272,7 +256,6 @@ def callText : Call F → String
   | .sdo x nd _ => s!"{sdoName x} of {nodeName nd}"
   | .clo site _ _ => s!"a call to the closure {algName site.alg}#{site.idx}"
   | .cmethod m _ _ => s!"the method {Ecma.Gen.methods.getD m "?"}"
-  | .phrase p _ _ => s!"phrase {p}"
   | .callAt a nd _ => s!"a call to {algName a} at {nodeName nd}"
   | .prim q _ => s!"the primitive {primName q}"
   | .sort x _ => s!"the sort test {Ecma.Gen.sorts.getD x "?"}"
@@ -286,7 +269,6 @@ def leafText : Leaf → String
   | .field f => s!"read {fieldName f}"
   | .q => "? (ReturnIfAbrupt)"
   | .bang => "! (a normal completion)"
-  | .bangAt r => s!"! (a normal completion), erratum {Ecma.Gen.errataIds.getD r "?"}"
   | .un _ => "a unary operation"
   | .bin _ => "a binary operation"
   | .rel _ => "a comparison"
@@ -317,7 +299,6 @@ def callKText : CallK → String
   | .sort x => s!"the sort test {Ecma.Gen.sorts.getD x "?"}"
   | .tyEq => "a type test"
   | .tstep _ => "a table step"
-  | .phrase p => s!"phrase {p}"
   | .earlyRow .. => "an early-error rule"
   | .earlyOwn _ => "a production's early-error rules"
   | .covered => "whether a child must cover a nonterminal"
@@ -362,8 +343,7 @@ def finText (pc : Print.Ctx) : Fin F → String
   | .setField f => s!"Set {fieldName f}"
   | .setIndex _ | .setIndexVal .. | .setBlockVal .. => "Set a List's element"
   | .br .. => "if: the condition"
-  | .assert => "assert"
-  | .assertAt r => s!"assert, erratum {(r.bind (Ecma.Gen.errataIds[·]?)).getD "?"}"
+  | .assert | .assertAlways => "assert"
   | .assertIf _ => "assert: the condition"
   | .ctxPush => "push onto the execution context stack"
   | .ctxRemove => "remove from the execution context stack"
@@ -395,8 +375,6 @@ def opText (pc : Print.Ctx) : Op → String
   | .or cs => s!"or ({cs.length})"
   | .andT cs _ => s!"and ({cs.length}), then a test"
   | .all .. => "every element of a List"
-  | .erratum r _ _ => s!"under erratum {Ecma.Gen.errataIds.getD r "?"}"
-  | .readings e .. => s!"by the reading of erratum {Ecma.Gen.errataIds.getD e "?"}"
   | .stop _ => "a stop"
   | .residue form => s!"residue: {form}"
 
@@ -409,15 +387,12 @@ def insText (pc : Print.Ctx) : Ins → String
   | .ret _ | .retUnused => "return"
   | .throw _ => "throw"
   | .br .. => "if"
-  | .assert _ | .assertAt .. | .assertIf .. => "assert"
+  | .assert _ | .assertAlways _ | .assertIf .. => "assert"
   | .loop _ it p _ => s!"{iterText it}: the loop at {pathText p}"
   | .ctxPush _ => "push an execution context"
   | .ctxRemove _ => "remove an execution context"
   | .ctxTopIs _ => "check the running execution context"
   | .transfer .. => "a transfer"
-  | .readings r .. => s!"the readings of erratum {Ecma.Gen.errataIds.getD r "?"}"
-  | .reading r .. => s!"the steps of reading {Ecma.Gen.errataIds.getD r "?"}"
-  | .byReading e .. => s!"by the reading of erratum {Ecma.Gen.errataIds.getD e "?"}"
   | .cover .. => "must cover"
   | .stop _ => "a stop"
   | .residue form => s!"residue: {form}"
@@ -449,83 +424,75 @@ def ctlText (pc : Print.Ctx) : Ctl F → String
   | .ret v => "return: " ++ Debugger.Show.val baseNames v
   | .esc v => "escape: " ++ Debugger.Show.val baseNames v
 
-/-- A frame's view; `ctl`: the run's control, for its innermost frame; a step of an erratum's
-reading numbered within it (`Machine.stepLabel`). -/
-def view (P : Prog) (rd : ErratumId → Reading) (run : Nat) (f : Frame F) (ctl : Option (Ctl F)) : FrameView :=
+/-- A frame's view; `ctl`: the run's control, for its innermost frame. -/
+def view (P : Prog) (run : Nat) (f : Frame F) (ctl : Option (Ctl F)) : FrameView :=
   let (vars, cs, _) := frameCode P f
   let pc : Print.Ctx := { d := Ecma.Gen.decls, vars, cl := cs, clos := cs.map fun _ => "", depth := 0 }
   let control := match ctl with
     | some c => ctlText pc c
     | none => "waiting for its callee"
-  let (sp, text) := srcStep P rd f
-  let (sec, path) := stepLabel Ecma.Gen.clauses Ecma.Gen.errataIds rd f.alg sp
+  let (sp, text) := srcStep P f
+  let (_, path) := stepLabel Ecma.Gen.clauses f.alg sp
   { alg := f.alg, secId := secId f.alg, name := algName f.alg, path,
-    reading := if sec == secId f.alg then none else some sec, text, kind := kindText f.kind, run, flags := kindFlags f.kind,
+    text, kind := kindText f.kind, run, flags := kindFlags f.kind,
     slots := f.slots.toList.zipIdx.map fun (v, i) => (slotName vars i, v), node := f.node,
     detail := some { control, konts := f.konts.map (kontText pc) } }
 
 /-- The frames of a run's configuration (its frames and control) under the parents `ps`,
 innermost first: its own, then each parent's. -/
-def views (P : Prog) (rd : ErratumId → Reading) (ps : List Parent) (frames : List (Frame F)) (ctl : Ctl F) : List FrameView :=
+def views (P : Prog) (ps : List Parent) (frames : List (Frame F)) (ctl : Ctl F) : List FrameView :=
   let one := fun (run : Nat) (fs : List (Frame F)) (ctl : Ctl F) =>
-    fs.zipIdx.map fun (f, i) => view P rd run f (if i == 0 then some ctl else none)
+    fs.zipIdx.map fun (f, i) => view P run f (if i == 0 then some ctl else none)
   one ps.length frames ctl ++ (ps.zipIdx.flatMap fun (p, j) => one (ps.length - 1 - j) p.frames p.ctl)
 
 /-! Listings. -/
 
 mutual
-/-- Steps `ns` from `i` under `up` at depth `d` (in reading `rk`, else `sec`), each with its sub-steps and arms. -/
-partial def listNodes (pc : Print.Ctx) (sec : String) (rk : Option String) (d : Nat) (ns : List Node) (i : Nat)
+/-- Steps `ns` from `i` under `up` at depth `d`, each with its sub-steps and arms. -/
+partial def listNodes (pc : Print.Ctx) (d : Nat) (ns : List Stmt) (i : Nat)
     (up : List Nat) : StateM (List Nat) (List ListingStep) :=
   match ns with
   | [] => pure []
-  | n@(.mk _ s) :: r => do
+  | s :: r => do
     let p := i :: up
-    let kids ← stmtKids pc sec rk (d + 1) p s
-    let arms ← (armsOf s).zipIdx.mapM fun (a@(.mk _ cd b), j) => do
+    let kids ← stmtKids pc (d + 1) p s
+    let arms ← (armsOf s).zipIdx.mapM fun (a@(.mk cd b), j) => do
       let q := (i + 1 + j) :: up
-      let ck ← closKids pc sec rk (d + 1) q ((cd.map closC).getD [])
-      let bk ← bodyKids pc sec rk (d + 1) q b
-      pure { path := pathText q, text := plainText (ownLine (Print.arm pc a)), depth := d, reading := rk, steps := ck ++ bk }
-    let rest ← listNodes pc sec rk d r (i + width n) up
-    pure ({ path := pathText p, text := plainText (ownLine (Print.node pc n)), depth := d, reading := rk, steps := kids } ::
+      let ck ← closKids pc (d + 1) q ((cd.map closC).getD [])
+      let bk ← bodyKids pc (d + 1) q b
+      pure { path := pathText q, text := plainText (ownLine (Print.arm pc a)), depth := d, steps := ck ++ bk }
+    let rest ← listNodes pc d r (i + width s) up
+    pure ({ path := pathText p, text := plainText (ownLine (Print.node pc s)), depth := d, steps := kids } ::
       arms ++ rest)
 
-/-- The sub-steps of statement `s` at path `p`: the bodies of the closures it evaluates, its nested
-steps, and its erratum's readings, each numbered from 1 under its `readingKey`. -/
-partial def stmtKids (pc : Print.Ctx) (sec : String) (rk : Option String) (d : Nat) (p : List Nat) (s : Stmt) :
+/-- The sub-steps of statement `s` at path `p`: the bodies of the closures it evaluates and its nested
+steps. -/
+partial def stmtKids (pc : Print.Ctx) (d : Nat) (p : List Nat) (s : Stmt) :
     StateM (List Nat) (List ListingStep) := do
-  let own ← closKids pc sec rk d p (closS s)
+  let own ← closKids pc d p (closS s)
   let nested ← match s with
-    | .if_ _ b _ _ | .forEach _ _ _ _ b | .forEachRec _ _ _ b | .forRange _ _ _ _ _ _ b | .forSuchThat _ _ _ _ b
-    | .forKeys _ _ _ _ b | .forIndex _ _ b | .forChildren _ b | .forChildrenOf _ _ b => bodyKids pc sec rk d p b
-    | .ifElse _ s1 s2 => return (← stmtKids pc sec rk d p s1) ++ (← stmtKids pc sec rk d p s2)
-    | .repeat_ b | .repeatWhile _ b | .repeatUntil _ b | .repeatN _ b | .expanded _ _ b => listNodes pc sec rk d b 1 p
-    | .findSuchThat _ _ _ _ f => stmtKids pc sec rk d p f
-    | .readings e lit alts => do
-      let lk ← stmtKids pc sec rk d p lit
-      let rs ← alts.mapM fun (r, ns) =>
-        let key := readingKey Ecma.Gen.errataIds e (rk.getD sec) (pathText p) r
-        listNodes pc sec (some key) d ns 1 []
-      pure (lk ++ rs.flatten)
+    | .if_ _ b _ _ | .forEach _ _ _ _ b | .forEachRec _ _ _ b | .forRange _ _ _ _ _ _ b
+    | .forKeys _ _ _ _ b | .forIndex _ _ b | .forChildren _ b | .forChildrenOf _ _ b => bodyKids pc d p b
+    | .ifElse _ s1 s2 => return (← stmtKids pc d p s1) ++ (← stmtKids pc d p s2)
+    | .repeat_ b | .repeatWhile _ b | .repeatUntil _ b | .repeatN _ b | .block b => listNodes pc d b 1 p
     | _ => pure []
   pure (own ++ nested)
 
 /-- A body's sub-steps at path `p`: an inline step's, or the nested steps. -/
-partial def bodyKids (pc : Print.Ctx) (sec : String) (rk : Option String) (d : Nat) (p : List Nat) :
+partial def bodyKids (pc : Print.Ctx) (d : Nat) (p : List Nat) :
     Body → StateM (List Nat) (List ListingStep)
-  | .inline s => stmtKids pc sec rk d p s
-  | .block ns => listNodes pc sec rk d ns 1 p
+  | .inline s => stmtKids pc d p s
+  | .block ns => listNodes pc d ns 1 p
 
 /-- The bodies of the closure literals `ks` not listed yet, numbered under `p` (`Machine.cloPath`). -/
-partial def closKids (pc : Print.Ctx) (sec : String) (rk : Option String) (d : Nat) (p : List Nat) (ks : List Nat) :
+partial def closKids (pc : Print.Ctx) (d : Nat) (p : List Nat) (ks : List Nat) :
     StateM (List Nat) (List ListingStep) := do
   let mut out := []
   for k in ks do
     if (← get).contains k then continue
     modify (k :: ·)
     match pc.cl[k]? with
-    | some cl => out := out ++ (← listNodes pc sec rk d cl.body 1 p)
+    | some cl => out := out ++ (← listNodes pc d cl.body 1 p)
     | none => pure ()
   return out
 end
@@ -535,9 +502,9 @@ def paramNames (vars : Array String) (h : Option Header) : List String :=
   ((h.map (·.params)).getD []).map fun q => slotName vars q.x
 
 /-- The steps of an algorithm's or SDO row's body, as its frames print them (`frameText`). -/
-def listSteps (a : AlgId) (vars : Array String) (cs : Array CloLit) (body : List Node) : List ListingStep :=
+def listSteps (vars : Array String) (cs : Array CloLit) (body : List Stmt) : List ListingStep :=
   let pc : Print.Ctx := { d := Ecma.Gen.decls, vars, cl := cs, clos := cs.map fun _ => "", depth := 0 }
-  ((listNodes pc (secId a) none 0 body 1 []).run []).1
+  ((listNodes pc 0 body 1 []).run []).1
 
 /-- An SDO row's or algorithm's listing, the row first where both have the id (`algName`). -/
 def algorithm (a : AlgId) : Option Listing :=
@@ -547,12 +514,12 @@ def algorithm (a : AlgId) : Option Listing :=
       name := algName a, secId := secId a, idx := a.idx, kind := "row"
       production := String.intercalate " | " r.keys
       params := paramNames r.vars (Ecma.Gen.decls.sdoHeaders.getD r.sdo none)
-      steps := listSteps a r.vars r.closures r.body }
+      steps := listSteps r.vars r.closures r.body }
   | none, some g =>
     some {
       name := g.name, secId := secId a, idx := a.idx, kind := "alg"
       params := paramNames g.vars (some g.header)
-      steps := listSteps a g.vars g.closures g.body }
+      steps := listSteps g.vars g.closures g.body }
   | none, none => none
 
 def names : Names := { baseNames with algorithm }

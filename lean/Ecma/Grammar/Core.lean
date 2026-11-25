@@ -273,15 +273,6 @@ def Prod.altOf (p : Prod) : Option Alt :=
   | .alts as => as[p.alt]?
   | .oneOf _ => none
 
-/-- A reading of a rule: the definition of `rule.lhs` in `grammar` under the
-reading, replacing the pinned one: an erratum's (`erratum` indexes the errata),
-or with none an interpreting reading, in effect under every reading of the errata. -/
-structure RuleReading where
-  erratum : Option Nat
-  grammar : GrammarId
-  rule : Rule
-  deriving Repr, BEq, Inhabited
-
 /-- The Annex B sections whose grammar is an overlay of the main grammar, by
 clause id: B.1.1 `sec-html-like-comments`, B.1.2
 `sec-regular-expressions-patterns`, B.3.3
@@ -358,17 +349,12 @@ inductive BlockKind where
   | overlay (sec : AnnexB) (mode : OverlayMode) (cond : OverlayCond)
   deriving Repr, BEq, Inhabited
 
-/-- One `<emu-grammar type="definition">` block of spec.html: its clause id, the
-line of its opening tag, its kind and its rules in order. -/
+/-- One grammar definition block: its grammar, clause id, kind and rules in order. -/
 structure Block where
+  grammar : GrammarId
   clause : String
-  line : Nat
   kind : BlockKind
   rules : List Rule
-  /-- the indentation of its rules -/
-  indent : Nat
-  /-- the rules a `// emu-format ignore` line precedes, by index -/
-  fmtIgnore : List Nat
   deriving Repr
 
 /-- How spec.html names a goal symbol. -/
@@ -387,23 +373,21 @@ inductive GoalSrc where
   | supplemental
   /-- a supplemental grammar given as a copy of its definition -/
   | copy
-  /-- json.emu: "its goal symbol is |X|" (the line is json.emu's) -/
+  /-- JSON grammar: "its goal symbol is |X|" -/
   | json
   deriving Repr, BEq, Inhabited
 
-/-- A goal symbol instance (§5.1.1–§5.1.5, ParseText's callers), with the
-spec.html line it is named on and how. -/
+/-- A goal symbol instance (§5.1.1–§5.1.5, ParseText's callers). -/
 structure Goal where
   nt : NT
   args : List Arg
-  line : Nat
   src : GoalSrc
   deriving Repr
 
 /-- A supplemental-grammar cover (§5.1.5): when processing an instance of
 production `context` (of the syntactic grammar's `Production` type `P`), "the
 interpretation of |cover| is refined using the following grammar", with goal
-`refined` (the supplemental block, or the copy of a definition, at `line`).
+`refined` (the supplemental block, or the copy of a definition).
 These are only the sites whose prose says "is refined using the following
 grammar". The early errors' "must cover" sites are not here (for example
 DestructuringAssignmentTarget : LeftHandSideExpression, spec.html:21512, and
@@ -413,7 +397,6 @@ structure Cover (P : Type) where
   context : P
   cover : NT
   refined : NT
-  line : Nat
   deriving Repr
 
 /-- §12.10 "Rules of Automatic Semicolon Insertion": where a `;` of the

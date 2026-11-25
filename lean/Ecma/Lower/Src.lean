@@ -2,8 +2,6 @@ module
 
 public import Ecma.Ops.ProgPrim
 public import Ecma.Notation.AlgKey
-public import Ecma.Lower.Macros
-public import Ecma.Lower.Equations
 public import Ecma.Grammar.Derives
 public import Std.Data.HashMap
 
@@ -12,9 +10,9 @@ public import Std.Data.HashMap
 /-!
 # A program's source arrays, and the program they give
 
-`Src` holds the arrays a `Prog` is built from: the algorithms, the SDO rows (with the phrases'),
-the declaration tables, the early-error rows, the tables, GL and the realm table. `Src.index` indexes them;
-`Src.prog` indexes them with their macro uses expanded.
+`Src` holds the arrays a `Prog` is built from: the algorithms, the SDO rows,
+the declaration tables, the early-error rows, the tables, GL and the realm table. `Src.index` /
+`Src.prog` indexes them.
 -/
 
 namespace Ecma
@@ -50,7 +48,7 @@ def rowMap (s : Src) : Std.HashMap (SdoId × ProdId) SdoRow :=
 /-- The concrete methods: a method's name, its receiver's sort, the algorithm. -/
 def methodMap (s : Src) : Std.HashMap (SortId × MethodId) AlgId :=
   s.algs.foldl (fun m a => match a.header.kind, a.header.recv, s.decls.methods.idxOf? (baseName a.name) with
-    | .concreteMethod, some (_, .sort _ _ k _), some i => m.insert (k, i) a.id
+    | .concreteMethod, some (_, .sort _ k), some i => m.insert (k, i) a.id
     | _, _, _ => m) {}
 
 /-- `k`'s concrete method `m` in `mm`: its own, else its first supersort's (to depth `f`); §9.1.1.3 and
@@ -66,13 +64,6 @@ def earlyMap (s : Src) : Std.HashMap ProdId (List EarlyRow) :=
   let m : Std.HashMap ProdId (List EarlyRow) := s.earlyRows.foldl (fun m r =>
     r.prods.foldl (fun m p => m.insert p ((m.getD p []) ++ [r])) m) {}
   m.map fun _ rs => if rs.any (·.modifies) then rs.filter (·.modifies) else rs
-
-/-- The source with each algorithm's and SDO row's macro uses expanded (`Alg.expandMacros`), and each equation's
-repeated SDO applications evaluated once (`SdoRow.bindApplications`). -/
-def expandMacros (s : Src) : Src :=
-  let raw := s.algMap
-  let look := fun a => raw[algKey a]?
-  { s with algs := s.algs.map (·.expandMacros look), rows := s.rows.map fun r => (r.expandMacros look).bindApplications }
 
 /-- The program of the arrays as they are: its maps built once, each field a lookup. -/
 def index (s : Src) : Prog :=
@@ -90,7 +81,6 @@ def index (s : Src) : Prog :=
     sdoDefault d := (s.decls.sdoDefaults[d]?).join
     params := tab.paramsOf
     method := s.methodOf methodMap 64
-    phrase p := (s.decls.phrases[p]?).map (·.meaning) |>.getD .none
     sdoRc d := sdoRc s.decls.sdoHeaders d
     sdoArity d := sdoArity s.decls.sdoHeaders d
     sortDef k := (s.decls.sortDefs[k]?).join
@@ -103,10 +93,10 @@ def index (s : Src) : Prog :=
     overlayClause a := s.decls.clauses.idxOf? a.clause
     rowOf a := rowIdx[algKey a]?
     realm := s.realm
-    jobErratum c := (s.decls.jobErrata.find? (·.1 == c)).map (·.2) }
+    jobChecked c := s.decls.checkedJobs.contains c }
 
-/-- The program: the index of the source with its macro uses expanded. -/
-def prog (s : Src) : Prog := s.expandMacros.index
+/-- The program. -/
+def prog (s : Src) : Prog := s.index
 
 end Src
 

@@ -24,7 +24,7 @@ def headWords (h : String) : String :=
 /-- The column of table `t` headed `col` (a String), in its first row (`colOfHeads`). -/
 def columnOf (t : Table) (col : Val M) : Option (Nat × Option Nat) :=
   (t.rows.head?.map (·.cells)).bind fun hs => colOfHeads (hs.map fun c => match c.body with
-    | .text h => if c.head then some (headWords h) else none
+    | .text h => some (headWords h)
     | _ => none) col
 
 /-- The cell of a row of `Table.grid` in column `i`, if the row has one. -/

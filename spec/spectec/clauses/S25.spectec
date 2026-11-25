@@ -1,0 +1,1722 @@
+-- ECMA-262 SpecTec Clauses: S25
+
+def @sec-allocatearraybuffer "AllocateArrayBuffer" (kind ao params [ctor : constructor, byteLength : sort [#"non-negative"] integer, maxByteLength : sort [#"non-negative"] integer | val(~empty~) opt] -> completion<ArrayBuffer> | #"throw completion") vars [ctor, byteLength, maxByteLength, #"slots", allocatingResizableBuffer, #"obj", #"block"] {
+  let #"slots" = [[[ArrayBufferData]], [[ArrayBufferByteLength]], [[ArrayBufferDetachKey]]]
+  if_else maxByteLength sat $Present() and maxByteLength is not val {~empty~} { let allocatingResizableBuffer = true } else { let allocatingResizableBuffer = false }
+  if allocatingResizableBuffer is val {true} {
+    if byteLength > maxByteLength -> throw @ph-new-error([[RangeError]])
+    perform $Append([[ArrayBufferMaxByteLength]], ?#"slots")
+  }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(ctor, "%ArrayBuffer.prototype%", #"slots")
+  let #"block" = ? @sec-createbytedatablock(byteLength)
+  set field #"obj"[[ArrayBufferData]] = #"block"
+  set field #"obj"[[ArrayBufferByteLength]] = byteLength
+  set field #"obj"[[ArrayBufferDetachKey]] = ~empty~
+  if allocatingResizableBuffer is val {true} {
+    if $CanAllocate(maxByteLength, false) is val {false} -> throw @ph-new-error([[RangeError]])
+    note "Resizable ArrayBuffers are designed to be implementable with in-place growth. Implementations may throw if, for example, virtual memory cannot be reserved up front."
+    set field #"obj"[[ArrayBufferMaxByteLength]] = maxByteLength
+  }
+  return #"obj"
+}
+
+def @sec-arraybufferbytelength "ArrayBufferByteLength" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer, #"order" : val(~seq-cst~) | val(~unordered~)] -> sort [#"non-negative"] integer) vars [arrayBuffer, #"order", bufferByteLengthBlock, rawLength, agentRecord, isLittleEndian] {
+  if @sec-isgrowablesharedarraybuffer(arrayBuffer) is val {true} {
+    let bufferByteLengthBlock = arrayBuffer[[ArrayBufferByteLengthData]]
+    let rawLength = @sec-getrawbytesfromsharedblock(bufferByteLengthBlock, 0, ~biguint64~, true, #"order")
+    let agentRecord = $AgentRecord()
+    let isLittleEndian = agentRecord[[LittleEndian]]
+    return $ℝ(@sec-rawbytestonumeric(~biguint64~, rawLength, isLittleEndian))
+  }
+  assert @sec-isdetachedbuffer(arrayBuffer) is val {false}
+  return arrayBuffer[[ArrayBufferByteLength]]
+}
+
+def @sec-arraybuffercopyanddetach "ArrayBufferCopyAndDetach" (kind ao params [arrayBuffer : #"ECMAScript language value", newLength : #"ECMAScript language value", preserveResizability : val(~preserve-resizability~) | val(~fixed-length~)] -> completion<ArrayBuffer> | #"throw completion") vars [arrayBuffer, newLength, preserveResizability, newByteLength, newMaxByteLength, newBuffer, copyLength, fromBlock, toBlock] {
+  perform ? @sec-requireinternalslot(arrayBuffer, [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(arrayBuffer) is val {true} -> throw @ph-new-error([[TypeError]])
+  if newLength is val {undefined} {
+    let newByteLength = arrayBuffer[[ArrayBufferByteLength]]
+  }
+  else {
+    let newByteLength = ? @sec-toindex(newLength)
+  }
+  if @sec-isdetachedbuffer(arrayBuffer) is val {true} -> throw @ph-new-error([[TypeError]])
+  if preserveResizability is val {~preserve-resizability~} and @sec-isfixedlengtharraybuffer(arrayBuffer) is val {false} {
+    let newMaxByteLength = arrayBuffer[[ArrayBufferMaxByteLength]]
+  }
+  else {
+    let newMaxByteLength = ~empty~
+  }
+  if arrayBuffer[[ArrayBufferDetachKey]] is not val {~empty~} -> throw @ph-new-error([[TypeError]])
+  let newBuffer = ? @sec-allocatearraybuffer(intrinsic [[ArrayBuffer]], newByteLength, newMaxByteLength)
+  let copyLength = $min(newByteLength, arrayBuffer[[ArrayBufferByteLength]])
+  let fromBlock = arrayBuffer[[ArrayBufferData]]
+  let toBlock = newBuffer[[ArrayBufferData]]
+  perform @sec-copydatablockbytes(toBlock, 0, fromBlock, 0, copyLength)
+  note "Neither creation of the new Data Block nor copying from the old Data Block are observable. Implementations may implement this method as a zero-copy move or a `realloc`."
+  perform ! @sec-detacharraybuffer(arrayBuffer)
+  return newBuffer
+}
+
+def @sec-isdetachedbuffer "IsDetachedBuffer" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer] -> Boolean) vars [arrayBuffer] {
+  if arrayBuffer[[ArrayBufferData]] is val {null} -> return true
+  return false
+}
+
+def @sec-detacharraybuffer "DetachArrayBuffer" (kind ao params [arrayBuffer : ArrayBuffer, key : #"ECMAScript language value" opt] -> completion<val(~unused~)> | #"throw completion") vars [arrayBuffer, key, expectedKey] {
+  assert @sec-issharedarraybuffer(arrayBuffer) is val {false}
+  let expectedKey = arrayBuffer[[ArrayBufferDetachKey]]
+  if key sat $Present() {
+    if expectedKey is val {~empty~} or @sec-samevalue(key, expectedKey) is val {false} -> throw @ph-new-error([[TypeError]])
+  }
+  else {
+    if expectedKey is not val {~empty~} -> throw @ph-new-error([[TypeError]])
+  }
+  set field arrayBuffer[[ArrayBufferData]] = null
+  set field arrayBuffer[[ArrayBufferByteLength]] = 0
+  return ~unused~
+}
+
+def @sec-clonearraybuffer "CloneArrayBuffer" (kind ao params [sourceBuffer : ArrayBuffer | SharedArrayBuffer, sourceByteOffset : sort [#"non-negative"] integer, sourceLength : sort [#"non-negative"] integer] -> completion<ArrayBuffer> | #"throw completion") vars [sourceBuffer, sourceByteOffset, sourceLength, targetBuffer, sourceBlock, targetBlock] {
+  assert @sec-isdetachedbuffer(sourceBuffer) is val {false}
+  let targetBuffer = ? @sec-allocatearraybuffer(intrinsic [[ArrayBuffer]], sourceLength)
+  let sourceBlock = sourceBuffer[[ArrayBufferData]]
+  let targetBlock = targetBuffer[[ArrayBufferData]]
+  perform @sec-copydatablockbytes(targetBlock, 0, sourceBlock, sourceByteOffset, sourceLength)
+  return targetBuffer
+}
+
+def @sec-getarraybuffermaxbytelengthoption "GetArrayBufferMaxByteLengthOption" (kind ao params [options : #"ECMAScript language value"] -> completion<sort [#"non-negative"] integer | val(~empty~)> | #"throw completion") vars [options, maxByteLength] {
+  if options is not ty {Object} -> return ~empty~
+  let maxByteLength = ? @sec-get-o-p(options, "maxByteLength")
+  if maxByteLength is val {undefined} -> return ~empty~
+  return ? @sec-toindex(maxByteLength)
+}
+
+def @sec-isfixedlengtharraybuffer "IsFixedLengthArrayBuffer" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer] -> Boolean) vars [arrayBuffer] {
+  if arrayBuffer sat $HasSlot([[ArrayBufferMaxByteLength]]) -> return false
+  return true
+}
+
+def @sec-isunsignedelementtype "IsUnsignedElementType" (kind ao params [type : #"TypedArray element type"] -> Boolean) vars [type] {
+  if type is val {~uint8~; ~uint8clamped~; ~uint16~; ~uint32~; ~biguint64~} -> return true
+  return false
+}
+
+def @sec-isunclampedintegerelementtype "IsUnclampedIntegerElementType" (kind ao params [type : #"TypedArray element type"] -> Boolean) vars [type] {
+  if type is val {~int8~; ~uint8~; ~int16~; ~uint16~; ~int32~; ~uint32~} -> return true
+  return false
+}
+
+def @sec-isbigintelementtype "IsBigIntElementType" (kind ao params [type : #"TypedArray element type"] -> Boolean) vars [type] {
+  if type is val {~biguint64~; ~bigint64~} -> return true
+  return false
+}
+
+def @sec-isnotearconfiguration "IsNoTearConfiguration" (kind ao params [type : #"TypedArray element type", #"order" : val(~seq-cst~) | val(~unordered~) | val(~init~)] -> Boolean) vars [type, #"order"] {
+  if @sec-isunclampedintegerelementtype(type) is val {true} -> return true
+  if @sec-isbigintelementtype(type) is val {true} and #"order" is val {~seq-cst~} -> return true
+  return false
+}
+
+def @sec-rawbytestonumeric "RawBytesToNumeric" (kind ao params [type : #"TypedArray element type", rawBytes : list<#"byte value">, isLittleEndian : Boolean] -> Number | BigInt) vars [type, rawBytes, isLittleEndian, elementSize, value, intValue] {
+  let elementSize = $TableLookup(table t"table-the-typedarray-constructors", code "Element Size", code "Element Type", ?type)
+  if isLittleEndian is val {false} -> perform $Reverse(?rawBytes)
+  if type is val {~float16~} {
+    let value = @ph-bytes-decode-binary16(?rawBytes)
+    if value is ty {NaN} -> return nan
+    return $NumberFor(data choice 0, ?value)
+  }
+  if type is val {~float32~} {
+    let value = @ph-bytes-decode-binary32(?rawBytes)
+    if value is ty {NaN} -> return nan
+    return $NumberFor(data choice 0, ?value)
+  }
+  if type is val {~float64~} {
+    let value = @ph-bytes-decode-binary64(?rawBytes)
+    if value is ty {NaN} -> return nan
+    return $NumberFor(data choice 0, ?value)
+  }
+  if @sec-isunsignedelementtype(type) is val {true} {
+    let intValue = @ph-bytes-decode-unsigned(?rawBytes)
+  }
+  else {
+    let intValue = @ph-bytes-decode-signed(?rawBytes, elementSize * 8)
+  }
+  if @sec-isbigintelementtype(type) is val {true} -> return $NumberFor(data choice 1, ?intValue)
+  return $NumberFor(data choice 0, ?intValue)
+}
+
+def @sec-getrawbytesfromsharedblock "GetRawBytesFromSharedBlock" (kind ao params [#"block" : #"Shared Data Block", byteIndex : sort [#"non-negative"] integer, type : #"TypedArray element type", isTypedArray : Boolean, #"order" : val(~seq-cst~) | val(~unordered~)] -> list<#"byte value">) vars [#"block", byteIndex, type, isTypedArray, #"order", elementSize, agentRecord, execution, eventsRecord, noTear, rawValue, readEvent] {
+  let elementSize = $TableLookup(table t"table-the-typedarray-constructors", code "Element Size", code "Element Type", ?type)
+  let agentRecord = $AgentRecord()
+  let execution = agentRecord[[CandidateExecution]]
+  let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+  if_else isTypedArray is val {true} and @sec-isnotearconfiguration(type, #"order") is val {true} { let noTear = true } else { let noTear = false }
+  if $ListLen(execution[[EventsRecords]]) is val {1} {
+    let rawValue = @formal-singleagentreadbytes(execution, eventsRecord, #"block", byteIndex, elementSize)
+  }
+  else {
+    if $EnteredCriticalSections() sat $IsEmpty() -> perform @formal-agent-interleave()
+    let rawValue = @formal-choosesharedbytes(execution, eventsRecord, #"block", byteIndex, elementSize)
+  }
+  note "In implementations, _rawValue_ is the result of a non-atomic or atomic read instruction on the underlying hardware. The nondeterminism is a semantic prescription of the memory model to describe observable behaviour of hardware with weak consistency."
+  let readEvent = record ReadSharedMemory { [[Order]]: #"order", [[NoTear]]: noTear, [[Block]]: #"block", [[ByteIndex]]: byteIndex, [[ElementSize]]: elementSize }
+  perform $Append(?readEvent, eventsRecord[[EventList]])
+  perform $Append(record #"Chosen Value Record" { [[Event]]: readEvent, [[ChosenValue]]: rawValue }, execution[[ChosenValues]])
+  return rawValue
+}
+
+def @sec-getvaluefrombuffer "GetValueFromBuffer" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer, byteIndex : sort [#"non-negative"] integer, type : #"TypedArray element type", isTypedArray : Boolean, #"order" : val(~seq-cst~) | val(~unordered~), isLittleEndian : Boolean opt] -> Number | BigInt) vars [arrayBuffer, byteIndex, type, isTypedArray, #"order", isLittleEndian, #"block", elementSize, rawValue, agentRecord] {
+  assert @sec-isdetachedbuffer(arrayBuffer) is val {false}
+  assert expr @ph-sufficient-bytes(?arrayBuffer, ?byteIndex, ?type)
+  let #"block" = arrayBuffer[[ArrayBufferData]]
+  let elementSize = $TableLookup(table t"table-the-typedarray-constructors", code "Element Size", code "Element Type", ?type)
+  if @sec-issharedarraybuffer(arrayBuffer) is val {true} {
+    assert #"block" is ty {#"Shared Data Block"}
+    let rawValue = @sec-getrawbytesfromsharedblock(#"block", byteIndex, type, isTypedArray, #"order")
+  }
+  else {
+    let rawValue = @ph-block-bytes(?#"block", ?byteIndex, byteIndex + elementSize)
+  }
+  assert $ListLen(?rawValue) is val {elementSize}
+  if isLittleEndian fails $Present() {
+    let agentRecord = $AgentRecord()
+    set var isLittleEndian = agentRecord[[LittleEndian]]
+  }
+  return @sec-rawbytestonumeric(type, rawValue, isLittleEndian)
+}
+
+def @sec-numerictorawbytes "NumericToRawBytes" (kind ao params [type : #"TypedArray element type", value : Number | BigInt, isLittleEndian : Boolean] -> list<#"byte value">) vars [type, value, isLittleEndian, rawBytes, n, conversionOperation, intValue] {
+  if type is val {~float16~} {
+    let rawBytes = @formal-littleendianbytes(@formal-ieeebits(@ph-to-binary16(?value, data choice 0), 5, 11), 2)
+  }
+  else_if type is val {~float32~} {
+    let rawBytes = @formal-littleendianbytes(@formal-ieeebits(@ph-to-binary32(?value, data choice 0), 8, 24), 4)
+  }
+  else_if type is val {~float64~} {
+    let rawBytes = @formal-littleendianbytes(@formal-ieeebits(value, 11, 53), 8)
+  }
+  else {
+    let n = $TableLookup(table t"table-the-typedarray-constructors", code "Element Size", code "Element Type", ?type)
+    let conversionOperation = $TableLookup(table t"table-the-typedarray-constructors", code "Conversion Operation", code "Element Type", ?type)
+    let intValue = $ℝ(! conversionOperation(value))
+    if intValue >= 0 {
+      let rawBytes = @formal-littleendianbytes(intValue, n)
+    }
+    else {
+      let rawBytes = @formal-littleendianbytes(intValue modulo 2 ^ {8 * n}, n)
+    }
+  }
+  if isLittleEndian is val {false} -> perform $Reverse(?rawBytes)
+  return rawBytes
+}
+
+def @sec-setvalueinbuffer "SetValueInBuffer" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer, byteIndex : sort [#"non-negative"] integer, type : #"TypedArray element type", value : Number | BigInt, isTypedArray : Boolean, #"order" : val(~seq-cst~) | val(~unordered~) | val(~init~), isLittleEndian : Boolean opt] -> val(~unused~)) vars [arrayBuffer, byteIndex, type, value, isTypedArray, #"order", isLittleEndian, #"block", elementSize, agentRecord, rawBytes, execution, eventsRecord, noTear] {
+  assert @sec-isdetachedbuffer(arrayBuffer) is val {false}
+  assert expr @ph-sufficient-bytes(?arrayBuffer, ?byteIndex, ?type)
+  if @sec-isbigintelementtype(type) is val {true} {
+    assert value is ty {BigInt}
+  }
+  else {
+    assert value is ty {Number}
+  }
+  let #"block" = arrayBuffer[[ArrayBufferData]]
+  let elementSize = $TableLookup(table t"table-the-typedarray-constructors", code "Element Size", code "Element Type", ?type)
+  let agentRecord = $AgentRecord()
+  if isLittleEndian fails $Present() {
+    set var isLittleEndian = agentRecord[[LittleEndian]]
+  }
+  let rawBytes = @sec-numerictorawbytes(type, value, isLittleEndian)
+  if @sec-issharedarraybuffer(arrayBuffer) is val {true} {
+    let execution = agentRecord[[CandidateExecution]]
+    let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+    if_else isTypedArray is val {true} and @sec-isnotearconfiguration(type, #"order") is val {true} { let noTear = true } else { let noTear = false }
+    perform $Append(record WriteSharedMemory { [[Order]]: #"order", [[NoTear]]: noTear, [[Block]]: #"block", [[ByteIndex]]: byteIndex, [[ElementSize]]: elementSize, [[Payload]]: rawBytes }, eventsRecord[[EventList]])
+  }
+  else {
+    perform $StoreBytes(?rawBytes, ?#"block", ?byteIndex)
+  }
+  return ~unused~
+}
+
+def @sec-getmodifysetvalueinbuffer "GetModifySetValueInBuffer" (kind ao params [arrayBuffer : ArrayBuffer | SharedArrayBuffer, byteIndex : sort [#"non-negative"] integer, type : #"TypedArray element type", value : Number | BigInt, #"op" : #"read-modify-write modification function"] -> Number | BigInt) vars [arrayBuffer, byteIndex, type, value, #"op", #"block", elementSize, agentRecord, isLittleEndian, rawBytes, execution, eventsRecord, rawBytesRead, rmwEvent, rawBytesModified] {
+  assert @sec-isdetachedbuffer(arrayBuffer) is val {false}
+  assert expr @ph-sufficient-bytes(?arrayBuffer, ?byteIndex, ?type)
+  if @sec-isbigintelementtype(type) is val {true} {
+    assert value is ty {BigInt}
+  }
+  else {
+    assert value is ty {Number}
+  }
+  let #"block" = arrayBuffer[[ArrayBufferData]]
+  let elementSize = $TableLookup(table t"table-the-typedarray-constructors", code "Element Size", code "Element Type", ?type)
+  let agentRecord = $AgentRecord()
+  let isLittleEndian = agentRecord[[LittleEndian]]
+  let rawBytes = @sec-numerictorawbytes(type, value, isLittleEndian)
+  if @sec-issharedarraybuffer(arrayBuffer) is val {true} {
+    let execution = agentRecord[[CandidateExecution]]
+    let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+    if $ListLen(execution[[EventsRecords]]) is val {1} {
+      let rawBytesRead = @formal-singleagentreadbytes(execution, eventsRecord, #"block", byteIndex, elementSize)
+    }
+    else {
+      if $EnteredCriticalSections() sat $IsEmpty() -> perform @formal-agent-interleave()
+      let rawBytesRead = @formal-choosesharedbytes(execution, eventsRecord, #"block", byteIndex, elementSize)
+    }
+    note "In implementations, _rawBytesRead_ is the result of a load-link, of a load-exclusive, or of an operand of a read-modify-write instruction on the underlying hardware. The nondeterminism is a semantic prescription of the memory model to describe observable behaviour of hardware with weak consistency."
+    let rmwEvent = record ReadModifyWriteSharedMemory { [[Order]]: ~seq-cst~, [[NoTear]]: true, [[Block]]: #"block", [[ByteIndex]]: byteIndex, [[ElementSize]]: elementSize, [[Payload]]: rawBytes, [[ModifyOp]]: #"op" }
+    perform $Append(?rmwEvent, eventsRecord[[EventList]])
+    perform $Append(record #"Chosen Value Record" { [[Event]]: rmwEvent, [[ChosenValue]]: rawBytesRead }, execution[[ChosenValues]])
+  }
+  else {
+    let rawBytesRead = @ph-list-of-length(?elementSize, @ph-bytes-from(?elementSize, ?#"block", ?byteIndex))
+    let rawBytesModified = #"op"(rawBytesRead, rawBytes)
+    perform $StoreBytes(?rawBytesModified, ?#"block", ?byteIndex)
+  }
+  return @sec-rawbytestonumeric(type, rawBytesRead, isLittleEndian)
+}
+
+def @sec-arraybuffer-length "ArrayBuffer" (kind builtin params [length, options opt]) vars [#"this value", NewTarget, length, options, byteLength, requestedMaxByteLength] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let byteLength = ? @sec-toindex(length)
+  let requestedMaxByteLength = ? @sec-getarraybuffermaxbytelengthoption(options)
+  return ? @sec-allocatearraybuffer(new_target, byteLength, requestedMaxByteLength)
+}
+
+def @sec-arraybuffer.isview "ArrayBuffer.isView" (kind builtin params [arg]) vars [#"this value", NewTarget, arg] {
+  if arg is not ty {Object} -> return false
+  if arg sat $HasSlot([[ViewedArrayBuffer]]) -> return true
+  return false
+}
+
+def @sec-get-arraybuffer-%symbol.species% "get ArrayBuffer [ %Symbol.species% ]" (kind builtin params []) vars [#"this value", NewTarget] {
+  return this_value
+}
+
+def @sec-get-arraybuffer.prototype.bytelength "get ArrayBuffer.prototype.byteLength" (kind builtin params []) vars [#"this value", NewTarget, #"obj", length] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-isdetachedbuffer(#"obj") is val {true} -> return num_f(+0)
+  let length = #"obj"[[ArrayBufferByteLength]]
+  return $𝔽(length)
+}
+
+def @sec-get-arraybuffer.prototype.detached "get ArrayBuffer.prototype.detached" (kind builtin params []) vars [#"this value", NewTarget, #"obj"] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  return @sec-isdetachedbuffer(#"obj")
+}
+
+def @sec-get-arraybuffer.prototype.maxbytelength "get ArrayBuffer.prototype.maxByteLength" (kind builtin params []) vars [#"this value", NewTarget, #"obj", length] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-isdetachedbuffer(#"obj") is val {true} -> return num_f(+0)
+  if @sec-isfixedlengtharraybuffer(#"obj") is val {true} {
+    let length = #"obj"[[ArrayBufferByteLength]]
+  }
+  else {
+    let length = #"obj"[[ArrayBufferMaxByteLength]]
+  }
+  return $𝔽(length)
+}
+
+def @sec-get-arraybuffer.prototype.resizable "get ArrayBuffer.prototype.resizable" (kind builtin params []) vars [#"this value", NewTarget, #"obj"] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-isfixedlengtharraybuffer(#"obj") is val {false} -> return true
+  return false
+}
+
+def @sec-arraybuffer.prototype.resize "ArrayBuffer.prototype.resize" (kind builtin params [newLength]) vars [#"this value", NewTarget, newLength, #"obj", newByteLength, hostHandled, oldBlock, newBlock, copyLength] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferMaxByteLength]])
+  if @sec-issharedarraybuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  let newByteLength = ? @sec-toindex(newLength)
+  if @sec-isdetachedbuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  if newByteLength > #"obj"[[ArrayBufferMaxByteLength]] -> throw @ph-new-error([[RangeError]])
+  let hostHandled = ? @sec-hostresizearraybuffer(#"obj", newByteLength)
+  if hostHandled is val {~handled~} -> return undefined
+  let oldBlock = #"obj"[[ArrayBufferData]]
+  let newBlock = ? @sec-createbytedatablock(newByteLength)
+  let copyLength = $min(newByteLength, #"obj"[[ArrayBufferByteLength]])
+  perform @sec-copydatablockbytes(newBlock, 0, oldBlock, 0, copyLength)
+  note "Neither creation of the new Data Block nor copying from the old Data Block are observable. Implementations may implement this method as in-place growth or shrinkage."
+  set field #"obj"[[ArrayBufferData]] = newBlock
+  set field #"obj"[[ArrayBufferByteLength]] = newByteLength
+  return undefined
+}
+
+def @sec-arraybuffer.prototype.slice "ArrayBuffer.prototype.slice" (kind builtin params [start, end]) vars [#"this value", NewTarget, start, end, #"obj", length, first, final, newLength, ctor, #"new", fromBlock, toBlock, currentLength, maxCount, count] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-isdetachedbuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  let length = #"obj"[[ArrayBufferByteLength]]
+  let first = ? @sec-toclampedindex(start, length)
+  if_else end is val {undefined} { let final = length } else { let final = ? @sec-toclampedindex(end, length) }
+  let newLength = $max(final - first, 0)
+  let ctor = ? @sec-speciesconstructor(#"obj", intrinsic [[ArrayBuffer]])
+  let #"new" = ? @sec-construct(ctor, [$𝔽(newLength)])
+  perform ? @sec-requireinternalslot(#"new", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"new") is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-isdetachedbuffer(#"new") is val {true} -> throw @ph-new-error([[TypeError]])
+  if @sec-samevalue(#"new", #"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  if #"new"[[ArrayBufferByteLength]] < newLength -> throw @ph-new-error([[TypeError]])
+  note "Side-effects of the above steps may have detached or resized _obj_."
+  if @sec-isdetachedbuffer(#"obj") is val {true} -> throw @ph-new-error([[TypeError]])
+  let fromBlock = #"obj"[[ArrayBufferData]]
+  let toBlock = #"new"[[ArrayBufferData]]
+  let currentLength = #"obj"[[ArrayBufferByteLength]]
+  let maxCount = currentLength - first
+  if maxCount > 0 {
+    let count = $min(newLength, maxCount)
+    perform @sec-copydatablockbytes(toBlock, 0, fromBlock, first, count)
+  }
+  return #"new"
+}
+
+def @sec-arraybuffer.prototype.transfer "ArrayBuffer.prototype.transfer" (kind builtin params [newLength opt]) vars [#"this value", NewTarget, newLength, #"obj"] {
+  let #"obj" = this_value
+  return ? @sec-arraybuffercopyanddetach(#"obj", newLength, ~preserve-resizability~)
+}
+
+def @sec-arraybuffer.prototype.transfertofixedlength "ArrayBuffer.prototype.transferToFixedLength" (kind builtin params [newLength opt]) vars [#"this value", NewTarget, newLength, #"obj"] {
+  let #"obj" = this_value
+  return ? @sec-arraybuffercopyanddetach(#"obj", newLength, ~fixed-length~)
+}
+
+def @sec-allocatesharedarraybuffer "AllocateSharedArrayBuffer" (kind ao params [ctor : constructor, byteLength : sort [#"non-negative"] integer, maxByteLength : sort [#"non-negative"] integer | val(~empty~) opt] -> completion<SharedArrayBuffer> | #"throw completion") vars [ctor, byteLength, maxByteLength, #"slots", allocatingGrowableBuffer, #"obj", allocationLength, #"block", byteLengthBlock, agentRecord, rawBytes, execution, eventsRecord] {
+  let #"slots" = [[[ArrayBufferData]]]
+  if_else maxByteLength sat $Present() and maxByteLength is not val {~empty~} { let allocatingGrowableBuffer = true } else { let allocatingGrowableBuffer = false }
+  if allocatingGrowableBuffer is val {true} {
+    if byteLength > maxByteLength -> throw @ph-new-error([[RangeError]])
+    perform @ph-append-fields([[[ArrayBufferByteLengthData]], [[ArrayBufferMaxByteLength]]], ?#"slots")
+  }
+  else {
+    perform $Append([[ArrayBufferByteLength]], ?#"slots")
+  }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(ctor, "%SharedArrayBuffer.prototype%", #"slots")
+  if_else allocatingGrowableBuffer is val {true} { let allocationLength = maxByteLength } else { let allocationLength = byteLength }
+  let #"block" = ? @sec-createsharedbytedatablock(allocationLength)
+  set field #"obj"[[ArrayBufferData]] = #"block"
+  if allocatingGrowableBuffer is val {true} {
+    assert byteLength <= maxByteLength
+    let byteLengthBlock = ? @sec-createsharedbytedatablock(8)
+    let agentRecord = $AgentRecord()
+    let rawBytes = @sec-numerictorawbytes(~biguint64~, $ℤ(byteLength), agentRecord[[LittleEndian]])
+    let execution = agentRecord[[CandidateExecution]]
+    let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+    perform $Append(record WriteSharedMemory { [[Order]]: ~seq-cst~, [[NoTear]]: true, [[Block]]: byteLengthBlock, [[ByteIndex]]: 0, [[ElementSize]]: 8, [[Payload]]: rawBytes }, eventsRecord[[EventList]])
+    set field #"obj"[[ArrayBufferByteLengthData]] = byteLengthBlock
+    set field #"obj"[[ArrayBufferMaxByteLength]] = maxByteLength
+  }
+  else {
+    set field #"obj"[[ArrayBufferByteLength]] = byteLength
+  }
+  return #"obj"
+}
+
+def @sec-issharedarraybuffer "IsSharedArrayBuffer" (kind ao params [#"obj" : ArrayBuffer | SharedArrayBuffer] -> Boolean) vars [#"obj"] {
+  if #"obj"[[ArrayBufferData]] is ty {#"Shared Data Block"} -> return true
+  return false
+}
+
+def @sec-isgrowablesharedarraybuffer "IsGrowableSharedArrayBuffer" (kind ao params [#"obj" : ArrayBuffer | SharedArrayBuffer] -> Boolean) vars [#"obj"] {
+  if @sec-issharedarraybuffer(#"obj") is val {true} and #"obj" sat $HasSlot([[ArrayBufferByteLengthData]]) -> return true
+  return false
+}
+
+def @sec-sharedarraybuffer-length "SharedArrayBuffer" (kind builtin params [length, options opt]) vars [#"this value", NewTarget, length, options, byteLength, requestedMaxByteLength] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let byteLength = ? @sec-toindex(length)
+  let requestedMaxByteLength = ? @sec-getarraybuffermaxbytelengthoption(options)
+  return ? @sec-allocatesharedarraybuffer(new_target, byteLength, requestedMaxByteLength)
+}
+
+def @sec-sharedarraybuffer-%symbol.species% "get SharedArrayBuffer [ %Symbol.species% ]" (kind builtin params []) vars [#"this value", NewTarget] {
+  return this_value
+}
+
+def @sec-get-sharedarraybuffer.prototype.bytelength "get SharedArrayBuffer.prototype.byteLength" (kind builtin params []) vars [#"this value", NewTarget, #"obj", length] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"obj") is val {false} -> throw @ph-new-error([[TypeError]])
+  let length = @sec-arraybufferbytelength(#"obj", ~seq-cst~)
+  return $𝔽(length)
+}
+
+def @sec-sharedarraybuffer.prototype.grow "SharedArrayBuffer.prototype.grow" (kind builtin params [newLength]) vars [#"this value", NewTarget, newLength, #"obj", newByteLength, hostHandled, agentRecord, isLittleEndian, byteLengthBlock, currentByteLengthRawBytes, newByteLengthRawBytes, currentByteLength, byteLengthDelta, readByteLengthRawBytes] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferMaxByteLength]])
+  if @sec-issharedarraybuffer(#"obj") is val {false} -> throw @ph-new-error([[TypeError]])
+  let newByteLength = ? @sec-toindex(newLength)
+  let hostHandled = ? @sec-hostgrowsharedarraybuffer(#"obj", newByteLength)
+  if hostHandled is val {~handled~} -> return undefined
+  let agentRecord = $AgentRecord()
+  let isLittleEndian = agentRecord[[LittleEndian]]
+  let byteLengthBlock = #"obj"[[ArrayBufferByteLengthData]]
+  let currentByteLengthRawBytes = @sec-getrawbytesfromsharedblock(byteLengthBlock, 0, ~biguint64~, true, ~seq-cst~)
+  let newByteLengthRawBytes = @sec-numerictorawbytes(~biguint64~, $ℤ(newByteLength), isLittleEndian)
+  repeat {
+    note "This is a compare-and-exchange loop to ensure that parallel, racing grows of the same buffer are totally ordered, are not lost, and do not silently do nothing. The loop exits if it was able to attempt to grow uncontended."
+    let currentByteLength = $ℝ(@sec-rawbytestonumeric(~biguint64~, currentByteLengthRawBytes, isLittleEndian))
+    if newByteLength == currentByteLength -> return undefined
+    if newByteLength < currentByteLength or newByteLength > #"obj"[[ArrayBufferMaxByteLength]] -> throw @ph-new-error([[RangeError]])
+    let byteLengthDelta = newByteLength - currentByteLength
+    if $CanAllocate(byteLengthDelta, true) is val {false} -> throw @ph-new-error([[RangeError]])
+    note "No new Shared Data Block is constructed and used here. The observable behaviour of growable SharedArrayBuffers is specified by allocating a max-sized Shared Data Block at construction time, and this step captures the requirement that implementations that run out of memory must throw a *RangeError*."
+    let readByteLengthRawBytes = @sec-atomiccompareexchangeinsharedblock(byteLengthBlock, 0, 8, currentByteLengthRawBytes, newByteLengthRawBytes)
+    if @sec-bytelistequal(readByteLengthRawBytes, currentByteLengthRawBytes) is val {true} -> return undefined
+    set var currentByteLengthRawBytes = readByteLengthRawBytes
+  }
+}
+
+def @sec-get-sharedarraybuffer.prototype.growable "get SharedArrayBuffer.prototype.growable" (kind builtin params []) vars [#"this value", NewTarget, #"obj"] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"obj") is val {false} -> throw @ph-new-error([[TypeError]])
+  if @sec-isfixedlengtharraybuffer(#"obj") is val {false} -> return true
+  return false
+}
+
+def @sec-get-sharedarraybuffer.prototype.maxbytelength "get SharedArrayBuffer.prototype.maxByteLength" (kind builtin params []) vars [#"this value", NewTarget, #"obj", length] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"obj") is val {false} -> throw @ph-new-error([[TypeError]])
+  if @sec-isfixedlengtharraybuffer(#"obj") is val {true} {
+    let length = #"obj"[[ArrayBufferByteLength]]
+  }
+  else {
+    let length = #"obj"[[ArrayBufferMaxByteLength]]
+  }
+  return $𝔽(length)
+}
+
+def @sec-sharedarraybuffer.prototype.slice "SharedArrayBuffer.prototype.slice" (kind builtin params [start, end]) vars [#"this value", NewTarget, start, end, #"obj", length, first, final, newLength, ctor, #"new", fromBlock, toBlock] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"obj") is val {false} -> throw @ph-new-error([[TypeError]])
+  let length = @sec-arraybufferbytelength(#"obj", ~seq-cst~)
+  let first = ? @sec-toclampedindex(start, length)
+  if_else end is val {undefined} { let final = length } else { let final = ? @sec-toclampedindex(end, length) }
+  let newLength = $max(final - first, 0)
+  let ctor = ? @sec-speciesconstructor(#"obj", intrinsic [[SharedArrayBuffer]])
+  let #"new" = ? @sec-construct(ctor, [$𝔽(newLength)])
+  perform ? @sec-requireinternalslot(#"new", [[ArrayBufferData]])
+  if @sec-issharedarraybuffer(#"new") is val {false} -> throw @ph-new-error([[TypeError]])
+  if #"new"[[ArrayBufferData]] is val {#"obj"[[ArrayBufferData]]} -> throw @ph-new-error([[TypeError]])
+  if @sec-arraybufferbytelength(#"new", ~seq-cst~) < newLength -> throw @ph-new-error([[TypeError]])
+  let fromBlock = #"obj"[[ArrayBufferData]]
+  let toBlock = #"new"[[ArrayBufferData]]
+  perform @sec-copydatablockbytes(toBlock, 0, fromBlock, first, newLength)
+  return #"new"
+}
+
+def @sec-makedataviewwithbufferwitnessrecord "MakeDataViewWithBufferWitnessRecord" (kind ao params [#"obj" : DataView, #"order" : val(~seq-cst~) | val(~unordered~)] -> #"DataView With Buffer Witness Record") vars [#"obj", #"order", buffer, byteLength] {
+  let buffer = #"obj"[[ViewedArrayBuffer]]
+  if @sec-isdetachedbuffer(buffer) is val {true} {
+    let byteLength = ~detached~
+  }
+  else {
+    let byteLength = @sec-arraybufferbytelength(buffer, #"order")
+  }
+  return record #"DataView With Buffer Witness Record" { [[Object]]: #"obj", [[CachedBufferByteLength]]: byteLength }
+}
+
+def @sec-getviewbytelength "GetViewByteLength" (kind ao params [viewRecord : #"DataView With Buffer Witness Record"] -> sort [#"non-negative"] integer) vars [viewRecord, view, byteOffset, byteLength] {
+  assert @sec-isviewoutofbounds(viewRecord) is val {false}
+  let view = viewRecord[[Object]]
+  if view[[ByteLength]] is not val {~auto~} -> return view[[ByteLength]]
+  assert @sec-isfixedlengtharraybuffer(view[[ViewedArrayBuffer]]) is val {false}
+  let byteOffset = view[[ByteOffset]]
+  let byteLength = viewRecord[[CachedBufferByteLength]]
+  assert byteLength is not val {~detached~}
+  return byteLength - byteOffset
+}
+
+def @sec-isviewoutofbounds "IsViewOutOfBounds" (kind ao params [viewRecord : #"DataView With Buffer Witness Record"] -> Boolean) vars [viewRecord, view, bufferByteLength, byteOffsetStart, byteOffsetEnd] {
+  let view = viewRecord[[Object]]
+  let bufferByteLength = viewRecord[[CachedBufferByteLength]]
+  if @sec-isdetachedbuffer(view[[ViewedArrayBuffer]]) is val {true} {
+    assert bufferByteLength is val {~detached~}
+    return true
+  }
+  assert bufferByteLength is ty {sort [#"non-negative"] integer}
+  let byteOffsetStart = view[[ByteOffset]]
+  if view[[ByteLength]] is val {~auto~} {
+    let byteOffsetEnd = bufferByteLength
+  }
+  else {
+    let byteOffsetEnd = byteOffsetStart + view[[ByteLength]]
+  }
+  note "A 0-length DataView whose [[ByteOffset]] is _bufferByteLength_ is not considered out-of-bounds."
+  if byteOffsetStart > bufferByteLength or byteOffsetEnd > bufferByteLength -> return true
+  return false
+}
+
+def @sec-getviewvalue "GetViewValue" (kind ao params [view : #"ECMAScript language value", requestIndex : #"ECMAScript language value", isLittleEndian : #"ECMAScript language value", type : #"TypedArray element type"] -> completion<Number | BigInt> | #"throw completion") vars [view, requestIndex, isLittleEndian, type, getIndex, viewOffset, viewRecord, viewSize, elementSize, bufferIndex] {
+  perform ? @sec-requireinternalslot(view, [[DataView]])
+  assert view sat $HasSlot([[ViewedArrayBuffer]])
+  let getIndex = ? @sec-toindex(requestIndex)
+  set var isLittleEndian = @sec-toboolean(isLittleEndian)
+  let viewOffset = view[[ByteOffset]]
+  let viewRecord = @sec-makedataviewwithbufferwitnessrecord(view, ~unordered~)
+  note "Bounds checking is not a synchronizing operation when _view_'s backing buffer is a growable SharedArrayBuffer."
+  if @sec-isviewoutofbounds(viewRecord) is val {true} -> throw @ph-new-error([[TypeError]])
+  let viewSize = @sec-getviewbytelength(viewRecord)
+  let elementSize = $TableLookup(table t"table-the-typedarray-constructors", code "Element Size", code "Element Type", ?type)
+  if getIndex + elementSize > viewSize -> throw @ph-new-error([[RangeError]])
+  let bufferIndex = getIndex + viewOffset
+  return @sec-getvaluefrombuffer(view[[ViewedArrayBuffer]], bufferIndex, type, false, ~unordered~, isLittleEndian)
+}
+
+def @sec-setviewvalue "SetViewValue" (kind ao params [view : #"ECMAScript language value", requestIndex : #"ECMAScript language value", isLittleEndian : #"ECMAScript language value", type : #"TypedArray element type", value : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [view, requestIndex, isLittleEndian, type, value, getIndex, number, viewOffset, viewRecord, viewSize, elementSize, bufferIndex] {
+  perform ? @sec-requireinternalslot(view, [[DataView]])
+  assert view sat $HasSlot([[ViewedArrayBuffer]])
+  let getIndex = ? @sec-toindex(requestIndex)
+  if @sec-isbigintelementtype(type) is val {true} -> let number = ? @sec-tobigint(value)
+  else -> let number = ? @sec-tonumber(value)
+  set var isLittleEndian = @sec-toboolean(isLittleEndian)
+  let viewOffset = view[[ByteOffset]]
+  let viewRecord = @sec-makedataviewwithbufferwitnessrecord(view, ~unordered~)
+  note "Bounds checking is not a synchronizing operation when _view_'s backing buffer is a growable SharedArrayBuffer."
+  if @sec-isviewoutofbounds(viewRecord) is val {true} -> throw @ph-new-error([[TypeError]])
+  let viewSize = @sec-getviewbytelength(viewRecord)
+  let elementSize = $TableLookup(table t"table-the-typedarray-constructors", code "Element Size", code "Element Type", ?type)
+  if getIndex + elementSize > viewSize -> throw @ph-new-error([[RangeError]])
+  let bufferIndex = getIndex + viewOffset
+  perform @sec-setvalueinbuffer(view[[ViewedArrayBuffer]], bufferIndex, type, number, false, ~unordered~, isLittleEndian)
+  return ~unused~
+}
+
+def @sec-dataview-buffer-byteoffset-bytelength "DataView" (kind builtin params [buffer, byteOffset opt, byteLength opt]) vars [#"this value", NewTarget, buffer, byteOffset, byteLength, offset, bufferByteLength, bufferIsFixedLength, viewByteLength, #"obj"] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  perform ? @sec-requireinternalslot(buffer, [[ArrayBufferData]])
+  let offset = ? @sec-toindex(byteOffset)
+  if @sec-isdetachedbuffer(buffer) is val {true} -> throw @ph-new-error([[TypeError]])
+  let bufferByteLength = @sec-arraybufferbytelength(buffer, ~seq-cst~)
+  if offset > bufferByteLength -> throw @ph-new-error([[RangeError]])
+  let bufferIsFixedLength = @sec-isfixedlengtharraybuffer(buffer)
+  if byteLength is val {undefined} {
+    if bufferIsFixedLength is val {true} {
+      let viewByteLength = bufferByteLength - offset
+    }
+    else {
+      let viewByteLength = ~auto~
+    }
+  }
+  else {
+    let viewByteLength = ? @sec-toindex(byteLength)
+    if offset + viewByteLength > bufferByteLength -> throw @ph-new-error([[RangeError]])
+  }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(new_target, "%DataView.prototype%", [[[DataView]], [[ViewedArrayBuffer]], [[ByteLength]], [[ByteOffset]]])
+  if @sec-isdetachedbuffer(buffer) is val {true} -> throw @ph-new-error([[TypeError]])
+  set var bufferByteLength = @sec-arraybufferbytelength(buffer, ~seq-cst~)
+  if offset > bufferByteLength -> throw @ph-new-error([[RangeError]])
+  if byteLength is not val {undefined} {
+    if offset + viewByteLength > bufferByteLength -> throw @ph-new-error([[RangeError]])
+  }
+  set field #"obj"[[ViewedArrayBuffer]] = buffer
+  set field #"obj"[[ByteLength]] = viewByteLength
+  set field #"obj"[[ByteOffset]] = offset
+  return #"obj"
+}
+
+def @sec-get-dataview.prototype.buffer "get DataView.prototype.buffer" (kind builtin params []) vars [#"this value", NewTarget, #"obj", buffer] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[DataView]])
+  assert #"obj" sat $HasSlot([[ViewedArrayBuffer]])
+  let buffer = #"obj"[[ViewedArrayBuffer]]
+  return buffer
+}
+
+def @sec-get-dataview.prototype.bytelength "get DataView.prototype.byteLength" (kind builtin params []) vars [#"this value", NewTarget, #"obj", viewRecord, size] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[DataView]])
+  assert #"obj" sat $HasSlot([[ViewedArrayBuffer]])
+  let viewRecord = @sec-makedataviewwithbufferwitnessrecord(#"obj", ~seq-cst~)
+  if @sec-isviewoutofbounds(viewRecord) is val {true} -> return num_f(+0)
+  let size = @sec-getviewbytelength(viewRecord)
+  return $𝔽(size)
+}
+
+def @sec-get-dataview.prototype.byteoffset "get DataView.prototype.byteOffset" (kind builtin params []) vars [#"this value", NewTarget, #"obj", viewRecord, offset] {
+  let #"obj" = this_value
+  perform ? @sec-requireinternalslot(#"obj", [[DataView]])
+  assert #"obj" sat $HasSlot([[ViewedArrayBuffer]])
+  let viewRecord = @sec-makedataviewwithbufferwitnessrecord(#"obj", ~seq-cst~)
+  if @sec-isviewoutofbounds(viewRecord) is val {true} -> return num_f(+0)
+  let offset = #"obj"[[ByteOffset]]
+  return $𝔽(offset)
+}
+
+def @sec-dataview.prototype.getbigint64 "DataView.prototype.getBigInt64" (kind builtin params [byteOffset, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, littleEndian, view] {
+  let view = this_value
+  return ? @sec-getviewvalue(view, byteOffset, littleEndian, ~bigint64~)
+}
+
+def @sec-dataview.prototype.getbiguint64 "DataView.prototype.getBigUint64" (kind builtin params [byteOffset, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, littleEndian, view] {
+  let view = this_value
+  return ? @sec-getviewvalue(view, byteOffset, littleEndian, ~biguint64~)
+}
+
+def @sec-dataview.prototype.getfloat16 "DataView.prototype.getFloat16" (kind builtin params [byteOffset, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  return ? @sec-getviewvalue(view, byteOffset, littleEndian, ~float16~)
+}
+
+def @sec-dataview.prototype.getfloat32 "DataView.prototype.getFloat32" (kind builtin params [byteOffset, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  return ? @sec-getviewvalue(view, byteOffset, littleEndian, ~float32~)
+}
+
+def @sec-dataview.prototype.getfloat64 "DataView.prototype.getFloat64" (kind builtin params [byteOffset, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  return ? @sec-getviewvalue(view, byteOffset, littleEndian, ~float64~)
+}
+
+def @sec-dataview.prototype.getint8 "DataView.prototype.getInt8" (kind builtin params [byteOffset]) vars [#"this value", NewTarget, byteOffset, view] {
+  let view = this_value
+  return ? @sec-getviewvalue(view, byteOffset, true, ~int8~)
+}
+
+def @sec-dataview.prototype.getint16 "DataView.prototype.getInt16" (kind builtin params [byteOffset, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  return ? @sec-getviewvalue(view, byteOffset, littleEndian, ~int16~)
+}
+
+def @sec-dataview.prototype.getint32 "DataView.prototype.getInt32" (kind builtin params [byteOffset, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  return ? @sec-getviewvalue(view, byteOffset, littleEndian, ~int32~)
+}
+
+def @sec-dataview.prototype.getuint8 "DataView.prototype.getUint8" (kind builtin params [byteOffset]) vars [#"this value", NewTarget, byteOffset, view] {
+  let view = this_value
+  return ? @sec-getviewvalue(view, byteOffset, true, ~uint8~)
+}
+
+def @sec-dataview.prototype.getuint16 "DataView.prototype.getUint16" (kind builtin params [byteOffset, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  return ? @sec-getviewvalue(view, byteOffset, littleEndian, ~uint16~)
+}
+
+def @sec-dataview.prototype.getuint32 "DataView.prototype.getUint32" (kind builtin params [byteOffset, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  return ? @sec-getviewvalue(view, byteOffset, littleEndian, ~uint32~)
+}
+
+def @sec-dataview.prototype.setbigint64 "DataView.prototype.setBigInt64" (kind builtin params [byteOffset, value, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, value, littleEndian, view] {
+  let view = this_value
+  perform ? @sec-setviewvalue(view, byteOffset, littleEndian, ~bigint64~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setbiguint64 "DataView.prototype.setBigUint64" (kind builtin params [byteOffset, value, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, value, littleEndian, view] {
+  let view = this_value
+  perform ? @sec-setviewvalue(view, byteOffset, littleEndian, ~biguint64~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setfloat16 "DataView.prototype.setFloat16" (kind builtin params [byteOffset, value, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, value, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  perform ? @sec-setviewvalue(view, byteOffset, littleEndian, ~float16~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setfloat32 "DataView.prototype.setFloat32" (kind builtin params [byteOffset, value, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, value, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  perform ? @sec-setviewvalue(view, byteOffset, littleEndian, ~float32~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setfloat64 "DataView.prototype.setFloat64" (kind builtin params [byteOffset, value, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, value, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  perform ? @sec-setviewvalue(view, byteOffset, littleEndian, ~float64~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setint8 "DataView.prototype.setInt8" (kind builtin params [byteOffset, value]) vars [#"this value", NewTarget, byteOffset, value, view] {
+  let view = this_value
+  perform ? @sec-setviewvalue(view, byteOffset, true, ~int8~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setint16 "DataView.prototype.setInt16" (kind builtin params [byteOffset, value, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, value, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  perform ? @sec-setviewvalue(view, byteOffset, littleEndian, ~int16~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setint32 "DataView.prototype.setInt32" (kind builtin params [byteOffset, value, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, value, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  perform ? @sec-setviewvalue(view, byteOffset, littleEndian, ~int32~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setuint8 "DataView.prototype.setUint8" (kind builtin params [byteOffset, value]) vars [#"this value", NewTarget, byteOffset, value, view] {
+  let view = this_value
+  perform ? @sec-setviewvalue(view, byteOffset, true, ~uint8~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setuint16 "DataView.prototype.setUint16" (kind builtin params [byteOffset, value, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, value, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  perform ? @sec-setviewvalue(view, byteOffset, littleEndian, ~uint16~, value)
+  return undefined
+}
+
+def @sec-dataview.prototype.setuint32 "DataView.prototype.setUint32" (kind builtin params [byteOffset, value, littleEndian opt]) vars [#"this value", NewTarget, byteOffset, value, littleEndian, view] {
+  let view = this_value
+  if littleEndian fails $Present() -> set var littleEndian = false
+  perform ? @sec-setviewvalue(view, byteOffset, littleEndian, ~uint32~, value)
+  return undefined
+}
+
+def @sec-validateintegertypedarray "ValidateIntegerTypedArray" (kind ao params [ta : #"ECMAScript language value", waitable : Boolean] -> completion<#"TypedArray With Buffer Witness Record"> | #"throw completion") vars [ta, waitable, taRecord, elementType] {
+  note "Bounds checking is not a synchronizing operation when _ta_'s backing buffer is a growable SharedArrayBuffer."
+  let taRecord = ? @sec-validatetypedarray(ta, ~unordered~)
+  let elementType = @sec-typedarrayelementtype(ta)
+  if @sec-isnotearconfiguration(elementType, ~seq-cst~) is val {false} -> throw @ph-new-error([[TypeError]])
+  if waitable is val {true} and elementType is neither val {~int32~; ~bigint64~} -> throw @ph-new-error([[TypeError]])
+  return taRecord
+}
+
+def @sec-validateatomicaccess "ValidateAtomicAccess" (kind ao params [taRecord : #"TypedArray With Buffer Witness Record", requestIndex : #"ECMAScript language value"] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [taRecord, requestIndex, length, accessIndex, ta, elementSize, offset] {
+  let length = @sec-typedarraylength(taRecord)
+  let accessIndex = ? @sec-toindex(requestIndex)
+  assert accessIndex >= 0
+  if accessIndex >= length -> throw @ph-new-error([[RangeError]])
+  let ta = taRecord[[Object]]
+  let elementSize = @sec-typedarrayelementsize(ta)
+  let offset = ta[[ByteOffset]]
+  return (accessIndex * elementSize) + offset
+}
+
+def @sec-validateatomicaccessonintegertypedarray "ValidateAtomicAccessOnIntegerTypedArray" (kind ao params [ta : #"ECMAScript language value", requestIndex : #"ECMAScript language value"] -> completion<sort [#"non-negative"] integer> | #"throw completion") vars [ta, requestIndex, taRecord] {
+  let taRecord = ? @sec-validateintegertypedarray(ta, false)
+  return ? @sec-validateatomicaccess(taRecord, requestIndex)
+}
+
+def @sec-revalidateatomicaccess "RevalidateAtomicAccess" (kind ao params [ta : TypedArray, byteIndexInBuffer : sort [#"non-negative"] integer] -> completion<val(~unused~)> | #"throw completion") vars [ta, byteIndexInBuffer, taRecord, elementSize, elementLastByteIndex] {
+  note "Bounds checking is not a synchronizing operation when _ta_'s backing buffer is a growable SharedArrayBuffer."
+  let taRecord = ? @sec-validatetypedarraybounds(ta, ~unordered~)
+  assert byteIndexInBuffer >= ta[[ByteOffset]]
+  let elementSize = @sec-typedarrayelementsize(ta)
+  let elementLastByteIndex = byteIndexInBuffer + elementSize - 1
+  if elementLastByteIndex >= taRecord[[CachedBufferByteLength]] -> throw @ph-new-error([[RangeError]])
+  return ~unused~
+}
+
+def @sec-getwaiterlist "GetWaiterList" (kind ao params [#"block" : #"Shared Data Block", i : doc "a non-negative integer that is evenly divisible by 4"] -> #"WaiterList Record") vars [#"block", i] {
+  assert expr $Chain(0, data choice 1, ?i, data choice 0, $Count(data choice 3, ?#"block")) and expr $Chain(0, data choice 1, i + 3, data choice 0, $Count(data choice 3, ?#"block"))
+  return $WaiterListFor(#"block", i)
+}
+
+def @sec-entercriticalsection "EnterCriticalSection" (kind ao params [waiterList : #"WaiterList Record"] -> val(~unused~)) vars [waiterList, agentRecord, execution, eventsRecord, enterEvent] {
+  assert $EnteredCriticalSections() sat $IsEmpty()
+  perform $AcquireCriticalSection(waiterList)
+  if waiterList[[MostRecentLeaveEvent]] is not val {~empty~} {
+    note "A _waiterList_ whose critical section has been entered at least once has a Synchronize event set by LeaveCriticalSection."
+    let agentRecord = $AgentRecord()
+    let execution = agentRecord[[CandidateExecution]]
+    let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+    let enterEvent = $NewRecord(data sort #"Synchronize event")
+    perform $Append(?enterEvent, eventsRecord[[EventList]])
+    perform $Append([waiterList[[MostRecentLeaveEvent]], enterEvent], eventsRecord[[AgentSynchronizesWith]])
+  }
+  return ~unused~
+}
+
+def @sec-leavecriticalsection "LeaveCriticalSection" (kind ao params [waiterList : #"WaiterList Record"] -> val(~unused~)) vars [waiterList, agentRecord, execution, eventsRecord, leaveEvent] {
+  perform @ph-assert-critical(?waiterList)
+  let agentRecord = $AgentRecord()
+  let execution = agentRecord[[CandidateExecution]]
+  let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+  let leaveEvent = $NewRecord(data sort #"Synchronize event")
+  perform $Append(?leaveEvent, eventsRecord[[EventList]])
+  set field waiterList[[MostRecentLeaveEvent]] = leaveEvent
+  perform $ReleaseCriticalSection(waiterList)
+  return ~unused~
+}
+
+def @sec-addwaiter "AddWaiter" (kind ao params [waiterList : #"WaiterList Record", waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterList, waiterRecord] {
+  perform @ph-assert-critical(?waiterList)
+  assert! expr @ph-no-waiter-with(waiterList[[Waiters]], waiterRecord[[PromiseCapability]], waiterRecord[[AgentSignifier]])
+  perform $Append(?waiterRecord, waiterList[[Waiters]])
+  return ~unused~
+}
+
+def @sec-removewaiter "RemoveWaiter" (kind ao params [waiterList : #"WaiterList Record", waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterList, waiterRecord] {
+  perform @ph-assert-critical(?waiterList)
+  assert waiterList[[Waiters]] sat $Contains(?waiterRecord)
+  perform $RemoveElem(?waiterRecord, waiterList[[Waiters]])
+  return ~unused~
+}
+
+def @sec-removewaiters "RemoveWaiters" (kind ao params [waiterList : #"WaiterList Record", count : sort [#"non-negative"] integer | val(math(+∞))] -> list<#"Waiter Record">) vars [waiterList, count, length, waiters] {
+  perform @ph-assert-critical(?waiterList)
+  let length = $ListLen(waiterList[[Waiters]])
+  set var count = $min(count, length)
+  let waiters = @ph-list-whose-elements([@ph-first-elements-of(?count, waiterList[[Waiters]])])
+  perform @ph-remove-first-n(?count, waiterList[[Waiters]])
+  return waiters
+}
+
+def @sec-suspendthisagent "SuspendThisAgent" (kind ao params [waiterList : #"WaiterList Record", waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterList, waiterRecord, thisAgent] {
+  perform @ph-assert-critical(?waiterList)
+  assert waiterList[[Waiters]] sat $Contains(?waiterRecord)
+  let thisAgent = @sec-agentsignifier()
+  assert waiterRecord[[AgentSignifier]] is val {thisAgent}
+  assert waiterRecord[[PromiseCapability]] is val {~blocking~}
+  assert @sec-agentcansuspend() is val {true}
+  perform @sec-leavecriticalsection(waiterList)
+  perform $SuspendAgentUntil(waiterList, waiterRecord[[TimeoutTime]])
+  repeat_while $AgentWoken() is val {false} {
+    perform @formal-agent-interleave()
+  }
+  perform @sec-entercriticalsection(waiterList)
+  return ~unused~
+}
+
+def @sec-notifywaiter "NotifyWaiter" (kind ao params [waiterList : #"WaiterList Record", waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterList, waiterRecord, promiseCapability] {
+  perform @ph-assert-critical(?waiterList)
+  if waiterRecord[[PromiseCapability]] is val {~blocking~} {
+    perform $WakeAgent(waiterRecord[[AgentSignifier]])
+    note "This causes the agent to resume execution in SuspendThisAgent."
+  }
+  else_if @sec-agentsignifier() is val {waiterRecord[[AgentSignifier]]} {
+    let promiseCapability = waiterRecord[[PromiseCapability]]
+    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [waiterRecord[[Result]]])
+  }
+  else {
+    perform @sec-enqueueresolveinagentjob(waiterRecord[[AgentSignifier]], waiterRecord[[PromiseCapability]], waiterRecord[[Result]])
+  }
+  return ~unused~
+}
+
+def @sec-enqueueresolveinagentjob "EnqueueResolveInAgentJob" (kind ao params [agentSignifier : #"agent signifier", promiseCapability : #"PromiseCapability Record", resolution : val("ok") | val("timed-out")] -> val(~unused~)) vars [agentSignifier, promiseCapability, resolution, resolveJob, realmInTargetAgent] {
+  let resolveJob = closure 0
+  let realmInTargetAgent = ! @sec-getfunctionrealm(promiseCapability[[Resolve]])
+  assert agentSignifier is val {realmInTargetAgent[[AgentSignifier]]}
+  perform @sec-hostenqueuegenericjob(resolveJob, realmInTargetAgent)
+  return ~unused~
+  closure job params none captures [agentSignifier, promiseCapability, resolution] {
+    assert @sec-agentsignifier() is val {agentSignifier}
+    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [resolution])
+    return ~unused~
+  }
+}
+
+def @sec-dowait "DoWait" (kind ao params [mode : val(~sync~) | val(~async~), ta : #"ECMAScript language value", index : #"ECMAScript language value", value : #"ECMAScript language value", timeout : #"ECMAScript language value"] -> completion<Object | val("not-equal") | val("timed-out") | val("ok")> | #"throw completion") vars [mode, ta, index, value, timeout, taRecord, buffer, byteIndexInBuffer, elementType, expected, timeoutNumber, realTimeout, #"block", waiterList, promiseCapability, resultObj, witness, thisAgent, now, additionalTimeout, timeoutTime, waiterRecord] {
+  let taRecord = ? @sec-validateintegertypedarray(ta, true)
+  let buffer = taRecord[[Object]][[ViewedArrayBuffer]]
+  if @sec-issharedarraybuffer(buffer) is val {false} -> throw @ph-new-error([[TypeError]])
+  let byteIndexInBuffer = ? @sec-validateatomicaccess(taRecord, index)
+  let elementType = @sec-typedarrayelementtype(ta)
+  assert elementType is val {~bigint64~; ~int32~}
+  if_else elementType is val {~bigint64~} { let expected = ? @sec-tobigint64(value) } else { let expected = ? @sec-toint32(value) }
+  let timeoutNumber = ? @sec-tonumber(timeout)
+  if timeoutNumber is val {nan; num_f(+∞)} -> let realTimeout = math(+∞)
+  else_if timeoutNumber is val {num_f(-∞)} -> let realTimeout = 0
+  else -> let realTimeout = $max($ℝ(timeoutNumber), 0)
+  if mode is val {~sync~} and @sec-agentcansuspend() is val {false} -> throw @ph-new-error([[TypeError]])
+  let #"block" = buffer[[ArrayBufferData]]
+  let waiterList = @sec-getwaiterlist(#"block", byteIndexInBuffer)
+  if mode is val {~sync~} {
+    let promiseCapability = ~blocking~
+    let resultObj = undefined
+  }
+  else {
+    let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+    let resultObj = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  }
+  perform @sec-entercriticalsection(waiterList)
+  let witness = @sec-getvaluefrombuffer(buffer, byteIndexInBuffer, elementType, true, ~seq-cst~)
+  if expected != witness {
+    perform @sec-leavecriticalsection(waiterList)
+    if mode is val {~sync~} -> return "not-equal"
+    perform ! @sec-createdatapropertyorthrow(resultObj, "async", false)
+    perform ! @sec-createdatapropertyorthrow(resultObj, "value", "not-equal")
+    return resultObj
+  }
+  if realTimeout == 0 and mode is val {~async~} {
+    note "There is no special handling of synchronous immediate timeouts. Asynchronous immediate timeouts have special handling in order to fail fast and avoid unnecessary Promise jobs."
+    perform @sec-leavecriticalsection(waiterList)
+    perform ! @sec-createdatapropertyorthrow(resultObj, "async", false)
+    perform ! @sec-createdatapropertyorthrow(resultObj, "value", "timed-out")
+    return resultObj
+  }
+  let thisAgent = @sec-agentsignifier()
+  let now = $TimeNow()
+  let additionalTimeout = $AdditionalTimeout()
+  let timeoutTime = $ℝ(now) + realTimeout + additionalTimeout
+  note "When _realTimeout_ is +∞, _timeoutTime_ is also +∞."
+  let waiterRecord = @ph-new-record(record #"Waiter Record" { [[AgentSignifier]]: thisAgent, [[PromiseCapability]]: promiseCapability, [[TimeoutTime]]: timeoutTime, [[Result]]: "ok" })
+  perform @sec-addwaiter(waiterList, waiterRecord)
+  if mode is val {~sync~} {
+    perform @sec-suspendthisagent(waiterList, waiterRecord)
+    if waiterList[[Waiters]] sat $Contains(?waiterRecord) {
+      set field waiterRecord[[Result]] = "timed-out"
+      perform @sec-removewaiter(waiterList, waiterRecord)
+    }
+  }
+  else_if timeoutTime sat $IsFinite() {
+    perform @sec-enqueueatomicswaitasynctimeoutjob(waiterList, waiterRecord)
+  }
+  perform @sec-leavecriticalsection(waiterList)
+  if mode is val {~sync~} -> return waiterRecord[[Result]]
+  perform ! @sec-createdatapropertyorthrow(resultObj, "async", true)
+  perform ! @sec-createdatapropertyorthrow(resultObj, "value", promiseCapability[[Promise]])
+  return resultObj
+}
+
+def @sec-enqueueatomicswaitasynctimeoutjob "EnqueueAtomicsWaitAsyncTimeoutJob" (kind ao params [waiterList : #"WaiterList Record", waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterList, waiterRecord, timeoutJob, timeOfJobExecution, now, currentRealm, delay] {
+  let timeoutJob = closure 0
+  let now = $TimeNow()
+  let currentRealm = $CurrentRealm()
+  perform @sec-hostenqueuetimeoutjob(timeoutJob, currentRealm, $𝔽(waiterRecord[[TimeoutTime]]) - now)
+  return ~unused~
+  closure job params none captures [waiterList, waiterRecord] {
+    perform @sec-entercriticalsection(waiterList)
+    if waiterList[[Waiters]] sat $Contains(?waiterRecord) {
+      let timeOfJobExecution = $TimeNow()
+      assert! expr @ph-time-at-least($ℝ(timeOfJobExecution), waiterRecord[[TimeoutTime]])
+      set field waiterRecord[[Result]] = "timed-out"
+      perform @sec-removewaiter(waiterList, waiterRecord)
+      perform @sec-notifywaiter(waiterList, waiterRecord)
+    }
+    perform @sec-leavecriticalsection(waiterList)
+    return ~unused~
+  }
+}
+
+def @sec-atomiccompareexchangeinsharedblock "AtomicCompareExchangeInSharedBlock" (kind ao params [#"block" : #"Shared Data Block", byteIndexInBuffer : integer, elementSize : sort [#"non-negative"] integer, expectedBytes : list<#"byte value">, replacementBytes : list<#"byte value">] -> list<#"byte value">) vars [#"block", byteIndexInBuffer, elementSize, expectedBytes, replacementBytes, agentRecord, execution, eventsRecord, rawBytesRead, second, oldBytes, newBytes, event] {
+  let agentRecord = $AgentRecord()
+  let execution = agentRecord[[CandidateExecution]]
+  let eventsRecord = $ListFind([[AgentSignifier]], execution[[EventsRecords]], @sec-agentsignifier())
+  if $ListLen(execution[[EventsRecords]]) is val {1} {
+    let rawBytesRead = @formal-singleagentreadbytes(execution, eventsRecord, #"block", byteIndexInBuffer, elementSize)
+  }
+  else {
+    if $EnteredCriticalSections() sat $IsEmpty() -> perform @formal-agent-interleave()
+    let rawBytesRead = @formal-choosesharedbytes(execution, eventsRecord, #"block", byteIndexInBuffer, elementSize)
+  }
+  note "In implementations, _rawBytesRead_ is the result of a load-link, of a load-exclusive, or of an operand of a read-modify-write instruction on the underlying hardware. The nondeterminism is a semantic prescription of the memory model to describe observable behaviour of hardware with weak consistency."
+  note "The comparison of the expected value and the read value is performed outside of the read-modify-write modification function to avoid needlessly strong synchronization when the expected value is not equal to the read value."
+  if @sec-bytelistequal(rawBytesRead, expectedBytes) is val {true} {
+    let second = closure 0
+    let event = record ReadModifyWriteSharedMemory { [[Order]]: ~seq-cst~, [[NoTear]]: true, [[Block]]: #"block", [[ByteIndex]]: byteIndexInBuffer, [[ElementSize]]: elementSize, [[Payload]]: replacementBytes, [[ModifyOp]]: second }
+  }
+  else {
+    let event = record ReadSharedMemory { [[Order]]: ~seq-cst~, [[NoTear]]: true, [[Block]]: #"block", [[ByteIndex]]: byteIndexInBuffer, [[ElementSize]]: elementSize }
+  }
+  perform $Append(?event, eventsRecord[[EventList]])
+  perform $Append(record #"Chosen Value Record" { [[Event]]: event, [[ChosenValue]]: rawBytesRead }, execution[[ChosenValues]])
+  return rawBytesRead
+  closure read_modify_write atomic params [oldBytes, newBytes] captures [] {
+    return newBytes
+  }
+}
+
+def @sec-atomicreadmodifywrite "AtomicReadModifyWrite" (kind ao params [ta : #"ECMAScript language value", index : #"ECMAScript language value", value : #"ECMAScript language value", #"op" : #"read-modify-write modification function"] -> completion<Number | BigInt> | #"throw completion") vars [ta, index, value, #"op", byteIndexInBuffer, coerced, buffer, elementType] {
+  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index)
+  if ta[[ContentType]] is val {~bigint~} -> let coerced = ? @sec-tobigint(value)
+  else -> let coerced = $𝔽(? @sec-tointegerorinfinity(value))
+  perform ? @sec-revalidateatomicaccess(ta, byteIndexInBuffer)
+  let buffer = ta[[ViewedArrayBuffer]]
+  let elementType = @sec-typedarrayelementtype(ta)
+  return @sec-getmodifysetvalueinbuffer(buffer, byteIndexInBuffer, elementType, coerced, #"op")
+}
+
+def @sec-bytelistbitwiseop "ByteListBitwiseOp" (kind ao params [#"op" : doc "&, ^, or |", xBytes : list<#"byte value">, yBytes : list<#"byte value">] -> list<#"byte value">) vars [#"op", xBytes, yBytes, result, i, xByte, yByte, resultByte] {
+  assert expr $SameLength([xBytes, yBytes])
+  let result = $ListNew()
+  let i = 0
+  for_each xByte in xBytes {
+    let yByte = yBytes[i]
+    if #"op" is val {code "&"} {
+      let resultByte = $Bitwise(data choice 0, ?xByte, ?yByte)
+    }
+    else_if #"op" is val {code "^"} {
+      let resultByte = $Bitwise(data choice 1, ?xByte, ?yByte)
+    }
+    else {
+      assert #"op" is val {code "|"}
+      let resultByte = $Bitwise(data choice 2, ?xByte, ?yByte)
+    }
+    set var i = i + 1
+    perform $Append(?resultByte, ?result)
+  }
+  return result
+}
+
+def @sec-bytelistequal "ByteListEqual" (kind ao params [xBytes : list<#"byte value">, yBytes : list<#"byte value">] -> Boolean) vars [xBytes, yBytes, i, xByte, yByte] {
+  if expr not $SameLength([xBytes, yBytes]) -> return false
+  let i = 0
+  for_each xByte in xBytes {
+    let yByte = yBytes[i]
+    if xByte != yByte -> return false
+    set var i = i + 1
+  }
+  return true
+}
+
+def @sec-atomics.add "Atomics.add" (kind builtin params [ta, index, value]) vars [#"this value", NewTarget, ta, index, value, add, xBytes, yBytes, type, agentRecord, isLittleEndian, x, y, sum, sumBytes] {
+  let add = closure 0
+  return ? @sec-atomicreadmodifywrite(ta, index, value, add)
+  closure read_modify_write atomic params [xBytes, yBytes] captures [ta] {
+    let type = @sec-typedarrayelementtype(ta)
+    let agentRecord = $AgentRecord()
+    let isLittleEndian = agentRecord[[LittleEndian]]
+    let x = @sec-rawbytestonumeric(type, xBytes, isLittleEndian)
+    let y = @sec-rawbytestonumeric(type, yBytes, isLittleEndian)
+    if x is ty {Number} {
+      let sum = @sec-numeric-types-number-add(x, y)
+    }
+    else {
+      assert x is ty {BigInt}
+      let sum = @sec-numeric-types-bigint-add(x, y)
+    }
+    let sumBytes = @sec-numerictorawbytes(type, sum, isLittleEndian)
+    assert expr $SameLength([sumBytes, xBytes, yBytes])
+    return sumBytes
+  }
+}
+
+def @sec-atomics.and "Atomics.and" (kind builtin params [ta, index, value]) vars [#"this value", NewTarget, ta, index, value, #"and", xBytes, yBytes] {
+  let #"and" = closure 0
+  return ? @sec-atomicreadmodifywrite(ta, index, value, #"and")
+  closure read_modify_write atomic params [xBytes, yBytes] captures [] {
+    return @sec-bytelistbitwiseop(code "&", xBytes, yBytes)
+  }
+}
+
+def @sec-atomics.compareexchange "Atomics.compareExchange" (kind builtin params [ta, index, expectedValue, replacementValue]) vars [#"this value", NewTarget, ta, index, expectedValue, replacementValue, byteIndexInBuffer, buffer, #"block", expected, replacement, elementType, elementSize, agentRecord, isLittleEndian, expectedBytes, replacementBytes, rawBytesRead] {
+  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index)
+  let buffer = ta[[ViewedArrayBuffer]]
+  let #"block" = buffer[[ArrayBufferData]]
+  if ta[[ContentType]] is val {~bigint~} {
+    let expected = ? @sec-tobigint(expectedValue)
+    let replacement = ? @sec-tobigint(replacementValue)
+  }
+  else {
+    let expected = $𝔽(? @sec-tointegerorinfinity(expectedValue))
+    let replacement = $𝔽(? @sec-tointegerorinfinity(replacementValue))
+  }
+  perform ? @sec-revalidateatomicaccess(ta, byteIndexInBuffer)
+  let elementType = @sec-typedarrayelementtype(ta)
+  let elementSize = @sec-typedarrayelementsize(ta)
+  let agentRecord = $AgentRecord()
+  let isLittleEndian = agentRecord[[LittleEndian]]
+  let expectedBytes = @sec-numerictorawbytes(elementType, expected, isLittleEndian)
+  let replacementBytes = @sec-numerictorawbytes(elementType, replacement, isLittleEndian)
+  if @sec-issharedarraybuffer(buffer) is val {true} {
+    let rawBytesRead = @sec-atomiccompareexchangeinsharedblock(#"block", byteIndexInBuffer, elementSize, expectedBytes, replacementBytes)
+  }
+  else {
+    let rawBytesRead = @ph-list-of-length(?elementSize, @ph-bytes-from(?elementSize, ?#"block", ?byteIndexInBuffer))
+    if @sec-bytelistequal(rawBytesRead, expectedBytes) is val {true} {
+      perform $StoreBytes(?replacementBytes, ?#"block", ?byteIndexInBuffer)
+    }
+  }
+  return @sec-rawbytestonumeric(elementType, rawBytesRead, isLittleEndian)
+}
+
+def @sec-atomics.exchange "Atomics.exchange" (kind builtin params [ta, index, value]) vars [#"this value", NewTarget, ta, index, value, second, oldBytes, newBytes] {
+  let second = closure 0
+  return ? @sec-atomicreadmodifywrite(ta, index, value, second)
+  closure read_modify_write atomic params [oldBytes, newBytes] captures [] {
+    return newBytes
+  }
+}
+
+def @sec-atomics.islockfree "Atomics.isLockFree" (kind builtin params [size]) vars [#"this value", NewTarget, size, n, agentRecord] {
+  let n = ? @sec-tointegerorinfinity(size)
+  let agentRecord = $AgentRecord()
+  if n == 1 -> return agentRecord[[IsLockFree1]]
+  if n == 2 -> return agentRecord[[IsLockFree2]]
+  if n == 4 -> return true
+  if n == 8 -> return agentRecord[[IsLockFree8]]
+  return false
+}
+
+def @sec-atomics.load "Atomics.load" (kind builtin params [ta, index]) vars [#"this value", NewTarget, ta, index, byteIndexInBuffer, buffer, elementType] {
+  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index)
+  perform ? @sec-revalidateatomicaccess(ta, byteIndexInBuffer)
+  let buffer = ta[[ViewedArrayBuffer]]
+  let elementType = @sec-typedarrayelementtype(ta)
+  return @sec-getvaluefrombuffer(buffer, byteIndexInBuffer, elementType, true, ~seq-cst~)
+}
+
+def @sec-atomics.notify "Atomics.notify" (kind builtin params [ta, index, count]) vars [#"this value", NewTarget, ta, index, count, taRecord, byteIndexInBuffer, intCount, buffer, #"block", waiterList, waiters, waiterRecord, waitersCount] {
+  let taRecord = ? @sec-validateintegertypedarray(ta, true)
+  let byteIndexInBuffer = ? @sec-validateatomicaccess(taRecord, index)
+  if count is val {undefined} {
+    set var count = math(+∞)
+  }
+  else {
+    let intCount = ? @sec-tointegerorinfinity(count)
+    set var count = $max(intCount, 0)
+  }
+  let buffer = ta[[ViewedArrayBuffer]]
+  if @sec-issharedarraybuffer(buffer) is val {false} -> return num_f(+0)
+  let #"block" = buffer[[ArrayBufferData]]
+  let waiterList = @sec-getwaiterlist(#"block", byteIndexInBuffer)
+  perform @sec-entercriticalsection(waiterList)
+  let waiters = @sec-removewaiters(waiterList, count)
+  for_each waiterRecord in waiters {
+    perform @sec-notifywaiter(waiterList, waiterRecord)
+  }
+  perform @sec-leavecriticalsection(waiterList)
+  let waitersCount = $ListLen(?waiters)
+  return $𝔽(waitersCount)
+}
+
+def @sec-atomics.or "Atomics.or" (kind builtin params [ta, index, value]) vars [#"this value", NewTarget, ta, index, value, #"or", xBytes, yBytes] {
+  let #"or" = closure 0
+  return ? @sec-atomicreadmodifywrite(ta, index, value, #"or")
+  closure read_modify_write atomic params [xBytes, yBytes] captures [] {
+    return @sec-bytelistbitwiseop(code "|", xBytes, yBytes)
+  }
+}
+
+def @sec-atomics.pause "Atomics.pause" (kind builtin params []) vars [#"this value", NewTarget] {
+  perform $SpinWaitHint()
+  return undefined
+}
+
+def @sec-atomics.store "Atomics.store" (kind builtin params [ta, index, value]) vars [#"this value", NewTarget, ta, index, value, byteIndexInBuffer, coerced, buffer, elementType] {
+  let byteIndexInBuffer = ? @sec-validateatomicaccessonintegertypedarray(ta, index)
+  if ta[[ContentType]] is val {~bigint~} -> let coerced = ? @sec-tobigint(value)
+  else -> let coerced = $𝔽(? @sec-tointegerorinfinity(value))
+  perform ? @sec-revalidateatomicaccess(ta, byteIndexInBuffer)
+  let buffer = ta[[ViewedArrayBuffer]]
+  let elementType = @sec-typedarrayelementtype(ta)
+  perform @sec-setvalueinbuffer(buffer, byteIndexInBuffer, elementType, coerced, true, ~seq-cst~)
+  return coerced
+}
+
+def @sec-atomics.sub "Atomics.sub" (kind builtin params [ta, index, value]) vars [#"this value", NewTarget, ta, index, value, subtract, xBytes, yBytes, type, agentRecord, isLittleEndian, x, y, difference, differenceBytes] {
+  let subtract = closure 0
+  return ? @sec-atomicreadmodifywrite(ta, index, value, subtract)
+  closure read_modify_write atomic params [xBytes, yBytes] captures [ta] {
+    let type = @sec-typedarrayelementtype(ta)
+    let agentRecord = $AgentRecord()
+    let isLittleEndian = agentRecord[[LittleEndian]]
+    let x = @sec-rawbytestonumeric(type, xBytes, isLittleEndian)
+    let y = @sec-rawbytestonumeric(type, yBytes, isLittleEndian)
+    if x is ty {Number} {
+      let difference = @sec-numeric-types-number-subtract(x, y)
+    }
+    else {
+      assert x is ty {BigInt}
+      let difference = @sec-numeric-types-bigint-subtract(x, y)
+    }
+    let differenceBytes = @sec-numerictorawbytes(type, difference, isLittleEndian)
+    assert expr $SameLength([differenceBytes, xBytes, yBytes])
+    return differenceBytes
+  }
+}
+
+def @sec-atomics.wait "Atomics.wait" (kind builtin params [ta, index, value, timeout]) vars [#"this value", NewTarget, ta, index, value, timeout] {
+  return ? @sec-dowait(~sync~, ta, index, value, timeout)
+}
+
+def @sec-atomics.waitasync "Atomics.waitAsync" (kind builtin params [ta, index, value, timeout]) vars [#"this value", NewTarget, ta, index, value, timeout] {
+  return ? @sec-dowait(~async~, ta, index, value, timeout)
+}
+
+def @sec-atomics.xor "Atomics.xor" (kind builtin params [ta, index, value]) vars [#"this value", NewTarget, ta, index, value, xor, xBytes, yBytes] {
+  let xor = closure 0
+  return ? @sec-atomicreadmodifywrite(ta, index, value, xor)
+  closure read_modify_write atomic params [xBytes, yBytes] captures [] {
+    return @sec-bytelistbitwiseop(code "^", xBytes, yBytes)
+  }
+}
+
+def @sec-json.israwjson "JSON.isRawJSON" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj"] {
+  if #"obj" is ty {Object} and #"obj" sat $HasSlot([[IsRawJSON]]) -> return true
+  return false
+}
+
+def @sec-json.parse "JSON.parse" (kind builtin params [#"text", reviver opt]) vars [#"this value", NewTarget, #"text", reviver, jsonString, parseResult, unfiltered, root, rootName, snapshot] {
+  let jsonString = ? @sec-tostring(#"text")
+  let parseResult = ? @sec-ParseJSON(jsonString)
+  let unfiltered = parseResult[[Value]]
+  if @sec-iscallable(reviver) is val {false} -> return unfiltered
+  let root = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  let rootName = $"the empty String"()
+  perform ! @sec-createdatapropertyorthrow(root, rootName, unfiltered)
+  let snapshot = @sec-createjsonparserecord(parseResult[[ParseNode]], rootName, unfiltered)
+  return ? @sec-internalizejsonproperty(root, rootName, reviver, snapshot)
+}
+
+def @sec-ParseJSON "ParseJSON" (kind ao params [#"text" : String] -> completion<record { [[ParseNode]]: #"Parse Node", [[Value]]: #"ECMAScript language value" }> | #"throw completion") vars [#"text", scriptString, script, result] {
+  if $IsJSONText(@sec-stringtocodepoints(#"text")) is val {false} -> throw @ph-new-error([[SyntaxError]])
+  let scriptString = $"string-concatenation"("(", #"text", ");")
+  let script = @formal-parsetextin(scriptString, |Script|, false, true, false)
+  note "The early error rules defined in <emu-xref href=\"#sec-object-initializer-static-semantics-early-errors\"></emu-xref> have special handling for the above invocation of ParseText."
+  assert script is ty {#"Parse Node"}
+  let result = ! sdo Evaluation(script)
+  note "The PropertyDefinitionEvaluation semantics defined in <emu-xref href=\"#sec-runtime-semantics-propertydefinitionevaluation\"></emu-xref> have special handling for the above evaluation."
+  if result is ty {Object} {
+    assert expr @ph-contains-cond(?script, |ArrayLiteral|) or expr @ph-contains-cond(?script, |ObjectLiteral|)
+  }
+  else {
+    assert result is ty {String; Number; Boolean} or result is val {null}
+  }
+  return record Record { [[ParseNode]]: script, [[Value]]: result }
+}
+
+def @sec-createjsonparserecord "CreateJSONParseRecord" (kind ao params [parseNode : #"Parse Node", key : #"property name", value : #"ECMAScript language value"] -> #"JSON Parse Record") vars [parseNode, key, value, typedValueNode, elements, entries, isArray, contentNodes, length, valueLength, index, propertyName, elementParseRecord, propertyNodes, #"keys", propertyKey, propertyDefinition, propertyNode, propertyValueNode, entryParseRecord] {
+  let typedValueNode = @sec-shallowestcontainedjsonvalue(parseNode)
+  assert typedValueNode is not val {~empty~}
+  let elements = $ListNew()
+  let entries = $ListNew()
+  if value is ty {Object} {
+    let isArray = ! @sec-isarray(value)
+    if isArray is val {true} {
+      assert typedValueNode is ty {pred(sat @ph-type-nt-parse-node(data choice 1, |ArrayLiteral|))}
+      let contentNodes = sdo JSONArrayLiteralContentNodes(typedValueNode)
+      let length = $ListLen(?contentNodes)
+      let valueLength = ! @sec-lengthofarraylike(value)
+      assert valueLength is val {length}
+      let index = 0
+      repeat_while index < length {
+        let propertyName = ! @sec-tostring($𝔽(index))
+        let elementParseRecord = @sec-createjsonparserecord(contentNodes[index], propertyName, ! @sec-get-o-p(value, propertyName))
+        perform $Append(?elementParseRecord, ?elements)
+        set var index = index + 1
+      }
+    }
+    else {
+      assert typedValueNode is ty {pred(sat @ph-type-nt-parse-node(data choice 1, |ObjectLiteral|))}
+      let propertyNodes = sdo PropertyDefinitionNodes(typedValueNode)
+      note "Because _value_ was produced from JSON text and has not been modified, all of its property keys are Strings and will be exhaustively enumerated."
+      let #"keys" = ! @sec-enumerableownproperties(value, ~key~)
+      for_each propertyKey : String in #"keys" {
+        note "In the case of JSON text specifying multiple name/value pairs with the same name for a single object (such as <code>{\"a\":\"lost\",\"a\":\"kept\"}</code>), the value for the corresponding property of the resulting ECMAScript object is specified by the last pair with that name."
+        let propertyDefinition = ~empty~
+        for_each propertyNode : #"Parse Node" in propertyNodes {
+          let propertyName = sdo PropName(propertyNode)
+          if propertyName is val {propertyKey} -> set var propertyDefinition = propertyNode
+        }
+        assert propertyDefinition is val {prods [p"Syntactic - PropertyDefinition : PropertyName[?Yield, ?Await] `:` AssignmentExpression[+In, ?Yield, ?Await]"]}
+        let propertyValueNode = $ChildOf(|AssignmentExpression|, ?propertyDefinition)
+        let entryParseRecord = @sec-createjsonparserecord(propertyValueNode, propertyKey, ! @sec-get-o-p(value, propertyKey))
+        perform $Append(?entryParseRecord, ?entries)
+      }
+    }
+  }
+  else {
+    assert typedValueNode is neither ty {pred(sat @ph-type-nt-parse-node(data choice 1, |ArrayLiteral|)); pred(sat @ph-type-nt-parse-node(data choice 1, |ObjectLiteral|))}
+  }
+  return record #"JSON Parse Record" { [[ParseNode]]: typedValueNode, [[Key]]: key, [[Value]]: value, [[Elements]]: elements, [[Entries]]: entries }
+}
+
+def @sec-internalizejsonproperty "InternalizeJSONProperty" (kind ao params [holder : Object, name : String, reviver : #"function object", parseRecord : #"JSON Parse Record" | val(~empty~)] -> completion<#"ECMAScript language value"> | #"throw completion") vars [holder, name, reviver, parseRecord, value, context, parseNode, sourceText, elementRecords, entryRecords, isArray, elementRecordsLength, length, index, propertyKey, elementRecord, newElement, #"keys", entry, entryRecord] {
+  let value = ? @sec-get-o-p(holder, name)
+  let context = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  if parseRecord is ty {#"JSON Parse Record"} and @sec-samevalue(parseRecord[[Value]], value) is val {true} {
+    if value is not ty {Object} {
+      let parseNode = parseRecord[[ParseNode]]
+      assert parseNode is neither ty {pred(sat @ph-type-nt-parse-node(data choice 1, |ArrayLiteral|)); pred(sat @ph-type-nt-parse-node(data choice 1, |ObjectLiteral|))}
+      let sourceText = $SourceText(?parseNode)
+      perform ! @sec-createdatapropertyorthrow(context, "source", @sec-codepointstostring(sourceText))
+    }
+    let elementRecords = parseRecord[[Elements]]
+    let entryRecords = parseRecord[[Entries]]
+  }
+  else {
+    let elementRecords = $ListNew()
+    let entryRecords = $ListNew()
+  }
+  if value is ty {Object} {
+    let isArray = ? @sec-isarray(value)
+    if isArray is val {true} {
+      let elementRecordsLength = $ListLen(?elementRecords)
+      let length = ? @sec-lengthofarraylike(value)
+      let index = 0
+      repeat_while index < length {
+        let propertyKey = ! @sec-tostring($𝔽(index))
+        if_else index < elementRecordsLength { let elementRecord = elementRecords[index] } else { let elementRecord = ~empty~ }
+        let newElement = ? @sec-internalizejsonproperty(value, propertyKey, reviver, elementRecord)
+        if newElement is val {undefined} {
+          perform ? value[[Delete]](propertyKey)
+        }
+        else {
+          perform ? @sec-createdataproperty(value, propertyKey, newElement)
+        }
+        set var index = index + 1
+      }
+    }
+    else {
+      let #"keys" = ? @sec-enumerableownproperties(value, ~key~)
+      for_each propertyKey : String in #"keys" {
+        let entryRecord = ~empty~
+        for_each entry in entryRecords {
+          if entryRecord is val {~empty~} and entry[[Key]] is val {propertyKey} -> set var entryRecord = entry
+        }
+        let newElement = ? @sec-internalizejsonproperty(value, propertyKey, reviver, entryRecord)
+        if newElement is val {undefined} {
+          perform ? value[[Delete]](propertyKey)
+        }
+        else {
+          perform ? @sec-createdataproperty(value, propertyKey, newElement)
+        }
+      }
+    }
+  }
+  return ? @sec-call(reviver, holder, [name, value, context])
+}
+
+def @sec-shallowestcontainedjsonvalue "ShallowestContainedJSONValue" (kind ao params [root : #"Parse Node"] -> #"Parse Node" | val(~empty~)) vars [root, activeFunc, parseSteps, types, unaryExpr, queue, candidate, queuedChildren, type, #"children"] {
+  let activeFunc = $ActiveFunction()
+  let parseSteps = ~empty~
+  set var parseSteps = ref @sec-json.parse
+  assert activeFunc is ty {sort [#"built-in"] #"function object"} and activeFunc sat $HasSlot([[Behaviour]]) and activeFunc[[Behaviour]] is val {parseSteps}
+  let types = [|NullLiteral|, |BooleanLiteral|, |NumericLiteral|, |StringLiteral|, |ArrayLiteral|, |ObjectLiteral|, |UnaryExpression|]
+  let unaryExpr = ~empty~
+  let queue = [root]
+  repeat_while queue fails $IsEmpty() {
+    let candidate = $ListElem(data choice 1, ?queue)
+    perform $RemoveFirst(?queue)
+    let queuedChildren = false
+    for_each type : nonterminal in types {
+      if expr $InstanceOf(candidate, ?type) {
+        note "In the JSON grammar, a <code>number</code> token may represent a negative value. In ECMAScript, negation is represented as a unary operation in which a |UnaryExpression| parses to a `-` followed by a derived |UnaryExpression|."
+        if type is val {|UnaryExpression|} {
+          if $Parent(candidate) is not ty {pred(sat @ph-type-nt-parse-node(data choice 0, |UnaryExpression|))} -> set var unaryExpr = candidate
+        }
+        else_if type is val {|NumericLiteral|} {
+          assert $ParseNodesWithin(unaryExpr) sat $Contains(?candidate)
+          return unaryExpr
+        }
+        else {
+          return candidate
+        }
+      }
+      if queuedChildren is val {false} and expr $InstanceOf(candidate, data sort nonterminal) and @ph-contains(?candidate, ?type) is val {true} {
+        let #"children" = $ChildNodes(candidate)
+        set var queue = $ListConcat([queue, #"children"])
+        set var queuedChildren = true
+      }
+    }
+  }
+  return ~empty~
+}
+
+def @sec-json.rawjson "JSON.rawJSON" (kind builtin params [#"text"]) vars [#"this value", NewTarget, #"text", jsonString, parseResult, internalSlotsList, #"obj"] {
+  let jsonString = ? @sec-tostring(#"text")
+  if jsonString is val {$"the empty String"()} -> throw @ph-new-error([[SyntaxError]])
+  if $FirstUnit(?jsonString) sat @ph-not-json-first-unit() -> throw @ph-new-error([[SyntaxError]])
+  if @ph-last-code-unit(?jsonString) sat @ph-not-json-last-unit() -> throw @ph-new-error([[SyntaxError]])
+  let parseResult = ? @sec-ParseJSON(jsonString)
+  assert parseResult[[Value]] is ty {String; Number; Boolean} or parseResult[[Value]] is val {null}
+  let internalSlotsList = [[[IsRawJSON]]]
+  let #"obj" = @sec-ordinaryobjectcreate(null, internalSlotsList)
+  perform ! @sec-createdatapropertyorthrow(#"obj", "rawJSON", jsonString)
+  perform ! @sec-setintegritylevel(#"obj", ~frozen~)
+  return #"obj"
+}
+
+def @sec-json.stringify "JSON.stringify" (kind builtin params [value, replacer opt, space opt]) vars [#"this value", NewTarget, value, replacer, space, stack, indent, propertyList, replacerFunc, isArray, length, k, propertyKey, propertyValue, item, spaceMV, gap, wrapper, state] {
+  let stack = $ListNew()
+  let indent = $"the empty String"()
+  let propertyList = undefined
+  let replacerFunc = undefined
+  if replacer is ty {Object} {
+    if @sec-iscallable(replacer) is val {true} {
+      set var replacerFunc = replacer
+    }
+    else {
+      let isArray = ? @sec-isarray(replacer)
+      if isArray is val {true} {
+        set var propertyList = $ListNew()
+        let length = ? @sec-lengthofarraylike(replacer)
+        let k = 0
+        repeat_while k < length {
+          let propertyKey = ! @sec-tostring($𝔽(k))
+          let propertyValue = ? @sec-get-o-p(replacer, propertyKey)
+          let item = undefined
+          if propertyValue is ty {String} {
+            set var item = propertyValue
+          }
+          else_if propertyValue is ty {Number} {
+            set var item = ! @sec-tostring(propertyValue)
+          }
+          else_if propertyValue is ty {Object} {
+            if propertyValue sat @ph-has-slot-or(data choice 0, [[StringData]], [[NumberData]]) -> set var item = ? @sec-tostring(propertyValue)
+          }
+          if item is not val {undefined} and propertyList fails $Contains(?item) {
+            perform $Append(?item, ?propertyList)
+          }
+          set var k = k + 1
+        }
+      }
+    }
+  }
+  if space is ty {Object} {
+    if space sat $HasSlot([[NumberData]]) {
+      set var space = ? @sec-tonumber(space)
+    }
+    else_if space sat $HasSlot([[StringData]]) {
+      set var space = ? @sec-tostring(space)
+    }
+  }
+  if space is ty {Number} {
+    let spaceMV = ! @sec-tointegerorinfinity(space)
+    set var spaceMV = $min(10, spaceMV)
+    if_else spaceMV < 1 { let gap = $"the empty String"() } else { let gap = $StrOfUnits(@ph-occurrences-of(?spaceMV, $CodeUnit(cu(32, "0020", "SPACE")))) }
+  }
+  else_if space is ty {String} {
+    if_else $StrLen(?space) <= 10 { let gap = space } else { let gap = $Substring(?space, 0, 10) }
+  }
+  else {
+    let gap = $"the empty String"()
+  }
+  let wrapper = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  perform ! @sec-createdatapropertyorthrow(wrapper, $"the empty String"(), value)
+  let state = record #"JSON Serialization Record" { [[ReplacerFunction]]: replacerFunc, [[Stack]]: stack, [[Indent]]: indent, [[Gap]]: gap, [[PropertyList]]: propertyList }
+  return ? @sec-serializejsonproperty(state, $"the empty String"(), wrapper)
+}
+
+def @sec-serializejsonproperty "SerializeJSONProperty" (kind ao params [state : #"JSON Serialization Record", key : String, holder : Object] -> completion<String | val(undefined)> | #"throw completion") vars [state, key, holder, value, toJSON, rawJSON, isArray] {
+  let value = ? @sec-get-o-p(holder, key)
+  if value is ty {Object} or value is ty {BigInt} {
+    let toJSON = ? @sec-getv(value, "toJSON")
+    if @sec-iscallable(toJSON) is val {true} {
+      set var value = ? @sec-call(toJSON, value, [key])
+    }
+  }
+  if state[[ReplacerFunction]] is not val {undefined} {
+    set var value = ? @sec-call(state[[ReplacerFunction]], holder, [key, value])
+  }
+  if value is ty {Object} {
+    if value sat $HasSlot([[IsRawJSON]]) {
+      let rawJSON = ! @sec-get-o-p(value, "rawJSON")
+      assert rawJSON is ty {String}
+      return rawJSON
+    }
+    if value sat $HasSlot([[NumberData]]) {
+      set var value = ? @sec-tonumber(value)
+    }
+    else_if value sat $HasSlot([[StringData]]) {
+      set var value = ? @sec-tostring(value)
+    }
+    else_if value sat $HasSlot([[BooleanData]]) {
+      set var value = value[[BooleanData]]
+    }
+    else_if value sat $HasSlot([[BigIntData]]) {
+      set var value = value[[BigIntData]]
+    }
+  }
+  if value is val {null} -> return "null"
+  if value is val {true} -> return "true"
+  if value is val {false} -> return "false"
+  if value is ty {String} -> return @sec-quotejsonstring(value)
+  if value is ty {Number} {
+    if value is ty {sort [finite] Number} -> return ! @sec-tostring(value)
+    return "null"
+  }
+  if value is ty {BigInt} -> throw @ph-new-error([[TypeError]])
+  if value is ty {Object} and @sec-iscallable(value) is val {false} {
+    let isArray = ? @sec-isarray(value)
+    if isArray is val {true} {
+      return ? @sec-serializejsonarray(state, value)
+    }
+    return ? @sec-serializejsonobject(state, value)
+  }
+  return undefined
+}
+
+def @sec-quotejsonstring "QuoteJSONString" (kind ao params [value : String] -> String) vars [value, product, codePoint, unit] {
+  let product = @ph-string-solely($CodeUnit(cu(34, "0022", "QUOTATION MARK")))
+  for_each codePoint : #"code point" in @sec-stringtocodepoints(value) {
+    if codePoint sat @ph-listed-in-column(code "Code Point", table t"table-json-single-character-escapes") {
+      set var product = $"string-concatenation"(product, $TableLookup(table t"table-json-single-character-escapes", code "Escape Sequence", code "Code Point", ?codePoint))
+    }
+    else_if codePoint sat @ph-value-less-than(cu(32, "0020", "SPACE")) or codePoint sat @ph-surrogate-value() {
+      let unit = $UnitOrPointOf(data choice 1, $NumericValue(?codePoint))
+      set var product = $"string-concatenation"(product, @sec-unicodeescape(unit))
+    }
+    else {
+      set var product = $"string-concatenation"(product, @sec-utf16encodecodepoint(codePoint))
+    }
+  }
+  set var product = $"string-concatenation"(product, $CodeUnit(cu(34, "0022", "QUOTATION MARK")))
+  return product
+}
+
+def @sec-unicodeescape "UnicodeEscape" (kind ao params [codeUnit : #"code unit"] -> String) vars [codeUnit, n, #"hex"] {
+  let n = $NumericValue(?codeUnit)
+  assert n <= math(hex(65535, "FFFF"))
+  let #"hex" = @ph-lower-hex(?n)
+  return $"string-concatenation"($CodeUnit(cu(92, "005C", "REVERSE SOLIDUS")), "u", @sec-stringpad(#"hex", 4, "0", ~start~))
+}
+
+def @sec-serializejsonobject "SerializeJSONObject" (kind ao params [state : #"JSON Serialization Record", value : Object] -> completion<String> | #"throw completion") vars [state, value, stepBack, #"keys", partial, propertyKey, stringP, member, final, properties, first, part, separator] {
+  if state[[Stack]] sat $Contains(?value) -> throw @ph-new-error([[TypeError]])
+  perform $Append(?value, state[[Stack]])
+  let stepBack = state[[Indent]]
+  set field state[[Indent]] = $"string-concatenation"(state[[Indent]], state[[Gap]])
+  if state[[PropertyList]] is not val {undefined} {
+    let #"keys" = state[[PropertyList]]
+  }
+  else {
+    let #"keys" = ? @sec-enumerableownproperties(value, ~key~)
+  }
+  let partial = $ListNew()
+  for_each propertyKey in #"keys" {
+    let stringP = ? @sec-serializejsonproperty(state, propertyKey, value)
+    if stringP is not val {undefined} {
+      let member = @sec-quotejsonstring(propertyKey)
+      set var member = $"string-concatenation"(member, ":")
+      if state[[Gap]] is not val {$"the empty String"()} {
+        set var member = $"string-concatenation"(member, $CodeUnit(cu(32, "0020", "SPACE")))
+      }
+      set var member = $"string-concatenation"(member, stringP)
+      perform $Append(?member, ?partial)
+    }
+  }
+  if partial sat $IsEmpty() {
+    let final = "{}"
+  }
+  else {
+    if state[[Gap]] is val {$"the empty String"()} {
+      let properties = $"the empty String"()
+      let first = true
+      for_each part in partial {
+        if first is val {true} -> set var first = false
+        else -> set var properties = $"string-concatenation"(properties, $CodeUnit(cu(44, "002C", "COMMA")))
+        set var properties = $"string-concatenation"(properties, part)
+      }
+      let final = $"string-concatenation"("{", properties, "}")
+    }
+    else {
+      let separator = $"string-concatenation"($CodeUnit(cu(44, "002C", "COMMA")), $CodeUnit(cu(10, "000A", "LINE FEED")), state[[Indent]])
+      let properties = $"the empty String"()
+      let first = true
+      for_each part in partial {
+        if first is val {true} -> set var first = false
+        else -> set var properties = $"string-concatenation"(properties, separator)
+        set var properties = $"string-concatenation"(properties, part)
+      }
+      let final = $"string-concatenation"("{", $CodeUnit(cu(10, "000A", "LINE FEED")), state[[Indent]], properties, $CodeUnit(cu(10, "000A", "LINE FEED")), stepBack, "}")
+    }
+  }
+  perform $RemoveLast(state[[Stack]])
+  set field state[[Indent]] = stepBack
+  return final
+}
+
+def @sec-serializejsonarray "SerializeJSONArray" (kind ao params [state : #"JSON Serialization Record", value : Object] -> completion<String> | #"throw completion") vars [state, value, stepBack, partial, length, index, stringP, final, properties, first, part, separator] {
+  if state[[Stack]] sat $Contains(?value) -> throw @ph-new-error([[TypeError]])
+  perform $Append(?value, state[[Stack]])
+  let stepBack = state[[Indent]]
+  set field state[[Indent]] = $"string-concatenation"(state[[Indent]], state[[Gap]])
+  let partial = $ListNew()
+  let length = ? @sec-lengthofarraylike(value)
+  let index = 0
+  repeat_while index < length {
+    let stringP = ? @sec-serializejsonproperty(state, ! @sec-tostring($𝔽(index)), value)
+    if stringP is val {undefined} {
+      perform $Append("null", ?partial)
+    }
+    else {
+      perform $Append(?stringP, ?partial)
+    }
+    set var index = index + 1
+  }
+  if partial sat $IsEmpty() {
+    let final = "[]"
+  }
+  else {
+    if state[[Gap]] is val {$"the empty String"()} {
+      let properties = $"the empty String"()
+      let first = true
+      for_each part in partial {
+        if first is val {true} -> set var first = false
+        else -> set var properties = $"string-concatenation"(properties, $CodeUnit(cu(44, "002C", "COMMA")))
+        set var properties = $"string-concatenation"(properties, part)
+      }
+      let final = $"string-concatenation"("[", properties, "]")
+    }
+    else {
+      let separator = $"string-concatenation"($CodeUnit(cu(44, "002C", "COMMA")), $CodeUnit(cu(10, "000A", "LINE FEED")), state[[Indent]])
+      let properties = $"the empty String"()
+      let first = true
+      for_each part in partial {
+        if first is val {true} -> set var first = false
+        else -> set var properties = $"string-concatenation"(properties, separator)
+        set var properties = $"string-concatenation"(properties, part)
+      }
+      let final = $"string-concatenation"("[", $CodeUnit(cu(10, "000A", "LINE FEED")), state[[Indent]], properties, $CodeUnit(cu(10, "000A", "LINE FEED")), stepBack, "]")
+    }
+  }
+  perform $RemoveLast(state[[Stack]])
+  set field state[[Indent]] = stepBack
+  return final
+}
+
+sdo_row @sec-static-semantics-jsonarrayliteralcontentnodes JSONArrayLiteralContentNodes form alg {
+  prods [p"Syntactic 0 ArrayLiteral : `[` Elision? `]`", p"Syntactic 1 ArrayLiteral : `[` Elision? `]`", p"Syntactic - ArrayLiteral : `[` ElementList[?Yield, ?Await] `]`", p"Syntactic 0 ArrayLiteral : `[` ElementList[?Yield, ?Await] `,` Elision? `]`", p"Syntactic 1 ArrayLiteral : `[` ElementList[?Yield, ?Await] `,` Elision? `]`"]
+  keys ["\n          ArrayLiteral :\n            `[` Elision? `]`\n            `[` ElementList `]`\n            `[` ElementList `,` Elision? `]`\n        "]
+  vars []
+  steps {
+    assert child 5 |Elision| fails $Present()
+    if child 5 |ElementList| fails $Present() -> return $ListNew()
+    return sdo JSONArrayLiteralContentNodes(child 5 |ElementList|)
+  }
+}
+
+sdo_row @sec-static-semantics-jsonarrayliteralcontentnodes#1 JSONArrayLiteralContentNodes form alg {
+  prods [p"Syntactic 0 ElementList : Elision? AssignmentExpression[+In, ?Yield, ?Await]", p"Syntactic 1 ElementList : Elision? AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["ElementList : Elision? AssignmentExpression"]
+  vars []
+  steps {
+    assert child 5 |Elision| fails $Present()
+    return [child 5 |AssignmentExpression|]
+  }
+}
+
+sdo_row @sec-static-semantics-jsonarrayliteralcontentnodes#2 JSONArrayLiteralContentNodes form alg {
+  prods [p"Syntactic 0 ElementList : ElementList[?Yield, ?Await] `,` Elision? AssignmentExpression[+In, ?Yield, ?Await]", p"Syntactic 1 ElementList : ElementList[?Yield, ?Await] `,` Elision? AssignmentExpression[+In, ?Yield, ?Await]"]
+  keys ["ElementList : ElementList `,` Elision? AssignmentExpression"]
+  vars [elements]
+  steps {
+    assert child 5 |Elision| fails $Present()
+    let elements = sdo JSONArrayLiteralContentNodes(child 3 |ElementList|)
+    return $ListConcat([elements, [child 5 |AssignmentExpression|]])
+  }
+}
+
+sdo_row @sec-static-semantics-jsonarrayliteralcontentnodes#3 JSONArrayLiteralContentNodes form alg {
+  prods [p"Syntactic 0 ElementList : Elision? SpreadElement[?Yield, ?Await]", p"Syntactic 1 ElementList : Elision? SpreadElement[?Yield, ?Await]", p"Syntactic 0 ElementList : ElementList[?Yield, ?Await] `,` Elision? SpreadElement[?Yield, ?Await]", p"Syntactic 1 ElementList : ElementList[?Yield, ?Await] `,` Elision? SpreadElement[?Yield, ?Await]"]
+  keys ["\n          ElementList :\n            Elision? SpreadElement\n            ElementList `,` Elision? SpreadElement\n        "]
+  vars []
+  steps {
+    note "JSON text as specified in ECMA-404 does not include |SpreadElement|."
+    unreachable 0
+  }
+}
+

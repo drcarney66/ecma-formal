@@ -31,21 +31,9 @@ def nodeVal {M : Model} : Option M.Node → Val M
   | some n => .node n
   | none => .absent
 
-/-- A phrase argument: a hole's value, an enum, a predicate phrase's subject (passed last),
-the SDO row's Parse Node, or a sort. -/
-def phraseArg {M : Model} (nd : Option M.Node) (vs : List (Val M)) : PhraseArg → Val M
-  | .hole i | .spread i => vs.getD i .absent
+/-- An argument of a sort test: the subject value, or an enum constant. -/
+def sortArg {M : Model} (v : Val M) : SortArg → Val M
+  | .subject => v
   | .enum e => .enum e
-  | .subject => vs.getLastD .absent
-  | .thisNode => nodeVal nd
-  | .sort s => .sort s
-  | .field f => .field f
-  | .choice k => .choice k
-
-/-- A phrase meaning's arguments: a spread list hole's are the values from its own on. -/
-def phraseArgs {M : Model} (nd : Option M.Node) (vs : List (Val M)) : List PhraseArg → List (Val M)
-  | [] => []
-  | .spread i :: as => vs.drop i ++ phraseArgs nd vs as
-  | a :: as => phraseArg nd vs a :: phraseArgs nd vs as
 
 end Ecma

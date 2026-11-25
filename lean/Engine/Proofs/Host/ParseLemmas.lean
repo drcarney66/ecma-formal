@@ -9,20 +9,18 @@ public import Engine.Model.Parse
 namespace Engine.Impl
 
 open Engine.Model Ecma.Grammar
-open Ecma (ProdId NtId ParamId ErratumId Reading ParseCx)
+open Ecma (ProdId NtId ParamId ParseCx)
 
 /-- At a non-numeric goal, a Parse Node `parse` gives is the parser's, restamped. -/
-theorem parse_some {sel : ErratumId → Reading} {cx : ParseCx} {st : Nat} {src : Array MathVal} {goal : NtId}
+theorem parse_some {cx : ParseCx} {st : Nat} {src : Array MathVal} {goal : NtId}
     {args : List (ParamId × Bool)} {m : Node}
     (hg : (goal == NT.StringNumericLiteral.ctorIdx || goal == NT.StringIntegerLiteral.ctorIdx) = false)
-    (h : parse sel cx st src goal args = some (some m)) :
-    ∃ n, outcome 0 src goal args (Ecma.rulesUnder readings sel) (grammarCx cx) cx.strict (litLook sel) = .ok n ∧
+    (h : parse cx st src goal args = some (some m)) :
+    ∃ n, outcome 0 src goal args (grammarCx cx) cx.strict = .ok n ∧
       m = restamp st n := by
   unfold parse at h
   rw [hg] at h
   simp only [Bool.false_eq_true, if_false] at h
-  split at h
-  · cases h
   split at h
   · next n e => cases h; exact ⟨n, e, rfl⟩
   · cases h

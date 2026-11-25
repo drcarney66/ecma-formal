@@ -1,0 +1,98 @@
+grammar numericString
+
+rule numericString |StringNumericLiteral| [] ::: {
+  | |StrWhiteSpace|?
+  | |StrWhiteSpace|? |StrNumericLiteral| |StrWhiteSpace|?
+}
+
+rule numericString |StrWhiteSpace| [] ::: {
+  | |StrWhiteSpaceChar| |StrWhiteSpace|?
+}
+
+rule numericString |StrWhiteSpaceChar| [] ::: {
+  | |WhiteSpace|
+  | |LineTerminator|
+}
+
+rule numericString |StrNumericLiteral| [] ::: {
+  | |StrDecimalLiteral|
+  | |NonDecimalIntegerLiteral[~Sep]|
+}
+
+rule numericString |StrDecimalLiteral| [] ::: {
+  | |StrUnsignedDecimalLiteral|
+  | "+" |StrUnsignedDecimalLiteral|
+  | "-" |StrUnsignedDecimalLiteral|
+}
+
+rule numericString |StrUnsignedDecimalLiteral| [] ::: {
+  | "Infinity"
+  | |DecimalDigits[~Sep]| "." |DecimalDigits[~Sep]|? |ExponentPart[~Sep]|?
+  | "." |DecimalDigits[~Sep]| |ExponentPart[~Sep]|?
+  | |DecimalDigits[~Sep]| |ExponentPart[~Sep]|?
+}
+
+rule numericString |StringIntegerLiteral| [] ::: {
+  | |StrWhiteSpace|?
+  | |StrWhiteSpace|? |StrIntegerLiteral| |StrWhiteSpace|?
+}
+
+rule numericString |StrIntegerLiteral| [] ::: {
+  | |SignedInteger[~Sep]|
+  | |NonDecimalIntegerLiteral[~Sep]|
+}
+
+rule numericString |UTCOffset| [] ::: {
+  | |ASCIISign| |Hour|
+  | |ASCIISign| |Hour| |HourSubcomponents[+Extended]|
+  | |ASCIISign| |Hour| |HourSubcomponents[~Extended]|
+}
+
+rule numericString |ASCIISign| [] ::: one_of {
+  row ["+", "-"]
+}
+
+rule numericString |Hour| [] ::: {
+  | "0" |DecimalDigit|
+  | "1" |DecimalDigit|
+  | "20"
+  | "21"
+  | "22"
+  | "23"
+}
+
+rule numericString |HourSubcomponents| [Extended] ::: {
+  | |TimeSeparator[?Extended]| |MinuteSecond|
+  | |TimeSeparator[?Extended]| |MinuteSecond| |TimeSeparator[?Extended]| |MinuteSecond| |TemporalDecimalFraction|?
+}
+
+rule numericString |TimeSeparator| [Extended] ::: {
+  | [+Extended] ":"
+  | [~Extended] [empty]
+}
+
+rule numericString |MinuteSecond| [] ::: {
+  | "0" |DecimalDigit|
+  | "1" |DecimalDigit|
+  | "2" |DecimalDigit|
+  | "3" |DecimalDigit|
+  | "4" |DecimalDigit|
+  | "5" |DecimalDigit|
+}
+
+rule numericString |TemporalDecimalFraction| [] ::: {
+  | |TemporalDecimalSeparator| |DecimalDigit|
+  | |TemporalDecimalSeparator| |DecimalDigit| |DecimalDigit|
+  | |TemporalDecimalSeparator| |DecimalDigit| |DecimalDigit| |DecimalDigit|
+  | |TemporalDecimalSeparator| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit|
+  | |TemporalDecimalSeparator| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit|
+  | |TemporalDecimalSeparator| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit|
+  | |TemporalDecimalSeparator| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit|
+  | |TemporalDecimalSeparator| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit|
+  | |TemporalDecimalSeparator| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit| |DecimalDigit|
+}
+
+rule numericString |TemporalDecimalSeparator| [] ::: one_of {
+  row [".", ","]
+}
+

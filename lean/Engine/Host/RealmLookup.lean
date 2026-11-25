@@ -18,8 +18,6 @@ namespace Engine.Host.RealmLookup
 
 open Ecma Ecma.Spec
 
-def readingOf (e : ErratumId) : Reading := (Ecma.Gen.parity[e]?).getD .literal
-
 def algNamed? (n : String) : Option Alg := allAlgs.find? (·.name == n)
 
 end Engine.Host.RealmLookup

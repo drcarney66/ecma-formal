@@ -78,15 +78,6 @@ end
 /-- The number of host calls before a shape change. -/
 abbrev ShapeChange.stamp {M : Model} (c : ShapeChange M) : Nat := c.before.length
 
-/-- The stop of a check at a site of erratum `e`: the erratum under its literal reading, else `r`. -/
-def Stop.at (rd : ErratumId → Reading) (e : ErratumId) (r : Stop) : Stop :=
-  if rd e == .literal then .erratum e else r
-
-/-- The stop of a false Assert at a site of erratum `r` (`Stmt.assertAt`): `Stop.at`, else a failed Assert. -/
-def Stop.atAssert (rd : ErratumId → Reading) : Option ErratumId → Stop
-  | some e => Stop.at rd e .assertFailed
-  | none => .assertFailed
-
 namespace Run
 variable {M : Model} {α β : Type}
 
@@ -116,7 +107,7 @@ def Res.boundary : Res M (Val M) → Res M (Val M)
 
 /-- `r` with a state component `set` to `outer` when control leaves it, and to `inner` again when
 a transfer resumes it; a call runs, and resumes it, in the inner state. -/
-def Res.within {γ : Type} (set : State M → γ → State M) (outer inner : γ) : Res M α → Res M α
+def Res.within {γ : Type} (set : State M → γ → State M) (outer _inner : γ) : Res M α → Res M α
   | .ok a s => .ok a (set s outer)
   | .esc c s => .esc c (set s outer)
   | .stop r => .stop r
@@ -143,20 +134,16 @@ structure LeafCtx (M : Model) where
   unit : ProdId → Option NtId
   /-- the terminals of a production's present right-hand side, by position -/
   terms : ProdId → List (Nat × String)
-  /-- whether a phrase's meaning spreads its list hole (`PhraseArg.spread`) -/
-  spread : PhraseId → Bool
   /-- the clause of each Annex B overlay section, where the program has it -/
   overlayClause : Grammar.AnnexB → Option ClauseId
   /-- the Annex B overlay sections the host supports (B.1, B.3): its logged choices -/
   annexB : Run M Grammar.AnnexB.Set
-  /-- the reading chosen for each erratum -/
-  reading : ErratumId → Reading
   /-- checked mode: the Asserts that cost an evaluation are evaluated -/
   checked : Bool
   /-- whether the host's resources run out at pushing an execution context in a state (`Host.exhausts`) -/
   exhausts : State M → Bool
-  /-- the erratum whose text stops at the job loop's check for a Job the clause makes -/
-  jobErratum : ClauseId → Option ErratumId
+  /-- whether a Job the clause makes has its completion checked in every mode (§9.5) -/
+  jobChecked : ClauseId → Bool := fun _ => false
 
 /-! Environments: one value per slot, as nested pairs. -/
 
@@ -302,7 +289,7 @@ def valOf : ValLit → Run M (Val M)
   | .null => Run.pure .null
   | .true => Run.pure (.bool true)
   | .false => Run.pure (.bool false)
-  | .str s _ => Run.pure (.str (M.strLit s))
+  | .str s => Run.pure (.str (M.strLit s))
   | .nan _ => Run.pure (.num M.numNaN)
   | .num sg .inf .f => Run.pure (.num (M.numInf (sg == .minus)))
   | .num sg (.num (.dec 0)) .f => Run.pure (.num (M.numZero (sg == .minus)))
@@ -521,11 +508,6 @@ def question (chk : Bool) : Val M → Run M (Val M)
 a value that is not a Completion Record fails the Assert of the expansion (§5.2.3.4). -/
 def bang (chk : Bool) : Val M → Run M (Val M)
   | .comp t x _ => if t == Known.eNormal then Run.pure x else Run.stop .assertFailed
-  | v => if chk then Run.stop .assertFailed else Run.pure v
-
-/-- `! v` at a site of an erratum: as `bang`, an abrupt completion stops with `r`. -/
-def bangAt (chk : Bool) (r : Stop) : Val M → Run M (Val M)
-  | .comp t x _ => if t == Known.eNormal then Run.pure x else Run.stop r
   | v => if chk then Run.stop .assertFailed else Run.pure v
 
 def bool : Val M → Run M Bool

@@ -1,8 +1,0 @@
-[package]
-name = "jsgrammar"
-version = "0.1.0"
-edition = "2021"
-rust-version = "1.95"
-description = "ECMA-262's grammars, from spec.html's <emu-grammar type=\"definition\"> blocks, as Lean data (lean/Ecma/Grammar/Gen; docs/parser/GRAMMAR.md)"
-
-[dependencies]

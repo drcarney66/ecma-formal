@@ -1,0 +1,738 @@
+-- ECMA-262 SpecTec Clauses: S20
+
+def @sec-object-value "Object" (kind builtin params [value]) vars [#"this value", NewTarget, value] {
+  if new_target is neither val {undefined; $ActiveFunction()} {
+    return ? @sec-ordinarycreatefromconstructor(new_target, "%Object.prototype%")
+  }
+  if value is val {undefined; null} -> return @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  return ! @sec-toobject(value)
+}
+
+def @sec-object.assign "Object.assign" (kind builtin params [target, sources rest]) vars [#"this value", NewTarget, target, sources, targetObj, nextSource, #"from", #"keys", nextKey, propertyDesc, propertyValue] {
+  let targetObj = ? @sec-toobject(target)
+  if expr @ph-only-one-argument-passed() -> return targetObj
+  for_each nextSource in sources {
+    if nextSource is neither val {undefined; null} {
+      let #"from" = ! @sec-toobject(nextSource)
+      let #"keys" = ? #"from"[[OwnPropertyKeys]]()
+      for_each nextKey in #"keys" {
+        let propertyDesc = ? #"from"[[GetOwnProperty]](nextKey)
+        if propertyDesc is not val {undefined} and propertyDesc[[Enumerable]] is val {true} {
+          let propertyValue = ? @sec-get-o-p(#"from", nextKey)
+          perform ? @sec-set-o-p-v-throw(targetObj, nextKey, propertyValue, true)
+        }
+      }
+    }
+  }
+  return targetObj
+}
+
+def @sec-object.create "Object.create" (kind builtin params [proto, properties]) vars [#"this value", NewTarget, proto, properties, #"obj"] {
+  if proto is not ty {Object} and proto is not val {null} -> throw @ph-new-error([[TypeError]])
+  let #"obj" = @sec-ordinaryobjectcreate(proto)
+  if properties is not val {undefined} {
+    return ? @sec-objectdefineproperties(#"obj", properties)
+  }
+  return #"obj"
+}
+
+def @sec-object.defineproperties "Object.defineProperties" (kind builtin params [#"obj", properties]) vars [#"this value", NewTarget, #"obj", properties] {
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  return ? @sec-objectdefineproperties(#"obj", properties)
+}
+
+def @sec-objectdefineproperties "ObjectDefineProperties" (kind ao params [#"obj" : Object, properties : #"ECMAScript language value"] -> completion<Object> | #"throw completion") vars [#"obj", properties, #"keys", propertyDescs, nextKey, currentPropertyDesc, propertyDescObj, propertyDesc, property] {
+  set var properties = ? @sec-toobject(properties)
+  let #"keys" = ? properties[[OwnPropertyKeys]]()
+  let propertyDescs = $ListNew()
+  for_each nextKey in #"keys" {
+    let currentPropertyDesc = ? properties[[GetOwnProperty]](nextKey)
+    if currentPropertyDesc is not val {undefined} and currentPropertyDesc[[Enumerable]] is val {true} {
+      let propertyDescObj = ? @sec-get-o-p(properties, nextKey)
+      let propertyDesc = ? @sec-topropertydescriptor(propertyDescObj)
+      perform $Append(record Record { [[Key]]: nextKey, [[Descriptor]]: propertyDesc }, ?propertyDescs)
+    }
+  }
+  for_each property in propertyDescs {
+    perform ? @sec-definepropertyorthrow(#"obj", property[[Key]], property[[Descriptor]])
+  }
+  return #"obj"
+}
+
+def @sec-object.defineproperty "Object.defineProperty" (kind builtin params [#"obj", key, attrs]) vars [#"this value", NewTarget, #"obj", key, attrs, propertyKey, propertyDesc] {
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let propertyKey = ? @sec-topropertykey(key)
+  let propertyDesc = ? @sec-topropertydescriptor(attrs)
+  perform ? @sec-definepropertyorthrow(#"obj", propertyKey, propertyDesc)
+  return #"obj"
+}
+
+def @sec-object.entries "Object.entries" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj", coerced, entryList] {
+  let coerced = ? @sec-toobject(#"obj")
+  let entryList = ? @sec-enumerableownproperties(coerced, ~key+value~)
+  return @sec-createarrayfromlist(entryList)
+}
+
+def @sec-object.freeze "Object.freeze" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj", status] {
+  if #"obj" is not ty {Object} -> return #"obj"
+  let status = ? @sec-setintegritylevel(#"obj", ~frozen~)
+  if status is val {false} -> throw @ph-new-error([[TypeError]])
+  return #"obj"
+}
+
+def @sec-object.fromentries "Object.fromEntries" (kind builtin params [iterable]) vars [#"this value", NewTarget, iterable, #"obj", #"closure", key, value, propertyKey, adder] {
+  perform ? @sec-requireobjectcoercible(iterable)
+  let #"obj" = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  assert #"obj" is ty {pred(sat @spec-copy-1(data choice 1, data choice 0))}
+  let #"closure" = closure 0
+  let adder = @sec-createbuiltinfunction(#"closure", 2, "", [])
+  return ? @sec-add-entries-from-iterable(#"obj", iterable, adder)
+  closure abstract params [key, value] captures [#"obj"] {
+    let propertyKey = ? @sec-topropertykey(key)
+    perform ! @sec-createdatapropertyorthrow(#"obj", propertyKey, value)
+    return @sec-normalcompletion(undefined)
+  }
+}
+
+def @sec-object.getownpropertydescriptor "Object.getOwnPropertyDescriptor" (kind builtin params [#"obj", key]) vars [#"this value", NewTarget, #"obj", key, coerced, propertyKey, propertyDesc] {
+  let coerced = ? @sec-toobject(#"obj")
+  let propertyKey = ? @sec-topropertykey(key)
+  let propertyDesc = ? coerced[[GetOwnProperty]](propertyKey)
+  return @sec-frompropertydescriptor(propertyDesc)
+}
+
+def @sec-object.getownpropertydescriptors "Object.getOwnPropertyDescriptors" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj", coerced, ownKeys, descs, key, propertyDesc, propertyDescObj] {
+  let coerced = ? @sec-toobject(#"obj")
+  let ownKeys = ? coerced[[OwnPropertyKeys]]()
+  let descs = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
+  for_each key in ownKeys {
+    let propertyDesc = ? coerced[[GetOwnProperty]](key)
+    let propertyDescObj = @sec-frompropertydescriptor(propertyDesc)
+    if propertyDescObj is not val {undefined} -> perform ! @sec-createdatapropertyorthrow(descs, key, propertyDescObj)
+  }
+  return descs
+}
+
+def @sec-object.getownpropertynames "Object.getOwnPropertyNames" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj"] {
+  return @sec-createarrayfromlist(? @sec-getownpropertykeys(#"obj", ~string~))
+}
+
+def @sec-object.getownpropertysymbols "Object.getOwnPropertySymbols" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj"] {
+  return @sec-createarrayfromlist(? @sec-getownpropertykeys(#"obj", ~symbol~))
+}
+
+def @sec-getownpropertykeys "GetOwnPropertyKeys" (kind ao params [value : #"ECMAScript language value", type : val(~string~) | val(~symbol~)] -> completion<list<#"property key">> | #"throw completion") vars [value, type, #"obj", #"keys", nameList, nextKey] {
+  let #"obj" = ? @sec-toobject(value)
+  let #"keys" = ? #"obj"[[OwnPropertyKeys]]()
+  let nameList = $ListNew()
+  for_each nextKey in #"keys" {
+    if nextKey is ty {Symbol} and type is val {~symbol~} or nextKey is ty {String} and type is val {~string~} {
+      perform $Append(?nextKey, ?nameList)
+    }
+  }
+  return nameList
+}
+
+def @sec-object.getprototypeof "Object.getPrototypeOf" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj", coerced] {
+  let coerced = ? @sec-toobject(#"obj")
+  return ? coerced[[GetPrototypeOf]]()
+}
+
+def @sec-object.groupby "Object.groupBy" (kind builtin params [items, callback]) vars [#"this value", NewTarget, items, callback, groups, #"obj", group, elements] {
+  let groups = ? @sec-groupby(items, callback, ~property~)
+  let #"obj" = @sec-ordinaryobjectcreate(null)
+  for_each_rec [[[Key]], [[Elements]]] group in groups {
+    let elements = @sec-createarrayfromlist(group[[Elements]])
+    perform ! @sec-createdatapropertyorthrow(#"obj", group[[Key]], elements)
+  }
+  return #"obj"
+}
+
+def @sec-object.hasown "Object.hasOwn" (kind builtin params [#"obj", key]) vars [#"this value", NewTarget, #"obj", key, coerced, propertyKey] {
+  let coerced = ? @sec-toobject(#"obj")
+  let propertyKey = ? @sec-topropertykey(key)
+  return ? @sec-hasownproperty(coerced, propertyKey)
+}
+
+def @sec-object.is "Object.is" (kind builtin params [value1, value2]) vars [#"this value", NewTarget, value1, value2] {
+  return @sec-samevalue(value1, value2)
+}
+
+def @sec-object.isextensible "Object.isExtensible" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj"] {
+  if #"obj" is not ty {Object} -> return false
+  return ? @sec-isextensible-o(#"obj")
+}
+
+def @sec-object.isfrozen "Object.isFrozen" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj"] {
+  if #"obj" is not ty {Object} -> return true
+  return ? @sec-testintegritylevel(#"obj", ~frozen~)
+}
+
+def @sec-object.issealed "Object.isSealed" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj"] {
+  if #"obj" is not ty {Object} -> return true
+  return ? @sec-testintegritylevel(#"obj", ~sealed~)
+}
+
+def @sec-object.keys "Object.keys" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj", coerced, keyList] {
+  let coerced = ? @sec-toobject(#"obj")
+  let keyList = ? @sec-enumerableownproperties(coerced, ~key~)
+  return @sec-createarrayfromlist(keyList)
+}
+
+def @sec-object.preventextensions "Object.preventExtensions" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj", status] {
+  if #"obj" is not ty {Object} -> return #"obj"
+  let status = ? #"obj"[[PreventExtensions]]()
+  if status is val {false} -> throw @ph-new-error([[TypeError]])
+  return #"obj"
+}
+
+def @sec-object.seal "Object.seal" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj", status] {
+  if #"obj" is not ty {Object} -> return #"obj"
+  let status = ? @sec-setintegritylevel(#"obj", ~sealed~)
+  if status is val {false} -> throw @ph-new-error([[TypeError]])
+  return #"obj"
+}
+
+def @sec-object.setprototypeof "Object.setPrototypeOf" (kind builtin params [#"obj", proto]) vars [#"this value", NewTarget, #"obj", proto, status] {
+  perform ? @sec-requireobjectcoercible(#"obj")
+  if proto is not ty {Object} and proto is not val {null} -> throw @ph-new-error([[TypeError]])
+  if #"obj" is not ty {Object} -> return #"obj"
+  let status = ? #"obj"[[SetPrototypeOf]](proto)
+  if status is val {false} -> throw @ph-new-error([[TypeError]])
+  return #"obj"
+}
+
+def @sec-object.values "Object.values" (kind builtin params [#"obj"]) vars [#"this value", NewTarget, #"obj", coerced, valueList] {
+  let coerced = ? @sec-toobject(#"obj")
+  let valueList = ? @sec-enumerableownproperties(coerced, ~value~)
+  return @sec-createarrayfromlist(valueList)
+}
+
+def @sec-object.prototype.hasownproperty "Object.prototype.hasOwnProperty" (kind builtin params [value]) vars [#"this value", NewTarget, value, propertyKey, #"obj"] {
+  let propertyKey = ? @sec-topropertykey(value)
+  let #"obj" = ? @sec-toobject(this_value)
+  return ? @sec-hasownproperty(#"obj", propertyKey)
+}
+
+def @sec-object.prototype.isprototypeof "Object.prototype.isPrototypeOf" (kind builtin params [value]) vars [#"this value", NewTarget, value, #"obj"] {
+  if value is not ty {Object} -> return false
+  let #"obj" = ? @sec-toobject(this_value)
+  repeat {
+    set var value = ? value[[GetPrototypeOf]]()
+    if value is val {null} -> return false
+    if @sec-samevalue(#"obj", value) is val {true} -> return true
+  }
+}
+
+def @sec-object.prototype.propertyisenumerable "Object.prototype.propertyIsEnumerable" (kind builtin params [value]) vars [#"this value", NewTarget, value, propertyKey, #"obj", propertyDesc] {
+  let propertyKey = ? @sec-topropertykey(value)
+  let #"obj" = ? @sec-toobject(this_value)
+  let propertyDesc = ? #"obj"[[GetOwnProperty]](propertyKey)
+  if propertyDesc is val {undefined} -> return false
+  return propertyDesc[[Enumerable]]
+}
+
+def @sec-object.prototype.tolocalestring "Object.prototype.toLocaleString" (kind builtin params [reserved1 opt, reserved2 opt]) vars [#"this value", NewTarget, reserved1, reserved2, thisValue] {
+  let thisValue = this_value
+  return ? @sec-invoke(thisValue, "toString")
+}
+
+def @sec-object.prototype.tostring "Object.prototype.toString" (kind builtin params []) vars [#"this value", NewTarget, #"obj", isArray, builtinTag, tag] {
+  if this_value is val {undefined} -> return "[object Undefined]"
+  if this_value is val {null} -> return "[object Null]"
+  let #"obj" = ! @sec-toobject(this_value)
+  let isArray = ? @sec-isarray(#"obj")
+  if isArray is val {true} -> let builtinTag = "Array"
+  else_if #"obj" sat $HasSlot([[ParameterMap]]) -> let builtinTag = "Arguments"
+  else_if #"obj" sat $HasMethod([[Call]]) -> let builtinTag = "Function"
+  else_if #"obj" sat $HasSlot([[ErrorData]]) -> let builtinTag = "Error"
+  else_if #"obj" sat $HasSlot([[BooleanData]]) -> let builtinTag = "Boolean"
+  else_if #"obj" sat $HasSlot([[NumberData]]) -> let builtinTag = "Number"
+  else_if #"obj" sat $HasSlot([[StringData]]) -> let builtinTag = "String"
+  else_if #"obj" sat $HasSlot([[DateValue]]) -> let builtinTag = "Date"
+  else_if #"obj" sat $HasSlot([[RegExpMatcher]]) -> let builtinTag = "RegExp"
+  else -> let builtinTag = "Object"
+  let tag = ? @sec-get-o-p(#"obj", $WellKnownSymbol("Symbol.toStringTag"))
+  if tag is not ty {String} -> set var tag = builtinTag
+  return $"string-concatenation"("[object ", tag, "]")
+}
+
+def @sec-object.prototype.valueof "Object.prototype.valueOf" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-toobject(this_value)
+}
+
+def @sec-get-object.prototype.__proto__ "get Object.prototype.__proto__" (kind builtin params []) vars [#"this value", NewTarget, #"obj"] {
+  let #"obj" = ? @sec-toobject(this_value)
+  return ? #"obj"[[GetPrototypeOf]]()
+}
+
+def @sec-set-object.prototype.__proto__ "set Object.prototype.__proto__" (kind builtin params [proto]) vars [#"this value", NewTarget, proto, thisValue, status] {
+  let thisValue = this_value
+  perform ? @sec-requireobjectcoercible(thisValue)
+  if proto is not ty {Object} and proto is not val {null} -> return undefined
+  if thisValue is not ty {Object} -> return undefined
+  let status = ? thisValue[[SetPrototypeOf]](proto)
+  if status is val {false} -> throw @ph-new-error([[TypeError]])
+  return undefined
+}
+
+def @sec-object.prototype.__defineGetter__ "Object.prototype.__defineGetter__" (kind builtin params [key, getter]) vars [#"this value", NewTarget, key, getter, #"obj", propertyDesc, propertyKey] {
+  let #"obj" = ? @sec-toobject(this_value)
+  if @sec-iscallable(getter) is val {false} -> throw @ph-new-error([[TypeError]])
+  let propertyDesc = record PropertyDescriptor { [[Getter]]: getter, [[Enumerable]]: true, [[Configurable]]: true }
+  let propertyKey = ? @sec-topropertykey(key)
+  perform ? @sec-definepropertyorthrow(#"obj", propertyKey, propertyDesc)
+  return undefined
+}
+
+def @sec-object.prototype.__defineSetter__ "Object.prototype.__defineSetter__" (kind builtin params [key, setter]) vars [#"this value", NewTarget, key, setter, #"obj", propertyDesc, propertyKey] {
+  let #"obj" = ? @sec-toobject(this_value)
+  if @sec-iscallable(setter) is val {false} -> throw @ph-new-error([[TypeError]])
+  let propertyDesc = record PropertyDescriptor { [[Setter]]: setter, [[Enumerable]]: true, [[Configurable]]: true }
+  let propertyKey = ? @sec-topropertykey(key)
+  perform ? @sec-definepropertyorthrow(#"obj", propertyKey, propertyDesc)
+  return undefined
+}
+
+def @sec-object.prototype.__lookupGetter__ "Object.prototype.__lookupGetter__" (kind builtin params [key]) vars [#"this value", NewTarget, key, #"obj", propertyKey, propertyDesc] {
+  let #"obj" = ? @sec-toobject(this_value)
+  let propertyKey = ? @sec-topropertykey(key)
+  repeat {
+    let propertyDesc = ? #"obj"[[GetOwnProperty]](propertyKey)
+    if propertyDesc is not val {undefined} {
+      if @sec-isaccessordescriptor(propertyDesc) is val {true} -> return propertyDesc[[Getter]]
+      return undefined
+    }
+    set var #"obj" = ? #"obj"[[GetPrototypeOf]]()
+    if #"obj" is val {null} -> return undefined
+  }
+}
+
+def @sec-object.prototype.__lookupSetter__ "Object.prototype.__lookupSetter__" (kind builtin params [key]) vars [#"this value", NewTarget, key, #"obj", propertyKey, propertyDesc] {
+  let #"obj" = ? @sec-toobject(this_value)
+  let propertyKey = ? @sec-topropertykey(key)
+  repeat {
+    let propertyDesc = ? #"obj"[[GetOwnProperty]](propertyKey)
+    if propertyDesc is not val {undefined} {
+      if @sec-isaccessordescriptor(propertyDesc) is val {true} -> return propertyDesc[[Setter]]
+      return undefined
+    }
+    set var #"obj" = ? #"obj"[[GetPrototypeOf]]()
+    if #"obj" is val {null} -> return undefined
+  }
+}
+
+def @sec-function-p1-p2-pn-body "Function" (kind builtin params [paramArgs rest, bodyArg]) vars [#"this value", NewTarget, paramArgs, bodyArg, ctor] {
+  let ctor = $ActiveFunction()
+  if bodyArg fails $Present() -> set var bodyArg = $"the empty String"()
+  return ? @sec-createdynamicfunction(ctor, new_target, ~normal~, paramArgs, bodyArg)
+}
+
+def @sec-createdynamicfunction "CreateDynamicFunction" (kind ao params [ctor : constructor, newTarget : constructor | val(undefined), #"kind" : val(~normal~) | val(~generator~) | val(~async~) | val(~async-generator~), paramArgs : list<#"ECMAScript language value">, bodyArg : #"ECMAScript language value"] -> completion<#"ECMAScript function object"> | #"throw completion") vars [ctor, newTarget, #"kind", paramArgs, bodyArg, prefix, exprGrammar, bodyGrammar, paramGrammar, fallbackProto, argCount, paramStrings, arg, paramString, bodyString, currentRealm, joinedParamsString, k, nextArgString, bodyParseString, sourceString, sourceText, #"params", body, expr, funcProto, envRecord, privateEnv, func, protoProto] {
+  if newTarget is val {undefined} -> set var newTarget = ctor
+  if #"kind" is val {~normal~} {
+    let prefix = "function"
+    let exprGrammar = $GrammarSymbol(|FunctionExpression|)
+    let bodyGrammar = $GrammarSymbol(|FunctionBody[~Yield, ~Await]|)
+    let paramGrammar = $GrammarSymbol(|FormalParameters[~Yield, ~Await]|)
+    let fallbackProto = "%Function.prototype%"
+  }
+  else_if #"kind" is val {~generator~} {
+    let prefix = "function*"
+    let exprGrammar = $GrammarSymbol(|GeneratorExpression|)
+    let bodyGrammar = $GrammarSymbol(|GeneratorBody|)
+    let paramGrammar = $GrammarSymbol(|FormalParameters[+Yield, ~Await]|)
+    let fallbackProto = "%GeneratorFunction.prototype%"
+  }
+  else_if #"kind" is val {~async~} {
+    let prefix = "async function"
+    let exprGrammar = $GrammarSymbol(|AsyncFunctionExpression|)
+    let bodyGrammar = $GrammarSymbol(|AsyncFunctionBody|)
+    let paramGrammar = $GrammarSymbol(|FormalParameters[~Yield, +Await]|)
+    let fallbackProto = "%AsyncFunction.prototype%"
+  }
+  else {
+    assert #"kind" is val {~async-generator~}
+    let prefix = "async function*"
+    let exprGrammar = $GrammarSymbol(|AsyncGeneratorExpression|)
+    let bodyGrammar = $GrammarSymbol(|AsyncGeneratorBody|)
+    let paramGrammar = $GrammarSymbol(|FormalParameters[+Yield, +Await]|)
+    let fallbackProto = "%AsyncGeneratorFunction.prototype%"
+  }
+  let argCount = $ListLen(?paramArgs)
+  let paramStrings = $ListNew()
+  for_each arg in paramArgs {
+    if_else arg is ty {Object} { let paramString = @sec-hostgetcodeforeval(arg) } else { let paramString = ~no-code~ }
+    if paramString is val {~no-code~} -> set var paramString = ? @sec-tostring(arg)
+    perform $Append(?paramString, ?paramStrings)
+  }
+  if_else bodyArg is ty {Object} { let bodyString = @sec-hostgetcodeforeval(bodyArg) } else { let bodyString = ~no-code~ }
+  if bodyString is val {~no-code~} -> set var bodyString = ? @sec-tostring(bodyArg)
+  let currentRealm = $CurrentRealm()
+  let joinedParamsString = $"the empty String"()
+  if argCount > 0 {
+    set var joinedParamsString = paramStrings[0]
+    let k = 1
+    repeat_while k < argCount {
+      let nextArgString = paramStrings[k]
+      set var joinedParamsString = $"string-concatenation"(joinedParamsString, ",", nextArgString)
+      set var k = k + 1
+    }
+  }
+  let bodyParseString = $"string-concatenation"(cu(10, "000A", "LINE FEED"), bodyString, cu(10, "000A", "LINE FEED"))
+  let sourceString = $"string-concatenation"(prefix, " anonymous(", joinedParamsString, cu(10, "000A", "LINE FEED"), ") {", bodyParseString, "}")
+  perform ? @sec-hostensurecancompilestrings(currentRealm, paramStrings, bodyString, sourceString, ~function~, paramArgs, bodyArg)
+  let sourceText = @sec-stringtocodepoints(sourceString)
+  let #"params" = @sec-parsetext(joinedParamsString, paramGrammar)
+  if #"params" is ty {list<error>} -> throw @ph-new-error([[SyntaxError]])
+  let body = @sec-parsetext(bodyParseString, bodyGrammar)
+  if body is ty {list<error>} -> throw @ph-new-error([[SyntaxError]])
+  note "The parameters and body are parsed separately to ensure that each is valid alone. For example, `new Function(\"/*\", \"*/ ) {\")` does not evaluate to a function."
+  note "If this step is reached, _sourceText_ must have the syntax of _exprGrammar_ (although the reverse implication does not hold). The purpose of the next two steps is to enforce any Early Error rules which apply to _exprGrammar_ directly."
+  let expr = @sec-parsetext(sourceText, exprGrammar)
+  if expr is ty {list<error>} -> throw @ph-new-error([[SyntaxError]])
+  if sdo AllPrivateIdentifiersValid(body; []) is val {false} -> throw @ph-new-error([[SyntaxError]])
+  if sdo AllPrivateIdentifiersValid(#"params"; []) is val {false} -> throw @ph-new-error([[SyntaxError]])
+  let funcProto = ? @sec-getprototypefromconstructor(newTarget, fallbackProto)
+  let envRecord = currentRealm[[GlobalEnv]]
+  let privateEnv = null
+  let func = @sec-ordinaryfunctioncreate(funcProto, sourceText, #"params", body, ~non-lexical-this~, envRecord, privateEnv)
+  perform @sec-setfunctionname(func, "anonymous")
+  if #"kind" is val {~generator~} {
+    let protoProto = @sec-ordinaryobjectcreate(intrinsic [[GeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(func, "prototype", record PropertyDescriptor { [[Value]]: protoProto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+  }
+  else_if #"kind" is val {~async-generator~} {
+    let protoProto = @sec-ordinaryobjectcreate(intrinsic [[AsyncGeneratorPrototype]])
+    perform ! @sec-definepropertyorthrow(func, "prototype", record PropertyDescriptor { [[Value]]: protoProto, [[Writable]]: true, [[Enumerable]]: false, [[Configurable]]: false })
+  }
+  else_if #"kind" is val {~normal~} {
+    perform @sec-makeconstructor(func)
+  }
+  note "Functions whose _kind_ is ~async~ are not constructable and do not have a [[Construct]] internal method or a *\"prototype\"* property."
+  return func
+}
+
+def @sec-function.prototype.apply "Function.prototype.apply" (kind builtin params [thisArg, argArray]) vars [#"this value", NewTarget, thisArg, argArray, func, argList] {
+  let func = this_value
+  if @sec-iscallable(func) is val {false} -> throw @ph-new-error([[TypeError]])
+  if argArray is val {undefined; null} {
+    perform @sec-preparefortailcall()
+    return ? @sec-call(func, thisArg)
+  }
+  let argList = ? @sec-createlistfromarraylike(argArray)
+  perform @sec-preparefortailcall()
+  return ? @sec-call(func, thisArg, argList)
+}
+
+def @sec-function.prototype.bind "Function.prototype.bind" (kind builtin params [thisArg, args rest]) vars [#"this value", NewTarget, thisArg, args, target, boundFunc, length, targetHasLength, targetLength, targetLengthAsInt, argCount, targetName] {
+  let target = this_value
+  if @sec-iscallable(target) is val {false} -> throw @ph-new-error([[TypeError]])
+  let boundFunc = ? @sec-boundfunctioncreate(target, thisArg, args)
+  let length = 0
+  let targetHasLength = ? @sec-hasownproperty(target, "length")
+  if targetHasLength is val {true} {
+    let targetLength = ? @sec-get-o-p(target, "length")
+    if targetLength is ty {Number} {
+      let targetLengthAsInt = ! @sec-tointegerorinfinity(targetLength)
+      if targetLengthAsInt == math(+∞) {
+        set var length = math(+∞)
+      }
+      else_if targetLengthAsInt == math(-∞) {
+        set var length = 0
+      }
+      else {
+        let argCount = $ListLen(?args)
+        set var length = $max(targetLengthAsInt - argCount, 0)
+      }
+    }
+  }
+  perform @sec-setfunctionlength(boundFunc, length)
+  let targetName = ? @sec-get-o-p(target, "name")
+  if targetName is not ty {String} -> set var targetName = $"the empty String"()
+  perform @sec-setfunctionname(boundFunc, targetName, "bound")
+  return boundFunc
+}
+
+def @sec-function.prototype.call "Function.prototype.call" (kind builtin params [thisArg, args rest]) vars [#"this value", NewTarget, thisArg, args, func] {
+  let func = this_value
+  if @sec-iscallable(func) is val {false} -> throw @ph-new-error([[TypeError]])
+  perform @sec-preparefortailcall()
+  return ? @sec-call(func, thisArg, args)
+}
+
+def @sec-function.prototype.tostring "Function.prototype.toString" (kind builtin params []) vars [#"this value", NewTarget, func, name, matched, native, closed, key, accessor, n] {
+  let func = this_value
+  if func is ty {Object} and func sat $HasSlot([[SourceText]]) and func[[SourceText]] is ty {#"sequence of Unicode code points"} and @sec-hosthassourcetextavailable(func) is val {true} {
+    return @sec-codepointstostring(func[[SourceText]])
+  }
+  if func is ty {sort [#"built-in"] #"function object"} {
+    if func sat $HasSlot([[InitialName]]) and func[[InitialName]] is ty {String} {
+      let name = func[[InitialName]]
+      let matched = false
+      if name is val {"get"} or name is val {"set"} {
+        set var matched = true
+      }
+      else_if name is not val {$"the empty String"()} {
+        let native = $ParseGoal(@sec-stringtocodepoints($"string-concatenation"("function ", name, "() { [native code] }")), |NativeFunction|, false, false, false)
+        let closed = $ParseGoal(@sec-stringtocodepoints($"string-concatenation"("function ", name, $CodeUnit(cu(10, "000A", "LINE FEED")), "() { [native code] }")), |NativeFunction|, false, false, false)
+        if native is not val {~empty~} and closed is not val {~empty~} and native sat @ph-contains-node(data choice 0, |PropertyName|) {
+          let key = @sec-codepointstostring($SourceText(@ph-first-node-within(|PropertyName|, ?native)))
+          if native sat @ph-not-contains-node(data choice 0, |NativeFunctionAccessor|) {
+            if name is val {key} -> set var matched = true
+          }
+          else {
+            let accessor = @sec-codepointstostring($SourceText(@ph-first-node-within(|NativeFunctionAccessor|, ?native)))
+            let n = $StrLen(?name)
+            if $Substring(?name, 0, $StrLen(?accessor)) is val {accessor} and $Substring(?name, n - $StrLen(?key), ?n) is val {key} -> set var matched = true
+          }
+        }
+      }
+      if name is not val {$"the empty String"()} and matched is val {false} -> return $""()
+    }
+    return $NativeFunctionSource(func)
+  }
+  if func is ty {Object} and @sec-iscallable(func) is val {true} -> return $NativeFunctionSource(func)
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-function.prototype-%symbol.hasinstance% "Function.prototype [ %Symbol.hasInstance% ]" (kind builtin params [value]) vars [#"this value", NewTarget, value, thisValue] {
+  let thisValue = this_value
+  return ? @sec-ordinaryhasinstance(thisValue, value)
+}
+
+def @sec-boolean-constructor-boolean-value "Boolean" (kind builtin params [value]) vars [#"this value", NewTarget, value, bool, #"obj"] {
+  let bool = @sec-toboolean(value)
+  if new_target is val {undefined} -> return bool
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(new_target, "%Boolean.prototype%", [[[BooleanData]]])
+  set field #"obj"[[BooleanData]] = bool
+  return #"obj"
+}
+
+def @sec-boolean.prototype.tostring "Boolean.prototype.toString" (kind builtin params []) vars [#"this value", NewTarget, bool] {
+  let bool = ? @sec-thisbooleanvalue(this_value)
+  if bool is val {true} -> return "true"
+  return "false"
+}
+
+def @sec-boolean.prototype.valueof "Boolean.prototype.valueOf" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-thisbooleanvalue(this_value)
+}
+
+def @sec-thisbooleanvalue "ThisBooleanValue" (kind ao params [arg : #"ECMAScript language value"] -> completion<Boolean> | #"throw completion") vars [arg, bool] {
+  if arg is ty {Boolean} -> return arg
+  if arg is ty {Object} and arg sat $HasSlot([[BooleanData]]) {
+    let bool = arg[[BooleanData]]
+    assert bool is ty {Boolean}
+    return bool
+  }
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-symbol-description "Symbol" (kind builtin params [description opt]) vars [#"this value", NewTarget, description, descString] {
+  if new_target is not val {undefined} -> throw @ph-new-error([[TypeError]])
+  if description is val {undefined} -> let descString = undefined
+  else -> let descString = ? @sec-tostring(description)
+  return @ph-new-symbol-whose-description(?descString)
+}
+
+def @sec-symbol.for "Symbol.for" (kind builtin params [key]) vars [#"this value", NewTarget, key, stringKey, agentRecord, globalSymbolRegistry, element, newSymbol] {
+  let stringKey = ? @sec-tostring(key)
+  let agentRecord = $AgentRecord()
+  let globalSymbolRegistry = agentRecord[[GlobalSymbolRegistry]]
+  for_each element in globalSymbolRegistry {
+    if element[[Key]] is val {stringKey} -> return element[[Symbol]]
+  }
+  assert globalSymbolRegistry sat @ph-no-registry-entry(?stringKey)
+  let newSymbol = @ph-new-symbol-whose-description(?stringKey)
+  perform $Append(record #"GlobalSymbolRegistry Record" { [[Key]]: stringKey, [[Symbol]]: newSymbol }, ?globalSymbolRegistry)
+  return newSymbol
+}
+
+def @sec-symbol.keyfor "Symbol.keyFor" (kind builtin params [symbol]) vars [#"this value", NewTarget, symbol] {
+  if symbol is not ty {Symbol} -> throw @ph-new-error([[TypeError]])
+  return @sec-keyforsymbol(symbol)
+}
+
+def @sec-symbol.prototype.description "get Symbol.prototype.description" (kind builtin params []) vars [#"this value", NewTarget, symbol] {
+  let symbol = ? @sec-thissymbolvalue(this_value)
+  return symbol[[Description]]
+}
+
+def @sec-symbol.prototype.tostring "Symbol.prototype.toString" (kind builtin params []) vars [#"this value", NewTarget, symbol] {
+  let symbol = ? @sec-thissymbolvalue(this_value)
+  return @sec-symboldescriptivestring(symbol)
+}
+
+def @sec-symboldescriptivestring "SymbolDescriptiveString" (kind ao params [symbol : Symbol] -> String) vars [symbol, description] {
+  let description = symbol[[Description]]
+  if description is val {undefined} -> set var description = $"the empty String"()
+  assert description is ty {String}
+  return $"string-concatenation"("Symbol(", description, ")")
+}
+
+def @sec-symbol.prototype.valueof "Symbol.prototype.valueOf" (kind builtin params []) vars [#"this value", NewTarget] {
+  return ? @sec-thissymbolvalue(this_value)
+}
+
+def @sec-thissymbolvalue "ThisSymbolValue" (kind ao params [arg : #"ECMAScript language value"] -> completion<Symbol> | #"throw completion") vars [arg, symbol] {
+  if arg is ty {Symbol} -> return arg
+  if arg is ty {Object} and arg sat $HasSlot([[SymbolData]]) {
+    let symbol = arg[[SymbolData]]
+    assert symbol is ty {Symbol}
+    return symbol
+  }
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-symbol.prototype-%symbol.toprimitive% "Symbol.prototype [ %Symbol.toPrimitive% ]" (kind builtin params [hint]) vars [#"this value", NewTarget, hint] {
+  return ? @sec-thissymbolvalue(this_value)
+}
+
+def @sec-keyforsymbol "KeyForSymbol" (kind ao params [symbol : Symbol] -> String | val(undefined)) vars [symbol, agentRecord, globalSymbolRegistry, element] {
+  let agentRecord = $AgentRecord()
+  let globalSymbolRegistry = agentRecord[[GlobalSymbolRegistry]]
+  for_each element in globalSymbolRegistry {
+    if @sec-samevalue(element[[Symbol]], symbol) is val {true} -> return element[[Key]]
+  }
+  assert globalSymbolRegistry sat @ph-no-registry-entry(?symbol)
+  return undefined
+}
+
+def @sec-error-message "Error" (kind builtin params [message, options opt]) vars [#"this value", NewTarget, message, options, newTarget, #"obj", messageString] {
+  if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%Error.prototype%", [[[ErrorData]]])
+  if message is not val {undefined} {
+    let messageString = ? @sec-tostring(message)
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
+  }
+  perform ? @sec-installerrorcause(#"obj", options)
+  perform $HostExtendObject(#"obj")
+  return #"obj"
+}
+
+def @sec-error.iserror "Error.isError" (kind builtin params [arg]) vars [#"this value", NewTarget, arg] {
+  if arg is not ty {Object} -> return false
+  if arg fails $HasSlot([[ErrorData]]) -> return false
+  return true
+}
+
+def @sec-error.prototype.tostring "Error.prototype.toString" (kind builtin params []) vars [#"this value", NewTarget, #"obj", name, message] {
+  let #"obj" = this_value
+  if #"obj" is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let name = ? @sec-get-o-p(#"obj", "name")
+  if_else name is val {undefined} { set var name = "Error" } else { set var name = ? @sec-tostring(name) }
+  let message = ? @sec-get-o-p(#"obj", "message")
+  if_else message is val {undefined} { set var message = $"the empty String"() } else { set var message = ? @sec-tostring(message) }
+  if name is val {$"the empty String"()} -> return message
+  if message is val {$"the empty String"()} -> return name
+  return $"string-concatenation"(name, $CodeUnit(cu(58, "003A", "COLON")), $CodeUnit(cu(32, "0020", "SPACE")), message)
+}
+
+def @sec-aggregate-error "AggregateError" (kind builtin params [errors, message, options opt]) vars [#"this value", NewTarget, errors, message, options, newTarget, #"obj", messageString, errorsList] {
+  if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%AggregateError.prototype%", [[[ErrorData]]])
+  if message is not val {undefined} {
+    let messageString = ? @sec-tostring(message)
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
+  }
+  perform ? @sec-installerrorcause(#"obj", options)
+  let errorsList = ? @sec-iteratortolist(? @sec-getiterator(errors, ~sync~))
+  perform ! @sec-definepropertyorthrow(#"obj", "errors", record PropertyDescriptor { [[Configurable]]: true, [[Enumerable]]: false, [[Writable]]: true, [[Value]]: @sec-createarrayfromlist(errorsList) })
+  perform $HostExtendObject(#"obj")
+  return #"obj"
+}
+
+def @sec-suppressederror "SuppressedError" (kind builtin params [error, suppressed, message]) vars [#"this value", NewTarget, error, suppressed, message, newTarget, #"obj", messageString] {
+  if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%SuppressedError.prototype%", [[[ErrorData]]])
+  if message is not val {undefined} {
+    let messageString = ? @sec-tostring(message)
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
+  }
+  perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "error", error)
+  perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "suppressed", suppressed)
+  perform $HostExtendObject(#"obj")
+  return #"obj"
+}
+
+def @sec-installerrorcause "InstallErrorCause" (kind ao params [#"obj" : Object, options : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [#"obj", options, cause] {
+  if options is ty {Object} and ? @sec-hasproperty(options, "cause") is val {true} {
+    let cause = ? @sec-get-o-p(options, "cause")
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "cause", cause)
+  }
+  return ~unused~
+}
+
+def @sec-nativeerror/EvalError "EvalError" (kind builtin params [message, options opt]) vars [#"this value", NewTarget, message, options, newTarget, #"obj", messageString] {
+  if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%EvalError.prototype%", [[[ErrorData]]])
+  if message is not val {undefined} {
+    let messageString = ? @sec-tostring(message)
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
+  }
+  perform ? @sec-installerrorcause(#"obj", options)
+  perform $HostExtendObject(#"obj")
+  return #"obj"
+}
+
+def @sec-nativeerror/RangeError "RangeError" (kind builtin params [message, options opt]) vars [#"this value", NewTarget, message, options, newTarget, #"obj", messageString] {
+  if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%RangeError.prototype%", [[[ErrorData]]])
+  if message is not val {undefined} {
+    let messageString = ? @sec-tostring(message)
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
+  }
+  perform ? @sec-installerrorcause(#"obj", options)
+  perform $HostExtendObject(#"obj")
+  return #"obj"
+}
+
+def @sec-nativeerror/ReferenceError "ReferenceError" (kind builtin params [message, options opt]) vars [#"this value", NewTarget, message, options, newTarget, #"obj", messageString] {
+  if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%ReferenceError.prototype%", [[[ErrorData]]])
+  if message is not val {undefined} {
+    let messageString = ? @sec-tostring(message)
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
+  }
+  perform ? @sec-installerrorcause(#"obj", options)
+  perform $HostExtendObject(#"obj")
+  return #"obj"
+}
+
+def @sec-nativeerror/SyntaxError "SyntaxError" (kind builtin params [message, options opt]) vars [#"this value", NewTarget, message, options, newTarget, #"obj", messageString] {
+  if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%SyntaxError.prototype%", [[[ErrorData]]])
+  if message is not val {undefined} {
+    let messageString = ? @sec-tostring(message)
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
+  }
+  perform ? @sec-installerrorcause(#"obj", options)
+  perform $HostExtendObject(#"obj")
+  return #"obj"
+}
+
+def @sec-nativeerror/TypeError "TypeError" (kind builtin params [message, options opt]) vars [#"this value", NewTarget, message, options, newTarget, #"obj", messageString] {
+  if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%TypeError.prototype%", [[[ErrorData]]])
+  if message is not val {undefined} {
+    let messageString = ? @sec-tostring(message)
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
+  }
+  perform ? @sec-installerrorcause(#"obj", options)
+  perform $HostExtendObject(#"obj")
+  return #"obj"
+}
+
+def @sec-nativeerror/URIError "URIError" (kind builtin params [message, options opt]) vars [#"this value", NewTarget, message, options, newTarget, #"obj", messageString] {
+  if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
+  let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%URIError.prototype%", [[[ErrorData]]])
+  if message is not val {undefined} {
+    let messageString = ? @sec-tostring(message)
+    perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
+  }
+  perform ? @sec-installerrorcause(#"obj", options)
+  perform $HostExtendObject(#"obj")
+  return #"obj"
+}
+

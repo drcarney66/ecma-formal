@@ -56,7 +56,6 @@ inductive Leaf where
   | field (f : FieldId)
   | q
   | bang
-  | bangAt (r : ErratumId)
   | un (o : UnOp)
   | bin (o : BinOp)
   /-- `relOp`, a Boolean -/
@@ -105,8 +104,6 @@ inductive CallK where
   | tyEq
   /-- a table step's row for the key, in the frame's variables -/
   | tstep (t : TableId)
-  /-- a phrase by its meaning, off any Parse Node -/
-  | phrase (p : PhraseId)
   /-- the early errors of rule row `i` of production `prod`, at the frame's Parse Node -/
   | earlyRow (prod : ProdId) (i : Nat)
   /-- the early errors of the rules of the productions `ps`, at the frame's Parse Node -/
@@ -158,10 +155,6 @@ inductive Op where
   | andT (cs : List Op) (t : Op)
   /-- every element of the List `l` (bound in turn) passes `t`; false for a value that is no List -/
   | all (l t : Op)
-  /-- `e` under erratum `r`'s literal reading: its failed checks stop as `r` (and sort errors when `sort`) -/
-  | erratum (r : ErratumId) (sort : Bool) (e : Op)
-  /-- the operand of the reading chosen for erratum `e`, else `lit` -/
-  | readings (e : ErratumId) (lit : Op) (alts : List (Reading × Op))
   | stop (r : Stop)
   | residue (form : String)
   deriving BEq, Inhabited
@@ -205,8 +198,8 @@ inductive Ins where
   | br (c : Op) (t e : List Ins)
   /-- `Assert: c`, in checked mode -/
   | assert (c : Op)
-  /-- `Assert: c` at an erratum's site, in every mode -/
-  | assertAt (r : Option ErratumId) (c : Op)
+  /-- `Assert: c`, checked in every mode -/
+  | assertAlways (c : Op)
   /-- `Assert: If c, then d.`, in checked mode -/
   | assertIf (c d : Op)
   /-- a loop at step path `p`, its iterator binding `x` -/
@@ -217,12 +210,6 @@ inductive Ins where
   | ctxTopIs (e : Op)
   /-- a transfer passing `v` from context `ctx`, the resumption's Completion Record to `x` -/
   | transfer (x : Option Slot) (ctx v : Op)
-  /-- erratum `r`'s pinned step and its readings' steps -/
-  | readings (r : ErratumId) (lit : List Ins) (alts : List (Reading × List Ins))
-  /-- definition reading `r`'s steps' code: no choice, whatever the readings of the errata -/
-  | reading (r : ErratumId) (code : List Ins)
-  /-- the code of the reading chosen for erratum `e`, else `lit` -/
-  | byReading (e : ErratumId) (lit : List Ins) (alts : List (Reading × List Ins))
   /-- `p must cover k`: `p`'s value, a Parse Node, reparsed as `k`; the reparse's early errors, or `err`'s value
   where it has no parse, added to the tuple in slot `acc` -/
   | cover (acc : Slot) (p : Op) (k : NtId) (err : Op)
@@ -231,22 +218,6 @@ inductive Ins where
   deriving Inhabited
 
 abbrev Code := List Ins
-
-/-- A step's readings as code: a definition reading's (its one alternative, `.definition`) is its steps' code;
-an erratum's are the pinned step `lit` and the alternatives `alts`, chosen by the reading of the erratum. -/
-def Ins.ofReadings (r : ErratumId) (lit : List Ins) : List (Reading × List Ins) → List Ins
-  | [(.definition, code)] => [.reading r code]
-  | alts => [.readings r lit alts]
-
-/-- An early-error sentence's readings as code: a definition reading's sentences, else `byReading`. -/
-def Ins.ofSentReadings (e : ErratumId) (lit : List Ins) : List (Reading × List Ins) → List Ins
-  | [(.definition, code)] => code
-  | alts => [.byReading e lit alts]
-
-/-- A condition's readings as an operand: a definition reading's condition, else `Op.readings`. -/
-def Op.ofReadings (e : ErratumId) (lit : Op) : List (Reading × Op) → Op
-  | [(.definition, o)] => o
-  | alts => .readings e lit alts
 
 /-- A table cell as the values it holds: an expression's, a name's String, the operation it names, a field
 (`vals`); each line's of a cell of lines; a cell inside markup (`<dfn>`, code, a link); or none (a step, a type,

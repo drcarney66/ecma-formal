@@ -20,45 +20,32 @@ with no fact about the parser's search or builder.
 
 namespace Engine.Impl
 open Ecma Ecma.Prims.Nodes Engine.Model
-open Ecma.Grammar (NT Prod RuleReading occsOf fillOccs occsAt prodsOf)
+open Ecma.Grammar (NT Prod occsOf fillOccs occsAt)
 
 /-- The engine's Parse Nodes. -/
 local notation "Node" => Engine.Model.Node
 
-/-- The engine's grammar context: the specification's GL under the engine's readings. A parse's context, the code
-point classes and strictness from outside are whatever they are: `Model.NodeLaws` reads the GL and the readings
+/-- The engine's grammar context: the specification's GL. A parse's context, the code
+point classes and strictness from outside are whatever they are: `Model.NodeLaws` reads the GL
 only. -/
 def grammarCtx (cx : Ecma.Grammar.Ctx) (P : Ecma.Grammar.CodePrims) (strict : Bool) : GrammarCtx :=
-  ⟨Ecma.Spec.gl, Engine.readings, cx, P, strict⟩
+  ⟨Ecma.Spec.gl, cx, P, strict⟩
 
 /-! The tables are `occsAt`. -/
 
-theorem occs_table (A : Array (Option Prod)) (L₂ : List Prod) (p : Nat) :
-    (if p < (A.map fun o => (o.map Engine.Parse.occsOfProd).getD []).size then
-        (A.map fun o => (o.map Engine.Parse.occsOfProd).getD [])[p]?.getD []
-      else (L₂.toArray.map Engine.Parse.occsOfProd)[p - (A.map fun o => (o.map Engine.Parse.occsOfProd).getD []).size]?.getD []) =
-      (((A.toList ++ L₂.map some)[p]?).join.bind fun p => p.altOf.map fun a => occsOf a.rhs p.mask).getD [] := by
+/-- The occurrences the check reads are the specification's. -/
+theorem occsBy_eq (p : Nat) :
+    Engine.Parse.occsBy p = occsAt Ecma.Spec.gl p := by
+  have hg : Engine.Parse.glOccs.get = Engine.Parse.prods.map fun o => (o.map Engine.Parse.occsOfProd).getD [] := rfl
+  have hl : Ecma.Spec.gl.byId = Engine.Parse.prods := rfl
   have hp : ∀ o : Option Prod, (o.bind fun p => p.altOf.map fun a => occsOf a.rhs p.mask).getD [] =
       (o.map Engine.Parse.occsOfProd).getD [] := fun o => by cases o <;> rfl
-  rw [hp]
-  simp only [Array.size_map, Array.getElem?_map, List.getElem?_toArray, List.getElem?_append,
-    Array.length_toList, Array.getElem?_toList, List.getElem?_map]
-  split
-  · cases A[p]? with
-    | none => rfl
-    | some o => cases o <;> rfl
-  · cases L₂[p - A.size]? <;> rfl
-
-/-- The occurrences the check reads are the specification's. -/
-theorem occsBy_eq (rd : List RuleReading) (p : Nat) :
-    Engine.Parse.occsBy (Engine.Parse.readingOccs rd) p = occsAt Ecma.Spec.gl rd p := by
-  have hg : Engine.Parse.glOccs.get = Engine.Parse.prods.map fun o => (o.map Engine.Parse.occsOfProd).getD [] := rfl
-  have hr : Engine.Parse.readingOccs rd =
-      (prodsOf (rd.map fun x : RuleReading => (x.grammar, [x.rule]))).toArray.map Engine.Parse.occsOfProd := rfl
-  have hl : Ecma.Spec.gl.byId = Engine.Parse.prods := rfl
   unfold Engine.Parse.occsBy occsAt Ecma.Grammar.prodAt
-  rw [hg, hr, hl]
-  exact occs_table _ _ p
+  rw [hg, hl, hp]
+  simp only [Array.getElem?_map, Array.getElem?_toList]
+  cases Engine.Parse.prods[p]? with
+  | none => rfl
+  | some o => cases o <;> rfl
 
 /-! A node whose slots pass. -/
 
@@ -98,16 +85,16 @@ def nodeOk (occs : Nat → List (NT × Bool)) : Node → Bool
   | .mk _ _ _ p _ _ kids _ => slotsOk kids (occs p) 0
 
 /-- At a node whose slots pass, `nodeChild` answers by its production's occurrences. -/
-theorem child_of_nodeOk {rd : List RuleReading} {d : Node}
-    (h : nodeOk (Engine.Parse.occsBy (Engine.Parse.readingOccs rd)) d = true) (nt : NtId) (k : Nat) :
-    Impl.nodeChild d nt k = (((fillOccs (occsAt Ecma.Spec.gl rd (Impl.nodeProd d))
+theorem child_of_nodeOk {d : Node}
+    (h : nodeOk Engine.Parse.occsBy d = true) (nt : NtId) (k : Nat) :
+    Impl.nodeChild d nt k = (((fillOccs (occsAt Ecma.Spec.gl (Impl.nodeProd d))
       (seqList (M := Impl) (Impl.nodeKids d))).filter (·.1 == nt)).map (·.2))[k]? := by
   obtain ⟨_, _, _, p, _, _, kids, _⟩ := d
   rw [seqList_eq, ← occsBy_eq]
   have hf := slotsOk_fill kids _ 0 h
   simp only [List.drop_zero] at hf
   show ((kids.filter fun c => slotNt c == nt).map Prod.snd)[k]? =
-    (((fillOccs (Engine.Parse.occsBy _ p) (kids.filterMap Prod.snd).toList).filter _).map _)[k]?
+    (((fillOccs (Engine.Parse.occsBy p) (kids.filterMap Prod.snd).toList).filter _).map _)[k]?
   rw [Array.toList_filterMap, hf, ← Array.getElem?_toList]
   simp [List.filter_map, Function.comp_def]
 
@@ -181,15 +168,15 @@ theorem shapeOk_restamp (occs : Nat → List (NT × Bool)) (k : Nat) : ∀ (f : 
 
 /-- A Parse Node the checked outcome gives passes the check. -/
 theorem outcome_shaped {stamp : Nat} {src : Array MathVal} {goal : NtId} {args : List (ParamId × Bool)}
-    {rd : List RuleReading} {cx : Ecma.Grammar.Ctx} {strict lit : Bool} {n : Node}
-    (h : outcome stamp src goal args rd cx strict lit = .ok n) : shaped rd n = true := by
+    {cx : Ecma.Grammar.Ctx} {strict : Bool} {n : Node}
+    (h : outcome stamp src goal args cx strict = .ok n) : shaped n = true := by
   unfold outcome at h
   split at h
   · cases h
   split at h
   · split at h
     · cases h
-    generalize Engine.Parse.parse builder rd cx strict stamp _ goal args lit = o at h
+    generalize Engine.Parse.parse builder cx strict stamp _ goal args = o at h
     cases o with
     | ok m =>
       simp only [checked] at h
@@ -200,10 +187,10 @@ theorem outcome_shaped {stamp : Nat} {src : Array MathVal} {goal : NtId} {args :
     | stop => cases h
   · cases h
 
-/-- A Parse Node `parse` gives passes the check, under the readings in effect. -/
-theorem parse_shaped {sel : ErratumId → Reading} {pc : ParseCx} {st : Nat} {src : Array MathVal} {goal : NtId}
-    {args : List (ParamId × Bool)} {n : Node} (h : Engine.parse sel pc st src goal args = some (some n)) :
-    shaped (rulesUnder readings sel) n = true := by
+/-- A Parse Node `parse` gives passes the check. -/
+theorem parse_shaped {pc : ParseCx} {st : Nat} {src : Array MathVal} {goal : NtId}
+    {args : List (ParamId × Bool)} {n : Node} (h : Engine.parse pc st src goal args = some (some n)) :
+    shaped n = true := by
   cases hg : (goal == Ecma.Grammar.NT.StringNumericLiteral.ctorIdx || goal == Ecma.Grammar.NT.StringIntegerLiteral.ctorIdx)
   · obtain ⟨m, ho, rfl⟩ := parse_some hg h
     exact shapeOk_restamp _ _ _ _ (Nat.le_refl _) (outcome_shaped ho)
@@ -217,14 +204,14 @@ theorem parse_shaped {sel : ErratumId → Reading} {pc : ParseCx} {st : Nat} {sr
 
 /-- §5.1.2 "the |X| of" at the engine's model: at every node of a parse, the `k`-th written occurrence of `nt` in the
 node's production. -/
-theorem child_parse (sel : ErratumId → Reading) (pc : ParseCx) (st : Nat) (src : List Nat) (goal : NtId)
+theorem child_parse (pc : ParseCx) (st : Nat) (src : List Nat) (goal : NtId)
     (args : List (ParamId × Bool)) (n d : Impl.Node) (nt : NtId) (k : Nat)
-    (h : Impl.parse sel pc st (Impl.seqOfNats src) goal args = some (some n))
+    (h : Impl.parse pc st (Impl.seqOfNats src) goal args = some (some n))
     (hd : d = n ∨ d ∈ seqList (M := Impl) (Impl.nodeDescendants n)) :
-    Impl.nodeChild d nt k = (((fillOccs (occsAt Ecma.Spec.gl (rulesUnder Engine.readings sel) (Impl.nodeProd d))
+    Impl.nodeChild d nt k = (((fillOccs (occsAt Ecma.Spec.gl (Impl.nodeProd d))
       (seqList (M := Impl) (Impl.nodeKids d))).filter (·.1 == nt)).map (·.2))[k]? := by
-  have hs : shaped (rulesUnder readings sel) n = true := parse_shaped h
-  have hds : shaped (rulesUnder readings sel) d = true := by
+  have hs : shaped n = true := parse_shaped h
+  have hds : shaped d = true := by
     rcases hd with rfl | hd
     · exact hs
     · exact shapeOk_below _ _ n (Nat.le_refl _) hs d hd
@@ -236,10 +223,10 @@ theorem guard_bind_some {α : Type} {b : Bool} {f : Unit → Option α} {x : α}
   · exact nomatch h
   · exact ⟨rfl, by simpa [guard] using h⟩
 
-/-- A covered node `cover` gives passes the check, under the readings in effect. -/
-theorem cover_shaped {sel : ErratumId → Reading} {pc : ParseCx} {st : Nat} {c : Node} {goal : NtId}
-    {args : List (ParamId × Bool)} {n : Node} (h : Engine.Model.Relabel.relabel sel pc st c goal args = some n) :
-    shaped (rulesUnder readings sel) n = true := by
+/-- A covered node `cover` gives passes the check. -/
+theorem cover_shaped {pc : ParseCx} {st : Nat} {c : Node} {goal : NtId}
+    {args : List (ParamId × Bool)} {n : Node} (h : Engine.Model.Relabel.relabel pc st c goal args = some n) :
+    shaped n = true := by
   obtain ⟨_, lo, hi, p, nt, _, kids, t⟩ := c
   unfold Engine.Model.Relabel.relabel at h
   obtain ⟨-, h⟩ := guard_bind_some h
@@ -251,14 +238,14 @@ theorem cover_shaped {sel : ErratumId → Reading} {pc : ParseCx} {st : Nat} {c 
   exact hs
 
 /-- §5.1.5 "the |X| of" at the engine's model, in a covered node the model gives. -/
-theorem child_cover (sel : ErratumId → Reading) (pc : ParseCx) (st : Nat) (c : Impl.Node) (goal : NtId)
+theorem child_cover (pc : ParseCx) (st : Nat) (c : Impl.Node) (goal : NtId)
     (args : List (ParamId × Bool)) (n d : Impl.Node) (nt : NtId) (k : Nat)
-    (h : Impl.cover sel pc st c goal args = some n)
+    (h : Impl.cover pc st c goal args = some n)
     (hd : d = n ∨ d ∈ seqList (M := Impl) (Impl.nodeDescendants n)) :
-    Impl.nodeChild d nt k = (((fillOccs (occsAt Ecma.Spec.gl (rulesUnder Engine.readings sel) (Impl.nodeProd d))
+    Impl.nodeChild d nt k = (((fillOccs (occsAt Ecma.Spec.gl (Impl.nodeProd d))
       (seqList (M := Impl) (Impl.nodeKids d))).filter (·.1 == nt)).map (·.2))[k]? := by
-  have hs : shaped (rulesUnder readings sel) n = true := cover_shaped h
-  have hds : shaped (rulesUnder readings sel) d = true := by
+  have hs : shaped n = true := cover_shaped h
+  have hds : shaped d = true := by
     rcases hd with rfl | hd
     · exact hs
     · exact shapeOk_below _ _ n (Nat.le_refl _) hs d hd

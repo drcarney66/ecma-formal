@@ -1,0 +1,66 @@
+-- ECMA-262 SpecTec Clauses: S11
+
+def @sec-utf16encodecodepoint "UTF16EncodeCodePoint" (kind ao params [codePoint : #"Unicode code point"] -> String) vars [codePoint, cu1, cu2] {
+  assert expr $Chain(0, data choice 1, ?codePoint, data choice 1, math(hex(1114111, "10FFFF")))
+  if codePoint <= math(hex(65535, "FFFF")) -> return $StrOfUnits($UnitOrPointOf(data choice 1, ?codePoint))
+  let cu1 = $UnitOrPointOf(data choice 1, $floor((codePoint - math(hex(65536, "10000"))) / math(hex(1024, "400"))) + math(hex(55296, "D800")))
+  let cu2 = $UnitOrPointOf(data choice 1, ((codePoint - math(hex(65536, "10000"))) modulo math(hex(1024, "400"))) + math(hex(56320, "DC00")))
+  return $"string-concatenation"(cu1, cu2)
+}
+
+def @sec-codepointstostring "CodePointsToString" (kind ao params [#"text" : seq<#"Unicode code point">] -> String) vars [#"text", result, codePoint] {
+  let result = $"the empty String"()
+  for_each codePoint : #"code point" in #"text" {
+    set var result = $"string-concatenation"(result, @sec-utf16encodecodepoint(codePoint))
+  }
+  return result
+}
+
+def @sec-utf16decodesurrogatepair "UTF16SurrogatePairToCodePoint" (kind ao params [lead : #"code unit", trail : #"code unit"] -> #"code point") vars [lead, trail, codePoint] {
+  assert lead is ty {sort [leading] surrogate} and trail is ty {sort [trailing] surrogate}
+  let codePoint = (lead - math(hex(55296, "D800"))) * math(hex(1024, "400")) + (trail - math(hex(56320, "DC00"))) + math(hex(65536, "10000"))
+  return $UnitOrPointOf(data choice 0, ?codePoint)
+}
+
+def @sec-codepointat "CodePointAt" (kind ao params [string : String, position : sort [#"non-negative"] integer] -> record { [[CodePoint]]: #"code point", [[CodeUnitCount]]: sort [positive] integer, [[IsUnpairedSurrogate]]: Boolean }) vars [string, position, size, first, codePoint, second] {
+  let size = $StrLen(?string)
+  assert position >= 0 and position < size
+  let first = $UnitAt(?position, ?string)
+  let codePoint = $UnitOrPointOf(data choice 0, $NumericValue(?first))
+  if first is neither ty {sort [leading] surrogate; sort [trailing] surrogate} {
+    return record Record { [[CodePoint]]: codePoint, [[CodeUnitCount]]: 1, [[IsUnpairedSurrogate]]: false }
+  }
+  if first is ty {sort [trailing] surrogate} or position + 1 == size {
+    return record Record { [[CodePoint]]: codePoint, [[CodeUnitCount]]: 1, [[IsUnpairedSurrogate]]: true }
+  }
+  let second = $UnitAt(position + 1, ?string)
+  if second is not ty {sort [trailing] surrogate} {
+    return record Record { [[CodePoint]]: codePoint, [[CodeUnitCount]]: 1, [[IsUnpairedSurrogate]]: true }
+  }
+  set var codePoint = @sec-utf16decodesurrogatepair(first, second)
+  return record Record { [[CodePoint]]: codePoint, [[CodeUnitCount]]: 2, [[IsUnpairedSurrogate]]: false }
+}
+
+def @sec-stringtocodepoints "StringToCodePoints" (kind ao params [string : String] -> list<#"code point">) vars [string, codePoints, size, position, codePoint] {
+  let codePoints = $ListNew()
+  let size = $StrLen(?string)
+  let position = 0
+  repeat_while position < size {
+    let codePoint = @sec-codepointat(string, position)
+    perform $Append(codePoint[[CodePoint]], ?codePoints)
+    set var position = position + codePoint[[CodeUnitCount]]
+  }
+  return codePoints
+}
+
+def @sec-parsetext "ParseText" (kind ao params [sourceText : String | seq<#"Unicode code point">, goalSymbol : doc "a nonterminal in one of the ECMAScript grammars"] -> #"Parse Node" | pred(sat @ph-type-syntax-errors())) vars [sourceText, goalSymbol] {
+  if sourceText is ty {String} -> set var sourceText = @sec-stringtocodepoints(sourceText)
+  return @formal-parsetextin(sourceText, goalSymbol, false, false, false)
+  return $""()
+}
+
+def @sec-isstrict "IsStrict" (kind ao params [parseNode : #"Parse Node"] -> Boolean) vars [parseNode] {
+  if expr @ph-source-strict(?parseNode) -> return true
+  return false
+}
+

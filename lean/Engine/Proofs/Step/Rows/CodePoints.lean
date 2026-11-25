@@ -37,21 +37,21 @@ set_option maxRecDepth 8000 in
 theorem sortDef_97 : Engine.P.sortDef 97 = some { super := [], test := .alg ⟨2826, 0⟩, record := false } := by
   rw [sortDef_eq]; rfl
 
-variable (H : Host F) (rd : ErratumId → Reading) (chk : Bool)
+variable (H : Host F) (chk : Bool)
 
 /-! ## The sorts' tests -/
 
 /-- The steps of the sort test of the code units, at one: true. -/
 theorem cu_steps [PinsHold] (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (sl : Array (Val F))
     (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (u : Int) (h0 : 0 ≤ u) (h1 : u ≤ 0xFFFF) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 98 (.math (.int u)))⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 98 (.math (.int u)))⟩
       ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool true)⟩ := by
-  refine Steps.next (step_sort_alg H rd chk _ _ _ _ _ _ sortDef_98 rfl rfl) ?_
+  refine Steps.next (step_sort_alg H chk _ _ _ _ _ _ sortDef_98 rfl rfl) ?_
   dsimp only [Cfg.push]
-  refine Steps.next (step_alg H rd chk _ _ _ _ _ _ cuAlg_pin cuCode_pin) ?_
+  refine Steps.next (step_alg H chk _ _ _ _ _ _ cuAlg_pin cuCode_pin) ?_
   show Steps _ ⟨s, ⟨_, none, #[.math (.int u)], .steps false true true, [], [], none⟩ :: _, .code cuCode⟩ _
   gsteps
-  refine Steps.next (step_sort_int H rd chk _ _ _) ?_
+  refine Steps.next (step_sort_int H chk _ _ _) ?_
   gsteps
   refine Steps.valBool true (by mdecide) ?_
   gsteps
@@ -94,15 +94,15 @@ theorem range_steps [PinsHold] (k : SortId) (aid : AlgId) (g : Alg) (code : Code
     (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (sl : Array (Val F))
     (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (u : Int) (h0 : 0 ≤ u) (h1 : u ≤ 0xFFFF)
     (b : Bool) (hb : b = true ↔ ((lo : Int) ≤ u ∧ u ≤ (hi : Int))) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort k (.math (.int u)))⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort k (.math (.int u)))⟩
       ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool b)⟩ := by
-  refine Steps.next (step_sort_alg H rd chk _ _ _ _ _ _ hd ht hr) ?_
+  refine Steps.next (step_sort_alg H chk _ _ _ _ _ _ hd ht hr) ?_
   dsimp only [Cfg.push]
-  refine Steps.next (step_alg H rd chk _ _ _ _ _ _ hg (by rw [hid]; exact hc)) ?_
+  refine Steps.next (step_alg H chk _ _ _ _ _ _ hg (by rw [hid]; exact hc)) ?_
   rw [hf, hcode]
   unfold rangeCode
   gsteps
-  refine Steps.trans (cu_steps H rd chk _ _ _ _ _ _ _ _ _ u h0 h1) ?_
+  refine Steps.trans (cu_steps H chk _ _ _ _ _ _ _ _ _ u h0 h1) ?_
   gsteps
   refine Steps.next (step_prim_ok _ _ _ _ _ _ _ rfl rfl (prim_numericValue u h0 (by omega) _)) ?_
   gsteps
@@ -119,27 +119,27 @@ theorem range_steps [PinsHold] (k : SortId) (aid : AlgId) (g : Alg) (code : Code
 theorem lead_steps [PinsHold] (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (sl : Array (Val F))
     (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (u : Int) (h0 : 0 ≤ u) (h1 : u ≤ 0xFFFF)
     (b : Bool) (hb : b = true ↔ (0xD800 ≤ u ∧ u ≤ 0xDBFF)) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 95 (.math (.int u)))⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 95 (.math (.int u)))⟩
       ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool b)⟩ :=
-  range_steps H rd chk 95 ⟨2825, 0⟩ leadAlg leadCode 0xD800 0xDBFF "D800" "DBFF" _ sortDef_95 rfl rfl leadAlg_pin rfl
+  range_steps H chk 95 ⟨2825, 0⟩ leadAlg leadCode 0xD800 0xDBFF "D800" "DBFF" _ sortDef_95 rfl rfl leadAlg_pin rfl
     leadCode_pin rfl (fun _ => rfl) s fs a nd sl kd p K ci u h0 h1 b hb
 
 /-- The test of the sort of the surrogates, at a code unit. -/
 theorem surr_steps [PinsHold] (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (sl : Array (Val F))
     (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (u : Int) (h0 : 0 ≤ u) (h1 : u ≤ 0xFFFF)
     (b : Bool) (hb : b = true ↔ (0xD800 ≤ u ∧ u ≤ 0xDFFF)) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 96 (.math (.int u)))⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 96 (.math (.int u)))⟩
       ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool b)⟩ :=
-  range_steps H rd chk 96 ⟨2824, 0⟩ unitAlg unitCode 0xD800 0xDFFF "D800" "DFFF" _ sortDef_96 rfl rfl unitAlg_pin rfl
+  range_steps H chk 96 ⟨2824, 0⟩ unitAlg unitCode 0xD800 0xDFFF "D800" "DFFF" _ sortDef_96 rfl rfl unitAlg_pin rfl
     unitCode_pin rfl (fun _ => rfl) s fs a nd sl kd p K ci u h0 h1 b hb
 
 /-- The test of the sort of the trailing surrogates, at a code unit. -/
 theorem trail_steps [PinsHold] (s : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (sl : Array (Val F))
     (kd : Kind) (p : List Nat) (K : List (Kont F)) (ci : Option Nat) (u : Int) (h0 : 0 ≤ u) (h1 : u ≤ 0xFFFF)
     (b : Bool) (hb : b = true ↔ (0xDC00 ≤ u ∧ u ≤ 0xDFFF)) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 97 (.math (.int u)))⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .invoke (.sort 97 (.math (.int u)))⟩
       ⟨s, ⟨a, nd, sl, kd, p, K, ci⟩ :: fs, .val (.bool b)⟩ :=
-  range_steps H rd chk 97 ⟨2826, 0⟩ trailAlg trailCode 0xDC00 0xDFFF "DC00" "DFFF" _ sortDef_97 rfl rfl trailAlg_pin rfl
+  range_steps H chk 97 ⟨2826, 0⟩ trailAlg trailCode 0xDC00 0xDFFF "DC00" "DFFF" _ sortDef_97 rfl rfl trailAlg_pin rfl
     trailCode_pin rfl (fun _ => rfl) s fs a nd sl kd p K ci u h0 h1 b hb
 
 /-! ## The String primitives and UTF16SurrogatePairToCodePoint -/
@@ -163,9 +163,9 @@ theorem prim_unitAt (t : Array UInt16) (p : Nat) (hp : p < t.size) (s : State F)
 /-- UTF16SurrogatePairToCodePoint's steps at a leading and a trailing surrogate. -/
 theorem pair_steps [PinsHold] (s : State F) (fr : List (Frame F)) (l t : Int)
     (hl0 : 0xD800 ≤ l) (hl1 : l ≤ 0xDBFF) (ht0 : 0xDC00 ≤ t) (ht1 : t ≤ 0xDFFF) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨s, fr, .invoke (.alg ⟨571, 0⟩ [.math (.int l), .math (.int t)])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨571, 0⟩ [.math (.int l), .math (.int t)])⟩
       ⟨s, fr, .val (.math (Model.MathVal.int ((l - 0xD800) * 0x400 + (t - 0xDC00) + 0x10000)))⟩ := by
-  refine Steps.next (step_alg H rd chk _ _ _ _ _ _ pairAlg_pin pairCode_pin) ?_
+  refine Steps.next (step_alg H chk _ _ _ _ _ _ pairAlg_pin pairCode_pin) ?_
   show Steps _ ⟨s, ⟨_, none, #[.math (.int l), .math (.int t), .unbound], .steps false true true, [], [], none⟩ :: _,
     .code pairCode⟩ _
   cases chk
@@ -175,13 +175,13 @@ theorem pair_steps [PinsHold] (s : State F) (fr : List (Frame F)) (l t : Int)
     gsteps
     exact .refl _
   · gsteps
-    refine Steps.trans (lead_steps H rd true _ _ _ _ _ _ _ _ _ l (by omega) (by omega) true (by simp; omega)) ?_
+    refine Steps.trans (lead_steps H true _ _ _ _ _ _ _ _ _ l (by omega) (by omega) true (by simp; omega)) ?_
     gsteps
-    refine Steps.trans (surr_steps H rd true _ _ _ _ _ _ _ _ _ l (by omega) (by omega) true (by simp; omega)) ?_
+    refine Steps.trans (surr_steps H true _ _ _ _ _ _ _ _ _ l (by omega) (by omega) true (by simp; omega)) ?_
     gsteps
-    refine Steps.trans (trail_steps H rd true _ _ _ _ _ _ _ _ _ t (by omega) (by omega) true (by simp; omega)) ?_
+    refine Steps.trans (trail_steps H true _ _ _ _ _ _ _ _ _ t (by omega) (by omega) true (by simp; omega)) ?_
     gsteps
-    refine Steps.trans (surr_steps H rd true _ _ _ _ _ _ _ _ _ t (by omega) (by omega) true (by simp; omega)) ?_
+    refine Steps.trans (surr_steps H true _ _ _ _ _ _ _ _ _ t (by omega) (by omega) true (by simp; omega)) ?_
     gsteps
     show Steps _ ⟨_, _, .invoke (.prim 56 [.choice 0, (.math (Model.MathVal.int ((l - 0xD800) * 0x400 + (t - 0xDC00) + 0x10000)) : Val F)])⟩ _
     refine Steps.next (step_prim_ok _ _ _ _ _ _ _ rfl rfl (prim_pointOf _ (by omega) (by omega) _)) ?_
@@ -191,18 +191,18 @@ theorem pair_steps [PinsHold] (s : State F) (fr : List (Frame F)) (l t : Int)
 /-! ## CodePointAt -/
 
 macro "mlead" u:term:max b:term:max : tactic =>
-  `(tactic| refine Steps.trans (lead_steps _ _ _ _ _ _ _ _ _ _ _ _ $u (by omega) (by omega) $b (by simp; omega)) ?_)
+  `(tactic| refine Steps.trans (lead_steps _ _ _ _ _ _ _ _ _ _ _ $u (by omega) (by omega) $b (by simp; omega)) ?_)
 
 macro "msurr" u:term:max b:term:max : tactic =>
-  `(tactic| refine Steps.trans (surr_steps _ _ _ _ _ _ _ _ _ _ _ _ $u (by omega) (by omega) $b (by simp; omega)) ?_)
+  `(tactic| refine Steps.trans (surr_steps _ _ _ _ _ _ _ _ _ _ _ $u (by omega) (by omega) $b (by simp; omega)) ?_)
 
 macro "mtrail" u:term:max b:term:max : tactic =>
-  `(tactic| refine Steps.trans (trail_steps _ _ _ _ _ _ _ _ _ _ _ _ $u (by omega) (by omega) $b (by simp; omega)) ?_)
+  `(tactic| refine Steps.trans (trail_steps _ _ _ _ _ _ _ _ _ _ _ $u (by omega) (by omega) $b (by simp; omega)) ?_)
 
 open Engine.Accel in
 /-- CodePointAt's steps from its read of the code unit at the position. -/
 theorem cpa_rest [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt16) (p : Nat) (hp : p < s.size) :
-    Steps (Ctx.spec Engine.P' H rd chk)
+    Steps (Ctx.spec Engine.P' H chk)
       ⟨st, ⟨cpaAlg.id, none, #[.str s, .math (.int p), .math (.int s.size), .unbound, .unbound, .unbound],
         .steps false true true, [3], [.args (.let_ 3) [] [], .seq (cpaCode.drop 6)], none⟩ :: fr,
         .invoke (.prim 51 [.math (.int p), .str s])⟩
@@ -277,26 +277,26 @@ theorem cpa_rest [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt
   gsteps
   msurr v true
   gsteps
-  refine Steps.trans (pair_steps _ _ _ _ _ u v (by omega) (by omega) (by omega) (by omega)) ?_
+  refine Steps.trans (pair_steps _ _ _ _ u v (by omega) (by omega) (by omega) (by omega)) ?_
   gsteps
   exact .refl _
 
 open Engine.Accel in
 theorem cpa_steps [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt16) (p : Nat) (hp : p < s.size) :
-    Steps (Ctx.spec Engine.P' H rd chk) ⟨st, fr, .invoke (.alg ⟨572, 0⟩ [.str s, .math (.int p)])⟩
+    Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.alg ⟨572, 0⟩ [.str s, .math (.int p)])⟩
       ⟨{ st with heap := st.heap.push (cpRec (cpAt s p)) }, fr, .val (.ref st.heap.size)⟩ := by
-  refine Steps.next (step_alg H rd chk _ _ _ _ _ _ cpaAlg_pin cpaCode_pin) ?_
+  refine Steps.next (step_alg H chk _ _ _ _ _ _ cpaAlg_pin cpaCode_pin) ?_
   show Steps _ ⟨st, ⟨_, none, #[.str s, .math (.int p), .unbound, .unbound, .unbound, .unbound],
     .steps false true true, [], [], none⟩ :: _, .code cpaCode⟩ _
   cases chk
   · gsteps
-    exact cpa_rest H rd false st fr s p hp
+    exact cpa_rest H false st fr s p hp
   · gsteps
     refine Steps.valBool true (by mdecide) ?_
     gsteps
     refine Steps.valBool true (by mdecide) ?_
     gsteps
-    exact cpa_rest H rd true st fr s p hp
+    exact cpa_rest H true st fr s p hp
 
 /-! ## CodePointAt's Record -/
 

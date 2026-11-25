@@ -1,4 +1,4 @@
-// expect: stop: erratum GetUTCEpochNanosecondsNaN sec-getutcepochnanoseconds#0 4
+// expect: stop: assertFailed sec-getutcepochnanoseconds#0 4
 // UTC ( t ) of a large finite local time: setHours(1e21) gives t = 3.6e24,
 // GetUTCEpochNanoseconds step 1's MakeDay finds no time value on the month's
 // first day (NaN), and the Assert of its step 4 fails. No test262 test

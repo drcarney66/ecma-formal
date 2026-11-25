@@ -58,10 +58,10 @@ def depth (ps : List Parent) (c : Cfg F) : Nat := parentsDepth ps + (shown c.fra
 
 /-- The pause at `c`: its frames, then those saved for the
 contexts on the stack (`saved`); `base` contexts were on the stack when the root's run started. -/
-def paused (P : Prog) (rd : ErratumId → Reading) (ps : List Parent) (pa : Parent) (c : Cfg F)
+def paused (P : Prog) (ps : List Parent) (pa : Parent) (c : Cfg F)
     (base : Nat) : Paused :=
-  let saved := c.s.frames.map fun (a, fs) => (Show.addr a, fun (_ : Unit) => views P rd [] fs (.val .absent))
-  { frames := fun _ => wholeStack saved (stackAddrs c.s) (views P rd ps (shown pa.frames) pa.ctl), state := some c.s,
+  let saved := c.s.frames.map fun (a, fs) => (Show.addr a, fun (_ : Unit) => views P [] fs (.val .absent))
+  { frames := fun _ => wholeStack saved (stackAddrs c.s) (views P ps (shown pa.frames) pa.ctl), state := some c.s,
     depth := depth ps c, entered := enteredAt pa, base }
 
 /-- `c` applies `?` to a throw completion: its escape passes a callee's on. -/
@@ -128,7 +128,7 @@ def rootContexts (ps : List Parent) (c : Cfg F) : Option Nat :=
 
 /-! The hooks. -/
 
-unsafe def atStep.impl (P : Prog) (rd : ErratumId → Reading) (ps : List Parent) (pa : Parent) (n : Nat) (c : Cfg F) (k : Cfg F → Out F) : Out F :=
+unsafe def atStep.impl (P : Prog) (ps : List Parent) (pa : Parent) (n : Nat) (c : Cfg F) (k : Cfg F → Out F) : Out F :=
   unsafeBaseIO do
     noteRoot (rootContexts ps c)
     let isStep := match c.ctl, c.frames with
@@ -142,7 +142,7 @@ unsafe def atStep.impl (P : Prog) (rd : ErratumId → Reading) (ps : List Parent
     let look ← session.modifyGet (·.tick isStep esc throwing (rethrows c) carried c.s.parses)
     if look != Look.no then
       let ss ← session.get
-      let p := fun (_ : Unit) => paused P rd ps pa c ss.rootBase
+      let p := fun (_ : Unit) => paused P ps pa c ss.rootBase
       if look == Look.consider then
         (consider (enteredAt pa) (fun _ => depth ps c) (fun _ => stepNode ps pa) (fun _ => c.s.stack.size) (fun _ => frameNodes ps c)
           c.s.parses p).catchExceptions fun _ => pure ()
@@ -156,20 +156,20 @@ unsafe def atStep.impl (P : Prog) (rd : ErratumId → Reading) (ps : List Parent
 /-- Before the transition from `c` (under the parents `ps`, `n` transitions left): `k c`, the
 session consulted. -/
 @[implemented_by atStep.impl]
-def atStep (_P : Prog) (_rd : ErratumId → Reading) (_ps : List Parent) (_pa : Parent) (_n : Nat) (c : Cfg F) (k : Cfg F → Out F) : Out F := k c
+def atStep (_P : Prog) (_ps : List Parent) (_pa : Parent) (_n : Nat) (c : Cfg F) (k : Cfg F → Out F) : Out F := k c
 
-unsafe def atStop.impl (P : Prog) (rd : ErratumId → Reading) (ps : List Parent) (pa : Parent) (r : Stop) (k : Unit → Final F) : Final F :=
+unsafe def atStop.impl (P : Prog) (ps : List Parent) (pa : Parent) (r : Stop) (k : Unit → Final F) : Final F :=
   unsafeBaseIO do
     let p : Unit → Paused := fun _ =>
       let d := parentsDepth ps + (shown pa.frames).length
-      { frames := fun _ => views P rd ps (shown pa.frames) pa.ctl, state := none, depth := d, entered := none, stop? := some (Engine.SpecRun.stopName r) }
+      { frames := fun _ => views P ps (shown pa.frames) pa.ctl, state := none, depth := d, entered := none, stop? := some (Engine.SpecRun.stopName r) }
     (onStop p).catchExceptions fun _ => pure ()
     return k ()
 
 /-- A run (under the parents `ps`) stopped by `r` in the transition from `pa`: `k ()`, the session
 consulted. -/
 @[implemented_by atStop.impl]
-def atStop (_P : Prog) (_rd : ErratumId → Reading) (_ps : List Parent) (_pa : Parent) (_r : Stop) (k : Unit → Final F) : Final F := k ()
+def atStop (_P : Prog) (_ps : List Parent) (_pa : Parent) (_r : Stop) (k : Unit → Final F) : Final F := k ()
 
 /-- The transition from `c` is a transfer: the value a suspended computation is passed is at its last operand. -/
 def isXfer (c : Cfg F) : Bool :=
@@ -209,12 +209,12 @@ partial def runW (E : Engine.Machine.Setup) (sites : Bool) (ps : List Parent) (n
   let X := E.X
   let pa := Parent.of c
   let xfer := isXfer c
-  let o := atStep X.P X.rd ps pa n c fun c => Engine.Machine.stepA E c
+  let o := atStep X.P ps pa n c fun c => Engine.Machine.stepA E c
   let o := if xfer then atXfer o else o
   let o := if sites then noteW pa o else o
   match o with
   | .inl c => runW E sites ps (if xfer then n + 2 else n + 1) c
-  | .inr (.stop r) => atStop X.P X.rd ps pa r fun _ => .stop r
+  | .inr (.stop r) => atStop X.P ps pa r fun _ => .stop r
   | .inr f => f
 
 /-- `Engine.Machine.dispatch` over `runW`: every entry a watched run. -/
