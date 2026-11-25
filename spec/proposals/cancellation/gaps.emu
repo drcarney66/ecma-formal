@@ -1,0 +1,67 @@
+<!doctype html>
+<meta charset="utf8">
+<pre class="metadata">
+title: Cancellation Default Prototypes & Annex D
+stage: 1
+</pre>
+
+<emu-clause id="sec-control-abstraction-objects">
+  <h1>Control Abstraction Objects</h1>
+
+  <emu-clause id="sec-cancellation">
+    <h1>Cancellation</h1>
+
+    <emu-clause id="sec-abortsignal-host-integration">
+      <h1>Host Integration</h1>
+      <p>The [[Prototype]] internal slots of %AbortSignal% and %AbortSignal.prototype% are host-defined. If the host does not define them, they are %Function.prototype% and %Object.prototype%, respectively. A host which defines them must set them before any ECMAScript code is evaluated in the realm (for example, in the host-defined steps of InitializeHostDefinedRealm). Hosts may also define additional properties on %AbortSignal%, %AbortSignal.prototype%, %AbortController%, and %AbortController.prototype%.</p>
+      <p>A host may specify additional internal slots for all AbortController instances and for all AbortSignal instances. These slots, along with any passed to CreateAbortSignal or CreateDependentAbortSignal as _additionalInternalSlotsList_, are allocated when the object is created. The complete list of internal slot names used to create each object must contain no duplicates. The host initializes the slots it specifies for all instances in HostInitializeAbortController and HostInitializeAbortSignal.</p>
+      <emu-note>
+        <p>On the web platform, %AbortSignal% inherits from <del>%EventTarget%</del><ins>`EventTarget`</ins> and %AbortSignal.prototype% inherits from <del>%EventTarget.prototype%</del><ins>`EventTarget.prototype`</ins>. The host also defines `AbortSignal.prototype.onabort` and `AbortSignal.timeout`.</p>
+      </emu-note>
+    </emu-clause>
+
+    <emu-clause id="sec-abortsignal-objects">
+      <h1>AbortSignal Objects</h1>
+
+      <emu-clause id="sec-abortsignal-constructor">
+        <h1>The AbortSignal Constructor</h1>
+        <p>The <dfn variants="AbortSignals">AbortSignal</dfn> constructor:</p>
+        <ul>
+          <li>is <dfn>%AbortSignal%</dfn>.</li>
+          <li>is the initial value of the *"AbortSignal"* property of the global object.</li>
+          <li><del>throws a *TypeError* exception when called as a function or as a constructor. AbortSignals are created through `AbortController`, `AbortSignal.abort`, `AbortSignal.any`, or by the host.</del><ins>is not intended to be called as a function or as a constructor and will throw an exception when called in that manner.</ins></li>
+        </ul>
+      </emu-clause>
+
+      <emu-clause id="sec-properties-of-the-abortsignal-constructor">
+        <h1>Properties of the AbortSignal Constructor</h1>
+        <p>The AbortSignal constructor:</p>
+        <ul>
+          <li>has a [[Prototype]] internal slot whose value is <del>host-defined (see <emu-xref href="#sec-abortsignal-host-integration"></emu-xref>)</del><ins>%Function.prototype%</ins>.</li>
+          <li>has the following properties:</li>
+        </ul>
+      </emu-clause>
+
+      <emu-clause id="sec-properties-of-the-abortsignal-prototype-object">
+        <h1>Properties of the AbortSignal Prototype Object</h1>
+        <p>The <dfn>AbortSignal prototype object</dfn>:</p>
+        <ul>
+          <li>is <dfn>%AbortSignal.prototype%</dfn>.</li>
+          <li>has a [[Prototype]] internal slot whose value is <del>host-defined (see <emu-xref href="#sec-abortsignal-host-integration"></emu-xref>)</del><ins>%Object.prototype%</ins>.</li>
+          <li>is an ordinary object.</li>
+          <li>does not have an [[AbortReason]] internal slot or any of the other internal slots of AbortSignal instances.</li>
+        </ul>
+      </emu-clause>
+    </emu-clause>
+  </emu-clause>
+</emu-clause>
+
+<emu-annex id="sec-host-hooks-summary">
+  <h1>Host Hooks</h1>
+  <p><b>InitializeHostDefinedRealm(...)</b></p>
+  <ins><p><b>HostCreateAbortCallbackAlgorithm(...)</b></p></ins>
+  <ins><p><b>HostCreateAbortError(...)</b></p></ins>
+  <ins><p><b>HostInitializeAbortController(...)</b></p></ins>
+  <ins><p><b>HostInitializeAbortSignal(...)</b></p></ins>
+  <ins><p><b>HostAbortSignalAborted(...)</b></p></ins>
+</emu-annex>

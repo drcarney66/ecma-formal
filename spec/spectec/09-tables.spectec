@@ -288,6 +288,30 @@ table t"sec-todatestring-month-names" @sec-datestring#1 {
   ]
 }
 
+table t"table-abort-algorithm-registration-record-fields" @sec-abort-algorithm-registration-records#0 {
+  kind fields
+  thead true
+  schema ("Abort Algorithm Registration Record", false)
+  vars []
+  rows [
+    row [
+      cell { text "Field Name" }
+      cell { text "Value" }
+      cell { text "Meaning" }
+    ]
+    row [
+      cell { field [[Signal]] }
+      cell { raw "an AbortSignal or ~empty~" }
+      cell { text "The signal on which the algorithm is registered, or ~empty~ once the registration has been removed." }
+    ]
+    row [
+      cell { field [[Algorithm]] }
+      cell { ty (pred(sat @ph-type-header-closure-no-params()) | val(~empty~)) }
+      cell { text "The algorithm to perform when [[Signal]] is aborted, or ~empty~ once the registration has been removed." }
+    ]
+  ]
+}
+
 table t"table-abstract-methods-of-environment-records" @sec-the-environment-record-type-hierarchy#0 {
   kind abstract_methods
   thead true
@@ -1906,6 +1930,78 @@ table t"table-importentry-record-fields" @sec-source-text-module-records#1 {
       cell { field [[LocalName]] }
       cell { ty (String) }
       cell { text "The name that is used to locally access the imported value from within the importing module." }
+    ]
+  ]
+}
+
+table t"table-internal-slots-of-abortcallbackregistration-instances" @sec-properties-of-abortcallbackregistration-instances#0 {
+  kind slots
+  thead true
+  schema ("Abort Callback Registration Instance", false)
+  vars []
+  rows [
+    row [
+      cell { text "Internal Slot" }
+      cell { text "Type" }
+      cell { text "Description" }
+    ]
+    row [
+      cell { field [[AbortRegistration]] }
+      cell { ty (#"Abort Algorithm Registration Record") }
+      cell { text "The entry returned by AddAbortAlgorithm." }
+    ]
+  ]
+}
+
+table t"table-internal-slots-of-abortcontroller-instances" @sec-properties-of-abortcontroller-instances#0 {
+  kind slots
+  thead true
+  schema ("AbortController Instance", false)
+  vars []
+  rows [
+    row [
+      cell { text "Internal Slot" }
+      cell { text "Type" }
+      cell { text "Description" }
+    ]
+    row [
+      cell { field [[Signal]] }
+      cell { raw "an AbortSignal" }
+      cell { text "The signal which this controller aborts." }
+    ]
+  ]
+}
+
+table t"table-internal-slots-of-abortsignal-instances" @sec-properties-of-abortsignal-instances#0 {
+  kind slots
+  thead true
+  schema ("AbortSignal Instance", false)
+  vars []
+  rows [
+    row [
+      cell { text "Internal Slot" }
+      cell { text "Type" }
+      cell { text "Description" }
+    ]
+    row [
+      cell { field [[AbortReason]] }
+      cell { ty (#"ECMAScript language value") }
+      cell { text "The reason the signal was aborted, or *undefined* if it has not been aborted." }
+    ]
+    row [
+      cell { field [[AbortAlgorithms]] }
+      cell { ty (list<#"Abort Algorithm Registration Record">) }
+      cell { text "The registrations to run in insertion order when the signal is aborted." }
+    ]
+    row [
+      cell { field [[SourceSignals]] }
+      cell { raw "a List of AbortSignals or ~not-dependent~" }
+      cell { text "~not-dependent~ if this signal is not a dependent signal. Otherwise, the non-dependent signals which this signal depends on. A <dfn>dependent signal</dfn> is one created by CreateDependentAbortSignal from signals none of which were already aborted. A dependent signal created from an empty List of signals has an empty [[SourceSignals]] List, and is never aborted." }
+    ]
+    row [
+      cell { field [[DependentSignals]] }
+      cell { raw "a List of AbortSignals" }
+      cell { text "The dependent signals which depend on this signal." }
     ]
   ]
 }
@@ -4162,6 +4258,11 @@ table t"table-waiterrecord" @sec-waiter-record#0 {
       cell { ty (val("ok") | val("timed-out")) }
       cell { text "The return value of the call." }
     ]
+    row [
+      cell { field [[AbortRegistration]] }
+      cell { ty (#"Abort Algorithm Registration Record" | val(~empty~)) }
+      cell { text "The registration for an abortable asynchronous wait. Only the waiting agent accesses this field." }
+    ]
   ]
 }
 
@@ -4549,6 +4650,21 @@ table t"table-well-known-intrinsic-objects" @sec-well-known-intrinsic-objects#0 
       cell { expr (intrinsic [[WrapForValidIteratorPrototype]]) }
       cell { text "" }
       cell { text "The prototype of wrapped iterator objects returned by `Iterator.from` (<emu-xref href=\"#sec-%wrapforvaliditeratorprototype%-object\"></emu-xref>)" }
+    ]
+    row [
+      cell { expr (intrinsic [[AbortCallbackRegistrationPrototype]]) }
+      cell { text "" }
+      cell { text "The prototype of abort callback registration objects (<emu-xref href=\"#sec-%abortcallbackregistrationprototype%-object\"></emu-xref>)" }
+    ]
+    row [
+      cell { expr (intrinsic [[AbortController]]) }
+      cell { expr ("AbortController") }
+      cell { text "The `AbortController` <emu-not-ref>constructor</emu-not-ref> (<emu-xref href=\"#sec-abortcontroller-constructor\"></emu-xref>)" }
+    ]
+    row [
+      cell { expr (intrinsic [[AbortSignal]]) }
+      cell { expr ("AbortSignal") }
+      cell { text "The `AbortSignal` <emu-not-ref>constructor</emu-not-ref> (<emu-xref href=\"#sec-abortsignal-constructor\"></emu-xref>)" }
     ]
   ]
 }

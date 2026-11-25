@@ -897,36 +897,34 @@ def @sec-suspendthisagent "SuspendThisAgent" (kind ao params [waiterList : #"Wai
   return ~unused~
 }
 
-def @sec-notifywaiter "NotifyWaiter" (kind ao params [waiterList : #"WaiterList Record", waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterList, waiterRecord, promiseCapability] {
+def @sec-notifywaiter "NotifyWaiter" (kind ao params [waiterList : #"WaiterList Record", waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterList, waiterRecord] {
   perform @ph-assert-critical(?waiterList)
   if waiterRecord[[PromiseCapability]] is val {~blocking~} {
     perform $WakeAgent(waiterRecord[[AgentSignifier]])
     note "This causes the agent to resume execution in SuspendThisAgent."
   }
   else_if @sec-agentsignifier() is val {waiterRecord[[AgentSignifier]]} {
-    let promiseCapability = waiterRecord[[PromiseCapability]]
-    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [waiterRecord[[Result]]])
+    perform @sec-resolveasyncwaiter(waiterRecord)
   }
   else {
-    perform @sec-enqueueresolveinagentjob(waiterRecord[[AgentSignifier]], waiterRecord[[PromiseCapability]], waiterRecord[[Result]])
+    perform @sec-enqueueresolveinagentjob(waiterRecord)
   }
   return ~unused~
 }
 
-def @sec-enqueueresolveinagentjob "EnqueueResolveInAgentJob" (kind ao params [agentSignifier : #"agent signifier", promiseCapability : #"PromiseCapability Record", resolution : val("ok") | val("timed-out")] -> val(~unused~)) vars [agentSignifier, promiseCapability, resolution, resolveJob, realmInTargetAgent] {
+def @sec-enqueueresolveinagentjob "EnqueueResolveInAgentJob" (kind ao params [waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterRecord, resolveJob, realmInTargetAgent] {
   let resolveJob = closure 0
-  let realmInTargetAgent = ! @sec-getfunctionrealm(promiseCapability[[Resolve]])
-  assert agentSignifier is val {realmInTargetAgent[[AgentSignifier]]}
+  let realmInTargetAgent = ! @sec-getfunctionrealm(waiterRecord[[PromiseCapability]][[Resolve]])
+  assert waiterRecord[[AgentSignifier]] is val {realmInTargetAgent[[AgentSignifier]]}
   perform @sec-hostenqueuegenericjob(resolveJob, realmInTargetAgent)
   return ~unused~
-  closure job params none captures [agentSignifier, promiseCapability, resolution] {
-    assert @sec-agentsignifier() is val {agentSignifier}
-    perform ! @sec-call(promiseCapability[[Resolve]], undefined, [resolution])
+  closure job params none captures [waiterRecord] {
+    perform @sec-resolveasyncwaiter(waiterRecord)
     return ~unused~
   }
 }
 
-def @sec-dowait "DoWait" (kind ao params [mode : val(~sync~) | val(~async~), ta : #"ECMAScript language value", index : #"ECMAScript language value", value : #"ECMAScript language value", timeout : #"ECMAScript language value"] -> completion<Object | val("not-equal") | val("timed-out") | val("ok")> | #"throw completion") vars [mode, ta, index, value, timeout, taRecord, buffer, byteIndexInBuffer, elementType, expected, timeoutNumber, realTimeout, #"block", waiterList, promiseCapability, resultObj, witness, thisAgent, now, additionalTimeout, timeoutTime, waiterRecord] {
+def @sec-dowait "DoWait" (kind ao params [mode : val(~sync~) | val(~async~), ta : #"ECMAScript language value", index : #"ECMAScript language value", value : #"ECMAScript language value", timeout : #"ECMAScript language value"] -> completion<Object | val("not-equal") | val("timed-out") | val("ok")> | #"throw completion") vars [mode, ta, index, value, timeout, taRecord, buffer, byteIndexInBuffer, elementType, expected, timeoutNumber, signal, realTimeout, #"block", waiterList, promiseCapability, resultObj, witness, thisAgent, now, additionalTimeout, timeoutTime, waiterRecord, algorithm, pending, entry] {
   let taRecord = ? @sec-validateintegertypedarray(ta, true)
   let buffer = taRecord[[Object]][[ViewedArrayBuffer]]
   if @sec-issharedarraybuffer(buffer) is val {false} -> throw @ph-new-error([[TypeError]])
@@ -934,8 +932,22 @@ def @sec-dowait "DoWait" (kind ao params [mode : val(~sync~) | val(~async~), ta 
   let elementType = @sec-typedarrayelementtype(ta)
   assert elementType is val {~bigint64~; ~int32~}
   if_else elementType is val {~bigint64~} { let expected = ? @sec-tobigint64(value) } else { let expected = ? @sec-toint32(value) }
-  let timeoutNumber = ? @sec-tonumber(timeout)
-  if timeoutNumber is val {nan; num_f(+∞)} -> let realTimeout = math(+∞)
+  if mode is val {~async~} and timeout is ty {Object} {
+    let timeoutNumber = ? @sec-get-o-p(timeout, "timeout")
+    let signal = ? @sec-get-o-p(timeout, "signal")
+  }
+  else {
+    let timeoutNumber = timeout
+    let signal = undefined
+  }
+  if timeoutNumber is val {undefined} -> set var timeoutNumber = num_f(+∞)
+  if timeoutNumber is not ty {Number} -> throw @ph-new-error([[TypeError]])
+  if timeoutNumber is val {nan} -> throw @ph-new-error([[RangeError]])
+  if signal is not val {undefined} {
+    perform ? @sec-requireinternalslot(signal, [[AbortReason]])
+    if @sec-isaborted(signal) is val {true} -> throw signal[[AbortReason]]
+  }
+  if timeoutNumber is val {num_f(+∞)} -> let realTimeout = math(+∞)
   else_if timeoutNumber is val {num_f(-∞)} -> let realTimeout = 0
   else -> let realTimeout = $max($ℝ(timeoutNumber), 0)
   if mode is val {~sync~} and @sec-agentcansuspend() is val {false} -> throw @ph-new-error([[TypeError]])
@@ -970,7 +982,13 @@ def @sec-dowait "DoWait" (kind ao params [mode : val(~sync~) | val(~async~), ta 
   let additionalTimeout = $AdditionalTimeout()
   let timeoutTime = $ℝ(now) + realTimeout + additionalTimeout
   note "When _realTimeout_ is +∞, _timeoutTime_ is also +∞."
-  let waiterRecord = @ph-new-record(record #"Waiter Record" { [[AgentSignifier]]: thisAgent, [[PromiseCapability]]: promiseCapability, [[TimeoutTime]]: timeoutTime, [[Result]]: "ok" })
+  let waiterRecord = @ph-new-record(record #"Waiter Record" { [[AgentSignifier]]: thisAgent, [[PromiseCapability]]: promiseCapability, [[TimeoutTime]]: timeoutTime, [[Result]]: "ok", [[AbortRegistration]]: ~empty~ })
+  if signal is not val {undefined} {
+    let algorithm = closure 0
+    let entry = @sec-addabortalgorithm(signal, algorithm)
+    assert entry is ty {#"Abort Algorithm Registration Record"}
+    set field waiterRecord[[AbortRegistration]] = entry
+  }
   perform @sec-addwaiter(waiterList, waiterRecord)
   if mode is val {~sync~} {
     perform @sec-suspendthisagent(waiterList, waiterRecord)
@@ -987,6 +1005,14 @@ def @sec-dowait "DoWait" (kind ao params [mode : val(~sync~) | val(~async~), ta 
   perform ! @sec-createdatapropertyorthrow(resultObj, "async", true)
   perform ! @sec-createdatapropertyorthrow(resultObj, "value", promiseCapability[[Promise]])
   return resultObj
+  closure abstract params none captures [waiterList, waiterRecord, signal, promiseCapability] {
+    perform @sec-entercriticalsection(waiterList)
+    if_else waiterList[[Waiters]] sat $Contains(?waiterRecord) { let pending = true } else { let pending = false }
+    if pending is val {true} -> perform @sec-removewaiter(waiterList, waiterRecord)
+    perform @sec-leavecriticalsection(waiterList)
+    if pending is val {true} -> perform ! @sec-call(promiseCapability[[Reject]], undefined, [signal[[AbortReason]]])
+    return ~unused~
+  }
 }
 
 def @sec-enqueueatomicswaitasynctimeoutjob "EnqueueAtomicsWaitAsyncTimeoutJob" (kind ao params [waiterList : #"WaiterList Record", waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterList, waiterRecord, timeoutJob, timeOfJobExecution, now, currentRealm, delay] {
@@ -1676,6 +1702,15 @@ def @sec-serializejsonarray "SerializeJSONArray" (kind ao params [state : #"JSON
   perform $RemoveLast(state[[Stack]])
   set field state[[Indent]] = stepBack
   return final
+}
+
+def @sec-resolveasyncwaiter "ResolveAsyncWaiter" (kind ao params [waiterRecord : #"Waiter Record"] -> val(~unused~)) vars [waiterRecord, entry, promiseCapability] {
+  assert @sec-agentsignifier() is val {waiterRecord[[AgentSignifier]]}
+  let entry = waiterRecord[[AbortRegistration]]
+  if entry is not val {~empty~} -> perform @sec-removeabortalgorithm(entry)
+  let promiseCapability = waiterRecord[[PromiseCapability]]
+  perform ! @sec-call(promiseCapability[[Resolve]], undefined, [waiterRecord[[Result]]])
+  return ~unused~
 }
 
 sdo_row @sec-static-semantics-jsonarrayliteralcontentnodes JSONArrayLiteralContentNodes form alg {

@@ -1,6 +1,7 @@
 # Keyed item metadata linking spec/spectec items and spec.html slots
 
 alg @await base=10 close=8
+alg @sec-%abortcallbackregistrationprototype%.remove base=12 close=10
 alg @sec-%arrayiteratorprototype%.next base=12 close=10
 alg @sec-%asyncfromsynciteratorprototype%.next base=12 close=10
 alg @sec-%asyncfromsynciteratorprototype%.return base=12 close=10
@@ -63,8 +64,16 @@ alg @sec-LoadRequestedModules base=14 close=12
 alg @sec-ModuleRequestsEqual base=12 close=10
 alg @sec-ParseJSON base=10 close=8
 alg @sec-SetterThatIgnoresPrototypeProperties base=8 close=6
+alg @sec-abortcontroller base=12 close=10
+alg @sec-abortcontroller.prototype.abort base=12 close=10
+alg @sec-abortsignal base=12 close=10
+alg @sec-abortsignal.abort base=12 close=10
+alg @sec-abortsignal.any base=12 close=10
+alg @sec-abortsignal.prototype.addabortcallback base=12 close=10
+alg @sec-abortsignal.prototype.throwifaborted base=12 close=10
 alg @sec-add-entries-from-iterable base=10 close=8
 alg @sec-add-value-to-keyed-group base=8 close=6
+alg @sec-addabortalgorithm base=10 close=8
 alg @sec-adddisposableresource base=8 close=6
 alg @sec-addrestrictedfunctionproperties base=8 close=6
 alg @sec-addtokeptobjects base=6 close=4
@@ -228,6 +237,7 @@ alg @sec-copydataproperties base=8 close=6
 alg @sec-countleftcapturingparensbefore base=10 close=8
 alg @sec-countleftcapturingparenswithin base=10 close=8
 alg @sec-create-default-export-synthetic-module base=12 close=10
+alg @sec-createabortsignal base=10 close=8
 alg @sec-createarrayfromlist base=8 close=6
 alg @sec-createarrayiterator base=10 close=8
 alg @sec-createasyncfromsynciterator base=10 close=8
@@ -235,6 +245,7 @@ alg @sec-createbuiltinfunction base=8 close=6
 alg @sec-createbytedatablock base=10 close=8
 alg @sec-createdataproperty base=8 close=6
 alg @sec-createdatapropertyorthrow base=8 close=6
+alg @sec-createdependentabortsignal base=10 close=8
 alg @sec-createdynamicfunction base=12 close=10
 alg @sec-createforiniterator base=12 close=10
 alg @sec-createglobalfunctionbinding base=12 close=10
@@ -421,6 +432,9 @@ alg @sec-get-%typedarray%.prototype.buffer base=10 close=8
 alg @sec-get-%typedarray%.prototype.bytelength base=10 close=8
 alg @sec-get-%typedarray%.prototype.byteoffset base=10 close=8
 alg @sec-get-%typedarray%.prototype.length base=10 close=8
+alg @sec-get-abortcontroller.prototype.signal base=12 close=10
+alg @sec-get-abortsignal.prototype.aborted base=12 close=10
+alg @sec-get-abortsignal.prototype.reason base=12 close=10
 alg @sec-get-array-%symbol.species% base=10 close=8
 alg @sec-get-arraybuffer-%symbol.species% base=10 close=8
 alg @sec-get-arraybuffer.prototype.bytelength base=10 close=8
@@ -516,6 +530,8 @@ alg @sec-hasproperty base=8 close=6
 alg @sec-hasrestrictedglobalproperty base=12 close=10
 alg @sec-host-cleanup-finalization-registry base=10 close=8
 alg @sec-hostcalljobcallback base=8 close=6
+alg @sec-hostcreateabortcallbackalgorithm base=10 close=8
+alg @sec-hostcreateaborterror base=10 close=8
 alg @sec-hostensurecancompilestrings base=10 close=8
 alg @sec-hosteventset base=8 close=6
 alg @sec-hostmakejobcallback base=8 close=6
@@ -542,6 +558,7 @@ alg @sec-installerrorcause base=10 close=8
 alg @sec-instanceofoperator base=8 close=6
 alg @sec-internalizejsonproperty base=10 close=8
 alg @sec-invoke base=8 close=6
+alg @sec-isaborted base=10 close=8
 alg @sec-isaccessordescriptor base=10 close=8
 alg @sec-isanonymousfunctiondefinition base=8 close=6
 alg @sec-isarray base=8 close=6
@@ -935,17 +952,20 @@ alg @sec-regexpexec base=10 close=8
 alg @sec-regexphasflag base=12 close=10
 alg @sec-regexpinitialize base=10 close=8
 alg @sec-rejectpromise base=10 close=8
+alg @sec-removeabortalgorithm base=10 close=8
 alg @sec-removewaiter base=10 close=8
 alg @sec-removewaiters base=10 close=8
 alg @sec-requireinternalslot base=8 close=6
 alg @sec-requireobjectcoercible base=8 close=6
 alg @sec-resolve-private-identifier base=10 close=8
+alg @sec-resolveasyncwaiter base=10 close=8
 alg @sec-resolvebinding base=8 close=6
 alg @sec-resolveexport base=14 close=12
 alg @sec-resolvethisbinding base=8 close=6
 alg @sec-returncompletion base=10 close=8
 alg @sec-revalidateatomicaccess base=10 close=8
 alg @sec-roundmvresult base=12 close=10
+alg @sec-runabortsteps base=10 close=8
 alg @sec-runcallercontext base=8 close=6
 alg @sec-runsuspendedcontext base=8 close=6
 alg @sec-runtime-semantics-canonicalize-ch base=12 close=10
@@ -1008,6 +1028,7 @@ alg @sec-sharedarraybuffer-length base=10 close=8
 alg @sec-sharedarraybuffer.prototype.grow base=10 close=8
 alg @sec-sharedarraybuffer.prototype.slice base=10 close=8
 alg @sec-sharedatablockeventset base=8 close=6
+alg @sec-signalabort base=10 close=8
 alg @sec-skipasciiwhitespace base=10 close=8
 alg @sec-smr-Evaluate base=14 close=12
 alg @sec-smr-Link base=14 close=12

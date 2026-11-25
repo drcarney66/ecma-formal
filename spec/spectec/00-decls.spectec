@@ -347,6 +347,10 @@ clause @row-ischaracterclass-classcontrolletter
 clause @row-propname-coverinitializedname
 clause @row-vardeclarednames-if-function
 clause @row-varscopeddeclarations-if-function
+clause @sec-%abortcallbackregistrationprototype%-%symbol.dispose% op "%AbortCallbackRegistrationPrototype% [ %Symbol.dispose% ]"
+clause @sec-%abortcallbackregistrationprototype%-%symbol.tostringtag%
+clause @sec-%abortcallbackregistrationprototype%-object
+clause @sec-%abortcallbackregistrationprototype%.remove op "%AbortCallbackRegistrationPrototype%.remove"
 clause @sec-%arrayiteratorprototype%-%symbol.tostringtag%
 clause @sec-%arrayiteratorprototype%-object
 clause @sec-%arrayiteratorprototype%.next op "%ArrayIteratorPrototype%.next"
@@ -433,6 +437,27 @@ clause @sec-LoadRequestedModules op "LoadRequestedModules"
 clause @sec-ModuleRequestsEqual op "ModuleRequestsEqual"
 clause @sec-ParseJSON op "ParseJSON"
 clause @sec-SetterThatIgnoresPrototypeProperties op "SetterThatIgnoresPrototypeProperties"
+clause @sec-abort-algorithm-registration-records
+clause @sec-abortcallbackregistration-objects
+clause @sec-abortcontroller op "AbortController"
+clause @sec-abortcontroller-constructor
+clause @sec-abortcontroller-objects
+clause @sec-abortcontroller.prototype
+clause @sec-abortcontroller.prototype-%symbol.tostringtag%
+clause @sec-abortcontroller.prototype.abort op "AbortController.prototype.abort"
+clause @sec-abortcontroller.prototype.constructor
+clause @sec-abortsignal op "AbortSignal"
+clause @sec-abortsignal-abstract-operations
+clause @sec-abortsignal-constructor
+clause @sec-abortsignal-host-integration
+clause @sec-abortsignal-objects
+clause @sec-abortsignal.abort op "AbortSignal.abort"
+clause @sec-abortsignal.any op "AbortSignal.any"
+clause @sec-abortsignal.prototype
+clause @sec-abortsignal.prototype-%symbol.tostringtag%
+clause @sec-abortsignal.prototype.addabortcallback op "AbortSignal.prototype.addAbortCallback"
+clause @sec-abortsignal.prototype.constructor
+clause @sec-abortsignal.prototype.throwifaborted op "AbortSignal.prototype.throwIfAborted"
 clause @sec-abstract-closure
 clause @sec-abstract-module-records
 clause @sec-abstract-operations
@@ -452,6 +477,7 @@ clause @sec-abstract-operations-for-typedarray-objects
 clause @sec-abstract-operations-for-uint8array-objects
 clause @sec-add-entries-from-iterable op "AddEntriesFromIterable"
 clause @sec-add-value-to-keyed-group op "AddValueToKeyedGroup"
+clause @sec-addabortalgorithm op "AddAbortAlgorithm"
 clause @sec-adddisposableresource op "AddDisposableResource"
 clause @sec-addition-operator-plus
 clause @sec-addition-operator-plus-runtime-semantics-evaluation op "Evaluation"
@@ -734,6 +760,7 @@ clause @sec-bytelistbitwiseop op "ByteListBitwiseOp"
 clause @sec-bytelistequal op "ByteListEqual"
 clause @sec-call op "Call"
 clause @sec-canbeheldweakly op "CanBeHeldWeakly"
+clause @sec-cancellation
 clause @sec-candeclareglobalfunction op "CanDeclareGlobalFunction"
 clause @sec-candeclareglobalvar op "CanDeclareGlobalVar"
 clause @sec-candidate-executions
@@ -787,6 +814,8 @@ clause @sec-conformance-normative-optional
 clause @sec-construct op "Construct"
 clause @sec-constructor
 clause @sec-constructor-properties-of-the-global-object
+clause @sec-constructor-properties-of-the-global-object-abortcontroller
+clause @sec-constructor-properties-of-the-global-object-abortsignal
 clause @sec-constructor-properties-of-the-global-object-aggregate-error
 clause @sec-constructor-properties-of-the-global-object-array
 clause @sec-constructor-properties-of-the-global-object-arraybuffer
@@ -833,6 +862,7 @@ clause @sec-countleftcapturingparens-annexb
 clause @sec-countleftcapturingparensbefore op "CountLeftCapturingParensBefore"
 clause @sec-countleftcapturingparenswithin op "CountLeftCapturingParensWithin"
 clause @sec-create-default-export-synthetic-module op "CreateDefaultExportSyntheticModule"
+clause @sec-createabortsignal op "CreateAbortSignal"
 clause @sec-createarrayfromlist op "CreateArrayFromList"
 clause @sec-createarrayiterator op "CreateArrayIterator"
 clause @sec-createasyncfromsynciterator op "CreateAsyncFromSyncIterator"
@@ -840,6 +870,7 @@ clause @sec-createbuiltinfunction op "CreateBuiltinFunction"
 clause @sec-createbytedatablock op "CreateByteDataBlock"
 clause @sec-createdataproperty op "CreateDataProperty"
 clause @sec-createdatapropertyorthrow op "CreateDataPropertyOrThrow"
+clause @sec-createdependentabortsignal op "CreateDependentAbortSignal"
 clause @sec-createdisposableresource
 clause @sec-createdynamicfunction op "CreateDynamicFunction"
 clause @sec-createforiniterator op "CreateForInIterator"
@@ -1180,6 +1211,9 @@ clause @sec-get-%typedarray%.prototype.buffer op "get %TypedArray%.prototype.buf
 clause @sec-get-%typedarray%.prototype.bytelength op "get %TypedArray%.prototype.byteLength"
 clause @sec-get-%typedarray%.prototype.byteoffset op "get %TypedArray%.prototype.byteOffset"
 clause @sec-get-%typedarray%.prototype.length op "get %TypedArray%.prototype.length"
+clause @sec-get-abortcontroller.prototype.signal op "get AbortController.prototype.signal"
+clause @sec-get-abortsignal.prototype.aborted op "get AbortSignal.prototype.aborted"
+clause @sec-get-abortsignal.prototype.reason op "get AbortSignal.prototype.reason"
 clause @sec-get-array-%symbol.species% op "get Array [ %Symbol.species% ]"
 clause @sec-get-arraybuffer-%symbol.species% op "get ArrayBuffer [ %Symbol.species% ]"
 clause @sec-get-arraybuffer.prototype.bytelength op "get ArrayBuffer.prototype.byteLength"
@@ -1296,7 +1330,10 @@ clause @sec-host-layering-points
 clause @sec-host-promise-rejection-tracker op "HostPromiseRejectionTracker"
 clause @sec-host-running-jobs
 clause @sec-host-synchronizes-with
+clause @sec-hostabortsignalaborted op "HostAbortSignalAborted"
 clause @sec-hostcalljobcallback op "HostCallJobCallback"
+clause @sec-hostcreateabortcallbackalgorithm op "HostCreateAbortCallbackAlgorithm"
+clause @sec-hostcreateaborterror op "HostCreateAbortError"
 clause @sec-hostenqueuegenericjob op "HostEnqueueGenericJob"
 clause @sec-hostenqueuepromisejob op "HostEnqueuePromiseJob"
 clause @sec-hostenqueuetimeoutjob op "HostEnqueueTimeoutJob"
@@ -1309,6 +1346,8 @@ clause @sec-hostgetimportmetaproperties op "HostGetImportMetaProperties"
 clause @sec-hostgetsupportedimportattributes op "HostGetSupportedImportAttributes"
 clause @sec-hostgrowsharedarraybuffer op "HostGrowSharedArrayBuffer"
 clause @sec-hosthassourcetextavailable op "HostHasSourceTextAvailable"
+clause @sec-hostinitializeabortcontroller op "HostInitializeAbortController"
+clause @sec-hostinitializeabortsignal op "HostInitializeAbortSignal"
 clause @sec-hostmakejobcallback op "HostMakeJobCallback"
 clause @sec-hostresizearraybuffer op "HostResizeArrayBuffer"
 clause @sec-hosts-and-implementations
@@ -1359,6 +1398,7 @@ clause @sec-interesting-cases-of-automatic-semicolon-insertion
 clause @sec-internalizejsonproperty op "InternalizeJSONProperty"
 clause @sec-invariants-of-the-essential-internal-methods
 clause @sec-invoke op "Invoke"
+clause @sec-isaborted op "IsAborted"
 clause @sec-isaccessordescriptor op "IsAccessorDescriptor"
 clause @sec-isanonymousfunctiondefinition op "IsAnonymousFunctionDefinition"
 clause @sec-isarray op "IsArray"
@@ -1948,6 +1988,9 @@ clause @sec-promise.try op "Promise.try"
 clause @sec-promise.withResolvers op "Promise.withResolvers"
 clause @sec-promisecapability-records
 clause @sec-promisereaction-records
+clause @sec-properties-of-abortcallbackregistration-instances
+clause @sec-properties-of-abortcontroller-instances
+clause @sec-properties-of-abortsignal-instances
 clause @sec-properties-of-aggregate-error-instances
 clause @sec-properties-of-array-instances
 clause @sec-properties-of-array-instances-length
@@ -1988,6 +2031,10 @@ clause @sec-properties-of-suppressederror-instances
 clause @sec-properties-of-symbol-instances
 clause @sec-properties-of-the-%typedarray%-intrinsic-object
 clause @sec-properties-of-the-%typedarrayprototype%-object
+clause @sec-properties-of-the-abortcontroller-constructor
+clause @sec-properties-of-the-abortcontroller-prototype-object
+clause @sec-properties-of-the-abortsignal-constructor
+clause @sec-properties-of-the-abortsignal-prototype-object
 clause @sec-properties-of-the-aggregate-error-constructors
 clause @sec-properties-of-the-aggregate-error-prototype-objects
 clause @sec-properties-of-the-array-constructor
@@ -2182,12 +2229,14 @@ clause @sec-rejectpromise op "RejectPromise"
 clause @sec-relational-operators
 clause @sec-relational-operators-runtime-semantics-evaluation op "Evaluation"
 clause @sec-relations-of-candidate-executions
+clause @sec-removeabortalgorithm op "RemoveAbortAlgorithm"
 clause @sec-removewaiter op "RemoveWaiter"
 clause @sec-removewaiters op "RemoveWaiters"
 clause @sec-requireinternalslot op "RequireInternalSlot"
 clause @sec-requireobjectcoercible op "RequireObjectCoercible"
 clause @sec-resizable-arraybuffer-guidelines
 clause @sec-resolve-private-identifier op "ResolvePrivateIdentifier"
+clause @sec-resolveasyncwaiter op "ResolveAsyncWaiter"
 clause @sec-resolvebinding op "ResolveBinding"
 clause @sec-resolveexport op "ResolveExport"
 clause @sec-resolvethisbinding op "ResolveThisBinding"
@@ -2198,6 +2247,7 @@ clause @sec-returncompletion op "ReturnCompletion"
 clause @sec-revalidateatomicaccess op "RevalidateAtomicAccess"
 clause @sec-roundmvresult op "RoundMVResult"
 clause @sec-rules-of-automatic-semicolon-insertion
+clause @sec-runabortsteps op "RunAbortSteps"
 clause @sec-runcallercontext op "RunCallerContext"
 clause @sec-runsuspendedcontext op "RunSuspendedContext"
 clause @sec-runtime-errors-for-function-call-assignment-targets
@@ -2338,6 +2388,7 @@ clause @sec-sharedarraybuffer.prototype.grow op "SharedArrayBuffer.prototype.gro
 clause @sec-sharedarraybuffer.prototype.slice op "SharedArrayBuffer.prototype.slice"
 clause @sec-sharedatablockeventset op "SharedDataBlockEventSet"
 clause @sec-shorthands-for-unwrapping-completion-records
+clause @sec-signalabort op "SignalAbort"
 clause @sec-signed-right-shift-operator
 clause @sec-signed-right-shift-operator-runtime-semantics-evaluation op "Evaluation"
 clause @sec-skipasciiwhitespace op "SkipAsciiWhitespace"
@@ -2956,6 +3007,12 @@ clause @spec-type-8
 clause @spec-type-9
 clause @typedarray-species-create op "TypedArraySpeciesCreate"
 
+field [[%AbortCallbackRegistrationPrototype%]]
+field [[%AbortCallbackRegistrationPrototype.remove%]]
+field [[%AbortController%]]
+field [[%AbortController.prototype%]]
+field [[%AbortSignal%]]
+field [[%AbortSignal.prototype%]]
 field [[%AggregateError%]]
 field [[%AggregateError.prototype%]]
 field [[%Array%]]
@@ -3096,11 +3153,21 @@ field [[%isNaN%]]
 field [[%parseFloat%]]
 field [[%parseInt%]]
 field [[%unescape%]]
+field [[AbortAlgorithms]]
+field [[AbortCallbackRegistrationPrototype]]
+field [[AbortCallbackRegistrationPrototype.remove]]
+field [[AbortController]]
+field [[AbortController.prototype]]
+field [[AbortReason]]
+field [[AbortRegistration]]
+field [[AbortSignal]]
+field [[AbortSignal.prototype]]
 field [[Action]]
 field [[AgentSignifier]]
 field [[AgentSynchronizesWith]]
 field [[AggregateError]]
 field [[AggregateError.prototype]]
+field [[Algorithm]]
 field [[AlreadyCalled]]
 field [[Array]]
 field [[Array.prototype]]
@@ -3199,6 +3266,7 @@ field [[DeclarativeRecord]]
 field [[DefineOwnProperty]]
 field [[Deletable]]
 field [[Delete]]
+field [[DependentSignals]]
 field [[Description]]
 field [[Descriptor]]
 field [[DisposableResourceStack]]
@@ -3424,11 +3492,13 @@ field [[SetPrototypeOf]]
 field [[Setter]]
 field [[SharedArrayBuffer]]
 field [[SharedArrayBuffer.prototype]]
+field [[Signal]]
 field [[Signifier]]
 field [[Site]]
 field [[Size]]
 field [[SlotValues]]
 field [[Slots]]
+field [[SourceSignals]]
 field [[SourceText]]
 field [[Specifier]]
 field [[Stack]]
@@ -3527,6 +3597,7 @@ field [[unescape]]
 enum ~accessor~
 enum ~all~
 enum ~all-but-default~
+enum ~already-aborted~
 enum ~ambiguous~
 enum ~any~
 enum ~ascending~
@@ -3612,6 +3683,7 @@ enum ~non-lexical-this~
 enum ~none~
 enum ~normal~
 enum ~not-a-number~
+enum ~not-dependent~
 enum ~not-found~
 enum ~not-started~
 enum ~number~
@@ -3989,6 +4061,7 @@ extern def $ℝ
 extern def $ℤ
 extern def $𝔽
 
+syntax #"Abort Algorithm Registration Record" defined {}
 syntax #"Abstract Closure"
 syntax #"Agent Events Record" defined { super [] record true test none }
 syntax #"Agent Record" defined { super [] record true test none }

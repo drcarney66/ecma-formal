@@ -2186,3 +2186,204 @@ def @await "Await" (kind ao params [arg : #"ECMAScript language value"] -> compl
   }
 }
 
+def @sec-createabortsignal "CreateAbortSignal" (kind ao params [#"realm" : #"Realm Record", proto : Object opt, additionalInternalSlotsList : doc "a List of names of internal slots" opt] -> doc "an AbortSignal") vars [#"realm", proto, additionalInternalSlotsList, internalSlotsList, signal] {
+  if proto fails $Present() -> set var proto = #"realm"[[Intrinsics]][[%AbortSignal.prototype%]]
+  if additionalInternalSlotsList fails $Present() -> set var additionalInternalSlotsList = $ListNew()
+  let internalSlotsList = [[[AbortReason]], [[AbortAlgorithms]], [[SourceSignals]], [[DependentSignals]]]
+  set var internalSlotsList = internalSlotsList
+  set var internalSlotsList = $ListConcat([internalSlotsList, additionalInternalSlotsList])
+  let signal = @sec-ordinaryobjectcreate(proto, internalSlotsList)
+  set field signal[[AbortReason]] = undefined
+  set field signal[[AbortAlgorithms]] = $ListNew()
+  set field signal[[SourceSignals]] = ~not-dependent~
+  set field signal[[DependentSignals]] = $ListNew()
+  perform @sec-hostinitializeabortsignal(signal, #"realm")
+  return signal
+}
+
+def @sec-isaborted "IsAborted" (kind ao params [signal : doc "an AbortSignal"] -> Boolean) vars [signal] {
+  if signal[[AbortReason]] is val {undefined} -> return false
+  return true
+}
+
+def @sec-addabortalgorithm "AddAbortAlgorithm" (kind ao params [signal : doc "an AbortSignal", algorithm : pred(sat @ph-type-header-closure-no-params())] -> #"Abort Algorithm Registration Record" | val(~already-aborted~)) vars [signal, algorithm, entry] {
+  if @sec-isaborted(signal) is val {true} -> return ~already-aborted~
+  let entry = record #"Abort Algorithm Registration Record" { [[Signal]]: signal, [[Algorithm]]: algorithm }
+  perform $Append(?entry, signal[[AbortAlgorithms]])
+  return entry
+}
+
+def @sec-removeabortalgorithm "RemoveAbortAlgorithm" (kind ao params [entry : #"Abort Algorithm Registration Record"] -> val(~unused~)) vars [entry, signal] {
+  let signal = entry[[Signal]]
+  if signal is val {~empty~} -> return ~unused~
+  assert signal[[AbortAlgorithms]] sat $Contains(?entry)
+  perform $RemoveElem(?entry, signal[[AbortAlgorithms]])
+  set field entry[[Signal]] = ~empty~
+  set field entry[[Algorithm]] = ~empty~
+  return ~unused~
+}
+
+def @sec-signalabort "SignalAbort" (kind ao params [signal : doc "an AbortSignal", reason : #"ECMAScript language value"] -> val(~unused~)) vars [signal, reason, dependentSignalsToAbort, dependentSignal] {
+  assert signal[[SourceSignals]] is val {~not-dependent~}
+  if @sec-isaborted(signal) is val {true} -> return ~unused~
+  if reason is val {undefined} -> set var reason = @sec-hostcreateaborterror()
+  set field signal[[AbortReason]] = reason
+  let dependentSignalsToAbort = $ListNew()
+  for_each dependentSignal in signal[[DependentSignals]] {
+    if @sec-isaborted(dependentSignal) is val {false} {
+      set field dependentSignal[[AbortReason]] = reason
+      perform $Append(?dependentSignal, ?dependentSignalsToAbort)
+    }
+  }
+  perform @sec-runabortsteps(signal)
+  for_each dependentSignal in dependentSignalsToAbort {
+    perform @sec-runabortsteps(dependentSignal)
+  }
+  return ~unused~
+}
+
+def @sec-runabortsteps "RunAbortSteps" (kind ao params [signal : doc "an AbortSignal"] -> val(~unused~)) vars [signal, entry, algorithm] {
+  assert @sec-isaborted(signal) is val {true}
+  repeat_while signal[[AbortAlgorithms]] fails $IsEmpty() {
+    let entry = $ListElem(data choice 1, signal[[AbortAlgorithms]])
+    let algorithm = entry[[Algorithm]]
+    perform @sec-removeabortalgorithm(entry)
+    perform algorithm()
+  }
+  perform @sec-hostabortsignalaborted(signal)
+  return ~unused~
+}
+
+def @sec-createdependentabortsignal "CreateDependentAbortSignal" (kind ao params [signals : doc "a List of AbortSignals", #"realm" : #"Realm Record", proto : Object opt, additionalInternalSlotsList : doc "a List of names of internal slots" opt] -> doc "an AbortSignal") vars [signals, #"realm", proto, additionalInternalSlotsList, resultSignal, signal, sourceSignals, sourceSignal] {
+  if proto fails $Present() -> set var proto = #"realm"[[Intrinsics]][[%AbortSignal.prototype%]]
+  if additionalInternalSlotsList fails $Present() -> set var additionalInternalSlotsList = $ListNew()
+  let resultSignal = @sec-createabortsignal(#"realm", proto, additionalInternalSlotsList)
+  for_each signal in signals {
+    if @sec-isaborted(signal) is val {true} {
+      set field resultSignal[[AbortReason]] = signal[[AbortReason]]
+      return resultSignal
+    }
+  }
+  set field resultSignal[[SourceSignals]] = $ListNew()
+  for_each signal in signals {
+    if signal[[SourceSignals]] is val {~not-dependent~} -> let sourceSignals = [signal]
+    else -> let sourceSignals = signal[[SourceSignals]]
+    for_each sourceSignal in sourceSignals {
+      assert @sec-isaborted(sourceSignal) is val {false} and sourceSignal[[SourceSignals]] is val {~not-dependent~}
+      if resultSignal[[SourceSignals]] fails $Contains(?sourceSignal) {
+        perform $Append(?sourceSignal, resultSignal[[SourceSignals]])
+        perform $Append(?resultSignal, sourceSignal[[DependentSignals]])
+      }
+    }
+  }
+  return resultSignal
+}
+
+def @sec-hostcreateabortcallbackalgorithm "HostCreateAbortCallbackAlgorithm" (kind host_defined params [callback : #"function object"] -> pred(sat @ph-type-header-closure-no-params())) vars [callback] {
+  return closure 0
+  closure abstract params none captures [callback] {
+    perform @sec-completion-ao(@sec-call(callback, undefined))
+    return ~unused~
+  }
+}
+
+def @sec-hostcreateaborterror "HostCreateAbortError" (kind host_defined params [] -> Object) vars [error, message] {
+  let error = @sec-ordinaryobjectcreate(intrinsic [[Error.prototype]], [[[ErrorData]]])
+  let message = "The operation was aborted."
+  perform @sec-createnonenumerabledatapropertyorthrow(error, "message", message)
+  perform @sec-createnonenumerabledatapropertyorthrow(error, "name", "AbortError")
+  return error
+}
+
+def @sec-abortcontroller "AbortController" (kind builtin params []) vars [#"this value", NewTarget, internalSlotsList, controller] {
+  if new_target is val {undefined} -> throw @ph-new-error([[TypeError]])
+  let internalSlotsList = [[[Signal]]]
+  set var internalSlotsList = internalSlotsList
+  let controller = ? @sec-ordinarycreatefromconstructor(new_target, "%AbortController.prototype%", internalSlotsList)
+  set field controller[[Signal]] = @sec-createabortsignal($CurrentRealm())
+  perform @sec-hostinitializeabortcontroller(controller)
+  return controller
+}
+
+def @sec-abortcontroller.prototype.abort "AbortController.prototype.abort" (kind builtin params [reason opt]) vars [#"this value", NewTarget, reason, controller] {
+  let controller = this_value
+  perform ? @sec-requireinternalslot(controller, [[Signal]])
+  perform @sec-signalabort(controller[[Signal]], reason)
+  return undefined
+}
+
+def @sec-get-abortcontroller.prototype.signal "get AbortController.prototype.signal" (kind builtin params []) vars [#"this value", NewTarget, controller] {
+  let controller = this_value
+  perform ? @sec-requireinternalslot(controller, [[Signal]])
+  return controller[[Signal]]
+}
+
+def @sec-abortsignal "AbortSignal" (kind builtin params []) vars [#"this value", NewTarget] {
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-abortsignal.abort "AbortSignal.abort" (kind builtin params [reason opt]) vars [#"this value", NewTarget, reason, signal] {
+  let signal = @sec-createabortsignal($CurrentRealm())
+  if reason is val {undefined} -> set var reason = @sec-hostcreateaborterror()
+  set field signal[[AbortReason]] = reason
+  return signal
+}
+
+def @sec-abortsignal.any "AbortSignal.any" (kind builtin params [signals]) vars [#"this value", NewTarget, signals, iteratorRecord, signalsList, next, error] {
+  if signals is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let iteratorRecord = ? @sec-getiterator(signals, ~sync~)
+  let signalsList = $ListNew()
+  repeat {
+    let next = ? @sec-iteratorstepvalue(iteratorRecord)
+    if next is val {~done~} {
+      return @sec-createdependentabortsignal(signalsList, $CurrentRealm())
+    }
+    if next is not ty {Object} or next fails $HasSlot([[AbortReason]]) {
+      let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+      return ? @sec-iteratorclose(iteratorRecord, error)
+    }
+    perform $Append(?next, ?signalsList)
+  }
+}
+
+def @sec-abortsignal.prototype.addabortcallback "AbortSignal.prototype.addAbortCallback" (kind builtin params [callback]) vars [#"this value", NewTarget, callback, signal, algorithm, entry, registration] {
+  let signal = this_value
+  perform ? @sec-requireinternalslot(signal, [[AbortReason]])
+  if @sec-iscallable(callback) is val {false} -> throw @ph-new-error([[TypeError]])
+  let algorithm = @sec-hostcreateabortcallbackalgorithm(callback)
+  let entry = @sec-addabortalgorithm(signal, algorithm)
+  if entry is val {~already-aborted~} {
+    perform algorithm()
+    throw signal[[AbortReason]]
+  }
+  let registration = @sec-ordinaryobjectcreate(intrinsic [[AbortCallbackRegistrationPrototype]], [[[AbortRegistration]]])
+  set field registration[[AbortRegistration]] = entry
+  return registration
+}
+
+def @sec-get-abortsignal.prototype.aborted "get AbortSignal.prototype.aborted" (kind builtin params []) vars [#"this value", NewTarget, signal] {
+  let signal = this_value
+  perform ? @sec-requireinternalslot(signal, [[AbortReason]])
+  return @sec-isaborted(signal)
+}
+
+def @sec-get-abortsignal.prototype.reason "get AbortSignal.prototype.reason" (kind builtin params []) vars [#"this value", NewTarget, signal] {
+  let signal = this_value
+  perform ? @sec-requireinternalslot(signal, [[AbortReason]])
+  return signal[[AbortReason]]
+}
+
+def @sec-abortsignal.prototype.throwifaborted "AbortSignal.prototype.throwIfAborted" (kind builtin params []) vars [#"this value", NewTarget, signal] {
+  let signal = this_value
+  perform ? @sec-requireinternalslot(signal, [[AbortReason]])
+  if @sec-isaborted(signal) is val {true} -> throw signal[[AbortReason]]
+  return undefined
+}
+
+def @sec-%abortcallbackregistrationprototype%.remove "%AbortCallbackRegistrationPrototype%.remove" (kind builtin params []) vars [#"this value", NewTarget, registration] {
+  let registration = this_value
+  perform ? @sec-requireinternalslot(registration, [[AbortRegistration]])
+  perform @sec-removeabortalgorithm(registration[[AbortRegistration]])
+  return undefined
+}
+

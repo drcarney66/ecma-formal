@@ -1,0 +1,5 @@
+parent sec-cancellation sec-control-abstraction-objects
+retarget sec-atomics sec-atomics-object
+ignore sec-atomics 0
+use-new sec-dowait 3
+attr sec-%abortcallbackregistrationprototype%-%symbol.dispose% type "built-in function"

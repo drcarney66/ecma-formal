@@ -482,6 +482,25 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. [id="step-json-parse-assert-type"] Assert: _result_ is either a String, a Number, a Boolean, an Object that is defined by either an |ArrayLiteral| or an |ObjectLiteral|, or *null*.
 @@end
 
+@@patch alg @sec-abortcontroller root:2..3
+@@spectec
+|   set var internalSlotsList = internalSlotsList
+@@html
+| 1. Append to _internalSlotsList_ the internal slot names the host specifies for all AbortController instances.
+@@end
+
+@@patch alg @sec-abortsignal.any root/3:do:2..3
+@@spectec
+|     if next is not ty {Object} or next fails $HasSlot([[AbortReason]]) {
+|       let error = @sec-throwcompletion(@ph-new-error(err [[TypeError]]))
+|       return ? @sec-iteratorclose(iteratorRecord, error)
+|     }
+@@html
+|   1. If _next_ is not an Object or _next_ does not have an [[AbortReason]] internal slot, then
+|     1. Let _error_ be ThrowCompletion(a newly created *TypeError* object).
+|     1. Return ? IteratorClose(_iteratorRecord_, _error_).
+@@end
+
 @@patch alg @sec-add-entries-from-iterable root/1:do:4..5
 @@spectec
 |     block {
@@ -1746,6 +1765,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Return the number of <emu-grammar>Atom :: `(` GroupSpecifier? Disjunction `)`</emu-grammar> Parse Nodes contained within _parseNode_.
 @@end
 
+@@patch alg @sec-createabortsignal root:3..4
+@@spectec
+|   set var internalSlotsList = internalSlotsList
+@@html
+| 1. Append to _internalSlotsList_ the internal slot names the host specifies for all AbortSignal instances.
+@@end
+
 @@patch alg @sec-createbuiltinfunction root:3..4
 @@spectec
 |   let internalSlotsList = $BuiltinFunctionSlots()
@@ -2363,7 +2389,14 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Set _needsAwait_ to *false*.
 @@end
 
-@@patch alg @sec-dowait root/24:then:1..2
+@@patch alg @sec-dowait cl0:1..2
+@@spectec
+|   if_else waiterList[[Waiters]] sat $Contains(?waiterRecord) { let pending = true } else { let pending = false }
+@@html
+|     1. Let _pending_ be whether _waiterList_.[[Waiters]] contains _waiterRecord_.
+@@end
+
+@@patch alg @sec-dowait root/29:then:1..2
 @@spectec
 |     if waiterList[[Waiters]] sat $Contains(?waiterRecord) {
 |       set field waiterRecord[[Result]] = "timed-out"
@@ -2373,7 +2406,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | <none>
 @@end
 
-@@patch alg @sec-dowait root:21..23
+@@patch alg @sec-dowait root:26..28
 @@spectec
 |   let now = $TimeNow()
 |   let additionalTimeout = $AdditionalTimeout()
@@ -2382,11 +2415,11 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Let _additionalTimeout_ be an implementation-defined non-negative mathematical value.
 @@end
 
-@@patch alg @sec-dowait root:25..26
+@@patch alg @sec-dowait root:30..31
 @@spectec
-|   let waiterRecord = @ph-new-record(record #"Waiter Record" { [[AgentSignifier]]: thisAgent, [[PromiseCapability]]: promiseCapability, [[TimeoutTime]]: timeoutTime, [[Result]]: "ok" })
+|   let waiterRecord = @ph-new-record(record #"Waiter Record" { [[AgentSignifier]]: thisAgent, [[PromiseCapability]]: promiseCapability, [[TimeoutTime]]: timeoutTime, [[Result]]: "ok", [[AbortRegistration]]: ~empty~ })
 @@html
-| 1. Let _waiterRecord_ be a new Waiter Record { [[AgentSignifier]]: _thisAgent_, [[PromiseCapability]]: _promiseCapability_, [[TimeoutTime]]: _timeoutTime_, [[Result]]: *"ok"* }.
+| 1. Let _waiterRecord_ be a new Waiter Record { [[AgentSignifier]]: _thisAgent_, [[PromiseCapability]]: _promiseCapability_, [[TimeoutTime]]: _timeoutTime_, [[Result]]: *"ok"*, [[AbortRegistration]]: ~empty~ }.
 @@end
 
 @@patch alg @sec-dowait root:5..6
@@ -2394,15 +2427,6 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   assert elementType is val {~bigint64~; ~int32~}
 @@html
 | 1. Assert: _elementType_ is either ~bigint64~ or ~int32~.
-@@end
-
-@@patch alg @sec-dowait root:8..9
-@@spectec
-| if timeoutNumber is val {nan; num_f(+∞)} -> let realTimeout = math(+∞)
-|   else_if timeoutNumber is val {num_f(-∞)} -> let realTimeout = 0
-|   else -> let realTimeout = $max($ℝ(timeoutNumber), 0)
-@@html
-| 1. If _timeoutNumber_ is either *NaN* or *+∞*<sub>𝔽</sub>, let _realTimeout_ be +∞.
 @@end
 
 @@patch alg @sec-encode root:2..3
@@ -4150,6 +4174,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   return ? result
 @@html
 | 1. Return ? Call(_jobCallback_.[[Callback]], _thisValue_, _argList_).
+@@end
+
+@@patch alg @sec-hostcreateaborterror root:1..2
+@@spectec
+|   let message = "The operation was aborted."
+@@html
+| 1. Let _message_ be an implementation-defined String.
 @@end
 
 @@patch alg @sec-hostmakejobcallback root:0..1
@@ -7712,6 +7743,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   if flags sat @ph-units-other-than(data choice 0, ["d", "g", "i", "m", "s", "u", "v", "y"]) -> throw @ph-new-error([[SyntaxError]])
 @@html
 | 1. If _flags_ contains any code unit other than *"d"*, *"g"*, *"i"*, *"m"*, *"s"*, *"u"*, *"v"*, or *"y"*, throw a *SyntaxError* exception.
+@@end
+
+@@patch alg @sec-removeabortalgorithm root:3..4
+@@spectec
+|   perform $RemoveElem(?entry, signal[[AbortAlgorithms]])
+@@html
+| 1. Remove _entry_ from _signal_.[[AbortAlgorithms]].
 @@end
 
 @@patch alg @sec-removewaiter root:2..3
