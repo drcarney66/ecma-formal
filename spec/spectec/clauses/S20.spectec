@@ -606,7 +606,7 @@ def @sec-error-message "Error" (kind builtin params [message, options opt]) vars
     let messageString = ? @sec-tostring(message)
     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
   }
-  perform ? @sec-installerrorcause(#"obj", options)
+  perform ? @sec-installerrorownproperties(#"obj", options)
   perform $HostExtendObject(#"obj")
   return #"obj"
 }
@@ -636,20 +636,21 @@ def @sec-aggregate-error "AggregateError" (kind builtin params [errors, message,
     let messageString = ? @sec-tostring(message)
     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
   }
-  perform ? @sec-installerrorcause(#"obj", options)
+  perform ? @sec-installerrorownproperties(#"obj", options)
   let errorsList = ? @sec-iteratortolist(? @sec-getiterator(errors, ~sync~))
   perform ! @sec-definepropertyorthrow(#"obj", "errors", record PropertyDescriptor { [[Configurable]]: true, [[Enumerable]]: false, [[Writable]]: true, [[Value]]: @sec-createarrayfromlist(errorsList) })
   perform $HostExtendObject(#"obj")
   return #"obj"
 }
 
-def @sec-suppressederror "SuppressedError" (kind builtin params [error, suppressed, message]) vars [#"this value", NewTarget, error, suppressed, message, newTarget, #"obj", messageString] {
+def @sec-suppressederror "SuppressedError" (kind builtin params [error, suppressed, message, options opt]) vars [#"this value", NewTarget, error, suppressed, message, options, newTarget, #"obj", messageString] {
   if_else new_target is val {undefined} { let newTarget = $ActiveFunction() } else { let newTarget = new_target }
   let #"obj" = ? @sec-ordinarycreatefromconstructor(newTarget, "%SuppressedError.prototype%", [[[ErrorData]]])
   if message is not val {undefined} {
     let messageString = ? @sec-tostring(message)
     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
   }
+  perform ? @sec-installerrorownproperties(#"obj", options)
   perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "error", error)
   perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "suppressed", suppressed)
   perform $HostExtendObject(#"obj")
@@ -671,7 +672,7 @@ def @sec-nativeerror/EvalError "EvalError" (kind builtin params [message, option
     let messageString = ? @sec-tostring(message)
     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
   }
-  perform ? @sec-installerrorcause(#"obj", options)
+  perform ? @sec-installerrorownproperties(#"obj", options)
   perform $HostExtendObject(#"obj")
   return #"obj"
 }
@@ -683,7 +684,7 @@ def @sec-nativeerror/RangeError "RangeError" (kind builtin params [message, opti
     let messageString = ? @sec-tostring(message)
     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
   }
-  perform ? @sec-installerrorcause(#"obj", options)
+  perform ? @sec-installerrorownproperties(#"obj", options)
   perform $HostExtendObject(#"obj")
   return #"obj"
 }
@@ -695,7 +696,7 @@ def @sec-nativeerror/ReferenceError "ReferenceError" (kind builtin params [messa
     let messageString = ? @sec-tostring(message)
     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
   }
-  perform ? @sec-installerrorcause(#"obj", options)
+  perform ? @sec-installerrorownproperties(#"obj", options)
   perform $HostExtendObject(#"obj")
   return #"obj"
 }
@@ -707,7 +708,7 @@ def @sec-nativeerror/SyntaxError "SyntaxError" (kind builtin params [message, op
     let messageString = ? @sec-tostring(message)
     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
   }
-  perform ? @sec-installerrorcause(#"obj", options)
+  perform ? @sec-installerrorownproperties(#"obj", options)
   perform $HostExtendObject(#"obj")
   return #"obj"
 }
@@ -719,7 +720,7 @@ def @sec-nativeerror/TypeError "TypeError" (kind builtin params [message, option
     let messageString = ? @sec-tostring(message)
     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
   }
-  perform ? @sec-installerrorcause(#"obj", options)
+  perform ? @sec-installerrorownproperties(#"obj", options)
   perform $HostExtendObject(#"obj")
   return #"obj"
 }
@@ -731,8 +732,22 @@ def @sec-nativeerror/URIError "URIError" (kind builtin params [message, options 
     let messageString = ? @sec-tostring(message)
     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
   }
-  perform ? @sec-installerrorcause(#"obj", options)
+  perform ? @sec-installerrorownproperties(#"obj", options)
   perform $HostExtendObject(#"obj")
   return #"obj"
+}
+
+def @sec-installerrorownproperties "InstallErrorOwnProperties" (kind ao params [O : Object, options : #"ECMAScript language value"] -> completion<val(~unused~)> | #"throw completion") vars [O, options, cause, #"code"] {
+  if options is ty {Object} {
+    if ? @sec-hasproperty(options, "cause") is val {true} {
+      let cause = ? @sec-get-o-p(options, "cause")
+      perform @sec-createnonenumerabledatapropertyorthrow(O, "cause", cause)
+    }
+    if ? @sec-hasproperty(options, "code") is val {true} {
+      let #"code" = ? @sec-get-o-p(options, "code")
+      perform @sec-createnonenumerabledatapropertyorthrow(O, "code", #"code")
+    }
+  }
+  return ~unused~
 }
 

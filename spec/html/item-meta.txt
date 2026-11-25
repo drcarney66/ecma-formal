@@ -539,6 +539,7 @@ alg @sec-initializetypedarrayfromelements base=12 close=10
 alg @sec-initializetypedarrayfromtypedarray base=12 close=10
 alg @sec-innermoduleevaluation base=16 close=14
 alg @sec-installerrorcause base=10 close=8
+alg @sec-installerrorownproperties base=10 close=8
 alg @sec-instanceofoperator base=8 close=6
 alg @sec-internalizejsonproperty base=10 close=8
 alg @sec-invoke base=8 close=6

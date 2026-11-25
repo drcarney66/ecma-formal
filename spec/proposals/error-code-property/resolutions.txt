@@ -1,0 +1,13 @@
+# Retarget hyphenated SuppressedError clause IDs in proposal-error-code-property to ECMA-262's unhyphenated IDs.
+retarget sec-suppressed-error-objects sec-suppressederror-objects
+retarget sec-suppressed-error-constructor sec-suppressederror-constructor
+retarget sec-suppressed-error sec-suppressederror
+
+# Error, NativeError, and AggregateError renamed _O_ -> _obj_ and _msg_ -> _messageString_ in newer ECMA-262.
+patch sec-error-message 2 "Perform ? InstallErrorCause(_obj_, _options_)." ==> "Perform ? InstallErrorOwnProperties(_obj_, _options_)."
+patch sec-nativeerror 2 "Perform ? InstallErrorCause(_obj_, _options_)." ==> "Perform ? InstallErrorOwnProperties(_obj_, _options_)."
+patch sec-aggregate-error 2 "Perform ? InstallErrorCause(_obj_, _options_)." ==> "Perform ? InstallErrorOwnProperties(_obj_, _options_)."
+
+# SuppressedError in ECMA-262 has no [ , _options_ ] parameter and no InstallErrorCause call yet.
+use-new sec-suppressed-error 0
+patch sec-suppressed-error 2 "            1. Perform CreateNonEnumerableDataPropertyOrThrow(_obj_, *\"error\"*, _error_)." ==> "            1. Perform ? InstallErrorOwnProperties(_obj_, _options_).\n            1. Perform CreateNonEnumerableDataPropertyOrThrow(_obj_, *\"error\"*, _error_)."

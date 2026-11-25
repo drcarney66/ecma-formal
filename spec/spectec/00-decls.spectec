@@ -1055,6 +1055,7 @@ clause @sec-error-constructor
 clause @sec-error-handling-and-language-extensions
 clause @sec-error-message op "Error"
 clause @sec-error-objects
+clause @sec-error-objects-abstract-operations
 clause @sec-error.iserror op "Error.isError"
 clause @sec-error.prototype
 clause @sec-error.prototype.constructor
@@ -1351,6 +1352,7 @@ clause @sec-initializetypedarrayfromlist
 clause @sec-initializetypedarrayfromtypedarray op "InitializeTypedArrayFromTypedArray"
 clause @sec-innermoduleevaluation op "InnerModuleEvaluation"
 clause @sec-installerrorcause op "InstallErrorCause"
+clause @sec-installerrorownproperties op "InstallErrorOwnProperties"
 clause @sec-instanceofoperator op "InstanceofOperator"
 clause @sec-int16array
 clause @sec-int32array

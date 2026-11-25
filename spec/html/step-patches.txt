@@ -8903,7 +8903,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If _literal_ is a List of errors, return *NaN*.
 @@end
 
-@@patch alg @sec-suppressederror root:5..6
+@@patch alg @sec-suppressederror root:6..7
 @@spectec
 |   perform $HostExtendObject(#"obj")
 @@html
@@ -16225,7 +16225,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     let messageString = ? @sec-tostring(message)
 |     perform @sec-createnonenumerabledatapropertyorthrow(#"obj", "message", messageString)
 |   }
-|   perform ? @sec-installerrorcause(#"obj", options)
+|   perform ? @sec-installerrorownproperties(#"obj", options)
 |   perform $HostExtendObject(#"obj")
 |   return #"obj"
 @@html
@@ -16235,7 +16235,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |             1. If _message_ is not *undefined*, then
 |               1. Let _messageString_ be ? ToString(_message_).
 |               1. Perform CreateNonEnumerableDataPropertyOrThrow(_obj_, *"message"*, _messageString_).
-|             1. Perform ? InstallErrorCause(_obj_, _options_).
+|             1. Perform ? InstallErrorOwnProperties(_obj_, _options_).
 |             1. Return _obj_.
 |           
 @@end
