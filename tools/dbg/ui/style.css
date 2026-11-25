@@ -33,8 +33,12 @@ body.dbg * { box-sizing: border-box; }
 #controls { display: flex; flex-wrap: wrap; gap: .25em; align-items: center; }
 #controls label { margin-left: .6em; }
 #build-row { display: flex; flex-wrap: wrap; gap: .4em; align-items: center; margin-top: .35em; }
-#build-row label { color: var(--dbg-dim); }
+#build-row label, #build-row .head-label, #build-row .head-sep { color: var(--dbg-dim); }
 #build-note { color: var(--dbg-dim); flex: 1 1 20rem; min-width: 0; }
+#spec-notation { display: inline-flex; border: 1px solid var(--dbg-line); border-radius: 4px; overflow: hidden; background: var(--dbg-pane); }
+#spec-notation button { border: 0; border-radius: 0; background: transparent; color: var(--dbg-dim); padding: .15em .55em; }
+#spec-notation button + button { border-left: 1px solid var(--dbg-line); }
+#spec-notation button.on { background: var(--dbg-select); color: var(--dbg-ink); font-weight: 600; }
 #status { font: var(--dbg-mono); margin-top: .3em; color: var(--dbg-ink); overflow-wrap: anywhere; }
 body.dbg[data-state="paused"] #status { color: var(--owed, #8a5a00); }
 body.dbg[data-state="terminated"] #status { color: var(--dbg-good); }
@@ -80,11 +84,6 @@ body.dbg .bar-in { max-width: none; }
 .pane h2 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--dbg-dim); margin: .2em 0 .4em; }
 .pane h2 span { text-transform: none; color: var(--dbg-ink); }
 .pane h2 button { float: right; font-size: 11px; }
-#step-pane h2 { display: flex; align-items: center; justify-content: space-between; gap: .5em; }
-.seg-toggle { display: inline-flex; border: 1px solid var(--dbg-line); border-radius: 4px; overflow: hidden; letter-spacing: 0; font-weight: 500; text-transform: none; }
-.seg-toggle button { float: none; border: 0; border-radius: 0; background: var(--dbg-pane); color: var(--dbg-dim); padding: .1em .5em; font-size: 11px; line-height: 1.25; }
-.seg-toggle button + button { border-left: 1px solid var(--dbg-line); }
-.seg-toggle button.on { background: var(--dbg-select); color: var(--dbg-ink); font-weight: 600; }
 .tools { margin-bottom: .3em; display: flex; gap: .3em; align-items: center; flex-wrap: wrap; }
 .code { font: var(--dbg-mono); }
 #source { flex: 1; overflow: auto; }
