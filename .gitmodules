@@ -5,3 +5,6 @@
 	path = external/test262
 	url = https://github.com/tc39/test262
 	shallow = true
+[submodule "external/proposal-popcount"]
+	path = external/proposal-popcount
+	url = https://github.com/js-choi/proposal-popcount

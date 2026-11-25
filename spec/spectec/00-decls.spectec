@@ -229,6 +229,7 @@ clause @ph-number-trunc
 clause @ph-numeric-value-defined
 clause @ph-occurrences-of
 clause @ph-occurs-exactly-once
+clause @ph-one-bits-32
 clause @ph-one-character
 clause @ph-only-one-argument-passed
 clause @ph-only-single-code-points
@@ -286,6 +287,7 @@ clause @ph-to-binary32
 clause @ph-to-binary64
 clause @ph-token
 clause @ph-token-nt
+clause @ph-trailing-zero-bits-32
 clause @ph-trim-both
 clause @ph-trim-leading
 clause @ph-trim-trailing
@@ -1545,6 +1547,7 @@ clause @sec-math.ceil op "Math.ceil"
 clause @sec-math.clz32 op "Math.clz32"
 clause @sec-math.cos op "Math.cos"
 clause @sec-math.cosh op "Math.cosh"
+clause @sec-math.ctz32 op "Math.ctz32"
 clause @sec-math.e
 clause @sec-math.exp op "Math.exp"
 clause @sec-math.expm1 op "Math.expm1"
@@ -1564,6 +1567,7 @@ clause @sec-math.log2e
 clause @sec-math.max op "Math.max"
 clause @sec-math.min op "Math.min"
 clause @sec-math.pi
+clause @sec-math.popcount32 op "Math.popcount32"
 clause @sec-math.pow op "Math.pow"
 clause @sec-math.random op "Math.random"
 clause @sec-math.round op "Math.round"

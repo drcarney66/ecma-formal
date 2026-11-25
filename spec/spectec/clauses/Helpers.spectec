@@ -3135,6 +3135,29 @@ def @formal-rounddecimalmv "formal-rounddecimalmv" (kind ao params [m : sort [#"
   return @sec-roundmvresult(m * 10 ^ k)
 }
 
+def @ph-trailing-zero-bits-32 "ph-trailing-zero-bits-32" (kind ao params [n : #"integral Number"]) vars [n, m, p] {
+  assert $ℝ(n) sat $InInterval(0, 2 ^ 32 - 1)
+  let m = $ℝ(n)
+  if m == 0 -> return 32
+  let p = 0
+  repeat_while m modulo 2 == 0 {
+    set var m = $floor(m / 2)
+    set var p = p + 1
+  }
+  return p
+}
+
+def @ph-one-bits-32 "ph-one-bits-32" (kind ao params [n : #"integral Number"]) vars [n, m, p] {
+  assert $ℝ(n) sat $InInterval(0, 2 ^ 32 - 1)
+  let m = $ℝ(n)
+  let p = 0
+  repeat_while m > 0 {
+    set var p = p + (m modulo 2)
+    set var m = $floor(m / 2)
+  }
+  return p
+}
+
 def @spec-cond-0 "spec-cond" (kind ao params [x0, x1]) vars [x0, x1] {
   return bool(x0[[Key]] is val {x1[[Key]]})
 }

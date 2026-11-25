@@ -1,0 +1,6 @@
+# Place Math.ctz32 and Math.popcount32 under The Math Object's function properties, and supply
+# the missing type="built-in function" attribute omitted in the Stage 0 spec.emu.
+parent sec-math.ctz32 sec-function-properties-of-the-math-object
+parent sec-math.popcount32 sec-function-properties-of-the-math-object
+attr sec-math.ctz32 type "built-in function"
+attr sec-math.popcount32 type "built-in function"

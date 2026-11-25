@@ -1478,3 +1478,15 @@ def @sec-date.prototype-%symbol.toprimitive% "Date.prototype [ %Symbol.toPrimiti
   return ? @sec-ordinarytoprimitive(#"obj", tryFirst)
 }
 
+def @sec-math.ctz32 "Math.ctz32" (kind builtin params [x]) vars [#"this value", NewTarget, x, n, p] {
+  let n = ? @sec-touint32(x)
+  let p = @ph-trailing-zero-bits-32(?n)
+  return $𝔽(p)
+}
+
+def @sec-math.popcount32 "Math.popcount32" (kind builtin params [x]) vars [#"this value", NewTarget, x, n, p] {
+  let n = ? @sec-touint32(x)
+  let p = @ph-one-bits-32(?n)
+  return $𝔽(p)
+}
+

@@ -667,6 +667,7 @@ alg @sec-math.ceil base=10 close=8
 alg @sec-math.clz32 base=10 close=8
 alg @sec-math.cos base=10 close=8
 alg @sec-math.cosh base=10 close=8
+alg @sec-math.ctz32 base=10 close=8
 alg @sec-math.exp base=10 close=8
 alg @sec-math.expm1 base=10 close=8
 alg @sec-math.f16round base=10 close=8
@@ -680,6 +681,7 @@ alg @sec-math.log1p base=10 close=8
 alg @sec-math.log2 base=10 close=8
 alg @sec-math.max base=10 close=8
 alg @sec-math.min base=10 close=8
+alg @sec-math.popcount32 base=10 close=8
 alg @sec-math.pow base=10 close=8
 alg @sec-math.round base=10 close=8
 alg @sec-math.sign base=10 close=8
@@ -2837,6 +2839,7 @@ spectec_only_def @ph-number-trunc
 spectec_only_def @ph-numeric-value-defined
 spectec_only_def @ph-occurrences-of
 spectec_only_def @ph-occurs-exactly-once
+spectec_only_def @ph-one-bits-32
 spectec_only_def @ph-one-character
 spectec_only_def @ph-only-one-argument-passed
 spectec_only_def @ph-only-single-code-points
@@ -2893,6 +2896,7 @@ spectec_only_def @ph-to-binary32
 spectec_only_def @ph-to-binary64
 spectec_only_def @ph-token
 spectec_only_def @ph-token-nt
+spectec_only_def @ph-trailing-zero-bits-32
 spectec_only_def @ph-trim-both
 spectec_only_def @ph-trim-leading
 spectec_only_def @ph-trim-trailing

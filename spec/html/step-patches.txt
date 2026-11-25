@@ -5366,6 +5366,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Return an implementation-approximated Number value representing the hyperbolic cosine of ℝ(_n_).
 @@end
 
+@@patch alg @sec-math.ctz32 root:1..2
+@@spectec
+|   let p = @ph-trailing-zero-bits-32(?n)
+@@html
+| 1. Let _p_ be the number of trailing zero bits in the unsigned 32-bit binary representation of _n_.
+@@end
+
 @@patch alg @sec-math.exp root:1..3
 @@spectec
 |   if n is val {nan; num_f(+∞)} -> return n
@@ -5477,6 +5484,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   return $"implementation-approximated"($log2($ℝ(n)))
 @@html
 | 1. Return an implementation-approximated Number value representing log2(ℝ(_n_)).
+@@end
+
+@@patch alg @sec-math.popcount32 root:1..2
+@@spectec
+|   let p = @ph-one-bits-32(?n)
+@@html
+| 1. Let _p_ be the number of one bits in the unsigned 32-bit binary representation of _n_.
 @@end
 
 @@patch alg @sec-math.sin root:2..4
