@@ -510,6 +510,7 @@ alg @sec-global-environment-records-withbaseobject base=12 close=10
 alg @sec-globaldeclarationinstantiation base=8 close=6
 alg @sec-groupby base=8 close=6
 alg @sec-groupspecifiersthatmatch base=10 close=8
+alg @sec-has-property-which-could-run-user-code base=10 close=8
 alg @sec-haslexicaldeclaration base=12 close=10
 alg @sec-hasownproperty base=8 close=6
 alg @sec-hasproperty base=8 close=6
@@ -858,6 +859,8 @@ alg @sec-parsepattern base=10 close=8
 alg @sec-parsepattern-annexb base=10 close=8
 alg @sec-parsetext base=8 close=6
 alg @sec-parsetimezoneoffsetstring base=12 close=10
+alg @sec-perform-promise-resolution base=10 close=8
+alg @sec-perform-promise-resolve-thenable base=10 close=8
 alg @sec-performeval base=10 close=8
 alg @sec-performpromiseall base=12 close=10
 alg @sec-performpromiseallsettled base=12 close=10
@@ -939,6 +942,7 @@ alg @sec-removewaiter base=10 close=8
 alg @sec-removewaiters base=10 close=8
 alg @sec-requireinternalslot base=8 close=6
 alg @sec-requireobjectcoercible base=8 close=6
+alg @sec-requires-deferred-promise-resolution base=12 close=10
 alg @sec-resolve-private-identifier base=10 close=8
 alg @sec-resolvebinding base=8 close=6
 alg @sec-resolveexport base=14 close=12
@@ -961,6 +965,7 @@ alg @sec-runtime-semantics-repeatmatcher-abstract-operation base=12 close=10
 alg @sec-runtime-semantics-scriptevaluation base=8 close=6
 alg @sec-runtime-semantics-unicodematchproperty-p base=12 close=10
 alg @sec-runtime-semantics-unicodematchpropertyvalue-p-v base=12 close=10
+alg @sec-safe-promise-resolve base=10 close=8
 alg @sec-sametype base=8 close=6
 alg @sec-samevalue base=8 close=6
 alg @sec-samevaluenonnumber base=8 close=6

@@ -730,7 +730,7 @@ theorem hookCompletion_law (c : Cells) (k : ClauseId) (xs : List (Val Impl)) (s 
       have hm := lookup_some_mem hl
       simp only [hooks, Engine.Host.hooks, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hm
       rcases hm with ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ |
-        ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ <;>
+        ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩ <;>
       first
         | exact normalEnum_normal _ s r s' h
         | (unfold Engine.Host.enumNamed at h

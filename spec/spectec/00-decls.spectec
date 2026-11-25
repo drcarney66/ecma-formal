@@ -1281,6 +1281,7 @@ clause @sec-grouping-operator-static-semantics-early-errors
 clause @sec-groupspecifiersthatmatch op "GroupSpecifiersThatMatch"
 clause @sec-growable-sharedarraybuffer-guidelines
 clause @sec-happens-before
+clause @sec-has-property-which-could-run-user-code op "PropertyAccessCouldRunUserCode"
 clause @sec-hashbang
 clause @sec-haslexicaldeclaration op "HasLexicalDeclaration"
 clause @sec-hasownproperty op "HasOwnProperty"
@@ -1308,6 +1309,7 @@ clause @sec-hostgetcodeforeval op "HostGetCodeForEval"
 clause @sec-hostgetimportmetaproperties op "HostGetImportMetaProperties"
 clause @sec-hostgetsupportedimportattributes op "HostGetSupportedImportAttributes"
 clause @sec-hostgrowsharedarraybuffer op "HostGrowSharedArrayBuffer"
+clause @sec-hosthasinternalmethodswhichcanrunusercode op "HostObjectHasImpureLookupInternalMethods"
 clause @sec-hosthassourcetextavailable op "HostHasSourceTextAvailable"
 clause @sec-hostmakejobcallback op "HostMakeJobCallback"
 clause @sec-hostresizearraybuffer op "HostResizeArrayBuffer"
@@ -1896,6 +1898,8 @@ clause @sec-patterns-static-semantics-early-errors
 clause @sec-patterns-static-semantics-early-errors-annexb
 clause @sec-patterns-static-semantics-is-character-class op "IsCharacterClass"
 clause @sec-patterns-static-semantics-is-character-class-annexb
+clause @sec-perform-promise-resolution op "PerformPromiseResolution"
+clause @sec-perform-promise-resolve-thenable op "PerformPromiseResolveThenable"
 clause @sec-performeval op "PerformEval"
 clause @sec-performpromiseall op "PerformPromiseAll"
 clause @sec-performpromiseallsettled op "PerformPromiseAllSettled"
@@ -2186,6 +2190,7 @@ clause @sec-removewaiter op "RemoveWaiter"
 clause @sec-removewaiters op "RemoveWaiters"
 clause @sec-requireinternalslot op "RequireInternalSlot"
 clause @sec-requireobjectcoercible op "RequireObjectCoercible"
+clause @sec-requires-deferred-promise-resolution op "RequiresDeferredPromiseResolution"
 clause @sec-resizable-arraybuffer-guidelines
 clause @sec-resolve-private-identifier op "ResolvePrivateIdentifier"
 clause @sec-resolvebinding op "ResolveBinding"
@@ -2266,6 +2271,7 @@ clause @sec-runtime-semantics-substitutionevaluation op "SubstitutionEvaluation"
 clause @sec-runtime-semantics-unicodematchproperty-p op "UnicodeMatchProperty"
 clause @sec-runtime-semantics-unicodematchpropertyvalue-p-v op "UnicodeMatchPropertyValue"
 clause @sec-runtime-semantics-whileloopevaluation op "WhileLoopEvaluation"
+clause @sec-safe-promise-resolve op "SafePromiseResolve"
 clause @sec-sametype op "SameType"
 clause @sec-samevalue op "SameValue"
 clause @sec-samevaluenonnumber op "SameValueNonNumber"
@@ -3550,6 +3556,7 @@ enum ~continue~
 enum ~cooked~
 enum ~data~
 enum ~date~
+enum ~deferred~
 enum ~derived~
 enum ~descending~
 enum ~detached~
@@ -3577,6 +3584,7 @@ enum ~fulfill~
 enum ~fulfilled~
 enum ~function~
 enum ~generator~
+enum ~get~
 enum ~get-own-property~
 enum ~get-prototype-of~
 enum ~global~
@@ -3630,6 +3638,7 @@ enum ~rejected~
 enum ~return~
 enum ~sealed~
 enum ~seq-cst~
+enum ~set~
 enum ~signed~
 enum ~simple~
 enum ~skip-holes~

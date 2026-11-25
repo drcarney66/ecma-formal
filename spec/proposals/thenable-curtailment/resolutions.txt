@@ -1,0 +1,9 @@
+unwrap sec-safe-resolve-promise
+retarget sec-createresolvingfunctions-modified sec-createresolvingfunctions
+ignore sec-createresolvingfunctions-modified 1
+use-new sec-newpromiseresolvethenablejob 2
+parent sec-has-property-which-could-run-user-code sec-promise-abstract-operations
+parent sec-perform-promise-resolution sec-promise-abstract-operations
+parent sec-perform-promise-resolve-thenable sec-promise-abstract-operations
+parent sec-safe-promise-resolve sec-promise-abstract-operations
+parent sec-hosthasinternalmethodswhichcanrunusercode sec-promise-abstract-operations

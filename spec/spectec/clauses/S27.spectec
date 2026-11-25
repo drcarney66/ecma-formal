@@ -1094,7 +1094,7 @@ def @sec-ifabruptrejectpromise#1 "IfAbruptRejectPromise.2" (kind untyped params 
   set var value = ! value
 }
 
-def @sec-createresolvingfunctions "CreateResolvingFunctions" (kind ao params [toResolve : Promise] -> record { [[Resolve]]: #"function object", [[Reject]]: #"function object" }) vars [toResolve, promiseOrEmpty, resolveSteps, resolution, promise, selfResolutionError, #"then", thenAction, thenJobCallback, job, resolve, rejectSteps, reason, reject] {
+def @sec-createresolvingfunctions "CreateResolvingFunctions" (kind ao params [toResolve : Promise] -> record { [[Resolve]]: #"function object", [[Reject]]: #"function object" }) vars [toResolve, promiseOrEmpty, resolveSteps, resolution, promise, resolve, rejectSteps, reason, reject] {
   let promiseOrEmpty = record Record { [[Value]]: toResolve }
   let resolveSteps = closure 0
   let resolve = @sec-createbuiltinfunction(resolveSteps, 1, "", [])
@@ -1105,28 +1105,7 @@ def @sec-createresolvingfunctions "CreateResolvingFunctions" (kind ao params [to
     if promiseOrEmpty[[Value]] is val {~empty~} -> return undefined
     let promise = promiseOrEmpty[[Value]]
     set field promiseOrEmpty[[Value]] = ~empty~
-    if @sec-samevalue(resolution, promise) is val {true} {
-      let selfResolutionError = @ph-new-error(err [[TypeError]])
-      perform @sec-rejectpromise(promise, selfResolutionError)
-      return undefined
-    }
-    if resolution is not ty {Object} {
-      perform @sec-fulfillpromise(promise, resolution)
-      return undefined
-    }
-    let #"then" = @sec-completion-ao(@sec-get-o-p(resolution, "then"))
-    if #"then" is ty {#"abrupt completion"} {
-      perform @sec-rejectpromise(promise, #"then"[[Value]])
-      return undefined
-    }
-    let thenAction = #"then"[[Value]]
-    if @sec-iscallable(thenAction) is val {false} {
-      perform @sec-fulfillpromise(promise, resolution)
-      return undefined
-    }
-    let thenJobCallback = @sec-hostmakejobcallback(thenAction)
-    let job = @sec-newpromiseresolvethenablejob(promise, resolution, thenJobCallback)
-    perform @sec-hostenqueuepromisejob(job[[Job]], job[[Realm]])
+    perform ? @sec-perform-promise-resolution(promise, resolution, ~sync~)
     return undefined
   }
   closure abstract params [reason] captures [promiseOrEmpty] {
@@ -1232,7 +1211,7 @@ def @sec-newpromisereactionjob "NewPromiseReactionJob" (kind ao params [reaction
   }
 }
 
-def @sec-newpromiseresolvethenablejob "NewPromiseResolveThenableJob" (kind ao params [promiseToResolve : Promise, thenable : Object, #"then" : #"JobCallback Record"] -> record { [[Job]]: #"Job Abstract Closure", [[Realm]]: #"Realm Record" }) vars [promiseToResolve, thenable, #"then", job, resolvingFuncs, thenCallResult, getThenRealmResult, thenRealm] {
+def @sec-newpromiseresolvethenablejob "NewPromiseResolveThenableJob" (kind ao params [promiseToResolve : Promise, thenable : Object, #"then" : #"JobCallback Record"] -> record { [[Job]]: #"Job Abstract Closure", [[Realm]]: #"Realm Record" }) vars [promiseToResolve, thenable, #"then", job, getThenRealmResult, thenRealm] {
   let job = closure 0
   let getThenRealmResult = @sec-completion-ao(@sec-getfunctionrealm(#"then"[[Callback]]))
   if getThenRealmResult is ty {#"normal completion"} -> let thenRealm = getThenRealmResult[[Value]]
@@ -1240,12 +1219,7 @@ def @sec-newpromiseresolvethenablejob "NewPromiseResolveThenableJob" (kind ao pa
   note "_thenRealm_ is never *null*. When _then_.[[Callback]] is a revoked Proxy and no code runs, _thenRealm_ is used to create error objects."
   return record Record { [[Job]]: job, [[Realm]]: thenRealm }
   closure job params none captures [promiseToResolve, thenable, #"then"] {
-    let resolvingFuncs = @sec-createresolvingfunctions(promiseToResolve)
-    let thenCallResult = @sec-completion-ao(@sec-hostcalljobcallback(#"then", thenable, [resolvingFuncs[[Resolve]], resolvingFuncs[[Reject]]]))
-    if thenCallResult is ty {#"abrupt completion"} {
-      return ! @sec-call(resolvingFuncs[[Reject]], undefined, [thenCallResult[[Value]]])
-    }
-    return ! thenCallResult
+    return ? @sec-perform-promise-resolve-thenable(promiseToResolve, thenable, #"then")
   }
 }
 
@@ -2184,5 +2158,91 @@ def @await "Await" (kind ao params [arg : #"ECMAScript language value"] -> compl
     note "The Completion Record returned by RunSuspendedContext is intentionally ignored."
     return @sec-normalcompletion(undefined)
   }
+}
+
+def @sec-has-property-which-could-run-user-code "PropertyAccessCouldRunUserCode" (kind ao params [o : Object, propertyKey : #"property key", #"kind" : doc "~any~, ~set~ or ~get~"] -> Boolean) vars [o, propertyKey, #"kind", #"desc", proto] {
+  assert pass "The following steps do not run user code"
+  if o sat $HasSlot([[ProxyHandler]]) -> return true
+  if o sat $HasSlot([[Module]]) -> return true
+  if @sec-hosthasinternalmethodswhichcanrunusercode(o) is val {true} -> return true
+  let #"desc" = ! o[[GetOwnProperty]](propertyKey)
+  if #"desc" is not val {undefined} {
+    if @sec-isaccessordescriptor(#"desc") is val {true} {
+      if #"kind" is val {~any~; ~get~} and #"desc"[[Get]] is not val {undefined} -> return true
+      if #"kind" is val {~any~; ~set~} and #"desc"[[Set]] is not val {undefined} -> return true
+    }
+    return false
+  }
+  let proto = ! o[[GetPrototypeOf]]()
+  if proto is val {null} -> return false
+  return @sec-has-property-which-could-run-user-code(proto, propertyKey, #"kind")
+}
+
+def @sec-perform-promise-resolution "PerformPromiseResolution" (kind ao params [promise : Promise, resolution : #"ECMAScript language value", thenCallTiming : val(~sync~) | val(~deferred~)] -> completion<val(~unused~)>) vars [promise, resolution, thenCallTiming, selfResolutionError, #"then", thenAction, thenJobCallback, job] {
+  assert promise sat $HasSlot([[PromiseState]])
+  if @sec-samevalue(resolution, promise) is val {true} {
+    let selfResolutionError = @ph-new-error(err [[TypeError]])
+    perform @sec-rejectpromise(promise, selfResolutionError)
+    return ~unused~
+  }
+  if resolution is not ty {Object} {
+    perform @sec-fulfillpromise(promise, resolution)
+    return ~unused~
+  }
+  let #"then" = @sec-completion-ao(@sec-get-o-p(resolution, "then"))
+  if #"then" is ty {#"abrupt completion"} {
+    perform @sec-rejectpromise(promise, #"then"[[Value]])
+    return ~unused~
+  }
+  let thenAction = #"then"[[Value]]
+  if @sec-iscallable(thenAction) is val {false} {
+    perform @sec-fulfillpromise(promise, resolution)
+    return ~unused~
+  }
+  if thenCallTiming is val {~deferred~} {
+    perform ! @sec-perform-promise-resolve-thenable(promise, resolution, thenAction)
+    return ~unused~
+  }
+  let thenJobCallback = @sec-hostmakejobcallback(thenAction)
+  let job = @sec-newpromiseresolvethenablejob(promise, resolution, thenJobCallback)
+  perform @sec-hostenqueuepromisejob(job[[Job]], job[[Realm]])
+  return ~unused~
+}
+
+def @sec-perform-promise-resolve-thenable "PerformPromiseResolveThenable" (kind ao params [promiseToResolve : Promise, thenable : Object, #"then" : #"JobCallback Record" | #"function object"] -> completion<#"ECMAScript language value">) vars [promiseToResolve, thenable, #"then", resolvingFunctions, thenCallResult] {
+  let resolvingFunctions = @sec-createresolvingfunctions(promiseToResolve)
+  if #"then" is ty {#"function object"} {
+    let thenCallResult = @sec-completion-ao(@sec-call(#"then", thenable, [resolvingFunctions[[Resolve]], resolvingFunctions[[Reject]]]))
+  }
+  else {
+    let thenCallResult = @sec-completion-ao(@sec-hostcalljobcallback(#"then", thenable, [resolvingFunctions[[Resolve]], resolvingFunctions[[Reject]]]))
+  }
+  if thenCallResult is ty {#"abrupt completion"} {
+    return ! @sec-call(resolvingFunctions[[Reject]], undefined, [thenCallResult[[Value]]])
+  }
+  return ! thenCallResult
+}
+
+def @sec-safe-promise-resolve "SafePromiseResolve" (kind ao params [promiseCapability : #"PromiseCapability Record", resolution : #"ECMAScript language value"] -> completion<val(undefined)> | #"throw completion") vars [promiseCapability, resolution, promise, deferredSteps, deferredThen, wrapper] {
+  assert pass "_.[[Resolve]] was created by CreateResolvingFunctions"
+  if @sec-requires-deferred-promise-resolution(resolution) is val {false} {
+    return ? @sec-call(promiseCapability[[Resolve]], undefined, [resolution])
+  }
+  let promise = promiseCapability[[Promise]]
+  let deferredSteps = closure 0
+  let deferredThen = @sec-createbuiltinfunction(deferredSteps, 0, "", [])
+  let wrapper = @sec-ordinaryobjectcreate(null)
+  perform ! @sec-createdatapropertyorthrow(wrapper, "then", deferredThen)
+  return ? @sec-call(promiseCapability[[Resolve]], undefined, [wrapper])
+  closure abstract params [] captures [promise, resolution] {
+    perform ? @sec-perform-promise-resolution(promise, resolution, ~deferred~)
+    return undefined
+  }
+}
+
+def @sec-requires-deferred-promise-resolution "RequiresDeferredPromiseResolution" (kind ao params [value : #"ECMAScript language value"] -> Boolean) vars [value] {
+  if value is not ty {Object} -> return false
+  if @sec-has-property-which-could-run-user-code(value, "then", ~get~) is val {true} -> return true
+  return false
 }
 

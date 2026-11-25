@@ -156,7 +156,8 @@ def hooks : List (String × Hook) := [
   ("sec-host-promise-rejection-tracker", fun _ _ => Run.pure unused),
   ("sec-math.random", fun _ _ => seededRandom defaultSeed),
   ("sec-getnamedtimezoneoffsetnanoseconds", fun _ _ => Run.pure (.math (Impl.ofNat 0))),
-  ("sec-getnamedtimezoneepochnanoseconds", fun _ _ => Run.stop .residue)]
+  ("sec-getnamedtimezoneepochnanoseconds", fun _ _ => Run.stop .residue),
+  ("sec-hosthasinternalmethodswhichcanrunusercode", fun _ _ => Run.pure (.bool false))]
 
 /-- The clause `print`'s behaviour calls to write a line. -/
 def printClause : ClauseId := 2000000

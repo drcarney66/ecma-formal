@@ -4114,6 +4114,24 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Append _groupSpecifier_ to _result_.
 @@end
 
+@@patch alg @sec-has-property-which-could-run-user-code root/5:then/0:then:0..2
+@@spectec
+|       if #"kind" is val {~any~; ~get~} and #"desc"[[Get]] is not val {undefined} -> return true
+|       if #"kind" is val {~any~; ~set~} and #"desc"[[Set]] is not val {undefined} -> return true
+@@html
+|     1. If _kind_ is either ~any~ or ~get~, and _desc_.[[Get]] is not *undefined*, return *true*.
+|     1. If _kind_ is either ~any~ or ~set~, and _desc_.[[Set]] is not *undefined*, return *true*.
+@@end
+
+@@patch alg @sec-has-property-which-could-run-user-code root:1..3
+@@spectec
+|   if o sat $HasSlot([[ProxyHandler]]) -> return true
+|   if o sat $HasSlot([[Module]]) -> return true
+@@html
+| 1. If _o_ has the [[GetPrototypeOf]] and [[GetOwnProperty]] internal methods as defined in <emu-xref href="#sec-proxy-object-internal-methods-and-internal-slots"></emu-xref>, return *true*.
+| 1. If _o_ has the [[GetPrototypeOf]] and [[GetOwnProperty]] internal methods as defined in <emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>, return *true*.
+@@end
+
 @@patch alg @sec-hasownproperty root:0..1
 @@spectec
 |   let propertyDesc = ? #"obj"[[GetOwnProperty]](propertyKey)
@@ -8214,6 +8232,22 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 @@html
 | 1. Let _value_ be the canonical property value of _v_ as given in the “Canonical property value” column of the corresponding row.
 | 1. Return the List of Unicode code points _value_.
+@@end
+
+@@patch alg @sec-safe-promise-resolve root:0..1
+@@spectec
+|   assert pass "_.[[Resolve]] was created by CreateResolvingFunctions"
+@@html
+| 1. Assert: _promiseCapability_.[[Resolve]] was created by CreateResolvingFunctions.
+@@end
+
+@@patch alg @sec-safe-promise-resolve root:3..4
+@@spectec
+|   let deferredSteps = closure 0
+@@html
+| 1. Let _deferredSteps_ be a new Abstract Closure that captures _promise_ and _resolution_ and performs the following steps when called:
+|   1. Perform ? PerformPromiseResolution(_promise_, _resolution_, ~deferred~).
+|   1. Return *undefined*.
 @@end
 
 @@patch alg @sec-samevaluenonnumber root:1..2
