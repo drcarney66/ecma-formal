@@ -1,6 +1,7 @@
 # Keyed item metadata linking spec/spectec items and spec.html slots
 
 alg @await base=10 close=8
+alg @sec-%abstractmodulesource% base=10 close=8
 alg @sec-%arrayiteratorprototype%.next base=12 close=10
 alg @sec-%asyncfromsynciteratorprototype%.next base=12 close=10
 alg @sec-%asyncfromsynciteratorprototype%.return base=12 close=10
@@ -249,6 +250,7 @@ alg @sec-createlistfromarraylike base=8 close=6
 alg @sec-createlistiteratorRecord base=8 close=6
 alg @sec-createmapiterator base=10 close=8
 alg @sec-createmappedargumentsobject base=10 close=8
+alg @sec-createnewmodulesourceidentity base=12 close=10
 alg @sec-createnonenumerabledatapropertyorthrow base=8 close=6
 alg @sec-createperiterationenvironment base=10 close=8
 alg @sec-createregexpstringiterator base=10 close=8
@@ -415,6 +417,7 @@ alg @sec-generatorresumeabrupt base=10 close=8
 alg @sec-generatorstart base=10 close=8
 alg @sec-generatorvalidate base=10 close=8
 alg @sec-generatoryield base=10 close=8
+alg @sec-get-%abstractmodulesource%.prototype-%symbol.tostringtag% base=10 close=8
 alg @sec-get-%typedarray%-%symbol.species% base=10 close=8
 alg @sec-get-%typedarray%.prototype-%symbol.tostringtag% base=10 close=8
 alg @sec-get-%typedarray%.prototype.buffer base=10 close=8
@@ -472,6 +475,7 @@ alg @sec-getmatchstring base=10 close=8
 alg @sec-getmethod base=8 close=6
 alg @sec-getmodifysetvalueinbuffer base=10 close=8
 alg @sec-getmodulenamespace base=10 close=8
+alg @sec-getmodulesourcerecord base=10 close=8
 alg @sec-getnamedtimezoneepochnanoseconds base=10 close=8
 alg @sec-getnamedtimezoneoffsetnanoseconds base=10 close=8
 alg @sec-getnewtarget base=8 close=6
@@ -711,6 +715,8 @@ alg @sec-module-namespace-exotic-objects-setprototypeof-v base=10 close=8
 alg @sec-moduledeclarationlinking base=14 close=12
 alg @sec-moduleevaluation base=14 close=12
 alg @sec-modulenamespacecreate base=10 close=8
+alg @sec-modulesource base=10 close=8
+alg @sec-modulesourcesequal base=12 close=10
 alg @sec-monthfromtime base=10 close=8
 alg @sec-newdeclarativeenvironment base=10 close=8
 alg @sec-newfunctionenvironment base=10 close=8
@@ -1705,6 +1711,8 @@ row @sec-if-statement-runtime-semantics-evaluation base=8 close=6
 row @sec-if-statement-runtime-semantics-evaluation#1 base=8 close=6
 row @sec-import-call-runtime-semantics-evaluation base=10 close=8
 row @sec-import-call-runtime-semantics-evaluation#1 base=10 close=8
+row @sec-import-call-runtime-semantics-evaluation#2 base=10 close=8
+row @sec-import-call-runtime-semantics-evaluation#3 base=10 close=8
 row @sec-initializers-in-forin-statement-heads base=8 close=6
 row @sec-initializers-in-forin-statement-heads#1 base=8 close=6
 row @sec-initializers-in-forin-statement-heads#2 base=8 close=6
@@ -2050,6 +2058,7 @@ row @sec-static-semantics-boundnames#48 base=8 close=6
 row @sec-static-semantics-boundnames#49 base=8 close=6
 row @sec-static-semantics-boundnames#50 base=8 close=6
 row @sec-static-semantics-boundnames#51 base=8 close=6
+row @sec-static-semantics-boundnames#52 base=8 close=6
 row @sec-static-semantics-capturinggroupname base=10 close=8
 row @sec-static-semantics-classelementevaluation base=8 close=6
 row @sec-static-semantics-classelementevaluation#1 base=8 close=6
@@ -2297,6 +2306,7 @@ row @sec-static-semantics-importentries#1 base=10 close=8
 row @sec-static-semantics-importentries#2 base=10 close=8
 row @sec-static-semantics-importentries#3 base=10 close=8
 row @sec-static-semantics-importentries#4 base=10 close=8
+row @sec-static-semantics-importentries#5 base=10 close=8
 row @sec-static-semantics-importentriesformodule base=10 close=8
 row @sec-static-semantics-importentriesformodule#1 base=10 close=8
 row @sec-static-semantics-importentriesformodule#2 base=10 close=8
@@ -2437,6 +2447,8 @@ row @sec-static-semantics-modulerequests#7 base=10 close=8
 row @sec-static-semantics-modulerequests#8 base=10 close=8
 row @sec-static-semantics-modulerequests#9 base=10 close=8
 row @sec-static-semantics-modulerequests#10 base=10 close=8
+row @sec-static-semantics-modulerequests#11 base=10 close=8
+row @sec-static-semantics-modulerequests#12 base=10 close=8
 row @sec-static-semantics-nonconstructorelements base=8 close=6
 row @sec-static-semantics-nonconstructorelements#1 base=8 close=6
 row @sec-static-semantics-privateboundidentifiers base=8 close=6

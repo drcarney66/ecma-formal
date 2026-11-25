@@ -1,0 +1,37 @@
+# Merge resolutions for tc39/proposal-esm-phase-imports (PR #65) onto ECMA-262.
+
+ignore sec-object-type 0
+keep-base sec-well-known-intrinsic-objects 3
+
+use-new sec-evaluate-import-call 0
+use-new sec-evaluate-import-call 2
+
+use-new sec-ContinueDynamicImport 0
+patch sec-ContinueDynamicImport 2 "1. Let _module_ be _moduleCompletion_.[[Value]]." ==> "1. Let _module_ be _moduleCompletion_.[[Value]].\n          1. If _phase_ is ~source~, then\n            1. Let _moduleSource_ be _module_.[[SourceRecord]].[[ModuleSource]].\n            1. If _moduleSource_ is ~empty~, then\n              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *SyntaxError* object »).\n            1. Else,\n              1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, « _moduleSource_ »).\n            1. Return ~unused~."
+
+ignore sec-modulerequest-record 1
+use-new sec-modulerequest-record 2
+
+use-new sec-ModuleRequestsEqual 0
+use-new sec-ModuleRequestsEqual 2
+
+ignore sec-abstract-module-records 1
+place sec-abstract-module-records 2 after 5
+ignore sec-abstract-module-records 3
+
+patch sec-parsemodule 0 "_hostDefined_: anything," ==> "_hostDefined_: anything,\n              optional _sourceIdentity_: a module source identity,"
+patch sec-parsemodule 2 "1. If _body_ is a List of errors, return _body_." ==> "1. If _body_ is a List of errors, return _body_.\n            1. If _sourceIdentity_ is not present, set _sourceIdentity_ to CreateNewModuleSourceIdentity()."
+patch sec-parsemodule 2 "1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_," ==> "1. Let _moduleSourceObject_ be OrdinaryObjectCreate(%ModuleSource.prototype%, « [[ModuleSourceRecord]] »).\n            1. Let _moduleSourceRecord_ be the Module Source Record { [[HostDefined]]: _hostDefined_, [[SourceText]]: _sourceText_, [[SourceIdentity]]: _sourceIdentity_, [[ModuleSourceKind]]: *\"ModuleSource\"*, [[ModuleSource]]: _moduleSourceObject_ }.\n            1. Set _moduleSourceObject_.[[ModuleSourceRecord]] to _moduleSourceRecord_.\n            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[SourceRecord]]: _moduleSourceRecord_,"
+
+patch sec-source-text-module-record-initialize-environment 2 "1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _namespace_).\n                1. Else," ==> "1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _namespace_).\n                1. Else if _importEntry_.[[ImportName]] is ~source~, then\n                  1. Let _moduleSourceObject_ be _importedModule_.[[SourceRecord]].[[ModuleSource]].\n                  1. If _moduleSourceObject_ is ~empty~, throw a *SyntaxError* exception.\n                  1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*).\n                  1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _moduleSourceObject_).\n                1. Else,"
+
+use-new sec-HostLoadImportedModule 4
+place sec-HostLoadImportedModule 6 after 6
+ignore sec-HostLoadImportedModule 7
+
+use-new sec-FinishLoadingImportedModule 2
+
+ignore sec-host-hooks-summary 9
+
+attr sec-get-%abstractmodulesource%.prototype-%symbol.tostringtag% type "built-in function"
+attr sec-modulesource type "built-in function"

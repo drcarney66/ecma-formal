@@ -407,6 +407,15 @@ sdo_row @sec-static-semantics-boundnames#39 BoundNames form alg {
 }
 
 sdo_row @sec-static-semantics-boundnames#40 BoundNames form alg {
+  prods [p"Syntactic 0 ImportDeclaration : `import` `source` ImportedBinding FromClause WithClause? `;`", p"Syntactic 1 ImportDeclaration : `import` `source` ImportedBinding FromClause WithClause? `;`"]
+  keys ["ImportDeclaration : `import` `source` ImportedBinding FromClause WithClause? `;`"]
+  vars []
+  steps {
+    return sdo BoundNames(child 5 |ImportedBinding|)
+  }
+}
+
+sdo_row @sec-static-semantics-boundnames#41 BoundNames form alg {
   prods [p"Syntactic 0 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`", p"Syntactic 1 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`"]
   keys ["ImportDeclaration : `import` ModuleSpecifier WithClause? `;`"]
   vars []
@@ -415,7 +424,7 @@ sdo_row @sec-static-semantics-boundnames#40 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#41 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#42 BoundNames form alg {
   prods [p"Syntactic - ImportClause : ImportedDefaultBinding `,` NameSpaceImport"]
   keys ["ImportClause : ImportedDefaultBinding `,` NameSpaceImport"]
   vars [names1, names2]
@@ -426,7 +435,7 @@ sdo_row @sec-static-semantics-boundnames#41 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#42 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#43 BoundNames form alg {
   prods [p"Syntactic - ImportClause : ImportedDefaultBinding `,` NamedImports"]
   keys ["ImportClause : ImportedDefaultBinding `,` NamedImports"]
   vars [names1, names2]
@@ -437,7 +446,7 @@ sdo_row @sec-static-semantics-boundnames#42 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#43 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#44 BoundNames form alg {
   prods [p"Syntactic - NamedImports : `{` `}`"]
   keys ["NamedImports : `{` `}`"]
   vars []
@@ -446,7 +455,7 @@ sdo_row @sec-static-semantics-boundnames#43 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#44 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#45 BoundNames form alg {
   prods [p"Syntactic - ImportsList : ImportsList `,` ImportSpecifier"]
   keys ["ImportsList : ImportsList `,` ImportSpecifier"]
   vars [names1, names2]
@@ -457,7 +466,7 @@ sdo_row @sec-static-semantics-boundnames#44 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#45 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#46 BoundNames form alg {
   prods [p"Syntactic - ImportSpecifier : ModuleExportName `as` ImportedBinding"]
   keys ["ImportSpecifier : ModuleExportName `as` ImportedBinding"]
   vars []
@@ -466,7 +475,7 @@ sdo_row @sec-static-semantics-boundnames#45 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#46 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#47 BoundNames form alg {
   prods [p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic 1 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`", p"Syntactic - ExportDeclaration : `export` NamedExports `;`"]
   keys ["\n        ExportDeclaration :\n          `export` ExportFromClause FromClause WithClause? `;`\n          `export` NamedExports `;`\n      "]
   vars []
@@ -475,7 +484,7 @@ sdo_row @sec-static-semantics-boundnames#46 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#47 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#48 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` VariableStatement[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` VariableStatement"]
   vars []
@@ -484,7 +493,7 @@ sdo_row @sec-static-semantics-boundnames#47 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#48 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#49 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` [lookahead ∉ { `using`, `await` }] Declaration[~Yield, +Await]"]
   keys ["ExportDeclaration : `export` Declaration"]
   vars []
@@ -493,7 +502,7 @@ sdo_row @sec-static-semantics-boundnames#48 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#49 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#50 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` HoistableDeclaration[~Yield, +Await, +Default]"]
   keys ["ExportDeclaration : `export` `default` HoistableDeclaration"]
   vars [declNames]
@@ -504,7 +513,7 @@ sdo_row @sec-static-semantics-boundnames#49 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#50 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#51 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` ClassDeclaration[~Yield, +Await, +Default]"]
   keys ["ExportDeclaration : `export` `default` ClassDeclaration"]
   vars [declNames]
@@ -515,7 +524,7 @@ sdo_row @sec-static-semantics-boundnames#50 BoundNames form alg {
   }
 }
 
-sdo_row @sec-static-semantics-boundnames#51 BoundNames form alg {
+sdo_row @sec-static-semantics-boundnames#52 BoundNames form alg {
   prods [p"Syntactic - ExportDeclaration : `export` `default` [lookahead ∉ { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`"]
   keys ["ExportDeclaration : `export` `default` AssignmentExpression `;`"]
   vars []

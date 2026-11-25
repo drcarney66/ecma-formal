@@ -347,6 +347,10 @@ clause @row-ischaracterclass-classcontrolletter
 clause @row-propname-coverinitializedname
 clause @row-vardeclarednames-if-function
 clause @row-varscopeddeclarations-if-function
+clause @sec-%abstractmodulesource% op "%AbstractModuleSource%"
+clause @sec-%abstractmodulesource%-intrinsic-object
+clause @sec-%abstractmodulesource%.prototype
+clause @sec-%abstractmodulesource%.prototype.constructor
 clause @sec-%arrayiteratorprototype%-%symbol.tostringtag%
 clause @sec-%arrayiteratorprototype%-object
 clause @sec-%arrayiteratorprototype%.next op "%ArrayIteratorPrototype%.next"
@@ -366,6 +370,7 @@ clause @sec-%iteratorhelperprototype%.return op "%IteratorHelperPrototype%.retur
 clause @sec-%mapiteratorprototype%-%symbol.tostringtag%
 clause @sec-%mapiteratorprototype%-object
 clause @sec-%mapiteratorprototype%.next op "%MapIteratorPrototype%.next"
+clause @sec-%modulesource%.prototype.constructor
 clause @sec-%regexpstringiteratorprototype%-%symbol.tostringtag%
 clause @sec-%regexpstringiteratorprototype%-object
 clause @sec-%regexpstringiteratorprototype%.next op "%RegExpStringIteratorPrototype%.next"
@@ -424,6 +429,8 @@ clause @sec-ContinueModuleLoading op "ContinueModuleLoading"
 clause @sec-EvaluateModuleSync op "EvaluateModuleSync"
 clause @sec-FinishLoadingImportedModule op "FinishLoadingImportedModule"
 clause @sec-GetImportedModule op "GetImportedModule"
+clause @sec-HostGetModuleSourceName
+clause @sec-HostGetModuleSourceRecord op "HostGetModuleSourceRecord"
 clause @sec-HostLoadImportedModule op "HostLoadImportedModule"
 clause @sec-IncrementModuleAsyncEvaluationCount op "IncrementModuleAsyncEvaluationCount"
 clause @sec-InnerModuleLinking op "InnerModuleLinking"
@@ -855,6 +862,7 @@ clause @sec-createlistfromarraylike op "CreateListFromArrayLike"
 clause @sec-createlistiteratorRecord op "CreateListIteratorRecord"
 clause @sec-createmapiterator op "CreateMapIterator"
 clause @sec-createmappedargumentsobject op "CreateMappedArgumentsObject"
+clause @sec-createnewmodulesourceidentity op "CreateNewModuleSourceIdentity"
 clause @sec-createnonenumerabledatapropertyorthrow op "CreateNonEnumerableDataPropertyOrThrow"
 clause @sec-createperiterationenvironment op "CreatePerIterationEnvironment"
 clause @sec-createregexpstringiterator op "CreateRegExpStringIterator"
@@ -1174,6 +1182,7 @@ clause @sec-generatorresumeabrupt op "GeneratorResumeAbrupt"
 clause @sec-generatorstart op "GeneratorStart"
 clause @sec-generatorvalidate op "GeneratorValidate"
 clause @sec-generatoryield op "GeneratorYield"
+clause @sec-get-%abstractmodulesource%.prototype-%symbol.tostringtag% op "get %AbstractModuleSource%.prototype [ %Symbol.toStringTag% ]"
 clause @sec-get-%typedarray%-%symbol.species% op "get %TypedArray% [ %Symbol.species% ]"
 clause @sec-get-%typedarray%.prototype-%symbol.tostringtag% op "get %TypedArray%.prototype [ %Symbol.toStringTag% ]"
 clause @sec-get-%typedarray%.prototype.buffer op "get %TypedArray%.prototype.buffer"
@@ -1231,6 +1240,7 @@ clause @sec-getmatchstring op "GetMatchString"
 clause @sec-getmethod op "GetMethod"
 clause @sec-getmodifysetvalueinbuffer op "GetModifySetValueInBuffer"
 clause @sec-getmodulenamespace op "GetModuleNamespace"
+clause @sec-getmodulesourcerecord op "GetModuleSourceRecord"
 clause @sec-getnamedtimezoneepochnanoseconds op "GetNamedTimeZoneEpochNanoseconds"
 clause @sec-getnamedtimezoneoffsetnanoseconds op "GetNamedTimeZoneOffsetNanoseconds"
 clause @sec-getnewtarget op "GetNewTarget"
@@ -1611,11 +1621,17 @@ clause @sec-module-namespace-objects
 clause @sec-module-semantics
 clause @sec-module-semantics-runtime-semantics-evaluation op "Evaluation"
 clause @sec-module-semantics-static-semantics-early-errors
+clause @sec-module-source-object
+clause @sec-module-source-objects
+clause @sec-module-source-record-invariants
 clause @sec-moduledeclarationlinking op "Link"
 clause @sec-moduleevaluation op "Evaluate"
 clause @sec-modulenamespacecreate op "ModuleNamespaceCreate"
 clause @sec-modulerequest-record
 clause @sec-modules
+clause @sec-modulesource op "ModuleSource"
+clause @sec-modulesource.prototype
+clause @sec-modulesourcesequal op "ModuleSourcesEqual"
 clause @sec-monthfromtime op "MonthFromTime"
 clause @sec-multiplicative-operators
 clause @sec-multiplicative-operators-runtime-semantics-evaluation op "Evaluation"
@@ -1969,6 +1985,7 @@ clause @sec-properties-of-for-in-iterator-instances
 clause @sec-properties-of-generator-instances
 clause @sec-properties-of-generator-prototype
 clause @sec-properties-of-map-instances
+clause @sec-properties-of-modulesource-instances
 clause @sec-properties-of-nativeerror-instances
 clause @sec-properties-of-nativeerror-instances/EvalError
 clause @sec-properties-of-nativeerror-instances/RangeError
@@ -1986,6 +2003,9 @@ clause @sec-properties-of-string-instances
 clause @sec-properties-of-string-instances-length
 clause @sec-properties-of-suppressederror-instances
 clause @sec-properties-of-symbol-instances
+clause @sec-properties-of-the-%abstractmodulesource%-intrinsic-object
+clause @sec-properties-of-the-%abstractmodulesource%-prototype-object
+clause @sec-properties-of-the-%modulesource%-prototype-object
 clause @sec-properties-of-the-%typedarray%-intrinsic-object
 clause @sec-properties-of-the-%typedarrayprototype%-object
 clause @sec-properties-of-the-aggregate-error-constructors
@@ -2018,6 +2038,7 @@ clause @sec-properties-of-the-generatorfunction-prototype-object
 clause @sec-properties-of-the-iterator-constructor
 clause @sec-properties-of-the-map-constructor
 clause @sec-properties-of-the-map-prototype-object
+clause @sec-properties-of-the-modulesource-constructor
 clause @sec-properties-of-the-nativeerror-constructors
 clause @sec-properties-of-the-nativeerror-constructors/EvalError
 clause @sec-properties-of-the-nativeerror-constructors/RangeError
@@ -2956,6 +2977,8 @@ clause @spec-type-8
 clause @spec-type-9
 clause @typedarray-species-create op "TypedArraySpeciesCreate"
 
+field [[%AbstractModuleSource%]]
+field [[%AbstractModuleSource.prototype%]]
 field [[%AggregateError%]]
 field [[%AggregateError.prototype%]]
 field [[%Array%]]
@@ -3028,6 +3051,8 @@ field [[%Map.prototype%]]
 field [[%Map.prototype.entries%]]
 field [[%MapIteratorPrototype%]]
 field [[%Math%]]
+field [[%ModuleSource%]]
+field [[%ModuleSource.prototype%]]
 field [[%Number%]]
 field [[%Number.prototype%]]
 field [[%Object%]]
@@ -3096,6 +3121,8 @@ field [[%isNaN%]]
 field [[%parseFloat%]]
 field [[%parseInt%]]
 field [[%unescape%]]
+field [[AbstractModuleSource]]
+field [[AbstractModuleSource.prototype]]
 field [[Action]]
 field [[AgentSignifier]]
 field [[AgentSynchronizesWith]]
@@ -3338,6 +3365,10 @@ field [[ModifyOp]]
 field [[Module]]
 field [[ModuleAsyncEvaluationCount]]
 field [[ModuleRequest]]
+field [[ModuleSource]]
+field [[ModuleSource.prototype]]
+field [[ModuleSourceKind]]
+field [[ModuleSourceRecord]]
 field [[MostRecentLeaveEvent]]
 field [[Multiline]]
 field [[Mutable]]
@@ -3371,6 +3402,7 @@ field [[ParseNode]]
 field [[Payload]]
 field [[PendingAsyncDependencies]]
 field [[PendingModulesCount]]
+field [[Phase]]
 field [[Prefix]]
 field [[PreventExtensions]]
 field [[PrimaryIdentifier]]
@@ -3429,6 +3461,8 @@ field [[Site]]
 field [[Size]]
 field [[SlotValues]]
 field [[Slots]]
+field [[SourceIdentity]]
+field [[SourceRecord]]
 field [[SourceText]]
 field [[Specifier]]
 field [[Stack]]
@@ -3563,6 +3597,7 @@ enum ~enumerate~
 enum ~evaluated~
 enum ~evaluating~
 enum ~evaluating-async~
+enum ~evaluation~
 enum ~executing~
 enum ~failure~
 enum ~field~
@@ -3612,6 +3647,7 @@ enum ~non-lexical-this~
 enum ~none~
 enum ~normal~
 enum ~not-a-number~
+enum ~not-a-source~
 enum ~not-found~
 enum ~not-started~
 enum ~number~
@@ -3633,6 +3669,7 @@ enum ~seq-cst~
 enum ~signed~
 enum ~simple~
 enum ~skip-holes~
+enum ~source~
 enum ~start~
 enum ~start+end~
 enum ~strict~
@@ -4044,6 +4081,7 @@ syntax MatcherContinuation defined { super [#"Abstract Closure"] record false te
 syntax #"Memory event" defined { super [] record true test none }
 syntax #"Module Environment Record" defined { super [#"Declarative Environment Record"] record true test none }
 syntax #"Module Record" defined { super [] record true test none }
+syntax #"Module Source Record" defined {}
 syntax #"ModuleRequest Record" defined { super [] record true test none }
 syntax NaN defined { super [Number] record false test alg @sort-NaN }
 syntax Null defined { super [] record false test alg @sort-Null }

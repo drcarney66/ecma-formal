@@ -1,0 +1,16 @@
+place sec-well-known-intrinsic-objects 1 after 0
+place sec-static-semantics-modulerequests 14 after 13
+place sec-static-semantics-modulerequests 15 after 13
+use-new sec-abstract-module-records 4
+ignore sec-InnerModuleLinking 0
+use-new sec-InnerModuleLinking 2
+use-new sec-innermoduleevaluation 2
+use-new sec-source-text-module-records 1
+place sec-static-semantics-importentries 10 after 9
+place sec-static-semantics-importentries 11 after 9
+place sec-properties-of-the-%abstractmodulesource%-prototype-object 1 after 0
+place sec-properties-of-the-%abstractmodulesource%-prototype-object 2 after 0
+use-new sec-module-source-object 2
+place sec-host-hooks-summary 2 after 9
+place sec-static-semantics-boundnames 4 after 82
+place sec-static-semantics-boundnames 5 after 82

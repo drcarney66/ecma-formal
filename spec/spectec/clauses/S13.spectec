@@ -118,19 +118,47 @@ def @sec-makesuperpropertyreference "MakeSuperPropertyReference" (kind ao params
   return record #"Reference Record" { [[Base]]: baseValue, [[ReferencedName]]: propertyKey, [[Strict]]: strict, [[ThisValue]]: actualThis }
 }
 
-def @sec-evaluate-import-call "EvaluateImportCall" (kind ao params [specifierExpr : #"Parse Node", optionsExpr : #"Parse Node" opt] -> completion<Promise> | #"abrupt completion") vars [specifierExpr, optionsExpr, referrer, specifierRef, specifier, optionsRef, options, promiseCapability, specifierString, attrs, attrsObj, entries, entry, key, value, #"rest", sorted, least, a, moduleRequest] {
+def @sec-evaluate-import-call "EvaluateImportCall" (kind ao params [specifierExpression : #"Parse Node", phase : val(~source~) | val(~evaluation~), optionsExpression : #"Parse Node" opt] -> completion<Promise> | #"throw completion") vars [specifierExpression, phase, optionsExpression, referrer, specifierRef, specifier, optionsRef, options, promiseCapability, attributesObj, moduleSourceRecord, moduleRequest, specifierString, attributes, entries, entry, key, value, #"rest", sorted, least, a] {
   let referrer = @sec-getactivescriptormodule()
   if referrer is val {null} -> set var referrer = $CurrentRealm()
-  let specifierRef = ? sdo Evaluation(specifierExpr)
+  let specifierRef = ? sdo Evaluation(specifierExpression)
   let specifier = ? @sec-getvalue(specifierRef)
-  if optionsExpr sat $Present() {
-    let optionsRef = ? sdo Evaluation(optionsExpr)
+  if optionsExpression sat $Present() {
+    let optionsRef = ? sdo Evaluation(optionsExpression)
     let options = ? @sec-getvalue(optionsRef)
   }
   else {
     let options = undefined
   }
   let promiseCapability = ! @sec-newpromisecapability(intrinsic [[Promise]])
+  let attributesObj = undefined
+  if specifier is ty {Object} {
+    let moduleSourceRecord = @sec-getmodulesourcerecord(specifier)
+    if moduleSourceRecord is not val {~not-a-source~} {
+      if options is not val {undefined} {
+        if options is not ty {Object} {
+          perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
+          return promiseCapability[[Promise]]
+        }
+        set var attributesObj = @sec-completion-ao(@sec-get-o-p(options, "with"))
+        block {
+          assert attributesObj is ty {#"Completion Record"}
+          if attributesObj is ty {#"abrupt completion"} {
+            perform ? @sec-call(promiseCapability[[Reject]], undefined, [attributesObj[[Value]]])
+            return promiseCapability[[Promise]]
+          }
+          set var attributesObj = ! attributesObj
+        }
+      }
+      if attributesObj is not val {undefined} {
+        perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
+        return promiseCapability[[Promise]]
+      }
+      let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: moduleSourceRecord, [[Phase]]: phase, [[Attributes]]: [] })
+      perform @sec-HostLoadImportedModule(referrer, moduleRequest, ~empty~, promiseCapability)
+      return promiseCapability[[Promise]]
+    }
+  }
   let specifierString = @sec-completion-ao(@sec-tostring(specifier))
   block {
     assert specifierString is ty {#"Completion Record"}
@@ -140,27 +168,27 @@ def @sec-evaluate-import-call "EvaluateImportCall" (kind ao params [specifierExp
     }
     set var specifierString = ! specifierString
   }
-  let attrs = $ListNew()
+  let attributes = $ListNew()
   if options is not val {undefined} {
     if options is not ty {Object} {
       perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
       return promiseCapability[[Promise]]
     }
-    let attrsObj = @sec-completion-ao(@sec-get-o-p(options, "with"))
+    set var attributesObj = @sec-completion-ao(@sec-get-o-p(options, "with"))
     block {
-      assert attrsObj is ty {#"Completion Record"}
-      if attrsObj is ty {#"abrupt completion"} {
-        perform ? @sec-call(promiseCapability[[Reject]], undefined, [attrsObj[[Value]]])
+      assert attributesObj is ty {#"Completion Record"}
+      if attributesObj is ty {#"abrupt completion"} {
+        perform ? @sec-call(promiseCapability[[Reject]], undefined, [attributesObj[[Value]]])
         return promiseCapability[[Promise]]
       }
-      set var attrsObj = ! attrsObj
+      set var attributesObj = ! attributesObj
     }
-    if attrsObj is not val {undefined} {
-      if attrsObj is not ty {Object} {
+    if attributesObj is not val {undefined} {
+      if attributesObj is not ty {Object} {
         perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
         return promiseCapability[[Promise]]
       }
-      let entries = @sec-completion-ao(@sec-enumerableownproperties(attrsObj, ~key+value~))
+      let entries = @sec-completion-ao(@sec-enumerableownproperties(attributesObj, ~key+value~))
       block {
         assert entries is ty {#"Completion Record"}
         if entries is ty {#"abrupt completion"} {
@@ -177,15 +205,15 @@ def @sec-evaluate-import-call "EvaluateImportCall" (kind ao params [specifierExp
             perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
             return promiseCapability[[Promise]]
           }
-          perform $Append(record #"ImportAttribute Record" { [[Key]]: key, [[Value]]: value }, ?attrs)
+          perform $Append(record #"ImportAttribute Record" { [[Key]]: key, [[Value]]: value }, ?attributes)
         }
       }
     }
-    if @sec-AllImportAttributesSupported(attrs) is val {false} {
+    if @sec-AllImportAttributesSupported(attributes) is val {false} {
       perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[TypeError]])])
       return promiseCapability[[Promise]]
     }
-    let #"rest" = $Copy(?attrs)
+    let #"rest" = $Copy(?attributes)
     let sorted = $ListNew()
     repeat_while #"rest" fails $IsEmpty() {
       let least = $ListElem(data choice 1, ?#"rest")
@@ -195,19 +223,29 @@ def @sec-evaluate-import-call "EvaluateImportCall" (kind ao params [specifierExp
       perform $Append(?least, ?sorted)
       perform $RemoveElem(?least, ?#"rest")
     }
-    set var attrs = sorted
+    set var attributes = sorted
   }
-  let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: specifierString, [[Attributes]]: attrs })
+  let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: specifierString, [[Phase]]: phase, [[Attributes]]: attributes })
   perform @sec-HostLoadImportedModule(referrer, moduleRequest, ~empty~, promiseCapability)
   return promiseCapability[[Promise]]
 }
 
-def @sec-ContinueDynamicImport "ContinueDynamicImport" (kind ao params [promiseCapability : #"PromiseCapability Record", moduleCompletion : completion<#"Module Record"> | #"throw completion"] -> val(~unused~)) vars [promiseCapability, moduleCompletion, module, loadPromise, rejectedClosure, reason, onRejected, linkAndEvaluateClosure, #"link", evaluatePromise, fulfilledClosure, namespace, onFulfilled, linkAndEvaluate] {
+def @sec-ContinueDynamicImport "ContinueDynamicImport" (kind ao params [promiseCapability : #"PromiseCapability Record", phase : val(~source~) | val(~evaluation~), moduleCompletion : completion<#"Module Record"> | #"throw completion"] -> val(~unused~)) vars [promiseCapability, phase, moduleCompletion, module, moduleSource, loadPromise, rejectedClosure, reason, onRejected, linkAndEvaluateClosure, #"link", evaluatePromise, fulfilledClosure, namespace, onFulfilled, linkAndEvaluate] {
   if moduleCompletion is ty {#"abrupt completion"} {
     perform ! @sec-call(promiseCapability[[Reject]], undefined, [moduleCompletion[[Value]]])
     return ~unused~
   }
   let module = moduleCompletion[[Value]]
+  if phase is val {~source~} {
+    let moduleSource = module[[SourceRecord]][[ModuleSource]]
+    if moduleSource is val {~empty~} {
+      perform ! @sec-call(promiseCapability[[Reject]], undefined, [@ph-new-error(err [[SyntaxError]])])
+    }
+    else {
+      perform ! @sec-call(promiseCapability[[Resolve]], undefined, [moduleSource])
+    }
+    return ~unused~
+  }
   let loadPromise = module.LoadRequestedModules()
   let rejectedClosure = closure 0
   let onRejected = @sec-createbuiltinfunction(rejectedClosure, 1, "", [])
@@ -2069,7 +2107,7 @@ sdo_row @sec-import-call-runtime-semantics-evaluation Evaluation form alg {
   keys ["ImportCall : `import` `(` AssignmentExpression `,`? `)`"]
   vars []
   steps {
-    return ? @sec-evaluate-import-call(child 5 |AssignmentExpression|)
+    return ? @sec-evaluate-import-call(child 5 |AssignmentExpression|, ~evaluation~)
   }
 }
 
@@ -2078,7 +2116,25 @@ sdo_row @sec-import-call-runtime-semantics-evaluation#1 Evaluation form alg {
   keys ["ImportCall : `import` `(` AssignmentExpression `,` AssignmentExpression `,`? `)`"]
   vars []
   steps {
-    return ? @sec-evaluate-import-call(child 0 |AssignmentExpression|, child 1 |AssignmentExpression|)
+    return ? @sec-evaluate-import-call(child 0 |AssignmentExpression|, ~evaluation~, child 1 |AssignmentExpression|)
+  }
+}
+
+sdo_row @sec-import-call-runtime-semantics-evaluation#2 Evaluation form alg {
+  prods [p"Syntactic 0 ImportCall : `import` `.` `source` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCall : `import` `.` `source` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
+  keys ["ImportCall : `import` `.` `source` `(` AssignmentExpression `,`? `)`"]
+  vars []
+  steps {
+    return ? @sec-evaluate-import-call(child 5 |AssignmentExpression|, ~source~)
+  }
+}
+
+sdo_row @sec-import-call-runtime-semantics-evaluation#3 Evaluation form alg {
+  prods [p"Syntactic 0 ImportCall : `import` `.` `source` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`", p"Syntactic 1 ImportCall : `import` `.` `source` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`"]
+  keys ["ImportCall : `import` `.` `source` `(` AssignmentExpression `,` AssignmentExpression `,`? `)`"]
+  vars []
+  steps {
+    return ? @sec-evaluate-import-call(child 0 |AssignmentExpression|, ~source~, child 1 |AssignmentExpression|)
   }
 }
 

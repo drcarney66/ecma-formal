@@ -192,6 +192,8 @@ rule syntactic |SuperCall| [Yield, Await] : {
 rule syntactic |ImportCall| [Yield, Await] : {
   | "import" "(" |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
   | "import" "(" |AssignmentExpression[+In, ?Yield, ?Await]| "," |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
+  | "import" "." "source" "(" |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
+  | "import" "." "source" "(" |AssignmentExpression[+In, ?Yield, ?Await]| "," |AssignmentExpression[+In, ?Yield, ?Await]| ","? ")"
 }
 
 rule syntactic |Arguments| [Yield, Await] : {
@@ -963,6 +965,7 @@ rule syntactic |ModuleExportName| [] : {
 
 rule syntactic |ImportDeclaration| [] : {
   | "import" |ImportClause| |FromClause| |WithClause|? ";"
+  | "import" "source" |ImportedBinding| |FromClause| |WithClause|? ";"
   | "import" |ModuleSpecifier| |WithClause|? ";"
 }
 

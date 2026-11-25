@@ -609,6 +609,7 @@ semi p"Syntactic - ClassElement : FieldDefinition[?Yield, ?Await] `;`" pos 1 ins
 semi p"Syntactic - ClassElement : `static` FieldDefinition[?Yield, ?Await] `;`" pos 2 insertable
 semi p"Syntactic - ClassElement : `;`" pos 0 insertable
 semi p"Syntactic 0 ImportDeclaration : `import` ImportClause FromClause WithClause? `;`" pos 4 insertable
+semi p"Syntactic 0 ImportDeclaration : `import` `source` ImportedBinding FromClause WithClause? `;`" pos 5 insertable
 semi p"Syntactic 0 ImportDeclaration : `import` ModuleSpecifier WithClause? `;`" pos 3 insertable
 semi p"Syntactic 0 ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`" pos 4 insertable
 semi p"Syntactic - ExportDeclaration : `export` NamedExports `;`" pos 2 insertable

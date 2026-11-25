@@ -112,3 +112,21 @@ def @sec-proxy.revocable "Proxy.revocable" (kind builtin params [target, handler
   }
 }
 
+def @sec-%abstractmodulesource% "%AbstractModuleSource%" (kind builtin params []) vars [#"this value", NewTarget] {
+  throw @ph-new-error([[TypeError]])
+}
+
+def @sec-get-%abstractmodulesource%.prototype-%symbol.tostringtag% "get %AbstractModuleSource%.prototype [ %Symbol.toStringTag% ]" (kind builtin params []) vars [#"this value", NewTarget, O, module, name] {
+  let O = this_value
+  if O is not ty {Object} -> return undefined
+  let module = @sec-getmodulesourcerecord(O)
+  if module is val {~not-a-source~} -> return undefined
+  let name = module[[ModuleSourceKind]]
+  assert name is ty {String}
+  return name
+}
+
+def @sec-modulesource "ModuleSource" (kind builtin params []) vars [#"this value", NewTarget] {
+  throw @ph-new-error([[TypeError]])
+}
+

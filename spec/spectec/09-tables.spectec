@@ -1895,11 +1895,11 @@ table t"table-importentry-record-fields" @sec-source-text-module-records#1 {
     row [
       cell { field [[ModuleRequest]] }
       cell { ty (#"ModuleRequest Record") }
-      cell { text "ModuleRequest Record representing the |ModuleSpecifier| and import attributes of the |ImportDeclaration|." }
+      cell { text "ModuleRequest Record representing the ModuleSpecifier and import attributes of the ImportDeclaration." }
     ]
     row [
       cell { field [[ImportName]] }
-      cell { ty (String | val(~namespace~)) }
+      cell { ty (String | val(~namespace~) | val(~source~)) }
       cell { text "The name under which the desired binding is exported by the module identified by [[ModuleRequest]]. The value ~namespace~ indicates that the import request is for the target module's namespace object." }
     ]
     row [
@@ -2973,16 +2973,55 @@ table t"table-module-record-fields" @sec-abstract-module-records#0 {
       cell { text "The Module Namespace Object (<emu-xref href=\"#sec-module-namespace-objects\"></emu-xref>) if one has been created for this module." }
     ]
     row [
+      cell { field [[SourceRecord]] }
+      cell { ty (#"Module Source Record") }
+      cell { text "The Module Source Record (<emu-xref href=\"#table-module-source-record-fields\"></emu-xref>) associated with this module." }
+    ]
+  ]
+}
+
+table t"table-module-source-record-fields" @sec-abstract-module-records#2 {
+  kind fields
+  thead true
+  schema ("Module Source Record", false)
+  vars []
+  rows [
+    row [
+      cell { text "Field Name" }
+      cell { text "Value Type" }
+      cell { text "Meaning" }
+    ]
+    row [
       cell { field [[HostDefined]] }
       cell { ty (pred(sat @spec-copy-6(data choice 0, undefined))) }
-      cell { text "Field reserved for use by host environments that need to associate additional information with a module." }
+      cell { text "Field reserved for use by host environments that need to associate additional information with a module. This typically contains the canonical module specifier (e.g. the resolved URL) and other host-specific metadata." }
+    ]
+    row [
+      cell { field [[SourceText]] }
+      cell { ty (#"ECMAScript source text" | val(~none~)) }
+      cell { text "The original <emu-xref href=\"#sec-source-text\">source text</emu-xref> for this module, if a Source Text Module Record." }
+    ]
+    row [
+      cell { field [[SourceIdentity]] }
+      cell { raw "a module source identity" }
+      cell { text "The module source identity of this module source (<emu-xref href=\"#sec-createnewmodulesourceidentity\"></emu-xref>)." }
+    ]
+    row [
+      cell { field [[ModuleSourceKind]] }
+      cell { ty (String) }
+      cell { text "A constant string identifying the kind of module source, to be used as the return value of the %Symbol.toStringTag% getter on %AbstractModuleSource%." }
+    ]
+    row [
+      cell { field [[ModuleSource]] }
+      cell { ty (Object | val(~empty~)) }
+      cell { text "The Module Source Object corresponding to this module source's source phase (<emu-xref href=\"#sec-module-source-objects\"></emu-xref>), or ~empty~ if it is not available for this module kind. When set, it must have a [[Prototype]] internal slot containing an object whose initial [[Prototype]] is %AbstractModuleSource%." }
     ]
   ]
 }
 
 table t"table-modulerequest-fields" @sec-modulerequest-record#0 {
   kind fields
-  thead false
+  thead true
   schema ("ModuleRequest Record", false)
   vars []
   rows [
@@ -2993,8 +3032,13 @@ table t"table-modulerequest-fields" @sec-modulerequest-record#0 {
     ]
     row [
       cell { field [[Specifier]] }
-      cell { ty (String) }
-      cell { text "The module specifier" }
+      cell { ty (String | #"Module Source Record") }
+      cell { text "The module specifier string, or a Module Source Record when importing a module source directly" }
+    ]
+    row [
+      cell { field [[Phase]] }
+      cell { ty (val(~source~) | val(~evaluation~)) }
+      cell { text "The target import phase" }
     ]
     row [
       cell { field [[Attributes]] }
@@ -4174,6 +4218,11 @@ table t"table-well-known-intrinsic-objects" @sec-well-known-intrinsic-objects#0 
       cell { text "Intrinsic Name" }
       cell { text "Global Name" }
       cell { text "ECMAScript Language Association" }
+    ]
+    row [
+      cell { expr (intrinsic [[AbstractModuleSource]]) }
+      cell { text "" }
+      cell { text "The `%AbstractModuleSource%` intrinsic object (<emu-xref href=\"#sec-%abstractmodulesource%-intrinsic-object\"></emu-xref>)" }
     ]
     row [
       cell { expr (intrinsic [[AggregateError]]) }

@@ -150,6 +150,7 @@ def hooks : List (String × Hook) := [
   ("sec-hostgetimportmetaproperties", fun _ _ => listOf []),
   ("sec-hostfinalizeimportmeta", fun _ _ => Run.pure unused),
   ("sec-hostgetsupportedimportattributes", fun _ _ => listOf [.str (Impl.strLit "type")]),
+  ("sec-hostgetmodulesourcerecord", fun _ _ => enumNamed N "not-a-source"),
   ("sec-hostresizearraybuffer", fun _ _ => normalEnum N "unhandled"),
   ("sec-hostgrowsharedarraybuffer", fun _ _ => normalEnum N "unhandled"),
   ("sec-localizedlistseparator", fun _ _ => Run.pure (.str (Impl.strLit ", "))),
@@ -360,19 +361,24 @@ def loaderBuiltin : Alg :=
   let fld (n : String) : FieldId := (N.field? n).getD 0
   let isEmpty (x : Slot) : Cond := .preds (.var x) (.isVal false false [.enum Known.eEmpty]) []
   let isStr (x : Slot) (v : String) : Cond := .preds (.var x) (.isVal false false [.val (.str v)]) []
+  let reqSpec : Expr := .field (.var 1) (fld "Specifier")
+  let specIsStr : Cond := .preds reqSpec (.isTy false false [.sort [] Known.sString]) []
   let errors : Cond := .preds (.var 5) (.isTy false false [.listOf (.sort [] ((N.sort? "error").getD 0))]) []
   let isNormal : Cond := .preds (.var 7) (.isTy false false [.sort [] Known.sNormalComp]) []
   let normalC (e : Expr) : Expr := .call (alg "sec-normalcompletion") [e]
   let throwC (e : Expr) : Expr := .call (alg "sec-throwcompletion") [e]
   let typeError : Expr := .call (.alg Known.algNewError) [.fieldName (fld "TypeError")]
-  let parse : Expr := .call (alg "sec-parsemodule") [.var 6, .call (.prim Known.pCurrentRealm) [], .enum Known.eEmpty]
+  let parseStr : Expr := .call (alg "sec-parsemodule") [.var 6, .call (.prim Known.pCurrentRealm) [], .var 4]
+  let parseRec : Expr := .call (alg "sec-parsemodule") [.var 6, .call (.prim Known.pCurrentRealm) [], .var 4, .field reqSpec (fld "SourceIdentity")]
   let param (x : Slot) : Param := { x, ty := none, optional := false, rest := false }
   { id := loaderAlg N
     name := "HostLoadImportedModule"
     header := { kind := .ao, params := [param 0, param 1, param 2, param 3], ret := none, recv := none }
     vars := #["referrer", "moduleRequest", "hostDefined", "payload", "specifier", "module", "sourceText", "result",
       "type", "attr"]
-    body := [.let_ 4 (.call (.alg ⟨keyClause, 0⟩) [.var 0, .field (.var 1) (fld "Specifier")]),
+    body := [.if_ specIsStr
+        (.inline (.let_ 4 (.call (.alg ⟨keyClause, 0⟩) [.var 0, reqSpec]))) []
+        (some (.mk none (.inline (.let_ 4 (.field reqSpec (fld "HostDefined")))))),
       .let_ 8 (.enum Known.eEmpty),
       .forEach 9 none (.field (.var 1) (fld "Attributes")) false (.block [
         .if_ (.preds (.field (.var 9) (fld "Key")) (.isVal false false [.val (.str "type")]) [])
@@ -387,7 +393,8 @@ def loaderBuiltin : Alg :=
                 [.var 4, .var 8, .field (.var 7) (fld "Value")]))) [] none]),
              .mk (some (.preds (.var 8) (.isVal true false [.enum Known.eEmpty]) [])) (.inline (.let_ 7 (throwC typeError)))]
             (some (.mk none (.block [
-            .set (.var 5) parse,
+            .if_ specIsStr (.inline (.set (.var 5) parseStr)) []
+              (some (.mk none (.inline (.set (.var 5) parseRec)))),
             .if_ errors (.inline (.let_ 7 (throwC (.index (.var 5) (.math .none (.num (.dec 0))))))) []
               (some (.mk none (.block [
                 .perform (.call (.alg ⟨storeClause, 0⟩) [.var 4, .var 8, .var 5]),
@@ -434,7 +441,7 @@ def firstBuiltins : List Alg :=
       throwFirst 2,
       .ret (some (.call (alg "sec-runtime-semantics-scriptevaluation") [.var 2]))],
     mk runModuleAlg "HostRunModule" 3 #["sourceText", "realm", "key", "m", "p", "l"] [
-      .let_ 3 (.call (alg "sec-parsemodule") [.var 0, .var 1, .enum Known.eEmpty]),
+      .let_ 3 (.call (alg "sec-parsemodule") [.var 0, .var 1, .var 2]),
       throwFirst 3,
       .perform (.call (.alg ⟨storeClause, 0⟩) [.var 2, .enum Known.eEmpty, .var 3]),
       .let_ 4 (.call (alg "sec-LoadRequestedModules") [.var 3]),

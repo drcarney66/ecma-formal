@@ -366,28 +366,31 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 @@patch alg @sec-InnerModuleLinking root:8..9
 @@spectec
 |   for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
-|     let requiredModule = @sec-GetImportedModule(module, request)
-|     set var index = ? @sec-InnerModuleLinking(requiredModule, stack, index)
-|     if requiredModule is ty {#"Cyclic Module Record"} {
-|       assert requiredModule[[Status]] is val {~linking~; ~linked~; ~evaluating-async~; ~evaluated~}
-|       assert expr @ph-iff(bool(requiredModule[[Status]] is val {~linking~}), bool(stack sat $Contains(?requiredModule)))
-|       if requiredModule[[Status]] is val {~linking~} {
-|         set field module[[DFSAncestorIndex]] = $min(module[[DFSAncestorIndex]], requiredModule[[DFSAncestorIndex]])
+|     if request[[Phase]] is val {~evaluation~} {
+|       let requiredModule = @sec-GetImportedModule(module, request)
+|       set var index = ? @sec-InnerModuleLinking(requiredModule, stack, index)
+|       if requiredModule is ty {#"Cyclic Module Record"} {
+|         assert requiredModule[[Status]] is val {~linking~; ~linked~; ~evaluating-async~; ~evaluated~}
+|         assert expr @ph-iff(bool(requiredModule[[Status]] is val {~linking~}), bool(stack sat $Contains(?requiredModule)))
+|         if requiredModule[[Status]] is val {~linking~} {
+|           set field module[[DFSAncestorIndex]] = $min(module[[DFSAncestorIndex]], requiredModule[[DFSAncestorIndex]])
+|         }
 |       }
 |     }
 |   }
 @@html
 | 1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
-|   1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
-|   1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
-|   1. If _requiredModule_ is a Cyclic Module Record, then
-|     1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
-|     1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
-|     1. If _requiredModule_.[[Status]] is ~linking~, then
-|       1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+|   1. If _request_.[[Phase]] is ~evaluation~, then
+|     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
+|     1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
+|     1. If _requiredModule_ is a Cyclic Module Record, then
+|       1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
+|       1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
+|       1. If _requiredModule_.[[Status]] is ~linking~, then
+|         1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
 @@end
 
-@@patch alg @sec-InnerModuleLoading root/4:then:1..2
+@@patch alg @sec-InnerModuleLoading root/5:then:1..2
 @@spectec
 |     for_each loaded : #"Cyclic Module Record" in state[[Visited]] {
 |       if loaded[[Status]] is val {~new~} -> set field loaded[[Status]] = ~unlinked~
@@ -397,22 +400,22 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. If _loaded_.[[Status]] is ~new~, set _loaded_.[[Status]] to ~unlinked~.
 @@end
 
-@@patch alg @sec-InnerModuleLoading root:1..2
+@@patch alg @sec-InnerModuleLoading root:2..3
 @@spectec
-|   if module is ty {#"Cyclic Module Record"} and module[[Status]] is val {~new~} and state[[Visited]] fails $Contains(?module) {
+|   if phase is val {~evaluation~} and module is ty {#"Cyclic Module Record"} and module[[Status]] is val {~new~} and state[[Visited]] fails $Contains(?module) {
 |     perform $Append(?module, state[[Visited]])
 |     let requestedModulesCount = $ListLen(module[[RequestedModules]])
 |     set field state[[PendingModulesCount]] = state[[PendingModulesCount]] + requestedModulesCount
 |     for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
 |       if @sec-AllImportAttributesSupported(request[[Attributes]]) is val {false} {
 |         let error = @sec-throwcompletion(@ph-new-error(err [[SyntaxError]]))
-|         perform @sec-ContinueModuleLoading(state, error)
+|         perform @sec-ContinueModuleLoading(state, request[[Phase]], error)
 |       }
 |       else {
 |         let values = @ph-contains-such-binds(data choice 0, data sort #"LoadedModuleRequest Record", ?#"record", closure 0, module[[LoadedModules]])
 |         if $ListLen(values) == 1 or $ListLen(values) != 0 and expr $""() {
 |           let #"record" = values[0]
-|           perform @sec-InnerModuleLoading(state, #"record"[[Module]])
+|           perform @sec-InnerModuleLoading(state, #"record"[[Module]], request[[Phase]])
 |         }
 |         else {
 |           perform @sec-HostLoadImportedModule(module, request, state[[HostDefined]], state)
@@ -423,30 +426,30 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     }
 |   }
 @@html
-| 1. If _module_ is a Cyclic Module Record, _module_.[[Status]] is ~new~, and _state_.[[Visited]] does not contain _module_, then
+| 1. If _phase_ is ~evaluation~, _module_ is a Cyclic Module Record, _module_.[[Status]] is ~new~, and _state_.[[Visited]] does not contain _module_, then
 |   1. Append _module_ to _state_.[[Visited]].
 |   1. Let _requestedModulesCount_ be the number of elements in _module_.[[RequestedModules]].
 |   1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
 |   1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
 |     1. If AllImportAttributesSupported(_request_.[[Attributes]]) is *false*, then
 |       1. Let _error_ be ThrowCompletion(a newly created *SyntaxError* object).
-|       1. Perform ContinueModuleLoading(_state_, _error_).
+|       1. Perform ContinueModuleLoading(_state_, _request_.[[Phase]], _error_).
 |     1. Else if _module_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _request_) is *true*, then
-|       1. Perform InnerModuleLoading(_state_, _record_.[[Module]]).
+|       1. Perform InnerModuleLoading(_state_, _record_.[[Module]], _request_.[[Phase]]).
 |     1. Else,
 |       1. Perform HostLoadImportedModule(_module_, _request_, _state_.[[HostDefined]], _state_).
 |       1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
 |     1. If _state_.[[IsLoading]] is *false*, return ~unused~.
 @@end
 
-@@patch alg @sec-ModuleRequestsEqual root:6..7
+@@patch alg @sec-ModuleRequestsEqual root:7..8
 @@spectec
-|   for_each xAttr : #"ImportAttribute Record" in xAttrs {
-|     if yAttrs sat @ph-not-contains-such(data choice 1, data sort #"ImportAttribute Record", ?yAttr, closure 0) -> return false
+|   for_each l : #"ImportAttribute Record" in leftAttrs {
+|     if rightAttrs sat @ph-not-contains-such(data choice 1, data sort #"ImportAttribute Record", ?r, closure 0) -> return false
 |   }
 @@html
-| 1. For each ImportAttribute Record _xAttr_ of _xAttrs_, do
-|   1. If _yAttrs_ does not contain an ImportAttribute Record _yAttr_ such that _xAttr_.[[Key]] is _yAttr_.[[Key]] and _xAttr_.[[Value]] is _yAttr_.[[Value]], return *false*.
+| 1. For each ImportAttribute Record _l_ of _leftAttrs_, do
+|   1. If _rightAttrs_ does not contain an ImportAttribute Record _r_ such that _l_.[[Key]] is _r_.[[Key]] and _l_.[[Value]] is _r_.[[Value]], return *false*.
 @@end
 
 @@patch alg @sec-ParseJSON root:0..1
@@ -2079,6 +2082,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Perform ! DefinePropertyOrThrow(_obj_, *"callee"*, PropertyDescriptor { [[Value]]: _func_, [[Writable]]: *true*, [[Enumerable]]: *false*, [[Configurable]]: *true* }).
 @@end
 
+@@patch alg @sec-createnewmodulesourceidentity root:0..1
+@@spectec
+|   return @ph-new-symbol-whose-description(undefined)
+@@html
+| 1. Return a new module source identity.
+@@end
+
 @@patch alg @sec-createnonenumerabledatapropertyorthrow root:0..1
 @@spectec
 |   assert #"obj" is ty {pred(sat @spec-copy-2(data choice 1, data choice 0))}
@@ -2814,14 +2824,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If AllPrivateIdentifiersValid of _body_ with argument _privateIdentifiers_ is *false*, throw a *SyntaxError* exception.
 @@end
 
-@@patch alg @sec-evaluate-import-call root/4:then:0..1
-@@spectec
-|     let optionsRef = ? sdo Evaluation(optionsExpr)
-@@html
-|   1. Let _optionsRef_ be ? Evaluation of _optionsExpr_.
-@@end
-
-@@patch alg @sec-evaluate-import-call root/9:then/3:then:2..3
+@@patch alg @sec-evaluate-import-call root/11:then/3:then:2..3
 @@spectec
 |       block {
 |         assert entries is ty {#"Completion Record"}
@@ -2835,23 +2838,23 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. IfAbruptRejectPromise(_entries_, _promiseCapability_).
 @@end
 
-@@patch alg @sec-evaluate-import-call root/9:then:2..3
+@@patch alg @sec-evaluate-import-call root/11:then:2..3
 @@spectec
 |     block {
-|       assert attrsObj is ty {#"Completion Record"}
-|       if attrsObj is ty {#"abrupt completion"} {
-|         perform ? @sec-call(promiseCapability[[Reject]], undefined, [attrsObj[[Value]]])
+|       assert attributesObj is ty {#"Completion Record"}
+|       if attributesObj is ty {#"abrupt completion"} {
+|         perform ? @sec-call(promiseCapability[[Reject]], undefined, [attributesObj[[Value]]])
 |         return promiseCapability[[Promise]]
 |       }
-|       set var attrsObj = ! attrsObj
+|       set var attributesObj = ! attributesObj
 |     }
 @@html
-|   1. IfAbruptRejectPromise(_attrsObj_, _promiseCapability_).
+|   1. IfAbruptRejectPromise(_attributesObj_, _promiseCapability_).
 @@end
 
-@@patch alg @sec-evaluate-import-call root/9:then:5..9
+@@patch alg @sec-evaluate-import-call root/11:then:5..9
 @@spectec
-|     let #"rest" = $Copy(?attrs)
+|     let #"rest" = $Copy(?attributes)
 |     let sorted = $ListNew()
 |     repeat_while #"rest" fails $IsEmpty() {
 |       let least = $ListElem(data choice 1, ?#"rest")
@@ -2861,26 +2864,40 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       perform $Append(?least, ?sorted)
 |       perform $RemoveElem(?least, ?#"rest")
 |     }
-|     set var attrs = sorted
+|     set var attributes = sorted
 @@html
-|   1. Sort _attrs_ according to the lexicographic order of their [[Key]] field, treating the value of each such field as a sequence of UTF-16 code unit values. NOTE: This sorting is observable only in that hosts are prohibited from changing behaviour based on the order in which attributes are enumerated.
+|   1. Sort _attributes_ according to the lexicographic order of their [[Key]] fields, treating the value of each such field as a sequence of UTF-16 code unit values. NOTE: This sorting is observable only in that hosts are prohibited from changing behaviour based on the order in which attributes are enumerated.
 @@end
 
-@@patch alg @sec-evaluate-import-call root:11..12
+@@patch alg @sec-evaluate-import-call root/4:then:0..1
 @@spectec
-|   let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: specifierString, [[Attributes]]: attrs })
+|     let optionsRef = ? sdo Evaluation(optionsExpression)
 @@html
-| 1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attrs_ }.
+|   1. Let _optionsRef_ be ? Evaluation of _optionsExpression_.
 @@end
 
-@@patch alg @sec-evaluate-import-call root:2..3
+@@patch alg @sec-evaluate-import-call root/7:then/1:then/0:then:2..3
 @@spectec
-|   let specifierRef = ? sdo Evaluation(specifierExpr)
+|         block {
+|           assert attributesObj is ty {#"Completion Record"}
+|           if attributesObj is ty {#"abrupt completion"} {
+|             perform ? @sec-call(promiseCapability[[Reject]], undefined, [attributesObj[[Value]]])
+|             return promiseCapability[[Promise]]
+|           }
+|           set var attributesObj = ! attributesObj
+|         }
 @@html
-| 1. Let _specifierRef_ be ? Evaluation of _specifierExpr_.
+|       1. IfAbruptRejectPromise(_attributesObj_, _promiseCapability_).
 @@end
 
-@@patch alg @sec-evaluate-import-call root:8..9
+@@patch alg @sec-evaluate-import-call root/7:then/1:then:2..3
+@@spectec
+|       let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: moduleSourceRecord, [[Phase]]: phase, [[Attributes]]: [] })
+@@html
+|     1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _moduleSourceRecord_, [[Phase]]: _phase_, [[Attributes]]: « » }.
+@@end
+
+@@patch alg @sec-evaluate-import-call root:10..11
 @@spectec
 |   block {
 |     assert specifierString is ty {#"Completion Record"}
@@ -2892,6 +2909,20 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   }
 @@html
 | 1. IfAbruptRejectPromise(_specifierString_, _promiseCapability_).
+@@end
+
+@@patch alg @sec-evaluate-import-call root:13..14
+@@spectec
+|   let moduleRequest = @ph-new-record(record #"ModuleRequest Record" { [[Specifier]]: specifierString, [[Phase]]: phase, [[Attributes]]: attributes })
+@@html
+| 1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Phase]]: _phase_, [[Attributes]]: _attributes_ }.
+@@end
+
+@@patch alg @sec-evaluate-import-call root:2..3
+@@spectec
+|   let specifierRef = ? sdo Evaluation(specifierExpression)
+@@html
+| 1. Let _specifierRef_ be ? Evaluation of _specifierExpression_.
 @@end
 
 @@patch alg @sec-evaluate-property-access-with-expression-key root:0..1
@@ -4321,41 +4352,44 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 @@patch alg @sec-innermoduleevaluation root:10..11
 @@spectec
 |   for_each request : #"ModuleRequest Record" in module[[RequestedModules]] {
-|     let requiredModule = @sec-GetImportedModule(module, request)
-|     set var index = ? @sec-innermoduleevaluation(requiredModule, stack, index)
-|     if requiredModule is ty {#"Cyclic Module Record"} {
-|       assert requiredModule[[Status]] is val {~evaluating~; ~evaluating-async~; ~evaluated~}
-|       assert expr @ph-iff(bool(requiredModule[[Status]] is val {~evaluating~}), bool(stack sat $Contains(?requiredModule)))
-|       if requiredModule[[Status]] is val {~evaluating~} {
-|         set field module[[DFSAncestorIndex]] = $min(module[[DFSAncestorIndex]], requiredModule[[DFSAncestorIndex]])
-|       }
-|       else {
-|         set var requiredModule = requiredModule[[CycleRoot]]
-|         assert requiredModule[[Status]] is val {~evaluating-async~; ~evaluated~}
-|         if requiredModule[[EvaluationError]] is not val {~empty~} -> return ? requiredModule[[EvaluationError]]
-|       }
-|       if requiredModule[[AsyncEvaluationOrder]] is ty {integer} {
-|         set field module[[PendingAsyncDependencies]] = module[[PendingAsyncDependencies]] + 1
-|         perform $Append(?module, requiredModule[[AsyncParentModules]])
+|     if request[[Phase]] is val {~evaluation~} {
+|       let requiredModule = @sec-GetImportedModule(module, request)
+|       set var index = ? @sec-innermoduleevaluation(requiredModule, stack, index)
+|       if requiredModule is ty {#"Cyclic Module Record"} {
+|         assert requiredModule[[Status]] is val {~evaluating~; ~evaluating-async~; ~evaluated~}
+|         assert expr @ph-iff(bool(requiredModule[[Status]] is val {~evaluating~}), bool(stack sat $Contains(?requiredModule)))
+|         if requiredModule[[Status]] is val {~evaluating~} {
+|           set field module[[DFSAncestorIndex]] = $min(module[[DFSAncestorIndex]], requiredModule[[DFSAncestorIndex]])
+|         }
+|         else {
+|           set var requiredModule = requiredModule[[CycleRoot]]
+|           assert requiredModule[[Status]] is val {~evaluating-async~; ~evaluated~}
+|           if requiredModule[[EvaluationError]] is not val {~empty~} -> return ? requiredModule[[EvaluationError]]
+|         }
+|         if requiredModule[[AsyncEvaluationOrder]] is ty {integer} {
+|           set field module[[PendingAsyncDependencies]] = module[[PendingAsyncDependencies]] + 1
+|           perform $Append(?module, requiredModule[[AsyncParentModules]])
+|         }
 |       }
 |     }
 |   }
 @@html
 | 1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
-|   1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
-|   1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
-|   1. If _requiredModule_ is a Cyclic Module Record, then
-|     1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
-|     1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
-|     1. If _requiredModule_.[[Status]] is ~evaluating~, then
-|       1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
-|     1. Else,
-|       1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
-|       1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
-|       1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
-|     1. If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then
-|       1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
-|       1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
+|   1. If _request_.[[Phase]] is ~evaluation~, then
+|     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
+|     1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
+|     1. If _requiredModule_ is a Cyclic Module Record, then
+|       1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
+|       1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
+|       1. If _requiredModule_.[[Status]] is ~evaluating~, then
+|         1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+|       1. Else,
+|         1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
+|         1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
+|         1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
+|       1. If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then
+|         1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
+|         1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
 @@end
 
 @@patch alg @sec-internalizejsonproperty root/2:then/0:then:1..2
@@ -6764,14 +6798,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If _body_ is a List of errors, return _body_.
 @@end
 
-@@patch alg @sec-parsemodule root:11..12
-@@spectec
-|   return record #"Source Text Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: async, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: [], [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: hostDefined, [[ECMAScriptCode]]: body, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: requestedModules, [[LoadedModules]]: [], [[ImportEntries]]: importEntries, [[LocalExportEntries]]: localExportEntries, [[IndirectExportEntries]]: indirectExportEntries, [[StarExportEntries]]: starExportEntries, [[DFSAncestorIndex]]: ~empty~ }
-@@html
-| 1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, [[DFSAncestorIndex]]: ~empty~ }.
-@@end
-
-@@patch alg @sec-parsemodule root:9..10
+@@patch alg @sec-parsemodule root:10..11
 @@spectec
 |   for_each exportEntry : #"ExportEntry Record" in exportEntries {
 |     if exportEntry[[ModuleRequest]] is val {null} {
@@ -6806,6 +6833,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Append _exportEntry_ to _starExportEntries_.
 |   1. Else,
 |     1. Append _exportEntry_ to _indirectExportEntries_.
+@@end
+
+@@patch alg @sec-parsemodule root:15..16
+@@spectec
+|   return record #"Source Text Module Record" { [[Realm]]: #"realm", [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: async, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: [], [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[SourceRecord]]: moduleSourceRecord, [[ECMAScriptCode]]: body, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: requestedModules, [[LoadedModules]]: [], [[ImportEntries]]: importEntries, [[LocalExportEntries]]: localExportEntries, [[IndirectExportEntries]]: indirectExportEntries, [[StarExportEntries]]: starExportEntries, [[DFSAncestorIndex]]: ~empty~ }
+@@html
+| 1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[SourceRecord]]: _moduleSourceRecord_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, [[DFSAncestorIndex]]: ~empty~ }.
 @@end
 
 @@patch alg @sec-parsepattern root:0..1
@@ -8717,6 +8751,12 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |       perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
 |       perform ! envRecord.InitializeBinding(importEntry[[LocalName]], namespace)
 |     }
+|     else_if importEntry[[ImportName]] is val {~source~} {
+|       let moduleSourceObject = importedModule[[SourceRecord]][[ModuleSource]]
+|       if moduleSourceObject is val {~empty~} -> throw @ph-new-error([[SyntaxError]])
+|       perform ! envRecord.CreateImmutableBinding(importEntry[[LocalName]], true)
+|       perform ! envRecord.InitializeBinding(importEntry[[LocalName]], moduleSourceObject)
+|     }
 |     else {
 |       assert importEntry[[ImportName]] is ty {String}
 |       let resolution = importedModule.ResolveExport(importEntry[[ImportName]])
@@ -8739,6 +8779,11 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Let _namespace_ be GetModuleNamespace(_importedModule_).
 |     1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*).
 |     1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _namespace_).
+|   1. Else if _importEntry_.[[ImportName]] is ~source~, then
+|     1. Let _moduleSourceObject_ be _importedModule_.[[SourceRecord]].[[ModuleSource]].
+|     1. If _moduleSourceObject_ is ~empty~, throw a *SyntaxError* exception.
+|     1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*).
+|     1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _moduleSourceObject_).
 |   1. Else,
 |     1. Assert: _importEntry_.[[ImportName]] is a String.
 |     1. Let _resolution_ be _importedModule_.ResolveExport(_importEntry_.[[ImportName]]).
@@ -14447,13 +14492,6 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Return « *"\*default\*"* ».
 @@end
 
-@@patch row @sec-static-semantics-boundnames#49 root:1..2
-@@spectec
-|     if declNames fails $Contains("*default*") -> perform $Append("*default*", ?declNames)
-@@html
-| 1. If _declNames_ does not include the element *"\*default\*"*, append *"\*default\*"* to _declNames_.
-@@end
-
 @@patch row @sec-static-semantics-boundnames#50 root:1..2
 @@spectec
 |     if declNames fails $Contains("*default*") -> perform $Append("*default*", ?declNames)
@@ -14461,7 +14499,14 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If _declNames_ does not include the element *"\*default\*"*, append *"\*default\*"* to _declNames_.
 @@end
 
-@@patch row @sec-static-semantics-boundnames#51 root:0..1
+@@patch row @sec-static-semantics-boundnames#51 root:1..2
+@@spectec
+|     if declNames fails $Contains("*default*") -> perform $Append("*default*", ?declNames)
+@@html
+| 1. If _declNames_ does not include the element *"\*default\*"*, append *"\*default\*"* to _declNames_.
+@@end
+
+@@patch row @sec-static-semantics-boundnames#52 root:0..1
 @@spectec
 |     return ["*default*"]
 @@html
@@ -15773,56 +15818,72 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     }
 @@html
 | 1. For each ModuleRequest Record _moduleRequest_ of _additionalRequests_, do
-|   1. If _requests_ does not contain a ModuleRequest Record _otherModuleRequest_ such that ModuleRequestsEqual(_moduleRequest_, _otherModuleRequest_) is *true*, then
+|   1. If _requests_ does not contain a ModuleRequest Record _otherModuleRequest_ such that ModuleRequestsEqual(_moduleRequest_, _otherModuleRequest_) is *true* and _moduleRequest_.[[Phase]] is _otherModuleRequest_.[[Phase]], then
 |     1. Append _moduleRequest_ to _requests_.
 @@end
 
 @@patch row @sec-static-semantics-modulerequests#4 root:1..2
 @@spectec
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Phase]]: ~evaluation~, [[Attributes]]: [] })
 @@html
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « » }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~evaluation~, [[Attributes]]: « » }.
 @@end
 
 @@patch row @sec-static-semantics-modulerequests#5 root:1..3
 @@spectec
 |     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Phase]]: ~evaluation~, [[Attributes]]: attrs })
 @@html
 | 1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_ }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~evaluation~, [[Attributes]]: _attrs_ }.
 @@end
 
 @@patch row @sec-static-semantics-modulerequests#6 root:1..2
 @@spectec
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Phase]]: ~source~, [[Attributes]]: [] })
 @@html
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « » }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~source~, [[Attributes]]: « » }.
 @@end
 
 @@patch row @sec-static-semantics-modulerequests#7 root:1..3
 @@spectec
 |     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Phase]]: ~source~, [[Attributes]]: attrs })
 @@html
 | 1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_ }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~source~, [[Attributes]]: _attrs_ }.
 @@end
 
 @@patch row @sec-static-semantics-modulerequests#8 root:1..2
 @@spectec
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: [] })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Phase]]: ~evaluation~, [[Attributes]]: [] })
 @@html
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « » }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~evaluation~, [[Attributes]]: « » }.
 @@end
 
 @@patch row @sec-static-semantics-modulerequests#9 root:1..3
 @@spectec
 |     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
-|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Attributes]]: attrs })
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Phase]]: ~evaluation~, [[Attributes]]: attrs })
 @@html
 | 1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
-| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_ }.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~evaluation~, [[Attributes]]: _attrs_ }.
+@@end
+
+@@patch row @sec-static-semantics-modulerequests#10 root:1..2
+@@spectec
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Phase]]: ~evaluation~, [[Attributes]]: [] })
+@@html
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~evaluation~, [[Attributes]]: « » }.
+@@end
+
+@@patch row @sec-static-semantics-modulerequests#11 root:1..3
+@@spectec
+|     let attrs = sdo WithClauseToAttributes(child 5 |WithClause|)
+|     return $ListOf1(record #"ModuleRequest Record" { [[Specifier]]: specifier, [[Phase]]: ~evaluation~, [[Attributes]]: attrs })
+@@html
+| 1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
+| 1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~evaluation~, [[Attributes]]: _attrs_ }.
 @@end
 
 @@patch row @sec-static-semantics-privateboundidentifiers#1 root:0..1
