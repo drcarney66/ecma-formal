@@ -3,7 +3,7 @@
 
     python3 scripts/law_quotes.py [--show ID] [-v]
 
-Every docstring of a field under lean/Ecma/Host/Laws/ and of lean/Ecma/Model/Laws.lean is read as the
+Every docstring of a field under lean/Ecma/Gen/ProseHostLaws_*.lean and of lean/Ecma/Gen/ProseModelLaws.lean is read as the
 convention has it: the id of a clause (or table, note, …) of the text's spec.html (`scripts/spec_text.py`) with a step or
 paragraph, the governing sentence quoted in double quotes, then `Reading:` and one line; or, where no sentence
 governs, `No sentence:` and why. A quotation may be several, each on lines of its own, and one may begin with
@@ -24,7 +24,7 @@ import spec_text
 ROOT = Path(__file__).resolve().parent.parent
 # the spec.html read: the text (scripts/spec_text.py) unless a caller sets another
 SPEC: Path | None = None
-FILES = sorted((ROOT / "lean/Ecma/Host/Laws").glob("*.lean")) + [ROOT / "lean/Ecma/Model/Laws.lean"]
+FILES = sorted((ROOT / "lean/Ecma/Gen").glob("ProseHostLaws_*.lean")) + [ROOT / "lean/Ecma/Gen/ProseModelLaws.lean"]
 
 ID = r"(?:sec|table|figure|note|prod|eqn|step)-[A-Za-z0-9_.%-]+"
 

@@ -27,15 +27,15 @@ laws only: no theorems, tactics, or `partial` or `unsafe` definitions (`scripts/
 |---|---|
 | `Ecma/Grammar` | the grammar notation (§5.1.6) as data (`SpecTec` printer included), and what it derives (`Derives`, `StrictCode`); `Grammar/Gen`: `spec/spectec/`'s grammars |
 | `Ecma/Notation` | the algorithm notation (§5.2) as data: steps, expressions, conditions, tables, early-error rules, the realm table; `Print.SpecTec` prints it back as SpecTec DSL |
-| `Ecma/Gen` | `spec/spectec/`'s declarations, algorithms, tables, early errors and realm in that notation |
-| `Ecma/Model.lean`, `Ecma/Model` | the abstract model: a carrier and operations for each sort of the specification, and the laws a model must satisfy |
+| `Ecma/Gen` | `spec/spectec/`'s declarations, algorithms, tables, early errors, realm (`S*`, `Decls`, `Tables`, `Realm`), and English-prose model, relations, and laws (`spec/spectec/prose/*.spectec` → `Prose*`) |
+| `Ecma/Model.lean`, `Ecma/Model` | the abstract model (`Gen/ProseModel`, `Gen/ProseModelLaws`, `Gen/ProseNodeRel` re-exported): a carrier and operations for each sort of the specification, and the laws a model must satisfy |
 | `Ecma/State.lean` | values, the store, the state, and a leaf operation's result |
 | `Ecma/Prims`, `Ecma/Ops` | the notation's primitives; parsing, leaf operations, early errors, table lookups |
 | `Ecma/Program.lean` | the program as lookups: algorithms, SDO rows, sorts, tables, early-error rules |
 | `Ecma/Lower` | the program the machine runs: macros expanded, phrases as calls, choices made constructive, then written as linear code (`Lin`) |
 | `Ecma/Machine` | the step machine, generic in the model: its code (`Code`), configurations (`Config`), one transition (`Step`), and what a run is (`Run`: `Step`, `Steps`, `Runs`) |
-| `Ecma/Host.lean`, `Ecma/Host` | the host: what the specification leaves to it, its laws, and the strategies the laws are stated over |
-| `Ecma/MemoryModel` | §29's relations and the validity of a candidate execution |
+| `Ecma/Host.lean`, `Ecma/Host` | the host (`Gen/ProseHost*` re-exported): what the specification leaves to it, its laws, and the strategies the laws are stated over |
+| `Ecma/MemoryModel` | §29's relations and the validity of a candidate execution (`Gen/ProseMemory*` re-exported) |
 | `Ecma/Spec` | the whole program as data, the built-ins by name, the starting realm |
 | `Ecma/Unicode` | ECMA-262's choice of Unicode properties (`Gen/Properties`) |
 
@@ -56,8 +56,8 @@ Outside `lean/`:
 | Where | What |
 |---|---|
 | `external/ecma262`, `external/test262` | the pinned specification and its tests (submodules) |
-| `spec/spectec`, `spec/ids` | the formal ECMA SpecTec specification (`*.spectec`) and its kept id tables (`*-ids.txt`) |
-| `crates/spectec` | the SpecTec parser, roundtripper, prose renderer, and Lean generator (`lean/Ecma/Gen`, `lean/Ecma/Grammar/Gen`) |
+| `spec/spectec`, `spec/ids` | the formal ECMA SpecTec specification (`grammars/`, `clauses/*.spectec`, and English-prose `prose/*.spectec`) and its kept id tables (`*-ids.txt`) |
+| `crates/spectec` | the SpecTec parser, roundtripper, prose renderer, and Lean generator (`lean/Ecma/Gen`, including `Prose*.lean`, and `lean/Ecma/Grammar/Gen`) |
 | `crates/spectec-html`, `spec/html` | bidirectional SpecTec ↔ `spec.html` algorithm & grammar printer/checker and name-keyed prose/layout metadata |
 | `crates/test262-runner` | test262 on `ecma-run` (`scripts/test262.py` drives it) |
 | `scripts` | the generators' drivers, the wasm and site builds, tests |

@@ -1,0 +1,57 @@
+spec_module ProseHostLaws_Locale
+import Ecma.Host.Laws.Basic
+
+---! # The laws of the locale-sensitive methods
+---!
+---! The list separator, locale case mapping and comparison, and the locale forms of Number and Date.
+
+namespace Ecma {
+  --- The value is an object with a [[DateValue]] internal slot.
+  def dateValued {M : Model} (s : State(M)) : Val(M) -> Bool
+    | .obj(a) => slotOf(s, a, Known.fDateValue).isSome
+    | _ => false
+  end
+
+  var {M : Model}
+
+  --- `n` is a negative Number.
+  def negNum (n : M.Num) : Prop := M.numView(n) = .negInf \/ exists m, M.numView(n) = .finite(m) /\ M.lt(m, M.ofNat(0)) = true
+
+  --- `n` is a positive Number.
+  def posNum (n : M.Num) : Prop := M.numView(n) = .posInf \/ exists m, M.numView(n) = .finite(m) /\ M.lt(M.ofNat(0), m) = true
+
+  --- `n` is +0𝔽 or -0𝔽.
+  def zeroNum (n : M.Num) : Prop := M.numView(n) = .posZero \/ M.numView(n) = .negZero
+
+  --- Two Strings are canonically equivalent according to the Unicode Standard: their code points have
+  --- the same canonical decomposition (NFD, UAX #15).
+  def canonEquiv (a b : M.Str) : Prop := M.normalize(.NFD, Prims.Strings.strPoints(a)) = M.normalize(.NFD, Prims.Strings.strPoints(b))
+
+  --- The laws of the locale-sensitive methods.
+  laws Host.LocaleLaws (H : Host(M)) {
+    --- sec-localizedlistseparator:
+    --- "LocalizedListSeparator ( ): a String"
+    --- "It returns an implementation-defined String appropriate for use as a list separator in the host environment's current locale (such as ", ")."
+    --- Reading: LocalizedListSeparator answers a String, the state as it was.
+    law listSeparator : forall c xs s r s', Gen.clauses[c]? = some("sec-localizedlistseparator") -> H.answers(c, xs, s, r, s') -> s' = s /\ exists x, r = .str(x);
+    --- sec-string.prototype.tolocalelowercase (and sec-string.prototype.tolocaleuppercase):
+    --- "It works exactly the same as toLowerCase except that it is intended to yield a locale-sensitive result corresponding with conventions of the host environment's current locale."
+    --- Reading: LocaleLowercase and LocaleUppercase answer a new List of code points.
+    law localeCase : forall q l s r s', q = Known.pLocaleUppercase \/ q = Known.pLocaleLowercase -> H.choice(q, [l], s) = .ok(r, s') -> (exists (cps : List(M.Math)), (forall c mem cps, Prims.Strings.isPoint(c) = true) /\ listOf(cps.map(.math), s) = .ok(r, s'));
+    --- sec-string.prototype.localecompare:
+    --- "this method, when considered as a method of two arguments, is required to be a consistent comparator defining a total ordering on the set of all Strings"
+    --- "This method is also required to recognize and honour canonical equivalence according to the Unicode Standard"
+    --- Reading: by one total preorder of all Strings, LocaleCompare answers a negative, positive or zero Number, never
+    --- *NaN*, and +0𝔽 for canonically equivalent Strings, the state as it was.
+    law localeCompare : exists (le : M.Str -> M.Str -> Prop), (forall a b, le(a, b) \/ le(b, a)) /\ (forall a b c, le(a, b) -> le(b, c) -> le(a, c)) /\ forall a b s r s', H.choice(Known.pLocaleCompare, [.str(a), .str(b)], s) = .ok(r, s') -> s' = s /\ exists n, r = .num(n) /\ (not le(b, a) -> negNum(n)) /\ (not le(a, b) -> posNum(n)) /\ (le(a, b) -> le(b, a) -> zeroNum(n)) /\ (canonEquiv(a, b) -> M.numView(n) = .posZero);
+    --- sec-number.prototype.tolocalestring:
+    --- "This method is implementation-defined, and it is permissible, but not encouraged, for it to return the same thing as toString."
+    --- Reading: LocaleNumberString answers a String, or ~empty~ for toString's, the state as it was.
+    law localeNumberString : H.asks(Known.pLocaleNumberString, fun _ _ r => r = .enum(Known.eEmpty) \/ exists x, r = .str(x));
+    --- sec-date.prototype.tolocaledatestring (and toLocaleString, toLocaleTimeString):
+    --- "This method returns a String value. The contents of the String are implementation-defined"
+    --- Reading: LocaleDateString answers a String, or ~empty~ for the form without a locale, for an object with a
+    --- [[DateValue]] slot, and a String or ~throw~ (a *TypeError*) for any other value, the state as it was.
+    law localeDateString : forall k v s r s', H.choice(Known.pLocaleDateString, [k, v], s) = .ok(r, s') -> s' = s /\ (dateValued(s, v) = true -> r = .enum(Known.eEmpty) \/ exists x, r = .str(x)) /\ (dateValued(s, v) = false -> r = .enum(Known.eThrow) \/ exists x, r = .str(x));
+  }
+}

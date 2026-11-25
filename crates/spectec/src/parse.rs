@@ -2276,6 +2276,9 @@ impl Parser {
 }
 
 pub fn parse_str(rel_path: &str, src: &str) -> Result<SpecFile, String> {
+    if crate::spec_model::parse::starts_with_spec_module(rel_path, src) {
+        return crate::spec_model::parse::parse_spec_file(rel_path, src);
+    }
     let lex_out = lex(src).map_err(|e| format!("{rel_path}: {e}"))?;
     Parser::new(lex_out.tokens)
         .parse_file(rel_path.to_string(), lex_out.header_comment)

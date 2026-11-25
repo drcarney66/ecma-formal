@@ -1162,6 +1162,9 @@ fn item_group_tag(item: &TopItem) -> usize {
 }
 
 pub fn print_file(f: &SpecFile) -> String {
+    if let [TopItem::SpecModule(m)] = f.items.as_slice() {
+        return crate::spec_model::print::print_spec_module(&f.header_comment, m);
+    }
     let mut out = String::new();
     if let Some(c) = &f.header_comment {
         out.push_str(c);
@@ -1214,6 +1217,7 @@ pub fn print_file(f: &SpecFile) -> String {
             TopItem::ClauseProps(cp) => out.push_str(&print_clause_props(cp)),
             TopItem::Def(a) => out.push_str(&print_alg_def(a)),
             TopItem::SdoRow(r) => out.push_str(&print_sdo_row(r)),
+            TopItem::SpecModule(m) => out.push_str(&crate::spec_model::print::print_spec_module(&None, m)),
         }
     }
     out

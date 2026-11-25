@@ -1,0 +1,55 @@
+spec_module ProseHostLaws_Optional
+import Ecma.Host.Laws.Basic
+
+---! # The laws of the optional features
+---!
+---! Whether the host is a web browser and the normative optional features it supports, the debugger statement, and a built-in function's source text.
+
+namespace Ecma {
+  --- An ASCII IdentifierName.
+  def identLike : List(Char) -> Bool
+    | c :: cs => (c.isAlpha || c == '_' || c == '$') && cs.all(fun c => c.isAlphanum || c == '_' || c == '$')
+    | [] => false
+  end
+
+  --- A built-in's property key as its name: an IdentifierName or `[Symbol.` IdentifierName `]`.
+  def keyLike (cs : List(Char)) : Bool := identLike(cs) || "[Symbol.".toList.isPrefixOf(cs) && cs.getLast? == some(']') && identLike(cs.drop(8).dropLast)
+
+  --- A name of these forms is matched by |NativeFunctionAccessor?| |PropertyName|: a key, or `get ` or
+  --- `set ` and a key.
+  def nameLike (cs : List(Char)) : Bool := keyLike(cs) || ("get ".toList.isPrefixOf(cs) || "set ".toList.isPrefixOf(cs)) && keyLike(cs.drop(4))
+
+  --- A name NativeFunctionSource's law admits: empty, or of those forms.
+  def nativeName (cs : List(Char)) : Bool := cs.isEmpty || nameLike(cs)
+
+  --- `function NAME() { [native code] }`.
+  def nativeWrap (cs : List(Char)) : String := "function " ++ String.ofList(cs) ++ "() { [native code] }"
+
+  var {M : Model}
+
+  --- The laws of the optional features.
+  laws Host.OptionalLaws (H : Host(M)) {
+    --- sec-additional-ecmascript-features-for-web-browsers:
+    --- "The ECMAScript language syntax and semantics defined in this annex are required when the ECMAScript host is a web browser."
+    --- Reading: WebBrowser, whether the host is a web browser or otherwise supports the feature its arguments name, is
+    --- one Boolean for the same arguments in every state, the state as it was.
+    law webBrowser : forall vs, exists b, forall s, H.choice(Known.pWebBrowser, vs, s) = .ok(.bool(b), s);
+    --- sec-additional-ecmascript-features-for-web-browsers:
+    --- "Web browsers are required to support all such features."
+    --- Reading: where the host is a web browser, it is a web browser or otherwise supports every clause _c_.
+    law webBrowserSupports : forall c s, H.choice(Known.pWebBrowser, [.choice(1), .absent], s) = .ok(.bool(true), s) -> H.choice(Known.pWebBrowser, [.choice(0), .clause(c)], s) = .ok(.bool(true), s);
+    --- sec-debugger-statement-runtime-semantics-evaluation step 1:
+    --- "If an implementation-defined debugging facility is available and enabled, then"
+    --- Reading: DebuggerEnabled answers a Boolean, the state as it was.
+    law debuggerEnabled : H.asks(Known.pDebuggerEnabled, fun _ _ r => exists b, r = .bool(b));
+    --- sec-debugger-statement-runtime-semantics-evaluation step 1.a:
+    --- "Perform an implementation-defined debugging action."
+    --- Reading: DebuggerAction answers ~unused~; what it may change is `invariantsKept`'s.
+    law debuggerAction : forall vs s r s', H.choice(Known.pDebuggerAction, vs, s) = .ok(r, s') -> r = .enum(Known.eUnused);
+    --- sec-function.prototype.tostring step 3:
+    --- "The representation must have the syntax of a NativeFunction. Additionally, if func has an [[InitialName]] internal slot and func.[[InitialName]] is a String, the portion of the returned String that would be matched by NativeFunctionAccessor? PropertyName must be func.[[InitialName]]."
+    --- Reading: NativeFunctionSource answers `function `, a name `nativeName` admits and `() { [native code] }`, the
+    --- name _func_.[[InitialName]] where that is a String, the state as it was.
+    law nativeFunctionSource : forall f s r s', H.choice(Known.pNativeFunctionSource, [f], s) = .ok(r, s') -> s' = s /\ exists cs, nativeName(cs) = true /\ r = .str(M.strLit(nativeWrap(cs))) /\ forall a sl ps y, f = .obj(a) -> M.heapGet(s.heap, a) = some(.object(sl, ps)) -> M.recGet(sl, Known.fInitialName) = some(.str(y)) -> M.strEq(y, M.strLit(String.ofList(cs))) = true;
+  }
+}

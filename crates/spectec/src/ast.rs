@@ -778,6 +778,7 @@ pub enum TopItem {
     ClauseProps(ClauseProps),
     Def(AlgDef),
     SdoRow(SdoRowDef),
+    SpecModule(crate::spec_model::ast::SpecModule),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

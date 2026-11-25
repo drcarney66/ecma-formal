@@ -501,25 +501,23 @@ class Site:
 
 
 def host_sections() -> list[Section]:
-    topics = re.findall(r"H\.(\w+)", (LEAN / "Ecma/Host/Laws.lean").read_text().split("extends", 1)[1])
+    topics = re.findall(r"H\.(\w+)", (LEAN / "Ecma/Gen/ProseHostLaws.lean").read_text().split("extends", 1)[1])
     files = {}
-    for f in sorted((LEAN / "Ecma/Host/Laws").glob("*.lean")):
+    for f in sorted((LEAN / "Ecma/Gen").glob("ProseHostLaws_*.lean")):
         m = re.search(r"structure Host\.(\w+)", f.read_text())
         if m:
-            files[m.group(1)] = f"lean/Ecma/Host/Laws/{f.name}"
-    secs = [Section("host", "The host", ["lean/Ecma/Host.lean"]),
-            Section("laws", "The laws of a host", ["lean/Ecma/Host/Laws.lean"])]
+            files[m.group(1)] = f"lean/Ecma/Gen/{f.name}"
+    secs = [Section("host", "The host", ["lean/Ecma/Gen/ProseHost.lean"]),
+            Section("laws", "The laws of a host", ["lean/Ecma/Gen/ProseHostLaws.lean"])]
     for t in topics:
         if t not in files:
-            raise SystemExit(f"Host.WF extends {t}, which no file of lean/Ecma/Host/Laws defines")
+            raise SystemExit(f"Host.WF extends {t}, which no ProseHostLaws_* file defines")
         title = re.search(r"/-!\s*#\s*([^\n]+)", (ROOT / files[t]).read_text()).group(1).strip()
         secs.append(Section(t, title[0].upper() + title[1:], [files[t]]))
-    used = {f for s in secs for f in s.files}
-    rest = [f"lean/Ecma/Host/Laws/{f.name}" for f in sorted((LEAN / "Ecma/Host/Laws").glob("*.lean"))
-            if f"lean/Ecma/Host/Laws/{f.name}" not in used]
-    for f in rest:  # Basic.lean (what the laws are stated over), DateFormat.lean (definitions only)
+    rest = ["lean/Ecma/Gen/ProseHostBasic.lean", "lean/Ecma/Gen/ProseDateFormat.lean"]
+    for f in rest:  # Basic (what the laws are stated over), DateFormat (definitions only)
         title = re.search(r"/-!\s*#\s*([^\n]+)", (ROOT / f).read_text()).group(1).strip()
-        secs.append(Section(Path(f).stem.lower(), title[0].upper() + title[1:], [f]))
+        secs.append(Section(Path(f).stem.removeprefix("ProseHost").removeprefix("Prose").lower(), title[0].upper() + title[1:], [f]))
     return secs
 
 
@@ -853,12 +851,12 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     sub = {x.split()[3]: x.split()[2] for x in tree}
     facts = {"rev": rev, "dirty": dirty, "ecma262": sub["external/ecma262"], "test262": sub["external/test262"]}
 
-    model_secs = [Section("model", "The model", ["lean/Ecma/Model.lean"]),
-                  Section("laws", "The laws of a model", ["lean/Ecma/Model/Laws.lean"])]
+    model_secs = [Section("model", "The model", ["lean/Ecma/Gen/ProseModel.lean"]),
+                  Section("laws", "The laws of a model", ["lean/Ecma/Gen/ProseModelLaws.lean"])]
     host_secs = host_sections()
     impl_secs = [Section("implements", "What it is to implement the specification", ["lean/Ecma/Implements.lean"]),
                  Section("runs", "Runs", ["lean/Ecma/Machine/Run.lean"])]
-    parse_secs = [Section("nodes", "Parse Nodes, derivations and their laws", ["lean/Ecma/Model/NodeRel.lean"])]
+    parse_secs = [Section("nodes", "Parse Nodes, derivations and their laws", ["lean/Ecma/Gen/ProseNodeRel.lean"])]
     for page, secs in (("model.html", model_secs), ("host.html", host_secs), ("implements.html", impl_secs),
                        ("parser-laws.html", parse_secs)):
         site.register(page, secs)

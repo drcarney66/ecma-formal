@@ -237,4 +237,59 @@ def @sec-test \"Test\" (kind ao params [x : Number] -> Boolean) vars [x] {
         assert!(p.contains("Test(_x_ (Number))"));
         assert!(p.contains("If _x_ = 1, Return *true*."));
     }
+
+    #[test]
+    fn roundtrip_and_emit_spec_model() {
+        let sample = "\
+spec_module ProseDemo
+import Ecma.Model
+
+namespace Ecma {
+  ---! # Demo prose model
+  ---!
+  ---! Summary line.
+
+  section {
+    var (M : Model)
+
+    syntax NumView (Math : Type) {
+      | nan
+      --- finite value
+      | finite (m : Math)
+    }
+    deriving [Repr, BEq]
+
+    relation Plus {E : Type} (r : Rel(E)) : Rel(E) {
+      rule step {a b : E} : Plus(r, a, b) :- r(a, b);
+      rule trans {a b c : E} : Plus(r, a, c) :- Plus(r, a, b), Plus(r, b, c);
+    }
+
+    laws DemoLaws {
+      --- sec-demo:
+      --- \"Quoted sentence.\"
+      --- Reading: equality holds.
+      law eq_comm : forall {α} (x y : M.Seq(α)), x = y <=> y = x;
+    }
+
+    def check (xs : List(Nat)) : Nat := match xs with
+      | [] => 0
+      | x :: _ => x + 1
+    end
+  }
+}
+";
+        let sf = parse_str("prose/00-demo.spectec", sample).unwrap();
+        let reprinted = print_file(&sf);
+        assert_eq!(reprinted, sample);
+        let TopItem::SpecModule(m) = &sf.items[0] else {
+            panic!("expected SpecModule");
+        };
+        let lean = spectec::spec_model::emit_lean::emit_spec_module(m);
+        assert!(lean.starts_with("module\n\npublic import Ecma.Model\n\n@[expose] public section\n"));
+        assert!(lean.contains("inductive NumView (Math : Type) where"));
+        assert!(lean.contains("inductive Plus {E : Type} (r : Rel E) : Rel E where"));
+        assert!(lean.contains("structure DemoLaws : Prop where"));
+        assert!(lean.contains("eq_comm : ∀ {α} (x y : M.Seq α), x = y ↔ y = x"));
+        assert!(!lean.contains("\n--"));
+    }
 }

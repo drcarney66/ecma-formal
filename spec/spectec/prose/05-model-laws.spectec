@@ -1,0 +1,799 @@
+spec_module ProseModelLaws
+import Ecma.Model
+
+---! # The laws of an Ecma model
+---!
+---! What the specification assumes of its sorts, stated over a `Model`'s
+---! operations. Indices, lengths and code units are mathematical values that are
+---! non-negative integers, written `M.ofNat k`. The laws about Parse Nodes are
+---! `Model.NodeLaws`, `Model.ParseLaws`, `Model.CoverLaws` and `Model.ParentLaws`.
+
+namespace Ecma {
+  --- §11.1.1 UTF16EncodeCodePoint: the code units of a code point.
+  def utf16Units (c : Nat) : List(Nat) := if c < 0x10000 then [c] else [0xD800 + (c - 0x10000) / 0x400, 0xDC00 + (c - 0x10000) % 0x400]
+
+  --- The code units of a text: its code points encoded in UTF-16.
+  def strLitUnits (t : String) : List(Nat) := t.toList.flatMap(fun c => utf16Units(c.toNat))
+
+  ---!  The Number type (§6.1.6.1): its value set, the Number value for a real, and IEEE 754-2019's
+  ---! operations on it. 
+
+  section Number {
+    var (M : Model)
+
+    --- |x|
+    def Model.abs (x : M.Math) : M.Math := if M.lt(x, M.ofNat(0)) then M.neg(x) else x
+
+    --- ±m × 2^k / 2^1074: a finite non-zero Number value's magnitude form, with e = k − 1074.
+    def Model.form (neg : Bool) (m k : Nat) : M.Math := let v := M.div(M.mul(M.ofNat(m), M.pow(M.ofNat(2), M.ofNat(k))), M.pow(M.ofNat(2), M.ofNat(1074))) in if neg then M.neg(v) else v
+
+    --- §6.1.6.1: the finite non-zero Number values, normalized (2^52 ≤ m < 2^53, −1074 ≤ e ≤ 971) or
+    --- denormalized (0 < m < 2^52, e = −1074); `even` when the significand m is even.
+    def Model.finiteNum (x : M.Math) (even : Bool) : Prop := exists (neg : Bool) (m k : Nat), x = M.form(neg, m, k) /\ m % 2 == 0 = even /\ (2 ^ 52 <= m /\ m < 2 ^ 53 /\ k <= 2045 \/ 0 < m /\ m < 2 ^ 52 /\ k = 0)
+
+    --- The candidates of "the Number value for x": the finite values without −0, i.e. the non-zero
+    --- ones and 0, and ±2^1024 (even); with the parity of each significand.
+    def Model.candidate (y : M.Math) (even : Bool) : Prop := M.finiteNum(y, even) \/ y = M.ofNat(0) /\ even = true \/ (y = M.pow(M.ofNat(2), M.ofNat(1024)) \/ y = M.neg(M.pow(M.ofNat(2), M.ofNat(1024)))) /\ even = true
+
+    --- y is "the member of the set closest in value to x", with ties to the even significand.
+    def Model.nearest (x y : M.Math) : Prop := exists ev, M.candidate(y, ev) /\ forall z ez, M.candidate(z, ez) -> M.lt(M.abs(M.sub(x, z)), M.abs(M.sub(x, y))) = false /\ (M.abs(M.sub(x, z)) = M.abs(M.sub(x, y)) -> z <> y -> ev = true)
+
+    --- The view of the Number value for a non-zero chosen member y of x: ±∞ for ±2^1024, ±0 by x's
+    --- sign for 0, else y.
+    def Model.viewFor (x y : M.Math) : NumView(M.Math) := if M.eq(y, M.pow(M.ofNat(2), M.ofNat(1024))) then .posInf else if M.eq(y, M.neg(M.pow(M.ofNat(2), M.ofNat(1024)))) then .negInf else if M.eq(y, M.ofNat(0)) then if M.lt(x, M.ofNat(0)) then .negZero else .posZero else .finite(y)
+
+    --- The real value of a finite Number view (both zeros are 0).
+    def Model.realOf : NumView(M.Math) -> Option(M.Math)
+      | .finite(m) => some(m)
+      | .posZero => some(M.ofNat(0))
+      | .negZero => some(M.ofNat(0))
+      | _ => none
+    end
+
+    --- Number::toString step 5's condition on n, k and s for x at radix r: k ≥ 1, n and s integers,
+    --- r^(k-1) ≤ s < r^k, and 𝔽(s × r^(n-k)) is x.
+    def Model.digitsOf (x : M.Num) (r n : M.Math) (k : Nat) (s : M.Math) : Prop := 1 <= k /\ M.isInt(n) = true /\ M.isInt(s) = true /\ M.lt(s, M.pow(r, M.ofNat(k - 1))) = false /\ M.lt(s, M.pow(r, M.ofNat(k))) = true /\ M.numOf(M.mul(s, M.pow(r, M.sub(n, M.ofNat(k))))) = x
+  }
+
+  --- The laws of the Number type: its value set (§6.1.6.1), "the Number value for x" as
+  --- roundTiesToEven, and IEEE 754-2019's operations.
+  laws Model.NumLaws (M : Model) {
+    --- sec-ecmascript-language-types-number-type:
+    --- "representing the double-precision floating point IEEE 754-2019 binary64 values"
+    --- Reading: a view determines the Number value.
+    law numView_inj : forall a b, M.numView(a) = M.numView(b) -> a = b;
+    --- sec-ecmascript-language-types-number-type:
+    --- "non-zero finite Numbers are partitioned into two groups"
+    --- Reading: every finite view is a normalized or denormalized value (`finiteNum`).
+    law numView_finite : forall a m, M.numView(a) = .finite(m) -> (exists ev, M.finiteNum(m, ev));
+    --- sec-ecmascript-language-types-number-type:
+    --- "non-zero finite Numbers are partitioned into two groups"
+    --- Reading: every normalized or denormalized value is a Number value.
+    law finiteNum_view : forall m ev, M.finiteNum(m, ev) -> (exists a, M.numView(a) = .finite(m));
+    --- sec-ecmascript-language-types-number-type:
+    --- "Choose the member of this set that is closest in value to x. If two values of the set are equally close, then the one with an even significand is chosen"
+    --- Reading: 𝔽(x) is the nearest candidate, ties to even, ±2^1024 read as ±∞ and 0 as a zero of x's sign.
+    law numOf_nearest : forall x, exists y, M.nearest(x, y) /\ M.numView(M.numOf(x)) = M.viewFor(x, y);
+    --- sec-numeric-types-number-unaryMinus:
+    --- "Return the negation of number; that is, compute a Number with the same magnitude but opposite sign."
+    --- Reading: negation flips the sign; NaN stays.
+    law numNeg_view : forall a, M.numView(M.numNeg(a)) = match M.numView(a) with
+        | .nan => .nan
+        | .posInf => .negInf
+        | .negInf => .posInf
+        | .posZero => .negZero
+        | .negZero => .posZero
+        | .finite(m) => .finite(M.neg(m))
+      end;
+    --- sec-numeric-types-number-add:
+    --- "If x is -0𝔽 and y is -0𝔽, return -0𝔽. 1. Return 𝔽(ℝ(x) + ℝ(y))."
+    --- Reading: Number::add's steps, a row each.
+    law numAdd_view : forall a b, M.numView(M.numAdd(a, b)) = match M.numView(a), M.numView(b) with
+        | .nan, _ => .nan
+        | _, .nan => .nan
+        | .posInf, .negInf => .nan
+        | .negInf, .posInf => .nan
+        | .posInf, _ => .posInf
+        | .negInf, _ => .negInf
+        | _, .posInf => .posInf
+        | _, .negInf => .negInf
+        | .negZero, .negZero => .negZero
+        | va, vb => match M.realOf(va), M.realOf(vb) with
+            | some(x), some(y) => M.numView(M.numOf(M.add(x, y)))
+            | _, _ => .nan
+          end
+      end;
+    --- sec-numeric-types-number-subtract:
+    --- "Return Number::add(x, Number::unaryMinus(y))."
+    --- Reading: subtraction is addition of the negation.
+    law numSub_def : forall a b, M.numSub(a, b) = M.numAdd(a, M.numNeg(b));
+    --- sec-numeric-types-number-multiply:
+    --- "Return 𝔽(ℝ(x) × ℝ(y))."
+    --- Reading: Number::multiply's steps, a row each.
+    law numMul_view : forall a b, M.numView(M.numMul(a, b)) = match M.numView(a), M.numView(b) with
+        | .nan, _ => .nan
+        | _, .nan => .nan
+        | .posInf, .posZero => .nan
+        | .posInf, .negZero => .nan
+        | .negInf, .posZero => .nan
+        | .negInf, .negZero => .nan
+        | .posZero, .posInf => .nan
+        | .negZero, .posInf => .nan
+        | .posZero, .negInf => .nan
+        | .negZero, .negInf => .nan
+        | va, vb => let neg := (match va with
+            | .negInf | .negZero => true
+            | .finite(m) => M.lt(m, M.ofNat(0))
+            | _ => false
+          end) != (match vb with
+            | .negInf | .negZero => true
+            | .finite(m) => M.lt(m, M.ofNat(0))
+            | _ => false
+          end) in match M.realOf(va), M.realOf(vb) with
+            | some(x), some(y) => if M.eq(M.mul(x, y), M.ofNat(0)) then if neg then .negZero else .posZero else M.numView(M.numOf(M.mul(x, y)))
+            | _, _ => if neg then .negInf else .posInf
+          end
+      end;
+    --- sec-numeric-types-number-divide:
+    --- "Return 𝔽(ℝ(x) / ℝ(y))."
+    --- Reading: Number::divide's steps, a row each.
+    law numDiv_view : forall a b, M.numView(M.numDiv(a, b)) = match M.numView(a), M.numView(b) with
+        | .nan, _ => .nan
+        | _, .nan => .nan
+        | .posInf, .posInf => .nan
+        | .posInf, .negInf => .nan
+        | .negInf, .posInf => .nan
+        | .negInf, .negInf => .nan
+        | .posZero, .posZero => .nan
+        | .posZero, .negZero => .nan
+        | .negZero, .posZero => .nan
+        | .negZero, .negZero => .nan
+        | va, vb => let neg := (match va with
+            | .negInf | .negZero => true
+            | .finite(m) => M.lt(m, M.ofNat(0))
+            | _ => false
+          end) != (match vb with
+            | .negInf | .negZero => true
+            | .finite(m) => M.lt(m, M.ofNat(0))
+            | _ => false
+          end) in match va, vb with
+            | .posInf, _ | .negInf, _ => if neg then .negInf else .posInf
+            | _, .posInf | _, .negInf => if neg then .negZero else .posZero
+            | _, .posZero | _, .negZero => if neg then .negInf else .posInf
+            | _, _ => match M.realOf(va), M.realOf(vb) with
+                | some(x), some(y) => if M.eq(M.div(x, y), M.ofNat(0)) then if neg then .negZero else .posZero else M.numView(M.numOf(M.div(x, y)))
+                | _, _ => .nan
+              end
+          end
+      end;
+    --- sec-numeric-types-number-lessThan:
+    --- "If ℝ(x) < ℝ(y), return true."
+    --- Reading: Number::lessThan's steps, *undefined* read as false.
+    law numLt_def : forall a b, M.numLt(a, b) = match M.numView(a), M.numView(b) with
+        | .nan, _ => false
+        | _, .nan => false
+        | .negInf, .negInf => false
+        | .negInf, _ => true
+        | _, .negInf => false
+        | .posInf, _ => false
+        | _, .posInf => true
+        | va, vb => match M.realOf(va), M.realOf(vb) with
+            | some(x), some(y) => M.lt(x, y)
+            | _, _ => false
+          end
+      end;
+    --- sec-numeric-types-number-equal:
+    --- "If x is +0𝔽 and y is -0𝔽, return true."
+    --- Reading: Number::equal's steps.
+    law numEq_def : forall a b, M.numEq(a, b) = match M.numView(a), M.numView(b) with
+        | .nan, _ => false
+        | _, .nan => false
+        | .posInf, .posInf => true
+        | .negInf, .negInf => true
+        | va, vb => match M.realOf(va), M.realOf(vb) with
+            | some(x), some(y) => M.eq(x, y)
+            | _, _ => false
+          end
+      end;
+    --- sec-numeric-types-number-tostring:
+    --- "Let n, k, and s be integers such that k ≥ 1, … and k is as small as possible."
+    --- Reading: for a finite positive x and a radix from 2 to 36, `numDigits` meets the step's condition (`digitsOf`),
+    --- and no n, k and s that meet it have a smaller k.
+    law numDigits_least : forall x m (r : Nat), M.numView(x) = .finite(m) -> M.lt(M.ofNat(0), m) = true -> 2 <= r -> r <= 36 -> M.digitsOf(x, M.ofNat(r), M.numDigits(x, M.ofNat(r)).1, M.numDigits(x, M.ofNat(r)).2.1, M.numDigits(x, M.ofNat(r)).2.2) /\ forall n k s, M.digitsOf(x, M.ofNat(r), n, k, s) -> M.numDigits(x, M.ofNat(r)).2.1 <= k;
+  }
+
+  --- §6.1.4: m is a code point's value, an integer in [0, 0x10FFFF].
+  def Model.isPoint (M : Model) (m : M.Math) : Prop := M.isInt(m) = true /\ M.lt(m, M.ofNat(0)) = false /\ M.lt(M.ofNat(0x10FFFF), m) = false
+
+  --- Every element of xs is a code point.
+  def Model.allPoints (M : Model) (xs : M.Seq(M.Math)) : Prop := forall i x, M.seqGet(xs, i) = some(x) -> M.isPoint(x)
+
+  --- §6.2.9: b is a byte value, an integer in [0, 255].
+  def Model.isByte (M : Model) (b : M.Math) : Prop := M.isInt(b) = true /\ M.lt(b, M.ofNat(0)) = false /\ M.lt(b, M.ofNat(256)) = true
+
+  --- The laws of Data Block byte sequences (§6.2.9).
+  laws Model.ByteLaws (M : Model) {
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: every Data Block has a non-negative integer number of bytes.
+    law bytesLen_nonneg : forall bs, M.isInt(M.bytesLen(bs)) = true /\ M.lt(M.bytesLen(bs), M.ofNat(0)) = false;
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: a byte exists at index i iff i is a non-negative integer less than the block length.
+    law bytesGet_bounds : forall bs i, M.isInt(i) = true /\ M.lt(i, M.ofNat(0)) = false /\ M.lt(i, M.bytesLen(bs)) = true <=> M.bytesGet(bs, i).isSome = true;
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: every byte read from a Data Block is an integer from 0 to 255.
+    law bytesGet_byte : forall bs i b, M.bytesGet(bs, i) = some(b) -> M.isByte(b);
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: bytesZero n has n bytes when n is a non-negative integer.
+    law bytesZero_len : forall n, M.isInt(n) = true -> M.lt(n, M.ofNat(0)) = false -> M.bytesLen(M.bytesZero(n)) = n;
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: every byte of bytesZero n is 0.
+    law bytesZero_get : forall n i b, M.bytesGet(M.bytesZero(n), i) = some(b) -> b = M.ofNat(0);
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: writing a byte preserves the block length.
+    law bytesSet_len : forall bs i v, M.bytesLen(M.bytesSet(bs, i, v)) = M.bytesLen(bs);
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: writing a byte v at an in-bounds index i updates only index i.
+    law bytesSet_get : forall bs i v j, M.isInt(i) = true -> M.lt(i, M.ofNat(0)) = false -> M.lt(i, M.bytesLen(bs)) = true -> M.isByte(v) -> M.bytesGet(M.bytesSet(bs, i, v), j) = if M.eq(j, i) then some(v) else M.bytesGet(bs, j);
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: filling a Data Block with a byte preserves its length.
+    law bytesFill_len : forall bs v, M.bytesLen(M.bytesFill(bs, v)) = M.bytesLen(bs);
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: filling a Data Block with byte v sets every in-bounds index to v.
+    law bytesFill_get : forall bs v i, M.isByte(v) -> M.isInt(i) = true -> M.lt(i, M.ofNat(0)) = false -> M.lt(i, M.bytesLen(bs)) = true -> M.bytesGet(M.bytesFill(bs, v), i) = some(v);
+  }
+
+  --- The laws a model of the spec's sorts satisfies.
+  laws Model.Laws (M : Model) {
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: addition is associative.
+    law add_assoc : forall a b c, M.add(M.add(a, b), c) = M.add(a, M.add(b, c));
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: addition is commutative.
+    law add_comm : forall a b, M.add(a, b) = M.add(b, a);
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: 0 is the additive identity.
+    law add_zero : forall a, M.add(a, M.ofNat(0)) = a;
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: negation is the additive inverse.
+    law add_neg : forall a, M.add(a, M.neg(a)) = M.ofNat(0);
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: subtraction adds the negation.
+    law sub_def : forall a b, M.sub(a, b) = M.add(a, M.neg(b));
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: multiplication is associative.
+    law mul_assoc : forall a b c, M.mul(M.mul(a, b), c) = M.mul(a, M.mul(b, c));
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: multiplication is commutative.
+    law mul_comm : forall a b, M.mul(a, b) = M.mul(b, a);
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: 1 is the multiplicative identity.
+    law mul_one : forall a, M.mul(a, M.ofNat(1)) = a;
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: multiplication distributes over addition.
+    law mul_add : forall a b c, M.mul(a, M.add(b, c)) = M.add(M.mul(a, b), M.mul(a, c));
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: division by a non-zero value inverts multiplication.
+    law div_mul : forall a b, b <> M.ofNat(0) -> M.mul(M.div(a, b), b) = a;
+    --- sec-mathematical-operations:
+    --- "Mathematical values: Arbitrary real numbers, used as the default numeric type."
+    --- Reading: 0 and 1 differ.
+    law zero_ne_one : M.ofNat(0) <> M.ofNat(1);
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: `<` is irreflexive.
+    law lt_irrefl : forall a, M.lt(a, a) = false;
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: `<` is transitive.
+    law lt_trans : forall a b c, M.lt(a, b) = true -> M.lt(b, c) = true -> M.lt(a, c) = true;
+    --- sec-mathematical-operations:
+    --- "Mathematical values: Arbitrary real numbers, used as the default numeric type."
+    --- Reading: `<` is total, as on the reals.
+    law lt_total : forall a b, M.lt(a, b) = true \/ a = b \/ M.lt(b, a) = true;
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: `<` is preserved by addition.
+    law add_lt_add : forall a b c, M.lt(a, b) = true -> M.lt(M.add(a, c), M.add(b, c)) = true;
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: a product of positive values is positive.
+    law mul_pos : forall a b, M.lt(M.ofNat(0), a) = true -> M.lt(M.ofNat(0), b) = true -> M.lt(M.ofNat(0), M.mul(a, b)) = true;
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: `=` on mathematical values is equality.
+    law eq_iff : forall a b, M.eq(a, b) = true <=> a = b;
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: numerals add as natural numbers.
+    law ofNat_add : forall m n, M.ofNat(m + n) = M.add(M.ofNat(m), M.ofNat(n));
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: x⁰ = 1.
+    law pow_zero : forall x, M.pow(x, M.ofNat(0)) = M.ofNat(1);
+    --- sec-mathematical-operations:
+    --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
+    --- Reading: xⁿ⁺¹ = xⁿ × x.
+    law pow_succ : forall x n, M.pow(x, M.ofNat(n + 1)) = M.mul(M.pow(x, M.ofNat(n)), x);
+    --- sec-mathematical-operations:
+    --- "The mathematical function floor(x) produces the largest integer (closest to +∞) that is not larger than x."
+    --- Reading: floor(x) is an integer.
+    law floor_isInt : forall x, M.isInt(M.floor(x)) = true;
+    --- sec-mathematical-operations:
+    --- "The mathematical function floor(x) produces the largest integer (closest to +∞) that is not larger than x."
+    --- Reading: floor(x) ≤ x.
+    law floor_le : forall x, M.lt(x, M.floor(x)) = false;
+    --- sec-mathematical-operations:
+    --- "The mathematical function floor(x) produces the largest integer (closest to +∞) that is not larger than x."
+    --- Reading: x < floor(x) + 1: no larger integer is ≤ x.
+    law lt_floor_add_one : forall x, M.lt(x, M.add(M.floor(x), M.ofNat(1))) = true;
+    --- sec-roundmvresult:
+    --- "a digit is significant if it is not zero or there is a non-zero digit to its left and there is a non-zero digit to its right"
+    --- Reading: for x > 0, `decExp x` is the integer e with 10^e ≤ x < 10^(e+1), the place of x's first significant digit.
+    law decExp_spec : forall x, M.lt(M.ofNat(0), x) = true -> M.isInt(M.decExp(x)) = true /\ M.lt(x, M.pow(M.ofNat(10), M.decExp(x))) = false /\ M.lt(x, M.pow(M.ofNat(10), M.add(M.decExp(x), M.ofNat(1)))) = true;
+    --- sec-mathematical-operations:
+    --- "When the term integer is used in this specification, it refers to a mathematical value which is in the set of integers, unless otherwise stated."
+    --- Reading: the integers are ±n.
+    law isInt_iff : forall x, M.isInt(x) = true <=> exists n, x = M.ofNat(n) \/ x = M.neg(M.ofNat(n));
+    --- sec-ecmascript-language-types-number-type:
+    --- "are represented in ECMAScript as a single special NaN ("not a number") value."
+    --- Reading: NaN's view.
+    law numView_nan : M.numView(M.numNaN) = .nan;
+    --- sec-ecmascript-language-types-number-type:
+    --- "There are two other special values, called positive Infinity and negative Infinity."
+    --- Reading: +∞𝔽 and -∞𝔽's views.
+    law numView_inf : forall b, M.numView(M.numInf(b)) = if b then .negInf else .posInf;
+    --- sec-ecmascript-language-types-number-type:
+    --- "Note that there is both a positive zero and a negative zero."
+    --- Reading: +0𝔽 and -0𝔽's views.
+    law numView_zero : forall b, M.numView(M.numZero(b)) = if b then .negZero else .posZero;
+    --- sec-ecmascript-language-types-number-type:
+    --- "representing the double-precision floating point IEEE 754-2019 binary64 values"
+    --- Reading: the Number type's value set, 𝔽 and the operations (`NumLaws`).
+    law num : M.NumLaws;
+    --- sec-mathematical-operations:
+    --- "BigInts: ECMAScript language values representing arbitrary integers in a one-to-one correspondence."
+    --- Reading: ℝ(ℤ(x)) = x for an integer x.
+    law bigVal_bigOf : forall x, M.isInt(x) = true -> M.bigVal(M.bigOf(x)) = x;
+    --- sec-mathematical-operations:
+    --- "BigInts: ECMAScript language values representing arbitrary integers in a one-to-one correspondence."
+    --- Reading: a BigInt's value is an integer.
+    law bigVal_isInt : forall b, M.isInt(M.bigVal(b)) = true;
+    --- sec-mathematical-operations:
+    --- "BigInts: ECMAScript language values representing arbitrary integers in a one-to-one correspondence."
+    --- Reading: a BigInt is its value.
+    law bigVal_inj : forall a b, M.bigVal(a) = M.bigVal(b) -> a = b;
+    --- sec-ecmascript-language-types-string-type:
+    --- "These positions are indexed with non-negative integers. The first element (if any) is at index 0, the next element (if any) at index 1, and so on."
+    --- Reading: a code unit is at a non-negative integer index below the length and is in [0, 65535].
+    law strAt_some : forall s i c, M.strAt(s, i) = some(c) -> (exists k, i = M.ofNat(k) /\ M.lt(i, M.strLen(s)) = true) /\ exists u, u < 65536 /\ c = M.ofNat(u);
+    --- sec-ecmascript-language-types-string-type:
+    --- "The String type is the set of all ordered sequences of zero or more 16-bit unsigned integer values"
+    --- Reading: a String is its sequence of code units.
+    law str_ext : forall s t, M.strLen(s) = M.strLen(t) -> (forall k, M.strAt(s, M.ofNat(k)) = M.strAt(t, M.ofNat(k))) -> s = t;
+    --- sec-ecmascript-language-types-string-type:
+    --- "denotes the String value whose sequence of code units is the concatenation of the code units (in order) of each of the arguments (in order)"
+    --- Reading: string-concatenation adds lengths.
+    law strConcat_len : forall s t, M.strLen(M.strConcat(s, t)) = M.add(M.strLen(s), M.strLen(t));
+    --- sec-ecmascript-language-types-string-type:
+    --- "denotes the String value whose sequence of code units is the concatenation of the code units (in order) of each of the arguments (in order)"
+    --- Reading: string-concatenation's code units are the first String's, then the second's.
+    law strConcat_at : forall s t i, M.strAt(M.strConcat(s, t), i) = if M.lt(i, M.strLen(s)) then M.strAt(s, i) else M.strAt(t, M.sub(i, M.strLen(s)));
+    --- sec-ecmascript-language-types-string-type:
+    --- "denotes the String value consisting of the consecutive code units of string beginning at index inclusiveStart and ending immediately before index exclusiveEnd"
+    --- Reading: the substring from i to j has length j - i.
+    law strSub_len : forall s i j, i <= j -> M.lt(M.strLen(s), M.ofNat(j)) = false -> M.strLen(M.strSub(s, M.ofNat(i), M.ofNat(j))) = M.ofNat(j - i);
+    --- sec-ecmascript-language-types-string-type:
+    --- "denotes the String value consisting of the consecutive code units of string beginning at index inclusiveStart and ending immediately before index exclusiveEnd"
+    --- Reading: the substring from i has the code units from i.
+    law strSub_at : forall s i j k, i <= j -> M.lt(M.strLen(s), M.ofNat(j)) = false -> k < j - i -> M.strAt(M.strSub(s, M.ofNat(i), M.ofNat(j)), M.ofNat(k)) = M.strAt(s, M.ofNat(i + k));
+    --- sec-ecmascript-language-types-string-type:
+    --- "(where each argument is a String value, a code unit, or a sequence of code units)"
+    --- Reading: the String of one code unit has length 1.
+    law strOfUnit_len : forall u, u < 65536 -> M.strLen(M.strOfUnit(M.ofNat(u))) = M.ofNat(1);
+    --- sec-ecmascript-language-types-string-type:
+    --- "(where each argument is a String value, a code unit, or a sequence of code units)"
+    --- Reading: the String of one code unit has it at index 0.
+    law strOfUnit_at : forall u, u < 65536 -> M.strAt(M.strOfUnit(M.ofNat(u)), M.ofNat(0)) = some(M.ofNat(u));
+    --- sec-string.prototype.repeat:
+    --- "If n = 0, return the empty String."
+    --- Reading: repeating a String zero times is the empty String.
+    law strRepeat_zero : forall s, M.strRepeat(M.ofNat(0), s) = M.strLit("");
+    --- sec-string.prototype.repeat:
+    --- "Return the String value that is made from n copies of string appended together."
+    --- Reading: repeating n + 1 times appends another copy.
+    law strRepeat_succ : forall n s, M.strRepeat(M.ofNat(n + 1), s) = M.strConcat(M.strRepeat(M.ofNat(n), s), s);
+    --- sec-numeric-types-number-tostring:
+    --- "The digits used in the representation of a number using radix r are taken from the first r code units of "0123456789abcdefghijklmnopqrstuvwxyz" in order."
+    --- Reading: a single radix-r digit n < r has that code unit as its representation.
+    law intToRadix_digit : forall n r, 2 <= r -> r <= 36 -> n < r -> M.intToRadix(M.ofNat(n), M.ofNat(r)) = M.strSub(M.strLit("0123456789abcdefghijklmnopqrstuvwxyz"), M.ofNat(n), M.ofNat(n + 1));
+    --- sec-numeric-types-number-tostring:
+    --- "It represents x as a String using a positional numeral system with radix radix."
+    --- "The representation of numbers with magnitude greater than or equal to 1𝔽 never includes leading zeroes."
+    --- Reading: for n ≥ r, the radix-r representation of n is that of n / r followed by the digit n % r.
+    law intToRadix_div : forall n r, 2 <= r -> r <= 36 -> r <= n -> M.intToRadix(M.ofNat(n), M.ofNat(r)) = M.strConcat(M.intToRadix(M.ofNat(n / r), M.ofNat(r)), M.intToRadix(M.ofNat(n % r), M.ofNat(r)));
+    --- sec-identity:
+    --- "Values without identity are equal to other values without identity if all of their innate characteristics are the same"
+    --- Reading: String equality is equality of code-unit sequences.
+    law strEq_iff : forall s t, M.strEq(s, t) = true <=> s = t;
+    --- sec-ecmascript-language-types-string-type:
+    --- "each element in the String is treated as a UTF-16 code unit value"
+    --- Reading: a String literal is the UTF-16 code units of its text (`strLitUnits`).
+    law strLit_units : forall t, seqList(M.strUnits(M.strLit(t))) = strLitUnits(t).map(M.ofNat);
+    --- sec-ecmascript-language-types-string-type:
+    --- "The length of a String is the number of elements (i.e., 16-bit values) within it."
+    --- Reading: a String has as many code units as its length.
+    law strUnits_len : forall s, M.ofNat(seqList(M.strUnits(s)).length) = M.strLen(s);
+    --- sec-ecmascript-language-types-string-type:
+    --- "These positions are indexed with non-negative integers. The first element (if any) is at index 0, the next element (if any) at index 1, and so on."
+    --- Reading: a String's code units, first to last, are those at its indices.
+    law strUnits_at : forall s k, seqList(M.strUnits(s))[k]? = M.strAt(s, M.ofNat(k));
+    --- sec-ecmascript-language-types-symbol-type:
+    --- "Each Symbol is unique and immutable."
+    --- Reading: Symbol equality is identity.
+    law symEq_iff : forall a b, M.symEq(a, b) = true <=> a = b;
+    --- sec-ecmascript-language-types-symbol-type:
+    --- "Each Symbol has an immutable [[Description]] internal slot whose value is either a String or undefined."
+    --- Reading: a new Symbol has the description it is made with.
+    law symDesc_new : forall k d, M.symDesc(M.symNew(k, d)) = d;
+    --- sec-ecmascript-language-types-symbol-type:
+    --- "Each Symbol is unique and immutable."
+    --- Reading: each creation makes a different Symbol.
+    law symNew_inj : forall k d k' d', M.symNew(k, d) = M.symNew(k', d') -> k = k';
+    --- sec-identity:
+    --- "each value with identity is unique and therefore only equal to itself."
+    --- Reading: an object is its identity.
+    law addrEq_iff : forall a b, M.addrEq(a, b) = true <=> a = b;
+    --- sec-identity:
+    --- "each value with identity is unique and therefore only equal to itself."
+    --- Reading: a Parse Node, a value with identity, is equal only to itself.
+    law nodeEq_iff : forall a b, M.nodeEq(a, b) = true <=> a = b;
+    --- sec-list-and-record-specification-type:
+    --- "The elements of a list may be randomly accessed using 0-origin indices."
+    --- Reading: a List's length is a non-negative integer.
+    law seqLen_nat : forall {α} (xs : M.Seq(α)), exists n, M.seqLen(xs) = M.ofNat(n);
+    --- sec-list-and-record-specification-type:
+    --- "The elements of a list may be randomly accessed using 0-origin indices."
+    --- Reading: an element is at a non-negative integer index below the length.
+    law seqGet_some : forall {α} (xs : M.Seq(α)) i (a : α), M.seqGet(xs, i) = some(a) -> (exists k, i = M.ofNat(k) /\ M.lt(i, M.seqLen(xs)) = true);
+    --- sec-list-and-record-specification-type:
+    --- "The elements of a list may be randomly accessed using 0-origin indices."
+    --- Reading: every index below the length has an element.
+    law seqGet_lt : forall {α} (xs : M.Seq(α)) k, M.lt(M.ofNat(k), M.seqLen(xs)) = true -> M.seqGet(xs, M.ofNat(k)).isSome = true;
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: a List is its sequence of elements.
+    law seq_ext : forall {α} (xs ys : M.Seq(α)), (forall i, M.seqGet(xs, i) = M.seqGet(ys, i)) -> xs = ys;
+    --- sec-list-and-record-specification-type:
+    --- "A new empty List can be expressed as « »."
+    --- Reading: « » has length 0.
+    law seqLen_nil : forall {α}, M.seqLen(M.seqNil(α := α)) = M.ofNat(0);
+    --- sec-list-and-record-specification-type:
+    --- "A new empty List can be expressed as « »."
+    --- Reading: « » has no elements.
+    law seqGet_nil : forall {α} i, M.seqGet(M.seqNil(α := α), i) = none;
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: appending adds one to the length.
+    law seqLen_push : forall {α} (xs : M.Seq(α)) a, M.seqLen(M.seqPush(xs, a)) = M.add(M.seqLen(xs), M.ofNat(1));
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: appending puts the element last.
+    law seqGet_push : forall {α} (xs : M.Seq(α)) a i, M.seqGet(M.seqPush(xs, a), i) = if M.eq(i, M.seqLen(xs)) then some(a) else M.seqGet(xs, i);
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: prepending adds one to the length.
+    law seqLen_cons : forall {α} (a : α) xs, M.seqLen(M.seqCons(a, xs)) = M.add(M.seqLen(xs), M.ofNat(1));
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: prepending puts the element first.
+    law seqGet_cons : forall {α} (a : α) xs i, M.seqGet(M.seqCons(a, xs), i) = if M.eq(i, M.ofNat(0)) then some(a) else M.seqGet(xs, M.sub(i, M.ofNat(1)));
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: replacing an element keeps the length.
+    law seqLen_set : forall {α} (xs : M.Seq(α)) i a, M.seqLen(M.seqSet(xs, i, a)) = M.seqLen(xs);
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: replacing the element at an index below the length (read-over-write).
+    law seqGet_set : forall {α} (xs : M.Seq(α)) i a j, M.seqGet(M.seqSet(xs, i, a), j) = if M.eq(j, i) && M.seqGet(xs, i).isSome then some(a) else M.seqGet(xs, j);
+    --- sec-list-and-record-specification-type:
+    --- "denotes a new List value whose elements are the concatenation of the elements (in order) of each of the arguments (in order)"
+    --- Reading: list-concatenation adds lengths.
+    law seqLen_concat : forall {α} (xs ys : M.Seq(α)), M.seqLen(M.seqConcat(xs, ys)) = M.add(M.seqLen(xs), M.seqLen(ys));
+    --- sec-list-and-record-specification-type:
+    --- "denotes a new List value whose elements are the concatenation of the elements (in order) of each of the arguments (in order)"
+    --- Reading: list-concatenation's elements are the first List's, then the second's.
+    law seqGet_concat : forall {α} (xs ys : M.Seq(α)) i, M.seqGet(M.seqConcat(xs, ys), i) = if M.lt(i, M.seqLen(xs)) then M.seqGet(xs, i) else M.seqGet(ys, M.sub(i, M.seqLen(xs)));
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: removing the element at an index below the length shortens by one.
+    law seqLen_remove : forall {α} (xs : M.Seq(α)) i, M.seqGet(xs, i).isSome = true -> M.seqLen(M.seqRemove(xs, i)) = M.sub(M.seqLen(xs), M.ofNat(1));
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: removing the element at an index below the length shifts the later ones.
+    law seqGet_remove : forall {α} (xs : M.Seq(α)) i j, M.seqGet(xs, i).isSome = true -> M.seqGet(M.seqRemove(xs, i), j) = if M.lt(j, i) then M.seqGet(xs, j) else M.seqGet(xs, M.add(j, M.ofNat(1)));
+    --- sec-list-and-record-specification-type:
+    --- "Values of the List type are simply ordered sequences of list elements containing the individual values."
+    --- Reading: removing at an index with no element changes nothing.
+    law seqRemove_none : forall {α} (xs : M.Seq(α)) i, M.seqGet(xs, i) = none -> M.seqRemove(xs, i) = xs;
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: `k` copies of a value are `k` elements.
+    law seqLen_repeat : forall {α} k (a : α), M.seqLen(M.seqRepeat(M.ofNat(k), a)) = M.ofNat(k);
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: each of `k` copies of a value is that value.
+    law seqGet_repeat : forall {α} k (a : α) i x, M.seqGet(M.seqRepeat(M.ofNat(k), a), i) = some(x) -> x = a;
+    --- sec-list-and-record-specification-type:
+    --- "When an algorithm iterates over the elements of a List without specifying an order, the order used is the order of the elements in the List."
+    --- Reading: a fold of « » is its start.
+    law seqFoldl_nil : forall {α β} (f : β -> α -> β) (b : β), M.seqFoldl(f, b, M.seqNil(α := α)) = b;
+    --- sec-list-and-record-specification-type:
+    --- "When an algorithm iterates over the elements of a List without specifying an order, the order used is the order of the elements in the List."
+    --- Reading: a fold visits the elements first to last.
+    law seqFoldl_push : forall {α β} (f : β -> α -> β) (b : β) (xs : M.Seq(α)) a, M.seqFoldl(f, b, M.seqPush(xs, a)) = f(M.seqFoldl(f, b, xs), a);
+    --- sec-list-and-record-specification-type:
+    --- "Any fields that are not explicitly listed are considered to be absent."
+    --- Reading: the empty Record has no fields.
+    law recGet_empty : forall {α} f, M.recGet(M.recEmpty(α := α), f) = none;
+    --- sec-list-and-record-specification-type:
+    --- "A Record type value consists of one or more named fields."
+    --- Reading: setting a field (read-over-write).
+    law recGet_set : forall {α} (r : M.Rec(α)) f a g, M.recGet(M.recSet(r, f, a), g) = if g = f then some(a) else M.recGet(r, g);
+    --- sec-list-and-record-specification-type:
+    --- "Any fields that are not explicitly listed are considered to be absent."
+    --- Reading: deleting a field makes it absent.
+    law recGet_del : forall {α} (r : M.Rec(α)) f g, M.recGet(M.recDel(r, f), g) = if g = f then none else M.recGet(r, g);
+    --- sec-list-and-record-specification-type:
+    --- "A Record type value consists of one or more named fields."
+    --- Reading: the listed fields are the present ones.
+    law recKeys_mem : forall {α} (r : M.Rec(α)) f, M.recGet(r, f).isSome = true <=> exists i, M.seqGet(M.recKeys(r), i) = some(f);
+    --- sec-list-and-record-specification-type:
+    --- "A Record type value consists of one or more named fields."
+    --- Reading: each field is listed once.
+    law recKeys_once : forall {α} (r : M.Rec(α)) f i j, M.seqGet(M.recKeys(r), i) = some(f) -> M.seqGet(M.recKeys(r), j) = some(f) -> i = j;
+    --- sec-object-type:
+    --- "The properties of an object are uniquely identified using property keys."
+    --- Reading: the empty table has no properties.
+    law propsGet_empty : forall {α} k, M.propsGet(M.propsEmpty(α := α), k) = none;
+    --- sec-object-type:
+    --- "The properties of an object are uniquely identified using property keys."
+    --- Reading: putting a property reads it back.
+    law propsGet_put_self : forall {α} (p : M.Props(α)) k a, M.propsGet(M.propsPut(p, k, a), k) = some(a);
+    --- sec-object-type:
+    --- "The properties of an object are uniquely identified using property keys."
+    --- Reading: putting a property leaves the others.
+    law propsGet_put_other : forall {α} (p : M.Props(α)) k a k', k' <> k -> M.propsGet(M.propsPut(p, k, a), k') = M.propsGet(p, k');
+    --- sec-object-type:
+    --- "The properties of an object are uniquely identified using property keys."
+    --- Reading: deleting a property removes it.
+    law propsGet_del_self : forall {α} (p : M.Props(α)) k, M.propsGet(M.propsDel(p, k), k) = none;
+    --- sec-object-type:
+    --- "The properties of an object are uniquely identified using property keys."
+    --- Reading: deleting a property leaves the others.
+    law propsGet_del_other : forall {α} (p : M.Props(α)) k k', k' <> k -> M.propsGet(M.propsDel(p, k), k') = M.propsGet(p, k');
+    --- sec-object-type:
+    --- "The properties of an object are uniquely identified using property keys."
+    --- Reading: the listed keys are the present ones.
+    law propsKeys_mem : forall {α} (p : M.Props(α)) k, M.propsGet(p, k).isSome = true <=> exists i, M.seqGet(M.propsKeys(p), i) = some(k);
+    --- sec-object-type:
+    --- "Each own property of an object must have a key that is distinct from the keys of the other own properties of that object."
+    --- Reading: each key is listed once.
+    law propsKeys_once : forall {α} (p : M.Props(α)) k i j, M.seqGet(M.propsKeys(p), i) = some(k) -> M.seqGet(M.propsKeys(p), j) = some(k) -> i = j;
+    --- sec-ordinaryownpropertykeys:
+    --- "in ascending chronological order of property creation"
+    --- Reading: a new key goes last in creation order.
+    law propsKeys_put_new : forall {α} (p : M.Props(α)) k a, M.propsGet(p, k) = none -> M.propsKeys(M.propsPut(p, k, a)) = M.seqPush(M.propsKeys(p), k);
+    --- sec-ordinaryownpropertykeys:
+    --- "in ascending chronological order of property creation"
+    --- Reading: updating a present key keeps creation order.
+    law propsKeys_put_old : forall {α} (p : M.Props(α)) k a, M.propsGet(p, k).isSome = true -> M.propsKeys(M.propsPut(p, k, a)) = M.propsKeys(p);
+    --- sec-ordinaryownpropertykeys:
+    --- "in ascending chronological order of property creation"
+    --- Reading: deleting a key removes it from creation order.
+    law propsKeys_del : forall {α} (p : M.Props(α)) k i, M.seqGet(M.propsKeys(p), i) = some(k) -> M.propsKeys(M.propsDel(p, k)) = M.seqRemove(M.propsKeys(p), i);
+    --- sec-object-type:
+    --- "The properties of an object are uniquely identified using property keys."
+    --- Reading: deleting an absent key changes nothing.
+    law propsDel_absent : forall {α} (p : M.Props(α)) k, M.propsGet(p, k) = none -> M.propsDel(p, k) = p;
+    --- sec-identity:
+    --- "References to existing values with identity cannot be manifest simply by describing them"
+    --- Reading: the empty store refers to no value.
+    law heapGet_empty : forall {α} a, M.heapGet(M.heapEmpty(α := α), a) = none;
+    --- sec-identity:
+    --- "each value with identity is unique and therefore only equal to itself."
+    --- Reading: an allocated address is fresh.
+    law heapAlloc_fresh : forall {α} (h : M.Heap(α)) v, M.heapGet(h, M.heapAlloc(h, v).1) = none;
+    --- sec-identity:
+    --- "References to existing values with identity cannot be manifest simply by describing them"
+    --- Reading: the allocated cell holds the value it is made with.
+    law heapAlloc_get_self : forall {α} (h : M.Heap(α)) v, M.heapGet(M.heapAlloc(h, v).2, M.heapAlloc(h, v).1) = some(v);
+    --- sec-identity:
+    --- "Some values with identity are mutable and therefore can have their characteristics (except their identity) changed in-place, causing all holders of the value to observe the new characteristics."
+    --- Reading: allocating leaves the other cells.
+    law heapAlloc_get_other : forall {α} (h : M.Heap(α)) v a, a <> M.heapAlloc(h, v).1 -> M.heapGet(M.heapAlloc(h, v).2, a) = M.heapGet(h, a);
+    --- sec-identity:
+    --- "Some values with identity are mutable and therefore can have their characteristics (except their identity) changed in-place, causing all holders of the value to observe the new characteristics."
+    --- Reading: writing an allocated cell (read-over-write).
+    law heapGet_set_self : forall {α} (h : M.Heap(α)) a v, M.heapGet(h, a).isSome = true -> M.heapGet(M.heapSet(h, a, v), a) = some(v);
+    --- sec-identity:
+    --- "Some values with identity are mutable and therefore can have their characteristics (except their identity) changed in-place, causing all holders of the value to observe the new characteristics."
+    --- Reading: writing a cell leaves the others.
+    law heapGet_set_other : forall {α} (h : M.Heap(α)) a v b, b <> a -> M.heapGet(M.heapSet(h, a, v), b) = M.heapGet(h, b);
+    --- sec-identity:
+    --- "References to existing values with identity cannot be manifest simply by describing them"
+    --- Reading: writing an unallocated cell changes nothing.
+    law heapSet_none : forall {α} (h : M.Heap(α)) a v, M.heapGet(h, a) = none -> M.heapSet(h, a, v) = h;
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: csSize is the non-negative integer count of elements in the CharSet.
+    law csSize_nat : forall cs, M.isInt(M.csSize(cs)) = true /\ not M.lt(M.csSize(cs), M.ofNat(0));
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: every index csGet reads is a valid index into the CharSet and yields a sequence of code points in it.
+    law csGet_some : forall cs i e, M.csGet(cs, i) = some(e) -> M.isInt(i) = true /\ not M.lt(i, M.ofNat(0)) /\ M.lt(i, M.csSize(cs)) = true /\ M.allPoints(e) /\ M.csHas(cs, e) = true;
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: every index below csSize holds an element.
+    law csGet_lt : forall cs i, M.isInt(i) = true -> not M.lt(i, M.ofNat(0)) -> M.lt(i, M.csSize(cs)) = true -> M.csGet(cs, i).isSome = true;
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: the CharSet has no duplicate elements at distinct indices.
+    law csGet_distinct : forall cs i j e f, M.csGet(cs, i) = some(e) -> M.csGet(cs, j) = some(f) -> seqList(e) = seqList(f) -> i = j;
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: every element in csHas appears at some index of csGet.
+    law csHas_exists : forall cs e, M.allPoints(e) -> M.csHas(cs, e) = true -> (exists i e', M.csGet(cs, i) = some(e') /\ seqList(e') = seqList(e));
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: the empty CharSet has no elements.
+    law csHas_empty : forall e, M.csHas(M.csEmpty, e) = false;
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: csAdd inserts a CharSetElement of code points into the CharSet.
+    law csHas_add : forall cs s e, M.allPoints(s) -> M.allPoints(e) -> (M.csHas(M.csAdd(cs, s), e) = true <=> M.csHas(cs, e) = true \/ seqList(e) = seqList(s));
+    --- sec-pattern-notation:
+    --- "For convenience, when working with CharSetElements of this kind, an individual character is treated interchangeably with a sequence of one character."
+    --- Reading: csInterval contains the one-character CharSetElements between lo and hi inclusive.
+    law csHas_interval : forall lo hi e, M.isPoint(lo) -> M.isPoint(hi) -> M.allPoints(e) -> (M.csHas(M.csInterval(lo, hi), e) = true <=> exists c, seqList(e) = [c] /\ M.isPoint(c) /\ not M.lt(c, lo) /\ not M.lt(hi, c));
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: csUnion is set union of CharSets.
+    law csHas_union : forall a b e, M.allPoints(e) -> (M.csHas(M.csUnion(a, b), e) = true <=> M.csHas(a, e) = true \/ M.csHas(b, e) = true);
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: csInter is set intersection of CharSets.
+    law csHas_inter : forall a b e, M.allPoints(e) -> (M.csHas(M.csInter(a, b), e) = true <=> M.csHas(a, e) = true /\ M.csHas(b, e) = true);
+    --- sec-pattern-notation:
+    --- "A CharSet is a mathematical set of CharSetElements."
+    --- Reading: csDiff is set difference of CharSets.
+    law csHas_diff : forall a b e, M.allPoints(e) -> (M.csHas(M.csDiff(a, b), e) = true <=> M.csHas(a, e) = true /\ M.csHas(b, e) = false);
+    --- sec-pattern-notation:
+    --- "For convenience, when working with CharSetElements of this kind, an individual character is treated interchangeably with a sequence of one character."
+    --- Reading: csAllSingle holds iff every element of the CharSet is a single character.
+    law csAllSingle_iff : forall cs, M.csAllSingle(cs) = true <=> forall i e, M.csGet(cs, i) = some(e) -> M.seqLen(e) = M.ofNat(1);
+    --- sec-pattern-notation:
+    --- "For convenience, when working with CharSetElements of this kind, an individual character is treated interchangeably with a sequence of one character."
+    --- Reading: csSingles restricts a CharSet to its single-character elements.
+    law csHas_singles : forall cs e, M.allPoints(e) -> (M.csHas(M.csSingles(cs), e) = true <=> M.csHas(cs, e) = true /\ M.seqLen(e) = M.ofNat(1));
+    --- sec-compiletocharset:
+    --- "Let charSet be the CharSet containing all CharSetElements whose character database definition includes the property p with value “True”."
+    --- Reading: csFromProp succeeds on the exact same property-value queries as propSet.
+    law csFromProp_some : forall p v, M.csFromProp(p, v).isSome = M.propSet(p, v).isSome;
+    --- sec-compiletocharset:
+    --- "Let charSet be the CharSet containing all CharSetElements whose character database definition includes the property p with value “True”."
+    --- Reading: csFromProp holds the CharSetElements that propSet returns.
+    law csHas_fromProp : forall p v cs e, M.csFromProp(p, v) = some(cs) -> M.allPoints(e) -> (M.csHas(cs, e) = true <=> exists es i e', M.propSet(p, v) = some(es) /\ M.seqGet(es, i) = some(e') /\ seqList(e') = seqList(e));
+    --- sec-allcharacters:
+    --- "Return the CharSet containing all Unicode code points c that do not have a Simple Case Folding mapping (that is, scf(c)=c)."
+    --- Reading: csNoScf contains every Unicode code point whose simple case folding is itself.
+    law csHas_noScf : forall e, M.allPoints(e) -> (M.csHas(M.csNoScf, e) = true <=> exists c, seqList(e) = [c] /\ M.isPoint(c) /\ M.scf?(c).getD(c) = c);
+    --- sec-wordcharacters:
+    --- "Let extraWordChars be the CharSet containing all characters c such that c is not in basicWordChars but Canonicalize(regexpRecord, c) is in basicWordChars."
+    --- Reading: csCanonExtra contains every character outside cs whose case-folded Canonicalize maps into cs.
+    law csHas_canonExtra : forall cs u e, M.allPoints(e) -> (M.csHas(M.csCanonExtra(cs, u), e) = true <=> exists c, seqList(e) = [c] /\ M.isPoint(c) /\ M.csHas(cs, M.seqPush(M.seqNil, c)) = false /\ M.csHas(cs, M.seqPush(M.seqNil, M.canonChar(true, u, c))) = true);
+    --- sec-runtime-semantics-charactersetmatcher-abstract-operation:
+    --- "If there exists a CharSetElement in charSet containing exactly one character a such that Canonicalize(regexpRecord, a) is cc, let found be true; else let found be false."
+    --- Reading: csHasCanon tests whether any single character a in cs canonicalizes to cc.
+    law csHasCanon_iff : forall cs cc u ic, M.isPoint(cc) -> (M.csHasCanon(cs, cc, u, ic) = true <=> exists a, M.isPoint(a) /\ M.csHas(cs, M.seqPush(M.seqNil, a)) = true /\ M.canonChar(ic, u, a) = cc);
+    --- sec-data-blocks:
+    --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
+    --- Reading: Data Block byte sequences (`ByteLaws`).
+    law bytes : M.ByteLaws;
+  }
+
+  --- The names of Table 67's binary properties of strings.
+  def Model.stringPropertyNames : List(String) := ["Basic_Emoji", "Emoji_Keycap_Sequence", "RGI_Emoji_Modifier_Sequence", "RGI_Emoji_Flag_Sequence", "RGI_Emoji_Tag_Sequence", "RGI_Emoji_ZWJ_Sequence", "RGI_Emoji"]
+
+  --- A name's code points.
+  def Model.codePointsOf (M : Model) (s : String) : M.Seq(M.Math) := s.toList.foldr(fun c q => M.seqCons(M.ofNat(c.toNat), q), M.seqNil)
+
+  --- The laws of the Unicode operations: only what the text relies on.
+  laws Model.UnicodeLaws (M : Model) {
+    --- sec-runtime-semantics-canonicalize-ch:
+    --- "If the file CaseFolding.txt of the Unicode Character Database provides a simple or common case folding mapping for char, return the result of applying that mapping to char."
+    --- Reading: simple case folding gives a code point.
+    law scf_point : forall c d, M.isPoint(c) -> M.scf?(c) = some(d) -> M.isPoint(d);
+    --- sec-string.prototype.tolowercase:
+    --- "Let lowerText be toLowercase(sText), according to the Unicode Default Case Conversion algorithm."
+    --- Reading: toLowercase gives code points.
+    law toLower_points : forall xs, M.allPoints(xs) -> M.allPoints(M.toLower(xs));
+    --- sec-string.prototype.touppercase:
+    --- "except that the String is mapped using the toUppercase algorithm of the Unicode Default Case Conversion"
+    --- Reading: toUppercase gives code points.
+    law toUpper_points : forall xs, M.allPoints(xs) -> M.allPoints(M.toUpper(xs));
+    --- sec-compiletocharset:
+    --- "Let charSet be the CharSet containing all CharSetElements whose character database definition includes the property p with value “True”."
+    --- Reading: a property value's elements are sequences of code points.
+    law propSet_chars : forall p v es i e, M.propSet(p, v) = some(es) -> M.seqGet(es, i) = some(e) -> M.allPoints(e);
+    --- sec-compiletocharset:
+    --- "Let charSet be the CharSet containing all CharSetElements whose character database definition includes the property p with value “True”."
+    --- Reading: a property value's elements are distinct.
+    law propSet_distinct : forall p v es i j e f, M.propSet(p, v) = some(es) -> M.seqGet(es, i) = some(e) -> M.seqGet(es, j) = some(f) -> M.eq(i, j) = false -> (exists k, M.seqGet(e, k) <> M.seqGet(f, k));
+    --- sec-compiletocharset:
+    --- "or a binary Unicode property of strings listed in the “ Property name ” column of"
+    --- Reading: an element of two or more code points only for a property of strings.
+    law propSet_strings : forall p v es i e, M.propSet(p, v) = some(es) -> M.seqGet(es, i) = some(e) -> M.eq(M.seqLen(e), M.ofNat(1)) = false -> (exists n mem Model.stringPropertyNames, forall k, M.seqGet(p, k) = M.seqGet(M.codePointsOf(n), k));
+    --- sec-string.prototype.normalize:
+    --- "Let normal be the String value that is the result of normalizing string into the normalization form named by form as specified in the latest Unicode Standard, Normalization Forms."
+    --- Reading: normalization gives code points.
+    law normalize_points : forall f xs, M.allPoints(xs) -> M.allPoints(M.normalize(f, xs));
+  }
+
+  --- `c` is an element of the List `s`.
+  def Model.InSeq {M : Model} {α : Type} (c : α) (s : M.Seq(α)) : Prop := M.seqFoldl(fun P x => P \/ x = c, False, s)
+
+  --- `n` is a child of `p`: one of `p`'s children is `n` by identity (`nodeEq`).
+  def Model.KidOf {M : Model} (n p : M.Node) : Prop := exists c, Model.InSeq(c, M.nodeKids(p)) /\ M.nodeEq(c, n) = true
+
+  --- `p` is `r` or a Parse Node in the tree below `r`, at any depth.
+  relation Model.Within {M : Model} : M.Node -> M.Node -> Prop {
+    rule root (r : M.Node) : Model.Within(r, r);
+    rule kid {r c p : M.Node} : Model.Within(r, p) :- Model.InSeq(c, M.nodeKids(r)), Model.Within(c, p);
+  }
+
+  --- `Model.nodeParent`'s laws (§5.1.2 Parent): an answer is a node at or below `r` of which `n` is a
+  --- child, and there is one wherever such a node is; with them `nodeAncestors`' and `nodeHeight`'s.
+  laws Model.ParentLaws (M : Model) {
+    --- sec-parsing:
+    --- "Moreover, it has zero or more children, one for each symbol on the production's right-hand side: each child is a Parse Node that is an instance of the corresponding symbol."
+    --- Reading: the parent the model gives of `n` in the tree rooted at `r` is a node at or below `r` of which `n` is
+    --- a child.
+    law sound : forall r n p, M.nodeParent(r, n) = some(p) -> Model.Within(r, p) /\ Model.KidOf(n, p);
+    --- sec-parsing:
+    --- "Moreover, it has zero or more children, one for each symbol on the production's right-hand side: each child is a Parse Node that is an instance of the corresponding symbol."
+    --- Reading: wherever a node at or below `r` has `n` as a child, the model gives a parent of `n`.
+    law complete : forall r n p, Model.Within(r, p) -> Model.KidOf(n, p) -> M.nodeParent(r, n).isSome = true;
+    --- sec-parsing:
+    --- "Moreover, it has zero or more children, one for each symbol on the production's right-hand side: each child is a Parse Node that is an instance of the corresponding symbol."
+    --- Reading: the ancestors of `n` in the tree rooted at `r` are its parent, then the parent's ancestors; none for
+    --- a node without a parent.
+    law ancestors : forall r n, M.nodeAncestors(r, n) = match M.nodeParent(r, n) with
+        | some(p) => p :: M.nodeAncestors(r, p)
+        | none => []
+      end;
+    --- sec-parsing:
+    --- "Moreover, it has zero or more children, one for each symbol on the production's right-hand side: each child is a Parse Node that is an instance of the corresponding symbol."
+    --- Reading: a Parse Node's height the model gives is more than each of its children's: the tree below it is
+    --- no deeper than its height.
+    law height : forall n c, Model.InSeq(c, M.nodeKids(n)) -> M.nodeHeight(c) < M.nodeHeight(n);
+  }
+}

@@ -1059,6 +1059,14 @@ pub fn emit(spec: &Spec, ids: &Ids, out_dir: &Path) -> Result<(), String> {
         files.insert("Realm".into(), wrap_mod(&["Ecma.Notation.Realm"], "Ecma.Gen.Realm", &body));
     }
 
+    // 6. Prose*.lean (prose specification models, relations, and laws)
+    for (name, txt) in crate::spec_model::emit_lean::emit(spec)? {
+        if files.contains_key(&name) {
+            return Err(format!("prose module name `{name}` collides with generated module"));
+        }
+        files.insert(name, txt);
+    }
+
     // Write Ecma/Gen/*.lean atomically on content diff & remove stale .lean files.
     std::fs::create_dir_all(out_dir).map_err(|e| format!("{}: {e}", out_dir.display()))?;
     for entry in std::fs::read_dir(out_dir).map_err(|e| format!("{}: {e}", out_dir.display()))? {

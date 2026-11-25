@@ -1,0 +1,127 @@
+spec_module ProseMemoryView
+import Ecma.MemoryModel
+import Ecma.State
+
+---! # The memory model's view of the state: a candidate execution as an `Exec`
+---!
+---! A candidate execution Record of the store, as the memory model sees it: its Agent Events Records
+---! and Chosen Value Records, read through its Lists, and each event by its address, with the fields
+---! of its Record. An event's kind is its Record's sort; [[ModifyOp]] is called by `d`, which runs an Abstract Closure.
+---! Fields, enums and sorts are known only through a `Names`.
+
+namespace Ecma.MemoryModel.View {
+  open Ecma
+
+  var {M : Model}
+
+  --- The name lookups of the view.
+  syntax Names record {
+    --- A field by its name (the first of that name).
+    field? : String -> Option(FieldId);
+    --- An enum by its name.
+    enum? : String -> Option(EnumId);
+    --- A sort by its name.
+    sort? : String -> Option(SortId);
+  }
+
+  var (N : Names)
+
+  --- A sequence's elements, first to last.
+  def toList {α : Type} (xs : M.Seq(α)) : List(α) := M.seqFoldl(fun acc x => acc ++ [x], [], xs)
+
+  --- The store cell a value refers to.
+  def cell (s : State(M)) : Val(M) -> Option(Cell(M))
+    | .ref(a) => M.heapGet(s.heap, a)
+    | _ => none
+  end
+
+  --- The elements of the List a value refers to; none where it refers to no List.
+  def list (s : State(M)) (v : Val(M)) : List(Val(M)) := match cell(s, v) with
+    | some(.list(xs, _)) => toList(xs)
+    | _ => []
+  end
+
+  --- A Record's field by name; ~absent~ where there is no such Record or field. As Strategy's `fieldOf`,
+  --- and unlike `readField`, it reads no `.env` cell's fields.
+  def field (s : State(M)) (v : Val(M)) (f : String) : Val(M) := match cell(s, v), N.field?(f) with
+    | some(.record(_, fs)), some(i) => M.recGet(fs, i).getD(.absent)
+    | _, _ => .absent
+  end
+
+  --- The address a value refers to.
+  def addr : Val(M) -> Option(M.Addr)
+    | .ref(a) => some(a)
+    | _ => none
+  end
+
+  --- A mathematical value, 0 where the value is none.
+  def math : Val(M) -> M.Math
+    | .math(m) => m
+    | _ => M.ofNat(0)
+  end
+
+  --- The byte values of a List of byte values.
+  def bytes (s : State(M)) (v : Val(M)) : List(M.Math) := list(s, v).filterMap(fun
+    | .math(m) => some(m)
+    | _ => none
+  end)
+
+  --- An « a, b » pair of events.
+  def pair (s : State(M)) (v : Val(M)) : Option(M.Addr times M.Addr) := match list(s, v) with
+    | [.ref(a), .ref(b)] => some((a, b))
+    | _ => none
+  end
+
+  --- An Agent Events Record: its [[EventList]]'s events and [[AgentSynchronizesWith]]'s pairs.
+  def eventsRecord (s : State(M)) (er : Val(M)) : EventsRecord(M.Addr) := ctor(list(s, field(N, s, er, "EventList")).filterMap(addr), list(s, field(N, s, er, "AgentSynchronizesWith")).filterMap(pair(s)))
+
+  --- A Chosen Value Record: its [[Event]] and [[ChosenValue]].
+  def chosenValue (s : State(M)) (cv : Val(M)) : Option(M.Addr times List(M.Math)) := addr(field(N, s, cv, "Event")).map(fun e => (e, bytes(s, field(N, s, cv, "ChosenValue"))))
+
+  --- An event's kind: its Record's sort.
+  def kind (s : State(M)) (e : M.Addr) : Kind := match M.heapGet(s.heap, e) with
+    | some(.record(k, _)) => if N.sort?("ReadSharedMemory") == some(k) then .read else if N.sort?("WriteSharedMemory") == some(k) then .write else if N.sort?("ReadModifyWriteSharedMemory") == some(k) then .rmw else if N.sort?("Synchronize event") == some(k) then .sync else .host
+    | _ => .host
+  end
+
+  --- An event's [[Order]]: ~unordered~ where it is neither ~seq-cst~ nor ~init~.
+  def order (s : State(M)) (e : M.Addr) : Order := match field(N, s, .ref(e), "Order") with
+    | .enum(o) => if N.enum?("seq-cst") == some(o) then .seqCst else if N.enum?("init") == some(o) then .init else .unordered
+    | _ => .unordered
+  end
+
+  --- [[ModifyOp]] of an event called on a List of byte values and a [[Payload]], in the state.
+  def modify (d : CloSite -> List(Val(M)) -> List(Val(M)) -> Run(M, Val(M))) (s : State(M)) (e : M.Addr) (bs pay : List(M.Math)) : Option(List(M.Math)) := match field(N, s, .ref(e), "ModifyOp") with
+    | .clo(site, caps) => let r : Run(M, Val(M)) := do {
+        let b <- listOf(bs.map(.math));
+        let p <- listOf(pay.map(.math));
+        d(site, caps, [b, p]);
+      } in match r(s) with
+        | .ok(.comp(_, v, _), s') | .ok(v, s') => some(bytes(s', v))
+        | _ => none
+      end
+    | _ => none
+  end
+
+  --- The candidate execution Record `ex` of state `s` as the memory model sees it; an event with
+  --- no [[Block]] has its own address, no Shared Data Block's.
+  def exec (d : CloSite -> List(Val(M)) -> List(Val(M)) -> Run(M, Val(M))) (s : State(M)) (ex : Val(M)) : Exec(M, M.Addr) {
+    records := list(s, field(N, s, ex, "EventsRecords")).map(eventsRecord(N, s));
+    chosen := list(s, field(N, s, ex, "ChosenValues")).filterMap(chosenValue(N, s));
+    kind := kind(N, s);
+    order := order(N, s);
+    noTear e := match field(N, s, .ref(e), "NoTear") with
+      | .bool(b) => b
+      | _ => false
+    end;
+    block e := addr(field(N, s, .ref(e), "Block")).getD(e);
+    byteIndex e := math(field(N, s, .ref(e), "ByteIndex"));
+    elementSize e := math(field(N, s, .ref(e), "ElementSize"));
+    payload e := bytes(s, field(N, s, .ref(e), "Payload"));
+    modify := modify(N, d, s);
+  }
+
+  --- The Shared Data Block events of `ex` are formed: [[Block]] a reference, [[ByteIndex]] and
+  --- [[ElementSize]] non-negative integers.
+  def Formed (d : CloSite -> List(Val(M)) -> List(Val(M)) -> Run(M, Val(M))) (s : State(M)) (ex : Val(M)) : Prop := forall e, MemoryModel.inSdb(exec(N, d, s, ex), e) -> (exists b, field(N, s, .ref(e), "Block") = .ref(b)) /\ (exists n, field(N, s, .ref(e), "ByteIndex") = .math(M.ofNat(n))) /\ exists n, field(N, s, .ref(e), "ElementSize") = .math(M.ofNat(n))
+}

@@ -1,0 +1,145 @@
+spec_module ProseHost
+import Ecma.Ops.Args
+
+---! # The host
+---!
+---! What the specification leaves to the host (`Host`): the host-defined and implementation-defined operations, by
+---! clause, and its choices at the points the specification names, by primitive. Every call of the host is logged
+---! (`Run.hostStep`): the host reads the state and the log, and only the machine appends to the log. The laws a host
+---! must meet are `Ecma.Host.Laws`.
+
+namespace Ecma {
+  var {M : Model}
+
+  --- The host: the operations the specification leaves to it (host-defined and
+  --- implementation-defined operations, by clause), and its choices at the points the
+  --- specification names (implementation-approximated values, implementation-defined choices,
+  --- whether it is a web browser), by primitive, and its choice of integers.
+  syntax Host (M : Model) record {
+    hook : ClauseId -> List(Val(M)) -> Run(M, Val(M));
+    choice : PrimId -> List(Val(M)) -> Run(M, Val(M));
+    --- the next job to run (§9.5): the log position of the call that scheduled it, or none
+    nextJob : Run(M, Option(Nat)) := Run.stop(.residue);
+    --- the jobs the host may take in this state, by their scheduling's log position: the surrounding
+    --- agent's, ready now
+    owns : State(M) -> Nat -> Bool := fun _ _ => true;
+    --- the milliseconds elapsed by the host's own clock as it takes its next job in this state; unlike
+    --- TimeNow's time value it never goes back (`Host.WF.elapsedMono`)
+    elapsed : State(M) -> M.Math := fun _ => M.ofNat(0);
+    --- the host-defined preparation steps of a job, by that position
+    prepareJob : Nat -> Run(M, Unit) := fun _ => Run.stop(.residue);
+    --- the host-defined cleanup steps of a job, by that position
+    cleanupJob : Nat -> Run(M, Unit) := fun _ => Run.stop(.residue);
+    --- what the host does when the agent has no Job to run (§9.5 leaves the scheduling to the host, §9.7 the other
+    --- agents of the cluster): an algorithm of its own to run as one, its preparation done, after which the agent's
+    --- Jobs go on unless it answers ~empty~; or none, and the agent's Jobs are done
+    idle : Run(M, Option(AlgId)) := pure(none);
+    --- a Job of the host's own that the agent runs before its next queued one (§9.6: its scripts and modules):
+    --- an algorithm of the host's and its arguments, its preparation done; or none
+    first : Run(M, Option(AlgId times List(Val(M)))) := pure(none);
+    --- the host-defined cleanup steps after `first`'s or `idle`'s algorithm, given what it returned: none where
+    --- the agent's Jobs are done; else whether it ran ECMAScript code, so that ClearKeptObjects and the host's
+    --- collection follow as after a Job (§9.10)
+    idleEnd : Val(M) -> Run(M, Option(Bool)) := fun _ => pure(none);
+    --- whether the host performs ClearKeptObjects (§9.10) now, a synchronous run of ECMAScript code
+    --- having ended (§9.9.1 leaves its scheduling to the host)
+    clearsKept : Run(M, Bool) := Run.stop(.residue);
+    --- the objects and symbols the host collects at a job boundary (§9.10.3), having emptied their WeakRefs
+    --- and cells (`Host.WF.collect`); none by default
+    collect : Run(M, List(Val(M))) := pure([]);
+    --- whether the host's resources run out at pushing an execution context in this state
+    exhausts : State(M) -> Bool := fun _ => false;
+    --- whether the host's resources run out at allocating an object (MakeBasicObject) in this state
+    exhaustsHeap : State(M) -> Bool := fun _ => false;
+  }
+
+  --- The state as the host reads it: the machine's bookkeeping of the running computation (the
+  --- Parse Nodes whose SDOs are running, the built-in calls' arguments) empty.
+  def State.hostView (s : State(M)) : State(M) := { s with evalNodes := [], passed := [] }
+
+  --- A state's bookkeeping (`State.hostView`'s) and host-call log.
+  syntax Books (M : Model) record {
+    evalNodes : List(M.Node);
+    passed : List(Val(M));
+    hostLog : List(HostCall(M));
+  }
+
+  --- `s`'s bookkeeping and host-call log.
+  def State.books (s : State(M)) : Books(M) := { evalNodes := s.evalNodes, passed := s.passed, hostLog := s.hostLog }
+
+  --- `t` with the bookkeeping and host-call log `pre`.
+  def State.restoreBooks (t : State(M)) (pre : Books(M)) : State(M) := { t with evalNodes := pre.evalNodes, passed := pre.passed, hostLog := pre.hostLog }
+
+  --- A host step's result over the books before it, `pre`: the host's writes to the log and the
+  --- bookkeeping are dropped; an answer `a` adds the entry `e a`; a resumed step is run on the view of
+  --- the state it is resumed with, over that state's books; a call runs on the step's state, and the same
+  --- step goes on after it.
+  def Res.hostStep {α : Type} (pre : Books(M)) (e : α -> HostCall(M)) : Res(M, α) -> Res(M, α)
+    | .ok(a, s) => .ok(a, { s.restoreBooks(pre) with hostLog := e(a) :: pre.hostLog })
+    | .esc(c, s) => .esc(c, s.restoreBooks(pre))
+    | .stop(r) => .stop(r)
+  end
+
+  --- A host step, logged: the host reads the state's view (`State.hostView`) and the log, and only
+  --- the machine appends to the log. The books are read first, so the host has the state's only reference.
+  def Run.hostStep {α : Type} (e : α -> HostCall(M)) (m : Run(M, α)) : Run(M, α) := fun s => Res.hostStep(s.books, e, m(s.hostView))
+
+  --- The active script or module (§9.4.1): the ScriptOrModule of the topmost execution context
+  --- that has a non-*null* one, else *null*.
+  def activeScriptOrModule (s : State(M)) : Val(M) := M.seqFoldl(fun r ctx => match ctx with
+    | .ref(a) => match M.heapGet(s.heap, a) with
+        | some(.record(_, fs)) => match M.recGet(fs, Known.fScriptOrModule) with
+            | some(.null) | none => r
+            | some(v) => v
+          end
+        | _ => r
+      end
+    | _ => r
+  end, .null, s.stack)
+
+  --- The Realm component of the execution context `ctx` where it is an address, else *null*.
+  def ctxRealm (s : State(M)) : Val(M) -> Val(M)
+    | .ref(a) => match M.heapGet(s.heap, a) with
+        | some(.record(_, fs)) => match M.recGet(fs, Known.fRealm) with
+            | some(.ref(r)) => .ref(r)
+            | _ => .null
+          end
+        | _ => .null
+      end
+    | _ => .null
+  end
+
+  --- The running execution context's Realm (§9.4): the topmost execution context's, by `ctxRealm`.
+  def runningRealm (s : State(M)) : Val(M) := ctxRealm(s, M.seqFoldl(fun _ ctx => ctx, .null, s.stack))
+
+  --- A host-defined operation, logged with the active script or module and the running Realm at the
+  --- call; an escaping completion is its answer (the algorithm boundary).
+  def Host.hookL (H : Host(M)) (c : ClauseId) (xs : List(Val(M))) : Run(M, Val(M)) := fun s => Run.hostStep(.hook(c, xs, activeScriptOrModule(s), runningRealm(s)), Run.boundary(H.hook(c, xs)), s)
+
+  --- A host choice, logged; an escaping completion is its answer.
+  def Host.choiceL (H : Host(M)) (q : PrimId) (xs : List(Val(M))) : Run(M, Val(M)) := Run.hostStep(.choice(q, xs), Run.boundary(H.choice(q, xs)))
+
+  --- Whether the host supports the Annex B section whose clause is `c?` (`hostSupports`, asked of `H`).
+  def Host.supports (H : Host(M)) : Option(ClauseId) -> Run(M, Bool)
+    | some(c) => do {
+        bool(<- H.choiceL(Known.pWebBrowser, [.choice(0), .clause(c)]));
+      }
+    | none => return(false)
+  end
+
+  --- A Model primitive, an implementation limit at allocating an object when the host's resources
+  --- run out (`exhaustsHeap`, read on the host's view of the state).
+  def Host.allocL (H : Host(M)) (q : PrimId) (xs : List(Val(M))) : Run(M, Val(M)) := fun s => if q == Known.pMakeObject && H.exhaustsHeap(s.hostView) then .stop(.implLimit) else prim(q, xs, s)
+
+  --- A primitive the host decides.
+  def hostPrim (p : PrimId) : Bool := Known.pApprox <= p && p <= Known.pWebBrowser || p == Known.pNaNEncoding || p == Known.pApproxInteger || p == Known.pHostInitializeBuiltinContext || p == Known.pHostReportErrors || p == Known.pDiscardContextResources || p == Known.pSpinWaitHint || Known.pAdditionalTimeout <= p && p <= Known.pTimeNow || p == Known.pParseDateString || p == Known.pCanAllocate || Known.pDebuggerEnabled <= p && p <= Known.pNativeFunctionSource || p == Known.pEscapePattern || Known.pHasTimeZoneRules <= p && p <= Known.pLastTransitionBefore || Known.pHostGlobalObject <= p && p <= Known.pMayCleanup || p == Known.pSortStep || p == Known.pForInStep || p == Known.pPropertyOrder || p == Known.pOmitSharedArrayBuffer || p == Known.pHostSupportsOptional || Known.pLocaleUppercase <= p && p <= Known.pLocaleNumberString || p == Known.pLocaleDateString || p == Known.pSuspendAgentUntil || p == Known.pExpandedYearForm || p == Known.pHostExtendIntrinsics || p == Known.pHostExtendObject || Known.pHostJobCallbackData <= p && p <= Known.pHostCleanupCallJobCallback || Known.pHostSelectAgent <= p && p <= Known.pAgentWoken || p == Known.pWakeAgent || p == Known.pChooseReadsBytesFrom || Known.pAgentNextJob <= p && p <= Known.pAgentCleanupJob || p == Known.pApproxPower || p == Known.pBigIntTooLarge || p == Known.pStringTooLarge
+
+  --- §18: a built-in function's parameters bound to the arguments `args` by its header: those
+  --- before a rest parameter from the front, those after it from the end of the arguments past the
+  --- front ones, the rest parameter's List the middle; a parameter without an argument is not present
+  --- (`.missing`), extra arguments without a rest parameter are dropped.
+  def builtinBind (h : Header) (args : List(Val(M))) : List(Slot times Val(M)) times Option(Slot times List(Val(M))) := let fill (ps : List(Param)) (vs : List(Val(M))) := ps.zipIdx.map(fun (p, i) => (p.x, vs.getD(i, .missing))) in let front := h.params.takeWhile(fun _dot0 => !_dot0.rest) in match h.params.drop(front.length) with
+    | [] => (fill(front, args), none)
+    | r :: back => let mid := args.drop(front.length) in let k := mid.length - min(back.length, mid.length) in (fill(front, args) ++ fill(back, mid.drop(k)), some((r.x, mid.take(k))))
+  end
+}

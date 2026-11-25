@@ -4,11 +4,12 @@
     python3 scripts/bijection.py [--print .lake/build/bin/ecma-print] [--spec-dir spec/spectec]
                                  [--json FILE] [-v]
 
-`ecma-print` (`lean/SpecPrint.lean`) prints every file in `spec/spectec/` back from `Ecma.Gen.*`
-and `Ecma.Grammar.Gen.*` as `@@file <rel_path> ... @@end` blocks using `Ecma.Print.SpecTec` and
-`Ecma.Grammar.PrintSpecTec`. This script checks that:
+`ecma-print` (`lean/SpecPrint.lean`) prints every file in `spec/spectec/` (outside `prose/`) back from
+`Ecma.Gen.*` and `Ecma.Grammar.Gen.*` as `@@file <rel_path> ... @@end` blocks using `Ecma.Print.SpecTec` and
+`Ecma.Grammar.PrintSpecTec`. (`spec/spectec/prose/*.spectec` is checked by `spectec roundtrip` and
+`ids_regenerated` in `scripts/quick_check.py`.) This script checks that:
 
-- `ecma-print` emits the exact set of `.spectec` files under `spec/spectec/` once each;
+- `ecma-print` emits the exact set of non-prose `.spectec` files under `spec/spectec/` once each;
 - every emitted file matches its `.spectec` file on disk byte for byte.
 """
 
@@ -74,7 +75,11 @@ def main() -> int:
         return 1
 
     spec_dir = Path(a.spec_dir)
-    want = {p.relative_to(spec_dir).as_posix(): p for p in sorted(spec_dir.rglob("*.spectec"))}
+    want = {
+        p.relative_to(spec_dir).as_posix(): p
+        for p in sorted(spec_dir.rglob("*.spectec"))
+        if p.relative_to(spec_dir).parts[0] != "prose"
+    }
     if not want:
         print(f"FAIL bijection: no .spectec files under {spec_dir}")
         return 1

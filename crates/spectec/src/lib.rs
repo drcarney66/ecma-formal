@@ -6,3 +6,4 @@ pub mod lexer;
 pub mod parse;
 pub mod print;
 pub mod prose;
+pub mod spec_model;

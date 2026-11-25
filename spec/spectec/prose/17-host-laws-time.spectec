@@ -1,0 +1,136 @@
+spec_module ProseHostLaws_Time
+import Ecma.Host.Laws.DateFormat
+
+---! # The laws of time and dates
+---!
+---! The host's clock, its time zone and Date.parse (sec-time-values-and-time-range, sec-systemtimezoneidentifier,
+---! sec-date.parse). The model has no local political rules for any time zone: GetNamedTimeZoneOffsetNanoseconds and
+---! GetNamedTimeZoneEpochNanoseconds run their default implementations, so *"UTC"* is the one available named time
+---! zone, and the system time zone is it or an offset time zone.
+
+namespace Ecma {
+  var {M : Model}
+
+  --- `n` is a time value identifying an instant: a finite integral Number from -8.64 × 10^15 to
+  --- 8.64 × 10^15 (sec-time-values-and-time-range).
+  def instantTimeValue (n : M.Num) : Prop := M.numView(n) = .posZero \/ M.numView(n) = .negZero \/ exists m, M.numView(n) = .finite(m) /\ M.isInt(m) = true /\ M.lt(m, M.neg(M.ofNat(maxTime))) = false /\ M.lt(M.ofNat(maxTime), m) = false
+
+  --- `x` is the empty String, or " (" then a time zone name then ")" (TimeZoneString step 9).
+  def timeZoneNameSuffix (x : M.Str) : Prop := M.strEq(x, M.strLit("")) = true \/ exists n, M.strEq(x, M.strConcat(M.strLit(" ("), M.strConcat(n, M.strLit(")")))) = true
+
+  --- Two decimal digits at the front of `l`: their value and the rest.
+  def digits2 : List(Nat) -> Option(Nat times List(Nat))
+    | a :: b :: l => if 48 <= a /\ a <= 57 /\ 48 <= b /\ b <= 57 then some(((a - 48) * 10 + (b - 48), l)) else none
+    | _ => none
+  end
+
+  --- A |TemporalDecimalFraction|'s 1 to 9 digits as nanoseconds.
+  def fractionNs (ds : List(Nat)) : Option(Nat) := if 1 <= ds.length /\ ds.length <= 9 /\ ds.all(fun c => 48 <= c /\ c <= 57) then some((ds ++ List.replicate(9 - ds.length, 48)).foldl(fun a c => a * 10 + (c - 48), 0)) else none
+
+  --- ParseTimeZoneOffsetString of a String |UTCOffset| matches, by its code units: its sign, |Hour|,
+  --- |MinuteSecond|s (the |TimeSeparator|s all *":"* or all empty) and fraction as nanoseconds; none
+  --- where |UTCOffset| does not match (IsTimeZoneOffsetString is *false*).
+  def utcOffsetNs : List(Nat) -> Option(Int)
+    | [] => none
+    | c :: l => do {
+        let sign : Int <- if c = 43 then some(1) else if c = 45 then some(-1) else none;
+        let (h, l) <- digits2(l);
+        guard(h <= 23);
+        let ns <- match l with
+          | [] => some(0)
+          | l => do {
+              let (ext, l) := match l with
+                | 58 :: l => (true, l)
+                | l => (false, l)
+              end;
+              let (mi, l) <- digits2(l);
+              guard(mi <= 59);
+              match l with
+                | [] => some(mi * 60 * 10 ^ 9)
+                | l => do {
+                    let l <- if ext then match l with
+                      | 58 :: l => some(l)
+                      | _ => none
+                    end else some(l);
+                    let (sc, l) <- digits2(l);
+                    guard(sc <= 59);
+                    let f <- match l with
+                      | [] => some(0)
+                      | c :: ds => if c = 46 \/ c = 44 then fractionNs(ds) else none
+                    end;
+                    some((mi * 60 + sc) * 10 ^ 9 + f);
+                  }
+              end;
+            }
+        end;
+        return sign * ((h * 3600 * 10 ^ 9 + ns : Nat) : Int);
+      }
+  end
+
+  --- SystemTimeZoneIdentifier() at `s` is `id`: *"UTC"* where SupportsOnlyUTC() is *true*, else
+  --- SystemTimeZoneString().
+  def sysTimeZone (H : Host(M)) (s : State(M)) (id : M.Str) : Prop := H.choice(Known.pSupportsOnlyUTC, [], s) = .ok(.bool(true), s) /\ M.strEq(id, M.strLit("UTC")) = true \/ H.choice(Known.pSupportsOnlyUTC, [], s) = .ok(.bool(false), s) /\ H.choice(Known.pSystemTimeZoneString, [], s) = .ok(.str(id), s)
+
+  --- The laws of time and dates.
+  laws Host.TimeLaws (H : Host(M)) {
+    --- sec-date.now:
+    --- "This function returns the time value designating the UTC date and time of the occurrence of the call to it."
+    --- Reading: TimeNow answers a time value identifying an instant (`instantTimeValue`), the state as it was.
+    law timeNow : H.asks(Known.pTimeNow, fun _ _ r => exists n, r = .num(n) /\ instantTimeValue(n));
+    --- No sentence: the host's clock (`Host.elapsed`, logged as it takes each job) is what `timeoutAfter`'s "after"
+    --- is measured on; that it never goes back is what makes "after" mean later.
+    --- Reading: as the host takes its next job, its clock reads no less than any elapsed time logged.
+    law elapsedMono : forall s k s', H.nextJob(s) = .ok(k, s') -> (forall j t, HostCall.next(j, t) mem s.hostLog -> M.lt(H.elapsed(s), t) = false);
+    --- sec-hostenqueuetimeoutjob:
+    --- "It schedules timeoutJob in the realm realm in the agent signified by realm.[[AgentSignifier]] to be performed after at least milliseconds milliseconds."
+    --- Reading: as the host takes a timeout job, its clock reads at least _milliseconds_ past the elapsed time logged
+    --- before the call that scheduled it.
+    law timeoutAfter : forall s pre c job realm ms a rl r rest s', s.hostLog = pre ++ .hook(c, [job, realm, .num(ms)], a, rl, r) :: rest -> Gen.clauses[c]? = some("sec-hostenqueuetimeoutjob") -> H.nextJob(s) = .ok(some(rest.length), s') -> mathAfter(lastElapsed(rest), H.elapsed(s), ms) = true;
+    --- sec-dowait step 23:
+    --- "Let additionalTimeout be an implementation-defined non-negative mathematical value."
+    --- Reading: AdditionalTimeout answers a non-negative mathematical value, the state as it was.
+    law additionalTimeout : H.asks(Known.pAdditionalTimeout, fun _ _ r => exists m, r = .math(m) /\ M.lt(m, M.ofNat(0)) = false);
+    --- sec-timezoneestring step 9:
+    --- "either the empty String or the string-concatenation of the code unit 0x0020 (SPACE), the code unit 0x0028 (LEFT PARENTHESIS), an implementation-defined time zone name, and the code unit 0x0029 (RIGHT PARENTHESIS)"
+    --- Reading: TimeZoneNameSuffix answers "" or " (" name ")", the state as it was.
+    law timeZoneNameSuffix : H.asks(Known.pTimeZoneNameSuffix, fun _ _ r => exists x, r = .str(x) /\ timeZoneNameSuffix(x));
+    --- sec-systemtimezoneidentifier step 2:
+    --- "Let systemTimeZoneString be the String representing the host environment's current time zone, either a primary time zone identifier or an offset time zone identifier."
+    --- sec-time-zone-identifiers: "ECMAScript implementations must support an available named time zone with the identifier "UTC", which must be the primary time zone identifier for the UTC time zone."
+    --- Reading: SystemTimeZoneString answers *"UTC"*, an available named time zone identifier whose
+    --- IsNonPrimaryTimeZoneId is *false*, or a String |UTCOffset| matches (`utcOffsetNs`), the state as it was.
+    law systemTimeZoneString : H.asks(Known.pSystemTimeZoneString, fun _ s r => exists x, r = .str(x) /\ (M.strEq(x, M.strLit("UTC")) = true \/ (exists a s' xs, H.choice(Known.pAvailableNamedTimeZoneIds, [], s) = .ok(.ref(a), s') /\ listAt(s', .ref(a)) = some(xs) /\ Val.str(x) mem xs /\ H.choice(Known.pIsNonPrimaryTimeZoneId, [.str(x)], s) = .ok(.bool(false), s)) \/ exists l, unitsAre(x, l) /\ utcOffsetNs(l).isSome));
+    --- sec-availablenamedtimezoneidentifiers step 4.b.i:
+    --- "Set primary to the primary time zone identifier associated with identifier."
+    --- Reading: PrimaryTimeZoneId answers *"UTC"* or an available named time zone identifier whose
+    --- IsNonPrimaryTimeZoneId is *false*, the state as it was.
+    law primaryTimeZoneId : H.asks(Known.pPrimaryTimeZoneId, fun _ s r => exists x, r = .str(x) /\ (M.strEq(x, M.strLit("UTC")) = true \/ exists a s' xs, H.choice(Known.pAvailableNamedTimeZoneIds, [], s) = .ok(.ref(a), s') /\ listAt(s', .ref(a)) = some(xs) /\ Val.str(x) mem xs /\ H.choice(Known.pIsNonPrimaryTimeZoneId, [.str(x)], s) = .ok(.bool(false), s)));
+    --- sec-systemtimezoneidentifier step 1:
+    --- "If the implementation only supports the UTC time zone, return "UTC"."
+    --- Reading: SupportsOnlyUTC answers a Boolean, the state as it was.
+    law supportsOnlyUTC : forall s r s', H.choice(Known.pSupportsOnlyUTC, [], s) = .ok(r, s') -> s' = s /\ exists b, r = .bool(b);
+    --- sec-date.parse:
+    --- "it returns a Number, the UTC time value corresponding to the date and time"
+    --- Reading: ParseDateString answers *NaN* or a time value (`instantTimeValue`), never -0𝔽, the state as it was.
+    law parseDateString : H.asks(Known.pParseDateString, fun _ _ r => exists n, r = .num(n) /\ (M.numView(n) = .nan \/ instantTimeValue(n)) /\ M.numView(n) <> .negZero);
+    --- sec-date.parse:
+    --- "When the MM or DD elements are absent, "01" is used. When the HH, mm, or ss elements are absent, "00" is used. When the sss element is absent, "000" is used. When the UTC offset representation is absent, date-only forms are interpreted as a UTC time"
+    --- Reading: a valid String of the format that is no local time gives the time value of its fields less its
+    --- offset, *NaN* out of a time value's range (sec-expanded-years).
+    law dateFormUTC : forall x s r s' (f : DateForm), H.choice(Known.pParseDateString, [.str(x)], s) = .ok(r, s') -> f.fits -> f.legal -> f.isLocal = false -> unitsAre(x, f.units) -> tvResult(r, f.ms - f.offsetMin * 60000);
+    --- sec-date.parse:
+    --- "When the UTC offset representation is absent, date-only forms are interpreted as a UTC time and date-time forms are interpreted as a local time."
+    --- Reading: a valid date-time form without an offset gives UTC of its fields (sec-utc-t): the fields themselves
+    --- where the system time zone is *"UTC"*, less the offset where it is an offset time zone.
+    law dateFormLocal : forall x s r s' (f : DateForm) id, H.choice(Known.pParseDateString, [.str(x)], s) = .ok(r, s') -> f.fits -> f.legal -> f.isLocal = true -> unitsAre(x, f.units) -> sysTimeZone(H, s, id) -> (M.strEq(id, M.strLit("UTC")) = true -> tvResult(r, f.ms)) /\ forall l o, unitsAre(id, l) -> utcOffsetNs(l) = some(o) -> tvResult(r, f.ms - o.tdiv(1000000));
+    --- sec-date.parse:
+    --- "Strings that are unrecognizable or contain out-of-bounds format element values shall cause this function to return NaN."
+    --- Reading: a String of the format's shape with an out-of-bounds element gives *NaN*.
+    law dateFormIllegal : forall x s r s' (f : DateForm), H.choice(Known.pParseDateString, [.str(x)], s) = .ok(r, s') -> f.fits -> f.illegal -> unitsAre(x, f.units) -> (exists n, r = .num(n) /\ M.numView(n) = .nan);
+    --- sec-date.prototype.toisostring step 7:
+    --- "Return a String representation of tv in the Date Time String Format on the UTC time scale, including all format elements and the UTC offset representation "Z"."
+    --- Reading: ExpandedYearForm, whether a year from 0 to 9999 is written as an expanded year, answers a Boolean,
+    --- the state as it was.
+    law expandedYearForm : H.asks(Known.pExpandedYearForm, fun _ _ r => exists b, r = .bool(b));
+  }
+}

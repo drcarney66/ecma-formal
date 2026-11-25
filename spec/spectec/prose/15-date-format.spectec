@@ -1,0 +1,139 @@
+spec_module ProseDateFormat
+import Ecma.Host.Laws.Basic
+
+---! # The Date Time String Format, over code units
+---!
+---! The Strings of the Date Time String Format (sec-date-time-string-format) as integers and code units: what
+---! ParseDateString's laws (`Ecma.Host.TimeLaws`) are stated over.
+
+namespace Ecma {
+  --- The last `n` decimal digits of `v`, the most significant first, as code units.
+  def decUnits : Nat -> Nat -> List(Nat)
+    | 0, _ => []
+    | n + 1, v => (48 + v / 10 ^ n % 10) :: decUnits(n, v)
+  end
+
+  --- `n` is the integral Number `t`: +0𝔽 for 0, else the finite Number whose value is `t`.
+  def numIs {M : Model} (n : M.Num) (t : Int) : Prop := if t = 0 then M.numView(n) = .posZero else exists m, M.numView(n) = .finite(m) /\ M.eq(m, intMath(t)) = true
+
+  --- `r` is the time value of the instant `t`: `t` where it is in range, else *NaN*.
+  def tvResult {M : Model} (r : Val(M)) (t : Int) : Prop := exists n, r = .num(n) /\ if inTime(t) then numIs(n, t) else M.numView(n) = .nan
+
+  --- The days of month `mo` (1 to 12) of year `y`.
+  def daysInMonth (y : Int) (mo : Nat) : Nat := [31, 28 + leapDays(y), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31].getD(mo - 1, 0)
+
+  --- A date-time form's time part (§21.4.1.32): `THH:mm`, then optionally `:ss` and then optionally
+  --- `.sss`, then the UTC offset representation: none, *"Z"* (`some none`), or a sign (`true` for
+  --- *"-"*), `HH`, *":"* and `mm`.
+  syntax DateTimePart record {
+    h : Nat;
+    mi : Nat;
+    sec : Option(Nat times Option(Nat));
+    off : Option(Option(Bool times Nat times Nat));
+  }
+
+  --- A String of the Date Time String Format's shape (§21.4.1.32): `YYYY`, or an expanded year's
+  --- sign (`true` for *"-"*) and six digits; optionally `-MM` and then optionally `-DD`; optionally a
+  --- time part.
+  syntax DateForm record {
+    sign : Option(Bool);
+    year : Nat;
+    md : Option(Nat times Option(Nat));
+    time : Option(DateTimePart);
+  }
+
+  namespace DateForm {
+    --- *"-"* or *"+"*.
+    def signUnits (neg : Bool) : List(Nat) := if neg then [45] else [43]
+
+    --- The UTC offset representation's code units.
+    def offUnits : Option(Option(Bool times Nat times Nat)) -> List(Nat)
+      | none => []
+      | some(none) => [90]
+      | some(some((n, h, m))) => signUnits(n) ++ decUnits(2, h) ++ [58] ++ decUnits(2, m)
+    end
+
+    --- `:ss` and `.sss`'s code units.
+    def secPart : Option(Nat times Option(Nat)) -> List(Nat)
+      | none => []
+      | some((sc, none)) => [58] ++ decUnits(2, sc)
+      | some((sc, some(ms))) => [58] ++ decUnits(2, sc) ++ [46] ++ decUnits(3, ms)
+    end
+
+    --- A time part's code units.
+    def timeUnits (p : DateTimePart) : List(Nat) := [84] ++ decUnits(2, p.h) ++ [58] ++ decUnits(2, p.mi) ++ secPart(p.sec) ++ offUnits(p.off)
+
+    --- The year's code units.
+    def yearPart (f : DateForm) : List(Nat) := match f.sign with
+      | none => decUnits(4, f.year)
+      | some(n) => signUnits(n) ++ decUnits(6, f.year)
+    end
+
+    --- `-MM` and `-DD`'s code units.
+    def mdPart : Option(Nat times Option(Nat)) -> List(Nat)
+      | none => []
+      | some((mo, none)) => [45] ++ decUnits(2, mo)
+      | some((mo, some(d))) => [45] ++ decUnits(2, mo) ++ [45] ++ decUnits(2, d)
+    end
+
+    --- The time part's code units, if any.
+    def timePart : Option(DateTimePart) -> List(Nat)
+      | none => []
+      | some(p) => timeUnits(p)
+    end
+
+    --- The String's code units.
+    def units (f : DateForm) : List(Nat) := f.yearPart ++ mdPart(f.md) ++ timePart(f.time)
+
+    --- The year.
+    def yearInt (f : DateForm) : Int := if f.sign = some(true) then -(f.year : Int) else f.year
+
+    --- The month, *"01"* where absent.
+    def month (f : DateForm) : Nat := f.md.map(fun _dot0 => _dot0.1).getD(1)
+
+    --- The day, *"01"* where absent.
+    def day (f : DateForm) : Nat := f.md.bind(fun _dot0 => _dot0.2).getD(1)
+
+    --- The hour, *"00"* where absent.
+    def hour (f : DateForm) : Nat := f.time.map(fun _dot0 => _dot0.h).getD(0)
+
+    --- The minute, *"00"* where absent.
+    def minute (f : DateForm) : Nat := f.time.map(fun _dot0 => _dot0.mi).getD(0)
+
+    --- The second, *"00"* where absent.
+    def second (f : DateForm) : Nat := f.time.bind(fun p => p.sec.map(fun _dot0 => _dot0.1)).getD(0)
+
+    --- The millisecond, *"000"* where absent.
+    def milli (f : DateForm) : Nat := f.time.bind(fun p => p.sec.bind(fun _dot0 => _dot0.2)).getD(0)
+
+    --- The UTC offset representation's sign, hours and minutes; none for *"Z"* or none.
+    def offset (f : DateForm) : Option(Bool times Nat times Nat) := f.time.bind(fun _dot0 => _dot0.off).join
+
+    --- The UTC offset in minutes, 0 for *"Z"* or none.
+    def offsetMin (f : DateForm) : Int := match f.offset with
+      | some((n, h, m)) => (if n then -1 else 1) * ((h * 60 + m : Nat) : Int)
+      | none => 0
+    end
+
+    --- A date-time form without a UTC offset: a local time.
+    def isLocal (f : DateForm) : Bool := match f.time with
+      | some(p) => p.off.isNone
+      | none => false
+    end
+
+    --- The time value of the fields, before the UTC offset is applied.
+    def ms (f : DateForm) : Int := dateMs(f.yearInt, f.month, f.day, f.hour, f.minute, f.second, f.milli)
+
+    --- Each element's value has as many digits as the element.
+    def fits (f : DateForm) : Prop := f.year < (if f.sign.isSome then 10 ^ 6 else 10 ^ 4) /\ f.month < 100 /\ f.day < 100 /\ f.hour < 100 /\ f.minute < 100 /\ f.second < 100 /\ f.milli < 1000 /\ forall n h m, f.offset = some((n, h, m)) -> h < 100 /\ m < 100
+
+    --- A valid instance of the format: each element in bounds, a day of the month, *"24"* only as
+    --- `24:00`, `24:00:00` or `24:00:00.000`, an offset's `HH` from 00 to 23 (|UTCOffset|'s |Hour|), and
+    --- no year 0 as -000000 (§21.4.1.32.1).
+    def legal (f : DateForm) : Prop := 1 <= f.month /\ f.month <= 12 /\ 1 <= f.day /\ f.day <= daysInMonth(f.yearInt, f.month) /\ (f.hour <= 23 \/ f.hour = 24 /\ f.minute = 0 /\ f.second = 0 /\ f.milli = 0) /\ f.minute <= 59 /\ f.second <= 59 /\ (forall n h m, f.offset = some((n, h, m)) -> h <= 23 /\ m <= 59) /\ not (f.sign = some(true) /\ f.year = 0)
+
+    --- An element out of the bounds the format's table gives it (`MM` 01 to 12, `DD` 01 to 31, `HH`
+    --- 00 to 24, `mm` and `ss` 00 to 59), or the year 0 as -000000.
+    def illegal (f : DateForm) : Prop := f.month = 0 \/ 12 < f.month \/ f.day = 0 \/ 31 < f.day \/ 24 < f.hour \/ 59 < f.minute \/ 59 < f.second \/ (exists n h m, f.offset = some((n, h, m)) /\ (24 < h \/ 59 < m)) \/ f.sign = some(true) /\ f.year = 0
+  }
+}
