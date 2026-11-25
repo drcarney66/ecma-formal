@@ -849,6 +849,10 @@ def @sec-getmodulenamespace "GetModuleNamespace" (kind ao params [module : doc "
   return namespace
 }
 
+def @sec-create-text-module "CreateTextModule" (kind ao params [source : String] -> completion<#"Synthetic Module Record">) vars [source] {
+  return @sec-create-default-export-synthetic-module(source)
+}
+
 sdo_row @sec-scriptisstrict ScriptIsStrict form alg {
   prods [p"Syntactic 0 Script : ScriptBody?", p"Syntactic 1 Script : ScriptBody?"]
   keys ["Script : ScriptBody?"]

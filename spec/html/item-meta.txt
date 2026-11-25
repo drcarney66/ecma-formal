@@ -228,6 +228,7 @@ alg @sec-copydataproperties base=8 close=6
 alg @sec-countleftcapturingparensbefore base=10 close=8
 alg @sec-countleftcapturingparenswithin base=10 close=8
 alg @sec-create-default-export-synthetic-module base=12 close=10
+alg @sec-create-text-module base=12 close=10
 alg @sec-createarrayfromlist base=8 close=6
 alg @sec-createarrayiterator base=10 close=8
 alg @sec-createasyncfromsynciterator base=10 close=8

@@ -385,6 +385,10 @@ def loaderBuiltin : Alg :=
               .let_ 7 (.call (alg "sec-completion-ao") [.call (alg "sec-parse-json-module") [.var 6]]),
               .if_ isNormal (.inline (.perform (.call (.alg ⟨storeClause, 0⟩)
                 [.var 4, .var 8, .field (.var 7) (fld "Value")]))) [] none]),
+             .mk (some (isStr 8 "text")) (.block [
+              .let_ 7 (.call (alg "sec-completion-ao") [.call (alg "sec-create-text-module") [.var 6]]),
+              .if_ isNormal (.inline (.perform (.call (.alg ⟨storeClause, 0⟩)
+                [.var 4, .var 8, .field (.var 7) (fld "Value")]))) [] none]),
              .mk (some (.preds (.var 8) (.isVal true false [.enum Known.eEmpty]) [])) (.inline (.let_ 7 (throwC typeError)))]
             (some (.mk none (.block [
             .set (.var 5) parse,

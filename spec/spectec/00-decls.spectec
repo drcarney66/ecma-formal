@@ -833,6 +833,7 @@ clause @sec-countleftcapturingparens-annexb
 clause @sec-countleftcapturingparensbefore op "CountLeftCapturingParensBefore"
 clause @sec-countleftcapturingparenswithin op "CountLeftCapturingParensWithin"
 clause @sec-create-default-export-synthetic-module op "CreateDefaultExportSyntheticModule"
+clause @sec-create-text-module op "CreateTextModule"
 clause @sec-createarrayfromlist op "CreateArrayFromList"
 clause @sec-createarrayiterator op "CreateArrayIterator"
 clause @sec-createasyncfromsynciterator op "CreateAsyncFromSyncIterator"

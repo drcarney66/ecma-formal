@@ -1,0 +1,4 @@
+# HostLoadImportedModule's prose list was written against an older base; block 5 has upstream typo [[Specifer]].
+use-new sec-HostLoadImportedModule 4
+ignore sec-HostLoadImportedModule 5
+ignore sec-HostLoadImportedModule 7
