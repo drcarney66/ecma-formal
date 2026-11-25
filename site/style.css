@@ -614,30 +614,73 @@ html:not(.js) .slide { position: static; opacity: 1; pointer-events: auto; aspec
 .p-label-svg { fill: var(--accent); font-size: 15px; font-family: var(--mono); font-weight: 700; }
 .p-bij-svg { fill: var(--quote); font-size: 14.5px; font-weight: 700; }
 
-/* Slide 3: The meat of the spec */
-.meat-layout { display: flex; flex-direction: column; justify-content: center; gap: 2.6cqh; }
-.meat-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.4cqw; align-items: stretch; }
-.meat-card {
-  border: 1.5px solid var(--rule); border-radius: 12px; padding: 2.8cqh 2.4cqw;
-  background: var(--paper); display: flex; flex-direction: column; gap: 1.3cqh;
+/* Slides 3–5: Exploded "Meat of the spec" (multi-step fade layers & downstream architecture) */
+.slide-top-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5cqw; flex-wrap: wrap; }
+.step-pills { display: flex; align-items: center; gap: 0.45cqw; padding-bottom: 0.3cqh; }
+.step-pill {
+  font: 600 clamp(0.62rem, 0.98cqw, 0.78rem)/1.35 var(--mono);
+  padding: 0.35cqh 0.75cqw; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-.meat-head h3 { font-size: clamp(1.18rem, 2.15cqw, 1.68rem); margin: 1.1cqh 0 0.2cqh; }
-.meat-lead { font-size: clamp(0.82rem, 1.32cqw, 1rem); color: var(--ink-2); margin: 0; max-width: none; }
-main .meat-card ul { margin: 0.4cqh 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 1.05cqh; }
-main .meat-card li { margin: 0; max-width: none; font-size: clamp(0.82rem, 1.32cqw, 1.02rem); line-height: 1.4; color: var(--ink); }
-main .meat-card li::marker { color: var(--accent); }
-.meat-downstream {
-  display: flex; align-items: center; gap: 1.4cqw;
-  border: 1.5px dashed var(--rule); border-radius: 10px;
-  padding: 2cqh 2.2cqw; background: var(--paper);
+.slide[data-step="0"] .step-pill[data-pill="0"],
+.slide[data-step="1"] .step-pill[data-pill="1"],
+.slide[data-step="2"] .step-pill[data-pill="2"],
+.slide[data-step="3"] .step-pill[data-pill="3"] {
+  background: var(--accent-soft); color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--rule));
 }
-.meat-arrow { font-size: clamp(1.3rem, 2.4cqw, 1.9rem); font-weight: 700; color: var(--accent); line-height: 1; flex: none; }
-.meat-downstream strong { display: block; font-size: clamp(0.9rem, 1.48cqw, 1.14rem); color: var(--ink); }
-.meat-downstream span { display: block; margin-top: 0.35cqh; font-size: clamp(0.8rem, 1.28cqw, 0.98rem); color: var(--ink-2); }
 
-/* Slide 4: Why now image */
-.why-wrap { align-items: center; justify-content: center; }
-.why-img { width: 100%; height: 100%; max-height: 76cqh; object-fit: contain; border-radius: 10px; }
+.multi-swap { position: relative; width: 100%; height: 100%; display: flex; align-items: center; }
+.multi-layer { width: 100%; }
+.multi-layer:not([data-layer="0"]) {
+  position: absolute; inset: 0; display: flex; align-items: center;
+  opacity: 0; pointer-events: none;
+}
+.deck-stage.ready .multi-layer { transition: opacity 0.3s ease; }
+.slide[data-step="1"] .multi-layer[data-layer="0"],
+.slide[data-step="2"] .multi-layer[data-layer="0"],
+.slide[data-step="3"] .multi-layer[data-layer="0"] { opacity: 0; pointer-events: none; }
+.slide[data-step="1"] .multi-layer[data-layer="1"],
+.slide[data-step="2"] .multi-layer[data-layer="2"],
+.slide[data-step="3"] .multi-layer[data-layer="3"] { opacity: 1; pointer-events: auto; }
+
+.meat-overview { display: flex; flex-direction: column; gap: 2.2cqh; width: 100%; }
+.meat-banner {
+  margin: 0; max-width: none; display: flex; align-items: center; gap: 1cqw;
+  padding: 1.5cqh 1.8cqw; border-radius: 10px; border: 1px solid var(--rule);
+  background: var(--surface); font-size: clamp(0.78rem, 1.24cqw, 0.96rem); color: var(--ink); line-height: 1.4;
+}
+.meat-banner .badge { flex: none; }
+.meat-triad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.6cqw; align-items: stretch; }
+.meat-card {
+  border: 1.5px solid var(--rule); border-radius: 11px; padding: 2.2cqh 1.8cqw;
+  background: var(--paper); display: flex; flex-direction: column; gap: 1cqh;
+}
+.meat-head h3 { font-size: clamp(0.95rem, 1.52cqw, 1.2rem); margin: 0.9cqh 0 0.1cqh; }
+.meat-head h3 code { background: none; padding: 0; font-size: 0.95em; }
+main .meat-card ul { margin: 0.3cqh 0 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.85cqh; }
+main .meat-card li { margin: 0; max-width: none; font-size: clamp(0.74rem, 1.18cqw, 0.92rem); line-height: 1.38; color: var(--ink-2); }
+main .meat-card li::marker { color: var(--accent); }
+
+.ds-layout { display: flex; flex-direction: column; justify-content: center; gap: 1.8cqh; }
+.ds-source {
+  border: 1.5px solid color-mix(in srgb, var(--accent) 42%, var(--rule));
+  background: color-mix(in srgb, var(--accent-soft) 32%, var(--surface));
+  border-radius: 11px; padding: 2cqh 2.2cqw;
+  display: flex; flex-direction: column; gap: 1.1cqh;
+}
+.ds-source-title { font-weight: 700; font-size: clamp(0.92rem, 1.55cqw, 1.2rem); color: var(--ink); }
+.ds-source-pills { display: flex; flex-wrap: wrap; gap: 0.8cqh 1cqw; }
+.ds-source-pills .badge { font-size: clamp(0.66rem, 1.05cqw, 0.82rem); text-transform: none; letter-spacing: 0.01em; padding: 0.25em 0.65em; }
+.ds-fan { text-align: center; font: 700 clamp(0.76rem, 1.22cqw, 0.95rem)/1.2 var(--mono); color: var(--accent); letter-spacing: 0.04em; }
+.ds-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.6cqh 1.8cqw; }
+.ds-card {
+  border: 1.5px solid var(--rule); border-radius: 10px; padding: 2cqh 2cqw;
+  background: var(--paper); display: flex; flex-direction: column; gap: 0.65cqh;
+}
+.ds-card h3 { margin: 0; font-size: clamp(0.92rem, 1.52cqw, 1.18rem); }
+.ds-card p { margin: 0; max-width: none; font-size: clamp(0.76rem, 1.22cqw, 0.94rem); line-height: 1.4; color: var(--ink-2); }
 
 /* Slide 4: Two clean tool cards */
 .tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.6cqw; align-items: stretch; align-content: center; }
@@ -692,7 +735,12 @@ pre.spec-code {
   margin: 0; padding: 3cqh 2.4cqw; font: clamp(0.82rem, 1.5cqw, 1.22rem)/1.65 var(--mono);
   white-space: pre-wrap; overflow-wrap: anywhere; background: var(--paper); border: 0;
 }
-pre.lean-code { font-size: clamp(0.74rem, 1.32cqw, 1.05rem); line-height: 1.58; }
+pre.lean-code { font-size: clamp(0.68rem, 1.18cqw, 0.95rem); line-height: 1.5; padding: 2.2cqh 2.1cqw; }
+pre.spec-code .k { color: var(--k); font-weight: 600; }
+pre.spec-code .s { color: var(--s); }
+pre.spec-code .c { color: var(--c); font-style: italic; }
+pre.spec-code .o, pre.spec-code .n { color: var(--o); }
+pre.spec-code .d { font-weight: 700; }
 pre.js-big { font-size: clamp(1.1rem, 2.2cqw, 1.75rem); padding: 6cqh 3cqw; }
 
 /* Slide 5 diff animation */
@@ -798,5 +846,5 @@ html.deck-present .deck-stage {
 @media print {
   .deck-stage { aspect-ratio: auto; width: 100%; overflow: visible; border: 0; box-shadow: none; }
   .slide { position: static !important; opacity: 1 !important; pointer-events: auto !important; page-break-after: always; border: 1px solid #ccc; margin-bottom: 1rem; }
-  .reveal-item, .diff-ins, .swap-after { opacity: 1 !important; max-width: none !important; transform: none !important; }
+  .reveal-item, .diff-ins, .swap-after, .multi-layer { opacity: 1 !important; max-width: none !important; transform: none !important; position: static !important; }
 }
