@@ -3006,6 +3006,20 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Assert: If _mapperFunc_ is present, then IsCallable(_mapperFunc_) is *true*, _thisArg_ is present, and _depth_ is 1.
 @@end
 
+@@patch alg @sec-fmamultiply root:4..5
+@@spectec
+|   assert pass "_ and _ both have positive signs"
+@@html
+| 1. Assert: _x_ and _y_ both have positive signs.
+@@end
+
+@@patch alg @sec-fmamultiply root:7..8
+@@spectec
+|   assert pass "_ and _ are both non-zero and finite"
+@@html
+| 1. Assert: _x_ and _y_ are both non-zero and finite.
+@@end
+
 @@patch alg @sec-forbodyevaluation root/2:do/0:then:0..1
 @@spectec
 |       let testRef = ? sdo Evaluation(#"test")
@@ -5389,6 +5403,20 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 @@html
 | 1. Let _exp_ be the exponential function of ℝ(_n_).
 | 1. Return an implementation-approximated Number value representing _exp_ - 1.
+@@end
+
+@@patch alg @sec-math.fusedMultiplyAdd root:10..11
+@@spectec
+|   assert pass "_ and _ are both finite"
+@@html
+| 1. Assert: _product_ and _z_ are both finite.
+@@end
+
+@@patch alg @sec-math.fusedMultiplyAdd root:7..8
+@@spectec
+|   if z is val {num_f(+∞); num_f(-∞)} -> return z
+@@html
+| 1. If _z_ is either *+∞*<sub>𝔽</sub> or *-∞*<sub>𝔽</sub>, return _z_.
 @@end
 
 @@patch alg @sec-math.hypot root/2:do:0..1

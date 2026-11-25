@@ -1,0 +1,3 @@
+# Place both top-level clauses of proposal-fma under The Math Object's function properties.
+parent sec-fmamultiply sec-function-properties-of-the-math-object
+parent sec-math.fusedMultiplyAdd sec-function-properties-of-the-math-object

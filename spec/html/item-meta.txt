@@ -390,6 +390,7 @@ alg @sec-finalization-registry.prototype.register base=10 close=8
 alg @sec-finalization-registry.prototype.unregister base=10 close=8
 alg @sec-findviapredicate base=12 close=10
 alg @sec-flattenintoarray base=12 close=10
+alg @sec-fmamultiply base=10 close=8
 alg @sec-forbodyevaluation base=10 close=8
 alg @sec-frombase64 base=10 close=8
 alg @sec-fromhex base=10 close=8
@@ -672,6 +673,7 @@ alg @sec-math.expm1 base=10 close=8
 alg @sec-math.f16round base=10 close=8
 alg @sec-math.floor base=10 close=8
 alg @sec-math.fround base=10 close=8
+alg @sec-math.fusedMultiplyAdd base=10 close=8
 alg @sec-math.hypot base=10 close=8
 alg @sec-math.imul base=10 close=8
 alg @sec-math.log base=10 close=8

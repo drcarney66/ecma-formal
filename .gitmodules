@@ -5,3 +5,6 @@
 	path = external/test262
 	url = https://github.com/tc39/test262
 	shallow = true
+[submodule "external/proposal-fma"]
+	path = external/proposal-fma
+	url = https://github.com/tc39/proposal-fma

@@ -1,0 +1,35 @@
+<emu-clause id="sec-fmamultiply" type="abstract operation">
+  <h1>
+    FMAMultiply (
+      _x_: a Number,
+      _y_: a Number,
+    ): either a non-zero mathematical value, ~not-a-number~, ~positive-infinity~, ~negative-infinity~, ~positive-zero~, or ~negative-zero~
+  </h1>
+  <dl class="header">
+    <dt>description</dt>
+    <dd>It computes the exact mathematical product of _x_ and _y_.
+    <p>The behaviour matches that of Number::multiply except that no rounding takes place and the result
+    is either an exact non-zero mathematical value or an enum indicating a signed zero, a signed infinity, or NaN.</p>
+    </dd>
+  </dl>
+  <emu-alg>
+    1. If _x_ is *NaN* or _y_ is *NaN*, return ~not-a-number~.
+    1. Let _sign_ be 1.
+    1. If _x_ is *-0*<sub>𝔽</sub> or _x_ <del><</del><ins>&lt;</ins> *-0*<sub>𝔽</sub>, then
+      1. Set _x_ to Number::unaryMinus(_x_).
+      1. Set _sign_ to -_sign_.
+    1. If _y_ is *-0*<sub>𝔽</sub> or _y_ <del><</del><ins>&lt;</ins> *-0*<sub>𝔽</sub>, then
+      1. Set _y_ to Number::unaryMinus(_y_).
+      1. Set _sign_ to -_sign_.
+    1. Assert: _x_ and _y_ both have positive signs.
+    1. If _x_ is *+∞*<sub>𝔽</sub> or _y_ is *+∞*<sub>𝔽</sub>, then
+      1. If _x_ is *+0*<sub>𝔽</sub> or _y_ is *+0*<sub>𝔽</sub>, return ~not-a-number~.
+      1. If _sign_ is -1, return ~negative-infinity~.
+      1. Return ~positive-infinity~.
+    1. If _x_ is *+0*<sub>𝔽</sub> or _y_ is *+0*<sub>𝔽</sub>, then
+      1. If _sign_ is -1, return ~negative-zero~.
+      1. Return ~positive-zero~.
+    1. Assert: _x_ and _y_ are both non-zero and finite.
+    1. Return _sign_ × ℝ(_x_) × ℝ(_y_).
+  </emu-alg>
+</emu-clause>

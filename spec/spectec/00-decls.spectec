@@ -1104,6 +1104,7 @@ clause @sec-flattenintoarray op "FlattenIntoArray"
 clause @sec-float16array
 clause @sec-float32array
 clause @sec-float64array
+clause @sec-fmamultiply op "FMAMultiply"
 clause @sec-for-in-and-for-of-statements
 clause @sec-for-in-and-for-of-statements-runtime-semantics-evaluation op "Evaluation"
 clause @sec-for-in-and-for-of-statements-static-semantics-early-errors
@@ -1551,6 +1552,7 @@ clause @sec-math.expm1 op "Math.expm1"
 clause @sec-math.f16round op "Math.f16round"
 clause @sec-math.floor op "Math.floor"
 clause @sec-math.fround op "Math.fround"
+clause @sec-math.fusedMultiplyAdd op "Math.fusedMultiplyAdd"
 clause @sec-math.hypot op "Math.hypot"
 clause @sec-math.imul op "Math.imul"
 clause @sec-math.ln10
@@ -3604,6 +3606,8 @@ enum ~method~
 enum ~minus-infinity~
 enum ~minus-zero~
 enum ~namespace~
+enum ~negative-infinity~
+enum ~negative-zero~
 enum ~new~
 enum ~no-code~
 enum ~non-constructor-method~
@@ -3618,6 +3622,8 @@ enum ~number~
 enum ~own-property-keys~
 enum ~pending~
 enum ~plus-infinity~
+enum ~positive-infinity~
+enum ~positive-zero~
 enum ~preserve-resizability~
 enum ~property~
 enum ~property-key~
