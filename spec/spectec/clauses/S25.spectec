@@ -1258,19 +1258,20 @@ def @sec-json.israwjson "JSON.isRawJSON" (kind builtin params [#"obj"]) vars [#"
   return false
 }
 
-def @sec-json.parse "JSON.parse" (kind builtin params [#"text", reviver opt]) vars [#"this value", NewTarget, #"text", reviver, jsonString, parseResult, unfiltered, root, rootName, snapshot] {
+def @sec-json.parse "JSON.parse" (kind builtin params [#"text", reviverOrOptions opt]) vars [#"this value", NewTarget, #"text", reviverOrOptions, jsonString, options, parseResult, unfiltered, root, rootName, snapshot] {
   let jsonString = ? @sec-tostring(#"text")
-  let parseResult = ? @sec-ParseJSON(jsonString)
+  let options = ? @sec-createjsonparseoptions(reviverOrOptions)
+  let parseResult = ? @sec-ParseJSON(jsonString, options)
   let unfiltered = parseResult[[Value]]
-  if @sec-iscallable(reviver) is val {false} -> return unfiltered
+  if @sec-iscallable(reviverOrOptions) is val {false} -> return unfiltered
   let root = @sec-ordinaryobjectcreate(intrinsic [[Object.prototype]])
   let rootName = $"the empty String"()
   perform ! @sec-createdatapropertyorthrow(root, rootName, unfiltered)
   let snapshot = @sec-createjsonparserecord(parseResult[[ParseNode]], rootName, unfiltered)
-  return ? @sec-internalizejsonproperty(root, rootName, reviver, snapshot)
+  return ? @sec-internalizejsonproperty(root, rootName, reviverOrOptions, snapshot)
 }
 
-def @sec-ParseJSON "ParseJSON" (kind ao params [#"text" : String] -> completion<record { [[ParseNode]]: #"Parse Node", [[Value]]: #"ECMAScript language value" }> | #"throw completion") vars [#"text", scriptString, script, result] {
+def @sec-ParseJSON "ParseJSON" (kind ao params [#"text" : String, options : #"JSON Parse Options Record"] -> completion<record { [[ParseNode]]: #"Parse Node", [[Value]]: #"ECMAScript language value" }> | #"throw completion") vars [#"text", options, scriptString, script, result] {
   if $IsJSONText(@sec-stringtocodepoints(#"text")) is val {false} -> throw @ph-new-error([[SyntaxError]])
   let scriptString = $"string-concatenation"("(", #"text", ");")
   let script = @formal-parsetextin(scriptString, |Script|, false, true, false)
@@ -1284,6 +1285,7 @@ def @sec-ParseJSON "ParseJSON" (kind ao params [#"text" : String] -> completion<
   else {
     assert result is ty {String; Number; Boolean} or result is val {null}
   }
+  perform ! @sec-applyjsonparseoptions(result, options)
   return record Record { [[ParseNode]]: script, [[Value]]: result }
 }
 
@@ -1425,12 +1427,13 @@ def @sec-shallowestcontainedjsonvalue "ShallowestContainedJSONValue" (kind ao pa
   return ~empty~
 }
 
-def @sec-json.rawjson "JSON.rawJSON" (kind builtin params [#"text"]) vars [#"this value", NewTarget, #"text", jsonString, parseResult, internalSlotsList, #"obj"] {
+def @sec-json.rawjson "JSON.rawJSON" (kind builtin params [#"text"]) vars [#"this value", NewTarget, #"text", jsonString, options, parseResult, internalSlotsList, #"obj"] {
   let jsonString = ? @sec-tostring(#"text")
   if jsonString is val {$"the empty String"()} -> throw @ph-new-error([[SyntaxError]])
   if $FirstUnit(?jsonString) sat @ph-not-json-first-unit() -> throw @ph-new-error([[SyntaxError]])
   if @ph-last-code-unit(?jsonString) sat @ph-not-json-last-unit() -> throw @ph-new-error([[SyntaxError]])
-  let parseResult = ? @sec-ParseJSON(jsonString)
+  let options = ! @sec-createjsonparseoptions()
+  let parseResult = ? @sec-ParseJSON(jsonString, options)
   assert parseResult[[Value]] is ty {String; Number; Boolean} or parseResult[[Value]] is val {null}
   let internalSlotsList = [[[IsRawJSON]]]
   let #"obj" = @sec-ordinaryobjectcreate(null, internalSlotsList)
@@ -1676,6 +1679,51 @@ def @sec-serializejsonarray "SerializeJSONArray" (kind ao params [state : #"JSON
   perform $RemoveLast(state[[Stack]])
   set field state[[Indent]] = stepBack
   return final
+}
+
+def @sec-createjsonparseoptions "CreateJSONParseOptions" (kind ao params [options : #"ECMAScript language value" opt] -> completion<#"JSON Parse Options Record"> | #"throw completion") vars [options, freeze, nullPrototypeObjects, freezeVal, nullProtoVal] {
+  let freeze = false
+  let nullPrototypeObjects = false
+  if options is ty {Object} and @sec-iscallable(options) is val {false} {
+    let freezeVal = ? @sec-get-o-p(options, "freeze")
+    if freezeVal is not val {undefined} {
+      if freezeVal is not ty {Boolean} -> throw @ph-new-error([[TypeError]])
+      set var freeze = freezeVal
+    }
+    set var nullPrototypeObjects = freeze
+    let nullProtoVal = ? @sec-get-o-p(options, "nullPrototypeObjects")
+    if nullProtoVal is not val {undefined} {
+      if nullProtoVal is not ty {Boolean} -> throw @ph-new-error([[TypeError]])
+      set var nullPrototypeObjects = nullProtoVal
+    }
+  }
+  return record #"JSON Parse Options Record" { [[Freeze]]: freeze, [[NullPrototypeObjects]]: nullPrototypeObjects }
+}
+
+def @sec-applyjsonparseoptions "ApplyJSONParseOptions" (kind ao params [value : #"ECMAScript language value", options : #"JSON Parse Options Record"] -> completion<val(~unused~)> | #"throw completion") vars [value, options, isArray, length, index, elem, #"keys", key, propVal] {
+  if value is not ty {Object} -> return ~unused~
+  if options[[Freeze]] is val {false} and options[[NullPrototypeObjects]] is val {false} -> return ~unused~
+  let isArray = ! @sec-isarray(value)
+  if isArray is val {true} {
+    let length = ! @sec-lengthofarraylike(value)
+    let index = 0
+    repeat_while index < length {
+      let elem = ! @sec-get-o-p(value, ! @sec-tostring($𝔽(index)))
+      perform ! @sec-applyjsonparseoptions(elem, options)
+      set var index = index + 1
+    }
+    if options[[Freeze]] is val {true} -> perform ! @sec-setintegritylevel(value, ~frozen~)
+  }
+  else {
+    let #"keys" = ! @sec-enumerableownproperties(value, ~key~)
+    for_each key : String in #"keys" {
+      let propVal = ! @sec-get-o-p(value, key)
+      perform ! @sec-applyjsonparseoptions(propVal, options)
+    }
+    if options[[NullPrototypeObjects]] is val {true} -> perform ! value[[SetPrototypeOf]](null)
+    if options[[Freeze]] is val {true} -> perform ! @sec-setintegritylevel(value, ~frozen~)
+  }
+  return ~unused~
 }
 
 sdo_row @sec-static-semantics-jsonarrayliteralcontentnodes JSONArrayLiteralContentNodes form alg {

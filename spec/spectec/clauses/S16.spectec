@@ -725,8 +725,9 @@ def @sec-create-default-export-synthetic-module "CreateDefaultExportSyntheticMod
   }
 }
 
-def @sec-parse-json-module "ParseJSONModule" (kind ao params [source : String] -> completion<#"Synthetic Module Record"> | #"throw completion") vars [source, parseResult] {
-  let parseResult = ? @sec-ParseJSON(source)
+def @sec-parse-json-module "ParseJSONModule" (kind ao params [source : String] -> completion<#"Synthetic Module Record"> | #"throw completion") vars [source, options, parseResult] {
+  let options = ! @sec-createjsonparseoptions()
+  let parseResult = ? @sec-ParseJSON(source, options)
   return @sec-create-default-export-synthetic-module(parseResult[[Value]])
 }
 

@@ -78,6 +78,7 @@ alg @sec-allocatearraybuffer base=10 close=8
 alg @sec-allocatesharedarraybuffer base=10 close=8
 alg @sec-allocatetypedarray base=12 close=10
 alg @sec-allocatetypedarraybuffer base=12 close=10
+alg @sec-applyjsonparseoptions base=10 close=8
 alg @sec-applystringornumericbinaryoperator base=8 close=6
 alg @sec-arguments-exotic-objects-defineownproperty-p-desc base=10 close=8
 alg @sec-arguments-exotic-objects-delete-p base=10 close=8
@@ -244,6 +245,7 @@ alg @sec-createimportbinding base=12 close=10
 alg @sec-createintrinsics base=8 close=6
 alg @sec-createiteratorfromclosure base=10 close=8
 alg @sec-createiterresultobject base=8 close=6
+alg @sec-createjsonparseoptions base=10 close=8
 alg @sec-createjsonparserecord base=10 close=8
 alg @sec-createlistfromarraylike base=8 close=6
 alg @sec-createlistiteratorRecord base=8 close=6

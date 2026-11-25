@@ -617,6 +617,18 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Let _data_ be ? <emu-meta suppress-effects="user-code">AllocateArrayBuffer(%ArrayBuffer%, _byteLength_)</emu-meta>.
 @@end
 
+@@patch alg @sec-applyjsonparseoptions root/3:else:1..2
+@@spectec
+|     for_each key : String in #"keys" {
+|       let propVal = ! @sec-get-o-p(value, key)
+|       perform ! @sec-applyjsonparseoptions(propVal, options)
+|     }
+@@html
+|   1. For each String _key_ of _keys_, do
+|     1. Let _propVal_ be ! Get(_value_, _key_).
+|     1. Perform ! ApplyJSONParseOptions(_propVal_, _options_).
+@@end
+
 @@patch alg @sec-applystringornumericbinaryoperator root/0:then/2:then:2..3
 @@spectec
 |       if $StringTooLarge($StrLen(?leftString) + $StrLen(?rightString)) is val {true} -> throw @ph-new-error([[RangeError]])
@@ -5014,7 +5026,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If _obj_ is an Object and _obj_ has an [[IsRawJSON]] internal slot, return *true*.
 @@end
 
-@@patch alg @sec-json.parse root:7..8
+@@patch alg @sec-json.parse root:8..9
 @@spectec
 |   let snapshot = @sec-createjsonparserecord(parseResult[[ParseNode]], rootName, unfiltered)
 @@html
@@ -5028,7 +5040,7 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. If the first code unit of _jsonString_ is not either an ASCII lowercase letter code unit (0x0061 through 0x007A, inclusive), an ASCII digit code unit (0x0030 through 0x0039, inclusive), 0x0022 (QUOTATION MARK), or 0x002D (HYPHEN-MINUS), throw a *SyntaxError* exception.
 @@end
 
-@@patch alg @sec-json.rawjson root:5..6
+@@patch alg @sec-json.rawjson root:6..7
 @@spectec
 |   assert parseResult[[Value]] is ty {String; Number; Boolean} or parseResult[[Value]] is val {null}
 @@html

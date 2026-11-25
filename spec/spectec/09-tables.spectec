@@ -2366,6 +2366,30 @@ table t"table-jobcallback-records" @sec-jobcallback-records#0 {
   ]
 }
 
+table t"table-json-parse-options-records" @sec-json-parse-options-records#0 {
+  kind fields
+  thead true
+  schema ("JSON Parse Options Record", false)
+  vars []
+  rows [
+    row [
+      cell { text "Field Name" }
+      cell { text "Value" }
+      cell { text "Meaning" }
+    ]
+    row [
+      cell { field [[Freeze]] }
+      cell { ty (Boolean) }
+      cell { text "Whether objects (including arrays) should be frozen upon creation." }
+    ]
+    row [
+      cell { field [[NullPrototypeObjects]] }
+      cell { ty (Boolean) }
+      cell { text "Whether non-array objects should be created with a null prototype." }
+    ]
+  ]
+}
+
 table t"table-json-parse-record" @sec-json-parse-record#0 {
   kind fields
   thead false

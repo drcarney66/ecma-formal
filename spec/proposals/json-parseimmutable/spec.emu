@@ -1,0 +1,193 @@
+<!doctype html>
+<meta charset="utf8">
+<pre class="metadata">
+title: JSON.parse Options
+stage: 2.7
+contributors: Robin Ricard, Rick Button, Ashley Claymore, Nicolò Ribaudo, Peter Klecha
+</pre>
+
+<emu-clause id="sec-ecmascript-language-scripts-and-modules">
+  <h1>ECMAScript Language: Scripts and Modules</h1>
+
+  <emu-clause id="sec-modules">
+    <h1>Modules</h1>
+
+    <emu-clause id="sec-module-semantics">
+      <h1>Module Semantics</h1>
+
+      <emu-clause id="sec-synthetic-module-records">
+        <h1>Synthetic Module Records</h1>
+
+        <emu-clause id="sec-parse-json-module" type="abstract operation">
+          <h1>
+            ParseJSONModule (
+              _source_: a String,
+            ): either a normal completion containing a Synthetic Module Record or a throw completion
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It parses _source_ as JSON and returns a Synthetic Module Record whose default export is the resulting value.</dd>
+          </dl>
+          <emu-alg>
+            1. <ins>Let _options_ be ! CreateJSONParseOptions().</ins>
+            1. Let _parseResult_ be ? ParseJSON(_source_<ins>, _options_</ins>).
+            1. Return CreateDefaultExportSyntheticModule(_parseResult_.[[Value]]).
+          </emu-alg>
+        </emu-clause>
+      </emu-clause>
+    </emu-clause>
+  </emu-clause>
+</emu-clause>
+
+<emu-clause id="sec-structured-data">
+  <h1>Structured Data</h1>
+
+  <emu-clause id="sec-json-object">
+    <h1>The JSON Object</h1>
+
+    <emu-clause id="sec-json.parse" type="built-in function">
+      <h1>JSON.parse ( _text_ [ , <del>_reviver_</del><ins>_reviverOrOptions_</ins> ] )</h1>
+      <p>This function parses a JSON text (a JSON-formatted String) and produces an ECMAScript language value. The JSON format represents literals, arrays, and objects with a syntax similar to the syntax for ECMAScript literals, Array Initializers, and Object Initializers. After parsing, JSON objects are realized as ECMAScript objects. JSON arrays are realized as ECMAScript Array instances. JSON strings, numbers, booleans, and null are realized as ECMAScript Strings, Numbers, Booleans, and *null*.</p>
+      <p>The optional <del>_reviver_</del><ins>_reviverOrOptions_</ins> parameter is <ins>either</ins> a function that can filter and transform the results<ins>, or an object whose entries specify built-in transforms to be applied</ins>. <del>For</del><ins>When _reviverOrOptions_ is a function, for</ins> each value produced by the parse, <del>_reviver_</del><ins>_reviverOrOptions_</ins> is called with three arguments (the associated property key, the value, and a context object). If the property is unmodified and its value is primitive, the provided context object has a *"source"* property containing source text of the corresponding Parse Node. If the call returns *undefined*, the property is deleted. Otherwise, the property is redefined to use the return value.</p>
+      <emu-alg>
+        1. Let _jsonString_ be ? ToString(_text_).
+        1. <ins>Let _options_ be ? CreateJSONParseOptions(_reviverOrOptions_).</ins>
+        1. Let _parseResult_ be ? ParseJSON(_jsonString_<ins>, _options_</ins>).
+        1. Let _unfiltered_ be _parseResult_.[[Value]].
+        1. If IsCallable(<del>_reviver_</del><ins>_reviverOrOptions_</ins>) is *false*, return _unfiltered_.
+        1. Let _root_ be OrdinaryObjectCreate(%Object.prototype%).
+        1. Let _rootName_ be the empty String.
+        1. Perform ! CreateDataPropertyOrThrow(_root_, _rootName_, _unfiltered_).
+        1. Let _snapshot_ be <emu-meta suppress-effects="user-code">CreateJSONParseRecord(_parseResult_.[[ParseNode]], _rootName_, _unfiltered_)</emu-meta>.
+        1. Return ? InternalizeJSONProperty(_root_, _rootName_, <del>_reviver_</del><ins>_reviverOrOptions_</ins>, _snapshot_).
+      </emu-alg>
+      <p>The *"length"* property of this function is *2*<sub>𝔽</sub>.</p>
+
+      <emu-clause id="sec-ParseJSON" type="abstract operation">
+        <h1>
+          ParseJSON (
+            _text_: a String,
+            <ins>_options_: a JSON Parse Options Record,</ins>
+          ): either a normal completion containing a Record with fields [[ParseNode]] (a Parse Node) and [[Value]] (an ECMAScript language value), or a throw completion
+        </h1>
+        <dl class="header">
+        </dl>
+        <emu-alg>
+          1. [id="step-json-parse-validate"] If StringToCodePoints(_text_) is not a valid JSON text as specified in ECMA-404, throw a *SyntaxError* exception.
+          1. Let _scriptString_ be the string-concatenation of *"("*, _text_, and *");"*.
+          1. [id="step-json-parse-parse"] Let _script_ be ParseText(_scriptString_, |Script|).
+          1. NOTE: The early error rules defined in <emu-xref href="#sec-object-initializer-static-semantics-early-errors"></emu-xref> have special handling for the above invocation of ParseText.
+          1. Assert: _script_ is a Parse Node.
+          1. [id="step-json-parse-eval"] Let _result_ be ! <emu-meta suppress-effects="user-code">Evaluation of _script_</emu-meta>.
+          1. NOTE: The PropertyDefinitionEvaluation semantics defined in <emu-xref href="#sec-runtime-semantics-propertydefinitionevaluation"></emu-xref> have special handling for the above evaluation.
+          1. [id="step-json-parse-assert-type"] Assert: _result_ is either a String, a Number, a Boolean, an Object that is defined by either an |ArrayLiteral| or an |ObjectLiteral|, or *null*.
+          1. <ins>Perform ! ApplyJSONParseOptions(_result_, _options_).</ins>
+          1. Return the Record { [[ParseNode]]: _script_, [[Value]]: _result_ }.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-json-parse-options-records">
+        <h1><ins>JSON Parse Options Records</ins></h1>
+        <p>A <dfn variants="JSON Parse Options Records">JSON Parse Options Record</dfn> is a Record value used to specify JSON deserialization options.</p>
+        <p>JSON Parse Options Records have the fields listed in <emu-xref href="#table-json-parse-options-records"></emu-xref>.</p>
+        <emu-table id="table-json-parse-options-records" caption="JSON Parse Options Record Fields">
+          <table>
+            <thead>
+              <tr>
+                <th>Field Name</th>
+                <th>Value</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tr>
+              <td>[[Freeze]]</td>
+              <td>a Boolean</td>
+              <td>Whether objects (including arrays) should be frozen upon creation.</td>
+            </tr>
+            <tr>
+              <td>[[NullPrototypeObjects]]</td>
+              <td>a Boolean</td>
+              <td>Whether non-array objects should be created with a null prototype.</td>
+            </tr>
+          </table>
+        </emu-table>
+      </emu-clause>
+
+      <emu-clause id="sec-createjsonparseoptions" type="abstract operation">
+        <h1>
+          <ins>CreateJSONParseOptions (
+            optional _options_: an ECMAScript language value,
+          ): either a normal completion containing a JSON Parse Options Record or a throw completion</ins>
+        </h1>
+        <dl class="header">
+        </dl>
+        <emu-alg>
+          1. Let _freeze_ be *false*.
+          1. Let _nullPrototypeObjects_ be *false*.
+          1. If _options_ is an Object and IsCallable(_options_) is *false*, then
+            1. Let _freezeVal_ be ? Get(_options_, *"freeze"*).
+            1. If _freezeVal_ is not *undefined*, then
+              1. If _freezeVal_ is not a Boolean, throw a *TypeError* exception.
+              1. Set _freeze_ to _freezeVal_.
+            1. Set _nullPrototypeObjects_ to _freeze_.
+            1. Let _nullProtoVal_ be ? Get(_options_, *"nullPrototypeObjects"*).
+            1. If _nullProtoVal_ is not *undefined*, then
+              1. If _nullProtoVal_ is not a Boolean, throw a *TypeError* exception.
+              1. Set _nullPrototypeObjects_ to _nullProtoVal_.
+          1. Return the JSON Parse Options Record { [[Freeze]]: _freeze_, [[NullPrototypeObjects]]: _nullPrototypeObjects_ }.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-applyjsonparseoptions" type="abstract operation">
+        <h1>
+          <ins>ApplyJSONParseOptions (
+            _value_: an ECMAScript language value,
+            _options_: a JSON Parse Options Record,
+          ): either a normal completion containing ~unused~ or a throw completion</ins>
+        </h1>
+        <dl class="header">
+        </dl>
+        <emu-alg>
+          1. If _value_ is not an Object, return ~unused~.
+          1. If _options_.[[Freeze]] is *false* and _options_.[[NullPrototypeObjects]] is *false*, return ~unused~.
+          1. Let _isArray_ be ! IsArray(_value_).
+          1. If _isArray_ is *true*, then
+            1. Let _length_ be ! LengthOfArrayLike(_value_).
+            1. Let _index_ be 0.
+            1. Repeat, while _index_ &lt; _length_,
+              1. Let _elem_ be ! Get(_value_, ! ToString(𝔽(_index_))).
+              1. Perform ! ApplyJSONParseOptions(_elem_, _options_).
+              1. Set _index_ to _index_ + 1.
+            1. If _options_.[[Freeze]] is *true*, perform ! SetIntegrityLevel(_value_, ~frozen~).
+          1. Else,
+            1. Let _keys_ be ! EnumerableOwnProperties(_value_, ~key~).
+            1. For each String _key_ of _keys_, do
+              1. Let _propVal_ be ! Get(_value_, _key_).
+              1. Perform ! ApplyJSONParseOptions(_propVal_, _options_).
+            1. If _options_.[[NullPrototypeObjects]] is *true*, perform ! _value_.[[SetPrototypeOf]](*null*).
+            1. If _options_.[[Freeze]] is *true*, perform ! SetIntegrityLevel(_value_, ~frozen~).
+          1. Return ~unused~.
+        </emu-alg>
+      </emu-clause>
+    </emu-clause>
+
+    <emu-clause id="sec-json.rawjson" type="built-in function">
+      <h1>JSON.rawJSON ( _text_ )</h1>
+      <p>This function returns an object representing raw JSON text of a string, number, boolean, or null value.</p>
+      <emu-alg>
+        1. Let _jsonString_ be ? ToString(_text_).
+        1. If _jsonString_ is the empty String, throw a *SyntaxError* exception.
+        1. If the first code unit of _jsonString_ is not either an ASCII lowercase letter code unit (0x0061 through 0x007A, inclusive), an ASCII digit code unit (0x0030 through 0x0039, inclusive), 0x0022 (QUOTATION MARK), or 0x002D (HYPHEN-MINUS), throw a *SyntaxError* exception.
+        1. If the last code unit of _jsonString_ is not either an ASCII lowercase letter code unit (0x0061 through 0x007A, inclusive), an ASCII digit code unit (0x0030 through 0x0039, inclusive), or 0x0022 (QUOTATION MARK), throw a *SyntaxError* exception.
+        1. <ins>Let _options_ be ! CreateJSONParseOptions().</ins>
+        1. Let _parseResult_ be ? ParseJSON(_jsonString_<ins>, _options_</ins>).
+        1. Assert: _parseResult_.[[Value]] is either a String, a Number, a Boolean, or *null*.
+        1. Let _internalSlotsList_ be « [[IsRawJSON]] ».
+        1. Let _obj_ be OrdinaryObjectCreate(*null*, _internalSlotsList_).
+        1. Perform ! CreateDataPropertyOrThrow(_obj_, *"rawJSON"*, _jsonString_).
+        1. Perform ! SetIntegrityLevel(_obj_, ~frozen~).
+        1. Return _obj_.
+      </emu-alg>
+    </emu-clause>
+  </emu-clause>
+</emu-clause>

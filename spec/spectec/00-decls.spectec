@@ -491,6 +491,7 @@ clause @sec-allocatearraybuffer op "AllocateArrayBuffer"
 clause @sec-allocatesharedarraybuffer op "AllocateSharedArrayBuffer"
 clause @sec-allocatetypedarray op "AllocateTypedArray"
 clause @sec-allocatetypedarraybuffer op "AllocateTypedArrayBuffer"
+clause @sec-applyjsonparseoptions op "ApplyJSONParseOptions"
 clause @sec-applystringornumericbinaryoperator op "ApplyStringOrNumericBinaryOperator"
 clause @sec-argument-lists
 clause @sec-arguments-exotic-objects
@@ -850,6 +851,7 @@ clause @sec-createimportbinding op "CreateImportBinding"
 clause @sec-createintrinsics op "CreateIntrinsics"
 clause @sec-createiteratorfromclosure op "CreateIteratorFromClosure"
 clause @sec-createiterresultobject op "CreateIteratorResultObject"
+clause @sec-createjsonparseoptions op "CreateJSONParseOptions"
 clause @sec-createjsonparserecord op "CreateJSONParseRecord"
 clause @sec-createlistfromarraylike op "CreateListFromArrayLike"
 clause @sec-createlistiteratorRecord op "CreateListIteratorRecord"
@@ -1450,6 +1452,7 @@ clause @sec-joinindexedproperties op "JoinIndexedProperties"
 clause @sec-json
 clause @sec-json-%symbol.tostringtag%
 clause @sec-json-object
+clause @sec-json-parse-options-records
 clause @sec-json-parse-record
 clause @sec-json-serialization-record
 clause @sec-json.israwjson op "JSON.isRawJSON"
@@ -3243,6 +3246,7 @@ field [[Float64Array]]
 field [[Float64Array.prototype]]
 field [[ForInIteratorPrototype]]
 field [[FormalParameters]]
+field [[Freeze]]
 field [[Function]]
 field [[Function.prototype]]
 field [[FunctionObject]]
@@ -3348,6 +3352,7 @@ field [[Namespace]]
 field [[NewTarget]]
 field [[NextMethod]]
 field [[NoTear]]
+field [[NullPrototypeObjects]]
 field [[Number]]
 field [[Number.prototype]]
 field [[NumberData]]
@@ -4031,6 +4036,7 @@ syntax #"ImportAttribute Record" defined { super [] record true test none }
 syntax #"ImportEntry Record" defined { super [] record true test none }
 syntax #"Iterator Record" defined { super [] record true test none }
 syntax #"IteratorResult object" defined {}
+syntax #"JSON Parse Options Record" defined {}
 syntax #"JSON Parse Record" defined { super [] record true test none }
 syntax #"JSON Serialization Record" defined { super [] record true test none }
 syntax #"Job Abstract Closure" defined { super [#"Abstract Closure"] record false test $ClosureKind(subject, ~job~) }
