@@ -762,3 +762,106 @@ def @sec-canonicalizekeyedcollectionkey "CanonicalizeKeyedCollectionKey" (kind a
   return key
 }
 
+def @sec-composite-function-arg "Composite" (kind builtin params [arg, options opt]) vars [#"this value", NewTarget, arg, options, preserveNegativeZero, preserveNegativeZeroOption, entries, #"keys", key, #"desc", value] {
+  if arg is not ty {Object} -> throw @ph-new-error([[TypeError]])
+  let preserveNegativeZero = @sec-iscomposite(arg)
+  if options is not val {undefined} {
+    if options is not ty {Object} -> throw @ph-new-error([[TypeError]])
+    let preserveNegativeZeroOption = ? @sec-get-o-p(options, "preserveNegativeZero")
+    if preserveNegativeZeroOption is not val {undefined} -> set var preserveNegativeZero = @sec-toboolean(preserveNegativeZeroOption)
+  }
+  if preserveNegativeZero is val {true} and @ph-current-realm-composite-registry() sat $Contains(?arg) -> return arg
+  let entries = $ListNew()
+  let #"keys" = ? arg[[OwnPropertyKeys]]()
+  for_each key in #"keys" {
+    let #"desc" = ? arg[[GetOwnProperty]](key)
+    if #"desc" is not val {undefined} and #"desc"[[Enumerable]] is val {true} {
+      if key is ty {Symbol} -> throw @ph-new-error([[TypeError]])
+      let value = ? @sec-get-o-p(arg, key)
+      set var value = @sec-canonicalizecompositevalue(value, preserveNegativeZero)
+      perform $Append(record #"Composite Entry Record" { [[Key]]: key, [[Value]]: value }, ?entries)
+    }
+  }
+  return @sec-findorcreatecomposite(entries)
+}
+
+def @sec-composite.iscomposite "Composite.isComposite" (kind builtin params [arg]) vars [#"this value", NewTarget, arg] {
+  return @sec-iscomposite(arg)
+}
+
+def @sec-iscomposite "IsComposite" (kind ao params [value : #"ECMAScript language value"] -> Boolean) vars [value] {
+  if value is not ty {Object} -> return false
+  if value sat $HasSlot([[Composite]]) -> return true
+  return false
+}
+
+def @sec-canonicalizecompositevalue "CanonicalizeCompositeValue" (kind ao params [value : #"ECMAScript language value", preserveNegativeZero : Boolean] -> #"ECMAScript language value") vars [value, preserveNegativeZero] {
+  if value is val {num_f(-0)} and preserveNegativeZero is val {false} -> return num_f(+0)
+  if value is val {nan} -> return nan
+  return value
+}
+
+def @sec-compositecanonicalorder "CompositeCanonicalOrder" (kind ao params [entries : list<#"Composite Entry Record">] -> list<#"Composite Entry Record">) vars [entries, integerEntries, stringEntries, entry, #"rest", sortedInt, least, a, sortedStr] {
+  let integerEntries = $ListNew()
+  let stringEntries = $ListNew()
+  for_each entry : #"Composite Entry Record" in entries {
+    assert entry[[Key]] is ty {String}
+    if_else entry[[Key]] is ty {#"array index"} { perform $Append(?entry, ?integerEntries) } else { perform $Append(?entry, ?stringEntries) }
+  }
+  let #"rest" = $Copy(?integerEntries)
+  let sortedInt = $ListNew()
+  repeat_while #"rest" fails $IsEmpty() {
+    let least = $ListElem(data choice 1, ?#"rest")
+    for_each a in #"rest" {
+      if $ℝ(! @sec-touint32(a[[Key]])) < $ℝ(! @sec-touint32(least[[Key]])) -> set var least = a
+    }
+    perform $Append(?least, ?sortedInt)
+    perform $RemoveElem(?least, ?#"rest")
+  }
+  set var integerEntries = sortedInt
+  let #"rest" = $Copy(?stringEntries)
+  let sortedStr = $ListNew()
+  repeat_while #"rest" fails $IsEmpty() {
+    let least = $ListElem(data choice 1, ?#"rest")
+    for_each a in #"rest" {
+      if ! @sec-islessthan(a[[Key]], least[[Key]], true) is val {true} -> set var least = a
+    }
+    perform $Append(?least, ?sortedStr)
+    perform $RemoveElem(?least, ?#"rest")
+  }
+  set var stringEntries = sortedStr
+  return $ListConcat([integerEntries, stringEntries])
+}
+
+def @sec-findorcreatecomposite "FindOrCreateComposite" (kind ao params [entries : list<#"Composite Entry Record">] -> #"composite object") vars [entries, sortedEntries, registry, composite, entry, #"desc"] {
+  let sortedEntries = @sec-compositecanonicalorder(entries)
+  let registry = @ph-current-realm-composite-registry()
+  for_each composite : #"composite object" in registry {
+    if @sec-compositematch(composite, sortedEntries) is val {true} -> return composite
+  }
+  let composite = @sec-ordinaryobjectcreate(null, [[[Composite]]])
+  for_each entry : #"Composite Entry Record" in sortedEntries {
+    let #"desc" = record PropertyDescriptor { [[Value]]: entry[[Value]], [[Writable]]: false, [[Enumerable]]: true, [[Configurable]]: false }
+    perform ! @sec-definepropertyorthrow(composite, entry[[Key]], #"desc")
+  }
+  set field composite[[Extensible]] = false
+  perform $SetAdd(?composite, ?registry)
+  return composite
+}
+
+def @sec-compositematch "CompositeMatch" (kind ao params [composite : #"composite object", sortedEntries : list<#"Composite Entry Record">] -> Boolean) vars [composite, sortedEntries, #"keys", i, entry, key, current] {
+  assert pass "_ is in the canonical key order produced by CompositeCanonicalOrder (<emu-xref href=\"#sec-compositecanonicalorder\"></emu-xref>)"
+  let #"keys" = ! composite[[OwnPropertyKeys]]()
+  assert pass "_ is in the canonical key order produced by CompositeCanonicalOrder (<emu-xref href=\"#sec-compositecanonicalorder\"></emu-xref>)"
+  if $ListLen(?#"keys") != $ListLen(?sortedEntries) -> return false
+  let i = 0
+  for_each entry : #"Composite Entry Record" in sortedEntries {
+    let key = #"keys"[i]
+    if entry[[Key]] is not val {key} -> return false
+    let current = ! @sec-get-o-p(composite, key)
+    if @sec-samevalue(current, entry[[Value]]) is val {false} -> return false
+    set var i = i + 1
+  }
+  return true
+}
+

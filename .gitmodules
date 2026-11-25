@@ -5,3 +5,6 @@
 	path = external/test262
 	url = https://github.com/tc39/test262
 	shallow = true
+[submodule "external/proposal-composites"]
+	path = external/proposal-composites
+	url = https://github.com/tc39/proposal-composites

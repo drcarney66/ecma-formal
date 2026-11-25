@@ -1590,8 +1590,8 @@ obj 136 "Date.prototype" @sec-properties-of-the-date-prototype-object {
       prop str "toUTCString" = data (obj 178) attrs { w: true, e: false, c: true } @sec-date.prototype.toutcstring
       prop str "valueOf" = data (obj 179) attrs { w: true, e: false, c: true } @sec-date.prototype.valueof
       prop sym "Symbol.toPrimitive" = data (obj 180) attrs { w: false, e: false, c: true } @sec-date.prototype-%symbol.toprimitive%
-      prop str "getYear" = data (obj 582) attrs { w: true, e: false, c: true } @sec-date.prototype.getyear annexB
-      prop str "setYear" = data (obj 583) attrs { w: true, e: false, c: true } @sec-date.prototype.setyear annexB
+      prop str "getYear" = data (obj 584) attrs { w: true, e: false, c: true } @sec-date.prototype.getyear annexB
+      prop str "setYear" = data (obj 585) attrs { w: true, e: false, c: true } @sec-date.prototype.setyear annexB
       prop str "toGMTString" = data (obj 178) attrs { w: true, e: false, c: true } @sec-date.prototype.togmtstring annexB
   ]
 }
@@ -2125,20 +2125,20 @@ obj 185 "String.prototype" @sec-properties-of-the-string-prototype-object {
       prop str "trimStart" = data (obj 218) attrs { w: true, e: false, c: true } @sec-string.prototype.trimstart
       prop str "valueOf" = data (obj 219) attrs { w: true, e: false, c: true } @sec-string.prototype.valueof
       prop sym "Symbol.iterator" = data (obj 220) attrs { w: true, e: false, c: true } @sec-string.prototype-%symbol.iterator%
-      prop str "substr" = data (obj 568) attrs { w: true, e: false, c: true } @sec-string.prototype.substr annexB
-      prop str "anchor" = data (obj 569) attrs { w: true, e: false, c: true } @sec-string.prototype.anchor annexB
-      prop str "big" = data (obj 570) attrs { w: true, e: false, c: true } @sec-string.prototype.big annexB
-      prop str "blink" = data (obj 571) attrs { w: true, e: false, c: true } @sec-string.prototype.blink annexB
-      prop str "bold" = data (obj 572) attrs { w: true, e: false, c: true } @sec-string.prototype.bold annexB
-      prop str "fixed" = data (obj 573) attrs { w: true, e: false, c: true } @sec-string.prototype.fixed annexB
-      prop str "fontcolor" = data (obj 574) attrs { w: true, e: false, c: true } @sec-string.prototype.fontcolor annexB
-      prop str "fontsize" = data (obj 575) attrs { w: true, e: false, c: true } @sec-string.prototype.fontsize annexB
-      prop str "italics" = data (obj 576) attrs { w: true, e: false, c: true } @sec-string.prototype.italics annexB
-      prop str "link" = data (obj 577) attrs { w: true, e: false, c: true } @sec-string.prototype.link annexB
-      prop str "small" = data (obj 578) attrs { w: true, e: false, c: true } @sec-string.prototype.small annexB
-      prop str "strike" = data (obj 579) attrs { w: true, e: false, c: true } @sec-string.prototype.strike annexB
-      prop str "sub" = data (obj 580) attrs { w: true, e: false, c: true } @sec-string.prototype.sub annexB
-      prop str "sup" = data (obj 581) attrs { w: true, e: false, c: true } @sec-string.prototype.sup annexB
+      prop str "substr" = data (obj 570) attrs { w: true, e: false, c: true } @sec-string.prototype.substr annexB
+      prop str "anchor" = data (obj 571) attrs { w: true, e: false, c: true } @sec-string.prototype.anchor annexB
+      prop str "big" = data (obj 572) attrs { w: true, e: false, c: true } @sec-string.prototype.big annexB
+      prop str "blink" = data (obj 573) attrs { w: true, e: false, c: true } @sec-string.prototype.blink annexB
+      prop str "bold" = data (obj 574) attrs { w: true, e: false, c: true } @sec-string.prototype.bold annexB
+      prop str "fixed" = data (obj 575) attrs { w: true, e: false, c: true } @sec-string.prototype.fixed annexB
+      prop str "fontcolor" = data (obj 576) attrs { w: true, e: false, c: true } @sec-string.prototype.fontcolor annexB
+      prop str "fontsize" = data (obj 577) attrs { w: true, e: false, c: true } @sec-string.prototype.fontsize annexB
+      prop str "italics" = data (obj 578) attrs { w: true, e: false, c: true } @sec-string.prototype.italics annexB
+      prop str "link" = data (obj 579) attrs { w: true, e: false, c: true } @sec-string.prototype.link annexB
+      prop str "small" = data (obj 580) attrs { w: true, e: false, c: true } @sec-string.prototype.small annexB
+      prop str "strike" = data (obj 581) attrs { w: true, e: false, c: true } @sec-string.prototype.strike annexB
+      prop str "sub" = data (obj 582) attrs { w: true, e: false, c: true } @sec-string.prototype.sub annexB
+      prop str "sup" = data (obj 583) attrs { w: true, e: false, c: true } @sec-string.prototype.sup annexB
       prop str "trimLeft" = data (obj 218) attrs { w: true, e: false, c: true } @String.prototype.trimleft annexB
       prop str "trimRight" = data (obj 217) attrs { w: true, e: false, c: true } @String.prototype.trimright annexB
   ]
@@ -2564,7 +2564,7 @@ obj 225 "RegExp.prototype" @sec-properties-of-the-regexp-prototype-object {
       prop str "toString" = data (obj 241) attrs { w: true, e: false, c: true } @sec-regexp.prototype.tostring
       prop str "unicode" = accessor (some 242, none) attrs { w: false, e: false, c: true } @sec-get-regexp.prototype.unicode
       prop str "unicodeSets" = accessor (some 243, none) attrs { w: false, e: false, c: true } @sec-get-regexp.prototype.unicodesets
-      prop str "compile" = data (obj 584) attrs { w: true, e: false, c: true } @sec-regexp.prototype.compile annexB
+      prop str "compile" = data (obj 586) attrs { w: true, e: false, c: true } @sec-regexp.prototype.compile annexB
   ]
 }
 
@@ -4318,7 +4318,29 @@ obj 385 "WeakSet.prototype.has" @sec-weakset.prototype.has {
   props []
 }
 
-obj 386 "ArrayBuffer" @sec-arraybuffer-constructor {
+obj 386 "Composite" @sec-composite-function {
+  names [[[Composite]]]
+  keys [[[%Composite%]]]
+  kind ordinary
+  proto some 1 extensible true
+  slots []
+  fn { alg some @sec-composite-function-arg len 1 name str "Composite" pfx none ctor false async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
+  props [
+      prop str "isComposite" = data (obj 387) attrs { w: true, e: false, c: true } @sec-composite.iscomposite
+  ]
+}
+
+obj 387 "Composite.isComposite" @sec-composite.iscomposite {
+  names []
+  keys []
+  kind ordinary
+  proto some 1 extensible true
+  slots []
+  fn { alg some @sec-composite.iscomposite len 1 name str "isComposite" pfx none ctor false async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
+  props []
+}
+
+obj 388 "ArrayBuffer" @sec-arraybuffer-constructor {
   names [[[ArrayBuffer]]]
   keys [[[%ArrayBuffer%]]]
   kind ordinary
@@ -4326,13 +4348,13 @@ obj 386 "ArrayBuffer" @sec-arraybuffer-constructor {
   slots []
   fn { alg some @sec-arraybuffer-length len 1 name str "ArrayBuffer" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "isView" = data (obj 387) attrs { w: true, e: false, c: true } @sec-arraybuffer.isview
-      prop str "prototype" = data (obj 389) attrs { w: false, e: false, c: false } @sec-arraybuffer.prototype
-      prop sym "Symbol.species" = accessor (some 388, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer-%symbol.species%
+      prop str "isView" = data (obj 389) attrs { w: true, e: false, c: true } @sec-arraybuffer.isview
+      prop str "prototype" = data (obj 391) attrs { w: false, e: false, c: false } @sec-arraybuffer.prototype
+      prop sym "Symbol.species" = accessor (some 390, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer-%symbol.species%
   ]
 }
 
-obj 387 "ArrayBuffer.isView" @sec-arraybuffer.isview {
+obj 389 "ArrayBuffer.isView" @sec-arraybuffer.isview {
   names []
   keys []
   kind ordinary
@@ -4342,7 +4364,7 @@ obj 387 "ArrayBuffer.isView" @sec-arraybuffer.isview {
   props []
 }
 
-obj 388 "get ArrayBuffer [ %Symbol.species% ]" @sec-get-arraybuffer-%symbol.species% {
+obj 390 "get ArrayBuffer [ %Symbol.species% ]" @sec-get-arraybuffer-%symbol.species% {
   names []
   keys []
   kind ordinary
@@ -4352,27 +4374,27 @@ obj 388 "get ArrayBuffer [ %Symbol.species% ]" @sec-get-arraybuffer-%symbol.spec
   props []
 }
 
-obj 389 "ArrayBuffer.prototype" @sec-properties-of-the-arraybuffer-prototype-object {
+obj 391 "ArrayBuffer.prototype" @sec-properties-of-the-arraybuffer-prototype-object {
   names [[[ArrayBuffer.prototype]]]
   keys [[[%ArrayBuffer.prototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "byteLength" = accessor (some 390, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer.prototype.bytelength
-      prop str "constructor" = data (obj 386) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.constructor
-      prop str "detached" = accessor (some 391, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer.prototype.detached
-      prop str "maxByteLength" = accessor (some 392, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer.prototype.maxbytelength
-      prop str "resizable" = accessor (some 393, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer.prototype.resizable
-      prop str "resize" = data (obj 394) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.resize
-      prop str "slice" = data (obj 395) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.slice
-      prop str "transfer" = data (obj 396) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.transfer
-      prop str "transferToFixedLength" = data (obj 397) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.transfertofixedlength
+      prop str "byteLength" = accessor (some 392, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer.prototype.bytelength
+      prop str "constructor" = data (obj 388) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.constructor
+      prop str "detached" = accessor (some 393, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer.prototype.detached
+      prop str "maxByteLength" = accessor (some 394, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer.prototype.maxbytelength
+      prop str "resizable" = accessor (some 395, none) attrs { w: false, e: false, c: true } @sec-get-arraybuffer.prototype.resizable
+      prop str "resize" = data (obj 396) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.resize
+      prop str "slice" = data (obj 397) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.slice
+      prop str "transfer" = data (obj 398) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.transfer
+      prop str "transferToFixedLength" = data (obj 399) attrs { w: true, e: false, c: true } @sec-arraybuffer.prototype.transfertofixedlength
       prop sym "Symbol.toStringTag" = data ("ArrayBuffer") attrs { w: false, e: false, c: true } @sec-arraybuffer.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 390 "get ArrayBuffer.prototype.byteLength" @sec-get-arraybuffer.prototype.bytelength {
+obj 392 "get ArrayBuffer.prototype.byteLength" @sec-get-arraybuffer.prototype.bytelength {
   names []
   keys []
   kind ordinary
@@ -4382,7 +4404,7 @@ obj 390 "get ArrayBuffer.prototype.byteLength" @sec-get-arraybuffer.prototype.by
   props []
 }
 
-obj 391 "get ArrayBuffer.prototype.detached" @sec-get-arraybuffer.prototype.detached {
+obj 393 "get ArrayBuffer.prototype.detached" @sec-get-arraybuffer.prototype.detached {
   names []
   keys []
   kind ordinary
@@ -4392,7 +4414,7 @@ obj 391 "get ArrayBuffer.prototype.detached" @sec-get-arraybuffer.prototype.deta
   props []
 }
 
-obj 392 "get ArrayBuffer.prototype.maxByteLength" @sec-get-arraybuffer.prototype.maxbytelength {
+obj 394 "get ArrayBuffer.prototype.maxByteLength" @sec-get-arraybuffer.prototype.maxbytelength {
   names []
   keys []
   kind ordinary
@@ -4402,7 +4424,7 @@ obj 392 "get ArrayBuffer.prototype.maxByteLength" @sec-get-arraybuffer.prototype
   props []
 }
 
-obj 393 "get ArrayBuffer.prototype.resizable" @sec-get-arraybuffer.prototype.resizable {
+obj 395 "get ArrayBuffer.prototype.resizable" @sec-get-arraybuffer.prototype.resizable {
   names []
   keys []
   kind ordinary
@@ -4412,7 +4434,7 @@ obj 393 "get ArrayBuffer.prototype.resizable" @sec-get-arraybuffer.prototype.res
   props []
 }
 
-obj 394 "ArrayBuffer.prototype.resize" @sec-arraybuffer.prototype.resize {
+obj 396 "ArrayBuffer.prototype.resize" @sec-arraybuffer.prototype.resize {
   names []
   keys []
   kind ordinary
@@ -4422,7 +4444,7 @@ obj 394 "ArrayBuffer.prototype.resize" @sec-arraybuffer.prototype.resize {
   props []
 }
 
-obj 395 "ArrayBuffer.prototype.slice" @sec-arraybuffer.prototype.slice {
+obj 397 "ArrayBuffer.prototype.slice" @sec-arraybuffer.prototype.slice {
   names []
   keys []
   kind ordinary
@@ -4432,7 +4454,7 @@ obj 395 "ArrayBuffer.prototype.slice" @sec-arraybuffer.prototype.slice {
   props []
 }
 
-obj 396 "ArrayBuffer.prototype.transfer" @sec-arraybuffer.prototype.transfer {
+obj 398 "ArrayBuffer.prototype.transfer" @sec-arraybuffer.prototype.transfer {
   names []
   keys []
   kind ordinary
@@ -4442,7 +4464,7 @@ obj 396 "ArrayBuffer.prototype.transfer" @sec-arraybuffer.prototype.transfer {
   props []
 }
 
-obj 397 "ArrayBuffer.prototype.transferToFixedLength" @sec-arraybuffer.prototype.transfertofixedlength {
+obj 399 "ArrayBuffer.prototype.transferToFixedLength" @sec-arraybuffer.prototype.transfertofixedlength {
   names []
   keys []
   kind ordinary
@@ -4452,7 +4474,7 @@ obj 397 "ArrayBuffer.prototype.transferToFixedLength" @sec-arraybuffer.prototype
   props []
 }
 
-obj 398 "SharedArrayBuffer" @sec-sharedarraybuffer-constructor {
+obj 400 "SharedArrayBuffer" @sec-sharedarraybuffer-constructor {
   names [[[SharedArrayBuffer]]]
   keys [[[%SharedArrayBuffer%]]]
   kind ordinary
@@ -4460,12 +4482,12 @@ obj 398 "SharedArrayBuffer" @sec-sharedarraybuffer-constructor {
   slots []
   fn { alg some @sec-sharedarraybuffer-length len 1 name str "SharedArrayBuffer" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 400) attrs { w: false, e: false, c: false } @sec-sharedarraybuffer.prototype
-      prop sym "Symbol.species" = accessor (some 399, none) attrs { w: false, e: false, c: true } @sec-sharedarraybuffer-%symbol.species%
+      prop str "prototype" = data (obj 402) attrs { w: false, e: false, c: false } @sec-sharedarraybuffer.prototype
+      prop sym "Symbol.species" = accessor (some 401, none) attrs { w: false, e: false, c: true } @sec-sharedarraybuffer-%symbol.species%
   ]
 }
 
-obj 399 "get SharedArrayBuffer [ %Symbol.species% ]" @sec-sharedarraybuffer-%symbol.species% {
+obj 401 "get SharedArrayBuffer [ %Symbol.species% ]" @sec-sharedarraybuffer-%symbol.species% {
   names []
   keys []
   kind ordinary
@@ -4475,24 +4497,24 @@ obj 399 "get SharedArrayBuffer [ %Symbol.species% ]" @sec-sharedarraybuffer-%sym
   props []
 }
 
-obj 400 "SharedArrayBuffer.prototype" @sec-properties-of-the-sharedarraybuffer-prototype-object {
+obj 402 "SharedArrayBuffer.prototype" @sec-properties-of-the-sharedarraybuffer-prototype-object {
   names [[[SharedArrayBuffer.prototype]]]
   keys [[[%SharedArrayBuffer.prototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "byteLength" = accessor (some 401, none) attrs { w: false, e: false, c: true } @sec-get-sharedarraybuffer.prototype.bytelength
-      prop str "constructor" = data (obj 398) attrs { w: true, e: false, c: true } @sec-sharedarraybuffer.prototype.constructor
-      prop str "grow" = data (obj 402) attrs { w: true, e: false, c: true } @sec-sharedarraybuffer.prototype.grow
-      prop str "growable" = accessor (some 403, none) attrs { w: false, e: false, c: true } @sec-get-sharedarraybuffer.prototype.growable
-      prop str "maxByteLength" = accessor (some 404, none) attrs { w: false, e: false, c: true } @sec-get-sharedarraybuffer.prototype.maxbytelength
-      prop str "slice" = data (obj 405) attrs { w: true, e: false, c: true } @sec-sharedarraybuffer.prototype.slice
+      prop str "byteLength" = accessor (some 403, none) attrs { w: false, e: false, c: true } @sec-get-sharedarraybuffer.prototype.bytelength
+      prop str "constructor" = data (obj 400) attrs { w: true, e: false, c: true } @sec-sharedarraybuffer.prototype.constructor
+      prop str "grow" = data (obj 404) attrs { w: true, e: false, c: true } @sec-sharedarraybuffer.prototype.grow
+      prop str "growable" = accessor (some 405, none) attrs { w: false, e: false, c: true } @sec-get-sharedarraybuffer.prototype.growable
+      prop str "maxByteLength" = accessor (some 406, none) attrs { w: false, e: false, c: true } @sec-get-sharedarraybuffer.prototype.maxbytelength
+      prop str "slice" = data (obj 407) attrs { w: true, e: false, c: true } @sec-sharedarraybuffer.prototype.slice
       prop sym "Symbol.toStringTag" = data ("SharedArrayBuffer") attrs { w: false, e: false, c: true } @sec-sharedarraybuffer.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 401 "get SharedArrayBuffer.prototype.byteLength" @sec-get-sharedarraybuffer.prototype.bytelength {
+obj 403 "get SharedArrayBuffer.prototype.byteLength" @sec-get-sharedarraybuffer.prototype.bytelength {
   names []
   keys []
   kind ordinary
@@ -4502,7 +4524,7 @@ obj 401 "get SharedArrayBuffer.prototype.byteLength" @sec-get-sharedarraybuffer.
   props []
 }
 
-obj 402 "SharedArrayBuffer.prototype.grow" @sec-sharedarraybuffer.prototype.grow {
+obj 404 "SharedArrayBuffer.prototype.grow" @sec-sharedarraybuffer.prototype.grow {
   names []
   keys []
   kind ordinary
@@ -4512,7 +4534,7 @@ obj 402 "SharedArrayBuffer.prototype.grow" @sec-sharedarraybuffer.prototype.grow
   props []
 }
 
-obj 403 "get SharedArrayBuffer.prototype.growable" @sec-get-sharedarraybuffer.prototype.growable {
+obj 405 "get SharedArrayBuffer.prototype.growable" @sec-get-sharedarraybuffer.prototype.growable {
   names []
   keys []
   kind ordinary
@@ -4522,7 +4544,7 @@ obj 403 "get SharedArrayBuffer.prototype.growable" @sec-get-sharedarraybuffer.pr
   props []
 }
 
-obj 404 "get SharedArrayBuffer.prototype.maxByteLength" @sec-get-sharedarraybuffer.prototype.maxbytelength {
+obj 406 "get SharedArrayBuffer.prototype.maxByteLength" @sec-get-sharedarraybuffer.prototype.maxbytelength {
   names []
   keys []
   kind ordinary
@@ -4532,7 +4554,7 @@ obj 404 "get SharedArrayBuffer.prototype.maxByteLength" @sec-get-sharedarraybuff
   props []
 }
 
-obj 405 "SharedArrayBuffer.prototype.slice" @sec-sharedarraybuffer.prototype.slice {
+obj 407 "SharedArrayBuffer.prototype.slice" @sec-sharedarraybuffer.prototype.slice {
   names []
   keys []
   kind ordinary
@@ -4542,7 +4564,7 @@ obj 405 "SharedArrayBuffer.prototype.slice" @sec-sharedarraybuffer.prototype.sli
   props []
 }
 
-obj 406 "DataView" @sec-dataview-constructor {
+obj 408 "DataView" @sec-dataview-constructor {
   names [[[DataView]]]
   keys [[[%DataView%]]]
   kind ordinary
@@ -4550,48 +4572,48 @@ obj 406 "DataView" @sec-dataview-constructor {
   slots []
   fn { alg some @sec-dataview-buffer-byteoffset-bytelength len 1 name str "DataView" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 407) attrs { w: false, e: false, c: false } @sec-dataview.prototype
+      prop str "prototype" = data (obj 409) attrs { w: false, e: false, c: false } @sec-dataview.prototype
   ]
 }
 
-obj 407 "DataView.prototype" @sec-properties-of-the-dataview-prototype-object {
+obj 409 "DataView.prototype" @sec-properties-of-the-dataview-prototype-object {
   names [[[DataView.prototype]]]
   keys [[[%DataView.prototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "buffer" = accessor (some 408, none) attrs { w: false, e: false, c: true } @sec-get-dataview.prototype.buffer
-      prop str "byteLength" = accessor (some 409, none) attrs { w: false, e: false, c: true } @sec-get-dataview.prototype.bytelength
-      prop str "byteOffset" = accessor (some 410, none) attrs { w: false, e: false, c: true } @sec-get-dataview.prototype.byteoffset
-      prop str "constructor" = data (obj 406) attrs { w: true, e: false, c: true } @sec-dataview.prototype.constructor
-      prop str "getBigInt64" = data (obj 411) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getbigint64
-      prop str "getBigUint64" = data (obj 412) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getbiguint64
-      prop str "getFloat16" = data (obj 413) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getfloat16
-      prop str "getFloat32" = data (obj 414) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getfloat32
-      prop str "getFloat64" = data (obj 415) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getfloat64
-      prop str "getInt8" = data (obj 416) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getint8
-      prop str "getInt16" = data (obj 417) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getint16
-      prop str "getInt32" = data (obj 418) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getint32
-      prop str "getUint8" = data (obj 419) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getuint8
-      prop str "getUint16" = data (obj 420) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getuint16
-      prop str "getUint32" = data (obj 421) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getuint32
-      prop str "setBigInt64" = data (obj 422) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setbigint64
-      prop str "setBigUint64" = data (obj 423) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setbiguint64
-      prop str "setFloat16" = data (obj 424) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setfloat16
-      prop str "setFloat32" = data (obj 425) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setfloat32
-      prop str "setFloat64" = data (obj 426) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setfloat64
-      prop str "setInt8" = data (obj 427) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setint8
-      prop str "setInt16" = data (obj 428) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setint16
-      prop str "setInt32" = data (obj 429) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setint32
-      prop str "setUint8" = data (obj 430) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setuint8
-      prop str "setUint16" = data (obj 431) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setuint16
-      prop str "setUint32" = data (obj 432) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setuint32
+      prop str "buffer" = accessor (some 410, none) attrs { w: false, e: false, c: true } @sec-get-dataview.prototype.buffer
+      prop str "byteLength" = accessor (some 411, none) attrs { w: false, e: false, c: true } @sec-get-dataview.prototype.bytelength
+      prop str "byteOffset" = accessor (some 412, none) attrs { w: false, e: false, c: true } @sec-get-dataview.prototype.byteoffset
+      prop str "constructor" = data (obj 408) attrs { w: true, e: false, c: true } @sec-dataview.prototype.constructor
+      prop str "getBigInt64" = data (obj 413) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getbigint64
+      prop str "getBigUint64" = data (obj 414) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getbiguint64
+      prop str "getFloat16" = data (obj 415) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getfloat16
+      prop str "getFloat32" = data (obj 416) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getfloat32
+      prop str "getFloat64" = data (obj 417) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getfloat64
+      prop str "getInt8" = data (obj 418) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getint8
+      prop str "getInt16" = data (obj 419) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getint16
+      prop str "getInt32" = data (obj 420) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getint32
+      prop str "getUint8" = data (obj 421) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getuint8
+      prop str "getUint16" = data (obj 422) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getuint16
+      prop str "getUint32" = data (obj 423) attrs { w: true, e: false, c: true } @sec-dataview.prototype.getuint32
+      prop str "setBigInt64" = data (obj 424) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setbigint64
+      prop str "setBigUint64" = data (obj 425) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setbiguint64
+      prop str "setFloat16" = data (obj 426) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setfloat16
+      prop str "setFloat32" = data (obj 427) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setfloat32
+      prop str "setFloat64" = data (obj 428) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setfloat64
+      prop str "setInt8" = data (obj 429) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setint8
+      prop str "setInt16" = data (obj 430) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setint16
+      prop str "setInt32" = data (obj 431) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setint32
+      prop str "setUint8" = data (obj 432) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setuint8
+      prop str "setUint16" = data (obj 433) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setuint16
+      prop str "setUint32" = data (obj 434) attrs { w: true, e: false, c: true } @sec-dataview.prototype.setuint32
       prop sym "Symbol.toStringTag" = data ("DataView") attrs { w: false, e: false, c: true } @sec-dataview.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 408 "get DataView.prototype.buffer" @sec-get-dataview.prototype.buffer {
+obj 410 "get DataView.prototype.buffer" @sec-get-dataview.prototype.buffer {
   names []
   keys []
   kind ordinary
@@ -4601,7 +4623,7 @@ obj 408 "get DataView.prototype.buffer" @sec-get-dataview.prototype.buffer {
   props []
 }
 
-obj 409 "get DataView.prototype.byteLength" @sec-get-dataview.prototype.bytelength {
+obj 411 "get DataView.prototype.byteLength" @sec-get-dataview.prototype.bytelength {
   names []
   keys []
   kind ordinary
@@ -4611,7 +4633,7 @@ obj 409 "get DataView.prototype.byteLength" @sec-get-dataview.prototype.byteleng
   props []
 }
 
-obj 410 "get DataView.prototype.byteOffset" @sec-get-dataview.prototype.byteoffset {
+obj 412 "get DataView.prototype.byteOffset" @sec-get-dataview.prototype.byteoffset {
   names []
   keys []
   kind ordinary
@@ -4621,7 +4643,7 @@ obj 410 "get DataView.prototype.byteOffset" @sec-get-dataview.prototype.byteoffs
   props []
 }
 
-obj 411 "DataView.prototype.getBigInt64" @sec-dataview.prototype.getbigint64 {
+obj 413 "DataView.prototype.getBigInt64" @sec-dataview.prototype.getbigint64 {
   names []
   keys []
   kind ordinary
@@ -4631,7 +4653,7 @@ obj 411 "DataView.prototype.getBigInt64" @sec-dataview.prototype.getbigint64 {
   props []
 }
 
-obj 412 "DataView.prototype.getBigUint64" @sec-dataview.prototype.getbiguint64 {
+obj 414 "DataView.prototype.getBigUint64" @sec-dataview.prototype.getbiguint64 {
   names []
   keys []
   kind ordinary
@@ -4641,7 +4663,7 @@ obj 412 "DataView.prototype.getBigUint64" @sec-dataview.prototype.getbiguint64 {
   props []
 }
 
-obj 413 "DataView.prototype.getFloat16" @sec-dataview.prototype.getfloat16 {
+obj 415 "DataView.prototype.getFloat16" @sec-dataview.prototype.getfloat16 {
   names []
   keys []
   kind ordinary
@@ -4651,7 +4673,7 @@ obj 413 "DataView.prototype.getFloat16" @sec-dataview.prototype.getfloat16 {
   props []
 }
 
-obj 414 "DataView.prototype.getFloat32" @sec-dataview.prototype.getfloat32 {
+obj 416 "DataView.prototype.getFloat32" @sec-dataview.prototype.getfloat32 {
   names []
   keys []
   kind ordinary
@@ -4661,7 +4683,7 @@ obj 414 "DataView.prototype.getFloat32" @sec-dataview.prototype.getfloat32 {
   props []
 }
 
-obj 415 "DataView.prototype.getFloat64" @sec-dataview.prototype.getfloat64 {
+obj 417 "DataView.prototype.getFloat64" @sec-dataview.prototype.getfloat64 {
   names []
   keys []
   kind ordinary
@@ -4671,7 +4693,7 @@ obj 415 "DataView.prototype.getFloat64" @sec-dataview.prototype.getfloat64 {
   props []
 }
 
-obj 416 "DataView.prototype.getInt8" @sec-dataview.prototype.getint8 {
+obj 418 "DataView.prototype.getInt8" @sec-dataview.prototype.getint8 {
   names []
   keys []
   kind ordinary
@@ -4681,7 +4703,7 @@ obj 416 "DataView.prototype.getInt8" @sec-dataview.prototype.getint8 {
   props []
 }
 
-obj 417 "DataView.prototype.getInt16" @sec-dataview.prototype.getint16 {
+obj 419 "DataView.prototype.getInt16" @sec-dataview.prototype.getint16 {
   names []
   keys []
   kind ordinary
@@ -4691,7 +4713,7 @@ obj 417 "DataView.prototype.getInt16" @sec-dataview.prototype.getint16 {
   props []
 }
 
-obj 418 "DataView.prototype.getInt32" @sec-dataview.prototype.getint32 {
+obj 420 "DataView.prototype.getInt32" @sec-dataview.prototype.getint32 {
   names []
   keys []
   kind ordinary
@@ -4701,7 +4723,7 @@ obj 418 "DataView.prototype.getInt32" @sec-dataview.prototype.getint32 {
   props []
 }
 
-obj 419 "DataView.prototype.getUint8" @sec-dataview.prototype.getuint8 {
+obj 421 "DataView.prototype.getUint8" @sec-dataview.prototype.getuint8 {
   names []
   keys []
   kind ordinary
@@ -4711,7 +4733,7 @@ obj 419 "DataView.prototype.getUint8" @sec-dataview.prototype.getuint8 {
   props []
 }
 
-obj 420 "DataView.prototype.getUint16" @sec-dataview.prototype.getuint16 {
+obj 422 "DataView.prototype.getUint16" @sec-dataview.prototype.getuint16 {
   names []
   keys []
   kind ordinary
@@ -4721,7 +4743,7 @@ obj 420 "DataView.prototype.getUint16" @sec-dataview.prototype.getuint16 {
   props []
 }
 
-obj 421 "DataView.prototype.getUint32" @sec-dataview.prototype.getuint32 {
+obj 423 "DataView.prototype.getUint32" @sec-dataview.prototype.getuint32 {
   names []
   keys []
   kind ordinary
@@ -4731,7 +4753,7 @@ obj 421 "DataView.prototype.getUint32" @sec-dataview.prototype.getuint32 {
   props []
 }
 
-obj 422 "DataView.prototype.setBigInt64" @sec-dataview.prototype.setbigint64 {
+obj 424 "DataView.prototype.setBigInt64" @sec-dataview.prototype.setbigint64 {
   names []
   keys []
   kind ordinary
@@ -4741,7 +4763,7 @@ obj 422 "DataView.prototype.setBigInt64" @sec-dataview.prototype.setbigint64 {
   props []
 }
 
-obj 423 "DataView.prototype.setBigUint64" @sec-dataview.prototype.setbiguint64 {
+obj 425 "DataView.prototype.setBigUint64" @sec-dataview.prototype.setbiguint64 {
   names []
   keys []
   kind ordinary
@@ -4751,7 +4773,7 @@ obj 423 "DataView.prototype.setBigUint64" @sec-dataview.prototype.setbiguint64 {
   props []
 }
 
-obj 424 "DataView.prototype.setFloat16" @sec-dataview.prototype.setfloat16 {
+obj 426 "DataView.prototype.setFloat16" @sec-dataview.prototype.setfloat16 {
   names []
   keys []
   kind ordinary
@@ -4761,7 +4783,7 @@ obj 424 "DataView.prototype.setFloat16" @sec-dataview.prototype.setfloat16 {
   props []
 }
 
-obj 425 "DataView.prototype.setFloat32" @sec-dataview.prototype.setfloat32 {
+obj 427 "DataView.prototype.setFloat32" @sec-dataview.prototype.setfloat32 {
   names []
   keys []
   kind ordinary
@@ -4771,7 +4793,7 @@ obj 425 "DataView.prototype.setFloat32" @sec-dataview.prototype.setfloat32 {
   props []
 }
 
-obj 426 "DataView.prototype.setFloat64" @sec-dataview.prototype.setfloat64 {
+obj 428 "DataView.prototype.setFloat64" @sec-dataview.prototype.setfloat64 {
   names []
   keys []
   kind ordinary
@@ -4781,7 +4803,7 @@ obj 426 "DataView.prototype.setFloat64" @sec-dataview.prototype.setfloat64 {
   props []
 }
 
-obj 427 "DataView.prototype.setInt8" @sec-dataview.prototype.setint8 {
+obj 429 "DataView.prototype.setInt8" @sec-dataview.prototype.setint8 {
   names []
   keys []
   kind ordinary
@@ -4791,7 +4813,7 @@ obj 427 "DataView.prototype.setInt8" @sec-dataview.prototype.setint8 {
   props []
 }
 
-obj 428 "DataView.prototype.setInt16" @sec-dataview.prototype.setint16 {
+obj 430 "DataView.prototype.setInt16" @sec-dataview.prototype.setint16 {
   names []
   keys []
   kind ordinary
@@ -4801,7 +4823,7 @@ obj 428 "DataView.prototype.setInt16" @sec-dataview.prototype.setint16 {
   props []
 }
 
-obj 429 "DataView.prototype.setInt32" @sec-dataview.prototype.setint32 {
+obj 431 "DataView.prototype.setInt32" @sec-dataview.prototype.setint32 {
   names []
   keys []
   kind ordinary
@@ -4811,7 +4833,7 @@ obj 429 "DataView.prototype.setInt32" @sec-dataview.prototype.setint32 {
   props []
 }
 
-obj 430 "DataView.prototype.setUint8" @sec-dataview.prototype.setuint8 {
+obj 432 "DataView.prototype.setUint8" @sec-dataview.prototype.setuint8 {
   names []
   keys []
   kind ordinary
@@ -4821,7 +4843,7 @@ obj 430 "DataView.prototype.setUint8" @sec-dataview.prototype.setuint8 {
   props []
 }
 
-obj 431 "DataView.prototype.setUint16" @sec-dataview.prototype.setuint16 {
+obj 433 "DataView.prototype.setUint16" @sec-dataview.prototype.setuint16 {
   names []
   keys []
   kind ordinary
@@ -4831,7 +4853,7 @@ obj 431 "DataView.prototype.setUint16" @sec-dataview.prototype.setuint16 {
   props []
 }
 
-obj 432 "DataView.prototype.setUint32" @sec-dataview.prototype.setuint32 {
+obj 434 "DataView.prototype.setUint32" @sec-dataview.prototype.setuint32 {
   names []
   keys []
   kind ordinary
@@ -4841,32 +4863,32 @@ obj 432 "DataView.prototype.setUint32" @sec-dataview.prototype.setuint32 {
   props []
 }
 
-obj 433 "Atomics" @sec-atomics-object {
+obj 435 "Atomics" @sec-atomics-object {
   names [[[Atomics]]]
   keys [[[%Atomics%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "add" = data (obj 434) attrs { w: true, e: false, c: true } @sec-atomics.add
-      prop str "and" = data (obj 435) attrs { w: true, e: false, c: true } @sec-atomics.and
-      prop str "compareExchange" = data (obj 436) attrs { w: true, e: false, c: true } @sec-atomics.compareexchange
-      prop str "exchange" = data (obj 437) attrs { w: true, e: false, c: true } @sec-atomics.exchange
-      prop str "isLockFree" = data (obj 438) attrs { w: true, e: false, c: true } @sec-atomics.islockfree
-      prop str "load" = data (obj 439) attrs { w: true, e: false, c: true } @sec-atomics.load
-      prop str "notify" = data (obj 440) attrs { w: true, e: false, c: true } @sec-atomics.notify
-      prop str "or" = data (obj 441) attrs { w: true, e: false, c: true } @sec-atomics.or
-      prop str "pause" = data (obj 442) attrs { w: true, e: false, c: true } @sec-atomics.pause
-      prop str "store" = data (obj 443) attrs { w: true, e: false, c: true } @sec-atomics.store
-      prop str "sub" = data (obj 444) attrs { w: true, e: false, c: true } @sec-atomics.sub
-      prop str "wait" = data (obj 445) attrs { w: true, e: false, c: true } @sec-atomics.wait
-      prop str "waitAsync" = data (obj 446) attrs { w: true, e: false, c: true } @sec-atomics.waitasync
-      prop str "xor" = data (obj 447) attrs { w: true, e: false, c: true } @sec-atomics.xor
+      prop str "add" = data (obj 436) attrs { w: true, e: false, c: true } @sec-atomics.add
+      prop str "and" = data (obj 437) attrs { w: true, e: false, c: true } @sec-atomics.and
+      prop str "compareExchange" = data (obj 438) attrs { w: true, e: false, c: true } @sec-atomics.compareexchange
+      prop str "exchange" = data (obj 439) attrs { w: true, e: false, c: true } @sec-atomics.exchange
+      prop str "isLockFree" = data (obj 440) attrs { w: true, e: false, c: true } @sec-atomics.islockfree
+      prop str "load" = data (obj 441) attrs { w: true, e: false, c: true } @sec-atomics.load
+      prop str "notify" = data (obj 442) attrs { w: true, e: false, c: true } @sec-atomics.notify
+      prop str "or" = data (obj 443) attrs { w: true, e: false, c: true } @sec-atomics.or
+      prop str "pause" = data (obj 444) attrs { w: true, e: false, c: true } @sec-atomics.pause
+      prop str "store" = data (obj 445) attrs { w: true, e: false, c: true } @sec-atomics.store
+      prop str "sub" = data (obj 446) attrs { w: true, e: false, c: true } @sec-atomics.sub
+      prop str "wait" = data (obj 447) attrs { w: true, e: false, c: true } @sec-atomics.wait
+      prop str "waitAsync" = data (obj 448) attrs { w: true, e: false, c: true } @sec-atomics.waitasync
+      prop str "xor" = data (obj 449) attrs { w: true, e: false, c: true } @sec-atomics.xor
       prop sym "Symbol.toStringTag" = data ("Atomics") attrs { w: false, e: false, c: true } @sec-atomics-%symbol.tostringtag%
   ]
 }
 
-obj 434 "Atomics.add" @sec-atomics.add {
+obj 436 "Atomics.add" @sec-atomics.add {
   names []
   keys []
   kind ordinary
@@ -4876,7 +4898,7 @@ obj 434 "Atomics.add" @sec-atomics.add {
   props []
 }
 
-obj 435 "Atomics.and" @sec-atomics.and {
+obj 437 "Atomics.and" @sec-atomics.and {
   names []
   keys []
   kind ordinary
@@ -4886,7 +4908,7 @@ obj 435 "Atomics.and" @sec-atomics.and {
   props []
 }
 
-obj 436 "Atomics.compareExchange" @sec-atomics.compareexchange {
+obj 438 "Atomics.compareExchange" @sec-atomics.compareexchange {
   names []
   keys []
   kind ordinary
@@ -4896,7 +4918,7 @@ obj 436 "Atomics.compareExchange" @sec-atomics.compareexchange {
   props []
 }
 
-obj 437 "Atomics.exchange" @sec-atomics.exchange {
+obj 439 "Atomics.exchange" @sec-atomics.exchange {
   names []
   keys []
   kind ordinary
@@ -4906,7 +4928,7 @@ obj 437 "Atomics.exchange" @sec-atomics.exchange {
   props []
 }
 
-obj 438 "Atomics.isLockFree" @sec-atomics.islockfree {
+obj 440 "Atomics.isLockFree" @sec-atomics.islockfree {
   names []
   keys []
   kind ordinary
@@ -4916,7 +4938,7 @@ obj 438 "Atomics.isLockFree" @sec-atomics.islockfree {
   props []
 }
 
-obj 439 "Atomics.load" @sec-atomics.load {
+obj 441 "Atomics.load" @sec-atomics.load {
   names []
   keys []
   kind ordinary
@@ -4926,7 +4948,7 @@ obj 439 "Atomics.load" @sec-atomics.load {
   props []
 }
 
-obj 440 "Atomics.notify" @sec-atomics.notify {
+obj 442 "Atomics.notify" @sec-atomics.notify {
   names []
   keys []
   kind ordinary
@@ -4936,7 +4958,7 @@ obj 440 "Atomics.notify" @sec-atomics.notify {
   props []
 }
 
-obj 441 "Atomics.or" @sec-atomics.or {
+obj 443 "Atomics.or" @sec-atomics.or {
   names []
   keys []
   kind ordinary
@@ -4946,7 +4968,7 @@ obj 441 "Atomics.or" @sec-atomics.or {
   props []
 }
 
-obj 442 "Atomics.pause" @sec-atomics.pause {
+obj 444 "Atomics.pause" @sec-atomics.pause {
   names []
   keys []
   kind ordinary
@@ -4956,7 +4978,7 @@ obj 442 "Atomics.pause" @sec-atomics.pause {
   props []
 }
 
-obj 443 "Atomics.store" @sec-atomics.store {
+obj 445 "Atomics.store" @sec-atomics.store {
   names []
   keys []
   kind ordinary
@@ -4966,7 +4988,7 @@ obj 443 "Atomics.store" @sec-atomics.store {
   props []
 }
 
-obj 444 "Atomics.sub" @sec-atomics.sub {
+obj 446 "Atomics.sub" @sec-atomics.sub {
   names []
   keys []
   kind ordinary
@@ -4976,7 +4998,7 @@ obj 444 "Atomics.sub" @sec-atomics.sub {
   props []
 }
 
-obj 445 "Atomics.wait" @sec-atomics.wait {
+obj 447 "Atomics.wait" @sec-atomics.wait {
   names []
   keys []
   kind ordinary
@@ -4986,7 +5008,7 @@ obj 445 "Atomics.wait" @sec-atomics.wait {
   props []
 }
 
-obj 446 "Atomics.waitAsync" @sec-atomics.waitasync {
+obj 448 "Atomics.waitAsync" @sec-atomics.waitasync {
   names []
   keys []
   kind ordinary
@@ -4996,7 +5018,7 @@ obj 446 "Atomics.waitAsync" @sec-atomics.waitasync {
   props []
 }
 
-obj 447 "Atomics.xor" @sec-atomics.xor {
+obj 449 "Atomics.xor" @sec-atomics.xor {
   names []
   keys []
   kind ordinary
@@ -5006,22 +5028,22 @@ obj 447 "Atomics.xor" @sec-atomics.xor {
   props []
 }
 
-obj 448 "JSON" @sec-json-object {
+obj 450 "JSON" @sec-json-object {
   names [[[JSON]]]
   keys [[[%JSON%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "isRawJSON" = data (obj 449) attrs { w: true, e: false, c: true } @sec-json.israwjson
-      prop str "parse" = data (obj 450) attrs { w: true, e: false, c: true } @sec-json.parse
-      prop str "rawJSON" = data (obj 451) attrs { w: true, e: false, c: true } @sec-json.rawjson
-      prop str "stringify" = data (obj 452) attrs { w: true, e: false, c: true } @sec-json.stringify
+      prop str "isRawJSON" = data (obj 451) attrs { w: true, e: false, c: true } @sec-json.israwjson
+      prop str "parse" = data (obj 452) attrs { w: true, e: false, c: true } @sec-json.parse
+      prop str "rawJSON" = data (obj 453) attrs { w: true, e: false, c: true } @sec-json.rawjson
+      prop str "stringify" = data (obj 454) attrs { w: true, e: false, c: true } @sec-json.stringify
       prop sym "Symbol.toStringTag" = data ("JSON") attrs { w: false, e: false, c: true } @sec-json-%symbol.tostringtag%
   ]
 }
 
-obj 449 "JSON.isRawJSON" @sec-json.israwjson {
+obj 451 "JSON.isRawJSON" @sec-json.israwjson {
   names []
   keys []
   kind ordinary
@@ -5031,7 +5053,7 @@ obj 449 "JSON.isRawJSON" @sec-json.israwjson {
   props []
 }
 
-obj 450 "JSON.parse" @sec-json.parse {
+obj 452 "JSON.parse" @sec-json.parse {
   names []
   keys []
   kind ordinary
@@ -5041,7 +5063,7 @@ obj 450 "JSON.parse" @sec-json.parse {
   props []
 }
 
-obj 451 "JSON.rawJSON" @sec-json.rawjson {
+obj 453 "JSON.rawJSON" @sec-json.rawjson {
   names []
   keys []
   kind ordinary
@@ -5051,7 +5073,7 @@ obj 451 "JSON.rawJSON" @sec-json.rawjson {
   props []
 }
 
-obj 452 "JSON.stringify" @sec-json.stringify {
+obj 454 "JSON.stringify" @sec-json.stringify {
   names []
   keys []
   kind ordinary
@@ -5061,7 +5083,7 @@ obj 452 "JSON.stringify" @sec-json.stringify {
   props []
 }
 
-obj 453 "WeakRef" @sec-weak-ref-constructor {
+obj 455 "WeakRef" @sec-weak-ref-constructor {
   names [[[WeakRef]]]
   keys [[[%WeakRef%]]]
   kind ordinary
@@ -5069,24 +5091,24 @@ obj 453 "WeakRef" @sec-weak-ref-constructor {
   slots []
   fn { alg some @sec-weak-ref-target len 1 name str "WeakRef" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 454) attrs { w: false, e: false, c: false } @sec-weak-ref.prototype
+      prop str "prototype" = data (obj 456) attrs { w: false, e: false, c: false } @sec-weak-ref.prototype
   ]
 }
 
-obj 454 "WeakRef.prototype" @sec-properties-of-the-weak-ref-prototype-object {
+obj 456 "WeakRef.prototype" @sec-properties-of-the-weak-ref-prototype-object {
   names [[[WeakRef.prototype]]]
   keys [[[%WeakRef.prototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 453) attrs { w: true, e: false, c: true } @sec-weak-ref.prototype.constructor opt
-      prop str "deref" = data (obj 455) attrs { w: true, e: false, c: true } @sec-weak-ref.prototype.deref
+      prop str "constructor" = data (obj 455) attrs { w: true, e: false, c: true } @sec-weak-ref.prototype.constructor opt
+      prop str "deref" = data (obj 457) attrs { w: true, e: false, c: true } @sec-weak-ref.prototype.deref
       prop sym "Symbol.toStringTag" = data ("WeakRef") attrs { w: false, e: false, c: true } @sec-weak-ref.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 455 "WeakRef.prototype.deref" @sec-weak-ref.prototype.deref {
+obj 457 "WeakRef.prototype.deref" @sec-weak-ref.prototype.deref {
   names []
   keys []
   kind ordinary
@@ -5096,7 +5118,7 @@ obj 455 "WeakRef.prototype.deref" @sec-weak-ref.prototype.deref {
   props []
 }
 
-obj 456 "FinalizationRegistry" @sec-finalization-registry-constructor {
+obj 458 "FinalizationRegistry" @sec-finalization-registry-constructor {
   names [[[FinalizationRegistry]]]
   keys [[[%FinalizationRegistry%]]]
   kind ordinary
@@ -5104,25 +5126,25 @@ obj 456 "FinalizationRegistry" @sec-finalization-registry-constructor {
   slots []
   fn { alg some @sec-finalization-registry-cleanup-callback len 1 name str "FinalizationRegistry" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 457) attrs { w: false, e: false, c: false } @sec-finalization-registry.prototype
+      prop str "prototype" = data (obj 459) attrs { w: false, e: false, c: false } @sec-finalization-registry.prototype
   ]
 }
 
-obj 457 "FinalizationRegistry.prototype" @sec-properties-of-the-finalization-registry-prototype-object {
+obj 459 "FinalizationRegistry.prototype" @sec-properties-of-the-finalization-registry-prototype-object {
   names [[[FinalizationRegistry.prototype]]]
   keys [[[%FinalizationRegistry.prototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 456) attrs { w: true, e: false, c: true } @sec-finalization-registry.prototype.constructor
-      prop str "register" = data (obj 458) attrs { w: true, e: false, c: true } @sec-finalization-registry.prototype.register
-      prop str "unregister" = data (obj 459) attrs { w: true, e: false, c: true } @sec-finalization-registry.prototype.unregister
+      prop str "constructor" = data (obj 458) attrs { w: true, e: false, c: true } @sec-finalization-registry.prototype.constructor
+      prop str "register" = data (obj 460) attrs { w: true, e: false, c: true } @sec-finalization-registry.prototype.register
+      prop str "unregister" = data (obj 461) attrs { w: true, e: false, c: true } @sec-finalization-registry.prototype.unregister
       prop sym "Symbol.toStringTag" = data ("FinalizationRegistry") attrs { w: false, e: false, c: true } @sec-finalization-registry.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 458 "FinalizationRegistry.prototype.register" @sec-finalization-registry.prototype.register {
+obj 460 "FinalizationRegistry.prototype.register" @sec-finalization-registry.prototype.register {
   names []
   keys []
   kind ordinary
@@ -5132,7 +5154,7 @@ obj 458 "FinalizationRegistry.prototype.register" @sec-finalization-registry.pro
   props []
 }
 
-obj 459 "FinalizationRegistry.prototype.unregister" @sec-finalization-registry.prototype.unregister {
+obj 461 "FinalizationRegistry.prototype.unregister" @sec-finalization-registry.prototype.unregister {
   names []
   keys []
   kind ordinary
@@ -5142,7 +5164,7 @@ obj 459 "FinalizationRegistry.prototype.unregister" @sec-finalization-registry.p
   props []
 }
 
-obj 460 "%IteratorHelperPrototype%.next" @sec-%iteratorhelperprototype%.next {
+obj 462 "%IteratorHelperPrototype%.next" @sec-%iteratorhelperprototype%.next {
   names []
   keys []
   kind ordinary
@@ -5152,7 +5174,7 @@ obj 460 "%IteratorHelperPrototype%.next" @sec-%iteratorhelperprototype%.next {
   props []
 }
 
-obj 461 "%IteratorHelperPrototype%.return" @sec-%iteratorhelperprototype%.return {
+obj 463 "%IteratorHelperPrototype%.return" @sec-%iteratorhelperprototype%.return {
   names []
   keys []
   kind ordinary
@@ -5162,7 +5184,7 @@ obj 461 "%IteratorHelperPrototype%.return" @sec-%iteratorhelperprototype%.return
   props []
 }
 
-obj 462 "Iterator" @sec-iterator-constructor {
+obj 464 "Iterator" @sec-iterator-constructor {
   names [[[Iterator]]]
   keys [[[%Iterator%]]]
   kind ordinary
@@ -5170,15 +5192,15 @@ obj 462 "Iterator" @sec-iterator-constructor {
   slots []
   fn { alg some @sec-iterator len 0 name str "Iterator" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "concat" = data (obj 463) attrs { w: true, e: false, c: true } @sec-iterator.concat
-      prop str "from" = data (obj 464) attrs { w: true, e: false, c: true } @sec-iterator.from
-      prop str "prototype" = data (obj 469) attrs { w: false, e: false, c: false } @sec-iterator.prototype
-      prop str "zip" = data (obj 467) attrs { w: true, e: false, c: true } @sec-iterator.zip
-      prop str "zipKeyed" = data (obj 468) attrs { w: true, e: false, c: true } @sec-iterator.zipkeyed
+      prop str "concat" = data (obj 465) attrs { w: true, e: false, c: true } @sec-iterator.concat
+      prop str "from" = data (obj 466) attrs { w: true, e: false, c: true } @sec-iterator.from
+      prop str "prototype" = data (obj 471) attrs { w: false, e: false, c: false } @sec-iterator.prototype
+      prop str "zip" = data (obj 469) attrs { w: true, e: false, c: true } @sec-iterator.zip
+      prop str "zipKeyed" = data (obj 470) attrs { w: true, e: false, c: true } @sec-iterator.zipkeyed
   ]
 }
 
-obj 463 "Iterator.concat" @sec-iterator.concat {
+obj 465 "Iterator.concat" @sec-iterator.concat {
   names []
   keys []
   kind ordinary
@@ -5188,7 +5210,7 @@ obj 463 "Iterator.concat" @sec-iterator.concat {
   props []
 }
 
-obj 464 "Iterator.from" @sec-iterator.from {
+obj 466 "Iterator.from" @sec-iterator.from {
   names []
   keys []
   kind ordinary
@@ -5198,7 +5220,7 @@ obj 464 "Iterator.from" @sec-iterator.from {
   props []
 }
 
-obj 465 "%WrapForValidIteratorPrototype%.next" @sec-%wrapforvaliditeratorprototype%.next {
+obj 467 "%WrapForValidIteratorPrototype%.next" @sec-%wrapforvaliditeratorprototype%.next {
   names []
   keys []
   kind ordinary
@@ -5208,7 +5230,7 @@ obj 465 "%WrapForValidIteratorPrototype%.next" @sec-%wrapforvaliditeratorprototy
   props []
 }
 
-obj 466 "%WrapForValidIteratorPrototype%.return" @sec-%wrapforvaliditeratorprototype%.return {
+obj 468 "%WrapForValidIteratorPrototype%.return" @sec-%wrapforvaliditeratorprototype%.return {
   names []
   keys []
   kind ordinary
@@ -5218,7 +5240,7 @@ obj 466 "%WrapForValidIteratorPrototype%.return" @sec-%wrapforvaliditeratorproto
   props []
 }
 
-obj 467 "Iterator.zip" @sec-iterator.zip {
+obj 469 "Iterator.zip" @sec-iterator.zip {
   names []
   keys []
   kind ordinary
@@ -5228,7 +5250,7 @@ obj 467 "Iterator.zip" @sec-iterator.zip {
   props []
 }
 
-obj 468 "Iterator.zipKeyed" @sec-iterator.zipkeyed {
+obj 470 "Iterator.zipKeyed" @sec-iterator.zipkeyed {
   names []
   keys []
   kind ordinary
@@ -5238,51 +5260,51 @@ obj 468 "Iterator.zipKeyed" @sec-iterator.zipkeyed {
   props []
 }
 
-obj 469 "Iterator.prototype" @sec-%iterator.prototype%-object {
+obj 471 "Iterator.prototype" @sec-%iterator.prototype%-object {
   names [[[Iterator.prototype]]]
   keys [[[%Iterator.prototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "chunks" = data (obj 478) attrs { w: true, e: false, c: true } @sec-iterator.prototype.chunks
-      prop str "constructor" = accessor (some 479, some 480) attrs { w: false, e: false, c: true } @sec-get-iterator.prototype.constructor
-      prop str "drop" = data (obj 481) attrs { w: true, e: false, c: true } @sec-iterator.prototype.drop
-      prop str "every" = data (obj 482) attrs { w: true, e: false, c: true } @sec-iterator.prototype.every
-      prop str "filter" = data (obj 483) attrs { w: true, e: false, c: true } @sec-iterator.prototype.filter
-      prop str "find" = data (obj 484) attrs { w: true, e: false, c: true } @sec-iterator.prototype.find
-      prop str "flatMap" = data (obj 485) attrs { w: true, e: false, c: true } @sec-iterator.prototype.flatmap
-      prop str "forEach" = data (obj 486) attrs { w: true, e: false, c: true } @sec-iterator.prototype.foreach
-      prop str "includes" = data (obj 487) attrs { w: true, e: false, c: true } @sec-iterator.prototype.includes
-      prop str "join" = data (obj 488) attrs { w: true, e: false, c: true } @sec-iterator.prototype.join
-      prop str "map" = data (obj 489) attrs { w: true, e: false, c: true } @sec-iterator.prototype.map
-      prop str "reduce" = data (obj 490) attrs { w: true, e: false, c: true } @sec-iterator.prototype.reduce
-      prop str "some" = data (obj 491) attrs { w: true, e: false, c: true } @sec-iterator.prototype.some
-      prop str "take" = data (obj 492) attrs { w: true, e: false, c: true } @sec-iterator.prototype.take
-      prop str "toArray" = data (obj 493) attrs { w: true, e: false, c: true } @sec-iterator.prototype.toarray
-      prop str "windows" = data (obj 494) attrs { w: true, e: false, c: true } @sec-iterator.prototype.windows
-      prop sym "Symbol.dispose" = data (obj 495) attrs { w: true, e: false, c: true } @sec-iterator.prototype-%symbol.dispose%
-      prop sym "Symbol.iterator" = data (obj 496) attrs { w: true, e: false, c: true } @sec-iterator.prototype-%symbol.iterator%
-      prop sym "Symbol.toStringTag" = accessor (some 497, some 498) attrs { w: false, e: false, c: true } @sec-get-iterator.prototype-%symbol.tostringtag%
+      prop str "chunks" = data (obj 480) attrs { w: true, e: false, c: true } @sec-iterator.prototype.chunks
+      prop str "constructor" = accessor (some 481, some 482) attrs { w: false, e: false, c: true } @sec-get-iterator.prototype.constructor
+      prop str "drop" = data (obj 483) attrs { w: true, e: false, c: true } @sec-iterator.prototype.drop
+      prop str "every" = data (obj 484) attrs { w: true, e: false, c: true } @sec-iterator.prototype.every
+      prop str "filter" = data (obj 485) attrs { w: true, e: false, c: true } @sec-iterator.prototype.filter
+      prop str "find" = data (obj 486) attrs { w: true, e: false, c: true } @sec-iterator.prototype.find
+      prop str "flatMap" = data (obj 487) attrs { w: true, e: false, c: true } @sec-iterator.prototype.flatmap
+      prop str "forEach" = data (obj 488) attrs { w: true, e: false, c: true } @sec-iterator.prototype.foreach
+      prop str "includes" = data (obj 489) attrs { w: true, e: false, c: true } @sec-iterator.prototype.includes
+      prop str "join" = data (obj 490) attrs { w: true, e: false, c: true } @sec-iterator.prototype.join
+      prop str "map" = data (obj 491) attrs { w: true, e: false, c: true } @sec-iterator.prototype.map
+      prop str "reduce" = data (obj 492) attrs { w: true, e: false, c: true } @sec-iterator.prototype.reduce
+      prop str "some" = data (obj 493) attrs { w: true, e: false, c: true } @sec-iterator.prototype.some
+      prop str "take" = data (obj 494) attrs { w: true, e: false, c: true } @sec-iterator.prototype.take
+      prop str "toArray" = data (obj 495) attrs { w: true, e: false, c: true } @sec-iterator.prototype.toarray
+      prop str "windows" = data (obj 496) attrs { w: true, e: false, c: true } @sec-iterator.prototype.windows
+      prop sym "Symbol.dispose" = data (obj 497) attrs { w: true, e: false, c: true } @sec-iterator.prototype-%symbol.dispose%
+      prop sym "Symbol.iterator" = data (obj 498) attrs { w: true, e: false, c: true } @sec-iterator.prototype-%symbol.iterator%
+      prop sym "Symbol.toStringTag" = accessor (some 499, some 500) attrs { w: false, e: false, c: true } @sec-get-iterator.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 470 "ForInIteratorPrototype" @sec-%foriniteratorprototype%-object {
+obj 472 "ForInIteratorPrototype" @sec-%foriniteratorprototype%-object {
   names [[[ForInIteratorPrototype]]]
   keys [[[%ForInIteratorPrototype%]]]
   kind ordinary
-  proto some 469 extensible true
+  proto some 471 extensible true
   slots []
   props [
       prop str "next" = data (obj 3) attrs { w: true, e: false, c: true } @sec-%foriniteratorprototype%.next
   ]
 }
 
-obj 471 "StringIteratorPrototype" @sec-%stringiteratorprototype%-object {
+obj 473 "StringIteratorPrototype" @sec-%stringiteratorprototype%-object {
   names [[[StringIteratorPrototype]]]
   keys [[[%StringIteratorPrototype%]]]
   kind ordinary
-  proto some 469 extensible true
+  proto some 471 extensible true
   slots []
   props [
       prop str "next" = data (obj 221) attrs { w: true, e: false, c: true } @sec-%stringiteratorprototype%.next
@@ -5290,11 +5312,11 @@ obj 471 "StringIteratorPrototype" @sec-%stringiteratorprototype%-object {
   ]
 }
 
-obj 472 "RegExpStringIteratorPrototype" @sec-%regexpstringiteratorprototype%-object {
+obj 474 "RegExpStringIteratorPrototype" @sec-%regexpstringiteratorprototype%-object {
   names [[[RegExpStringIteratorPrototype]]]
   keys [[[%RegExpStringIteratorPrototype%]]]
   kind ordinary
-  proto some 469 extensible true
+  proto some 471 extensible true
   slots []
   props [
       prop str "next" = data (obj 244) attrs { w: true, e: false, c: true } @sec-%regexpstringiteratorprototype%.next
@@ -5302,11 +5324,11 @@ obj 472 "RegExpStringIteratorPrototype" @sec-%regexpstringiteratorprototype%-obj
   ]
 }
 
-obj 473 "ArrayIteratorPrototype" @sec-%arrayiteratorprototype%-object {
+obj 475 "ArrayIteratorPrototype" @sec-%arrayiteratorprototype%-object {
   names [[[ArrayIteratorPrototype]]]
   keys [[[%ArrayIteratorPrototype%]]]
   kind ordinary
-  proto some 469 extensible true
+  proto some 471 extensible true
   slots []
   props [
       prop str "next" = data (obj 290) attrs { w: true, e: false, c: true } @sec-%arrayiteratorprototype%.next
@@ -5314,11 +5336,11 @@ obj 473 "ArrayIteratorPrototype" @sec-%arrayiteratorprototype%-object {
   ]
 }
 
-obj 474 "MapIteratorPrototype" @sec-%mapiteratorprototype%-object {
+obj 476 "MapIteratorPrototype" @sec-%mapiteratorprototype%-object {
   names [[[MapIteratorPrototype]]]
   keys [[[%MapIteratorPrototype%]]]
   kind ordinary
-  proto some 469 extensible true
+  proto some 471 extensible true
   slots []
   props [
       prop str "next" = data (obj 353) attrs { w: true, e: false, c: true } @sec-%mapiteratorprototype%.next
@@ -5326,11 +5348,11 @@ obj 474 "MapIteratorPrototype" @sec-%mapiteratorprototype%-object {
   ]
 }
 
-obj 475 "SetIteratorPrototype" @sec-%setiteratorprototype%-object {
+obj 477 "SetIteratorPrototype" @sec-%setiteratorprototype%-object {
   names [[[SetIteratorPrototype]]]
   keys [[[%SetIteratorPrototype%]]]
   kind ordinary
-  proto some 469 extensible true
+  proto some 471 extensible true
   slots []
   props [
       prop str "next" = data (obj 372) attrs { w: true, e: false, c: true } @sec-%setiteratorprototype%.next
@@ -5338,32 +5360,32 @@ obj 475 "SetIteratorPrototype" @sec-%setiteratorprototype%-object {
   ]
 }
 
-obj 476 "IteratorHelperPrototype" @sec-%iteratorhelperprototype%-object {
+obj 478 "IteratorHelperPrototype" @sec-%iteratorhelperprototype%-object {
   names [[[IteratorHelperPrototype]]]
   keys [[[%IteratorHelperPrototype%]]]
   kind ordinary
-  proto some 469 extensible true
+  proto some 471 extensible true
   slots []
   props [
-      prop str "next" = data (obj 460) attrs { w: true, e: false, c: true } @sec-%iteratorhelperprototype%.next
-      prop str "return" = data (obj 461) attrs { w: true, e: false, c: true } @sec-%iteratorhelperprototype%.return
+      prop str "next" = data (obj 462) attrs { w: true, e: false, c: true } @sec-%iteratorhelperprototype%.next
+      prop str "return" = data (obj 463) attrs { w: true, e: false, c: true } @sec-%iteratorhelperprototype%.return
       prop sym "Symbol.toStringTag" = data ("Iterator Helper") attrs { w: false, e: false, c: true } @sec-%iteratorhelperprototype%-%symbol.tostringtag%
   ]
 }
 
-obj 477 "WrapForValidIteratorPrototype" @sec-%wrapforvaliditeratorprototype%-object {
+obj 479 "WrapForValidIteratorPrototype" @sec-%wrapforvaliditeratorprototype%-object {
   names [[[WrapForValidIteratorPrototype]]]
   keys [[[%WrapForValidIteratorPrototype%]]]
   kind ordinary
-  proto some 469 extensible true
+  proto some 471 extensible true
   slots []
   props [
-      prop str "next" = data (obj 465) attrs { w: true, e: false, c: true } @sec-%wrapforvaliditeratorprototype%.next
-      prop str "return" = data (obj 466) attrs { w: true, e: false, c: true } @sec-%wrapforvaliditeratorprototype%.return
+      prop str "next" = data (obj 467) attrs { w: true, e: false, c: true } @sec-%wrapforvaliditeratorprototype%.next
+      prop str "return" = data (obj 468) attrs { w: true, e: false, c: true } @sec-%wrapforvaliditeratorprototype%.return
   ]
 }
 
-obj 478 "Iterator.prototype.chunks" @sec-iterator.prototype.chunks {
+obj 480 "Iterator.prototype.chunks" @sec-iterator.prototype.chunks {
   names []
   keys []
   kind ordinary
@@ -5373,7 +5395,7 @@ obj 478 "Iterator.prototype.chunks" @sec-iterator.prototype.chunks {
   props []
 }
 
-obj 479 "get Iterator.prototype.constructor" @sec-get-iterator.prototype.constructor {
+obj 481 "get Iterator.prototype.constructor" @sec-get-iterator.prototype.constructor {
   names []
   keys []
   kind ordinary
@@ -5383,7 +5405,7 @@ obj 479 "get Iterator.prototype.constructor" @sec-get-iterator.prototype.constru
   props []
 }
 
-obj 480 "set Iterator.prototype.constructor" @sec-set-iterator.prototype.constructor {
+obj 482 "set Iterator.prototype.constructor" @sec-set-iterator.prototype.constructor {
   names []
   keys []
   kind ordinary
@@ -5393,7 +5415,7 @@ obj 480 "set Iterator.prototype.constructor" @sec-set-iterator.prototype.constru
   props []
 }
 
-obj 481 "Iterator.prototype.drop" @sec-iterator.prototype.drop {
+obj 483 "Iterator.prototype.drop" @sec-iterator.prototype.drop {
   names []
   keys []
   kind ordinary
@@ -5403,7 +5425,7 @@ obj 481 "Iterator.prototype.drop" @sec-iterator.prototype.drop {
   props []
 }
 
-obj 482 "Iterator.prototype.every" @sec-iterator.prototype.every {
+obj 484 "Iterator.prototype.every" @sec-iterator.prototype.every {
   names []
   keys []
   kind ordinary
@@ -5413,7 +5435,7 @@ obj 482 "Iterator.prototype.every" @sec-iterator.prototype.every {
   props []
 }
 
-obj 483 "Iterator.prototype.filter" @sec-iterator.prototype.filter {
+obj 485 "Iterator.prototype.filter" @sec-iterator.prototype.filter {
   names []
   keys []
   kind ordinary
@@ -5423,7 +5445,7 @@ obj 483 "Iterator.prototype.filter" @sec-iterator.prototype.filter {
   props []
 }
 
-obj 484 "Iterator.prototype.find" @sec-iterator.prototype.find {
+obj 486 "Iterator.prototype.find" @sec-iterator.prototype.find {
   names []
   keys []
   kind ordinary
@@ -5433,7 +5455,7 @@ obj 484 "Iterator.prototype.find" @sec-iterator.prototype.find {
   props []
 }
 
-obj 485 "Iterator.prototype.flatMap" @sec-iterator.prototype.flatmap {
+obj 487 "Iterator.prototype.flatMap" @sec-iterator.prototype.flatmap {
   names []
   keys []
   kind ordinary
@@ -5443,7 +5465,7 @@ obj 485 "Iterator.prototype.flatMap" @sec-iterator.prototype.flatmap {
   props []
 }
 
-obj 486 "Iterator.prototype.forEach" @sec-iterator.prototype.foreach {
+obj 488 "Iterator.prototype.forEach" @sec-iterator.prototype.foreach {
   names []
   keys []
   kind ordinary
@@ -5453,7 +5475,7 @@ obj 486 "Iterator.prototype.forEach" @sec-iterator.prototype.foreach {
   props []
 }
 
-obj 487 "Iterator.prototype.includes" @sec-iterator.prototype.includes {
+obj 489 "Iterator.prototype.includes" @sec-iterator.prototype.includes {
   names []
   keys []
   kind ordinary
@@ -5463,7 +5485,7 @@ obj 487 "Iterator.prototype.includes" @sec-iterator.prototype.includes {
   props []
 }
 
-obj 488 "Iterator.prototype.join" @sec-iterator.prototype.join {
+obj 490 "Iterator.prototype.join" @sec-iterator.prototype.join {
   names []
   keys []
   kind ordinary
@@ -5473,7 +5495,7 @@ obj 488 "Iterator.prototype.join" @sec-iterator.prototype.join {
   props []
 }
 
-obj 489 "Iterator.prototype.map" @sec-iterator.prototype.map {
+obj 491 "Iterator.prototype.map" @sec-iterator.prototype.map {
   names []
   keys []
   kind ordinary
@@ -5483,7 +5505,7 @@ obj 489 "Iterator.prototype.map" @sec-iterator.prototype.map {
   props []
 }
 
-obj 490 "Iterator.prototype.reduce" @sec-iterator.prototype.reduce {
+obj 492 "Iterator.prototype.reduce" @sec-iterator.prototype.reduce {
   names []
   keys []
   kind ordinary
@@ -5493,7 +5515,7 @@ obj 490 "Iterator.prototype.reduce" @sec-iterator.prototype.reduce {
   props []
 }
 
-obj 491 "Iterator.prototype.some" @sec-iterator.prototype.some {
+obj 493 "Iterator.prototype.some" @sec-iterator.prototype.some {
   names []
   keys []
   kind ordinary
@@ -5503,7 +5525,7 @@ obj 491 "Iterator.prototype.some" @sec-iterator.prototype.some {
   props []
 }
 
-obj 492 "Iterator.prototype.take" @sec-iterator.prototype.take {
+obj 494 "Iterator.prototype.take" @sec-iterator.prototype.take {
   names []
   keys []
   kind ordinary
@@ -5513,7 +5535,7 @@ obj 492 "Iterator.prototype.take" @sec-iterator.prototype.take {
   props []
 }
 
-obj 493 "Iterator.prototype.toArray" @sec-iterator.prototype.toarray {
+obj 495 "Iterator.prototype.toArray" @sec-iterator.prototype.toarray {
   names []
   keys []
   kind ordinary
@@ -5523,7 +5545,7 @@ obj 493 "Iterator.prototype.toArray" @sec-iterator.prototype.toarray {
   props []
 }
 
-obj 494 "Iterator.prototype.windows" @sec-iterator.prototype.windows {
+obj 496 "Iterator.prototype.windows" @sec-iterator.prototype.windows {
   names []
   keys []
   kind ordinary
@@ -5533,7 +5555,7 @@ obj 494 "Iterator.prototype.windows" @sec-iterator.prototype.windows {
   props []
 }
 
-obj 495 "Iterator.prototype [ %Symbol.dispose% ]" @sec-iterator.prototype-%symbol.dispose% {
+obj 497 "Iterator.prototype [ %Symbol.dispose% ]" @sec-iterator.prototype-%symbol.dispose% {
   names []
   keys []
   kind ordinary
@@ -5543,7 +5565,7 @@ obj 495 "Iterator.prototype [ %Symbol.dispose% ]" @sec-iterator.prototype-%symbo
   props []
 }
 
-obj 496 "Iterator.prototype [ %Symbol.iterator% ]" @sec-iterator.prototype-%symbol.iterator% {
+obj 498 "Iterator.prototype [ %Symbol.iterator% ]" @sec-iterator.prototype-%symbol.iterator% {
   names []
   keys []
   kind ordinary
@@ -5553,7 +5575,7 @@ obj 496 "Iterator.prototype [ %Symbol.iterator% ]" @sec-iterator.prototype-%symb
   props []
 }
 
-obj 497 "get Iterator.prototype [ %Symbol.toStringTag% ]" @sec-get-iterator.prototype-%symbol.tostringtag% {
+obj 499 "get Iterator.prototype [ %Symbol.toStringTag% ]" @sec-get-iterator.prototype-%symbol.tostringtag% {
   names []
   keys []
   kind ordinary
@@ -5563,7 +5585,7 @@ obj 497 "get Iterator.prototype [ %Symbol.toStringTag% ]" @sec-get-iterator.prot
   props []
 }
 
-obj 498 "set Iterator.prototype [ %Symbol.toStringTag% ]" @sec-set-iterator.prototype-%symbol.tostringtag% {
+obj 500 "set Iterator.prototype [ %Symbol.toStringTag% ]" @sec-set-iterator.prototype-%symbol.tostringtag% {
   names []
   keys []
   kind ordinary
@@ -5573,19 +5595,19 @@ obj 498 "set Iterator.prototype [ %Symbol.toStringTag% ]" @sec-set-iterator.prot
   props []
 }
 
-obj 499 "AsyncIteratorPrototype" @sec-asynciteratorprototype {
+obj 501 "AsyncIteratorPrototype" @sec-asynciteratorprototype {
   names [[[AsyncIteratorPrototype]]]
   keys [[[%AsyncIteratorPrototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop sym "Symbol.asyncDispose" = data (obj 500) attrs { w: true, e: false, c: true } @sec-%asynciteratorprototype%-%symbol.asyncdispose%
-      prop sym "Symbol.asyncIterator" = data (obj 501) attrs { w: true, e: false, c: true } @sec-%asynciteratorprototype%-%symbol.asynciterator%
+      prop sym "Symbol.asyncDispose" = data (obj 502) attrs { w: true, e: false, c: true } @sec-%asynciteratorprototype%-%symbol.asyncdispose%
+      prop sym "Symbol.asyncIterator" = data (obj 503) attrs { w: true, e: false, c: true } @sec-%asynciteratorprototype%-%symbol.asynciterator%
   ]
 }
 
-obj 500 "%AsyncIteratorPrototype% [ %Symbol.asyncDispose% ]" @sec-%asynciteratorprototype%-%symbol.asyncdispose% {
+obj 502 "%AsyncIteratorPrototype% [ %Symbol.asyncDispose% ]" @sec-%asynciteratorprototype%-%symbol.asyncdispose% {
   names []
   keys []
   kind ordinary
@@ -5595,7 +5617,7 @@ obj 500 "%AsyncIteratorPrototype% [ %Symbol.asyncDispose% ]" @sec-%asynciterator
   props []
 }
 
-obj 501 "%AsyncIteratorPrototype% [ %Symbol.asyncIterator% ]" @sec-%asynciteratorprototype%-%symbol.asynciterator% {
+obj 503 "%AsyncIteratorPrototype% [ %Symbol.asyncIterator% ]" @sec-%asynciteratorprototype%-%symbol.asynciterator% {
   names []
   keys []
   kind ordinary
@@ -5605,20 +5627,20 @@ obj 501 "%AsyncIteratorPrototype% [ %Symbol.asyncIterator% ]" @sec-%asynciterato
   props []
 }
 
-obj 502 "AsyncFromSyncIteratorPrototype" @sec-%asyncfromsynciteratorprototype%-object {
+obj 504 "AsyncFromSyncIteratorPrototype" @sec-%asyncfromsynciteratorprototype%-object {
   names [[[AsyncFromSyncIteratorPrototype]]]
   keys [[[%AsyncFromSyncIteratorPrototype%]]]
   kind ordinary
-  proto some 499 extensible true
+  proto some 501 extensible true
   slots []
   props [
-      prop str "next" = data (obj 503) attrs { w: true, e: false, c: true } @sec-%asyncfromsynciteratorprototype%.next
-      prop str "return" = data (obj 504) attrs { w: true, e: false, c: true } @sec-%asyncfromsynciteratorprototype%.return
-      prop str "throw" = data (obj 505) attrs { w: true, e: false, c: true } @sec-%asyncfromsynciteratorprototype%.throw
+      prop str "next" = data (obj 505) attrs { w: true, e: false, c: true } @sec-%asyncfromsynciteratorprototype%.next
+      prop str "return" = data (obj 506) attrs { w: true, e: false, c: true } @sec-%asyncfromsynciteratorprototype%.return
+      prop str "throw" = data (obj 507) attrs { w: true, e: false, c: true } @sec-%asyncfromsynciteratorprototype%.throw
   ]
 }
 
-obj 503 "%AsyncFromSyncIteratorPrototype%.next" @sec-%asyncfromsynciteratorprototype%.next {
+obj 505 "%AsyncFromSyncIteratorPrototype%.next" @sec-%asyncfromsynciteratorprototype%.next {
   names []
   keys []
   kind ordinary
@@ -5628,7 +5650,7 @@ obj 503 "%AsyncFromSyncIteratorPrototype%.next" @sec-%asyncfromsynciteratorproto
   props []
 }
 
-obj 504 "%AsyncFromSyncIteratorPrototype%.return" @sec-%asyncfromsynciteratorprototype%.return {
+obj 506 "%AsyncFromSyncIteratorPrototype%.return" @sec-%asyncfromsynciteratorprototype%.return {
   names []
   keys []
   kind ordinary
@@ -5638,7 +5660,7 @@ obj 504 "%AsyncFromSyncIteratorPrototype%.return" @sec-%asyncfromsynciteratorpro
   props []
 }
 
-obj 505 "%AsyncFromSyncIteratorPrototype%.throw" @sec-%asyncfromsynciteratorprototype%.throw {
+obj 507 "%AsyncFromSyncIteratorPrototype%.throw" @sec-%asyncfromsynciteratorprototype%.throw {
   names []
   keys []
   kind ordinary
@@ -5648,7 +5670,7 @@ obj 505 "%AsyncFromSyncIteratorPrototype%.throw" @sec-%asyncfromsynciteratorprot
   props []
 }
 
-obj 506 "DisposableStack" @sec-disposablestack-constructor {
+obj 508 "DisposableStack" @sec-disposablestack-constructor {
   names [[[DisposableStack]]]
   keys [[[%DisposableStack%]]]
   kind ordinary
@@ -5656,30 +5678,30 @@ obj 506 "DisposableStack" @sec-disposablestack-constructor {
   slots []
   fn { alg some @sec-disposablestack len 0 name str "DisposableStack" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 507) attrs { w: false, e: false, c: false } @sec-disposablestack.prototype
+      prop str "prototype" = data (obj 509) attrs { w: false, e: false, c: false } @sec-disposablestack.prototype
   ]
 }
 
-obj 507 "DisposableStack.prototype" @sec-properties-of-the-disposablestack-prototype-object {
+obj 509 "DisposableStack.prototype" @sec-properties-of-the-disposablestack-prototype-object {
   names [[[DisposableStack.prototype]]]
   keys [[[%DisposableStack.prototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "adopt" = data (obj 508) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.adopt
-      prop str "constructor" = data (obj 506) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.constructor
-      prop str "defer" = data (obj 509) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.defer
-      prop str "dispose" = data (obj 510) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.dispose
-      prop str "disposed" = accessor (some 511, none) attrs { w: false, e: false, c: true } @sec-get-disposablestack.prototype.disposed
-      prop str "move" = data (obj 512) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.move
-      prop str "use" = data (obj 513) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.use
-      prop sym "Symbol.dispose" = data (obj 510) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype-%symbol.dispose%
+      prop str "adopt" = data (obj 510) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.adopt
+      prop str "constructor" = data (obj 508) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.constructor
+      prop str "defer" = data (obj 511) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.defer
+      prop str "dispose" = data (obj 512) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.dispose
+      prop str "disposed" = accessor (some 513, none) attrs { w: false, e: false, c: true } @sec-get-disposablestack.prototype.disposed
+      prop str "move" = data (obj 514) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.move
+      prop str "use" = data (obj 515) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype.use
+      prop sym "Symbol.dispose" = data (obj 512) attrs { w: true, e: false, c: true } @sec-disposablestack.prototype-%symbol.dispose%
       prop sym "Symbol.toStringTag" = data ("DisposableStack") attrs { w: false, e: false, c: true } @sec-disposablestack.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 508 "DisposableStack.prototype.adopt" @sec-disposablestack.prototype.adopt {
+obj 510 "DisposableStack.prototype.adopt" @sec-disposablestack.prototype.adopt {
   names []
   keys []
   kind ordinary
@@ -5689,7 +5711,7 @@ obj 508 "DisposableStack.prototype.adopt" @sec-disposablestack.prototype.adopt {
   props []
 }
 
-obj 509 "DisposableStack.prototype.defer" @sec-disposablestack.prototype.defer {
+obj 511 "DisposableStack.prototype.defer" @sec-disposablestack.prototype.defer {
   names []
   keys []
   kind ordinary
@@ -5699,7 +5721,7 @@ obj 509 "DisposableStack.prototype.defer" @sec-disposablestack.prototype.defer {
   props []
 }
 
-obj 510 "DisposableStack.prototype.dispose" @sec-disposablestack.prototype.dispose {
+obj 512 "DisposableStack.prototype.dispose" @sec-disposablestack.prototype.dispose {
   names [[[DisposableStack.prototype.dispose]]]
   keys [[[%DisposableStack.prototype.dispose%]]]
   kind ordinary
@@ -5709,7 +5731,7 @@ obj 510 "DisposableStack.prototype.dispose" @sec-disposablestack.prototype.dispo
   props []
 }
 
-obj 511 "get DisposableStack.prototype.disposed" @sec-get-disposablestack.prototype.disposed {
+obj 513 "get DisposableStack.prototype.disposed" @sec-get-disposablestack.prototype.disposed {
   names []
   keys []
   kind ordinary
@@ -5719,7 +5741,7 @@ obj 511 "get DisposableStack.prototype.disposed" @sec-get-disposablestack.protot
   props []
 }
 
-obj 512 "DisposableStack.prototype.move" @sec-disposablestack.prototype.move {
+obj 514 "DisposableStack.prototype.move" @sec-disposablestack.prototype.move {
   names []
   keys []
   kind ordinary
@@ -5729,7 +5751,7 @@ obj 512 "DisposableStack.prototype.move" @sec-disposablestack.prototype.move {
   props []
 }
 
-obj 513 "DisposableStack.prototype.use" @sec-disposablestack.prototype.use {
+obj 515 "DisposableStack.prototype.use" @sec-disposablestack.prototype.use {
   names []
   keys []
   kind ordinary
@@ -5739,7 +5761,7 @@ obj 513 "DisposableStack.prototype.use" @sec-disposablestack.prototype.use {
   props []
 }
 
-obj 514 "AsyncDisposableStack" @sec-asyncdisposablestack-constructor {
+obj 516 "AsyncDisposableStack" @sec-asyncdisposablestack-constructor {
   names [[[AsyncDisposableStack]]]
   keys [[[%AsyncDisposableStack%]]]
   kind ordinary
@@ -5747,30 +5769,30 @@ obj 514 "AsyncDisposableStack" @sec-asyncdisposablestack-constructor {
   slots []
   fn { alg some @sec-asyncdisposablestack len 0 name str "AsyncDisposableStack" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 515) attrs { w: false, e: false, c: false } @sec-asyncdisposablestack.prototype
+      prop str "prototype" = data (obj 517) attrs { w: false, e: false, c: false } @sec-asyncdisposablestack.prototype
   ]
 }
 
-obj 515 "AsyncDisposableStack.prototype" @sec-properties-of-the-asyncdisposablestack-prototype-object {
+obj 517 "AsyncDisposableStack.prototype" @sec-properties-of-the-asyncdisposablestack-prototype-object {
   names [[[AsyncDisposableStack.prototype]]]
   keys [[[%AsyncDisposableStack.prototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "adopt" = data (obj 516) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.adopt
-      prop str "constructor" = data (obj 514) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.constructor
-      prop str "defer" = data (obj 517) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.defer
-      prop str "disposeAsync" = data (obj 518) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.disposeAsync
-      prop str "disposed" = accessor (some 519, none) attrs { w: false, e: false, c: true } @sec-get-asyncdisposablestack.prototype.disposed
-      prop str "move" = data (obj 520) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.move
-      prop str "use" = data (obj 521) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.use
-      prop sym "Symbol.asyncDispose" = data (obj 518) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype-%symbol.asyncdispose%
+      prop str "adopt" = data (obj 518) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.adopt
+      prop str "constructor" = data (obj 516) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.constructor
+      prop str "defer" = data (obj 519) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.defer
+      prop str "disposeAsync" = data (obj 520) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.disposeAsync
+      prop str "disposed" = accessor (some 521, none) attrs { w: false, e: false, c: true } @sec-get-asyncdisposablestack.prototype.disposed
+      prop str "move" = data (obj 522) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.move
+      prop str "use" = data (obj 523) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype.use
+      prop sym "Symbol.asyncDispose" = data (obj 520) attrs { w: true, e: false, c: true } @sec-asyncdisposablestack.prototype-%symbol.asyncdispose%
       prop sym "Symbol.toStringTag" = data ("AsyncDisposableStack") attrs { w: false, e: false, c: true } @sec-asyncdisposablestack.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 516 "AsyncDisposableStack.prototype.adopt" @sec-asyncdisposablestack.prototype.adopt {
+obj 518 "AsyncDisposableStack.prototype.adopt" @sec-asyncdisposablestack.prototype.adopt {
   names []
   keys []
   kind ordinary
@@ -5780,7 +5802,7 @@ obj 516 "AsyncDisposableStack.prototype.adopt" @sec-asyncdisposablestack.prototy
   props []
 }
 
-obj 517 "AsyncDisposableStack.prototype.defer" @sec-asyncdisposablestack.prototype.defer {
+obj 519 "AsyncDisposableStack.prototype.defer" @sec-asyncdisposablestack.prototype.defer {
   names []
   keys []
   kind ordinary
@@ -5790,7 +5812,7 @@ obj 517 "AsyncDisposableStack.prototype.defer" @sec-asyncdisposablestack.prototy
   props []
 }
 
-obj 518 "AsyncDisposableStack.prototype.disposeAsync" @sec-asyncdisposablestack.prototype.disposeAsync {
+obj 520 "AsyncDisposableStack.prototype.disposeAsync" @sec-asyncdisposablestack.prototype.disposeAsync {
   names [[[AsyncDisposableStack.prototype.disposeAsync]]]
   keys [[[%AsyncDisposableStack.prototype.disposeAsync%]]]
   kind ordinary
@@ -5800,7 +5822,7 @@ obj 518 "AsyncDisposableStack.prototype.disposeAsync" @sec-asyncdisposablestack.
   props []
 }
 
-obj 519 "get AsyncDisposableStack.prototype.disposed" @sec-get-asyncdisposablestack.prototype.disposed {
+obj 521 "get AsyncDisposableStack.prototype.disposed" @sec-get-asyncdisposablestack.prototype.disposed {
   names []
   keys []
   kind ordinary
@@ -5810,7 +5832,7 @@ obj 519 "get AsyncDisposableStack.prototype.disposed" @sec-get-asyncdisposablest
   props []
 }
 
-obj 520 "AsyncDisposableStack.prototype.move" @sec-asyncdisposablestack.prototype.move {
+obj 522 "AsyncDisposableStack.prototype.move" @sec-asyncdisposablestack.prototype.move {
   names []
   keys []
   kind ordinary
@@ -5820,7 +5842,7 @@ obj 520 "AsyncDisposableStack.prototype.move" @sec-asyncdisposablestack.prototyp
   props []
 }
 
-obj 521 "AsyncDisposableStack.prototype.use" @sec-asyncdisposablestack.prototype.use {
+obj 523 "AsyncDisposableStack.prototype.use" @sec-asyncdisposablestack.prototype.use {
   names []
   keys []
   kind ordinary
@@ -5830,7 +5852,7 @@ obj 521 "AsyncDisposableStack.prototype.use" @sec-asyncdisposablestack.prototype
   props []
 }
 
-obj 522 "Promise" @sec-promise-constructor {
+obj 524 "Promise" @sec-promise-constructor {
   names [[[Promise]]]
   keys [[[%Promise%]]]
   kind ordinary
@@ -5838,20 +5860,20 @@ obj 522 "Promise" @sec-promise-constructor {
   slots []
   fn { alg some @sec-promise-executor len 1 name str "Promise" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "all" = data (obj 523) attrs { w: true, e: false, c: true } @sec-promise.all
-      prop str "allSettled" = data (obj 524) attrs { w: true, e: false, c: true } @sec-promise.allsettled
-      prop str "any" = data (obj 525) attrs { w: true, e: false, c: true } @sec-promise.any
-      prop str "prototype" = data (obj 532) attrs { w: false, e: false, c: false } @sec-promise.prototype
-      prop str "race" = data (obj 526) attrs { w: true, e: false, c: true } @sec-promise.race
-      prop str "reject" = data (obj 527) attrs { w: true, e: false, c: true } @sec-promise.reject
-      prop str "resolve" = data (obj 528) attrs { w: true, e: false, c: true } @sec-promise.resolve
-      prop str "try" = data (obj 529) attrs { w: true, e: false, c: true } @sec-promise.try
-      prop str "withResolvers" = data (obj 530) attrs { w: true, e: false, c: true } @sec-promise.withResolvers
-      prop sym "Symbol.species" = accessor (some 531, none) attrs { w: false, e: false, c: true } @sec-get-promise-%symbol.species%
+      prop str "all" = data (obj 525) attrs { w: true, e: false, c: true } @sec-promise.all
+      prop str "allSettled" = data (obj 526) attrs { w: true, e: false, c: true } @sec-promise.allsettled
+      prop str "any" = data (obj 527) attrs { w: true, e: false, c: true } @sec-promise.any
+      prop str "prototype" = data (obj 534) attrs { w: false, e: false, c: false } @sec-promise.prototype
+      prop str "race" = data (obj 528) attrs { w: true, e: false, c: true } @sec-promise.race
+      prop str "reject" = data (obj 529) attrs { w: true, e: false, c: true } @sec-promise.reject
+      prop str "resolve" = data (obj 530) attrs { w: true, e: false, c: true } @sec-promise.resolve
+      prop str "try" = data (obj 531) attrs { w: true, e: false, c: true } @sec-promise.try
+      prop str "withResolvers" = data (obj 532) attrs { w: true, e: false, c: true } @sec-promise.withResolvers
+      prop sym "Symbol.species" = accessor (some 533, none) attrs { w: false, e: false, c: true } @sec-get-promise-%symbol.species%
   ]
 }
 
-obj 523 "Promise.all" @sec-promise.all {
+obj 525 "Promise.all" @sec-promise.all {
   names []
   keys []
   kind ordinary
@@ -5861,7 +5883,7 @@ obj 523 "Promise.all" @sec-promise.all {
   props []
 }
 
-obj 524 "Promise.allSettled" @sec-promise.allsettled {
+obj 526 "Promise.allSettled" @sec-promise.allsettled {
   names []
   keys []
   kind ordinary
@@ -5871,7 +5893,7 @@ obj 524 "Promise.allSettled" @sec-promise.allsettled {
   props []
 }
 
-obj 525 "Promise.any" @sec-promise.any {
+obj 527 "Promise.any" @sec-promise.any {
   names []
   keys []
   kind ordinary
@@ -5881,7 +5903,7 @@ obj 525 "Promise.any" @sec-promise.any {
   props []
 }
 
-obj 526 "Promise.race" @sec-promise.race {
+obj 528 "Promise.race" @sec-promise.race {
   names []
   keys []
   kind ordinary
@@ -5891,7 +5913,7 @@ obj 526 "Promise.race" @sec-promise.race {
   props []
 }
 
-obj 527 "Promise.reject" @sec-promise.reject {
+obj 529 "Promise.reject" @sec-promise.reject {
   names []
   keys []
   kind ordinary
@@ -5901,7 +5923,7 @@ obj 527 "Promise.reject" @sec-promise.reject {
   props []
 }
 
-obj 528 "Promise.resolve" @sec-promise.resolve {
+obj 530 "Promise.resolve" @sec-promise.resolve {
   names []
   keys []
   kind ordinary
@@ -5911,7 +5933,7 @@ obj 528 "Promise.resolve" @sec-promise.resolve {
   props []
 }
 
-obj 529 "Promise.try" @sec-promise.try {
+obj 531 "Promise.try" @sec-promise.try {
   names []
   keys []
   kind ordinary
@@ -5921,7 +5943,7 @@ obj 529 "Promise.try" @sec-promise.try {
   props []
 }
 
-obj 530 "Promise.withResolvers" @sec-promise.withResolvers {
+obj 532 "Promise.withResolvers" @sec-promise.withResolvers {
   names []
   keys []
   kind ordinary
@@ -5931,7 +5953,7 @@ obj 530 "Promise.withResolvers" @sec-promise.withResolvers {
   props []
 }
 
-obj 531 "get Promise [ %Symbol.species% ]" @sec-get-promise-%symbol.species% {
+obj 533 "get Promise [ %Symbol.species% ]" @sec-get-promise-%symbol.species% {
   names []
   keys []
   kind ordinary
@@ -5941,22 +5963,22 @@ obj 531 "get Promise [ %Symbol.species% ]" @sec-get-promise-%symbol.species% {
   props []
 }
 
-obj 532 "Promise.prototype" @sec-properties-of-the-promise-prototype-object {
+obj 534 "Promise.prototype" @sec-properties-of-the-promise-prototype-object {
   names [[[Promise.prototype]]]
   keys [[[%Promise.prototype%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "catch" = data (obj 533) attrs { w: true, e: false, c: true } @sec-promise.prototype.catch
-      prop str "constructor" = data (obj 522) attrs { w: true, e: false, c: true } @sec-promise.prototype.constructor
-      prop str "finally" = data (obj 534) attrs { w: true, e: false, c: true } @sec-promise.prototype.finally
-      prop str "then" = data (obj 535) attrs { w: true, e: false, c: true } @sec-promise.prototype.then
+      prop str "catch" = data (obj 535) attrs { w: true, e: false, c: true } @sec-promise.prototype.catch
+      prop str "constructor" = data (obj 524) attrs { w: true, e: false, c: true } @sec-promise.prototype.constructor
+      prop str "finally" = data (obj 536) attrs { w: true, e: false, c: true } @sec-promise.prototype.finally
+      prop str "then" = data (obj 537) attrs { w: true, e: false, c: true } @sec-promise.prototype.then
       prop sym "Symbol.toStringTag" = data ("Promise") attrs { w: false, e: false, c: true } @sec-promise.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 533 "Promise.prototype.catch" @sec-promise.prototype.catch {
+obj 535 "Promise.prototype.catch" @sec-promise.prototype.catch {
   names []
   keys []
   kind ordinary
@@ -5966,7 +5988,7 @@ obj 533 "Promise.prototype.catch" @sec-promise.prototype.catch {
   props []
 }
 
-obj 534 "Promise.prototype.finally" @sec-promise.prototype.finally {
+obj 536 "Promise.prototype.finally" @sec-promise.prototype.finally {
   names []
   keys []
   kind ordinary
@@ -5976,7 +5998,7 @@ obj 534 "Promise.prototype.finally" @sec-promise.prototype.finally {
   props []
 }
 
-obj 535 "Promise.prototype.then" @sec-promise.prototype.then {
+obj 537 "Promise.prototype.then" @sec-promise.prototype.then {
   names []
   keys []
   kind ordinary
@@ -5986,7 +6008,7 @@ obj 535 "Promise.prototype.then" @sec-promise.prototype.then {
   props []
 }
 
-obj 536 "GeneratorFunction" @sec-generatorfunction-constructor {
+obj 538 "GeneratorFunction" @sec-generatorfunction-constructor {
   names [[[GeneratorFunction]]]
   keys [[[%GeneratorFunction%]]]
   kind ordinary
@@ -5994,24 +6016,24 @@ obj 536 "GeneratorFunction" @sec-generatorfunction-constructor {
   slots []
   fn { alg some @sec-generatorfunction len 1 name str "GeneratorFunction" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 537) attrs { w: false, e: false, c: false } @sec-generatorfunction.prototype
+      prop str "prototype" = data (obj 539) attrs { w: false, e: false, c: false } @sec-generatorfunction.prototype
   ]
 }
 
-obj 537 "GeneratorFunction.prototype" @sec-properties-of-the-generatorfunction-prototype-object {
+obj 539 "GeneratorFunction.prototype" @sec-properties-of-the-generatorfunction-prototype-object {
   names [[[GeneratorFunction.prototype]]]
   keys [[[%GeneratorFunction.prototype%]]]
   kind ordinary
   proto some 1 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 536) attrs { w: false, e: false, c: true } @sec-generatorfunction.prototype.constructor
-      prop str "prototype" = data (obj 540) attrs { w: false, e: false, c: true } @sec-generatorfunction.prototype.prototype
+      prop str "constructor" = data (obj 538) attrs { w: false, e: false, c: true } @sec-generatorfunction.prototype.constructor
+      prop str "prototype" = data (obj 542) attrs { w: false, e: false, c: true } @sec-generatorfunction.prototype.prototype
       prop sym "Symbol.toStringTag" = data ("GeneratorFunction") attrs { w: false, e: false, c: true } @sec-generatorfunction.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 538 "AsyncGeneratorFunction" @sec-asyncgeneratorfunction-constructor {
+obj 540 "AsyncGeneratorFunction" @sec-asyncgeneratorfunction-constructor {
   names [[[AsyncGeneratorFunction]]]
   keys [[[%AsyncGeneratorFunction%]]]
   kind ordinary
@@ -6019,39 +6041,39 @@ obj 538 "AsyncGeneratorFunction" @sec-asyncgeneratorfunction-constructor {
   slots []
   fn { alg some @sec-asyncgeneratorfunction len 1 name str "AsyncGeneratorFunction" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 539) attrs { w: false, e: false, c: false } @sec-asyncgeneratorfunction-prototype
+      prop str "prototype" = data (obj 541) attrs { w: false, e: false, c: false } @sec-asyncgeneratorfunction-prototype
   ]
 }
 
-obj 539 "AsyncGeneratorFunction.prototype" @sec-properties-of-asyncgeneratorfunction-prototype {
+obj 541 "AsyncGeneratorFunction.prototype" @sec-properties-of-asyncgeneratorfunction-prototype {
   names [[[AsyncGeneratorFunction.prototype]]]
   keys [[[%AsyncGeneratorFunction.prototype%]]]
   kind ordinary
   proto some 1 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 538) attrs { w: false, e: false, c: true } @sec-asyncgeneratorfunction-prototype-constructor
-      prop str "prototype" = data (obj 544) attrs { w: false, e: false, c: true } @sec-asyncgeneratorfunction-prototype-prototype
+      prop str "constructor" = data (obj 540) attrs { w: false, e: false, c: true } @sec-asyncgeneratorfunction-prototype-constructor
+      prop str "prototype" = data (obj 546) attrs { w: false, e: false, c: true } @sec-asyncgeneratorfunction-prototype-prototype
       prop sym "Symbol.toStringTag" = data ("AsyncGeneratorFunction") attrs { w: false, e: false, c: true } @sec-asyncgeneratorfunction-prototype-%symbol.tostringtag%
   ]
 }
 
-obj 540 "GeneratorFunction.prototype.prototype" @sec-properties-of-generator-prototype {
+obj 542 "GeneratorFunction.prototype.prototype" @sec-properties-of-generator-prototype {
   names [[[GeneratorFunction.prototype.prototype]], [[GeneratorPrototype]]]
   keys [[[%GeneratorFunction.prototype.prototype%]], [[%GeneratorPrototype%]]]
   kind ordinary
-  proto some 469 extensible true
+  proto some 471 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 537) attrs { w: false, e: false, c: true } @sec-generator.prototype.constructor
-      prop str "next" = data (obj 541) attrs { w: true, e: false, c: true } @sec-generator.prototype.next
-      prop str "return" = data (obj 542) attrs { w: true, e: false, c: true } @sec-generator.prototype.return
-      prop str "throw" = data (obj 543) attrs { w: true, e: false, c: true } @sec-generator.prototype.throw
+      prop str "constructor" = data (obj 539) attrs { w: false, e: false, c: true } @sec-generator.prototype.constructor
+      prop str "next" = data (obj 543) attrs { w: true, e: false, c: true } @sec-generator.prototype.next
+      prop str "return" = data (obj 544) attrs { w: true, e: false, c: true } @sec-generator.prototype.return
+      prop str "throw" = data (obj 545) attrs { w: true, e: false, c: true } @sec-generator.prototype.throw
       prop sym "Symbol.toStringTag" = data ("Generator") attrs { w: false, e: false, c: true } @sec-generator.prototype-%symbol.tostringtag%
   ]
 }
 
-obj 541 "%GeneratorPrototype%.next" @sec-generator.prototype.next {
+obj 543 "%GeneratorPrototype%.next" @sec-generator.prototype.next {
   names [[[GeneratorPrototype.next]]]
   keys [[[%GeneratorPrototype.next%]]]
   kind ordinary
@@ -6061,7 +6083,7 @@ obj 541 "%GeneratorPrototype%.next" @sec-generator.prototype.next {
   props []
 }
 
-obj 542 "%GeneratorPrototype%.return" @sec-generator.prototype.return {
+obj 544 "%GeneratorPrototype%.return" @sec-generator.prototype.return {
   names []
   keys []
   kind ordinary
@@ -6071,7 +6093,7 @@ obj 542 "%GeneratorPrototype%.return" @sec-generator.prototype.return {
   props []
 }
 
-obj 543 "%GeneratorPrototype%.throw" @sec-generator.prototype.throw {
+obj 545 "%GeneratorPrototype%.throw" @sec-generator.prototype.throw {
   names []
   keys []
   kind ordinary
@@ -6081,22 +6103,22 @@ obj 543 "%GeneratorPrototype%.throw" @sec-generator.prototype.throw {
   props []
 }
 
-obj 544 "AsyncGeneratorFunction.prototype.prototype" @sec-properties-of-asyncgenerator-prototype {
+obj 546 "AsyncGeneratorFunction.prototype.prototype" @sec-properties-of-asyncgenerator-prototype {
   names [[[AsyncGeneratorFunction.prototype.prototype]], [[AsyncGeneratorPrototype]]]
   keys [[[%AsyncGeneratorFunction.prototype.prototype%]], [[%AsyncGeneratorPrototype%]]]
   kind ordinary
-  proto some 499 extensible true
+  proto some 501 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 539) attrs { w: false, e: false, c: true } @sec-asyncgenerator-prototype-constructor
-      prop str "next" = data (obj 545) attrs { w: true, e: false, c: true } @sec-asyncgenerator-prototype-next
-      prop str "return" = data (obj 546) attrs { w: true, e: false, c: true } @sec-asyncgenerator-prototype-return
-      prop str "throw" = data (obj 547) attrs { w: true, e: false, c: true } @sec-asyncgenerator-prototype-throw
+      prop str "constructor" = data (obj 541) attrs { w: false, e: false, c: true } @sec-asyncgenerator-prototype-constructor
+      prop str "next" = data (obj 547) attrs { w: true, e: false, c: true } @sec-asyncgenerator-prototype-next
+      prop str "return" = data (obj 548) attrs { w: true, e: false, c: true } @sec-asyncgenerator-prototype-return
+      prop str "throw" = data (obj 549) attrs { w: true, e: false, c: true } @sec-asyncgenerator-prototype-throw
       prop sym "Symbol.toStringTag" = data ("AsyncGenerator") attrs { w: false, e: false, c: true } @sec-asyncgenerator-prototype-%symbol.tostringtag%
   ]
 }
 
-obj 545 "%AsyncGeneratorPrototype%.next" @sec-asyncgenerator-prototype-next {
+obj 547 "%AsyncGeneratorPrototype%.next" @sec-asyncgenerator-prototype-next {
   names []
   keys []
   kind ordinary
@@ -6106,7 +6128,7 @@ obj 545 "%AsyncGeneratorPrototype%.next" @sec-asyncgenerator-prototype-next {
   props []
 }
 
-obj 546 "%AsyncGeneratorPrototype%.return" @sec-asyncgenerator-prototype-return {
+obj 548 "%AsyncGeneratorPrototype%.return" @sec-asyncgenerator-prototype-return {
   names []
   keys []
   kind ordinary
@@ -6116,7 +6138,7 @@ obj 546 "%AsyncGeneratorPrototype%.return" @sec-asyncgenerator-prototype-return 
   props []
 }
 
-obj 547 "%AsyncGeneratorPrototype%.throw" @sec-asyncgenerator-prototype-throw {
+obj 549 "%AsyncGeneratorPrototype%.throw" @sec-asyncgenerator-prototype-throw {
   names []
   keys []
   kind ordinary
@@ -6126,7 +6148,7 @@ obj 547 "%AsyncGeneratorPrototype%.throw" @sec-asyncgenerator-prototype-throw {
   props []
 }
 
-obj 548 "AsyncFunction" @sec-async-function-constructor {
+obj 550 "AsyncFunction" @sec-async-function-constructor {
   names [[[AsyncFunction]]]
   keys [[[%AsyncFunction%]]]
   kind ordinary
@@ -6134,47 +6156,47 @@ obj 548 "AsyncFunction" @sec-async-function-constructor {
   slots []
   fn { alg some @sec-async-function-constructor-arguments len 1 name str "AsyncFunction" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 549) attrs { w: false, e: false, c: false } @sec-async-function-constructor-prototype
+      prop str "prototype" = data (obj 551) attrs { w: false, e: false, c: false } @sec-async-function-constructor-prototype
   ]
 }
 
-obj 549 "AsyncFunction.prototype" @sec-async-function-prototype-properties {
+obj 551 "AsyncFunction.prototype" @sec-async-function-prototype-properties {
   names [[[AsyncFunction.prototype]]]
   keys [[[%AsyncFunction.prototype%]]]
   kind ordinary
   proto some 1 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 548) attrs { w: false, e: false, c: true } @sec-async-function-prototype-properties-constructor
+      prop str "constructor" = data (obj 550) attrs { w: false, e: false, c: true } @sec-async-function-prototype-properties-constructor
       prop sym "Symbol.toStringTag" = data ("AsyncFunction") attrs { w: false, e: false, c: true } @sec-async-function-prototype-%symbol.tostringtag%
   ]
 }
 
-obj 550 "Reflect" @sec-reflect-object {
+obj 552 "Reflect" @sec-reflect-object {
   names [[[Reflect]]]
   keys [[[%Reflect%]]]
   kind ordinary
   proto some 0 extensible true
   slots []
   props [
-      prop str "apply" = data (obj 551) attrs { w: true, e: false, c: true } @sec-reflect.apply
-      prop str "construct" = data (obj 552) attrs { w: true, e: false, c: true } @sec-reflect.construct
-      prop str "defineProperty" = data (obj 553) attrs { w: true, e: false, c: true } @sec-reflect.defineproperty
-      prop str "deleteProperty" = data (obj 554) attrs { w: true, e: false, c: true } @sec-reflect.deleteproperty
-      prop str "get" = data (obj 555) attrs { w: true, e: false, c: true } @sec-reflect.get
-      prop str "getOwnPropertyDescriptor" = data (obj 556) attrs { w: true, e: false, c: true } @sec-reflect.getownpropertydescriptor
-      prop str "getPrototypeOf" = data (obj 557) attrs { w: true, e: false, c: true } @sec-reflect.getprototypeof
-      prop str "has" = data (obj 558) attrs { w: true, e: false, c: true } @sec-reflect.has
-      prop str "isExtensible" = data (obj 559) attrs { w: true, e: false, c: true } @sec-reflect.isextensible
-      prop str "ownKeys" = data (obj 560) attrs { w: true, e: false, c: true } @sec-reflect.ownkeys
-      prop str "preventExtensions" = data (obj 561) attrs { w: true, e: false, c: true } @sec-reflect.preventextensions
-      prop str "set" = data (obj 562) attrs { w: true, e: false, c: true } @sec-reflect.set
-      prop str "setPrototypeOf" = data (obj 563) attrs { w: true, e: false, c: true } @sec-reflect.setprototypeof
+      prop str "apply" = data (obj 553) attrs { w: true, e: false, c: true } @sec-reflect.apply
+      prop str "construct" = data (obj 554) attrs { w: true, e: false, c: true } @sec-reflect.construct
+      prop str "defineProperty" = data (obj 555) attrs { w: true, e: false, c: true } @sec-reflect.defineproperty
+      prop str "deleteProperty" = data (obj 556) attrs { w: true, e: false, c: true } @sec-reflect.deleteproperty
+      prop str "get" = data (obj 557) attrs { w: true, e: false, c: true } @sec-reflect.get
+      prop str "getOwnPropertyDescriptor" = data (obj 558) attrs { w: true, e: false, c: true } @sec-reflect.getownpropertydescriptor
+      prop str "getPrototypeOf" = data (obj 559) attrs { w: true, e: false, c: true } @sec-reflect.getprototypeof
+      prop str "has" = data (obj 560) attrs { w: true, e: false, c: true } @sec-reflect.has
+      prop str "isExtensible" = data (obj 561) attrs { w: true, e: false, c: true } @sec-reflect.isextensible
+      prop str "ownKeys" = data (obj 562) attrs { w: true, e: false, c: true } @sec-reflect.ownkeys
+      prop str "preventExtensions" = data (obj 563) attrs { w: true, e: false, c: true } @sec-reflect.preventextensions
+      prop str "set" = data (obj 564) attrs { w: true, e: false, c: true } @sec-reflect.set
+      prop str "setPrototypeOf" = data (obj 565) attrs { w: true, e: false, c: true } @sec-reflect.setprototypeof
       prop sym "Symbol.toStringTag" = data ("Reflect") attrs { w: false, e: false, c: true } @sec-reflect-%symbol.tostringtag%
   ]
 }
 
-obj 551 "Reflect.apply" @sec-reflect.apply {
+obj 553 "Reflect.apply" @sec-reflect.apply {
   names []
   keys []
   kind ordinary
@@ -6184,7 +6206,7 @@ obj 551 "Reflect.apply" @sec-reflect.apply {
   props []
 }
 
-obj 552 "Reflect.construct" @sec-reflect.construct {
+obj 554 "Reflect.construct" @sec-reflect.construct {
   names []
   keys []
   kind ordinary
@@ -6194,7 +6216,7 @@ obj 552 "Reflect.construct" @sec-reflect.construct {
   props []
 }
 
-obj 553 "Reflect.defineProperty" @sec-reflect.defineproperty {
+obj 555 "Reflect.defineProperty" @sec-reflect.defineproperty {
   names []
   keys []
   kind ordinary
@@ -6204,7 +6226,7 @@ obj 553 "Reflect.defineProperty" @sec-reflect.defineproperty {
   props []
 }
 
-obj 554 "Reflect.deleteProperty" @sec-reflect.deleteproperty {
+obj 556 "Reflect.deleteProperty" @sec-reflect.deleteproperty {
   names []
   keys []
   kind ordinary
@@ -6214,7 +6236,7 @@ obj 554 "Reflect.deleteProperty" @sec-reflect.deleteproperty {
   props []
 }
 
-obj 555 "Reflect.get" @sec-reflect.get {
+obj 557 "Reflect.get" @sec-reflect.get {
   names []
   keys []
   kind ordinary
@@ -6224,7 +6246,7 @@ obj 555 "Reflect.get" @sec-reflect.get {
   props []
 }
 
-obj 556 "Reflect.getOwnPropertyDescriptor" @sec-reflect.getownpropertydescriptor {
+obj 558 "Reflect.getOwnPropertyDescriptor" @sec-reflect.getownpropertydescriptor {
   names []
   keys []
   kind ordinary
@@ -6234,7 +6256,7 @@ obj 556 "Reflect.getOwnPropertyDescriptor" @sec-reflect.getownpropertydescriptor
   props []
 }
 
-obj 557 "Reflect.getPrototypeOf" @sec-reflect.getprototypeof {
+obj 559 "Reflect.getPrototypeOf" @sec-reflect.getprototypeof {
   names []
   keys []
   kind ordinary
@@ -6244,7 +6266,7 @@ obj 557 "Reflect.getPrototypeOf" @sec-reflect.getprototypeof {
   props []
 }
 
-obj 558 "Reflect.has" @sec-reflect.has {
+obj 560 "Reflect.has" @sec-reflect.has {
   names []
   keys []
   kind ordinary
@@ -6254,7 +6276,7 @@ obj 558 "Reflect.has" @sec-reflect.has {
   props []
 }
 
-obj 559 "Reflect.isExtensible" @sec-reflect.isextensible {
+obj 561 "Reflect.isExtensible" @sec-reflect.isextensible {
   names []
   keys []
   kind ordinary
@@ -6264,7 +6286,7 @@ obj 559 "Reflect.isExtensible" @sec-reflect.isextensible {
   props []
 }
 
-obj 560 "Reflect.ownKeys" @sec-reflect.ownkeys {
+obj 562 "Reflect.ownKeys" @sec-reflect.ownkeys {
   names []
   keys []
   kind ordinary
@@ -6274,7 +6296,7 @@ obj 560 "Reflect.ownKeys" @sec-reflect.ownkeys {
   props []
 }
 
-obj 561 "Reflect.preventExtensions" @sec-reflect.preventextensions {
+obj 563 "Reflect.preventExtensions" @sec-reflect.preventextensions {
   names []
   keys []
   kind ordinary
@@ -6284,7 +6306,7 @@ obj 561 "Reflect.preventExtensions" @sec-reflect.preventextensions {
   props []
 }
 
-obj 562 "Reflect.set" @sec-reflect.set {
+obj 564 "Reflect.set" @sec-reflect.set {
   names []
   keys []
   kind ordinary
@@ -6294,7 +6316,7 @@ obj 562 "Reflect.set" @sec-reflect.set {
   props []
 }
 
-obj 563 "Reflect.setPrototypeOf" @sec-reflect.setprototypeof {
+obj 565 "Reflect.setPrototypeOf" @sec-reflect.setprototypeof {
   names []
   keys []
   kind ordinary
@@ -6304,7 +6326,7 @@ obj 563 "Reflect.setPrototypeOf" @sec-reflect.setprototypeof {
   props []
 }
 
-obj 564 "Proxy" @sec-proxy-constructor {
+obj 566 "Proxy" @sec-proxy-constructor {
   names [[[Proxy]]]
   keys [[[%Proxy%]]]
   kind ordinary
@@ -6312,11 +6334,11 @@ obj 564 "Proxy" @sec-proxy-constructor {
   slots []
   fn { alg some @sec-proxy-target-handler len 2 name str "Proxy" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "revocable" = data (obj 565) attrs { w: true, e: false, c: true } @sec-proxy.revocable
+      prop str "revocable" = data (obj 567) attrs { w: true, e: false, c: true } @sec-proxy.revocable
   ]
 }
 
-obj 565 "Proxy.revocable" @sec-proxy.revocable {
+obj 567 "Proxy.revocable" @sec-proxy.revocable {
   names []
   keys []
   kind ordinary
@@ -6326,7 +6348,7 @@ obj 565 "Proxy.revocable" @sec-proxy.revocable {
   props []
 }
 
-obj 566 "escape" @sec-escape-string annexB {
+obj 568 "escape" @sec-escape-string annexB {
   names [[[escape]]]
   keys [[[%escape%]]]
   kind ordinary
@@ -6336,7 +6358,7 @@ obj 566 "escape" @sec-escape-string annexB {
   props []
 }
 
-obj 567 "unescape" @sec-unescape-string annexB {
+obj 569 "unescape" @sec-unescape-string annexB {
   names [[[unescape]]]
   keys [[[%unescape%]]]
   kind ordinary
@@ -6346,7 +6368,7 @@ obj 567 "unescape" @sec-unescape-string annexB {
   props []
 }
 
-obj 568 "String.prototype.substr" @sec-string.prototype.substr annexB {
+obj 570 "String.prototype.substr" @sec-string.prototype.substr annexB {
   names []
   keys []
   kind ordinary
@@ -6356,7 +6378,7 @@ obj 568 "String.prototype.substr" @sec-string.prototype.substr annexB {
   props []
 }
 
-obj 569 "String.prototype.anchor" @sec-string.prototype.anchor annexB {
+obj 571 "String.prototype.anchor" @sec-string.prototype.anchor annexB {
   names []
   keys []
   kind ordinary
@@ -6366,7 +6388,7 @@ obj 569 "String.prototype.anchor" @sec-string.prototype.anchor annexB {
   props []
 }
 
-obj 570 "String.prototype.big" @sec-string.prototype.big annexB {
+obj 572 "String.prototype.big" @sec-string.prototype.big annexB {
   names []
   keys []
   kind ordinary
@@ -6376,7 +6398,7 @@ obj 570 "String.prototype.big" @sec-string.prototype.big annexB {
   props []
 }
 
-obj 571 "String.prototype.blink" @sec-string.prototype.blink annexB {
+obj 573 "String.prototype.blink" @sec-string.prototype.blink annexB {
   names []
   keys []
   kind ordinary
@@ -6386,7 +6408,7 @@ obj 571 "String.prototype.blink" @sec-string.prototype.blink annexB {
   props []
 }
 
-obj 572 "String.prototype.bold" @sec-string.prototype.bold annexB {
+obj 574 "String.prototype.bold" @sec-string.prototype.bold annexB {
   names []
   keys []
   kind ordinary
@@ -6396,7 +6418,7 @@ obj 572 "String.prototype.bold" @sec-string.prototype.bold annexB {
   props []
 }
 
-obj 573 "String.prototype.fixed" @sec-string.prototype.fixed annexB {
+obj 575 "String.prototype.fixed" @sec-string.prototype.fixed annexB {
   names []
   keys []
   kind ordinary
@@ -6406,7 +6428,7 @@ obj 573 "String.prototype.fixed" @sec-string.prototype.fixed annexB {
   props []
 }
 
-obj 574 "String.prototype.fontcolor" @sec-string.prototype.fontcolor annexB {
+obj 576 "String.prototype.fontcolor" @sec-string.prototype.fontcolor annexB {
   names []
   keys []
   kind ordinary
@@ -6416,7 +6438,7 @@ obj 574 "String.prototype.fontcolor" @sec-string.prototype.fontcolor annexB {
   props []
 }
 
-obj 575 "String.prototype.fontsize" @sec-string.prototype.fontsize annexB {
+obj 577 "String.prototype.fontsize" @sec-string.prototype.fontsize annexB {
   names []
   keys []
   kind ordinary
@@ -6426,7 +6448,7 @@ obj 575 "String.prototype.fontsize" @sec-string.prototype.fontsize annexB {
   props []
 }
 
-obj 576 "String.prototype.italics" @sec-string.prototype.italics annexB {
+obj 578 "String.prototype.italics" @sec-string.prototype.italics annexB {
   names []
   keys []
   kind ordinary
@@ -6436,7 +6458,7 @@ obj 576 "String.prototype.italics" @sec-string.prototype.italics annexB {
   props []
 }
 
-obj 577 "String.prototype.link" @sec-string.prototype.link annexB {
+obj 579 "String.prototype.link" @sec-string.prototype.link annexB {
   names []
   keys []
   kind ordinary
@@ -6446,7 +6468,7 @@ obj 577 "String.prototype.link" @sec-string.prototype.link annexB {
   props []
 }
 
-obj 578 "String.prototype.small" @sec-string.prototype.small annexB {
+obj 580 "String.prototype.small" @sec-string.prototype.small annexB {
   names []
   keys []
   kind ordinary
@@ -6456,7 +6478,7 @@ obj 578 "String.prototype.small" @sec-string.prototype.small annexB {
   props []
 }
 
-obj 579 "String.prototype.strike" @sec-string.prototype.strike annexB {
+obj 581 "String.prototype.strike" @sec-string.prototype.strike annexB {
   names []
   keys []
   kind ordinary
@@ -6466,7 +6488,7 @@ obj 579 "String.prototype.strike" @sec-string.prototype.strike annexB {
   props []
 }
 
-obj 580 "String.prototype.sub" @sec-string.prototype.sub annexB {
+obj 582 "String.prototype.sub" @sec-string.prototype.sub annexB {
   names []
   keys []
   kind ordinary
@@ -6476,7 +6498,7 @@ obj 580 "String.prototype.sub" @sec-string.prototype.sub annexB {
   props []
 }
 
-obj 581 "String.prototype.sup" @sec-string.prototype.sup annexB {
+obj 583 "String.prototype.sup" @sec-string.prototype.sup annexB {
   names []
   keys []
   kind ordinary
@@ -6486,7 +6508,7 @@ obj 581 "String.prototype.sup" @sec-string.prototype.sup annexB {
   props []
 }
 
-obj 582 "Date.prototype.getYear" @sec-date.prototype.getyear annexB {
+obj 584 "Date.prototype.getYear" @sec-date.prototype.getyear annexB {
   names []
   keys []
   kind ordinary
@@ -6496,7 +6518,7 @@ obj 582 "Date.prototype.getYear" @sec-date.prototype.getyear annexB {
   props []
 }
 
-obj 583 "Date.prototype.setYear" @sec-date.prototype.setyear annexB {
+obj 585 "Date.prototype.setYear" @sec-date.prototype.setyear annexB {
   names []
   keys []
   kind ordinary
@@ -6506,7 +6528,7 @@ obj 583 "Date.prototype.setYear" @sec-date.prototype.setyear annexB {
   props []
 }
 
-obj 584 "RegExp.prototype.compile" @sec-regexp.prototype.compile annexB {
+obj 586 "RegExp.prototype.compile" @sec-regexp.prototype.compile annexB {
   names []
   keys []
   kind ordinary
@@ -6516,7 +6538,7 @@ obj 584 "RegExp.prototype.compile" @sec-regexp.prototype.compile annexB {
   props []
 }
 
-obj 585 "EvalError" @sec-nativeerror-constructors/EvalError {
+obj 587 "EvalError" @sec-nativeerror-constructors/EvalError {
   names [[[EvalError]]]
   keys [[[%EvalError%]]]
   kind ordinary
@@ -6524,24 +6546,24 @@ obj 585 "EvalError" @sec-nativeerror-constructors/EvalError {
   slots []
   fn { alg some @sec-nativeerror/EvalError len 1 name str "EvalError" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 586) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/EvalError
+      prop str "prototype" = data (obj 588) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/EvalError
   ]
 }
 
-obj 586 "EvalError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/EvalError {
+obj 588 "EvalError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/EvalError {
   names [[[EvalError.prototype]]]
   keys [[[%EvalError.prototype%]]]
   kind ordinary
   proto some 69 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 585) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/EvalError
+      prop str "constructor" = data (obj 587) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/EvalError
       prop str "message" = data ("") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.message/EvalError
       prop str "name" = data ("EvalError") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.name/EvalError
   ]
 }
 
-obj 587 "RangeError" @sec-nativeerror-constructors/RangeError {
+obj 589 "RangeError" @sec-nativeerror-constructors/RangeError {
   names [[[RangeError]]]
   keys [[[%RangeError%]]]
   kind ordinary
@@ -6549,24 +6571,24 @@ obj 587 "RangeError" @sec-nativeerror-constructors/RangeError {
   slots []
   fn { alg some @sec-nativeerror/RangeError len 1 name str "RangeError" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 588) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/RangeError
+      prop str "prototype" = data (obj 590) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/RangeError
   ]
 }
 
-obj 588 "RangeError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/RangeError {
+obj 590 "RangeError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/RangeError {
   names [[[RangeError.prototype]]]
   keys [[[%RangeError.prototype%]]]
   kind ordinary
   proto some 69 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 587) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/RangeError
+      prop str "constructor" = data (obj 589) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/RangeError
       prop str "message" = data ("") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.message/RangeError
       prop str "name" = data ("RangeError") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.name/RangeError
   ]
 }
 
-obj 589 "ReferenceError" @sec-nativeerror-constructors/ReferenceError {
+obj 591 "ReferenceError" @sec-nativeerror-constructors/ReferenceError {
   names [[[ReferenceError]]]
   keys [[[%ReferenceError%]]]
   kind ordinary
@@ -6574,24 +6596,24 @@ obj 589 "ReferenceError" @sec-nativeerror-constructors/ReferenceError {
   slots []
   fn { alg some @sec-nativeerror/ReferenceError len 1 name str "ReferenceError" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 590) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/ReferenceError
+      prop str "prototype" = data (obj 592) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/ReferenceError
   ]
 }
 
-obj 590 "ReferenceError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/ReferenceError {
+obj 592 "ReferenceError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/ReferenceError {
   names [[[ReferenceError.prototype]]]
   keys [[[%ReferenceError.prototype%]]]
   kind ordinary
   proto some 69 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 589) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/ReferenceError
+      prop str "constructor" = data (obj 591) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/ReferenceError
       prop str "message" = data ("") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.message/ReferenceError
       prop str "name" = data ("ReferenceError") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.name/ReferenceError
   ]
 }
 
-obj 591 "SyntaxError" @sec-nativeerror-constructors/SyntaxError {
+obj 593 "SyntaxError" @sec-nativeerror-constructors/SyntaxError {
   names [[[SyntaxError]]]
   keys [[[%SyntaxError%]]]
   kind ordinary
@@ -6599,24 +6621,24 @@ obj 591 "SyntaxError" @sec-nativeerror-constructors/SyntaxError {
   slots []
   fn { alg some @sec-nativeerror/SyntaxError len 1 name str "SyntaxError" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 592) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/SyntaxError
+      prop str "prototype" = data (obj 594) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/SyntaxError
   ]
 }
 
-obj 592 "SyntaxError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/SyntaxError {
+obj 594 "SyntaxError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/SyntaxError {
   names [[[SyntaxError.prototype]]]
   keys [[[%SyntaxError.prototype%]]]
   kind ordinary
   proto some 69 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 591) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/SyntaxError
+      prop str "constructor" = data (obj 593) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/SyntaxError
       prop str "message" = data ("") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.message/SyntaxError
       prop str "name" = data ("SyntaxError") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.name/SyntaxError
   ]
 }
 
-obj 593 "TypeError" @sec-nativeerror-constructors/TypeError {
+obj 595 "TypeError" @sec-nativeerror-constructors/TypeError {
   names [[[TypeError]]]
   keys [[[%TypeError%]]]
   kind ordinary
@@ -6624,24 +6646,24 @@ obj 593 "TypeError" @sec-nativeerror-constructors/TypeError {
   slots []
   fn { alg some @sec-nativeerror/TypeError len 1 name str "TypeError" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 594) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/TypeError
+      prop str "prototype" = data (obj 596) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/TypeError
   ]
 }
 
-obj 594 "TypeError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/TypeError {
+obj 596 "TypeError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/TypeError {
   names [[[TypeError.prototype]]]
   keys [[[%TypeError.prototype%]]]
   kind ordinary
   proto some 69 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 593) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/TypeError
+      prop str "constructor" = data (obj 595) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/TypeError
       prop str "message" = data ("") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.message/TypeError
       prop str "name" = data ("TypeError") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.name/TypeError
   ]
 }
 
-obj 595 "URIError" @sec-nativeerror-constructors/URIError {
+obj 597 "URIError" @sec-nativeerror-constructors/URIError {
   names [[[URIError]]]
   keys [[[%URIError%]]]
   kind ordinary
@@ -6649,24 +6671,24 @@ obj 595 "URIError" @sec-nativeerror-constructors/URIError {
   slots []
   fn { alg some @sec-nativeerror/URIError len 1 name str "URIError" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
-      prop str "prototype" = data (obj 596) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/URIError
+      prop str "prototype" = data (obj 598) attrs { w: false, e: false, c: false } @sec-nativeerror.prototype/URIError
   ]
 }
 
-obj 596 "URIError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/URIError {
+obj 598 "URIError.prototype" @sec-properties-of-the-nativeerror-prototype-objects/URIError {
   names [[[URIError.prototype]]]
   keys [[[%URIError.prototype%]]]
   kind ordinary
   proto some 69 extensible true
   slots []
   props [
-      prop str "constructor" = data (obj 595) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/URIError
+      prop str "constructor" = data (obj 597) attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.constructor/URIError
       prop str "message" = data ("") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.message/URIError
       prop str "name" = data ("URIError") attrs { w: true, e: false, c: true } @sec-nativeerror.prototype.name/URIError
   ]
 }
 
-obj 597 "Int8Array" @sec-typedarray-constructors/Int8Array {
+obj 599 "Int8Array" @sec-typedarray-constructors/Int8Array {
   names [[[Int8Array]]]
   keys [[[%Int8Array%]]]
   kind ordinary
@@ -6675,11 +6697,11 @@ obj 597 "Int8Array" @sec-typedarray-constructors/Int8Array {
   fn { alg some @sec-typedarray/Int8Array len 3 name str "Int8Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4607182418800017408) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Int8Array
-      prop str "prototype" = data (obj 598) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Int8Array
+      prop str "prototype" = data (obj 600) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Int8Array
   ]
 }
 
-obj 598 "Int8Array.prototype" @sec-properties-of-typedarray-prototype-objects/Int8Array {
+obj 600 "Int8Array.prototype" @sec-properties-of-typedarray-prototype-objects/Int8Array {
   names [[[Int8Array.prototype]]]
   keys [[[%Int8Array.prototype%]]]
   kind ordinary
@@ -6687,11 +6709,11 @@ obj 598 "Int8Array.prototype" @sec-properties-of-typedarray-prototype-objects/In
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4607182418800017408) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Int8Array
-      prop str "constructor" = data (obj 597) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Int8Array
+      prop str "constructor" = data (obj 599) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Int8Array
   ]
 }
 
-obj 599 "Uint8Array" @sec-typedarray-constructors/Uint8Array {
+obj 601 "Uint8Array" @sec-typedarray-constructors/Uint8Array {
   names [[[Uint8Array]]]
   keys [[[%Uint8Array%]]]
   kind ordinary
@@ -6700,13 +6722,13 @@ obj 599 "Uint8Array" @sec-typedarray-constructors/Uint8Array {
   fn { alg some @sec-typedarray/Uint8Array len 3 name str "Uint8Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4607182418800017408) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Uint8Array
-      prop str "prototype" = data (obj 600) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Uint8Array
+      prop str "prototype" = data (obj 602) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Uint8Array
       prop str "fromBase64" = data (obj 331) attrs { w: true, e: false, c: true } @sec-uint8array.frombase64
       prop str "fromHex" = data (obj 332) attrs { w: true, e: false, c: true } @sec-uint8array.fromhex
   ]
 }
 
-obj 600 "Uint8Array.prototype" @sec-properties-of-typedarray-prototype-objects/Uint8Array {
+obj 602 "Uint8Array.prototype" @sec-properties-of-typedarray-prototype-objects/Uint8Array {
   names [[[Uint8Array.prototype]]]
   keys [[[%Uint8Array.prototype%]]]
   kind ordinary
@@ -6714,7 +6736,7 @@ obj 600 "Uint8Array.prototype" @sec-properties-of-typedarray-prototype-objects/U
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4607182418800017408) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Uint8Array
-      prop str "constructor" = data (obj 599) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Uint8Array
+      prop str "constructor" = data (obj 601) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Uint8Array
       prop str "setFromBase64" = data (obj 333) attrs { w: true, e: false, c: true } @sec-uint8array.prototype.setfrombase64
       prop str "setFromHex" = data (obj 334) attrs { w: true, e: false, c: true } @sec-uint8array.prototype.setfromhex
       prop str "toBase64" = data (obj 335) attrs { w: true, e: false, c: true } @sec-uint8array.prototype.tobase64
@@ -6722,7 +6744,7 @@ obj 600 "Uint8Array.prototype" @sec-properties-of-typedarray-prototype-objects/U
   ]
 }
 
-obj 601 "Uint8ClampedArray" @sec-typedarray-constructors/Uint8ClampedArray {
+obj 603 "Uint8ClampedArray" @sec-typedarray-constructors/Uint8ClampedArray {
   names [[[Uint8ClampedArray]]]
   keys [[[%Uint8ClampedArray%]]]
   kind ordinary
@@ -6731,11 +6753,11 @@ obj 601 "Uint8ClampedArray" @sec-typedarray-constructors/Uint8ClampedArray {
   fn { alg some @sec-typedarray/Uint8ClampedArray len 3 name str "Uint8ClampedArray" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4607182418800017408) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Uint8ClampedArray
-      prop str "prototype" = data (obj 602) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Uint8ClampedArray
+      prop str "prototype" = data (obj 604) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Uint8ClampedArray
   ]
 }
 
-obj 602 "Uint8ClampedArray.prototype" @sec-properties-of-typedarray-prototype-objects/Uint8ClampedArray {
+obj 604 "Uint8ClampedArray.prototype" @sec-properties-of-typedarray-prototype-objects/Uint8ClampedArray {
   names [[[Uint8ClampedArray.prototype]]]
   keys [[[%Uint8ClampedArray.prototype%]]]
   kind ordinary
@@ -6743,11 +6765,11 @@ obj 602 "Uint8ClampedArray.prototype" @sec-properties-of-typedarray-prototype-ob
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4607182418800017408) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Uint8ClampedArray
-      prop str "constructor" = data (obj 601) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Uint8ClampedArray
+      prop str "constructor" = data (obj 603) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Uint8ClampedArray
   ]
 }
 
-obj 603 "Int16Array" @sec-typedarray-constructors/Int16Array {
+obj 605 "Int16Array" @sec-typedarray-constructors/Int16Array {
   names [[[Int16Array]]]
   keys [[[%Int16Array%]]]
   kind ordinary
@@ -6756,11 +6778,11 @@ obj 603 "Int16Array" @sec-typedarray-constructors/Int16Array {
   fn { alg some @sec-typedarray/Int16Array len 3 name str "Int16Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4611686018427387904) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Int16Array
-      prop str "prototype" = data (obj 604) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Int16Array
+      prop str "prototype" = data (obj 606) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Int16Array
   ]
 }
 
-obj 604 "Int16Array.prototype" @sec-properties-of-typedarray-prototype-objects/Int16Array {
+obj 606 "Int16Array.prototype" @sec-properties-of-typedarray-prototype-objects/Int16Array {
   names [[[Int16Array.prototype]]]
   keys [[[%Int16Array.prototype%]]]
   kind ordinary
@@ -6768,11 +6790,11 @@ obj 604 "Int16Array.prototype" @sec-properties-of-typedarray-prototype-objects/I
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4611686018427387904) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Int16Array
-      prop str "constructor" = data (obj 603) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Int16Array
+      prop str "constructor" = data (obj 605) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Int16Array
   ]
 }
 
-obj 605 "Uint16Array" @sec-typedarray-constructors/Uint16Array {
+obj 607 "Uint16Array" @sec-typedarray-constructors/Uint16Array {
   names [[[Uint16Array]]]
   keys [[[%Uint16Array%]]]
   kind ordinary
@@ -6781,11 +6803,11 @@ obj 605 "Uint16Array" @sec-typedarray-constructors/Uint16Array {
   fn { alg some @sec-typedarray/Uint16Array len 3 name str "Uint16Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4611686018427387904) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Uint16Array
-      prop str "prototype" = data (obj 606) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Uint16Array
+      prop str "prototype" = data (obj 608) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Uint16Array
   ]
 }
 
-obj 606 "Uint16Array.prototype" @sec-properties-of-typedarray-prototype-objects/Uint16Array {
+obj 608 "Uint16Array.prototype" @sec-properties-of-typedarray-prototype-objects/Uint16Array {
   names [[[Uint16Array.prototype]]]
   keys [[[%Uint16Array.prototype%]]]
   kind ordinary
@@ -6793,11 +6815,11 @@ obj 606 "Uint16Array.prototype" @sec-properties-of-typedarray-prototype-objects/
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4611686018427387904) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Uint16Array
-      prop str "constructor" = data (obj 605) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Uint16Array
+      prop str "constructor" = data (obj 607) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Uint16Array
   ]
 }
 
-obj 607 "Int32Array" @sec-typedarray-constructors/Int32Array {
+obj 609 "Int32Array" @sec-typedarray-constructors/Int32Array {
   names [[[Int32Array]]]
   keys [[[%Int32Array%]]]
   kind ordinary
@@ -6806,11 +6828,11 @@ obj 607 "Int32Array" @sec-typedarray-constructors/Int32Array {
   fn { alg some @sec-typedarray/Int32Array len 3 name str "Int32Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4616189618054758400) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Int32Array
-      prop str "prototype" = data (obj 608) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Int32Array
+      prop str "prototype" = data (obj 610) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Int32Array
   ]
 }
 
-obj 608 "Int32Array.prototype" @sec-properties-of-typedarray-prototype-objects/Int32Array {
+obj 610 "Int32Array.prototype" @sec-properties-of-typedarray-prototype-objects/Int32Array {
   names [[[Int32Array.prototype]]]
   keys [[[%Int32Array.prototype%]]]
   kind ordinary
@@ -6818,11 +6840,11 @@ obj 608 "Int32Array.prototype" @sec-properties-of-typedarray-prototype-objects/I
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4616189618054758400) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Int32Array
-      prop str "constructor" = data (obj 607) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Int32Array
+      prop str "constructor" = data (obj 609) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Int32Array
   ]
 }
 
-obj 609 "Uint32Array" @sec-typedarray-constructors/Uint32Array {
+obj 611 "Uint32Array" @sec-typedarray-constructors/Uint32Array {
   names [[[Uint32Array]]]
   keys [[[%Uint32Array%]]]
   kind ordinary
@@ -6831,11 +6853,11 @@ obj 609 "Uint32Array" @sec-typedarray-constructors/Uint32Array {
   fn { alg some @sec-typedarray/Uint32Array len 3 name str "Uint32Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4616189618054758400) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Uint32Array
-      prop str "prototype" = data (obj 610) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Uint32Array
+      prop str "prototype" = data (obj 612) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Uint32Array
   ]
 }
 
-obj 610 "Uint32Array.prototype" @sec-properties-of-typedarray-prototype-objects/Uint32Array {
+obj 612 "Uint32Array.prototype" @sec-properties-of-typedarray-prototype-objects/Uint32Array {
   names [[[Uint32Array.prototype]]]
   keys [[[%Uint32Array.prototype%]]]
   kind ordinary
@@ -6843,11 +6865,11 @@ obj 610 "Uint32Array.prototype" @sec-properties-of-typedarray-prototype-objects/
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4616189618054758400) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Uint32Array
-      prop str "constructor" = data (obj 609) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Uint32Array
+      prop str "constructor" = data (obj 611) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Uint32Array
   ]
 }
 
-obj 611 "BigInt64Array" @sec-typedarray-constructors/BigInt64Array {
+obj 613 "BigInt64Array" @sec-typedarray-constructors/BigInt64Array {
   names [[[BigInt64Array]]]
   keys [[[%BigInt64Array%]]]
   kind ordinary
@@ -6856,11 +6878,11 @@ obj 611 "BigInt64Array" @sec-typedarray-constructors/BigInt64Array {
   fn { alg some @sec-typedarray/BigInt64Array len 3 name str "BigInt64Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4620693217682128896) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/BigInt64Array
-      prop str "prototype" = data (obj 612) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/BigInt64Array
+      prop str "prototype" = data (obj 614) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/BigInt64Array
   ]
 }
 
-obj 612 "BigInt64Array.prototype" @sec-properties-of-typedarray-prototype-objects/BigInt64Array {
+obj 614 "BigInt64Array.prototype" @sec-properties-of-typedarray-prototype-objects/BigInt64Array {
   names [[[BigInt64Array.prototype]]]
   keys [[[%BigInt64Array.prototype%]]]
   kind ordinary
@@ -6868,11 +6890,11 @@ obj 612 "BigInt64Array.prototype" @sec-properties-of-typedarray-prototype-object
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4620693217682128896) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/BigInt64Array
-      prop str "constructor" = data (obj 611) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/BigInt64Array
+      prop str "constructor" = data (obj 613) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/BigInt64Array
   ]
 }
 
-obj 613 "BigUint64Array" @sec-typedarray-constructors/BigUint64Array {
+obj 615 "BigUint64Array" @sec-typedarray-constructors/BigUint64Array {
   names [[[BigUint64Array]]]
   keys [[[%BigUint64Array%]]]
   kind ordinary
@@ -6881,11 +6903,11 @@ obj 613 "BigUint64Array" @sec-typedarray-constructors/BigUint64Array {
   fn { alg some @sec-typedarray/BigUint64Array len 3 name str "BigUint64Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4620693217682128896) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/BigUint64Array
-      prop str "prototype" = data (obj 614) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/BigUint64Array
+      prop str "prototype" = data (obj 616) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/BigUint64Array
   ]
 }
 
-obj 614 "BigUint64Array.prototype" @sec-properties-of-typedarray-prototype-objects/BigUint64Array {
+obj 616 "BigUint64Array.prototype" @sec-properties-of-typedarray-prototype-objects/BigUint64Array {
   names [[[BigUint64Array.prototype]]]
   keys [[[%BigUint64Array.prototype%]]]
   kind ordinary
@@ -6893,11 +6915,11 @@ obj 614 "BigUint64Array.prototype" @sec-properties-of-typedarray-prototype-objec
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4620693217682128896) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/BigUint64Array
-      prop str "constructor" = data (obj 613) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/BigUint64Array
+      prop str "constructor" = data (obj 615) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/BigUint64Array
   ]
 }
 
-obj 615 "Float16Array" @sec-typedarray-constructors/Float16Array {
+obj 617 "Float16Array" @sec-typedarray-constructors/Float16Array {
   names [[[Float16Array]]]
   keys [[[%Float16Array%]]]
   kind ordinary
@@ -6906,11 +6928,11 @@ obj 615 "Float16Array" @sec-typedarray-constructors/Float16Array {
   fn { alg some @sec-typedarray/Float16Array len 3 name str "Float16Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4611686018427387904) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Float16Array
-      prop str "prototype" = data (obj 616) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Float16Array
+      prop str "prototype" = data (obj 618) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Float16Array
   ]
 }
 
-obj 616 "Float16Array.prototype" @sec-properties-of-typedarray-prototype-objects/Float16Array {
+obj 618 "Float16Array.prototype" @sec-properties-of-typedarray-prototype-objects/Float16Array {
   names [[[Float16Array.prototype]]]
   keys [[[%Float16Array.prototype%]]]
   kind ordinary
@@ -6918,11 +6940,11 @@ obj 616 "Float16Array.prototype" @sec-properties-of-typedarray-prototype-objects
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4611686018427387904) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Float16Array
-      prop str "constructor" = data (obj 615) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Float16Array
+      prop str "constructor" = data (obj 617) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Float16Array
   ]
 }
 
-obj 617 "Float32Array" @sec-typedarray-constructors/Float32Array {
+obj 619 "Float32Array" @sec-typedarray-constructors/Float32Array {
   names [[[Float32Array]]]
   keys [[[%Float32Array%]]]
   kind ordinary
@@ -6931,11 +6953,11 @@ obj 617 "Float32Array" @sec-typedarray-constructors/Float32Array {
   fn { alg some @sec-typedarray/Float32Array len 3 name str "Float32Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4616189618054758400) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Float32Array
-      prop str "prototype" = data (obj 618) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Float32Array
+      prop str "prototype" = data (obj 620) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Float32Array
   ]
 }
 
-obj 618 "Float32Array.prototype" @sec-properties-of-typedarray-prototype-objects/Float32Array {
+obj 620 "Float32Array.prototype" @sec-properties-of-typedarray-prototype-objects/Float32Array {
   names [[[Float32Array.prototype]]]
   keys [[[%Float32Array.prototype%]]]
   kind ordinary
@@ -6943,11 +6965,11 @@ obj 618 "Float32Array.prototype" @sec-properties-of-typedarray-prototype-objects
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4616189618054758400) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Float32Array
-      prop str "constructor" = data (obj 617) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Float32Array
+      prop str "constructor" = data (obj 619) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Float32Array
   ]
 }
 
-obj 619 "Float64Array" @sec-typedarray-constructors/Float64Array {
+obj 621 "Float64Array" @sec-typedarray-constructors/Float64Array {
   names [[[Float64Array]]]
   keys [[[%Float64Array%]]]
   kind ordinary
@@ -6956,11 +6978,11 @@ obj 619 "Float64Array" @sec-typedarray-constructors/Float64Array {
   fn { alg some @sec-typedarray/Float64Array len 3 name str "Float64Array" pfx none ctor true async false len_attrs { w: false, e: false, c: true } name_attrs { w: false, e: false, c: true } }
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4620693217682128896) attrs { w: false, e: false, c: false } @sec-typedarray.bytes_per_element/Float64Array
-      prop str "prototype" = data (obj 620) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Float64Array
+      prop str "prototype" = data (obj 622) attrs { w: false, e: false, c: false } @sec-typedarray.prototype/Float64Array
   ]
 }
 
-obj 620 "Float64Array.prototype" @sec-properties-of-typedarray-prototype-objects/Float64Array {
+obj 622 "Float64Array.prototype" @sec-properties-of-typedarray-prototype-objects/Float64Array {
   names [[[Float64Array.prototype]]]
   keys [[[%Float64Array.prototype%]]]
   kind ordinary
@@ -6968,7 +6990,7 @@ obj 620 "Float64Array.prototype" @sec-properties-of-typedarray-prototype-objects
   slots []
   props [
       prop str "BYTES_PER_ELEMENT" = data (number 4620693217682128896) attrs { w: false, e: false, c: false } @sec-typedarray.prototype.bytes_per_element/Float64Array
-      prop str "constructor" = data (obj 619) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Float64Array
+      prop str "constructor" = data (obj 621) attrs { w: true, e: false, c: true } @sec-typedarray.prototype.constructor/Float64Array
   ]
 }
 
@@ -6986,57 +7008,58 @@ clause_props @sec-global-object [
       prop str "decodeURIComponent" = data (obj 10) attrs { w: true, e: false, c: true } @sec-decodeuricomponent-encodeduricomponent
       prop str "encodeURI" = data (obj 11) attrs { w: true, e: false, c: true } @sec-encodeuri-uri
       prop str "encodeURIComponent" = data (obj 12) attrs { w: true, e: false, c: true } @sec-encodeuricomponent-uricomponent
+      prop str "Composite" = data (obj 386) attrs { w: true, e: false, c: true } @sec-function-properties-of-the-global-object-composite
       prop str "AggregateError" = data (obj 71) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-aggregate-error
       prop str "Array" = data (obj 245) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-array
-      prop str "ArrayBuffer" = data (obj 386) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-arraybuffer
-      prop str "AsyncDisposableStack" = data (obj 514) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-asyncdisposablestack
+      prop str "ArrayBuffer" = data (obj 388) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-arraybuffer
+      prop str "AsyncDisposableStack" = data (obj 516) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-asyncdisposablestack
       prop str "BigInt" = data (obj 87) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-bigint
-      prop str "BigInt64Array" = data (obj 611) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-bigint64array
-      prop str "BigUint64Array" = data (obj 613) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-biguint64array
+      prop str "BigInt64Array" = data (obj 613) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-bigint64array
+      prop str "BigUint64Array" = data (obj 615) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-biguint64array
       prop str "Boolean" = data (obj 55) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-boolean
-      prop str "DataView" = data (obj 406) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-dataview
+      prop str "DataView" = data (obj 408) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-dataview
       prop str "Date" = data (obj 132) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-date
-      prop str "DisposableStack" = data (obj 506) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-disposablestack
+      prop str "DisposableStack" = data (obj 508) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-disposablestack
       prop str "Error" = data (obj 67) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-error
-      prop str "EvalError" = data (obj 585) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-evalerror
-      prop str "FinalizationRegistry" = data (obj 456) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-finalization-registry
-      prop str "Float16Array" = data (obj 615) attrs { w: true, e: false, c: true } @sec-float16array
-      prop str "Float32Array" = data (obj 617) attrs { w: true, e: false, c: true } @sec-float32array
-      prop str "Float64Array" = data (obj 619) attrs { w: true, e: false, c: true } @sec-float64array
+      prop str "EvalError" = data (obj 587) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-evalerror
+      prop str "FinalizationRegistry" = data (obj 458) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-finalization-registry
+      prop str "Float16Array" = data (obj 617) attrs { w: true, e: false, c: true } @sec-float16array
+      prop str "Float32Array" = data (obj 619) attrs { w: true, e: false, c: true } @sec-float32array
+      prop str "Float64Array" = data (obj 621) attrs { w: true, e: false, c: true } @sec-float64array
       prop str "Function" = data (obj 49) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-function
-      prop str "Int8Array" = data (obj 597) attrs { w: true, e: false, c: true } @sec-int8array
-      prop str "Int16Array" = data (obj 603) attrs { w: true, e: false, c: true } @sec-int16array
-      prop str "Int32Array" = data (obj 607) attrs { w: true, e: false, c: true } @sec-int32array
-      prop str "Iterator" = data (obj 462) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-iterator
+      prop str "Int8Array" = data (obj 599) attrs { w: true, e: false, c: true } @sec-int8array
+      prop str "Int16Array" = data (obj 605) attrs { w: true, e: false, c: true } @sec-int16array
+      prop str "Int32Array" = data (obj 609) attrs { w: true, e: false, c: true } @sec-int32array
+      prop str "Iterator" = data (obj 464) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-iterator
       prop str "Map" = data (obj 337) attrs { w: true, e: false, c: true } @sec-map
       prop str "Number" = data (obj 75) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-number
       prop str "Object" = data (obj 13) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-object
-      prop str "Promise" = data (obj 522) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-promise
-      prop str "Proxy" = data (obj 564) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-proxy
-      prop str "RangeError" = data (obj 587) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-rangeerror
-      prop str "ReferenceError" = data (obj 589) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-referenceerror
+      prop str "Promise" = data (obj 524) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-promise
+      prop str "Proxy" = data (obj 566) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-proxy
+      prop str "RangeError" = data (obj 589) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-rangeerror
+      prop str "ReferenceError" = data (obj 591) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-referenceerror
       prop str "RegExp" = data (obj 222) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-regexp
       prop str "Set" = data (obj 354) attrs { w: true, e: false, c: true } @sec-set
-      prop str "SharedArrayBuffer" = data (obj 398) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-sharedarraybuffer omittable
+      prop str "SharedArrayBuffer" = data (obj 400) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-sharedarraybuffer omittable
       prop str "String" = data (obj 181) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-string
       prop str "SuppressedError" = data (obj 73) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-suppressederror
       prop str "Symbol" = data (obj 59) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-symbol
-      prop str "SyntaxError" = data (obj 591) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-syntaxerror
-      prop str "TypeError" = data (obj 593) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-typeerror
-      prop str "Uint8Array" = data (obj 599) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-uint8array
-      prop str "Uint8ClampedArray" = data (obj 601) attrs { w: true, e: false, c: true } @sec-uint8clampedarray
-      prop str "Uint16Array" = data (obj 605) attrs { w: true, e: false, c: true } @sec-uint16array
-      prop str "Uint32Array" = data (obj 609) attrs { w: true, e: false, c: true } @sec-uint32array
-      prop str "URIError" = data (obj 595) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-urierror
+      prop str "SyntaxError" = data (obj 593) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-syntaxerror
+      prop str "TypeError" = data (obj 595) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-typeerror
+      prop str "Uint8Array" = data (obj 601) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-uint8array
+      prop str "Uint8ClampedArray" = data (obj 603) attrs { w: true, e: false, c: true } @sec-uint8clampedarray
+      prop str "Uint16Array" = data (obj 607) attrs { w: true, e: false, c: true } @sec-uint16array
+      prop str "Uint32Array" = data (obj 611) attrs { w: true, e: false, c: true } @sec-uint32array
+      prop str "URIError" = data (obj 597) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-urierror
       prop str "WeakMap" = data (obj 373) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-weakmap
-      prop str "WeakRef" = data (obj 453) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-weakref
+      prop str "WeakRef" = data (obj 455) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-weakref
       prop str "WeakSet" = data (obj 381) attrs { w: true, e: false, c: true } @sec-constructor-properties-of-the-global-object-weakset
-      prop str "Atomics" = data (obj 433) attrs { w: true, e: false, c: true } @sec-atomics
-      prop str "JSON" = data (obj 448) attrs { w: true, e: false, c: true } @sec-json
+      prop str "Atomics" = data (obj 435) attrs { w: true, e: false, c: true } @sec-atomics
+      prop str "JSON" = data (obj 450) attrs { w: true, e: false, c: true } @sec-json
       prop str "Math" = data (obj 94) attrs { w: true, e: false, c: true } @sec-math
-      prop str "Reflect" = data (obj 550) attrs { w: true, e: false, c: true } @sec-reflect
-      prop str "escape" = data (obj 566) attrs { w: true, e: false, c: true } @sec-escape-string annexB
-      prop str "unescape" = data (obj 567) attrs { w: true, e: false, c: true } @sec-unescape-string annexB
+      prop str "Reflect" = data (obj 552) attrs { w: true, e: false, c: true } @sec-reflect
+      prop str "escape" = data (obj 568) attrs { w: true, e: false, c: true } @sec-escape-string annexB
+      prop str "unescape" = data (obj 569) attrs { w: true, e: false, c: true } @sec-unescape-string annexB
 ]
 
 clause_props @sec-module-namespace-objects [

@@ -207,6 +207,7 @@ alg @sec-call base=8 close=6
 alg @sec-canbeheldweakly base=6 close=4
 alg @sec-candeclareglobalfunction base=12 close=10
 alg @sec-candeclareglobalvar base=12 close=10
+alg @sec-canonicalizecompositevalue base=8 close=6
 alg @sec-canonicalizekeyedcollectionkey base=8 close=6
 alg @sec-canonicalnumericindexstring base=8 close=6
 alg @sec-charactercomplement base=12 close=10
@@ -222,6 +223,10 @@ alg @sec-comparetypedarrayelements base=10 close=8
 alg @sec-completepropertydescriptor base=10 close=8
 alg @sec-completion-ao base=10 close=8
 alg @sec-composewriteeventbytes base=8 close=6
+alg @sec-composite-function-arg base=10 close=8
+alg @sec-composite.iscomposite base=10 close=8
+alg @sec-compositecanonicalorder base=8 close=6
+alg @sec-compositematch base=8 close=6
 alg @sec-construct base=8 close=6
 alg @sec-copydatablockbytes base=10 close=8
 alg @sec-copydataproperties base=8 close=6
@@ -388,6 +393,7 @@ alg @sec-execute-async-module base=16 close=14
 alg @sec-finalization-registry-cleanup-callback base=10 close=8
 alg @sec-finalization-registry.prototype.register base=10 close=8
 alg @sec-finalization-registry.prototype.unregister base=10 close=8
+alg @sec-findorcreatecomposite base=8 close=6
 alg @sec-findviapredicate base=12 close=10
 alg @sec-flattenintoarray base=12 close=10
 alg @sec-forbodyevaluation base=10 close=8
@@ -549,6 +555,7 @@ alg @sec-isarraybufferviewoutofbounds base=10 close=8
 alg @sec-isbigintelementtype base=10 close=8
 alg @sec-iscallable base=8 close=6
 alg @sec-iscompatiblepropertydescriptor base=10 close=8
+alg @sec-iscomposite base=8 close=6
 alg @sec-isconcatspreadable base=12 close=10
 alg @sec-isconstructor base=8 close=6
 alg @sec-isdatadescriptor base=10 close=8
@@ -2710,6 +2717,7 @@ spectec_only_def @ph-copies-appended
 spectec_only_def @ph-count-nodes-before
 spectec_only_def @ph-count-nodes-within
 spectec_only_def @ph-cu-table
+spectec_only_def @ph-current-realm-composite-registry
 spectec_only_def @ph-decimal-digit-charset
 spectec_only_def @ph-decimal-digits
 spectec_only_def @ph-decimal-representation

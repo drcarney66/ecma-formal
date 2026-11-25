@@ -102,6 +102,7 @@ clause @ph-copies-appended
 clause @ph-count-nodes-before
 clause @ph-count-nodes-within
 clause @ph-cu-table
+clause @ph-current-realm-composite-registry
 clause @ph-decimal-digit-charset
 clause @ph-decimal-digits
 clause @ph-decimal-representation
@@ -737,6 +738,7 @@ clause @sec-canbeheldweakly op "CanBeHeldWeakly"
 clause @sec-candeclareglobalfunction op "CanDeclareGlobalFunction"
 clause @sec-candeclareglobalvar op "CanDeclareGlobalVar"
 clause @sec-candidate-executions
+clause @sec-canonicalizecompositevalue op "CanonicalizeCompositeValue"
 clause @sec-canonicalizekeyedcollectionkey op "CanonicalizeKeyedCollectionKey"
 clause @sec-canonicalnumericindexstring op "CanonicalNumericIndexString"
 clause @sec-charactercomplement op "CharacterComplement"
@@ -778,6 +780,15 @@ clause @sec-completepropertydescriptor op "CompletePropertyDescriptor"
 clause @sec-completion-ao op "Completion"
 clause @sec-completion-record-specification-type
 clause @sec-composewriteeventbytes op "ComposeWriteEventBytes"
+clause @sec-composite-abstract-operations
+clause @sec-composite-entry-records
+clause @sec-composite-function
+clause @sec-composite-function-arg op "Composite"
+clause @sec-composite-objects
+clause @sec-composite-registry
+clause @sec-composite.iscomposite op "Composite.isComposite"
+clause @sec-compositecanonicalorder op "CompositeCanonicalOrder"
+clause @sec-compositematch op "CompositeMatch"
 clause @sec-conditional-operator
 clause @sec-conditional-operator-runtime-semantics-evaluation op "Evaluation"
 clause @sec-conformance
@@ -1097,6 +1108,7 @@ clause @sec-finalization-registry.prototype-%symbol.tostringtag%
 clause @sec-finalization-registry.prototype.constructor
 clause @sec-finalization-registry.prototype.register op "FinalizationRegistry.prototype.register"
 clause @sec-finalization-registry.prototype.unregister op "FinalizationRegistry.prototype.unregister"
+clause @sec-findorcreatecomposite op "FindOrCreateComposite"
 clause @sec-findviapredicate op "FindViaPredicate"
 clause @sec-fixed-length-and-growable-sharedarraybuffer-objects
 clause @sec-fixed-length-and-resizable-arraybuffer-objects
@@ -1135,6 +1147,7 @@ clause @sec-function-instances-prototype
 clause @sec-function-objects
 clause @sec-function-p1-p2-pn-body op "Function"
 clause @sec-function-properties-of-the-global-object
+clause @sec-function-properties-of-the-global-object-composite
 clause @sec-function-properties-of-the-math-object
 clause @sec-function.prototype
 clause @sec-function.prototype-%symbol.hasinstance% op "Function.prototype [ %Symbol.hasInstance% ]"
@@ -1366,6 +1379,7 @@ clause @sec-isarraybufferviewoutofbounds op "IsArrayBufferViewOutOfBounds"
 clause @sec-isbigintelementtype op "IsBigIntElementType"
 clause @sec-iscallable op "IsCallable"
 clause @sec-iscompatiblepropertydescriptor op "IsCompatiblePropertyDescriptor"
+clause @sec-iscomposite op "IsComposite"
 clause @sec-isconcatspreadable op "IsConcatSpreadable"
 clause @sec-isconstructor op "IsConstructor"
 clause @sec-isdatadescriptor op "IsDataDescriptor"
@@ -2001,6 +2015,7 @@ clause @sec-properties-of-the-bigint-constructor
 clause @sec-properties-of-the-bigint-prototype-object
 clause @sec-properties-of-the-boolean-constructor
 clause @sec-properties-of-the-boolean-prototype-object
+clause @sec-properties-of-the-composite-function
 clause @sec-properties-of-the-dataview-constructor
 clause @sec-properties-of-the-dataview-prototype-object
 clause @sec-properties-of-the-date-constructor
@@ -2985,6 +3000,7 @@ field [[%BigUint64Array%]]
 field [[%BigUint64Array.prototype%]]
 field [[%Boolean%]]
 field [[%Boolean.prototype%]]
+field [[%Composite%]]
 field [[%DataView%]]
 field [[%DataView.prototype%]]
 field [[%Date%]]
@@ -3179,6 +3195,8 @@ field [[Closure]]
 field [[CodePoint]]
 field [[CodeUnitCount]]
 field [[Completion]]
+field [[Composite]]
+field [[CompositeRegistry]]
 field [[Configurable]]
 field [[Construct]]
 field [[Constructor]]
@@ -4008,6 +4026,7 @@ syntax #"Chosen Value Record" defined {}
 syntax #"ClassFieldDefinition Record" defined { super [] record true test none }
 syntax #"ClassStaticBlockDefinition Record" defined { super [] record true test none }
 syntax #"Completion Record"
+syntax #"Composite Entry Record" defined {}
 syntax #"Cyclic Module Record" defined { super [#"Module Record"] record true test none }
 syntax #"Data Block" defined { super [] record false test $IsDataBlock(subject) }
 syntax DataView defined { super [Object] record false test alg @sort-DataView }
@@ -4116,6 +4135,7 @@ syntax #"candidate execution Record" defined {}
 syntax character defined { super [#"code point"] record false test alg @sort-character }
 syntax #"code point" defined { super [#"Unicode code point"] record false test alg @sort-code-point }
 syntax #"code unit" defined { super [] record false test alg @sort-code-unit }
+syntax #"composite object" defined {}
 syntax constructor defined { super [#"function object"] record false test alg @sort-constructor }
 syntax #"continue completion" defined { super [#"Completion Record"] record false test alg @sort-continue-completion }
 syntax #"data property" defined { super [] record false test $PropertyIsKind(subject, ~data~) }

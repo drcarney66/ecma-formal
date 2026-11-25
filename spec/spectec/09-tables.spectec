@@ -1318,6 +1318,30 @@ table t"table-completion-record-fields" @sec-completion-record-specification-typ
   ]
 }
 
+table t"table-composite-entry-record" @sec-composite-entry-records#0 {
+  kind fields
+  thead true
+  schema ("Composite Entry Record", false)
+  vars []
+  rows [
+    row [
+      cell { text "Field Name" }
+      cell { text "Value" }
+      cell { text "Meaning" }
+    ]
+    row [
+      cell { field [[Key]] }
+      cell { ty (String) }
+      cell { text "The property key." }
+    ]
+    row [
+      cell { field [[Value]] }
+      cell { ty (#"ECMAScript language value") }
+      cell { text "The property value." }
+    ]
+  ]
+}
+
 table t"table-controlescape-code-point-values" @sec-patterns-static-semantics-character-value#0 {
   kind data
   thead true
@@ -3563,6 +3587,11 @@ table t"table-realm-record-fields" @sec-code-realms#0 {
       cell { ty (pred(sat @spec-copy-6(data choice 0, undefined))) }
       cell { text "Field reserved for use by hosts that need to associate additional information with a Realm Record." }
     ]
+    row [
+      cell { field [[CompositeRegistry]] }
+      cell { ty (list<Object>) }
+      cell { text "The composite objects interned by this realm (<emu-xref href=\"#sec-composite-registry\"></emu-xref>)." }
+    ]
   ]
 }
 
@@ -4244,6 +4273,11 @@ table t"table-well-known-intrinsic-objects" @sec-well-known-intrinsic-objects#0 
       cell { expr (intrinsic [[BigUint64Array]]) }
       cell { expr ("BigUint64Array") }
       cell { text "The `BigUint64Array` <emu-not-ref>constructor</emu-not-ref> (<emu-xref href=\"#sec-typedarray-objects\"></emu-xref>)" }
+    ]
+    row [
+      cell { expr (intrinsic [[Composite]]) }
+      cell { expr ("Composite") }
+      cell { text "The `Composite` function (<emu-xref href=\"#sec-composite-function\"></emu-xref>)" }
     ]
     row [
       cell { expr (intrinsic [[Boolean]]) }

@@ -3135,6 +3135,11 @@ def @formal-rounddecimalmv "formal-rounddecimalmv" (kind ao params [m : sort [#"
   return @sec-roundmvresult(m * 10 ^ k)
 }
 
+def @ph-current-realm-composite-registry "ph-current-realm-composite-registry" (kind ao params []) vars [#"realm"] {
+  let #"realm" = $CurrentRealm()
+  return #"realm"[[CompositeRegistry]]
+}
+
 def @spec-cond-0 "spec-cond" (kind ao params [x0, x1]) vars [x0, x1] {
   return bool(x0[[Key]] is val {x1[[Key]]})
 }

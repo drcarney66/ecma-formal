@@ -1524,6 +1524,13 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Let _existingProperty_ be ? <emu-meta effects="user-code">_globalObj_.[[GetOwnProperty]](_name_)</emu-meta>.
 @@end
 
+@@patch alg @sec-canonicalizecompositevalue root:1..2
+@@spectec
+|   if value is val {nan} -> return nan
+@@html
+| 1. If _value_ is *NaN*, return an implementation chosen *NaN* value. An implementation must return the same *NaN* value for every *NaN* argument, so that all *NaN* values returned from this operations are not implementation distinguishable (see <emu-xref href="#sec-numerictorawbytes">NumericToRawBytes</emu-xref>) from each other.
+@@end
+
 @@patch alg @sec-class-definitions-static-semantics-early-errors root:2..3
 @@spectec
 |   return sdo HasDirectSuper(ctor)
@@ -1630,6 +1637,81 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     assert expr $Chain(writeEvent[[ByteIndex]], data choice 1, ?byteLocation, data choice 0, writeEvent[[ByteIndex]] + writeEvent[[ElementSize]])
 @@html
 |   1. Assert: _writeEvent_ has _byteLocation_ in its memory range.
+@@end
+
+@@patch alg @sec-composite-function-arg root:3..4
+@@spectec
+|   if preserveNegativeZero is val {true} and @ph-current-realm-composite-registry() sat $Contains(?arg) -> return arg
+@@html
+| 1. [id="step-composite-early-return"] If _preserveNegativeZero_ is *true* and the current Realm Record's Composite Registry contains _arg_, return _arg_.
+@@end
+
+@@patch alg @sec-compositecanonicalorder root:2..11
+@@spectec
+|   for_each entry : #"Composite Entry Record" in entries {
+|     assert entry[[Key]] is ty {String}
+|     if_else entry[[Key]] is ty {#"array index"} { perform $Append(?entry, ?integerEntries) } else { perform $Append(?entry, ?stringEntries) }
+|   }
+|   let #"rest" = $Copy(?integerEntries)
+|   let sortedInt = $ListNew()
+|   repeat_while #"rest" fails $IsEmpty() {
+|     let least = $ListElem(data choice 1, ?#"rest")
+|     for_each a in #"rest" {
+|       if $ℝ(! @sec-touint32(a[[Key]])) < $ℝ(! @sec-touint32(least[[Key]])) -> set var least = a
+|     }
+|     perform $Append(?least, ?sortedInt)
+|     perform $RemoveElem(?least, ?#"rest")
+|   }
+|   set var integerEntries = sortedInt
+|   let #"rest" = $Copy(?stringEntries)
+|   let sortedStr = $ListNew()
+|   repeat_while #"rest" fails $IsEmpty() {
+|     let least = $ListElem(data choice 1, ?#"rest")
+|     for_each a in #"rest" {
+|       if ! @sec-islessthan(a[[Key]], least[[Key]], true) is val {true} -> set var least = a
+|     }
+|     perform $Append(?least, ?sortedStr)
+|     perform $RemoveElem(?least, ?#"rest")
+|   }
+|   set var stringEntries = sortedStr
+@@html
+| 1. For each Composite Entry Record _entry_ of _entries_, do
+|   1. Assert: _entry_.[[Key]] is a String.
+|   1. If _entry_.[[Key]] is an array index, append _entry_ to _integerEntries_; otherwise, append _entry_ to _stringEntries_.
+| 1. Sort _integerEntries_ into ascending order according to the numeric values of the array indices denoted by their [[Key]] fields.
+| 1. Sort _stringEntries_ into ascending order according to the lexicographic order of their [[Key]] fields, comparing them by code unit.
+@@end
+
+@@patch alg @sec-compositematch root:0..1
+@@spectec
+|   assert pass "_ is in the canonical key order produced by CompositeCanonicalOrder (<emu-xref href=\"#sec-compositecanonicalorder\"></emu-xref>)"
+@@html
+| 1. Assert: _sortedEntries_ is in the canonical key order produced by CompositeCanonicalOrder (<emu-xref href="#sec-compositecanonicalorder"></emu-xref>).
+@@end
+
+@@patch alg @sec-compositematch root:2..3
+@@spectec
+|   assert pass "_ is in the canonical key order produced by CompositeCanonicalOrder (<emu-xref href=\"#sec-compositecanonicalorder\"></emu-xref>)"
+@@html
+| 1. Assert: _keys_ is in the canonical key order produced by CompositeCanonicalOrder (<emu-xref href="#sec-compositecanonicalorder"></emu-xref>).
+@@end
+
+@@patch alg @sec-compositematch root:5..6
+@@spectec
+|   for_each entry : #"Composite Entry Record" in sortedEntries {
+|     let key = #"keys"[i]
+|     if entry[[Key]] is not val {key} -> return false
+|     let current = ! @sec-get-o-p(composite, key)
+|     if @sec-samevalue(current, entry[[Value]]) is val {false} -> return false
+|     set var i = i + 1
+|   }
+@@html
+| 1. For each Composite Entry Record _entry_ of _sortedEntries_, do
+|   1. Let _key_ be _keys_[_i_].
+|   1. If _entry_.[[Key]] is not _key_, return *false*.
+|   1. Let _current_ be ! Get(_composite_, _key_).
+|   1. If SameValue(_current_, _entry_.[[Value]]) is *false*, return *false*.
+|   1. Set _i_ to _i_ + 1.
 @@end
 
 @@patch alg @sec-construct root:2..3
@@ -2979,6 +3061,37 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |   1. If _cell_.[[UnregisterToken]] is not ~empty~ and SameValue(_cell_.[[UnregisterToken]], _unregisterToken_) is *true*, then
 |     1. Remove _cell_ from _finalizationRegistry_.[[Cells]].
 |     1. Set _removed_ to *true*.
+@@end
+
+@@patch alg @sec-findorcreatecomposite root:1..3
+@@spectec
+|   let registry = @ph-current-realm-composite-registry()
+|   for_each composite : #"composite object" in registry {
+|     if @sec-compositematch(composite, sortedEntries) is val {true} -> return composite
+|   }
+@@html
+| 1. Let _registry_ be the current Realm Record's Composite Registry.
+| 1. For each composite object _composite_ of _registry_, do
+|   1. If CompositeMatch(_composite_, _sortedEntries_) is *true*, return _composite_.
+@@end
+
+@@patch alg @sec-findorcreatecomposite root:4..5
+@@spectec
+|   for_each entry : #"Composite Entry Record" in sortedEntries {
+|     let #"desc" = record PropertyDescriptor { [[Value]]: entry[[Value]], [[Writable]]: false, [[Enumerable]]: true, [[Configurable]]: false }
+|     perform ! @sec-definepropertyorthrow(composite, entry[[Key]], #"desc")
+|   }
+@@html
+| 1. For each Composite Entry Record _entry_ of _sortedEntries_, do
+|   1. Let _desc_ be the PropertyDescriptor { [[Value]]: _entry_.[[Value]], [[Writable]]: *false*, [[Enumerable]]: *true*, [[Configurable]]: *false* }.
+|   1. Perform ! DefinePropertyOrThrow(_composite_, _entry_.[[Key]], _desc_).
+@@end
+
+@@patch alg @sec-findorcreatecomposite root:6..7
+@@spectec
+|   perform $SetAdd(?composite, ?registry)
+@@html
+| 1. Add _composite_ to _registry_.
 @@end
 
 @@patch alg @sec-findviapredicate root:3..4

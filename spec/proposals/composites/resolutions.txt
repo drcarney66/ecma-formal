@@ -1,0 +1,10 @@
+# Table 6 addition and clause placements for proposal-composites.
+ignore sec-well-known-intrinsic-objects 1
+patch sec-well-known-intrinsic-objects 2 "              <td>\n                %Boolean%\n              </td>" ==> "              <td>\n                %Composite%\n              </td>\n              <td>\n                *\"Composite\"*\n              </td>\n              <td>\n                The `Composite` function (<emu-xref href=\"#sec-composite-function\"></emu-xref>)\n              </td>\n            </tr>\n            <tr>\n              <td>\n                %Boolean%\n              </td>"
+parent sec-composite-objects sec-keyed-collections
+parent sec-composite-abstract-operations sec-keyed-collections
+unwrap sec-modifications
+use-new sec-canbeheldweakly 1
+ignore sec-canbeheldweakly 3
+attr sec-composite-function-arg type "built-in function"
+attr sec-composite.iscomposite type "built-in function"

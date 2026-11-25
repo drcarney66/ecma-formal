@@ -421,6 +421,7 @@ def @sec-initializehostdefinedrealm "InitializeHostDefinedRealm" (kind ao params
   set field #"realm"[[GlobalEnv]] = @sec-newglobalenvironment(global, thisValue)
   perform ? @sec-setdefaultglobalbindings(#"realm")
   perform $HostGlobalProperties(#"realm", global)
+  set field #"realm"[[CompositeRegistry]] = $ListNew()
   return ~unused~
 }
 
@@ -627,7 +628,7 @@ def @sec-cleanup-finalization-registry "CleanupFinalizationRegistry" (kind ao pa
 }
 
 def @sec-canbeheldweakly "CanBeHeldWeakly" (kind ao params [arg : #"ECMAScript language value"] -> Boolean) vars [arg] {
-  if arg is ty {Object} -> return true
+  if arg is ty {Object} and @sec-iscomposite(arg) is val {false} -> return true
   if arg is ty {Symbol} and @sec-keyforsymbol(arg) is val {undefined} -> return true
   return false
 }
