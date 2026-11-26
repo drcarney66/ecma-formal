@@ -5,18 +5,21 @@
 
 For each proposal on the November 2026 TC39 agenda (117th meeting), inspects `git diff --numstat BASE..BRANCH`
 (with generated code gitignored, every line in the diff is hand-written) and records:
-- `algorithms_loc`: lines added/removed in `spec/spectec/**`, `spec/html/**`, and `spec/proposals/**` (SpecTec
-  definitions, HTML bijection metadata, merge resolutions, and any draft spec text)
-- `model_loc`: lines added/removed in `lean/Ecma/**` and `lean/Engine/**` outside `Proofs/`, `Pins.lean`, `Claims.lean`
-- `proofs_loc`: lines added/removed in `lean/Engine/Proofs/**`, `lean/Engine/Pins.lean`, `lean/Engine/Claims.lean`
-- `tests_loc`: lines added/removed in `tests/**`
-- `spec_emu_lines`: upstream proposal spec lines (when checked out or recorded)
+- `spectec`: lines added/removed in `spec/spectec/**` (normalizing sequential object indices in `10-realm.spectec`
+  so inserting an intrinsic does not count unchanged downstream intrinsics)
+- `lean`: hand-written Lean lines added/removed in `lean/**` outside `Gen/` (`model` + `proofs`)
+- `model`: lines added/removed in `lean/**` outside `Gen/`, `Proofs/`, `Pins.lean`, `Claims.lean`
+- `proofs`: lines added/removed in `lean/Engine/Proofs/**`, `lean/Engine/Pins.lean`, `lean/Engine/Claims.lean`
+- `html_meta`: lines added/removed in `spec/html/**` and `spec/proposals/**`
+- `tests`: lines added/removed in `tests/**`
+- `spec_diff`: merged `spec.html` diff against base `external/ecma262/spec.html`
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -177,6 +180,9 @@ def branch_exists(name: str) -> bool:
     return subprocess.run(["git", "rev-parse", "--verify", "--quiet", name], cwd=ROOT, capture_output=True).returncode == 0
 
 
+REALM_ID_RE = re.compile(r"\b(obj|some)\s+\d+\b")
+
+
 def classify(path: str) -> str:
     if path.startswith("lean/"):
         if "/Gen/" in path:
@@ -184,24 +190,13 @@ def classify(path: str) -> str:
         if path.startswith("lean/Engine/Proofs/") or path in ("lean/Engine/Pins.lean", "lean/Engine/Claims.lean"):
             return "proofs"
         return "model"
-    if path.startswith("spec/spectec/prose/"):
-        return "model"
-    if path.startswith("spec/spectec/") or path.startswith("spec/html/") or path.startswith("spec/proposals/"):
-        return "algorithms"
+    if path.startswith("spec/spectec/"):
+        return "spectec"
+    if path.startswith("spec/html/") or path.startswith("spec/proposals/"):
+        return "html_meta"
     if path.startswith("tests/") and not path.endswith(".expected"):
         return "tests"
     return "meta"
-
-
-def strip_module_headers(files: list[Path]) -> str:
-    chunks = []
-    for f in files:
-        if not f.is_file():
-            continue
-        lines = [ln for ln in f.read_text().splitlines()
-                 if not ln.startswith(("import ", "namespace ", "end ", "-- Generated "))]
-        chunks.append("\n".join(lines))
-    return "\n".join(chunks) + "\n"
 
 
 def numstat_pair(path_a: Path, path_b: Path) -> dict[str, int]:
@@ -216,38 +211,29 @@ def numstat_pair(path_a: Path, path_b: Path) -> dict[str, int]:
     return {"added": added, "removed": removed}
 
 
-def inspect_worktree_generated(entry_id: str, prev: dict | None) -> tuple[dict[str, int], dict[str, int]]:
+def realm_spectec_numstat(mb: str, head: str) -> tuple[int, int]:
+    base_txt = REALM_ID_RE.sub(r"\1 #", git("show", f"{mb}:spec/spectec/10-realm.spectec"))
+    head_txt = REALM_ID_RE.sub(r"\1 #", git("show", f"{head}:spec/spectec/10-realm.spectec"))
+    with tempfile.TemporaryDirectory() as td:
+        ba = Path(td, "base.spectec")
+        pr = Path(td, "prop.spectec")
+        ba.write_text(base_txt)
+        pr.write_text(head_txt)
+        ns = numstat_pair(ba, pr)
+        return ns["added"], ns["removed"]
+
+
+def inspect_worktree_spec_diff(entry_id: str, prev: dict | None) -> dict[str, int]:
     wt = ROOT / "build/worktrees" / entry_id
     spec_diff = (prev or {}).get("spec_diff", {"added": 0, "removed": 0})
-    gen_lean = (prev or {}).get("generated_lean", {"added": 0, "removed": 0})
     if not wt.is_dir():
-        return spec_diff, gen_lean
+        return spec_diff
 
     mspecs = sorted((wt / "build").rglob("spec.html"))
     base_spec = ROOT / "external/ecma262/spec.html"
     if mspecs and base_spec.is_file():
         spec_diff = numstat_pair(base_spec, mspecs[0])
-
-    def gen_files_of(root_dir: Path) -> list[Path]:
-        return [
-            *sorted((root_dir / "lean/Ecma/Gen").glob("S*.lean")),
-            *sorted((root_dir / "lean/Ecma/Gen").glob("Helpers*.lean")),
-            *sorted((root_dir / "lean/Ecma/Gen").glob("Tables_*.lean")),
-            *sorted((root_dir / "lean/Ecma/Gen").glob("Early*.lean")),
-            *sorted((root_dir / "lean/Ecma/Grammar/Gen").glob("Syntactic*.lean")),
-            root_dir / "lean/Ecma/Grammar/Gen/Lexical.lean",
-        ]
-
-    base_gen = gen_files_of(ROOT)
-    prop_gen = gen_files_of(wt)
-    if any(f.is_file() for f in base_gen) and any(f.is_file() for f in prop_gen):
-        with tempfile.TemporaryDirectory() as td:
-            ba = Path(td, "base.lean")
-            pr = Path(td, "prop.lean")
-            ba.write_text(strip_module_headers(base_gen))
-            pr.write_text(strip_module_headers(prop_gen))
-            gen_lean = numstat_pair(ba, pr)
-    return spec_diff, gen_lean
+    return spec_diff
 
 
 def inspect_branch(entry: dict, base: str, prev: dict | None = None) -> dict:
@@ -256,15 +242,24 @@ def inspect_branch(entry: dict, base: str, prev: dict | None = None) -> dict:
         return {**entry, "status": "missing"}
     head = git("rev-parse", br).strip()
     mb = git("merge-base", base, br).strip()
-    buckets = {k: {"added": 0, "removed": 0, "files": 0} for k in ("algorithms", "model", "proofs", "tests", "meta", "generated")}
+    buckets = {k: {"added": 0, "removed": 0, "files": 0}
+               for k in ("spectec", "lean", "model", "proofs", "html_meta", "tests", "meta", "generated")}
     for ln in git("diff", "--numstat", mb, head).splitlines():
         if not ln.strip():
             continue
         a, r, p = ln.split("\t")
+        ai = int(a) if a != "-" else 0
+        ri = int(r) if r != "-" else 0
+        if p == "spec/spectec/10-realm.spectec":
+            ai, ri = realm_spectec_numstat(mb, head)
         cat = classify(p)
-        buckets[cat]["added"] += int(a) if a != "-" else 0
-        buckets[cat]["removed"] += int(r) if r != "-" else 0
+        buckets[cat]["added"] += ai
+        buckets[cat]["removed"] += ri
         buckets[cat]["files"] += 1
+        if cat in ("model", "proofs"):
+            buckets["lean"]["added"] += ai
+            buckets["lean"]["removed"] += ri
+            buckets["lean"]["files"] += 1
 
     # Upstream spec size if committed under spec/proposals/<id>/spec.* or submodule commit recorded
     pcommit = ""
@@ -304,7 +299,7 @@ def inspect_branch(entry: dict, base: str, prev: dict | None = None) -> dict:
     except subprocess.CalledProcessError:
         pass
 
-    spec_diff, gen_lean = inspect_worktree_generated(entry["id"], prev)
+    spec_diff = inspect_worktree_spec_diff(entry["id"], prev)
 
     return {
         **entry,
@@ -314,7 +309,6 @@ def inspect_branch(entry: dict, base: str, prev: dict | None = None) -> dict:
         "proposal_commit": pcommit,
         "spec_lines": spec_lines,
         "spec_diff": spec_diff,
-        "generated_lean": gen_lean,
         "diff": buckets,
     }
 
@@ -345,11 +339,12 @@ def main() -> int:
     for r in ready:
         d = r["diff"]
         sd = r["spec_diff"]
-        gl = r["generated_lean"]
+        st = d["spectec"]
+        ln = d["lean"]
         print(f"  {r['id']:22} [S{r['stage']:3}] spec.html=+{sd['added']}/-{sd['removed']}  "
-              f"gen_lean=+{gl['added']}/-{gl['removed']}  "
-              f"model=+{d['model']['added']}/-{d['model']['removed']}  "
-              f"proofs=+{d['proofs']['added']}/-{d['proofs']['removed']}")
+              f"spectec=+{st['added']}/-{st['removed']}  "
+              f"lean=+{ln['added']}/-{ln['removed']} "
+              f"(model=+{d['model']['added']}/-{d['model']['removed']}, proofs=+{d['proofs']['added']}/-{d['proofs']['removed']})")
     return 0
 
 

@@ -737,7 +737,11 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
     for p in props:
         d = p["diff"]
         sd = p.get("spec_diff", {"added": 0, "removed": 0})
-        gl = p.get("generated_lean", {"added": 0, "removed": 0})
+        st = d.get("spectec", {"added": 0, "removed": 0})
+        ln = d.get("lean", {
+            "added": d.get("model", {}).get("added", 0) + d.get("proofs", {}).get("added", 0),
+            "removed": d.get("model", {}).get("removed", 0) + d.get("proofs", {}).get("removed", 0),
+        })
         bcls = stage_cls.get(p["stage"], "none")
         ex, bid = p.get("example", ""), p.get("build", "")
         dbg_url = f"debugger/?example={html.escape(ex)}&amp;build={html.escape(bid)}"
@@ -748,9 +752,8 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
             f'<td><span class="badge {bcls}">{html.escape(p["stage"])}</span></td>'
             f'<td class="p-title"><a href="{html.escape(p["repo"])}">{html.escape(p["title"])}</a></td>'
             f'<td class="num">{pm(sd)}</td>'
-            f'<td class="num">{pm(gl)}</td>'
-            f'<td class="num">{pm(d["model"])}</td>'
-            f'<td class="num">{pm(d["proofs"])}</td>'
+            f'<td class="num">{pm(st)}</td>'
+            f'<td class="num">{pm(ln)}</td>'
             f'<td>{dbg_cell}</td>'
             f'</tr>'
         )
@@ -758,8 +761,7 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
         '<div class="tablebox prop117-box"><table class="prop117-table">'
         '<thead><tr>'
         '<th>Stage</th><th>Proposal</th><th class="num"><code>spec.html</code></th>'
-        '<th class="num">Auto-gen spec</th><th class="num">Model / Host</th>'
-        '<th class="num">Proofs</th><th></th>'
+        '<th class="num">SpecTec</th><th class="num">Hand-written Lean</th><th></th>'
         '</tr></thead><tbody>'
         + "".join(trows)
         + '</tbody></table></div>'
