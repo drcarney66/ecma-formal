@@ -614,73 +614,28 @@ html:not(.js) .slide { position: static; opacity: 1; pointer-events: auto; aspec
 .p-label-svg { fill: var(--accent); font-size: 15px; font-family: var(--mono); font-weight: 700; }
 .p-bij-svg { fill: var(--quote); font-size: 14.5px; font-weight: 700; }
 
-/* Slides 3–5: Exploded "Meat of the spec" (multi-step fade layers & downstream architecture) */
-.slide-top-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5cqw; flex-wrap: wrap; }
-.step-pills { display: flex; align-items: center; gap: 0.45cqw; padding-bottom: 0.3cqh; }
-.step-pill {
-  font: 600 clamp(0.62rem, 0.98cqw, 0.78rem)/1.35 var(--mono);
-  padding: 0.35cqh 0.75cqw; border-radius: 999px; cursor: pointer;
-  border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2);
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+/* Slides 8–10: Prose in SpecTec (quoted spec.html prose + how it translates -> SpecTec) */
+.prose-translate-body {
+  padding: 2.6cqh 2.4cqw; background: var(--paper);
+  display: flex; flex-direction: column; gap: 2cqh;
 }
-.slide[data-step="0"] .step-pill[data-pill="0"],
-.slide[data-step="1"] .step-pill[data-pill="1"],
-.slide[data-step="2"] .step-pill[data-pill="2"],
-.slide[data-step="3"] .step-pill[data-pill="3"] {
-  background: var(--accent-soft); color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--rule));
+.prose-spec-quote {
+  margin: 0; max-width: none; padding: 1.6cqh 1.8cqw;
+  border-left: 3.5px solid var(--quote); background: var(--quote-bg);
+  border-radius: 0 8px 8px 0;
+  font-family: var(--serif); font-size: clamp(0.86rem, 1.48cqw, 1.15rem); line-height: 1.5; color: var(--ink);
 }
-
-.multi-swap { position: relative; width: 100%; height: 100%; display: flex; align-items: center; }
-.multi-layer { width: 100%; }
-.multi-layer:not([data-layer="0"]) {
-  position: absolute; inset: 0; display: flex; align-items: center;
-  opacity: 0; pointer-events: none;
+.prose-spec-list p { margin: 0 0 1cqh; max-width: none; }
+.prose-spec-list ul { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 0.6cqh; }
+.prose-spec-list li { margin: 0; max-width: none; font-size: clamp(0.8rem, 1.32cqw, 1.02rem); line-height: 1.42; }
+.translate-note {
+  display: flex; align-items: baseline; gap: 0.9cqw;
+  padding: 1.4cqh 1.6cqw; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--rule));
+  background: color-mix(in srgb, var(--accent-soft) 35%, var(--surface));
+  font-size: clamp(0.78rem, 1.28cqw, 0.98rem); line-height: 1.45; color: var(--ink);
 }
-.deck-stage.ready .multi-layer { transition: opacity 0.3s ease; }
-.slide[data-step="1"] .multi-layer[data-layer="0"],
-.slide[data-step="2"] .multi-layer[data-layer="0"],
-.slide[data-step="3"] .multi-layer[data-layer="0"] { opacity: 0; pointer-events: none; }
-.slide[data-step="1"] .multi-layer[data-layer="1"],
-.slide[data-step="2"] .multi-layer[data-layer="2"],
-.slide[data-step="3"] .multi-layer[data-layer="3"] { opacity: 1; pointer-events: auto; }
-
-.meat-overview { display: flex; flex-direction: column; gap: 2.2cqh; width: 100%; }
-.meat-banner {
-  margin: 0; max-width: none; display: flex; align-items: center; gap: 1cqw;
-  padding: 1.5cqh 1.8cqw; border-radius: 10px; border: 1px solid var(--rule);
-  background: var(--surface); font-size: clamp(0.78rem, 1.24cqw, 0.96rem); color: var(--ink); line-height: 1.4;
-}
-.meat-banner .badge { flex: none; }
-.meat-triad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.6cqw; align-items: stretch; }
-.meat-card {
-  border: 1.5px solid var(--rule); border-radius: 11px; padding: 2.2cqh 1.8cqw;
-  background: var(--paper); display: flex; flex-direction: column; gap: 1cqh;
-}
-.meat-head h3 { font-size: clamp(0.95rem, 1.52cqw, 1.2rem); margin: 0.9cqh 0 0.1cqh; }
-.meat-head h3 code { background: none; padding: 0; font-size: 0.95em; }
-main .meat-card ul { margin: 0.3cqh 0 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.85cqh; }
-main .meat-card li { margin: 0; max-width: none; font-size: clamp(0.74rem, 1.18cqw, 0.92rem); line-height: 1.38; color: var(--ink-2); }
-main .meat-card li::marker { color: var(--accent); }
-
-.ds-layout { display: flex; flex-direction: column; justify-content: center; gap: 1.8cqh; }
-.ds-source {
-  border: 1.5px solid color-mix(in srgb, var(--accent) 42%, var(--rule));
-  background: color-mix(in srgb, var(--accent-soft) 32%, var(--surface));
-  border-radius: 11px; padding: 2cqh 2.2cqw;
-  display: flex; flex-direction: column; gap: 1.1cqh;
-}
-.ds-source-title { font-weight: 700; font-size: clamp(0.92rem, 1.55cqw, 1.2rem); color: var(--ink); }
-.ds-source-pills { display: flex; flex-wrap: wrap; gap: 0.8cqh 1cqw; }
-.ds-source-pills .badge { font-size: clamp(0.66rem, 1.05cqw, 0.82rem); text-transform: none; letter-spacing: 0.01em; padding: 0.25em 0.65em; }
-.ds-fan { text-align: center; font: 700 clamp(0.76rem, 1.22cqw, 0.95rem)/1.2 var(--mono); color: var(--accent); letter-spacing: 0.04em; }
-.ds-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.6cqh 1.8cqw; }
-.ds-card {
-  border: 1.5px solid var(--rule); border-radius: 10px; padding: 2cqh 2cqw;
-  background: var(--paper); display: flex; flex-direction: column; gap: 0.65cqh;
-}
-.ds-card h3 { margin: 0; font-size: clamp(0.92rem, 1.52cqw, 1.18rem); }
-.ds-card p { margin: 0; max-width: none; font-size: clamp(0.76rem, 1.22cqw, 0.94rem); line-height: 1.4; color: var(--ink-2); }
+.translate-note .badge { flex: none; }
 
 /* Slide 4: Two clean tool cards */
 .tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.6cqw; align-items: stretch; align-content: center; }
@@ -846,5 +801,5 @@ html.deck-present .deck-stage {
 @media print {
   .deck-stage { aspect-ratio: auto; width: 100%; overflow: visible; border: 0; box-shadow: none; }
   .slide { position: static !important; opacity: 1 !important; pointer-events: auto !important; page-break-after: always; border: 1px solid #ccc; margin-bottom: 1rem; }
-  .reveal-item, .diff-ins, .swap-after, .multi-layer { opacity: 1 !important; max-width: none !important; transform: none !important; position: static !important; }
+  .reveal-item, .diff-ins, .swap-after { opacity: 1 !important; max-width: none !important; transform: none !important; }
 }

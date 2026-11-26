@@ -9,7 +9,7 @@
 <div class="deck-bar" id="deck-bar" role="region" aria-label="Slide controls">
   <div class="deck-bar-left">
     <button type="button" class="theme deck-btn" id="deck-prev" title="Previous (←)">←</button>
-    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 13</span>
+    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 18</span>
     <button type="button" class="theme deck-btn" id="deck-next" title="Next (→)">→</button>
   </div>
   <div class="deck-bar-right">
@@ -94,73 +94,51 @@
     </div>
   </section>
 
-  <!-- 3. The meat of the spec (1/3): Bijective with spec.html (Overview -> Algorithm -> Grammar -> Table) -->
-  <section class="slide" id="slide-meat" data-slide="3" data-max-step="3" data-step="0">
-    <div class="slide-top slide-top-row">
-      <div>
-        <span class="slide-kicker">The meat of the spec · 1 / 3</span>
-        <h2 id="meat-of-the-spec">Bijective with <code>spec.html</code></h2>
-      </div>
-      <div class="step-pills" aria-hidden="true">
-        <span class="step-pill" data-pill="0">Overview</span>
-        <span class="step-pill" data-pill="1">1 · Algorithm</span>
-        <span class="step-pill" data-pill="2">2 · Grammar</span>
-        <span class="step-pill" data-pill="3">3 · Table</span>
-      </div>
+  <!-- 3. Bijective with spec.html (blank opener) -->
+  <section class="slide" id="slide-meat" data-slide="3" data-max-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">The spec</span>
+      <h2 id="bijective-with-spec-html">Bijective with <code>spec.html</code></h2>
+    </div>
+    <div class="slide-fill"></div>
+  </section>
+
+  <!-- 4. Algorithms: spec.html -> SpecTec -->
+  <section class="slide" id="slide-algorithms" data-slide="4" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">Bijective with spec.html</span>
+      <h2 id="spec-algorithms">Algorithms</h2>
     </div>
     <div class="slide-fill step-panel">
-      <div class="multi-swap">
-        <!-- Layer 0: Overview -->
-        <div class="multi-layer" data-layer="0">
-          <div class="meat-overview">
-            <p class="meat-banner">
-              <span class="badge proved">0-diff splice</span>
-              <span>Structured SpecTec (<code>spec/spectec/</code>, {{spectec_struct_files}} files) — what editors &amp; proposal champions work on every day, round-tripped byte-for-byte with <code>spec.html</code> via <code>spectec-html</code>.</span>
-            </p>
-            <div class="meat-triad">
-              <div class="meat-card">
-                <div class="meat-head">
-                  <span class="badge proved">1 · Algorithms</span>
-                  <h3><code>clauses/*.spectec</code></h3>
-                </div>
-                <ul>
-                  <li>All {{spectec_defs}} typed <code>def @sec-…</code> AOs, built-ins, SDOs &amp; internal methods</li>
-                  <li>All Static Semantics: Early Errors (<code>08-early-errors.spectec</code>)</li>
-                  <li>Explicit completions (<code>?</code> / <code>!</code>), closures &amp; record slots</li>
-                </ul>
-              </div>
-              <div class="meat-card">
-                <div class="meat-head">
-                  <span class="badge proved">2 · Grammars</span>
-                  <h3><code>01..07-grammar-*.spectec</code></h3>
-                </div>
-                <ul>
-                  <li>All 6 grammars: lexical, syntactic, RegExp, numeric, JSON &amp; Annex B</li>
-                  <li>Parameters (<code>[Yield, Await]</code>), guards, <code>butnot</code> &amp; lookahead</li>
-                  <li>Cover grammars &amp; §12.10 ASI semicolon sites</li>
-                </ul>
-              </div>
-              <div class="meat-card">
-                <div class="meat-head">
-                  <span class="badge proved">3 · Tables</span>
-                  <h3><code>09-tables</code> &amp; <code>10-realm</code></h3>
-                </div>
-                <ul>
-                  <li>Typed Record field schemas &amp; slot tables</li>
-                  <li>Essential internal &amp; Environment Record method signatures</li>
-                  <li>Operator dispatch tables &amp; intrinsic Realm graph</li>
-                </ul>
-              </div>
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§7.1.4 ToNumber ( arg )</span>
             </div>
+            <pre class="spec-code lean-code" data-verbatim>&lt;emu-clause id="sec-tonumber" type="abstract operation"&gt;
+  &lt;h1&gt;ToNumber ( _arg_: an ECMAScript language value ): either a normal completion containing a Number or a throw completion&lt;/h1&gt;
+  &lt;emu-alg&gt;
+    1. If _arg_ is a Number, return _arg_.
+    1. If _arg_ is either a Symbol or a BigInt, throw a *TypeError* exception.
+    1. If _arg_ is *undefined*, return *NaN*.
+    1. If _arg_ is either *null* or *false*, return *+0*&lt;sub&gt;𝔽&lt;/sub&gt;.
+    1. If _arg_ is *true*, return *1*&lt;sub&gt;𝔽&lt;/sub&gt;.
+    1. If _arg_ is a String, return StringToNumber(_arg_).
+    1. Assert: _arg_ is an Object.
+    1. Let _primitiveValue_ be ? ToPrimitive(_arg_, ~number~).
+    1. Assert: _primitiveValue_ is not an Object.
+    1. Return ? ToNumber(_primitiveValue_).
+  &lt;/emu-alg&gt;
+&lt;/emu-clause&gt;</pre>
           </div>
         </div>
-
-        <!-- Layer 1: Algorithm example -->
-        <div class="multi-layer" data-layer="1">
+        <div class="swap-layer swap-after">
           <div class="code-window">
             <div class="code-bar">
               <code>spec/spectec/clauses/S07.spectec</code>
-              <span class="badge proved">1 / 3 · Algorithm — §7.1.4 ToNumber ( arg )</span>
+              <span class="badge proved">0-diff splice with spec.html</span>
             </div>
             <pre class="spec-code lean-code" data-verbatim><span class="k">def</span> <span class="o">@sec-tonumber</span> <span class="s">"ToNumber"</span>
   (<span class="k">kind</span> <span class="k">ao</span> <span class="k">params</span> [arg : <span class="s">#"ECMAScript language value"</span>] -&gt; <span class="k">completion</span>&lt;Number&gt; | <span class="s">#"throw completion"</span>)
@@ -178,13 +156,47 @@
 }</pre>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
 
-        <!-- Layer 2: Grammar rules example -->
-        <div class="multi-layer" data-layer="2">
+  <!-- 5. Grammar rules: spec.html -> SpecTec -->
+  <section class="slide" id="slide-grammar-rules" data-slide="5" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">Bijective with spec.html</span>
+      <h2 id="spec-grammar-rules">Grammar rules</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§13.1 Identifiers &amp; §13.2.5 Object Initializer</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim>&lt;emu-grammar type="definition"&gt;
+  IdentifierReference[Yield, Await] :
+    Identifier
+    [~Yield] `yield`
+    [~Await] `await`
+
+  Identifier :
+    IdentifierName but not ReservedWord
+
+  PropertyDefinition[Yield, Await] :
+    IdentifierReference[?Yield, ?Await]
+    CoverInitializedName[?Yield, ?Await]
+    PropertyName[?Yield, ?Await] `:` AssignmentExpression[+In, ?Yield, ?Await]
+    MethodDefinition[?Yield, ?Await]
+    `...` AssignmentExpression[+In, ?Yield, ?Await]
+&lt;/emu-grammar&gt;</pre>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
           <div class="code-window">
             <div class="code-bar">
               <code>spec/spectec/03-grammar-syntactic.spectec</code>
-              <span class="badge proved">2 / 3 · Grammar — §13.1 Identifiers &amp; §13.2.5 Object Initializer</span>
+              <span class="badge proved">0-diff splice with spec.html</span>
             </div>
             <pre class="spec-code lean-code" data-verbatim><span class="k">rule</span> syntactic |IdentifierReference| [Yield, Await] : {
   | |Identifier|
@@ -205,13 +217,53 @@
 }</pre>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
 
-        <!-- Layer 3: Table example -->
-        <div class="multi-layer" data-layer="3">
+  <!-- 6. Tables: spec.html -> SpecTec -->
+  <section class="slide" id="slide-tables" data-slide="6" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">Bijective with spec.html</span>
+      <h2 id="spec-tables">Tables</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§6.2.4 Table 8 — Completion Record Fields</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim>&lt;emu-table id="table-completion-record-fields" caption="Completion Record Fields"&gt;
+  &lt;table&gt;
+    &lt;thead&gt;
+      &lt;tr&gt;&lt;th&gt;Field Name&lt;/th&gt;&lt;th&gt;Value&lt;/th&gt;&lt;th&gt;Meaning&lt;/th&gt;&lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tr&gt;
+      &lt;td&gt;[[Type]]&lt;/td&gt;
+      &lt;td&gt;~normal~, ~break~, ~continue~, ~return~, or ~throw~&lt;/td&gt;
+      &lt;td&gt;The type of completion that occurred.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;[[Value]]&lt;/td&gt;
+      &lt;td&gt;any value except a Completion Record&lt;/td&gt;
+      &lt;td&gt;The value that was produced.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;[[Target]]&lt;/td&gt;
+      &lt;td&gt;a String or ~empty~&lt;/td&gt;
+      &lt;td&gt;The target label for directed control transfers…&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/table&gt;
+&lt;/emu-table&gt;</pre>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
           <div class="code-window">
             <div class="code-bar">
               <code>spec/spectec/09-tables.spectec</code>
-              <span class="badge proved">3 / 3 · Table — §6.2.4 Table 8: Completion Record Fields</span>
+              <span class="badge proved">Typed schema &amp; field types</span>
             </div>
             <pre class="spec-code lean-code" data-verbatim><span class="k">table</span> <span class="s">t"table-completion-record-fields"</span> <span class="o">@sec-completion-record-specification-type#0</span> {
   <span class="k">kind</span> fields    <span class="k">thead</span> true    <span class="k">schema</span> (<span class="s">"Completion Record"</span>, false)    <span class="k">vars</span> []
@@ -221,6 +273,11 @@
       <span class="k">cell</span> { <span class="k">field</span> [[Type]] }
       <span class="k">cell</span> { <span class="k">ty</span> (<span class="k">val</span>(<span class="s">~normal~</span>) | <span class="k">val</span>(<span class="s">~break~</span>) | <span class="k">val</span>(<span class="s">~continue~</span>) | <span class="k">val</span>(<span class="s">~return~</span>) | <span class="k">val</span>(<span class="s">~throw~</span>)) }
       <span class="k">cell</span> { <span class="k">text</span> <span class="s">"The type of completion that occurred."</span> }
+    ]
+    <span class="k">row</span> [
+      <span class="k">cell</span> { <span class="k">field</span> [[Value]] }
+      <span class="k">cell</span> { <span class="k">ty</span> (<span class="k">pred</span>(<span class="k">sat</span> <span class="o">@ph-type-except</span>(<span class="k">data</span> <span class="k">sort</span> <span class="s">#"Completion Record"</span>))) }
+      <span class="k">cell</span> { <span class="k">text</span> <span class="s">"The value that was produced."</span> }
     ]
     <span class="k">row</span> [
       <span class="k">cell</span> { <span class="k">field</span> [[Target]] }
@@ -235,73 +292,45 @@
     </div>
   </section>
 
-  <!-- 4. The meat of the spec (2/3): Prose in SpecTec (Overview -> Model -> Laws -> Relations) -->
-  <section class="slide" id="slide-meat-prose" data-slide="4" data-max-step="3" data-step="0">
-    <div class="slide-top slide-top-row">
-      <div>
-        <span class="slide-kicker">The meat of the spec · 2 / 3</span>
-        <h2 id="meat-prose">Prose in SpecTec: model, laws &amp; relations</h2>
-      </div>
-      <div class="step-pills" aria-hidden="true">
-        <span class="step-pill" data-pill="0">Overview</span>
-        <span class="step-pill" data-pill="1">1 · Model</span>
-        <span class="step-pill" data-pill="2">2 · Laws</span>
-        <span class="step-pill" data-pill="3">3 · Relations</span>
-      </div>
+  <!-- 7. Prose in SpecTec (blank opener) -->
+  <section class="slide" id="slide-prose" data-slide="7" data-max-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">The spec</span>
+      <h2 id="prose-in-spectec">Prose in SpecTec</h2>
+    </div>
+    <div class="slide-fill"></div>
+  </section>
+
+  <!-- 8. Models: spec prose + how it translates -> SpecTec -->
+  <section class="slide" id="slide-models" data-slide="8" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">Prose in SpecTec</span>
+      <h2 id="prose-models">Models</h2>
     </div>
     <div class="slide-fill step-panel">
-      <div class="multi-swap">
-        <!-- Layer 0: Prose overview -->
-        <div class="multi-layer" data-layer="0">
-          <div class="meat-overview">
-            <p class="meat-banner">
-              <span class="badge rd">Prose in SpecTec</span>
-              <span><code>spec/spectec/prose/</code> ({{spectec_prose_files}} modules) — what ECMA-262 states in English prose, formalized as abstract carriers, verbatim-quoted laws, and inductive relations.</span>
-            </p>
-            <div class="meat-triad">
-              <div class="meat-card">
-                <div class="meat-head">
-                  <span class="badge rd">1 · Model</span>
-                  <h3><code>01-model</code> · <code>02-value</code></h3>
-                </div>
-                <ul>
-                  <li>Abstract <code>syntax Model record</code> — no representation baked in</li>
-                  <li>Mathematical values (ℝ), IEEE-754 Numbers, UTF-16 Strings &amp; BigInts</li>
-                  <li>Store cells with identity: Objects, Records, Lists &amp; Parse Nodes</li>
-                </ul>
-              </div>
-              <div class="meat-card">
-                <div class="meat-head">
-                  <span class="badge rd">2 · Laws</span>
-                  <h3>{{all_model_laws}} model + {{host_laws}} host</h3>
-                </div>
-                <ul>
-                  <li>Every <code>law</code> quotes the exact <code>spec.html</code> sentence it formalizes</li>
-                  <li><code>law_quotes.py</code> verifies every quotation against pinned <code>spec.html</code></li>
-                  <li>Covers IEEE-754 rounding, UTF-16, parse trees, jobs, clocks &amp; hooks</li>
-                </ul>
-              </div>
-              <div class="meat-card">
-                <div class="meat-head">
-                  <span class="badge rd">3 · Relations</span>
-                  <h3><code>04-derives</code> · <code>07-memory</code></h3>
-                </div>
-                <ul>
-                  <li>§5.1 stratified grammar derivation (<code>Derives</code>, <code>butnot</code>, ASI)</li>
-                  <li>§11.2.2 strict-mode containment &amp; §14.7.5 <code>for-in</code> enumeration</li>
-                  <li>§29 memory model (<code>SyncWith</code>, <code>HB</code>, <code>DataRaceFree</code>)</li>
-                </ul>
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§5.2.6 Mathematical Operations &amp; §6.1.6.1 The Number Type</span>
+            </div>
+            <div class="prose-translate-body">
+              <blockquote class="prose-spec-quote">
+                “The <b>Number type</b> has exactly 18,437,736,874,454,810,627 (2<sup>64</sup> − 2<sup>53</sup> + 3) values, representing the double-precision floating point IEEE 754-2019 binary64 values… except that the distinct NaN values of the IEEE Standard are represented in ECMAScript as a single special <b>NaN</b> value… two other special values, <b>+∞</b><sub>𝔽</sub> and <b>−∞</b><sub>𝔽</sub>… <b>+0</b><sub>𝔽</sub> and <b>−0</b><sub>𝔽</sub>, and the finite non-zero values.”
+              </blockquote>
+              <div class="translate-note">
+                <span class="badge rd">How it translates</span>
+                <span>Each specification sort (<code>Math</code>, <code>Num</code>, <code>Str</code>, <code>Addr</code>, <code>Node</code>, …) is an abstract carrier in <code>syntax Model record</code>, with a case view <code>NumView(Math)</code> and primitive operations — fixing no concrete representation.</span>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Layer 1: Model example -->
-        <div class="multi-layer" data-layer="1">
+        <div class="swap-layer swap-after">
           <div class="code-window">
             <div class="code-bar">
               <code>spec/spectec/prose/01-model.spectec</code>
-              <span class="badge rd">1 / 3 · Model — §5.2.6 &amp; §6.1.6.1 Abstract Carriers &amp; Operations</span>
+              <span class="badge rd">Abstract carriers &amp; operations</span>
             </div>
             <pre class="spec-code lean-code" data-verbatim><span class="c">--- The case view of an IEEE 754-2019 binary64 Number value (§6.1.6.1).</span>
 <span class="k">syntax</span> NumView (Math : Type) {
@@ -320,13 +349,97 @@
 }</pre>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
 
-        <!-- Layer 2: Laws example -->
-        <div class="multi-layer" data-layer="2">
+  <!-- 9. Relations: spec prose + how it translates -> SpecTec -->
+  <section class="slide" id="slide-relations" data-slide="9" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">Prose in SpecTec</span>
+      <h2 id="prose-relations">Relations</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§29.6.6 happens-before</span>
+            </div>
+            <div class="prose-translate-body">
+              <div class="prose-spec-quote prose-spec-list">
+                <p>For a candidate execution <i>execution</i>, its <b>happens-before</b> Relation is the least Relation on Memory events that satisfies the following — <i>eventA</i> happens-before <i>eventB</i> if any of the following conditions are true:</p>
+                <ul>
+                  <li><i>eventA</i> is-agent-order-before <i>eventB</i> in <i>execution</i>.</li>
+                  <li><i>eventA</i> synchronizes-with <i>eventB</i> in <i>execution</i>.</li>
+                  <li>SharedDataBlockEventSet(<i>execution</i>) contains both <i>eventA</i> and <i>eventB</i>, <i>eventA</i>.[[Order]] is ~init~, and <i>eventA</i> and <i>eventB</i> have overlapping memory ranges.</li>
+                  <li>There is an event <i>eventC</i> such that <i>eventA</i> happens-before <i>eventC</i> and <i>eventC</i> happens-before <i>eventB</i> in <i>execution</i>.</li>
+                </ul>
+              </div>
+              <div class="translate-note">
+                <span class="badge rd">How it translates</span>
+                <span>“The least Relation that satisfies…” becomes an inductive SpecTec <code>relation</code>, with one Horn <code>rule</code> (<code>conclusion :- premises;</code>) per prose bullet.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec/spectec/prose/07-memory-model.spectec</code>
+              <span class="badge rd">Inductive SpecTec relation</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim><span class="c">--- happens-before (§29.6.6): the least Relation closed under its four rules.</span>
+<span class="k">relation</span> HB (rbf : Rbf(E)) (hsw : Rel(E)) : Rel(E) {
+  <span class="k">rule</span> agent {a b : E} :
+    HB(rbf, hsw, a, b) :- agentOrder(x, a, b);
+  <span class="k">rule</span> sync  {a b : E} :
+    HB(rbf, hsw, a, b) :- SyncWith(x, rbf, hsw, a, b);
+  <span class="k">rule</span> init  {a b : E} :
+    HB(rbf, hsw, a, b) :- inSdb(x, a), inSdb(x, b), x.order(a) = .init, rangesOverlapping(x, a, b);
+  <span class="k">rule</span> trans {a b c : E} :
+    HB(rbf, hsw, a, b) :- HB(rbf, hsw, a, c), HB(rbf, hsw, c, b);
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. Laws: spec prose + how it translates -> SpecTec -->
+  <section class="slide" id="slide-laws" data-slide="10" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <span class="slide-kicker">Prose in SpecTec</span>
+      <h2 id="prose-laws">Laws</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§6.1.6.1.1 Number::unaryMinus &amp; §4.2 Hosts and Implementations</span>
+            </div>
+            <div class="prose-translate-body">
+              <blockquote class="prose-spec-quote">
+                <b>§6.1.6.1.1 Number::unaryMinus ( <i>number</i> ):</b> “1. If <i>number</i> is <b>NaN</b>, return <b>NaN</b>. 2. Return the negation of <i>number</i>; that is, compute a Number with the same magnitude but opposite sign.”
+              </blockquote>
+              <blockquote class="prose-spec-quote">
+                <b>§4.2 Hosts and Implementations:</b> “A host hook must conform to at least the following requirements: It must return either a normal completion or a throw completion.”
+              </blockquote>
+              <div class="translate-note">
+                <span class="badge rd">How it translates</span>
+                <span>Each prose requirement becomes a <code>law</code> in a SpecTec <code>laws</code> block ({{all_model_laws}} model + {{host_laws}} host laws), quoting the governing <code>spec.html</code> sentence verbatim (checked by <code>law_quotes.py</code>).</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
           <div class="code-window">
             <div class="code-bar">
               <code>spec/spectec/prose/05-model-laws.spectec</code> &amp; <code>24-host-laws-hooks.spectec</code>
-              <span class="badge rd">2 / 3 · Laws — Quoted spec.html Prose Checked by law_quotes.py</span>
+              <span class="badge rd">Quotes verified against spec.html</span>
             </div>
             <pre class="spec-code lean-code" data-verbatim><span class="k">laws</span> Model.NumLaws (M : Model) {
   <span class="c">--- sec-numeric-types-number-unaryMinus:</span>
@@ -345,74 +458,12 @@
 }</pre>
           </div>
         </div>
-
-        <!-- Layer 3: Relations example -->
-        <div class="multi-layer" data-layer="3">
-          <div class="code-window">
-            <div class="code-bar">
-              <code>spec/spectec/prose/07-memory-model.spectec</code>
-              <span class="badge rd">3 / 3 · Relations — §29.6.5 synchronizes-with &amp; §29.6.6 happens-before</span>
-            </div>
-            <pre class="spec-code lean-code" data-verbatim><span class="c">--- synchronizes-with (§29.6.5): the least Relation closed under its three rules.</span>
-<span class="k">relation</span> SyncWith (rbf : Rbf(E)) (hsw : Rel(E)) : Rel(E) {
-  <span class="k">rule</span> rf    {r w : E} : SyncWith(rbf, hsw, w, r) :-
-    readsFrom(x, rbf, r, w), x.order(r) = .seqCst, x.order(w) = .seqCst, rangesEqual(x, r, w);
-  <span class="k">rule</span> agent {a b : E} (rec : EventsRecord(E)) : SyncWith(rbf, hsw, a, b) :-
-    rec <span class="k">mem</span> x.records, (a, b) <span class="k">mem</span> rec.syncs;
-  <span class="k">rule</span> host  {a b : E} : SyncWith(rbf, hsw, a, b) :- hsw(a, b);
-}
-
-<span class="c">--- happens-before (§29.6.6): the least Relation closed under its four rules.</span>
-<span class="k">relation</span> HB (rbf : Rbf(E)) (hsw : Rel(E)) : Rel(E) {
-  <span class="k">rule</span> agent {a b : E}   : HB(rbf, hsw, a, b) :- agentOrder(x, a, b);
-  <span class="k">rule</span> sync  {a b : E}   : HB(rbf, hsw, a, b) :- SyncWith(x, rbf, hsw, a, b);
-  <span class="k">rule</span> init  {a b : E}   : HB(rbf, hsw, a, b) :- inSdb(x, a), inSdb(x, b), x.order(a) = .init, rangesOverlapping(x, a, b);
-  <span class="k">rule</span> trans {a b c : E} : HB(rbf, hsw, a, b) :- HB(rbf, hsw, a, c), HB(rbf, hsw, c, b);
-}</pre>
-          </div>
-        </div>
       </div>
     </div>
   </section>
 
-  <!-- 5. The meat of the spec (3/3): Everything else is downstream -->
-  <section class="slide" id="slide-meat-downstream" data-slide="5" data-max-step="0">
-    <div class="slide-top">
-      <span class="slide-kicker">The meat of the spec · 3 / 3</span>
-      <h2 id="meat-downstream">Everything else is generated downstream</h2>
-    </div>
-    <div class="slide-fill ds-layout">
-      <div class="ds-source">
-        <div class="ds-source-title">Single source of truth — <code>spec/spectec/</code> ({{spectec_total_files}} files)</div>
-        <div class="ds-source-pills">
-          <span class="badge proved">Bijective HTML ({{spectec_struct_files}} files): algorithms · grammars · tables</span>
-          <span class="badge rd">Prose SpecTec ({{spectec_prose_files}} modules): model · laws · relations</span>
-        </div>
-      </div>
-      <div class="ds-fan" aria-hidden="true">↓ &nbsp; compiled &amp; autogenerated &nbsp; ↓</div>
-      <div class="ds-grid">
-        <div class="ds-card">
-          <h3>Lean 4 specification &amp; proofs</h3>
-          <p><code>Ecma/Gen</code> &amp; <code>Grammar/Gen</code> emitted automatically · <code>Engine.implements</code> proved against all {{all_model_laws}} model &amp; {{host_laws}} host laws</p>
-        </div>
-        <div class="ds-card">
-          <h3>Executable JS reference VM</h3>
-          <p><code>ecma-run</code> executes full scripts &amp; module graphs step-for-step from the compiled SpecTec AST</p>
-        </div>
-        <div class="ds-card">
-          <h3>Wasm64 spec debugger</h3>
-          <p>Step forward &amp; backward in the browser with live <code>ECMA-262</code> ↔ <code>SpecTec</code> view toggle &amp; per-proposal builds</p>
-        </div>
-        <div class="ds-card">
-          <h3>Merge, static checks &amp; <code>test262</code></h3>
-          <p>Mechanical <code>spec.emu</code> merge, 0-diff HTML splice check, SDO/type completeness &amp; <code>test262</code> runner</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 6. Adding a proposal (1): write the algorithms -->
-  <section class="slide" id="slide-step-1" data-slide="6" data-max-step="1" data-step="0">
+  <!-- 11. Adding a proposal (1): write the algorithms -->
+  <section class="slide" id="slide-step-1" data-slide="11" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 1</span>
       <h2 id="step-1">Write the algorithms</h2>
@@ -434,8 +485,8 @@
     </div>
   </section>
 
-  <!-- 7. Adding a proposal (2): generate the spec -->
-  <section class="slide" id="slide-step-2" data-slide="7" data-max-step="1" data-step="0">
+  <!-- 12. Adding a proposal (2): generate the spec -->
+  <section class="slide" id="slide-step-2" data-slide="12" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 2</span>
       <h2 id="step-2">Generate SpecTec &amp; compile</h2>
@@ -474,8 +525,8 @@
     </div>
   </section>
 
-  <!-- 8. Adding a proposal (3): debug! -->
-  <section class="slide" id="slide-step-3" data-slide="8" data-max-step="1" data-step="0">
+  <!-- 13. Adding a proposal (3): debug! -->
+  <section class="slide" id="slide-step-3" data-slide="13" data-max-step="1" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 3</span>
       <h2 id="step-3">Debug!</h2>
@@ -499,8 +550,8 @@
     </div>
   </section>
 
-  <!-- 9. Adding a proposal (4): table of diffs from current proposals (no stats) -->
-  <section class="slide" id="slide-step-4" data-slide="9" data-max-step="0">
+  <!-- 14. Adding a proposal (4): table of diffs from current proposals (no stats) -->
+  <section class="slide" id="slide-step-4" data-slide="14" data-max-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Adding a proposal · Step 4</span>
       <h2 id="step-4">All {{proposals_117_count}} ECMA-262 proposals on the TC39 #117 agenda</h2>
@@ -510,8 +561,8 @@
     </div>
   </section>
 
-  <!-- 10. Tools usable right now -->
-  <section class="slide" id="slide-tools" data-slide="10" data-max-step="0">
+  <!-- 15. Tools usable right now -->
+  <section class="slide" id="slide-tools" data-slide="15" data-max-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Immediate value</span>
       <h2 id="tools">Tools for champions, reviewers &amp; editors — usable right now</h2>
@@ -537,8 +588,8 @@
     </div>
   </section>
 
-  <!-- 11. What this can deliver (right-arrow reveals one bullet at a time) -->
-  <section class="slide" id="slide-deliver" data-slide="11" data-max-step="4" data-step="0">
+  <!-- 16. What this can deliver (right-arrow reveals one bullet at a time) -->
+  <section class="slide" id="slide-deliver" data-slide="16" data-max-step="4" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Where this goes</span>
       <h2 id="deliver">What this can deliver</h2>
@@ -578,8 +629,8 @@
     </div>
   </section>
 
-  <!-- 12. Next steps (right-arrow reveals one bullet at a time) -->
-  <section class="slide" id="slide-next" data-slide="12" data-max-step="3" data-step="0">
+  <!-- 17. Next steps (right-arrow reveals one bullet at a time) -->
+  <section class="slide" id="slide-next" data-slide="17" data-max-step="3" data-step="0">
     <div class="slide-top">
       <span class="slide-kicker">Looking ahead</span>
       <h2 id="next-steps">Next steps</h2>
@@ -609,8 +660,8 @@
     </div>
   </section>
 
-  <!-- 13. Questions -->
-  <section class="slide slide-center" id="slide-questions" data-slide="13" data-max-step="0">
+  <!-- 18. Questions -->
+  <section class="slide slide-center" id="slide-questions" data-slide="18" data-max-step="0">
     <div class="hero-wrap">
       <h2 class="hero-h1" id="questions">Questions?</h2>
     </div>

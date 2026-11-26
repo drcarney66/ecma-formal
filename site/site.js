@@ -273,15 +273,6 @@
       if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeDbgModal(); });
 
       document.addEventListener("click", function (e) {
-        var pill = e.target.closest ? e.target.closest(".step-pill[data-pill]") : null;
-        if (pill && slides[idx] && slides[idx].contains(pill)) {
-          var ps = parseInt(pill.getAttribute("data-pill") || "0", 10);
-          if (!isNaN(ps) && ps >= 0 && ps <= maxStepOf(idx)) {
-            step = ps;
-            syncDeck();
-          }
-          return;
-        }
         var trigger = e.target.closest ? e.target.closest("[data-dbg-open]") : null;
         if (trigger && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
           e.preventDefault();
