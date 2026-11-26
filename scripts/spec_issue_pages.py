@@ -228,7 +228,7 @@ def program_html(iss: si.Issue, builds: list[dict], errata: dict, unrunnable: di
     elif builds:
         first = builds[0]
         q = f"../debugger/?example={esc(ident)}"
-        opens = [f'<a class="open" href="{q}">Open in the debugger: {esc(first["label"])}</a>']
+        opens = [f'<button type="button" class="open" data-dbg-open="{q}">Open in the debugger</button>']
         links.append(f'<p class="opens">{" ".join(opens)}</p>')
     kind = "a Module graph (its <code>main.mjs</code> runs as a Module)" if ex.is_dir() else "a Script"
     return (f'<section id="program"><h2>The program</h2>'

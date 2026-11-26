@@ -370,16 +370,19 @@ def examples_page(gallery: dict, builds: list[dict], checked: list[dict], facts:
         toc.append((g["id"], html.escape(g["title"]), 1))
         items = []
         for e in exs:
-            links, checks = [], []
+            primary_q = None
+            checks = []
             for b, c in e["builds"].items():
                 if b not in by_id:
                     continue
-                q = f"?example={e['id']}" + ("" if b == first else f"&amp;build={b}")
-                links.append(f'<a class="open" href="debugger/{q}">Open in the debugger: {html.escape(by_id[b]["label"])}</a>')
+                if primary_q is None:
+                    primary_q = f"?example={e['id']}" + ("" if b == first else f"&amp;build={b}")
                 where = ran.get((e["id"], b))
                 if checked and not where:
                     raise SystemExit(f"examples: {e['id']} [{b}] was not checked")
                 checks.append(f'<li><span class="build">{html.escape(by_id[b]["label"])}</span>: {check_line(c)}.</li>')
+            open_p = (f'<p class="opens"><button type="button" class="open" data-dbg-open="debugger/{primary_q}">'
+                      f'Open in the debugger</button></p>') if primary_q else ""
             args = (f'<p class="args">Run with <code>{html.escape(" ".join(e["args"]))}</code>.</p>' if e["args"] else "")
             bps = ", ".join(f"<code>{html.escape(x['alg'])}{(' ' + html.escape(x['path'])) if x.get('path') else ''}</code>"
                             for x in e["breakpoints"])
@@ -393,7 +396,7 @@ def examples_page(gallery: dict, builds: list[dict], checked: list[dict], facts:
             items.append(f"""<article class="example" id="{example_anchor(e['id'])}">
 <h3><a class="self" href="#{example_anchor(e['id'])}">{html.escape(e['title'])}</a></h3>
 <p class="what">{html.escape(e['line'])}</p>
-<p class="opens">{' '.join(links)}</p>
+{open_p}
 {setup_p}{args}<ul class="checks">{''.join(checks)}</ul>
 <details class="jssrc" open><summary>Source <code>{html.escape(e['file'])}</code></summary><pre class="js">{html.escape(e['source'])}</pre></details>
 </article>""")

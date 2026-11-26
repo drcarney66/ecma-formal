@@ -657,12 +657,10 @@ def page(rec: dict, gallery: dict | None, builds: list[dict]) -> dict:
         for e in gallery["examples"]:
             if e["group"] != "proposal":
                 continue
-            links = [f'<a class="open" href="debugger/?example={esc(e["id"])}&amp;build=defer">Open in the debugger: {esc(lab["defer"])}</a>']
-            if "spec" in e["builds"]:
-                links.append(f'<a class="open" href="debugger/?example={esc(e["id"])}">Open in the debugger: {esc(lab["spec"])}</a>')
+            links = [f'<button type="button" class="open" data-dbg-open="debugger/?example={esc(e["id"])}&amp;build=defer">Open in the debugger</button>']
             lis.append(f'<li><p><strong>{esc(e["title"])}</strong></p><p class="opens">{" ".join(links)}</p></li>')
         body.append(f'<h2 id="try">Try it</h2><p>The debugger has the proposal\'s build: under it each program runs and '
-                    f'pauses in the proposal\'s algorithms; under the specification\'s it is a SyntaxError.</p>'
+                    f'pauses in the proposal\'s algorithms.</p>'
                     f'<ul class="try">{"".join(lis)}</ul>')
     else:
         body.append('<h2 id="try">Try it</h2><p>This site was built without the proposal\'s debugger build; '

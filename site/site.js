@@ -144,6 +144,104 @@
       Object.keys(links).forEach(function (id) { var el = document.getElementById(id); if (el) obs.observe(el); });
     }
 
+    // Live debugger modal overlay (shared across slides, examples, errata, spec-issues, and proposal pages).
+    var modal = document.getElementById("dbg-modal");
+    var modalFrame = document.getElementById("dbg-modal-frame");
+    var modalClose = document.getElementById("dbg-modal-close");
+    var modalReturnFocus = null;
+    var onModalClosedDeck = null;
+
+    var closeDbgModal = function () {
+      if (!modal || modal.hidden) return false;
+      modal.hidden = true;
+      document.body.style.overflow = "";
+      if (modalFrame) {
+        modalFrame.onload = null;
+        modalFrame.setAttribute("src", "about:blank");
+      }
+      if (onModalClosedDeck) {
+        onModalClosedDeck();
+      } else if (modalReturnFocus && modalReturnFocus.focus) {
+        try { modalReturnFocus.focus({ preventScroll: true }); } catch (e) { /* none */ }
+      }
+      modalReturnFocus = null;
+      return true;
+    };
+
+    var bindModalControls = function () {
+      if (modalClose) modalClose.addEventListener("click", closeDbgModal);
+      if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeDbgModal(); });
+    };
+    bindModalControls();
+
+    var ensureDbgModal = function () {
+      if (modal && modalFrame) return;
+      modal = document.createElement("div");
+      modal.className = "dbg-modal";
+      modal.id = "dbg-modal";
+      modal.hidden = true;
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.setAttribute("aria-label", "Live specification debugger");
+      var box = document.createElement("div");
+      box.className = "dbg-modal-box";
+      modalClose = document.createElement("button");
+      modalClose.type = "button";
+      modalClose.className = "theme dbg-modal-close";
+      modalClose.id = "dbg-modal-close";
+      modalClose.title = "Close debugger overlay (Esc)";
+      modalClose.textContent = "× Close (Esc)";
+      modalFrame = document.createElement("iframe");
+      modalFrame.className = "dbg-modal-frame";
+      modalFrame.id = "dbg-modal-frame";
+      modalFrame.title = "Specification debugger";
+      box.appendChild(modalClose);
+      box.appendChild(modalFrame);
+      modal.appendChild(box);
+      document.body.appendChild(modal);
+      bindModalControls();
+    };
+
+    var openDbgModal = function (url, triggerEl) {
+      if (!url) return;
+      ensureDbgModal();
+      modalReturnFocus = triggerEl || document.activeElement || null;
+      modalFrame.onload = function () {
+        if (modal.hidden) return;
+        try {
+          if (modalFrame.contentDocument) modalFrame.contentDocument.documentElement.setAttribute("data-theme", theme);
+          if (modalFrame.contentWindow) modalFrame.contentWindow.focus();
+        } catch (e) { /* none */ }
+      };
+      modalFrame.setAttribute("src", url);
+      modal.hidden = false;
+      document.body.style.overflow = "hidden";
+    };
+
+    document.addEventListener("click", function (e) {
+      var trigger = e.target.closest ? e.target.closest("[data-dbg-open]") : null;
+      if (trigger && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        openDbgModal(trigger.getAttribute("data-dbg-open"), trigger);
+      }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key === "Escape" && modal && !modal.hidden) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closeDbgModal();
+      }
+    });
+
+    window.addEventListener("message", function (e) {
+      if (e.origin !== location.origin || !e.data) return;
+      if (e.data.type === "deck-escape" && modal && !modal.hidden) {
+        closeDbgModal();
+      }
+    });
+
     // 16:9 slide deck with intra-slide step animations, control-free present mode, and live debugger overlay.
     var deck = document.getElementById("deck");
     if (deck) {
@@ -152,9 +250,6 @@
       var prevBtn = document.getElementById("deck-prev");
       var nextBtn = document.getElementById("deck-next");
       var presBtn = document.getElementById("deck-present");
-      var modal = document.getElementById("dbg-modal");
-      var modalFrame = document.getElementById("dbg-modal-frame");
-      var modalClose = document.getElementById("dbg-modal-close");
       var step3Frame = document.getElementById("step3-dbg-frame");
       var sp = new URLSearchParams(location.search);
       var maxStepOf = function (i) {
@@ -257,42 +352,14 @@
         }
       };
 
-      var openDbgModal = function (url) {
-        if (!modal || !modalFrame || !url) return;
-        modalFrame.onload = function () {
-          if (modal.hidden) return;
-          try { if (modalFrame.contentWindow) modalFrame.contentWindow.focus(); } catch (e) { /* none */ }
-        };
-        modalFrame.setAttribute("src", url);
-        modal.hidden = false;
-      };
-
-      var closeDbgModal = function () {
-        if (!modal || modal.hidden) return false;
-        modal.hidden = true;
-        if (modalFrame) {
-          modalFrame.onload = null;
-          modalFrame.setAttribute("src", "about:blank");
-        }
+      onModalClosedDeck = function () {
         focusDeck();
         setTimeout(focusDeck, 0);
-        return true;
       };
 
       if (prevBtn) prevBtn.addEventListener("click", retreat);
       if (nextBtn) nextBtn.addEventListener("click", advance);
       if (presBtn) presBtn.addEventListener("click", function () { setPresent(true); });
-      if (modalClose) modalClose.addEventListener("click", closeDbgModal);
-      if (modal) modal.addEventListener("click", function (e) { if (e.target === modal) closeDbgModal(); });
-
-      document.addEventListener("click", function (e) {
-        var trigger = e.target.closest ? e.target.closest("[data-dbg-open]") : null;
-        if (trigger && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
-          e.preventDefault();
-          e.stopPropagation();
-          openDbgModal(trigger.getAttribute("data-dbg-open"));
-        }
-      });
 
       var isInlineDbgKey = function (e) {
         if (e.key === "F8" || e.key === "F9" || e.key === "F10" || e.key === "F11") return true;
@@ -303,10 +370,7 @@
 
       document.addEventListener("keydown", function (e) {
         if (e.ctrlKey || e.metaKey) return;
-        if (modal && !modal.hidden) {
-          if (!e.altKey && e.key === "Escape") { e.preventDefault(); closeDbgModal(); }
-          return;
-        }
+        if (modal && !modal.hidden) return;
         var tag = e.target && e.target.tagName;
         if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
         if (step3Frame && slides[idx].id === "slide-step-3" && step >= 1 && isInlineDbgKey(e)) {
@@ -321,7 +385,7 @@
         if (e.altKey) return;
         if (e.key === "Enter" && e.target && e.target.hasAttribute && e.target.hasAttribute("data-dbg-open")) {
           e.preventDefault();
-          openDbgModal(e.target.getAttribute("data-dbg-open"));
+          openDbgModal(e.target.getAttribute("data-dbg-open"), e.target);
           return;
         }
         if (e.key === "Escape") {
@@ -346,11 +410,9 @@
 
       window.addEventListener("message", function (e) {
         if (e.origin !== location.origin || !e.data) return;
-        if (e.data.type === "deck-escape") {
-          if (!closeDbgModal()) {
-            focusDeck();
-            if (presenting) setPresent(false);
-          }
+        if (e.data.type === "deck-escape" && (!modal || modal.hidden)) {
+          focusDeck();
+          if (presenting) setPresent(false);
         } else if (e.data.type === "deck-arrow" && (!modal || modal.hidden)) {
           focusDeck();
           if (e.data.key === "ArrowRight" || e.data.key === "PageDown") advance();

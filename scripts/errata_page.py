@@ -662,7 +662,7 @@ def program_html(sp: Text, e: Erratum, p: dict, runs: dict, gallery: dict, build
             if b not in by_id:
                 continue
             q = f"?example={pid}" + ("" if b == first else f"&amp;build={b}")
-            links.append(f'<a class="open" href="debugger/{q}">Open in the debugger: {esc(by_id[b]["label"])}</a>')
+            links.append(f'<button type="button" class="open" data-dbg-open="debugger/{q}">Open in the debugger</button>')
     args = header_args(f.read_text(), e.name)
     run_line = " ".join([run_name, *args, f.relative_to(ROOT).as_posix()])
     return (f'<div class="program"><p class="prog-head">The program <code>{esc(f.relative_to(ROOT).as_posix())}</code>'
