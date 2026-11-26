@@ -9,7 +9,7 @@
 <div class="deck-bar" id="deck-bar" role="region" aria-label="Slide controls">
   <div class="deck-bar-left">
     <button type="button" class="theme deck-btn" id="deck-prev" title="Previous (←)">←</button>
-    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 18</span>
+    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 17</span>
     <button type="button" class="theme deck-btn" id="deck-next" title="Next (→)">→</button>
   </div>
   <div class="deck-bar-right">
@@ -29,14 +29,13 @@
     </div>
   </section>
 
-  <!-- 2. Pipeline diagram (with bidirectional HTML <-> SpecTec bijection) -->
+  <!-- 2. Architecture -->
   <section class="slide" id="slide-pipeline" data-slide="2" data-max-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Architecture</span>
-      <h2 id="pipeline">The pipeline</h2>
+      <h2 id="pipeline">Architecture</h2>
     </div>
     <div class="slide-fill">
-      <svg class="pipe-svg" viewBox="0 0 960 400" role="img" aria-label="spec.html and SpecTec (spec/spectec/) form a verified 0-diff bijection via spectec-html; downstream, SpecTec compiles to a proved Lean 4 reference engine and a Wasm64 spec debugger">
+      <svg class="pipe-svg" viewBox="0 0 960 400" role="img" aria-label="spec.html and SpecTec (spec/spectec/) form a verified 0-diff bijection via spectec-html; SpecTec emits the proved Lean 4 Engine, which powers the Wasm64 and native spec debugger">
         <defs>
           <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
             <path class="dg-ah" d="M0,0 L10,5 L0,10 z"/>
@@ -74,40 +73,40 @@
         <text x="523" y="222" text-anchor="middle" class="p-muted-svg">{{all_model_laws}} model + {{host_laws}} host laws</text>
         <text x="523" y="252" text-anchor="middle" class="p-muted-svg">roundtrip + Lean bijection</text>
 
-        <!-- Arrows to Engine & Debugger -->
-        <path class="dg-a" d="M646,118 L724,96" stroke-width="2.8" marker-end="url(#arr)"/>
-        <path class="dg-a" d="M646,216 L724,244" stroke-width="2.8" marker-end="url(#arr)"/>
-        <text x="686" y="88" text-anchor="middle" class="p-muted-svg">emit</text>
+        <!-- Arrow: SpecTec -> Lean 4 Engine -->
+        <path class="dg-a" d="M646,97 L724,97" stroke-width="2.8" marker-end="url(#arr)"/>
+        <text x="685" y="84" text-anchor="middle" class="p-muted-svg">emit</text>
 
         <!-- Lean 4 Engine & Proofs -->
-        <rect class="dg-box proved" x="730" y="38" width="210" height="122" rx="12" stroke-width="2.5"/>
-        <text x="835" y="78" text-anchor="middle" class="p-title-svg">Lean 4 Engine</text>
-        <text x="835" y="108" text-anchor="middle" class="p-mono-svg">Engine.implements</text>
-        <text x="835" y="134" text-anchor="middle" class="p-muted-svg">proved · runs test262</text>
+        <rect class="dg-box proved" x="730" y="36" width="210" height="122" rx="12" stroke-width="2.5"/>
+        <text x="835" y="76" text-anchor="middle" class="p-title-svg">Lean 4 Engine</text>
+        <text x="835" y="106" text-anchor="middle" class="p-mono-svg">Engine.implements</text>
+        <text x="835" y="132" text-anchor="middle" class="p-muted-svg">proved · runs test262</text>
+
+        <!-- Arrow: Lean 4 Engine -> Debugger -->
+        <path class="dg-a" d="M835,160 L835,200" stroke-width="2.8" marker-end="url(#arr)"/>
 
         <!-- Wasm64 Debugger -->
-        <rect class="dg-box lean" x="730" y="190" width="210" height="122" rx="12" stroke-width="2.5"/>
-        <text x="835" y="230" text-anchor="middle" class="p-title-svg">Debugger</text>
-        <text x="835" y="260" text-anchor="middle" class="p-mono-svg">Wasm64 + Native</text>
-        <text x="835" y="286" text-anchor="middle" class="p-muted-svg">lazy-loaded per proposal</text>
+        <rect class="dg-box lean" x="730" y="206" width="210" height="122" rx="12" stroke-width="2.5"/>
+        <text x="835" y="246" text-anchor="middle" class="p-title-svg">Debugger</text>
+        <text x="835" y="276" text-anchor="middle" class="p-mono-svg">Wasm64 + Native</text>
+        <text x="835" y="302" text-anchor="middle" class="p-muted-svg">lazy-loaded per proposal</text>
       </svg>
     </div>
   </section>
 
-  <!-- 3. Bijective with spec.html (blank opener) -->
+  <!-- 3. The Spec (blank opener) -->
   <section class="slide" id="slide-meat" data-slide="3" data-max-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">The spec</span>
-      <h2 id="bijective-with-spec-html">Bijective with <code>spec.html</code></h2>
+      <h2 id="the-spec">The Spec</h2>
     </div>
     <div class="slide-fill"></div>
   </section>
 
-  <!-- 4. Algorithms: spec.html -> SpecTec -->
+  <!-- 4. The Spec: Algorithms -->
   <section class="slide" id="slide-algorithms" data-slide="4" data-max-step="1" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Bijective with spec.html</span>
-      <h2 id="spec-algorithms">Algorithms</h2>
+      <h2 id="spec-algorithms">The Spec: Algorithms</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
@@ -160,11 +159,10 @@
     </div>
   </section>
 
-  <!-- 5. Grammar rules: spec.html -> SpecTec -->
+  <!-- 5. The Spec: Grammar Rules -->
   <section class="slide" id="slide-grammar-rules" data-slide="5" data-max-step="1" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Bijective with spec.html</span>
-      <h2 id="spec-grammar-rules">Grammar rules</h2>
+      <h2 id="spec-grammar-rules">The Spec: Grammar Rules</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
@@ -221,11 +219,10 @@
     </div>
   </section>
 
-  <!-- 6. Tables: spec.html -> SpecTec -->
+  <!-- 6. The Spec: Tables -->
   <section class="slide" id="slide-tables" data-slide="6" data-max-step="1" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Bijective with spec.html</span>
-      <h2 id="spec-tables">Tables</h2>
+      <h2 id="spec-tables">The Spec: Tables</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
@@ -292,20 +289,10 @@
     </div>
   </section>
 
-  <!-- 7. Prose in SpecTec (blank opener) -->
-  <section class="slide" id="slide-prose" data-slide="7" data-max-step="0">
+  <!-- 7. The Spec: Models -->
+  <section class="slide" id="slide-models" data-slide="7" data-max-step="1" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">The spec</span>
-      <h2 id="prose-in-spectec">Prose in SpecTec</h2>
-    </div>
-    <div class="slide-fill"></div>
-  </section>
-
-  <!-- 8. Models: spec prose + how it translates -> SpecTec -->
-  <section class="slide" id="slide-models" data-slide="8" data-max-step="1" data-step="0">
-    <div class="slide-top">
-      <span class="slide-kicker">Prose in SpecTec</span>
-      <h2 id="prose-models">Models</h2>
+      <h2 id="prose-models">The Spec: Models</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
@@ -353,11 +340,10 @@
     </div>
   </section>
 
-  <!-- 9. Relations: spec prose + how it translates -> SpecTec -->
-  <section class="slide" id="slide-relations" data-slide="9" data-max-step="1" data-step="0">
+  <!-- 8. The Spec: Relations -->
+  <section class="slide" id="slide-relations" data-slide="8" data-max-step="1" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Prose in SpecTec</span>
-      <h2 id="prose-relations">Relations</h2>
+      <h2 id="prose-relations">The Spec: Relations</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
@@ -407,11 +393,10 @@
     </div>
   </section>
 
-  <!-- 10. Laws: spec prose + how it translates -> SpecTec -->
-  <section class="slide" id="slide-laws" data-slide="10" data-max-step="1" data-step="0">
+  <!-- 9. The Spec: Laws -->
+  <section class="slide" id="slide-laws" data-slide="9" data-max-step="1" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Prose in SpecTec</span>
-      <h2 id="prose-laws">Laws</h2>
+      <h2 id="prose-laws">The Spec: Laws</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
@@ -462,11 +447,10 @@
     </div>
   </section>
 
-  <!-- 11. Adding a proposal (1): write the algorithms -->
-  <section class="slide" id="slide-step-1" data-slide="11" data-max-step="1" data-step="0">
+  <!-- 10. Adding a proposal: Change the HTML -->
+  <section class="slide" id="slide-step-1" data-slide="10" data-max-step="1" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Adding a proposal · Step 1</span>
-      <h2 id="step-1">Write the algorithms</h2>
+      <h2 id="step-1">Adding a proposal: Change the HTML</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="code-window">
@@ -485,11 +469,10 @@
     </div>
   </section>
 
-  <!-- 12. Adding a proposal (2): generate the spec -->
-  <section class="slide" id="slide-step-2" data-slide="12" data-max-step="1" data-step="0">
+  <!-- 11. Adding a proposal: Generate the code -->
+  <section class="slide" id="slide-step-2" data-slide="11" data-max-step="1" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Adding a proposal · Step 2</span>
-      <h2 id="step-2">Generate SpecTec &amp; compile</h2>
+      <h2 id="step-2">Adding a proposal: Generate the code</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
@@ -525,11 +508,10 @@
     </div>
   </section>
 
-  <!-- 13. Adding a proposal (3): debug! -->
-  <section class="slide" id="slide-step-3" data-slide="13" data-max-step="1" data-step="0">
+  <!-- 12. Adding a proposal: Debug! -->
+  <section class="slide" id="slide-step-3" data-slide="12" data-max-step="1" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Adding a proposal · Step 3</span>
-      <h2 id="step-3">Debug!</h2>
+      <h2 id="step-3">Adding a proposal: Debug!</h2>
     </div>
     <div class="slide-fill step-panel">
       <div class="swap-box">
@@ -550,10 +532,9 @@
     </div>
   </section>
 
-  <!-- 14. Adding a proposal (4): table of diffs from current proposals (no stats) -->
-  <section class="slide" id="slide-step-4" data-slide="14" data-max-step="0">
+  <!-- 13. All 14 ECMA-262 proposals on the TC39 #117 agenda -->
+  <section class="slide" id="slide-step-4" data-slide="13" data-max-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Adding a proposal · Step 4</span>
       <h2 id="step-4">All {{proposals_117_count}} ECMA-262 proposals on the TC39 #117 agenda</h2>
     </div>
     <div class="slide-fill">
@@ -561,11 +542,10 @@
     </div>
   </section>
 
-  <!-- 15. Tools usable right now -->
-  <section class="slide" id="slide-tools" data-slide="15" data-max-step="0">
+  <!-- 14. Tools -->
+  <section class="slide" id="slide-tools" data-slide="14" data-max-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Immediate value</span>
-      <h2 id="tools">Tools for champions, reviewers &amp; editors — usable right now</h2>
+      <h2 id="tools">Tools for champions, reviewers &amp; editors</h2>
     </div>
     <div class="slide-fill tools-grid">
       <div class="tool-card">
@@ -588,10 +568,9 @@
     </div>
   </section>
 
-  <!-- 16. What this can deliver (right-arrow reveals one bullet at a time) -->
-  <section class="slide" id="slide-deliver" data-slide="16" data-max-step="4" data-step="0">
+  <!-- 15. What this can deliver -->
+  <section class="slide" id="slide-deliver" data-slide="15" data-max-step="4" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Where this goes</span>
       <h2 id="deliver">What this can deliver</h2>
     </div>
     <div class="slide-fill slide-bullets-wrap">
@@ -629,11 +608,10 @@
     </div>
   </section>
 
-  <!-- 17. Next steps (right-arrow reveals one bullet at a time) -->
-  <section class="slide" id="slide-next" data-slide="17" data-max-step="3" data-step="0">
+  <!-- 16. Looking ahead -->
+  <section class="slide" id="slide-next" data-slide="16" data-max-step="3" data-step="0">
     <div class="slide-top">
-      <span class="slide-kicker">Looking ahead</span>
-      <h2 id="next-steps">Next steps</h2>
+      <h2 id="next-steps">Looking ahead</h2>
     </div>
     <div class="slide-fill slide-bullets-wrap">
       <ul class="slide-bullets next-bullets">
@@ -660,8 +638,8 @@
     </div>
   </section>
 
-  <!-- 18. Questions -->
-  <section class="slide slide-center" id="slide-questions" data-slide="18" data-max-step="0">
+  <!-- 17. Questions -->
+  <section class="slide slide-center" id="slide-questions" data-slide="17" data-max-step="0">
     <div class="hero-wrap">
       <h2 class="hero-h1" id="questions">Questions?</h2>
     </div>
