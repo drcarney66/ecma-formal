@@ -118,7 +118,8 @@
 {{ex:spectec}}
 <p>Every part of the clause is explicit and readable by name: <code>@sec-iscallable</code> identifies the clause (mapped to sorted <code>ClauseId</code> {{ex:id}} when emitting Lean), <code>kind ao</code> marks an abstract operation taking <code>arg</code> of sort <code>#"ECMAScript language value"</code> and returning <code>Boolean</code>, step 1 tests <code>arg is not ty {Object}</code>, and step 2 checks <code>arg sat $HasMethod([[Call]])</code> before step 3 returns <code>false</code>. Running <code>spectec-html</code> renders those three steps back into <code>spec.html</code>'s exact ecmarkup.</p>
 <p><strong>A step of the machine.</strong> Downstream, <code>Lower</code> compiles the body with its step numbers preserved. When <code>EvaluateCall</code> reaches <code>IsCallable(func)</code>, the small-step machine pushes a frame for <code>@sec-iscallable</code> with <code>arg</code> bound to the callee; <code>Ecma.Machine.step</code> checks whether the callee is an Object in the store, inspects its <code>[[Call]]</code> internal method at step 2, and returns <code>true</code> or advances to step 3.</p>
-<p><strong>In the debugger.</strong> The example {{ex:debugger}} calls both a function and an ordinary object: the debugger pauses at <code>IsCallable</code> step 2 for the function and step 3 for the object, displaying <code>IsCallable</code> above <code>EvaluateCall</code> in the spec stack alongside the value of <var>arg</var>.</p>
+<p><strong>In the debugger.</strong> The example <code>tests/run/iscallable.js</code> calls both a function and an ordinary object: the debugger pauses at <code>IsCallable</code> step 2 for the function and step 3 for the object, displaying <code>IsCallable</code> above <code>EvaluateCall</code> in the spec stack alongside the value of <var>arg</var>.</p>
+{{ex:debugger}}
 
 <h2 id="sizes">Sizes</h2>
 <div class="tablebox">

@@ -66,10 +66,10 @@ REWORD: list[tuple[str, str, str]] = [
 
 # The pages, in three dropdown menus next to the site's name. Home is the site's name.
 NAV = [
-    ("Read", [("slides.html", "TC39 #117 slides"), ("how-it-works.html", "How it works"),
-              ("what-is-proved.html", "What is proved"), ("errata.html", "Errata"),
-              ("spec-issues/", "Spec issues"), ("proposal.html", "Applying a proposal"),
-              ("test262.html", "test262")]),
+    ("Read", [("how-it-works.html", "How it works"), ("what-is-proved.html", "What is proved"),
+              ("errata.html", "Errata"), ("spec-issues/", "Spec issues"),
+              ("proposal.html", "Applying a proposal"), ("test262.html", "test262"),
+              ("slides.html", "TC39 #117 slides")]),
     ("The Specification", [("model.html", "The model"), ("host.html", "The host"), ("implements.html", "Implements"),
                            ("parser-laws.html", "Parser laws")]),
     ("Try it", [("examples.html", "Examples"), ("debugger/", "Debugger")]),
@@ -801,8 +801,8 @@ def worked_example(dbgopt: dict | None) -> dict[str, str]:
                     f'§{num} IsCallable ( <var>arg</var> )</a></cite>{errata_page.alg_html(alg, sp)}</blockquote>'),
         "ex:spectec": f'<pre class="lean">{rl.highlight("--- " + st_file.relative_to(ROOT).as_posix() + chr(10) + code, None, [], lang="SpecTec")}</pre>',
         "ex:id": aid,
-        "ex:debugger": ('<a href="debugger/?example=run/iscallable">IsCallable, step by step</a>' if tour
-                        else "<code>tests/run/iscallable.js</code>"),
+        "ex:debugger": ('<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/iscallable">Open in the debugger</button></p>'
+                        if tour else ""),
     }
 
 
