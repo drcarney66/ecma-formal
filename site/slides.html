@@ -1,5 +1,5 @@
 <!-- title: Executing <code>spec.html</code> -->
-<!-- eyebrow: TC39 #117 · November 2026 -->
+<!-- eyebrow:  -->
 <!-- lede:  -->
 
 <button type="button" class="corner-theme" id="corner-theme" aria-label="Toggle dark mode" title="Toggle dark mode">
@@ -9,7 +9,7 @@
 <div class="deck-bar" id="deck-bar" role="region" aria-label="Slide controls">
   <div class="deck-bar-left">
     <button type="button" class="theme deck-btn" id="deck-prev" title="Previous (←)">←</button>
-    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 17</span>
+    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 16</span>
     <button type="button" class="theme deck-btn" id="deck-next" title="Next (→)">→</button>
   </div>
   <div class="deck-bar-right">
@@ -25,7 +25,6 @@
     <div class="hero-wrap">
       <h1 class="hero-h1">Executing <code>spec.html</code></h1>
       <p class="hero-sub">Formalization's time has come</p>
-      <p class="hero-meta">James M Snell · Dan Carney &nbsp;·&nbsp; TC39 #117</p>
     </div>
   </section>
 
@@ -95,20 +94,13 @@
     </div>
   </section>
 
-  <!-- 3. The Spec (blank opener) -->
-  <section class="slide" id="slide-meat" data-slide="3" data-max-step="0">
+  <!-- 3. The Spec -> The Spec: Algorithms -->
+  <section class="slide has-morph" id="slide-algorithms" data-slide="3" data-max-step="2" data-step="0">
     <div class="slide-top">
-      <h2 id="the-spec">The Spec</h2>
+      <span class="morph-spacer" aria-hidden="true">&nbsp;</span>
+      <h2 id="the-spec" class="morph-h2">The Spec<span class="morph-tail">: Algorithms</span></h2>
     </div>
-    <div class="slide-fill"></div>
-  </section>
-
-  <!-- 4. The Spec: Algorithms -->
-  <section class="slide" id="slide-algorithms" data-slide="4" data-max-step="1" data-step="0">
-    <div class="slide-top">
-      <h2 id="spec-algorithms">The Spec: Algorithms</h2>
-    </div>
-    <div class="slide-fill step-panel">
+    <div class="slide-fill step-panel morph-body">
       <div class="swap-box">
         <div class="swap-layer swap-before">
           <div class="code-window">
@@ -159,8 +151,8 @@
     </div>
   </section>
 
-  <!-- 5. The Spec: Grammar Rules -->
-  <section class="slide" id="slide-grammar-rules" data-slide="5" data-max-step="1" data-step="0">
+  <!-- 4. The Spec: Grammar Rules -->
+  <section class="slide" id="slide-grammar-rules" data-slide="4" data-max-step="1" data-step="0">
     <div class="slide-top">
       <h2 id="spec-grammar-rules">The Spec: Grammar Rules</h2>
     </div>
@@ -219,8 +211,8 @@
     </div>
   </section>
 
-  <!-- 6. The Spec: Tables -->
-  <section class="slide" id="slide-tables" data-slide="6" data-max-step="1" data-step="0">
+  <!-- 5. The Spec: Tables -->
+  <section class="slide" id="slide-tables" data-slide="5" data-max-step="1" data-step="0">
     <div class="slide-top">
       <h2 id="spec-tables">The Spec: Tables</h2>
     </div>
@@ -289,8 +281,8 @@
     </div>
   </section>
 
-  <!-- 7. The Spec: Models -->
-  <section class="slide" id="slide-models" data-slide="7" data-max-step="1" data-step="0">
+  <!-- 6. The Spec: Models -->
+  <section class="slide" id="slide-models" data-slide="6" data-max-step="1" data-step="0">
     <div class="slide-top">
       <h2 id="prose-models">The Spec: Models</h2>
     </div>
@@ -340,8 +332,8 @@
     </div>
   </section>
 
-  <!-- 8. The Spec: Relations -->
-  <section class="slide" id="slide-relations" data-slide="8" data-max-step="1" data-step="0">
+  <!-- 7. The Spec: Relations -->
+  <section class="slide" id="slide-relations" data-slide="7" data-max-step="1" data-step="0">
     <div class="slide-top">
       <h2 id="prose-relations">The Spec: Relations</h2>
     </div>
@@ -393,8 +385,8 @@
     </div>
   </section>
 
-  <!-- 9. The Spec: Laws -->
-  <section class="slide" id="slide-laws" data-slide="9" data-max-step="1" data-step="0">
+  <!-- 8. The Spec: Laws -->
+  <section class="slide" id="slide-laws" data-slide="8" data-max-step="1" data-step="0">
     <div class="slide-top">
       <h2 id="prose-laws">The Spec: Laws</h2>
     </div>
@@ -447,12 +439,13 @@
     </div>
   </section>
 
-  <!-- 10. Adding a proposal: Change the HTML -->
-  <section class="slide" id="slide-step-1" data-slide="10" data-max-step="1" data-step="0">
+  <!-- 9. Adding a proposal -> Adding a proposal: Change the HTML -->
+  <section class="slide has-morph" id="slide-step-1" data-slide="9" data-max-step="2" data-step="0">
     <div class="slide-top">
-      <h2 id="step-1">Adding a proposal: Change the HTML</h2>
+      <span class="morph-spacer" aria-hidden="true">&nbsp;</span>
+      <h2 id="step-1" class="morph-h2">Adding a proposal<span class="morph-tail">: Change the HTML</span></h2>
     </div>
-    <div class="slide-fill step-panel">
+    <div class="slide-fill step-panel morph-body">
       <div class="code-window">
         <div class="code-bar">
           <code>spec.html</code>
@@ -469,8 +462,8 @@
     </div>
   </section>
 
-  <!-- 11. Adding a proposal: Generate the code -->
-  <section class="slide" id="slide-step-2" data-slide="11" data-max-step="1" data-step="0">
+  <!-- 10. Adding a proposal: Generate the code -->
+  <section class="slide" id="slide-step-2" data-slide="10" data-max-step="1" data-step="0">
     <div class="slide-top">
       <h2 id="step-2">Adding a proposal: Generate the code</h2>
     </div>
@@ -508,8 +501,8 @@
     </div>
   </section>
 
-  <!-- 12. Adding a proposal: Debug! -->
-  <section class="slide" id="slide-step-3" data-slide="12" data-max-step="1" data-step="0">
+  <!-- 11. Adding a proposal: Debug! -->
+  <section class="slide" id="slide-step-3" data-slide="11" data-max-step="1" data-step="0">
     <div class="slide-top">
       <h2 id="step-3">Adding a proposal: Debug!</h2>
     </div>
@@ -532,44 +525,57 @@
     </div>
   </section>
 
-  <!-- 13. All 14 ECMA-262 proposals on the TC39 #117 agenda -->
-  <section class="slide" id="slide-step-4" data-slide="13" data-max-step="0">
+  <!-- 12. Varying levels of difficulty -->
+  <section class="slide" id="slide-step-4" data-slide="12" data-max-step="0">
     <div class="slide-top">
-      <h2 id="step-4">All {{proposals_117_count}} ECMA-262 proposals on the TC39 #117 agenda</h2>
+      <h2 id="step-4">Varying levels of difficulty</h2>
     </div>
     <div class="slide-fill">
       {{proposals_117_table}}
     </div>
   </section>
 
-  <!-- 14. Tools -->
-  <section class="slide" id="slide-tools" data-slide="14" data-max-step="0">
+  <!-- 13. Spec issues & errata -->
+  <section class="slide" id="slide-issues" data-slide="13" data-max-step="4" data-step="0">
     <div class="slide-top">
-      <h2 id="tools">Tools for champions, reviewers &amp; editors</h2>
+      <h2 id="spec-issues">Spec issues &amp; errata</h2>
     </div>
-    <div class="slide-fill tools-grid">
-      <div class="tool-card">
-        <div class="tool-head">
-          <div class="tool-kicker">Static &amp; Structural</div>
-          <h3>Mechanical merge &amp; SpecTec check</h3>
-          <p class="tool-sub">Merges a proposal into <code>spec.html</code> · checks grammar SDOs, slots &amp; types in SpecTec</p>
-        </div>
-        <div class="tool-inset">
-          <div class="inset-label"><span class="badge proved">Caught across #117</span></div>
+    <div class="slide-fill slide-bullets-wrap">
+      <ul class="slide-bullets">
+        <li class="reveal-item" data-reveal="1">
+          <strong>Contradictions &amp; wrong results</strong>
           <ul>
-            <li>Missing <code>BoundNames</code> row on <code>import defer</code></li>
-            <li><code>*undefined*</code> vs. <code>~empty~</code> / <code>~unused~</code> in <code>Immutable ArrayBuffers</code></li>
-            <li>Missing <code>[[DeferredNamespace]]</code> in <code>ParseModule</code> &amp; JSON modules</li>
-            <li>Stale clause IDs, untyped built-ins &amp; dangling intrinsics</li>
+            <li><code>Array.fromAsync()</code> fulfills with <code>undefined</code>; <code>CreateIntrinsics</code> misaligns <code>async</code></li>
+            <li>Timed-out <code>Atomics.wait()</code> returns <code>"ok"</code>; <code>+0 * -5</code> yields <code>+0</code>; TLA <code>using</code> never disposes</li>
           </ul>
-        </div>
-      </div>
-      {{slides_tool_dbg}}
+        </li>
+        <li class="reveal-item" data-reveal="2">
+          <strong>Failing <code>Assert:</code>s on valid programs</strong>
+          <ul>
+            <li>Every <code>await</code> resumes <code>AsyncBlockStart</code> with <code>~empty~</code>, failing its <code>~unused~</code> <code>Assert:</code></li>
+            <li><code>/\p{Hex}/u</code> and <code>new Function("o", "return o.#f")</code> trip <code>Assert:</code>s without early errors</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="3">
+          <strong>Missing grammar cases, type errors &amp; §29 defects</strong>
+          <ul>
+            <li>Cover-grammar gaps break <code>async function f(x = await 1) {}</code> and <code>return (f(x))</code> tail calls</li>
+            <li><code>"".split("")</code> builds an Array of code units, not Strings; §29 <code>Races</code> &amp; block-aliasing bugs</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="4">
+          <strong>In-flight proposal bugs</strong>
+          <ul>
+            <li>Missing <code>BoundNames</code> SDO row &amp; <code>[[DeferredNamespace]]</code> slots in <code>import defer</code></li>
+            <li><code>*undefined*</code> vs. <code>~empty~</code> / <code>~unused~</code> mismatches in <code>Immutable ArrayBuffers</code></li>
+          </ul>
+        </li>
+      </ul>
     </div>
   </section>
 
-  <!-- 15. What this can deliver -->
-  <section class="slide" id="slide-deliver" data-slide="15" data-max-step="4" data-step="0">
+  <!-- 14. What this can deliver -->
+  <section class="slide" id="slide-deliver" data-slide="14" data-max-step="4" data-step="0">
     <div class="slide-top">
       <h2 id="deliver">What this can deliver</h2>
     </div>
@@ -608,8 +614,8 @@
     </div>
   </section>
 
-  <!-- 16. Looking ahead -->
-  <section class="slide" id="slide-next" data-slide="16" data-max-step="3" data-step="0">
+  <!-- 15. Looking ahead -->
+  <section class="slide" id="slide-next" data-slide="15" data-max-step="3" data-step="0">
     <div class="slide-top">
       <h2 id="next-steps">Looking ahead</h2>
     </div>
@@ -638,8 +644,8 @@
     </div>
   </section>
 
-  <!-- 17. Questions -->
-  <section class="slide slide-center" id="slide-questions" data-slide="17" data-max-step="0">
+  <!-- 16. Questions -->
+  <section class="slide slide-center" id="slide-questions" data-slide="16" data-max-step="0">
     <div class="hero-wrap">
       <h2 class="hero-h1" id="questions">Questions?</h2>
     </div>

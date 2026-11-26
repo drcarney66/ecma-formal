@@ -706,26 +706,6 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
     has_dbg = bool(dbgopt and dbgopt.get("debugger"))
 
     if has_dbg:
-        tool_dbg_card = (
-            '<div class="tool-card tool-card-accent">'
-            '<div class="tool-head">'
-            '<div class="tool-kicker">Interactive Wasm64</div>'
-            '<h3>Spec debugger</h3>'
-            '<p class="tool-sub">Step forward &amp; back through <code>spec.html</code> · inspect Slots &amp; Realm</p>'
-            '</div>'
-            '<div class="tool-inset">'
-            '<div class="inset-label"><span class="badge rd">Examples</span></div>'
-            '<div class="example-grid">'
-            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma"><span>Math.fusedMultiplyAdd</span><span class="arr">→</span></button>'
-            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_deferred_reexports&amp;build=deferred-reexports"><span>export defer</span><span class="arr">→</span></button>'
-            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_thenable_curtailment&amp;build=thenable-curtailment"><span>Thenable Curtailment</span><span class="arr">→</span></button>'
-            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_composites&amp;build=composites"><span>Composite</span><span class="arr">→</span></button>'
-            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_iterator_transfer&amp;build=iterator-transfer"><span>Iterator.transfer</span><span class="arr">→</span></button>'
-            '<button type="button" class="ex-btn" data-dbg-open="debugger/?example=dbg/proposal_immutable_arraybuffer&amp;build=immutable-arraybuffer"><span>Immutable ArrayBuffer</span><span class="arr">→</span></button>'
-            '</div>'
-            '</div>'
-            '</div>'
-        )
         step3_after = (
             '<div class="step3-live">'
             '<iframe class="step-dbg-iframe" id="step3-dbg-frame" '
@@ -734,22 +714,12 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
             '</div>'
         )
     else:
-        tool_dbg_card = (
-            '<div class="tool-card">'
-            '<div class="tool-head">'
-            '<div class="tool-kicker">Interactive Wasm64</div>'
-            '<h3>Spec debugger</h3>'
-            '<p class="tool-sub">Step forward &amp; back through <code>spec.html</code> · inspect Slots &amp; Realm</p>'
-            '</div>'
-            '</div>'
-        )
         step3_after = '<pre class="lean">paused at String.prototype.trim step 2 · characters = "/_"</pre>'
 
     if not rec_path.is_file():
         return {
             "proposals_117_count": "14",
             "proposals_117_table": '<p class="muted">Run <code>scripts/proposals_summary.py</code>.</p>',
-            "slides_tool_dbg": tool_dbg_card,
             "slides_step3_after": step3_after,
         }
 
@@ -787,7 +757,7 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
     table_html = (
         '<div class="tablebox prop117-box"><table class="prop117-table">'
         '<thead><tr>'
-        '<th>Stage</th><th>Proposal (TC39 #117)</th><th class="num"><code>spec.html</code></th>'
+        '<th>Stage</th><th>Proposal</th><th class="num"><code>spec.html</code></th>'
         '<th class="num">Auto-gen spec</th><th class="num">Model / Host</th>'
         '<th class="num">Proofs</th><th></th>'
         '</tr></thead><tbody>'
@@ -797,7 +767,6 @@ def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:
     return {
         "proposals_117_count": str(len(props)),
         "proposals_117_table": table_html,
-        "slides_tool_dbg": tool_dbg_card,
         "slides_step3_after": step3_after,
     }
 

@@ -186,10 +186,23 @@
       var step = initLoc.step;
       var presenting = initLoc.presenting;
 
+      var prevIdx = -1;
       var syncDeck = function (writeHash) {
+        var changedSlide = prevIdx !== -1 && prevIdx !== idx;
+        prevIdx = idx;
         slides.forEach(function (s, i) {
+          if (i === idx) {
+            var wantStep = String(step);
+            if (changedSlide && s.getAttribute("data-step") !== wantStep) {
+              s.classList.add("snap-step");
+              s.setAttribute("data-step", wantStep);
+              void s.offsetWidth;
+              s.classList.remove("snap-step");
+            } else {
+              s.setAttribute("data-step", wantStep);
+            }
+          }
           s.classList.toggle("active", i === idx);
-          if (i === idx) s.setAttribute("data-step", String(step));
         });
         root.classList.toggle("deck-present", presenting);
         if (posEl) posEl.textContent = (idx + 1) + " / " + slides.length;

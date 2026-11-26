@@ -597,12 +597,50 @@ html:not(.js) .slide { position: static; opacity: 1; pointer-events: auto; aspec
 .hero-wrap { max-width: 84%; }
 .hero-h1 { font-size: clamp(2.2rem, 6.4cqw, 4.6rem); letter-spacing: -0.03em; margin: 0 0 2cqh; line-height: 1.1; }
 .hero-h1 code { background: var(--surface); padding: 0.06em 0.24em; border-radius: 8px; font-size: 0.9em; }
-.hero-sub { font-size: clamp(1.2rem, 2.8cqw, 2.1rem); color: var(--ink-2); margin: 0 0 4.5cqh; font-family: var(--serif); max-width: none; }
-.hero-meta { font-size: clamp(0.82rem, 1.45cqw, 1.05rem); color: var(--ink-2); margin: 0; letter-spacing: 0.02em; max-width: none; }
+.hero-sub { font-size: clamp(1.2rem, 2.8cqw, 2.1rem); color: var(--ink-2); margin: 0; font-family: var(--serif); max-width: none; }
 
 .slide-top { flex: 0 0 auto; margin-bottom: 2cqh; }
 .slide h2 { margin: 0; font-size: clamp(1.35rem, 2.85cqw, 2.25rem); letter-spacing: -0.02em; }
 .slide-fill { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+
+/* Section opener morph: starts centered at hero size on an empty slide, slides & shrinks to h2 on step 1 */
+.slide.snap-step * { transition: none !important; }
+.morph-spacer { display: block; font-size: clamp(1.35rem, 2.85cqw, 2.25rem); line-height: 1.25; visibility: hidden; pointer-events: none; }
+.has-morph .morph-h2 {
+  position: absolute; top: 3.6cqh; left: 4.2cqw; z-index: 3;
+  display: inline-block; white-space: nowrap; text-wrap: nowrap;
+  transform-origin: 0 0; transform: scale(1) translate(0%, 0%);
+}
+.has-morph .morph-tail {
+  position: absolute; left: 100%; top: 0; white-space: pre; opacity: 1;
+}
+html.js .has-morph:not([data-step="1"]):not([data-step="2"]) .morph-h2 {
+  top: 50%; left: 50%;
+  transform: scale(2.2) translate(-50%, -50%);
+}
+html.js .has-morph:not([data-step="1"]):not([data-step="2"]) .morph-tail {
+  opacity: 0; pointer-events: none;
+}
+html.js .has-morph:not([data-step="1"]):not([data-step="2"]) .morph-body {
+  opacity: 0; pointer-events: none;
+}
+.deck-stage.ready .has-morph .morph-h2 {
+  transition: top 0.48s cubic-bezier(0.22, 1, 0.36, 1), left 0.48s cubic-bezier(0.22, 1, 0.36, 1), transform 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.deck-stage.ready .has-morph[data-step="1"] .morph-tail,
+.deck-stage.ready .has-morph[data-step="2"] .morph-tail {
+  transition: opacity 0.28s ease 0.22s;
+}
+.deck-stage.ready .has-morph:not([data-step="1"]):not([data-step="2"]) .morph-tail {
+  transition: opacity 0.14s ease;
+}
+.deck-stage.ready .has-morph[data-step="1"] .morph-body,
+.deck-stage.ready .has-morph[data-step="2"] .morph-body {
+  transition: opacity 0.32s ease 0.2s;
+}
+.deck-stage.ready .has-morph:not([data-step="1"]):not([data-step="2"]) .morph-body {
+  transition: opacity 0.14s ease;
+}
 
 /* Slide 2: Pipeline SVG */
 .pipe-svg { width: 100%; height: 100%; max-height: 100%; display: block; }
@@ -703,15 +741,18 @@ pre.js-big { font-size: clamp(1.1rem, 2.2cqw, 1.75rem); padding: 6cqh 3cqw; }
   background: var(--proved-bg); color: var(--proved); border-radius: 4px; padding: 0; white-space: nowrap;
 }
 .deck-stage.ready .diff-ins { transition: max-width 0.4s ease, opacity 0.35s ease, padding 0.35s ease; }
-.slide[data-step="1"] .diff-ins { max-width: 28ch; opacity: 1; padding: 0 0.25em; font-weight: 700; }
+.slide:not(.has-morph)[data-step="1"] .diff-ins,
+.slide.has-morph[data-step="2"] .diff-ins { max-width: 28ch; opacity: 1; padding: 0 0.25em; font-weight: 700; }
 
-/* Slides 6 & 7 before -> after fade swap */
+/* Before -> after fade swap */
 .swap-box { position: relative; width: 100%; height: 100%; display: flex; align-items: center; }
 .swap-layer { width: 100%; }
 .deck-stage.ready .swap-layer { transition: opacity 0.32s ease; }
 .swap-after { position: absolute; inset: 0; display: flex; align-items: center; opacity: 0; pointer-events: none; }
-.slide[data-step="1"] .swap-before { opacity: 0; pointer-events: none; }
-.slide[data-step="1"] .swap-after { opacity: 1; pointer-events: auto; }
+.slide:not(.has-morph)[data-step="1"] .swap-before,
+.slide.has-morph[data-step="2"] .swap-before { opacity: 0; pointer-events: none; }
+.slide:not(.has-morph)[data-step="1"] .swap-after,
+.slide.has-morph[data-step="2"] .swap-after { opacity: 1; pointer-events: auto; }
 .hl-ins { background: var(--proved-bg); color: var(--proved); font-weight: 700; padding: 0.05em 0.25em; border-radius: 4px; }
 .bp-pill { color: var(--bad); font-weight: 600; }
 .step3-dbg-wrap { align-items: stretch; }
@@ -800,5 +841,8 @@ html.deck-present .deck-stage {
 @media print {
   .deck-stage { aspect-ratio: auto; width: 100%; overflow: visible; border: 0; box-shadow: none; }
   .slide { position: static !important; opacity: 1 !important; pointer-events: auto !important; page-break-after: always; border: 1px solid #ccc; margin-bottom: 1rem; }
-  .reveal-item, .diff-ins, .swap-after { opacity: 1 !important; max-width: none !important; transform: none !important; }
+  .reveal-item, .diff-ins, .swap-after, .morph-body, .morph-tail { opacity: 1 !important; max-width: none !important; transform: none !important; }
+  .has-morph .morph-h2 { position: static !important; transform: none !important; }
+  .has-morph .morph-tail { position: static !important; }
+  .morph-spacer { display: none !important; }
 }
