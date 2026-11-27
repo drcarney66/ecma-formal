@@ -163,14 +163,14 @@ def axioms() -> list[str]:
 
 
 def runtime_pins() -> int:
-    """The pinned program equations checked at run time (`class PinsHold` in `lean/Engine/Pins.lean`)."""
+    """The runtime pin and parser-table checks (`def pinChecks` in `lean/Engine/Pins.lean`)."""
     src = (LEAN / "Engine/Pins.lean").read_text()
-    m = re.search(r"(?m)^class PinsHold : Prop where\n(.*?)(?=\n\n)", src, re.DOTALL)
+    m = re.search(r"(?m)^def pinChecks : List .*?:=\n(.*?)(?=\n\n)", src, re.DOTALL)
     if not m:
-        raise SystemExit("lean/Engine/Pins.lean: no class PinsHold")
-    n = len(re.findall(r"(?m)^\s+[A-Za-z_]\w*\s*:", m.group(1)))
+        raise SystemExit("lean/Engine/Pins.lean: no def pinChecks")
+    n = len(re.findall(r'\("([A-Za-z_]\w*)",', m.group(1)))
     if n <= 0:
-        raise SystemExit("lean/Engine/Pins.lean: no fields in class PinsHold")
+        raise SystemExit("lean/Engine/Pins.lean: no entries in def pinChecks")
     return n
 
 
