@@ -842,7 +842,7 @@ def @ph-to-binary32 "ph-to-binary32" (kind ao params [n : Number, #"choice 1"]) 
   if n fails $IsFinite() -> return n
   if n is val {num_f(+0); num_f(-0)} -> return n
   let a = $abs($ℝ(n))
-  let e = 0
+  let e = $floor($DecimalExponent(a) * 33219 / 10000)
   repeat_while 2 ^ e > a {
     set var e = e - 1
   }
@@ -872,7 +872,7 @@ def @ph-to-binary16 "ph-to-binary16" (kind ao params [n : Number, #"choice 1"]) 
   if n fails $IsFinite() -> return n
   if n is val {num_f(+0); num_f(-0)} -> return n
   let a = $abs($ℝ(n))
-  let e = 0
+  let e = $floor($DecimalExponent(a) * 33219 / 10000)
   repeat_while 2 ^ e > a {
     set var e = e - 1
   }
@@ -2448,7 +2448,7 @@ def @formal-ieeebits "formal-ieeebits" (kind ao params [value : Number, w : sort
   if value is val {num_f(+∞); num_f(-∞)} -> return sign + (2 ^ w - 1) * 2 ^ {p - 1}
   let a = $abs($ℝ(value))
   if a == 0 -> return sign
-  let e = 0
+  let e = $floor($DecimalExponent(a) * 33219 / 10000)
   repeat_while 2 ^ e > a {
     set var e = e - 1
   }
@@ -2621,12 +2621,18 @@ def @formal-radixdigitvalue "formal-radixdigitvalue" (kind ao params [c : #"code
   return ~empty~
 }
 
-def @formal-earlyerrorsof "formal-earlyerrorsof" (kind ao params [node : #"Parse Node"] -> doc "a List of *SyntaxError* objects") vars [node, errors, #"child"] {
+def @formal-earlyerrorsof "formal-earlyerrorsof" (kind ao params [node : #"Parse Node"] -> doc "a List of *SyntaxError* objects") vars [node, errors, #"child", e] {
+  if $GoalSymbolOf(node) is val {|StringNumericLiteral|; |StringIntegerLiteral|} -> return $ListNew()
+  if expr $InstanceOf(node, |RegularExpressionLiteral|) -> return $ListNew()
   if node sat @ph-production-in(clause @sec-functiondeclarations-in-ifstatement-statement-clauses) -> return @formal-earlyerrorsof($CoveredBy(|IfStatement|, ?node))
   let errors = $ListNew()
   for_children_of #"child" in node {
     if expr $InstanceOf(#"child", data sort nonterminal) {
-      if $MustCoverChild(node, #"child") is val {false} -> set var errors = $ListConcat([errors, @formal-earlyerrorsof(#"child")])
+      if $MustCoverChild(node, #"child") is val {false} {
+        for_each e in @formal-earlyerrorsof(#"child") {
+          perform $Append(?e, ?errors)
+        }
+      }
     }
   }
   if errors fails $IsEmpty() -> return errors
@@ -2691,11 +2697,17 @@ def @formal-intrinsicpropertydescriptor "formal-intrinsicpropertydescriptor" (ki
   return record PropertyDescriptor { [[Value]]: value, [[Writable]]: p[[Writable]], [[Enumerable]]: p[[Enumerable]], [[Configurable]]: p[[Configurable]] }
 }
 
-def @formal-outermostinstances "formal-outermostinstances" (kind ao params [symbol : #"grammar symbol", node : #"Parse Node"] -> list<#"Parse Node">) vars [symbol, node, found, #"child"] {
+def @formal-outermostinstances "formal-outermostinstances" (kind ao params [symbol : #"grammar symbol", node : #"Parse Node"] -> list<#"Parse Node">) vars [symbol, node, found, #"child", item] {
   let found = $ListNew()
   for_children_of #"child" in node {
-    if expr $InstanceOf(#"child", ?symbol) -> perform $Append(?#"child", ?found)
-    else -> set var found = $ListConcat([found, @formal-outermostinstances(symbol, #"child")])
+    if expr $InstanceOf(#"child", ?symbol) {
+      perform $Append(?#"child", ?found)
+    }
+    else {
+      for_each item in @formal-outermostinstances(symbol, #"child") {
+        perform $Append(?item, ?found)
+      }
+    }
   }
   return found
 }
@@ -2797,16 +2809,27 @@ def @formal-parenthesizedoperandiserror "formal-parenthesizedoperandiserror" (ki
   return @formal-deleteoperandiserror($ChildOf(|Expression|, ?expression))
 }
 
-def @formal-parsenodeswithinprocessed "formal-parsenodeswithinprocessed" (kind ao params [node : #"Parse Node"] -> list<#"Parse Node">) vars [node, nodes, ifStatement, #"child"] {
-  let nodes = [node]
+def @formal-parsenodeswithinprocessed "formal-parsenodeswithinprocessed" (kind ao params [node : #"Parse Node"] -> list<#"Parse Node">) vars [node, nodes, hasIf, n, out, ifStatement, #"child"] {
+  let nodes = $ParseNodesWithin(node)
+  let hasIf = false
+  for_each n in nodes {
+    if n sat @ph-production-in(clause @sec-functiondeclarations-in-ifstatement-statement-clauses) -> set var hasIf = true
+  }
+  if hasIf is val {false} -> return nodes
+  let out = [node]
   if node sat @ph-production-in(clause @sec-functiondeclarations-in-ifstatement-statement-clauses) {
     let ifStatement = $CoveredBy(|IfStatement|, ?node)
-    return $ListConcat([nodes, @formal-parsenodeswithinprocessed(ifStatement)])
+    for_each n in @formal-parsenodeswithinprocessed(ifStatement) {
+      perform $Append(?n, ?out)
+    }
+    return out
   }
   for_children_of #"child" in node {
-    set var nodes = $ListConcat([nodes, @formal-parsenodeswithinprocessed(#"child")])
+    for_each n in @formal-parsenodeswithinprocessed(#"child") {
+      perform $Append(?n, ?out)
+    }
   }
-  return nodes
+  return out
 }
 
 def @ph-character-of-pattern "ph-character-of-pattern" (kind ao params [regexpRecord : #"RegExp Record", v : pred(sat @ph-type-anything())]) vars [regexpRecord, v] {

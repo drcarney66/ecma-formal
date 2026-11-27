@@ -185,4 +185,34 @@ def numberToStr (r : F.Math) (x : F.Num) : Option F.Str :=
 def numberToString (r : Nat) (x : F.Num) : Option String :=
   (numberToStr (F.ofNat r) x).map fun t => String.ofList (t.toList.map fun u => Char.ofNat u.toNat)
 
+/-- Non-negative safe integer `0 ≤ n < 2^53` whose canonical binary64 Number is `x`, if any. -/
+def safeNatOf? (x : F.Num) : Option Nat :=
+  if x == F.numZero false then some 0
+  else match F.numView x with
+    | .finite (.int i) =>
+      if 0 < i && i < 2 ^ 53 then
+        let n := i.toNat
+        if x == F.numOf (.int n) then some n else none
+      else none
+    | _ => none
+
+/-- Decimal string of `n : Nat` (`"0"` at `0`, `toString n` at `n > 0`). -/
+def natDecStr (n : Nat) : String :=
+  if n == 0 then "0" else toString n
+
+/-- `Number::toString(x, 10)` on canonical non-negative safe integers `< 2^53`. -/
+def numToStrEntry : List (Val F) → Option (Run F (Option (Val F)))
+  | [.num x, .math (.int 10)] =>
+    (safeNatOf? x).map fun n => always (pure (.str (F.strLit (natDecStr n))))
+  | _ => none
+
+/-- `ToString(argument)` on Strings and canonical non-negative safe integer Numbers `< 2^53`. -/
+def toStrEntry : List (Val F) → Option (Run F (Option (Val F)))
+  | [.str t] =>
+    some (always (pure (.comp Known.eNormal (.str t) (.enum Known.eEmpty))))
+  | [.num x] =>
+    (safeNatOf? x).map fun n =>
+      always (pure (.comp Known.eNormal (.str (F.strLit (natDecStr n))) (.enum Known.eEmpty)))
+  | _ => none
+
 end Engine.Accel

@@ -29,6 +29,8 @@ structure Facts where
 def writeId : AlgId := ⟨Known.cSortWriteSharedMemoryEvent, 0⟩
 def stcpId : AlgId := ⟨Known.cStringToCodePoints, 0⟩
 def gsiId : AlgId := ⟨Known.cGetStringIndex, 0⟩
+def numToStrId : AlgId := ⟨Known.cNumberToString, 0⟩
+def toStrId : AlgId := ⟨Known.cToString, 0⟩
 
 /-- An algorithm's row. -/
 def algRow (a : AlgId) (e : Entry) (m : Mode) : Row F := ⟨.alg a, e, m⟩
@@ -37,7 +39,9 @@ def algRow (a : AlgId) (e : Entry) (m : Mode) : Row F := ⟨.alg a, e, m⟩
 def exactRows : Table F :=
   [algRow writeId isWriteEntry .exact,
     algRow stcpId stcpEntry .exact,
-    algRow gsiId gsiEntry .exact]
+    algRow gsiId gsiEntry .exact,
+    algRow numToStrId numToStrEntry .exact,
+    algRow toStrId toStrEntry .exact]
 
 /-- The SDOs' rows: Contains and ComputedPropertyContains. -/
 def sdoRows (Fc : Facts) : Table F :=

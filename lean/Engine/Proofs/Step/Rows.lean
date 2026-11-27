@@ -5,6 +5,7 @@ public import Engine.Proofs.Step.Rows.IsWrite
 public import Engine.Proofs.Step.Rows.CodePoints
 public import Engine.Proofs.Step.Rows.Stcp
 public import Engine.Proofs.Step.Rows.Gsi
+public import Engine.Proofs.Step.Rows.ToString
 public import Engine.Proofs.Step.Rows.Contains
 public import Engine.Proofs.Step.Rows.LoopSkip
 public import Engine.Proofs.Step.Rows.LoopSkip.IntKeys
@@ -28,10 +29,12 @@ theorem exactRows_ok [PinsHold] (H : Host F) (chk : Bool) :
     ∀ row ∈ exactRows, RowAlgOk (Ctx.spec Engine.P' H chk) row := by
   intro row hrow
   simp only [exactRows, List.mem_cons, List.not_mem_nil, or_false] at hrow
-  rcases hrow with rfl | rfl | rfl
+  rcases hrow with rfl | rfl | rfl | rfl | rfl
   · exact isWrite_algRow H chk
   · exact stcp_algRow H chk
   · exact gsi_algRow H chk
+  · exact numToStr_algRow H chk
+  · exact toStr_algRow H chk
 
 /-- Contains' and ComputedPropertyContains' rows. -/
 theorem contains_sdoRows [PinsHold] (H : Host F) (chk : Bool) :

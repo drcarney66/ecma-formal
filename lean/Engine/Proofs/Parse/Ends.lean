@@ -109,37 +109,35 @@ theorem mem_single (j x : Nat) : (single j).mem x = (x == j) := by
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]
   omega
 
-theorem inIvs_foldl_consIv (raw : List (Nat × Nat)) (init : List (Nat × Nat)) (x : Nat) :
-    inIvs (raw.foldl (fun acc (lo, hi) => consIv lo hi acc) init) x =
-      (inIvs init x || inIvs raw x) := by
-  induction raw generalizing init with
+theorem inIvs_foldr_consIv (raw : List (Nat × Nat)) (init : List (Nat × Nat)) (x : Nat) :
+    inIvs (raw.foldr (fun (lo, hi) acc => consIv lo hi acc) init) x =
+      (inIvs raw x || inIvs init x) := by
+  induction raw with
   | nil => simp [inIvs]
   | cons p rs ih =>
-    simp only [List.foldl_cons, ih, inIvs_consIv, inIvs_cons]
-    cases inIvs init x <;> cases (decide (p.1 ≤ x) && decide (x < p.2)) <;> cases inIvs rs x <;> rfl
+    simp only [List.foldr_cons, inIvs_consIv, ih, inIvs_cons, Bool.or_assoc]
 
 theorem mem_ofIvs (raw : List (Nat × Nat)) (x : Nat) :
     (ofIvs raw).mem x = inIvs raw x := by
-  show inIvs (raw.foldl _ []) x = inIvs raw x
-  rw [inIvs_foldl_consIv, inIvs_nil, Bool.false_or]
+  show inIvs (raw.foldr _ []) x = inIvs raw x
+  rw [inIvs_foldr_consIv, inIvs_nil, Bool.or_false]
 
-theorem inIvs_foldl_point (xs : List Nat) (init : List (Nat × Nat)) (x : Nat) :
-    inIvs (xs.foldl (fun acc y => consIv y (y + 1) acc) init) x =
-      (inIvs init x || xs.contains x) := by
-  induction xs generalizing init with
+theorem inIvs_foldr_point (xs : List Nat) (init : List (Nat × Nat)) (x : Nat) :
+    inIvs (xs.foldr (fun y acc => consIv y (y + 1) acc) init) x =
+      (xs.contains x || inIvs init x) := by
+  induction xs with
   | nil => simp
   | cons y ys ih =>
-    simp only [List.foldl_cons, ih, inIvs_consIv, List.contains_cons]
+    simp only [List.foldr_cons, inIvs_consIv, ih, List.contains_cons]
     have hy : (decide (y ≤ x) && decide (x < y + 1)) = (x == y) := by
       apply Bool.eq_iff_iff.mpr
       simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq]; omega
-    rw [hy]
-    cases inIvs init x <;> cases (x == y) <;> cases ys.contains x <;> rfl
+    rw [hy, Bool.or_assoc]
 
 theorem mem_ofList (xs : List Nat) (x : Nat) :
     (ofList xs).mem x = xs.contains x := by
-  show inIvs (xs.foldl _ []) x = xs.contains x
-  rw [inIvs_foldl_point, inIvs_nil, Bool.false_or]
+  show inIvs (xs.foldr _ []) x = xs.contains x
+  rw [inIvs_foldr_point, inIvs_nil, Bool.or_false]
 
 theorem mem_ofArray (xs : Array Nat) (x : Nat) :
     (ofArray xs).mem x = xs.contains x := by
@@ -147,10 +145,53 @@ theorem mem_ofArray (xs : Array Nat) (x : Nat) :
   apply Bool.eq_iff_iff.mpr
   simp
 
+theorem inIvs_mergeIvs : ∀ (xs ys : List (Nat × Nat)) (x : Nat),
+    inIvs (mergeIvs xs ys) x = (inIvs xs x || inIvs ys x)
+  | [], ys, x => by simp [mergeIvs, inIvs]
+  | (a, b) :: xs, [], x => by simp [mergeIvs, inIvs]
+  | (a, b) :: xs, (c, d) :: ys, x => by
+    unfold mergeIvs
+    split <;> rename_i hba
+    · have hab : (decide (a ≤ x) && decide (x < b)) = false := range_false_of_le (by omega) x
+      rw [inIvs_mergeIvs xs ((c, d) :: ys) x, inIvs_cons (a, b) xs x]
+      dsimp only; rw [hab, Bool.false_or]
+    · split <;> rename_i hdc
+      · have hcd : (decide (c ≤ x) && decide (x < d)) = false := range_false_of_le (by omega) x
+        rw [inIvs_mergeIvs ((a, b) :: xs) ys x, inIvs_cons ((c, d)) ys x]
+        dsimp only; rw [hcd, Bool.false_or]
+      · split <;> rename_i hbc
+        · rw [inIvs_cons, inIvs_mergeIvs xs ((c, d) :: ys) x, inIvs_cons ((a, b)) xs x]
+          dsimp only; rw [Bool.or_assoc]
+        · split <;> rename_i hda
+          · rw [inIvs_cons, inIvs_mergeIvs ((a, b) :: xs) ys x, inIvs_cons ((c, d)) ys x]
+            dsimp only
+            cases inIvs ((a, b) :: xs) x <;> cases (decide (c ≤ x) && decide (x < d)) <;> cases inIvs ys x <;> rfl
+          · split <;> rename_i hbd
+            · rw [inIvs_mergeIvs xs ((min a c, d) :: ys) x, inIvs_cons ((min a c, d)) ys x,
+                inIvs_cons ((a, b)) xs x, inIvs_cons ((c, d)) ys x]
+              dsimp only
+              have hov : (decide (min a c ≤ x) && decide (x < d)) =
+                  ((decide (a ≤ x) && decide (x < b)) || (decide (c ≤ x) && decide (x < d))) := by
+                apply Bool.eq_iff_iff.mpr
+                simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]; omega
+              rw [hov]
+              cases (decide (a ≤ x) && decide (x < b)) <;> cases inIvs xs x <;>
+                cases (decide (c ≤ x) && decide (x < d)) <;> cases inIvs ys x <;> rfl
+            · rw [inIvs_mergeIvs ((min a c, b) :: xs) ys x, inIvs_cons ((min a c, b)) xs x,
+                inIvs_cons ((a, b)) xs x, inIvs_cons ((c, d)) ys x]
+              dsimp only
+              have hov : (decide (min a c ≤ x) && decide (x < b)) =
+                  ((decide (a ≤ x) && decide (x < b)) || (decide (c ≤ x) && decide (x < d))) := by
+                apply Bool.eq_iff_iff.mpr
+                simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]; omega
+              rw [hov]
+              cases (decide (a ≤ x) && decide (x < b)) <;> cases inIvs xs x <;>
+                cases (decide (c ≤ x) && decide (x < d)) <;> cases inIvs ys x <;> rfl
+termination_by xs ys _ => xs.length + ys.length
+
 theorem mem_union (a b : Ends) (x : Nat) :
     (a.union b).mem x = (a.mem x || b.mem x) := by
-  show inIvs (b.ivs.foldl _ (ofIvs a.ivs).ivs) x = _
-  rw [inIvs_foldl_consIv, ← mem_eq_inIvs (ofIvs a.ivs) x, mem_ofIvs, ← mem_eq_inIvs a x, ← mem_eq_inIvs b x]
+  exact inIvs_mergeIvs a.ivs b.ivs x
 
 theorem inIvs_foldl_diffOne (bs : List (Nat × Nat)) (init : List (Nat × Nat)) (x : Nat) :
     inIvs (bs.foldl (fun acc (lo, hi) => diffOne lo hi acc) init) x =
@@ -163,8 +204,8 @@ theorem inIvs_foldl_diffOne (bs : List (Nat × Nat)) (init : List (Nat × Nat)) 
 
 theorem mem_diff (a b : Ends) (x : Nat) :
     (a.diff b).mem x = (a.mem x && !b.mem x) := by
-  show inIvs (b.ivs.foldl _ (ofIvs a.ivs).ivs) x = _
-  rw [inIvs_foldl_diffOne, ← mem_eq_inIvs (ofIvs a.ivs) x, mem_ofIvs, ← mem_eq_inIvs a x, ← mem_eq_inIvs b x]
+  show inIvs (b.ivs.foldl _ a.ivs) x = _
+  rw [inIvs_foldl_diffOne, ← mem_eq_inIvs a x, ← mem_eq_inIvs b x]
 
 theorem isEmpty_iff (e : Ends) : e.isEmpty = true ↔ ∀ x, e.mem x = false := by
   simp only [isEmpty, mem, List.all_eq_true, Bool.eq_false_iff, ne_eq, List.any_eq_true,

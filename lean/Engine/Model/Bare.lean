@@ -422,11 +422,11 @@ def Node.same (a b : Node) : Bool := decide (a = b)
 
 theorem Node.same_iff (a b : Node) : Node.same a b = true ↔ a = b := decide_eq_true_iff
 
-/-- The proper descendants of a Parse Node, in pre-order. -/
-def descendants : Node → Array Node
-  | .mk _ _ _ _ _ _ kids _ => kids.attach.foldl (fun acc ⟨p, _h⟩ => match _hc : p.2 with
-    | some c => (acc.push c) ++ descendants c
-    | none => acc) #[]
+/-- Collect the proper descendants of a Parse Node onto `acc`, in pre-order. -/
+def descendantsInto : Array Node → Node → Array Node
+  | acc, .mk _ _ _ _ _ _ kids _ => kids.attach.foldl (fun acc ⟨p, _h⟩ => match _hc : p.2 with
+    | some c => descendantsInto (acc.push c) c
+    | none => acc) acc
 decreasing_by
   obtain ⟨a, b⟩ := p
   cases _hc
@@ -434,6 +434,9 @@ decreasing_by
   simp only [Prod.mk.sizeOf_spec, Option.some.sizeOf_spec] at this
   simp only [Node.mk.sizeOf_spec]
   omega
+
+/-- The proper descendants of a Parse Node, in pre-order. -/
+def descendants (n : Node) : Array Node := descendantsInto #[] n
 
 /-- A written occurrence's nonterminal: its child's, or the item's where it is absent. -/
 def slotNt : NtId × Option Node → NtId

@@ -73,24 +73,37 @@ def maxFrom (e : Ends) (k : Nat) : Nat :=
   | some j => max k j
   | none => k
 
+/-- Merge two interval lists (linear time when sorted, extensionally exact on all lists). -/
+def mergeIvs : List (Nat × Nat) → List (Nat × Nat) → List (Nat × Nat)
+  | [], ys => ys
+  | xs, [] => xs
+  | (a, b) :: xs, (c, d) :: ys =>
+    if b ≤ a then mergeIvs xs ((c, d) :: ys)
+    else if d ≤ c then mergeIvs ((a, b) :: xs) ys
+    else if b < c then (a, b) :: mergeIvs xs ((c, d) :: ys)
+    else if d < a then (c, d) :: mergeIvs ((a, b) :: xs) ys
+    else if b ≤ d then mergeIvs xs ((min a c, d) :: ys)
+    else mergeIvs ((min a c, b) :: xs) ys
+termination_by xs ys => xs.length + ys.length
+
 /-- Normalize a list of intervals. -/
 def ofIvs (raw : List (Nat × Nat)) : Ends :=
-  ⟨raw.foldl (fun acc (lo, hi) => consIv lo hi acc) []⟩
+  ⟨raw.foldr (fun (lo, hi) acc => consIv lo hi acc) []⟩
 
 /-- The positions `xs` as an end set. -/
 def ofList (xs : List Nat) : Ends :=
-  ⟨xs.foldl (fun acc x => consIv x (x + 1) acc) []⟩
+  ⟨xs.foldr (fun x acc => consIv x (x + 1) acc) []⟩
 
 /-- The positions `xs` as an end set. -/
 def ofArray (xs : Array Nat) : Ends := ofList xs.toList
 
 /-- The positions in `a` or `b`. -/
 def union (a b : Ends) : Ends :=
-  ⟨b.ivs.foldl (fun acc (lo, hi) => consIv lo hi acc) (ofIvs a.ivs).ivs⟩
+  ⟨mergeIvs a.ivs b.ivs⟩
 
 /-- The positions in `a` not in `b`. -/
 def diff (a b : Ends) : Ends :=
-  ⟨b.ivs.foldl (fun acc (lo, hi) => diffOne lo hi acc) (ofIvs a.ivs).ivs⟩
+  ⟨b.ivs.foldl (fun acc (lo, hi) => diffOne lo hi acc) a.ivs⟩
 
 /-- Structural monadic filter over `List Nat`. -/
 def filterListM {m : Type → Type} [Monad m] (p : Nat → m Bool) : List Nat → m (List Nat)

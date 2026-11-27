@@ -403,20 +403,25 @@ def @sec-array.prototype.findlastindex "Array.prototype.findLastIndex" (kind bui
   return findRecord[[Index]]
 }
 
-def @sec-findviapredicate "FindViaPredicate" (kind ao params [#"obj" : Object, length : sort [#"non-negative"] integer, direction : val(~ascending~) | val(~descending~), predicate : #"ECMAScript language value", thisArg : #"ECMAScript language value"] -> completion<record { [[Index]]: #"integral Number", [[Value]]: #"ECMAScript language value" }> | #"throw completion") vars [#"obj", length, direction, predicate, thisArg, indices, k, propertyKey, kValue, testResult] {
+def @sec-findviapredicate "FindViaPredicate" (kind ao params [#"obj" : Object, length : sort [#"non-negative"] integer, direction : val(~ascending~) | val(~descending~), predicate : #"ECMAScript language value", thisArg : #"ECMAScript language value"] -> completion<record { [[Index]]: #"integral Number", [[Value]]: #"ECMAScript language value" }> | #"throw completion") vars [#"obj", length, direction, predicate, thisArg, k, propertyKey, kValue, testResult] {
   if @sec-iscallable(predicate) is val {false} -> throw @ph-new-error([[TypeError]])
   if direction is val {~ascending~} {
-    let indices = @ph-integers-ascending(0, ?length)
+    for_range k incl 0 .. excl length {
+      let propertyKey = ! @sec-tostring($𝔽(k))
+      note "If _obj_ is a TypedArray, the following invocation of Get will return a normal completion."
+      let kValue = ? @sec-get-o-p(#"obj", propertyKey)
+      let testResult = ? @sec-call(predicate, thisArg, [kValue, $𝔽(k), #"obj"])
+      if @sec-toboolean(testResult) is val {true} -> return record Record { [[Index]]: $𝔽(k), [[Value]]: kValue }
+    }
   }
   else {
-    let indices = @ph-integers-descending(0, ?length)
-  }
-  for_each k : integer in indices {
-    let propertyKey = ! @sec-tostring($𝔽(k))
-    note "If _obj_ is a TypedArray, the following invocation of Get will return a normal completion."
-    let kValue = ? @sec-get-o-p(#"obj", propertyKey)
-    let testResult = ? @sec-call(predicate, thisArg, [kValue, $𝔽(k), #"obj"])
-    if @sec-toboolean(testResult) is val {true} -> return record Record { [[Index]]: $𝔽(k), [[Value]]: kValue }
+    for_range k incl 0 .. excl length desc {
+      let propertyKey = ! @sec-tostring($𝔽(k))
+      note "If _obj_ is a TypedArray, the following invocation of Get will return a normal completion."
+      let kValue = ? @sec-get-o-p(#"obj", propertyKey)
+      let testResult = ? @sec-call(predicate, thisArg, [kValue, $𝔽(k), #"obj"])
+      if @sec-toboolean(testResult) is val {true} -> return record Record { [[Index]]: $𝔽(k), [[Value]]: kValue }
+    }
   }
   return record Record { [[Index]]: num_f(-1), [[Value]]: undefined }
 }

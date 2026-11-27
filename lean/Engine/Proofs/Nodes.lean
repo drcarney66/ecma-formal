@@ -268,15 +268,43 @@ theorem foldl_attach_eq {α β : Type} {xs : Array α} {F : β → {x // x ∈ x
   have : F = fun b x => G b x.1 := funext fun b => funext fun x => h b x
   subst this; exact Array.foldl_attach
 
+theorem descendantsInto_unfold (acc : Array Node) (st lo hi : Nat) (pr : ProdId) (nt : NtId)
+    (as : List Grammar.Param) (kids : Array (NtId × Option Node)) (tx : Subarray Nat) :
+    descendantsInto acc (.mk st lo hi pr nt as kids tx) =
+      kids.foldl (fun a (p : NtId × Option Node) => match p.2 with
+        | some c => descendantsInto (a.push c) c
+        | none => a) acc := by
+  rw [descendantsInto]
+  exact foldl_attach_eq _ (fun _ x => by obtain ⟨⟨_, _ | _⟩, _⟩ := x <;> rfl) acc
+
 /-- The descendants of children, from an accumulator: each, then its descendants. -/
-theorem descendants_foldl : ∀ (kids : List (NtId × Option Node)) (acc : Array Node),
-    (kids.foldl (fun acc (p : NtId × Option Node) => match p.2 with
-      | some c => (acc.push c) ++ descendants c
-      | none => acc) acc).toList =
+theorem descendants_foldl : ∀ (k : Nat) (kids : List (NtId × Option Node)),
+    (∀ c ∈ kids.filterMap Prod.snd, c.height ≤ k) →
+    ∀ (acc : Array Node),
+      (kids.foldl (fun a (p : NtId × Option Node) => match p.2 with
+        | some c => descendantsInto (a.push c) c
+        | none => a) acc).toList =
       acc.toList ++ (kids.filterMap Prod.snd).flatMap fun c => c :: (descendants c).toList
-  | [], _ => by simp
-  | (_, none) :: r, acc => by simp [descendants_foldl r]
-  | (_, some c) :: r, acc => by simp [descendants_foldl r]
+  | _, [], _, acc => by simp
+  | k, (_, none) :: r, hk, acc => by
+    simp only [List.filterMap_cons] at hk ⊢
+    simpa using descendants_foldl k r hk acc
+  | 0, (_, some c) :: _, hk, _ => by
+    simp only [List.filterMap_cons, List.mem_cons, forall_eq_or_imp] at hk
+    obtain ⟨g, hg⟩ := height_pos c
+    omega
+  | k + 1, (_, some c) :: r, hk, acc => by
+    simp only [List.filterMap_cons, List.mem_cons, forall_eq_or_imp] at hk
+    obtain ⟨st, lo, hi, pr, nt, as, ks, tx⟩ := c
+    have hsub : ∀ d ∈ ks.toList.filterMap Prod.snd, d.height ≤ k := fun d hd => by
+      have hlt := height_kid (r := .mk st lo hi pr nt as ks tx) (by simpa [kidsOf] using hd)
+      omega
+    simp only [List.foldl_cons, List.filterMap_cons, List.flatMap_cons]
+    rw [descendants_foldl (k + 1) r hk.2, descendantsInto_unfold (acc.push _) st lo hi pr nt as ks tx,
+      ← Array.foldl_toList, descendants_foldl k ks.toList hsub,
+      descendants, descendantsInto_unfold #[] st lo hi pr nt as ks tx,
+      ← Array.foldl_toList, descendants_foldl k ks.toList hsub]
+    simp [List.append_assoc]
 
 theorem child_kids : ∀ (n : Impl.Node) (nt : NtId), ∃ os : List (Option Impl.Node),
     (∀ k, Impl.nodeChild n nt k = os[k]?) ∧
@@ -289,14 +317,12 @@ theorem child_kids : ∀ (n : Impl.Node) (nt : NtId), ∃ os : List (Option Impl
 
 theorem descendants_eq : ∀ n : Impl.Node, seqList (M := Impl) (Impl.nodeDescendants n) =
     (seqList (M := Impl) (Impl.nodeKids n)).flatMap fun c => c :: seqList (M := Impl) (Impl.nodeDescendants c)
-  | .mk _ _ _ _ _ _ kids _ => by
+  | .mk st lo hi pr nt as kids tx => by
+    have hk : ∀ c ∈ kids.toList.filterMap Prod.snd, c.height ≤ (Node.mk st lo hi pr nt as kids tx).height :=
+      fun c hc => Nat.le_of_lt (height_kid (r := .mk st lo hi pr nt as kids tx) (by simpa [kidsOf] using hc))
     rw [seqList_eq, seqList_eq]
-    show (descendants (.mk _ _ _ _ _ _ kids _)).toList = _
-    rw [descendants, foldl_attach_eq (fun acc (p : NtId × Option Node) =>
-      match p.2 with
-      | some c => (acc.push c) ++ descendants c
-      | none => acc) (fun _ x => by obtain ⟨⟨_, _ | _⟩, _⟩ := x <;> rfl), ← Array.foldl_toList,
-      descendants_foldl]
+    show (descendants (.mk st lo hi pr nt as kids tx)).toList = _
+    rw [descendants, descendantsInto_unfold, ← Array.foldl_toList, descendants_foldl _ kids.toList hk #[]]
     simp only [seqList_eq]
     show _ = List.flatMap _ (Array.filterMap _ kids).toList
     simp only [Array.toList_filterMap]
