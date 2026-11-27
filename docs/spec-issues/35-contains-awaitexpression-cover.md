@@ -61,6 +61,10 @@ it. |YieldExpression| has no cover, and the "Contains |YieldExpression|" rules w
 
 The row is for the UnaryExpression production only: under ``AwaitUsingDeclaration :
 CoverAwaitExpressionAndAwaitUsingDeclarationHead BindingList `;` `` the cover is an |AwaitUsingDeclarationHead|.
+(Note a companion gap in §15.9.1: `AsyncArrowFunction`'s early error checks unrefined
+`|CoverCallExpressionAndAsyncArrowHead| Contains |AwaitExpression|`, whereas in `[~Await]` contexts `async (x = await + 1) => x`
+parses `await + 1` as binary `+` inside `CoverCallExpressionAndAsyncArrowHead` and only becomes an `AwaitExpression`
+inside the refined `|AsyncArrowHead|`.)
 
 ## Examples
 

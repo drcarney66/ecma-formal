@@ -103,7 +103,10 @@ source.
 ```
 
 The other repair is a general rule in §5.1.2 that "_n_ is a |X|" and "the |X| of _n_" see through chain
-productions, which other algorithms may already assume; the model reads all "the |X| of _n_" sites that way.
+productions, which other algorithms may already assume; SpecTec (`lean/Ecma/Ops/Leaf.lean`) reads all "the |X| of _n_"
+sites that way, and additionally patches `VarScopedDeclarations` on `ModuleItem : ExportDeclaration`
+(`spec/spectec/clauses/S08.spectec`) where the text asks for grandchild `|VariableStatement|` across the non-chain
+production ``ExportDeclaration : `export` VariableStatement``.
 
 ## test262
 

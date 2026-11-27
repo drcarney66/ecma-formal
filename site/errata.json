@@ -73,6 +73,188 @@
     "clause": "sec-reads-bytes-from",
     "quote": "Each event _writeEvent_ with index _i_ in _writes_ has _readEvent_.[[ByteIndex]] + _i_ in its memory range."
    }
+  ],
+  "MakeDayFiniteTimeValue": [
+   {
+    "clause": "sec-makeday",
+    "where": "step 8",
+    "quote": "Find a finite time value _tv_ such that YearFromTime(_tv_) = ℝ(_balancedYear_), MonthFromTime(_tv_) = _balancedMonthMV_, and DateFromTime(_tv_) = 1; but if this is not possible (because some argument is out of range), return *NaN*."
+   }
+  ],
+  "PropNameCoverInitializedName": [
+   {
+    "clause": "sec-object-initializer-static-semantics-early-errors",
+    "where": "the duplicate `__proto__` rule",
+    "quote": "It is a Syntax Error if the PropertyNameList of |PropertyDefinitionList| contains any duplicate entries for *\"__proto__\"* and at least two of those entries were obtained from productions of the form"
+   },
+   {
+    "clause": "sec-static-semantics-propertynamelist",
+    "where": "step 1",
+    "quote": "Let _propertyName_ be the PropName of |PropertyDefinition|."
+   }
+  ],
+  "OrdinarySetReceiverHasProperty": [
+   {
+    "clause": "sec-ordinarysetwithowndescriptor",
+    "where": "step 2.d.i",
+    "quote": "Assert: _receiver_ does not currently have a property _propertyKey_."
+   }
+  ],
+  "MustCoverEarlyErrorOrder": [
+   {
+    "clause": "sec-syntactic-grammar",
+    "where": "\"must cover\", item 4",
+    "quote": "Otherwise (if the parse fails), it is an early Syntax Error."
+   },
+   {
+    "clause": "sec-async-arrow-function-definitions-static-semantics-early-errors",
+    "quote": "It is a Syntax Error if any element of the BoundNames of |CoverCallExpressionAndAsyncArrowHead| also occurs in the LexicallyDeclaredNames of |AsyncConciseBody|."
+   }
+  ],
+  "RegExpUnicodeEscapeLookahead": [
+   {
+    "clause": "sec-patterns",
+    "quote": "Each `\\\\u` |HexTrailSurrogate| for which the choice of associated `u` |HexLeadSurrogate| is ambiguous shall be associated with the nearest possible `u` |HexLeadSurrogate| that would otherwise have no corresponding `\\\\u` |HexTrailSurrogate|."
+   }
+  ],
+  "PostASILexicalGoal": [
+   {
+    "clause": "sec-ecmascript-language-lexical-grammar",
+    "quote": "The |InputElementRegExp| goal symbol is used in all syntactic grammar contexts where a |RegularExpressionLiteral| is permitted … In all other contexts, |InputElementDiv| is used as the lexical goal symbol."
+   },
+   {
+    "clause": "sec-rules-of-automatic-semicolon-insertion",
+    "quote": "In the following rules, “token” means the actual recognized lexical token determined using the current lexical goal symbol as described in clause"
+   }
+  ],
+  "ForLexicalHeaderASI": [
+   {
+    "clause": "sec-rules-of-automatic-semicolon-insertion",
+    "quote": "However, there is an additional overriding condition on the preceding rules: a semicolon is never inserted automatically if the semicolon would then be parsed as an empty statement or if that semicolon would become one of the two semicolons in the header of a `for` statement"
+   }
+  ],
+  "CoverMatchedVirtualSemis": [
+   {
+    "clause": "sec-syntactic-grammar",
+    "quote": "The sequence of tokens originally matched by _p_ is parsed again using _n_ as the goal symbol."
+   }
+  ],
+  "RegExpExecEndOfString": [
+   {
+    "clause": "sec-regexpbuiltinexec",
+    "where": "steps 13.a and 13.b",
+    "quote": "If _lastIndex_ > _length_, then … Let _inputIndex_ be the index into _input_ of the character that was obtained from element _lastIndex_ of _string_."
+   }
+  ],
+  "AnnexBFunctionEvalEmpty": [
+   {
+    "clause": "sec-function-definitions-runtime-semantics-evaluation",
+    "where": "FunctionDeclaration Evaluation",
+    "quote": "Return ~empty~."
+   },
+   {
+    "clause": "sec-functiondeclarationinstantiation",
+    "where": "Annex B.3.2.1 replacement steps",
+    "quote": "When the |FunctionDeclaration| _funcDecl_ is evaluated, perform the following steps in place of the |FunctionDeclaration| Evaluation algorithm … Return ~unused~."
+   }
+  ],
+  "AnnexBQuantifiableAssertion": [
+   {
+    "clause": "sec-compilesubpattern-annexb",
+    "quote": "The rule for `Term :: QuantifiableAssertion Quantifier` is the same as for `Term :: Atom Quantifier` but with |QuantifiableAssertion| substituted for |Atom|."
+   }
+  ],
+  "AnnexBCapturingParensAssert": [
+   {
+    "clause": "sec-countleftcapturingparenswithin",
+    "where": "step 1",
+    "quote": "Assert: _parseNode_ is an instance of a production in the RegExp Pattern grammar."
+   },
+   {
+    "clause": "sec-countleftcapturingparens-annexb",
+    "quote": "In the definitions of CountLeftCapturingParensWithin and CountLeftCapturingParensBefore, references to “Atom :: `(` GroupSpecifier? Disjunction `)`” are to be interpreted as meaning “Atom :: `(` GroupSpecifier? Disjunction `)`” or “ExtendedAtom :: `(` GroupSpecifier? Disjunction `)`”."
+   }
+  ],
+  "AnnexBReplacingAndB33": [
+   {
+    "clause": "sec-functiondeclarationinstantiation",
+    "quote": "If replacing the |FunctionDeclaration| _funcDecl_ with a |VariableStatement| that has _funcName_ as a |BindingIdentifier| would not produce any Early Errors for _func_ and _paramNames_ does not contain _funcName_, then"
+   },
+   {
+    "clause": "sec-functiondeclarations-in-ifstatement-statement-clauses",
+    "quote": "Source text matched by this production is processed as if each matching occurrence of |FunctionDeclaration[?Yield, ?Await, ~Default]| was the sole |StatementListItem| of a |BlockStatement| occupying that position in the source text."
+   }
+  ],
+  "SupplementalCoveredBy": [
+   {
+    "clause": "sec-function-calls-runtime-semantics-evaluation",
+    "where": "step 1",
+    "quote": "Let _expr_ be the |CallMemberExpression| that is covered by |CoverCallExpressionAndAsyncArrowHead|."
+   },
+   {
+    "clause": "sec-runtime-semantics-keyeddestructuringassignmentevaluation",
+    "where": "step 1.a",
+    "quote": "Let _assignmentPattern_ be the |AssignmentPattern| that is covered by |DestructuringAssignmentTarget|."
+   }
+  ],
+  "ToISOStringYearForm": [
+   {
+    "clause": "sec-date.prototype.toisostring",
+    "where": "step 7",
+    "quote": "Return a String representation of _tv_ in the Date Time String Format on the UTC time scale, including all format elements and the UTC offset representation *\"Z\"*."
+   },
+   {
+    "clause": "sec-date-time-string-format",
+    "quote": "`YYYY` is the year in the proleptic Gregorian calendar as four decimal digits from 0000 to 9999, or as an expanded year of *\"+\"* or *\"-\"* followed by six decimal digits."
+   }
+  ],
+  "ModuleDiamondCircularityAsserts": [
+   {
+    "clause": "sec-getexportednames",
+    "where": "step 3.a",
+    "quote": "Assert: We've reached the starting point of an `export *` circularity."
+   },
+   {
+    "clause": "sec-resolveexport",
+    "where": "step 3.a.i",
+    "quote": "Assert: This is a circular import request."
+   }
+  ],
+  "MemoryModelRMWCycleAndRbf": [
+   {
+    "clause": "sec-composewriteeventbytes",
+    "where": "step 3.d.ii",
+    "quote": "Let _bytes_ be ValueOfReadEvent(_execution_, _writeEvent_)."
+   },
+   {
+    "clause": "sec-valid-executions",
+    "quote": "_execution_ admits a happens-before Relation that is a strict partial order."
+   },
+   {
+    "clause": "sec-host-synchronizes-with",
+    "quote": "For a candidate execution _execution_, its host-synchronizes-with Relation is a host-provided strict partial order on host-specific Memory events that satisfies at least the following."
+   }
+  ],
+  "WeakRefAllCellsAndSuspendWaiter": [
+   {
+    "clause": "sec-weakref-execution",
+    "where": "step 1.b",
+    "quote": "For each FinalizationRegistry _finalizationRegistry_ such that _finalizationRegistry_.[[Cells]] contains a Record _cell_ such that _cell_.[[WeakRefTarget]] is _value_, do"
+   },
+   {
+    "clause": "sec-suspendthisagent",
+    "where": "step 7",
+    "quote": "another agent calling NotifyWaiter with arguments _waiterList_ and _thisAgent_"
+   },
+   {
+    "clause": "sec-runtime-semantics-unicodematchpropertyvalue-p-v",
+    "where": "step 3",
+    "quote": "Let _value_ be the canonical property value of _v_ as given in the “Canonical property value” column of the corresponding row."
+   },
+   {
+    "clause": "sec-abstract-module-records",
+    "quote": "This specification defines the abstract subclass named Cyclic Module Record and its concrete subclass named Source Text Module Record."
+   }
   ]
  },
  "programs": {
@@ -110,7 +292,7 @@
       "end": "throw: SyntaxError"
      },
      "literal": {
-      "end": "stop: residue formal-parsetextin#0 2"
+      "end": "normal: undefined"
      }
     }
    }
@@ -123,7 +305,7 @@
       "end": "normal: 1"
      },
      "literal": {
-      "end": "stop: residue formal-parsetextin#0 2"
+      "end": "throw: SyntaxError"
      }
     }
    }
@@ -266,7 +448,7 @@
       ]
      },
      "literal": {
-      "end": "stop: erratum DoWaitSyncTimeout sec-addwaiter#0 2"
+      "end": "stop: assertFailed sec-addwaiter#0 2"
      }
     }
    }
@@ -312,7 +494,7 @@
       ]
      },
      "literal": {
-      "end": "stop: erratum AsyncBlockStartAwaitResult sec-asyncblockstart#0 4"
+      "end": "stop: assertFailed sec-asyncblockstart#0 4"
      }
     }
    }
@@ -392,7 +574,7 @@
    {
     "program": "run/regexp_identity_escape_join_controls",
     "outcomes": {
-     "test262": {
+     "proposed": {
       "end": "normal: undefined",
       "printed": [
        "U+200C: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
@@ -500,7 +682,7 @@
       "end": "normal: \"get size|true\""
      },
      "literal": {
-      "end": "stop: erratum CreateIntrinsicsAsyncArgument sec-setfunctionname#0 5.a"
+      "end": "stop: sortError sec-setfunctionname#0 5.a"
      }
     }
    }
@@ -553,6 +735,285 @@
      },
      "literal": {
       "end": "stop: implLimit sec-numeric-types-bigint-leftShift#0 2..cclxxviii.2"
+     }
+    }
+   }
+  ],
+  "ParseTextErrorObjects": [
+   {
+    "program": "run/errata_parsetext_error_objects",
+    "outcomes": {
+     "proposed": {
+      "end": "normal: \"true,true,true,NaN\""
+     },
+     "literal": {
+      "end": "stop: residue sort-error#0 1"
+     }
+    }
+   }
+  ],
+  "LonePropertyGeneralCategoryAssert": [
+   {
+    "program": "run/errata_lone_property_gc",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"true,true,true,true\""
+     },
+     "literal": {
+      "end": "stop: assertFailed sec-runtime-semantics-unicodematchpropertyvalue-p-v#0 2"
+     }
+    }
+   }
+  ],
+  "StringLengthOverflow": [
+   {
+    "program": "run/errata_string_length_overflow",
+    "outcomes": {
+     "proposed": {
+      "end": "throw: RangeError"
+     },
+     "literal": {
+      "end": "stop: implLimit sec-string.prototype.repeat#0 7"
+     }
+    }
+   }
+  ],
+  "StringMaximumLength": [
+   {
+    "program": "run/errata_string_maximum_length",
+    "outcomes": {
+     "proposed": {
+      "end": "normal: \"RangeError,0,RangeError,a\""
+     },
+     "literal": {
+      "end": "stop: implLimit sec-string.prototype.repeat#0 7"
+     }
+    }
+   }
+  ],
+  "MakeDayFiniteTimeValue": [
+   {
+    "program": "run/errata_makeday_finite_time_value",
+    "outcomes": {
+     "proposed": {
+      "end": "normal: \"8639987299200000,8640000000000000\""
+     },
+     "literal": {
+      "end": "normal: \"NaN,8640000000000000\""
+     }
+    }
+   }
+  ],
+  "PropNameCoverInitializedName": [
+   {
+    "program": "run/errata_propname_coverinitializedname",
+    "outcomes": {
+     "proposed": {
+      "end": "normal: \"SyntaxError,SyntaxError,ok\""
+     },
+     "literal": {
+      "end": "stop: sortError sec-static-semantics-propertynamelist#0 1"
+     }
+    }
+   }
+  ],
+  "OrdinarySetReceiverHasProperty": [
+   {
+    "program": "run/errata_ordinaryset_receiver",
+    "outcomes": {
+     "proposed": {
+      "end": "normal: \"true,5,true,9\""
+     },
+     "literal": {
+      "end": "stop: assertFailed sec-ordinarysetwithowndescriptor#0 2.d.i"
+     }
+    }
+   }
+  ],
+  "MustCoverEarlyErrorOrder": [
+   {
+    "program": "run/errata_must_cover_order",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"SyntaxError,SyntaxError,SyntaxError,ok\""
+     },
+     "literal": {
+      "end": "stop: assertFailed sec-static-semantics-contains#7 1"
+     }
+    }
+   }
+  ],
+  "RegExpUnicodeEscapeLookahead": [
+   {
+    "program": "run/errata_regexp_unicode_escape_lookahead",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"true,true,a\""
+     },
+     "literal": {
+      "end": "stop: residue formal-parsetextin#0 2"
+     }
+    }
+   }
+  ],
+  "PostASILexicalGoal": [
+   {
+    "program": "run/post_asi_regexp",
+    "outcomes": {
+     "test262": {
+      "end": "normal: true"
+     },
+     "literal": {
+      "end": "throw: SyntaxError"
+     }
+    }
+   }
+  ],
+  "ForLexicalHeaderASI": [
+   {
+    "program": "run/errata_for_lexical_header_asi",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"SyntaxError,SyntaxError,3\""
+     },
+     "literal": {
+      "end": "normal: \"ok,ok,1\""
+     }
+    }
+   }
+  ],
+  "CoverMatchedVirtualSemis": [
+   {
+    "program": "run/errata_cover_virtual_semis",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"1,2,3\""
+     },
+     "literal": {
+      "end": "throw: SyntaxError"
+     }
+    }
+   }
+  ],
+  "RegExpExecEndOfString": [
+   {
+    "program": "run/errata_regexp_exec_end",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"a,1,null,0,,1\""
+     },
+     "literal": {
+      "end": "stop: sortError ph-input-index-of#0 1"
+     }
+    }
+   }
+  ],
+  "AnnexBFunctionEvalEmpty": [
+   {
+    "program": "run/errata_annexb_function_eval_empty",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"undefined,42\""
+     },
+     "literal": {
+      "end": "stop: sortError sec-performeval#0 28"
+     }
+    }
+   }
+  ],
+  "AnnexBQuantifiableAssertion": [
+   {
+    "program": "run/errata_annexb_quantifiable_assertion",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"a,a\""
+     },
+     "literal": {
+      "end": "stop: sortError row-compilesubpattern-quantifiableassertion-quantifier#0 1"
+     }
+    }
+   }
+  ],
+  "AnnexBCapturingParensAssert": [
+   {
+    "program": "run/errata_annexb_capturing_parens",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"true,a\""
+     },
+     "literal": {
+      "end": "stop: assertFailed sec-countleftcapturingparenswithin#0 1"
+     }
+    }
+   }
+  ],
+  "AnnexBReplacingAndB33": [
+   {
+    "program": "run/errata_annexb_replacing_b33",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"function,0,function,function\""
+     },
+     "literal": {
+      "end": "stop: sortError ph-annexb-replacing#0 1"
+     }
+    }
+   }
+  ],
+  "SupplementalCoveredBy": [
+   {
+    "program": "run/errata_supplemental_covered_by",
+    "outcomes": {
+     "test262": {
+      "end": "normal: undefined",
+      "printed": [
+       "30"
+      ]
+     },
+     "literal": {
+      "end": "stop: residue sec-function-calls-runtime-semantics-evaluation#0 1"
+     }
+    }
+   }
+  ],
+  "ToISOStringYearForm": [
+   {
+    "program": "run/errata_toisostring_year_form",
+    "outcomes": {
+     "test262": {
+      "end": "normal: \"1900-01-01T00:00:00.000Z,2026-01-01T00:00:00.000Z,+010000-01-01T00:00:00.000Z\""
+     },
+     "literal": {
+      "end": "normal: \"+001900-01-01T00:00:00.000Z,+002026-01-01T00:00:00.000Z,+010000-01-01T00:00:00.000Z\""
+     }
+    }
+   }
+  ],
+  "ModuleDiamondCircularityAsserts": [
+   {
+    "program": "run/errata_module_diamond",
+    "outcomes": {
+     "test262": {
+      "end": "normal: undefined",
+      "printed": [
+       "x,y|1|2"
+      ]
+     },
+     "literal": {
+      "end": "stop: assertFailed sec-getexportednames#0 3.a"
+     }
+    }
+   }
+  ],
+  "WeakRefAllCellsAndSuspendWaiter": [
+   {
+    "program": "run/errata_weakref_unicode_sorts",
+    "outcomes": {
+     "proposed": {
+      "end": "normal: \"true,true\""
+     },
+     "literal": {
+      "end": "stop: residue sec-runtime-semantics-unicodematchpropertyvalue-p-v#0 3"
      }
     }
    }
@@ -772,7 +1233,7 @@
   "CoveredNodeParent": {
    "items": [],
    "notes": [
-    "§5.1.5 reparses a cover with _n_ as goal, so the covered node roots a tree of its own: \"contained within\", \"most closely contains\" and \"the parent of\" (IsInTailPosition 2, MightBothParticipate 1, ShallowestContainedJSONValue 6.d) fail for a node inside it, and read literally `return (f(n - 1))` is no tail call. The test262 and proposed reading: the covered node takes the cover's place in the tree, its parent being the cover's parent (test262's tco-pos.js)."
+    "§5.1.5 reparses a cover with _n_ as goal, so the covered node roots a tree of its own: \"contained within\", \"most closely contains\" and \"the parent of\" (such as IsInTailPosition step 2) fail for a node inside it, and read literally `return (f(n - 1))` is not a tail call. The test262 and proposed reading: the covered node takes the cover's place in the tree, its parent being the cover's parent (test262's tco-pos.js; docs/spec-issues/46-covered-node-parent.md)."
    ]
   },
   "NumberMultiplyZeroSign": {
@@ -927,7 +1388,7 @@
     }
    ],
    "notes": [
-    "The pinned text says ParseText and ParsePattern return \"a List of one or more *SyntaxError* objects\" (with an implementation-defined number and order when multiple errors exist), without specifying the Realm Record or concrete error objects. Every caller only checks whether the List is non-empty and throws a fresh *SyntaxError* of its own (or, for ParseScript/ParseModule hosts, takes an element), so the proposed reading returns a single newly created *SyntaxError* object in the current realm (docs/spec-issues/05-parsetext-error-objects.md)."
+    "The pinned text says ParseText and ParsePattern return \"a List of one or more *SyntaxError* objects\" without specifying a Realm Record, and ten caller steps test \"is a List of errors\" where the sort \"error\" is never defined (tc39/ecma262 #3868). SpecTec bakes in three choices: @formal-parsetextin, @ph-syntax-errors and early-error rules allocate a singleton *SyntaxError* object in currentRealm; Engine/Host/Opts.lean pushes a realm execution context before top-level ParseScript/ParseModule; and @sort-error defines \"error\" as an Object with [[ErrorData]] (docs/spec-issues/05-parsetext-error-objects.md)."
    ]
   },
   "DoWaitSyncTimeout": {
@@ -1006,7 +1467,9 @@
      ]
     }
    ],
-   "notes": []
+   "notes": [
+    "While SpecTec keeps the literal subtraction at EnqueueAtomicsWaitAsyncTimeoutJob step 4, runtime parameter-sort checks are omitted and Engine.Host.Strategy.msCeil clamps negative timeout delays up to 0 ms (and wakeFinite in 16-host-laws-jobs.spectec caps finite agent suspension timeouts at maxTime = 8.64 × 10^15 ms)."
+   ]
   },
   "GetUTCEpochNanosecondsNaN": {
    "items": [
@@ -1029,7 +1492,9 @@
      "notes": []
     }
    ],
-   "notes": []
+   "notes": [
+    "Alongside keeping UTC step 1 literal here, SpecTec bakes in MakeDayFiniteTimeValue on MakeDay step 8 and omits runtime return-sort checks (so GetUTCEpochNanoseconds exceeding MinEpochNanoseconds..MaxEpochNanoseconds on large UTC(_t_) inputs does not stop with sortError; docs/spec-issues/10-utc-large-local-time.md)."
+   ]
   },
   "GetMatchStringStartAfterEnd": {
    "items": [
@@ -1052,7 +1517,9 @@
      "notes": []
     }
    ],
-   "notes": []
+   "notes": [
+    "While GetMatchString step 1's Assert is kept literal, @ph-input-index-of (Helpers.spectec) bakes in mapping a trailing-surrogate _lastIndex_ backward to the containing surrogate pair's code-point index at RegExpBuiltinExec step 13.b (and returning $ListLen(_input_) at _lastIndex_ = _length_, see RegExpExecEndOfString). Consequently /(?:)/gu stops at GetMatchString step 1 while /./gu at lastIndex = 1 on \"\\u{1F600}\" returns the lone trailing surrogate \"\\uDE00\" (docs/spec-issues/11-regexp-lastindex-inside-surrogate-pair.md)."
+   ]
   },
   "AsyncBlockStartAwaitResult": {
    "items": [
@@ -1117,7 +1584,9 @@
      "notes": []
     }
    ],
-   "notes": []
+   "notes": [
+    "In addition to checking NewPromiseReactionJob's completion at the job boundary, SpecTec's host laws assign *null*-realm promise Jobs to the surrounding agent with per-agent FIFO order, and Engine.Host.prepareJobOn pushes an execution context for the agent's realm so species resolving functions have a running execution context (docs/spec-issues/13-promise-job-abrupt-completion.md)."
+   ]
   },
   "NativeFunctionInitialName": {
    "items": [
@@ -1142,7 +1611,9 @@
      ]
     }
    ],
-   "notes": []
+   "notes": [
+    "While non-PropertyName [[InitialName]] strings such as \"a b\" have no conforming output and stop on residue when source text is unavailable, S20.spectec bakes in allowing an empty \"\" [[InitialName]] without a |PropertyName| Parse Node (for anonymous built-ins), and NativeFunctionSource restricts .ok representations to ASCII names (docs/spec-issues/14-nativefunction-initialname.md)."
+   ]
   },
   "SyntheticModuleLinkResets": {
    "items": [
@@ -1209,7 +1680,6 @@
      "alts": [
       {
        "readings": [
-        "test262",
         "proposed"
        ],
        "kind": "grammar",
@@ -1220,7 +1690,7 @@
     }
    ],
    "notes": [
-    "Since Unicode 15.1 added &lt;ZWNJ&gt; (U+200C) and &lt;ZWJ&gt; (U+200D) to ID_Continue, `IdentityEscape[~UnicodeMode] :: SourceCharacter but not UnicodeIDContinue` makes `/\\\\&#x200C;/` and `/\\\\&#x200D;/` SyntaxErrors outside §B.1.2 without an Annex F record; the test262 and proposed reading aligns the main grammar with §B.1.2 and pre-15.1 behaviour by admitting both code points as identity escapes (docs/spec-issues/21-identityescape-zwnj-zwj.md)."
+    "Since Unicode 15.1 added <ZWNJ> (U+200C) and <ZWJ> (U+200D) to ID_Continue, `IdentityEscape[~UnicodeMode] :: SourceCharacter but not UnicodeIDContinue` makes `/\\u200C/` and `/\\u200D/` (with literal ZWNJ/ZWJ) SyntaxErrors outside §B.1.2 without an Annex F record. Because test262's S7.8.5_A1.4_T2.js permits SyntaxError for ID_Continue characters, this is a proposed normative restoration rather than a test262 requirement (docs/spec-issues/21-identityescape-zwnj-zwj.md)."
    ]
   },
   "LonePropertyGeneralCategoryAssert": {
@@ -1363,7 +1833,7 @@
       }
      ],
      "notes": [
-      "Step 2 creates each built-in function by \"CreateBuiltinFunction(_steps_, _length_, _name_, _slots_, _realmRecord_, _proto_, _async_)\", which passes _async_ as CreateBuiltinFunction's _prefix_ and gives no accessor its prefix; read literally (realm.emu), SetFunctionName concatenates a Boolean and realm creation stops. test262 requires both: built-ins/Array/fromAsync/ (an async function) and built-ins/Map/prototype/size/name.js (*\"get size\"*). The proposed text: \"CreateBuiltinFunction(_steps_, _length_, _name_, _slots_, _realmRecord_, _proto_, _prefix_, _async_), where _prefix_ is *\"get\"* or *\"set\"* for a get or set accessor function of a built-in property and ~empty~ otherwise\", with an ~empty~ _prefix_ read as not present."
+      "Step 2 creates each built-in function by \"CreateBuiltinFunction(_steps_, _length_, _name_, _slots_, _realmRecord_, _proto_, _async_)\", which passes _async_ as CreateBuiltinFunction's _prefix_ and gives no accessor its prefix; read literally, SetFunctionName concatenates a Boolean and realm creation stops. test262 requires both: built-ins/Array/fromAsync/ (an async function) and built-ins/Map/prototype/size/name.js (*\"get size\"*). The proposed text: \"CreateBuiltinFunction(_steps_, _length_, _name_, _slots_, _realmRecord_, _proto_, _prefix_, _async_), where _prefix_ is *\"get\"* or *\"set\"* for a get or set accessor function of a built-in property and ~empty~ otherwise\", with an ~empty~ _prefix_ read as not present."
      ]
     }
    ],
@@ -1389,7 +1859,7 @@
       }
      ],
      "notes": [
-      "The definition of a consistent comparator reads each result as ℝ(_comparator_(_a_, _b_)), which has no value for ±∞; the literal reading (sort.emu) stops there. No test262 test has a comparator return ±∞. The test262 reading has no ℝ step: by SortStep's law (sort.emu) no consistent comparator gives a ±∞ result, so the order is the host's, and both test hosts order by the result's sign. The proposed text compares the Number itself with *+0*<sub>𝔽</sub> where the text takes ℝ of it, in the sort order's two conditions (\"if _sortCompare_(old[_j_], old[_k_]) &lt; *+0*<sub>𝔽</sub>\", \"… = *+0*<sub>𝔽</sub>\") and in the definition of a consistent comparator (\"_a_ &lt;<sub>C</sub> _b_ means _comparator_(_a_, _b_) &lt; *+0*<sub>𝔽</sub>\", likewise for =<sub>C</sub> and &gt;<sub>C</sub>)."
+      "The definition of a consistent comparator reads each result as ℝ(_comparator_(_a_, _b_)), which has no value for ±∞; the literal reading stops there. No test262 test has a comparator return ±∞. The test262 reading has no ℝ step: by SortStep's law no consistent comparator gives a ±∞ result, so the order is the host's, and both test hosts order by the result's sign. The proposed text compares the Number itself with *+0*<sub>𝔽</sub> where the text takes ℝ of it, in the sort order's two conditions (\"if _sortCompare_(old[_j_], old[_k_]) &lt; *+0*<sub>𝔽</sub>\", \"… = *+0*<sub>𝔽</sub>\") and in the definition of a consistent comparator (\"_a_ &lt;<sub>C</sub> _b_ means _comparator_(_a_, _b_) &lt; *+0*<sub>𝔽</sub>\", likewise for =<sub>C</sub> and &gt;<sub>C</sub>)."
      ]
     }
    ],
@@ -1559,7 +2029,7 @@
     }
    ],
    "notes": [
-    "§6.1.6.2 says a BigInt \"may be any size and is not limited to a particular bit-width\", and BigInt::exponentiate, BigInt::leftShift, BigInt::multiply, BigInt::add, BigInt::subtract and BigInt.asUintN return their exact results whatever their size; every implementation has a maximum size and throws a *RangeError* past it (V8 at 2<sup>30</sup> bits). The proposed text, in each of the six before its result is formed: \"If the result would exceed the implementation's maximum BigInt size, throw a *RangeError* exception.\" The host says whether it would (BigIntTooLarge). The literal text forms the result whatever its size, so an implementation gives up at a limit of its own. Not a defect of the text: a proposed normative change, which says what every implementation does (docs/spec-issues/51-bigint-maximum-size.md)."
+    "§6.1.6.2 says a BigInt \"may be any size and is not limited to a particular bit-width\", and BigInt::exponentiate, BigInt::leftShift, BigInt::multiply, BigInt::add, BigInt::subtract and BigInt.asUintN return their exact results whatever their size; every implementation has a maximum size and throws a *RangeError* past it (V8 at 2<sup>30</sup> bits). SpecTec checks BigIntTooLarge before forming the result (propagating `?` through binary operators, BigInt::signedRightShift, and `++`/`--`; docs/spec-issues/51-bigint-maximum-size.md)."
    ]
   },
   "StringMaximumLength": {
@@ -1674,23 +2144,212 @@
     }
    ],
    "notes": [
-    "§6.1.4 defines the String type as sequences of up to 2<sup>53</sup> - 1 16-bit code units and leaves the operations' behaviour unspecified when a result would exceed an implementation's smaller maximum String length; every engine throws a *RangeError* past its limit (V8 2<sup>28</sup> on 32-bit targets and 2<sup>29</sup> - 24 on 64-bit, SpiderMonkey 2<sup>30</sup> - 2, JavaScriptCore 2<sup>31</sup> - 1). The proposed text checks StringTooLarge before constructing the String and throws a *RangeError* exception when *true* (docs/spec-issues/53-string-maximum-length.md)."
+    "Even below §6.1.4's 2<sup>53</sup> - 1 ceiling, every engine enforces a smaller finite-memory maximum String length and throws a *RangeError* past it (V8 2<sup>28</sup> on 32-bit and 2<sup>29</sup> - 24 on 64-bit, SpiderMonkey 2<sup>30</sup> - 2, JavaScriptCore 2<sup>31</sup> - 1). SpecTec asks the host via StringTooLarge (answering *true* past 2<sup>28</sup> code units in Engine) and throws a *RangeError* (docs/spec-issues/54-string-maximum-length.md)."
    ]
   },
-  "MVDecimalIntegerLiteralZero": {
+  "StringLengthOverflow": {
    "items": [
     {
-     "tag": "emu-orphan-row",
+     "tag": "emu-reading",
      "attrs": {
-      "clause": "sec-static-semantics-mv",
-      "grammar": "DecimalIntegerLiteral :: `0`"
+      "clause": "sec-string.prototype.repeat",
+      "step": "7",
+      "hash": "7b5d920c788068d0d3cf079c039efecc29f25aa94ac4bfa37254bef6e4dcc641"
      },
-     "alts": [],
+     "alts": [
+      {
+       "readings": [
+        "proposed"
+       ],
+       "kind": "alg",
+       "text": "\n        1. If StringTooLarge(_n_ × the length of _string_) is *true*, throw a *RangeError* exception.\n        1. Return the String value that is made from _n_ copies of _string_ appended together.\n      "
+      }
+     ],
+     "notes": []
+    },
+    {
+     "tag": "emu-reading",
+     "attrs": {
+      "clause": "sec-string.prototype.concat",
+      "step": "5.b",
+      "hash": "cf401e78063d8f80b2674119ba81f6808a877e7db8b28af9652e5ce50004676b"
+     },
+     "alts": [
+      {
+       "readings": [
+        "proposed"
+       ],
+       "kind": "alg",
+       "text": "\n        1. If StringTooLarge(the length of _result_ + the length of _nextString_) is *true*, throw a *RangeError* exception.\n        1. Set _result_ to the string-concatenation of _result_ and _nextString_.\n      "
+      }
+     ],
+     "notes": []
+    },
+    {
+     "tag": "emu-reading",
+     "attrs": {
+      "clause": "sec-applystringornumericbinaryoperator",
+      "step": "1.c.iii",
+      "hash": "c695dc0558333df2a8778c270eb169cca0d9f474c932910f72b3eb734b38d53c"
+     },
+     "alts": [
+      {
+       "readings": [
+        "proposed"
+       ],
+       "kind": "alg",
+       "text": "\n        1. If StringTooLarge(the length of _leftString_ + the length of _rightString_) is *true*, throw a *RangeError* exception.\n        1. Return the string-concatenation of _leftString_ and _rightString_.\n      "
+      }
+     ],
+     "notes": []
+    },
+    {
+     "tag": "emu-reading",
+     "attrs": {
+      "clause": "sec-joinindexedproperties",
+      "step": "4.a",
+      "hash": "92547d0bea8e1bc0777a69fd4d8159c1b8cbcb1d7648d4a6ec743dd96e8b7933"
+     },
+     "alts": [
+      {
+       "readings": [
+        "proposed"
+       ],
+       "kind": "alg",
+       "text": "\n        1. If _k_ > 0, then\n          1. If StringTooLarge(the length of _result_ + the length of _separator_) is *true*, throw a *RangeError* exception.\n          1. Set _result_ to the string-concatenation of _result_ and _separator_.\n      "
+      }
+     ],
+     "notes": []
+    },
+    {
+     "tag": "emu-reading",
+     "attrs": {
+      "clause": "sec-joinindexedproperties",
+      "step": "4.d.iii",
+      "hash": "290b82cca70fc9351123ab12a4760382f8e2b8d9b98d93db8d3e1e4539a62769"
+     },
+     "alts": [
+      {
+       "readings": [
+        "proposed"
+       ],
+       "kind": "alg",
+       "text": "\n        1. If StringTooLarge(the length of _result_ + the length of _elementString_) is *true*, throw a *RangeError* exception.\n        1. Set _result_ to the string-concatenation of _result_ and _elementString_.\n      "
+      }
+     ],
      "notes": []
     }
    ],
    "notes": [
-    "§12.9.3 defines |DecimalIntegerLiteral| as \"|DecimalDigit|\", \"|NonZeroDigit| |NumericLiteralSeparator|? |DecimalDigits|[+Sep]\" and \"|NonOctalDecimalIntegerLiteral|\", and has no production <emu-grammar>DecimalIntegerLiteral :: `0`</emu-grammar>; §12.9.3.2 MV still has the row \"The MV of <emu-grammar>DecimalIntegerLiteral :: `0`</emu-grammar> is 0.\" The row names no production of the grammar, so it is never applied: the MV of the literal `0` is that of <emu-grammar>DecimalIntegerLiteral :: DecimalDigit</emu-grammar>, the MV of its |DecimalDigit|, which is 0. Both readings agree. The proposed text: delete the row (docs/spec-issues/52-mv-decimalintegerliteral-zero.md)."
+    "§6.1.4 defines the String type as sequences of up to 2<sup>53</sup> - 1 16-bit elements, yet String.prototype.repeat (`\"ab\".repeat(2 ** 52)`), String.prototype.concat, `+`, and JoinIndexedProperties have no `> 2^53 - 1` length guard before forming their result. SpecTec checks StringTooLarge (`Host.ValueLaws.stringTooLarge`, answering *true* past 2<sup>28</sup> and therefore past 2<sup>53</sup> - 1 in Engine) and throws a *RangeError* (docs/spec-issues/53-string-length-overflow.md)."
+   ]
+  },
+  "MakeDayFiniteTimeValue": {
+   "items": [],
+   "notes": [
+    "§21.4.1.1 defines a finite time value first as an integral Number and then states a ±8.64 × 10<sup>15</sup> ms range. On `Date.UTC(275761, 0, -256)`, 1 January 275761 exceeds 8.64 × 10<sup>15</sup> ms while the resulting date is in range; SpecTec (@sec-makeday and @sort-time-value) bakes in reading \"finite time value\" as any finite integral Number, matching V8, SpiderMonkey and JavaScriptCore (docs/spec-issues/10-utc-large-local-time.md)."
+   ]
+  },
+  "PropNameCoverInitializedName": {
+   "items": [],
+   "notes": [
+    "ObjectLiteral's duplicate-`__proto__` early-error rule calls PropertyNameList -> PropName on every PropertyDefinition, including CoverInitializedName (`({a = 1})`), which has no PropName row in §8.6.5. SpecTec bakes in @row-propname-coverinitializedname, @formal-protopropertycount, and bottom-up child early-error short-circuiting so evaluation never stops with sortError (docs/spec-issues/29-propname-coverinitializedname.md)."
+   ]
+  },
+  "OrdinarySetReceiverHasProperty": {
+   "items": [],
+   "notes": [
+    "Step 2.d.i's Assert follows `_receiver_.[[GetOwnProperty]](_propertyKey_)` returning *undefined*, which fails both when a Proxy receiver's trap hides a configurable target property and when an ordinary `_receiver_` inherits `_propertyKey_` from its prototype. SpecTec silences step 2.d.i via `assert pass` in S10.spectec:190 (docs/spec-issues/38-ordinaryset-receiver-has-property.md)."
+   ]
+  },
+  "MustCoverEarlyErrorOrder": {
+   "items": [],
+   "notes": [
+    "When a cover fails its \"must cover\" rule (`([...x = []]) => {}`, `async (...x = []) => {}`), unordered sibling and ancestor early-error rules still ask for \"the |n| that is covered by _p_\" — a Parse Node that does not exist. SpecTec (@formal-earlyerrorsof and LinEarly.linOwn) short-circuits children before parents and runs `must_cover` rules before other rules at each node (docs/spec-issues/39-must-cover-other-rules.md)."
+   ]
+  },
+  "RegExpUnicodeEscapeLookahead": {
+   "items": [],
+   "notes": [
+    "In §22.2.1's formal grammar, RegExpUnicodeEscapeSequence[+UnicodeMode] has both `u HexLeadSurrogate \\u HexTrailSurrogate` and unguarded `u HexLeadSurrogate` alongside `u HexTrailSurrogate`, leaving `/\\uD800\\uDC00+/u`, `/[\\uD800\\uDC00]/u` and `/(?<\\uD835\\uDC9C>a)/` context-free ambiguous. SpecTec attaches a 16-prefix `[lookahead not_in { \"\\uDC\", … }]` override in grammar-meta.txt and 04-grammar-regexp.spectec so greedy surrogate pairing is unambiguous and ParseLaws.complete holds (docs/spec-issues/55-regexp-unicode-escape-lookahead.md)."
+   ]
+  },
+  "PostASILexicalGoal": {
+   "items": [],
+   "notes": [
+    "Before ASI inserts `;` after `let a` or `do {} while (false)`, no |RegularExpressionLiteral| is syntactically permitted, so literal §12 scans `/` on the next line as `DivPunctuator` and never re-lexes it after inserting `;` — rejecting `let a\\n/x/.test(\"x\")`! §12 also omits initial lexical goals for non-Script/Module ParseText calls. SpecTec (GoalsAt and NextASI in 04-derives.spectec) probes offending tokens under InputElementDiv and re-scans post-ASI tokens under their post-`;` syntactic context, using InputElementHashbangOrRegExp only at index 0 of |Script| or |Module| (docs/spec-issues/56-post-asi-lexical-goal.md)."
+   ]
+  },
+  "ForLexicalHeaderASI": {
+   "items": [],
+   "notes": [
+    "In `ForStatement : for ( LexicalDeclaration Expression? ; Expression? ) Statement`, the first header `;` belongs to the child |LexicalDeclaration| rather than |ForStatement|; §5.1.5's declarative ASI also leaves `a = b\\n+c` ambiguous; and §5.1.6.7 leaves `[no LineTerminator here]` inside lookahead sets undefined. SpecTec (04-derives.spectec) bans virtual `;` at the end of a `for`-header LexicalDeclaration (`ForHeadersExplicit`), formalizes left-to-right maximal viable prefix ASI (`ValidASI`), and adds `LookItem.noLT` (docs/spec-issues/57-asi-for-lexical-header.md)."
+   ]
+  },
+  "CoverMatchedVirtualSemis": {
+   "items": [],
+   "notes": [
+    "§5.1.5 and §12.10 define ASI only for |Script| and |Module|, without stating that virtual semicolons inserted inside a cover _p_ (such as `(function () { let a\\n return 1 })()`) survive when _p_ is reparsed as _n_. SpecTec's GrammarCtx.CoverIs (06-node-rel.spectec) and Ecma.reparse (Ops/Parse.lean, Relabel.lean) preserve virtual semicolons inside reparsed covers (docs/spec-issues/58-cover-reparse-virtual-semicolons.md)."
+   ]
+  },
+  "RegExpExecEndOfString": {
+   "items": [],
+   "notes": [
+    "Step 13.a exits only when `_lastIndex_ > _length_`, so at `_lastIndex_ = _length_` (reached on `\"\"`, `/$/`, and the exhaustion step of every `/g` match) step 13.b asks for non-existent `element _lastIndex_ of _string_` in both BMP and Unicode modes. SpecTec's `@ph-input-index-of` (Helpers.spectec:78-89) returns `$ListLen(_input_)` when `_lastIndex_ == _length_` (docs/spec-issues/59-regexp-exec-end-of-string.md)."
+   ]
+  },
+  "AnnexBFunctionEvalEmpty": {
+   "items": [],
+   "notes": [
+    "All three Annex B.3.2 replacement algorithms (`FunctionDeclarationInstantiation`, `GlobalDeclarationInstantiation`, `EvalDeclarationInstantiation`) run in place of |FunctionDeclaration| Evaluation and end with `Return ~unused~` instead of `Return ~empty~`, which would leak `~unused~` out of `eval(\"{ function f() {} }\")` and overwrite prior statement values. SpecTec (S15.spectec:831-837) discards the closure's normal `~unused~` result and returns `~empty~` (docs/spec-issues/60-annexb-function-eval-empty.md)."
+   ]
+  },
+  "AnnexBQuantifiableAssertion": {
+   "items": [],
+   "notes": [
+    "Substituting |QuantifiableAssertion| for |Atom| in `Term :: Atom Quantifier` calls 2-argument `CompileAtom(_regexpRecord_, _direction_)`, which has no row for |QuantifiableAssertion| (whose semantics in §B.1.2.6 is 1-argument `CompileAssertion(_regexpRecord_)`). SpecTec adds `@row-compilesubpattern-quantifiableassertion-quantifier` in Helpers.spectec calling 1-argument `CompileAssertion` (docs/spec-issues/61-annexb-quantifiable-assertion.md)."
+   ]
+  },
+  "AnnexBCapturingParensAssert": {
+   "items": [],
+   "notes": [
+    "§B.1.2.2 extends step 2 of CountLeftCapturingParensWithin to count `ExtendedAtom` groups, but leaves step 1 asserting `#sec-patterns`, which fails on every quantified §B.1.2 `ExtendedAtom` or `QuantifiableAssertion` (`#sec-regular-expressions-patterns`). SpecTec includes all 36 Annex B RegExp productions in `clause_prods @sec-patterns` (00-decls.spectec) and dispatches ParsePattern and CompileToCharSet under §B.1.2 (docs/spec-issues/62-annexb-capturing-parens-assert.md)."
+   ]
+  },
+  "AnnexBReplacingAndB33": {
+   "items": [],
+   "notes": [
+    "§B.3.2 tests \"Early Errors for _func_\" on a Function Object `_func_` and \"_code_ Contains _x_\" on a Parse Node `_x_`; §B.3.3 speaks of a \"synthetic |BlockStatement|\" with no AST or SDO rules; and §B.1.1 extends MultiLineComment with optional `HTMLCloseComment?`, making `/*a\\nb*/` ambiguous. SpecTec reparses spliced `\"var \" + F + \";\"` on the root source, widens Contains to Parse Node identity, splices `{` `}` for B.3.3 via `$CoveredBy(|IfStatement|, node)` (including in `LinEarly.linTree`), and existentially quantifies trivia trees (docs/spec-issues/63-annexb-replacing-and-b33.md)."
+   ]
+  },
+  "SupplementalCoveredBy": {
+   "items": [],
+   "notes": [
+    "CallMemberExpression and AwaitExpression use \"covered by\" with no \"must cover\" rule anywhere in ECMA-262, and Keyed/IteratorDestructuringAssignmentEvaluation ask for the |AssignmentPattern| covered by |DestructuringAssignmentTarget| whereas §13.15.5 puts the \"must cover\" rule on its child |LeftHandSideExpression|. SpecTec's `$CoveredBy` (`Ecma.reparse` in Ops/Parse.lean) reparses on demand whenever `(n, k)` was not cached by `must_cover` (docs/spec-issues/64-supplemental-covered-by.md)."
+   ]
+  },
+  "ToISOStringYearForm": {
+   "items": [],
+   "notes": [
+    "§21.4.1.32 permits both 4-digit `YYYY` and expanded `+00YYYY` for years in `0..9999`, whereas test262 and all engines require 4-digit `YYYY` for `0..9999`. SpecTec adds `$ExpandedYearForm` in S21.spectec and binds it to `false` in Engine/Host/Core.lean (docs/spec-issues/65-toisostring-year-form.md)."
+   ]
+  },
+  "ModuleDiamondCircularityAsserts": {
+   "items": [],
+   "notes": [
+    "Both algorithms pass a single mutable List (`_exportStarSet_` / `_resolveSet_`) across sibling `export *` branches without popping or copying, so any cycle-free diamond `export *` DAG (`a -> {b, c} -> d`) falsifies both circularity Asserts. SpecTec silences both via `assert pass` in S16.spectec:528, 563 (docs/spec-issues/66-module-diamond-circularity-asserts.md)."
+   ]
+  },
+  "MemoryModelRMWCycleAndRbf": {
+   "items": [],
+   "notes": [
+    "Unequal overlapping RMWs (`[0,2)` and `[0,4)`) are not ordered by §29.6.5 synchronizes-with (which requires equal ranges), allowing a 2-cycle in reads-bytes-from where ValueOfReadEvent ↔ ComposeWriteEventBytes diverges infinitely; §29.7.5 also leaves reads-bytes-from unquantified (since PR #3321), and §29.5.3 HostEventSet includes Synchronize events against §29.6.4. SpecTec (07-memory-model.spectec) defines ValueOf/Compose as an inductive least fixpoint, existentially quantifies `rbf`, converts Tear Free Reads' Assert to a conjunct, and defines HostSync over `inHost` (docs/spec-issues/67-memory-model-rmw-cycle.md)."
+   ]
+  },
+  "WeakRefAllCellsAndSuspendWaiter": {
+   "items": [],
+   "notes": [
+    "SpecTec bakes in four prose/signature fixes: Cell.Emptied (25-host-laws-changes.spectec) empties *all* matching FinalizationRegistry cells rather than step 1.b's single `_cell_` per registry; $SuspendAgentUntil matches NotifyWaiter's Waiter Record parameter rather than `_thisAgent_` (#3328); $CanonicalPropertyValue selects UCD PropertyValueAliases.txt field 3 instead of a nonexistent \"Canonical property value\" column; and 00-decls.spectec declares `super [#\"Module Record\"]` on `#\"Synthetic Module Record\"` and models Private Name's `[[Description]]` as a Record field (docs/spec-issues/68-weakref-cells-and-unicode-sorts.md)."
    ]
   }
  }

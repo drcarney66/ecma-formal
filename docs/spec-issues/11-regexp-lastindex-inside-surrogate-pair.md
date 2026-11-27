@@ -5,10 +5,14 @@
   GetMatchIndexPair (`#sec-getmatchindexpair`), step 1).
 - **Kind:** a result that every engine tried contradicts (and on which they disagree), and, for an empty match, an
   ill-formed Match Record and a failing Assert.
-- **Model erratum:** `GetMatchStringStartAfterEnd`, default reading literal; its readings: literal, proposed (the
-  proposed reading moves _lastIndex_ back to the start of the code point, as under Proposed wording); the literal
-  reading stops at GetMatchString step 1 under RegExpBuiltinExec. The model reads step 13.b's character as the code
-  point that contains the code unit at _lastIndex_.
+- **Model erratum:** `GetMatchStringStartAfterEnd`, baked-in SpecTec reading literal on `GetMatchString` step 1's
+  `Assert:`, paired with a non-literal reading baked into `@ph-input-index-of` (`spec/spectec/clauses/Helpers.spectec`)
+  for `RegExpBuiltinExec` step 13.b: `@ph-input-index-of` maps a trailing-surrogate `_lastIndex_` backward to the code-point
+  index of the containing surrogate pair (and returns `$ListLen(_input_)` at `_lastIndex_ == _length_`, see
+  [59](59-regexp-exec-end-of-string.md)). Because `_lastIndex_` itself is not moved back, an empty match (`/(?:)/gu`)
+  stops at `GetMatchString` step 1, while a non-empty match (`/./gu` at `lastIndex = 1` on `"\u{1F600}x"`) returns the
+  lone trailing surrogate `"\uDE00"` at `index: 1`. The proposed reading moves `_lastIndex_` back to the start of the
+  code point as well.
 - **Upstream:** Checked 2026-11-19: issue #128 (open, 2015-10), "Unicode RegExp with index points trail surrogate in
   surrogate pair is not covered in the spec", and issue #2511 (open, 2021-09), "Underspecified behavior of global
   unicode regular expressions with lastIndex inside a surrogate pair", ask what the index of step 13.b means inside a
@@ -83,9 +87,9 @@ print("indices[0] " + JSON.stringify(md.indices[0]));
 V8 and SpiderMonkey start the match, and report it, at the start of the code point that contains _lastIndex_ (index
 0). JavaScriptCore does not match the code point that begins before _lastIndex_: its non-empty match is the next code
 point (`x`, at index 2), and its empty match lies at index 1, between the two code units of the pair, a position that
-the code-point _input_ does not have. No engine produces the literal result. The model's literal reading stops at
-GetMatchString step 1 (`stop: erratum GetMatchStringStartAfterEnd sec-getmatchstring#0 1`), and a run that stops
-reports only the stop; under the proposed reading (`--erratum GetMatchStringStartAfterEnd=proposed`) it prints V8's
+the code-point _input_ does not have. No engine produces the literal result. SpecTec stops at
+GetMatchString step 1 (`stop: assertFailed sec-getmatchstring#0 1`) on the empty-match case, and a run that stops
+reports only the stop; under the proposed reading below it prints V8's
 and SpiderMonkey's lines.
 
 ## Proposed wording

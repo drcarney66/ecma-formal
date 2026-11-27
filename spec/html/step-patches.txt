@@ -6842,10 +6842,9 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 |     1. Set _parseResult_ to ParseText(_patternText_, |Pattern[~UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups]|).
 @@end
 
-@@patch alg @sec-parsetext root:1..3
+@@patch alg @sec-parsetext root:1..2
 @@spectec
 |   return @formal-parsetextin(sourceText, goalSymbol, false, false, false)
-|   return $""()
 @@html
 | 1. Attempt to <emu-xref href="#sec-parsing">parse</emu-xref> _sourceText_ using _goalSymbol_ as the goal symbol, and analyse the parse result for any early error conditions. Parsing and early error detection may be interleaved in an implementation-defined manner.
 | 1. NOTE: When _goalSymbol_ is a nonterminal of the syntactic grammar, parsing includes conversion of _sourceText_ from code points to a stream of input elements as described in <emu-xref href="#sec-syntactic-grammar"></emu-xref>.
@@ -12598,11 +12597,25 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Let _lhs_ be ? Evaluation of |LeftHandSideExpression|.
 @@end
 
+@@patch row @sec-postfix-decrement-operator-runtime-semantics-evaluation root/3:else:1..2
+@@spectec
+|       let newValue = ? @sec-numeric-types-bigint-subtract(oldValue, num_z(1))
+@@html
+|   1. Let _newValue_ be BigInt::subtract(_oldValue_, *1*<sub>ℤ</sub>).
+@@end
+
 @@patch row @sec-postfix-increment-operator-runtime-semantics-evaluation root:0..1
 @@spectec
 |     let lhs = ? sdo Evaluation(child 5 |LeftHandSideExpression|)
 @@html
 | 1. Let _lhs_ be ? Evaluation of |LeftHandSideExpression|.
+@@end
+
+@@patch row @sec-postfix-increment-operator-runtime-semantics-evaluation root/3:else:1..2
+@@spectec
+|       let newValue = ? @sec-numeric-types-bigint-add(oldValue, num_z(1))
+@@html
+|   1. Let _newValue_ be BigInt::add(_oldValue_, *1*<sub>ℤ</sub>).
 @@end
 
 @@patch row @sec-prefix-decrement-operator-runtime-semantics-evaluation root:0..1
@@ -12612,11 +12625,25 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Let _expr_ be ? Evaluation of |UnaryExpression|.
 @@end
 
+@@patch row @sec-prefix-decrement-operator-runtime-semantics-evaluation root/3:else:1..2
+@@spectec
+|       let newValue = ? @sec-numeric-types-bigint-subtract(oldValue, num_z(1))
+@@html
+|   1. Let _newValue_ be BigInt::subtract(_oldValue_, *1*<sub>ℤ</sub>).
+@@end
+
 @@patch row @sec-prefix-increment-operator-runtime-semantics-evaluation root:0..1
 @@spectec
 |     let expr = ? sdo Evaluation(child 5 |UnaryExpression|)
 @@html
 | 1. Let _expr_ be ? Evaluation of |UnaryExpression|.
+@@end
+
+@@patch row @sec-prefix-increment-operator-runtime-semantics-evaluation root/3:else:1..2
+@@spectec
+|       let newValue = ? @sec-numeric-types-bigint-add(oldValue, num_z(1))
+@@html
+|   1. Let _newValue_ be BigInt::add(_oldValue_, *1*<sub>ℤ</sub>).
 @@end
 
 @@patch row @sec-property-accessors-runtime-semantics-evaluation root:0..1

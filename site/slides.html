@@ -61,7 +61,7 @@
         <path d="M396,222 C344,292 278,292 228,226" fill="none" stroke="var(--quote)" stroke-width="3.2" stroke-dasharray="7 4" marker-end="url(#arr-bij)"/>
         <rect x="218" y="276" width="184" height="46" rx="8" fill="var(--quote-bg)" stroke="var(--quote)" stroke-width="1.8"/>
         <text x="310" y="295" text-anchor="middle" class="p-bij-svg">HTML bijection</text>
-        <text x="310" y="313" text-anchor="middle" class="p-muted-svg">0-diff splice to spec.html</text>
+        <text x="310" y="313" text-anchor="middle" class="p-muted-svg">0-diff splice (+ spec/html/)</text>
 
         <!-- SpecTec -->
         <rect class="dg-box lean" x="400" y="56" width="246" height="230" rx="12" stroke-width="2.5"/>
@@ -553,14 +553,14 @@
           <strong>Failing <code>Assert:</code>s on valid programs</strong>
           <ul>
             <li>Every <code>await</code> resumes <code>AsyncBlockStart</code> with <code>~empty~</code>, failing its <code>~unused~</code> <code>Assert:</code></li>
-            <li><code>/\p{Hex}/u</code> and <code>new Function("o", "return o.#f")</code> trip <code>Assert:</code>s without early errors</li>
+            <li><code>/\p{Hex}/u</code>, <code>new Date(0).setHours(1e21)</code> &amp; diamond <code>export *</code> DAGs trip literal <code>Assert:</code>s</li>
           </ul>
         </li>
         <li class="reveal-item" data-reveal="3">
           <strong>Missing grammar cases, type errors &amp; §29 defects</strong>
           <ul>
-            <li>Cover-grammar gaps break <code>async function f(x = await 1) {}</code> and <code>return (f(x))</code> tail calls</li>
-            <li><code>"".split("")</code> builds an Array of code units, not Strings; §29 <code>Races</code> &amp; block-aliasing bugs</li>
+            <li>Post-ASI <code>/re/</code> lexing, <code>new Function("o", "return o.#f")</code> &amp; <code>return (f(x))</code> cover tail calls</li>
+            <li><code>"ab".split("")</code> builds code units, not Strings; §29 RMW cycles, <code>Races</code> &amp; block-aliasing bugs</li>
           </ul>
         </li>
         <li class="reveal-item" data-reveal="4">

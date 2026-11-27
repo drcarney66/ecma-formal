@@ -5,9 +5,10 @@
   ExtendedAtom productions of §B.1.2 (`#sec-regular-expressions-patterns`); §B.1.2.7 Runtime Semantics: CompileAtom
   (`#sec-compileatom-annexb`).
 - **Kind:** missing rule (early errors that the main grammar has and the Annex B grammar loses).
-- **Model erratum:** `AnnexBModifierEarlyErrors`, default reading test262; its readings: literal, test262, proposed.
-  The test262 and proposed readings apply §22.2.1.1's modifier rules to the ExtendedAtom productions too. The model
-  parses patterns with the main grammar only, so its runs below are the same under every reading.
+- **Model erratum:** `AnnexBModifierEarlyErrors`, baked-in SpecTec reading test262 (`spec/spectec/08-early-errors.spectec`);
+  its readings: literal, test262, proposed. The test262 and proposed readings apply §22.2.1.1's five modifier rules to
+  the ExtendedAtom productions too (without which `/(?i-i:a)/` on a `--web-browser` host also reaches `UpdateModifiers`
+  step 1's disjointness `Assert:`).
 - **Upstream:** Checked 2026-11-19: none found (searched for "RegularExpressionModifiers" and for modifiers with
   "Annex B"). The modifiers came with PR #3221 (merged 2025-01, commit f55b18095), "Normative: Add RegExp Modifiers",
   which added the productions to both grammars and their early errors to §22.2.1.1 only.

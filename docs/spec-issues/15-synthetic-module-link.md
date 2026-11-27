@@ -71,9 +71,9 @@ print("probe sees " + JSON.stringify(readJ()));
 | formal model (literal reading) | `main sees {"a":1}`, `probe sees undefined`, `after other: {"a":1}` |
 | formal model (proposed reading) | `main sees {"a":1}`, `probe sees {"a":1}`, `after other: {"a":1}` |
 
-Without `--enable-import-attributes`, the SpiderMonkey 140 shell rejects the import attribute (a SyntaxError). The
-model's rows are `ecma-run --module --module-dir examples/15-synthetic-module-link/
-examples/15-synthetic-module-link/main.mjs`, with `--erratum SyntheticModuleLinkResets=proposed` for the second.
+Without `--enable-import-attributes`, the SpiderMonkey 140 shell rejects the import attribute (a SyntaxError). SpecTec
+bakes in the literal reading (`ecma-run --module --module-dir examples/15-synthetic-module-link/
+examples/15-synthetic-module-link/main.mjs`), reproducing the `probe sees undefined` reset before `other.mjs` re-evaluates `j.json`.
 
 ## Proposed wording
 

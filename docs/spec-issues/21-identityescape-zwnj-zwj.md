@@ -4,8 +4,8 @@
   (`#sec-names-and-keywords`, UnicodeIDContinue), reached from §22.2.3.4 ParsePattern (`#sec-parsepattern`), step 4.a.
 - **Kind:** contradiction (an unrecorded normative change: a change of the Unicode Standard turned valid patterns into
   SyntaxErrors).
-- **Model erratum:** `IdentityEscapeJoinControls`, default reading test262 (`kind="proposal"`); its readings: literal,
-  test262, proposed. The test262 and proposed reading shares the proposed production.
+- **Model erratum:** `IdentityEscapeJoinControls`, baked-in SpecTec reading proposed (`kind="proposal"`, layer `parser`,
+  `spec/spectec/04-grammar-regexp.spectec`); its readings: literal, proposed.
 - **Upstream:** Checked 2026-11-19: none found (searched for "IdentityEscape"). Issue #3073 (closed, 2024-02),
   "[Informative] Observable changes because of Unicode 15.1", and PR #3074 (merged 2024-02, commit 467819a42),
   "Editorial: Remove special-casing of U+200C and U+200D", concern the same two code points; the PR removed
@@ -72,11 +72,11 @@ X)` and the same with the `u` flag, for X = U+200C, U+200D, their neighbours U+2
 | literal text, §B.1.2 | valid | valid | valid | `SyntaxError` |
 | V8, SpiderMonkey | valid | valid | valid | `SyntaxError` |
 | JavaScriptCore | valid | valid | valid | valid, but `SyntaxError` for `a` |
-| formal model (test262 reading, main grammar) | valid | valid | `SyntaxError` | `SyntaxError` |
+| formal model (proposed reading, main grammar) | valid | valid | `SyntaxError` | `SyntaxError` |
 | formal model (literal reading, main grammar) | `SyntaxError` | valid | `SyntaxError` | `SyntaxError` |
 
 The engines implement §B.1.2, under which the escapes are valid anyway: their output shows that none rejects them, not
-which reading of the main grammar they take. The model implements the main grammar only. JavaScriptCore's acceptance
+which reading of the main grammar they take. The model's default host runs without §B.1.2 (`--web-browser` enables §B.1.2). JavaScriptCore's acceptance
 of non-ASCII identity escapes with the `u` flag is a separate deviation: test262's
 `built-ins/RegExp/unicode_restricted_identity_escape*.js` check ASCII characters only.
 

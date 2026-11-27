@@ -42,7 +42,6 @@ NO_BREAKPOINT: dict[str, str] = {
 # The examples whose breakpoint is another step the Location line names, the first not reached.
 BREAKPOINT: dict[str, dict] = {
     "13-promise-job-abrupt-completion": {"alg": "sec-newpromisereactionjob", "path": "1.i"},
-    "47-promise-job-null-realm-code": {"alg": "sec-newpromisereactionjob", "path": "1.i"},
 }
 
 # The examples the Worker build cannot run: id -> a one-line reason.

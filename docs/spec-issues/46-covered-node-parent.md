@@ -75,12 +75,11 @@ for (var [name, fn] of [["plain", plain], ["paren", paren]]) {
 | formal model, test262 reading (the default) | no result in 120 s | no result in 120 s |
 | formal model, literal reading | `stop` (see below) | `stop` |
 
-JavaScriptCore is the only engine of the three with proper tail calls, and it treats both as tail calls. The model,
-under its default reading, does not finish 100000 calls within RESULTS.md's limit of 120 s, so its run is not a
-witness here; with 200 in place of 100000 it prints `plain: done` and `paren: done`. Under
-`--erratum CoveredNodeParent=literal` the model stops at the early-error rule of `PrimaryExpression :
-CoverParenthesizedExpressionAndArrowParameterList` (`stop: residue sec-grouping-operator-static-semantics-early-errors#0`),
-before running anything: it does not give the literal text's answer for any parenthesized expression.
+JavaScriptCore is the only engine of the three with proper tail calls, and it treats both as tail calls. SpecTec bakes in
+the test262 reading (`State.covers` in `lean/Ecma/Ops/Parse.lean` and `Model.ParentLaws` in
+`spec/spectec/prose/05-model-laws.spectec` splice each covered node's parent to the covering node's parent); it does not
+finish 100000 calls within RESULTS.md's 120 s limit, while with 200 calls (`tests/run/erratum_covered_node_parent.js`) it
+succeeds in constant stack space.
 
 ## Proposed wording
 

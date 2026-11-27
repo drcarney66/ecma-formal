@@ -445,6 +445,7 @@ const KNOWN_IDS: &[(&str, Kind, &str)] = &[
     ("ntAsyncConciseBody", Kind::Nt, "AsyncConciseBody"),
     ("ntCoverCallExpressionAndAsyncArrowHead", Kind::Nt, "CoverCallExpressionAndAsyncArrowHead"),
     ("ntAsyncArrowHead", Kind::Nt, "AsyncArrowHead"),
+    ("ntIfStatement", Kind::Nt, "IfStatement"),
     // Productions
     ("prodAwaitCover", Kind::Prod, "Syntactic - UnaryExpression : [+Await] CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield]"),
 ];

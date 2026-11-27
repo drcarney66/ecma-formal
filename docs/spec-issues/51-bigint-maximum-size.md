@@ -6,11 +6,11 @@
   §6.1.6.2.8 BigInt::subtract (`#sec-numeric-types-bigint-subtract`), step 1; §6.1.6.2.9 BigInt::leftShift
   (`#sec-numeric-types-bigint-leftShift`), step 2; §21.2.2.2 BigInt.asUintN (`#sec-bigint.asuintn`), step 3.
 - **Kind:** proposed normative change (not a defect: the text is consistent and gives every result).
-- **Model erratum:** `BigIntMaximumSize`, default reading proposed; its readings: literal, proposed. The proposed
-  reading asks the host, before the result is formed, whether it would exceed the implementation's maximum (the
-  host primitive BigIntTooLarge, `spec/formal/numbers.emu`; the model's host answers *true* past 2<sup>30</sup>
-  bits, covering `exponentiate`, `leftShift`, `multiply`, `add`, `subtract`, and `asUintN`) and throws a *RangeError*
-  if so; the literal reading forms the result whatever its size.
+- **Model erratum:** `BigIntMaximumSize`, baked-in SpecTec reading proposed (`$BigIntTooLarge` in
+  `spec/spectec/clauses/S06.spectec` and `S21.spectec`); its readings: literal, proposed. The proposed
+  reading asks the host before the result is formed whether it would exceed the implementation's maximum (the model's
+  host answers *true* past 2<sup>30</sup> bits, covering `exponentiate`, `leftShift`, `multiply`, `add`, `subtract`, and
+  `asUintN`) and throws a *RangeError* if so; the literal reading forms the result whatever its size.
 - **Upstream:** Checked 2026-11-19: none found that proposes this (searched for BigInt with "maximum size" and with
   "size limit"). Related: issue #1391 (open, 2019-01), "Extending defining out-of-memory beyond ArrayBuffer", asks
   whether BigInt will have a defined out-of-memory error as ArrayBuffer has; issue #4063 (closed, 2026-10, as not
@@ -62,7 +62,8 @@ The proposed wording below does not settle every consequence. BigInt::multiply, 
 BigInt::leftShift return "a BigInt" and would return a completion record (their headers and their rows in §6.1.6's
 Numeric Type Operations table); ApplyStringOrNumericBinaryOperator (§13.15.3) calls them in its last step, "Return
 _operation_(_leftNumber_, _rightNumber_)", which would take `?`; BigInt::signedRightShift calls
-BigInt::leftShift(_x_, -_y_), which shifts right and cannot exceed the maximum, so it would take `!`; and the
+BigInt::leftShift(_x_, -_y_), which shifts left when _y_ is negative (`2n >> -(2n ** 40n)`) and therefore also takes `?`,
+as do the four `UpdateExpression` (`++`/`--`) evaluation rules calling BigInt::add and BigInt::subtract; and the
 note of BigInt::multiply would end "unless it exceeds the implementation's maximum BigInt size". Under `BigIntMaximumSize`,
 `BigInt.asUintN`, `BigInt::add`, and `BigInt::subtract` are covered alongside `exponentiate`, `leftShift`, and
 `multiply`.

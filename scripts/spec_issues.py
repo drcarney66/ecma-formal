@@ -4,8 +4,8 @@
     python3 scripts/spec_issues.py check [-v] [NN...]   # the write-ups' form and every quotation of the text
 
 Each write-up is read for its number and title (the first line, `# NN. Title`), its header items (`- **Location:**`,
-`- **Kind:**`, `- **Model erratum:**`, …), and its sections. Its errata are the rows of spec/formal/errata.txt
-whose last column names it; an erratum the editors fixed is named by docs/spec-issues/README.md's "Fixed upstream".
+`- **Kind:**`, `- **Model erratum:**`, …), and its sections. Its errata are the rows of `spec/DECISIONS.md` §1
+whose last column names it.
 
 A quotation of the specification is a block quotation (`> …`). Each is checked against the pinned spec.html
 (scripts/spec_text.py), as the laws' quotations are (scripts/law_quotes.py `norm`: tags, entities, ecmarkdown's
@@ -87,22 +87,11 @@ def header_items(text: str) -> dict[str, str]:
     return out
 
 
-def fixed_upstream_names() -> dict[str, list[str]]:
-    """README.md's "Fixed upstream": the write-up's number → the errata the editors' fix retired."""
-    t = (DIR / "README.md").read_text()
-    m = re.search(r"(?ms)^## Fixed upstream\n(.*?)(?=^## |\Z)", t)
-    out: dict[str, list[str]] = {}
-    for item in re.findall(r"(?ms)^- \[(\d+)\]\([^)]*\): (.*?), by\s", m.group(1) if m else ""):
-        out[item[0]] = re.split(r",? and |, ", re.sub(r"\s+", " ", item[1]).strip())
-    return out
-
-
 def issues() -> list[Issue]:
     rows: dict[str, list[str]] = {}
     for e in errata_page.read_errata():
         for p in e.reports:
             rows.setdefault(Path(p).name, []).append(e.name)
-    fixed = fixed_upstream_names()
     out = []
     for p in sorted(DIR.glob("[0-9][0-9]-*.md")):
         text = p.read_text()
@@ -114,7 +103,7 @@ def issues() -> list[Issue]:
             raise SystemExit(f"{p.relative_to(ROOT)}: its title's number is {m.group(1)}")
         ex = [x for x in EXAMPLES.iterdir() if x.name.startswith(p.name[:3]) and (x.suffix == ".js" or x.is_dir())]
         out.append(Issue(int(m.group(1)), p.stem, p, m.group(2).strip(), text, header_items(text),
-                         re.findall(r"(?m)^## (.*)$", text), rows.get(p.name, []), fixed.get(p.name[:2], []),
+                         re.findall(r"(?m)^## (.*)$", text), rows.get(p.name, []), [],
                          ex[0] if ex else None))
     return out
 

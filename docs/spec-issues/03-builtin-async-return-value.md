@@ -31,7 +31,7 @@ and §5.2.4.4 Implicit Normal Completion: in a built-in function, "Return _v_" r
 
 ## Problem
 
-Array.fromAsync ends with "Return _array_" (§23.1.2.2, steps 8.d.vii.2 and 9.i of its closure), a normal
+Array.fromAsync ends with "Return _A_" (§23.1.2.2, steps 3.j.ii.10.b and 3.k.ix of its async closure), a normal
 completion. Step 10.b.iii returns it unchanged, AsyncBlockStart receives a normal completion, and step 1.f resolves
 the promise with *undefined*. So every built-in async function's promise fulfils with *undefined*, whatever its
 algorithm returns. For an ECMAScript async function, `return v` evaluates to a return completion, which is why step

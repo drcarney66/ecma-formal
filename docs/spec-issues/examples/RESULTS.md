@@ -158,7 +158,7 @@ fromAsync fulfils with [1,2]
 stdout:
 
 ```
-normal: [object #20741]
+normal: [object #19271]
 fromAsync fulfils with [1,2]
 ```
 
@@ -307,104 +307,6 @@ stdout:
 
 ```
 throw: TypeError
-```
-
-## 07-typedarray-with-filter-bang.js
-
-### V8 (node)
-
-`node script-shim.cjs 07-typedarray-with-filter-bang.js`: exit status 0
-
-stdout:
-
-```
-with: TypeError
-filter: TypeError after 2 calls
-```
-
-### SpiderMonkey (js140)
-
-`js140 07-typedarray-with-filter-bang.js`: exit status 0
-
-stdout:
-
-```
-with: TypeError
-filter: TypeError after 2 calls
-```
-
-### JavaScriptCore (bun)
-
-`bun script-shim.cjs 07-typedarray-with-filter-bang.js`: exit status 0
-
-stdout:
-
-```
-with: TypeError
-filter: no exception
-```
-
-### the formal model (ecma-run)
-
-`ecma-run 07-typedarray-with-filter-bang.js`: exit status 0
-
-stdout:
-
-```
-normal: undefined
-with: TypeError
-filter: TypeError after 2 calls
-```
-
-## 08-islooselyequal-boolean-bang.js
-
-### V8 (node)
-
-`node script-shim.cjs 08-islooselyequal-boolean-bang.js`: exit status 0
-
-stdout:
-
-```
-dict == false: TypeError
-true == {valueOf throws}: RangeError
-1 == dict: TypeError
-```
-
-### SpiderMonkey (js140)
-
-`js140 08-islooselyequal-boolean-bang.js`: exit status 0
-
-stdout:
-
-```
-dict == false: TypeError
-true == {valueOf throws}: RangeError
-1 == dict: TypeError
-```
-
-### JavaScriptCore (bun)
-
-`bun script-shim.cjs 08-islooselyequal-boolean-bang.js`: exit status 0
-
-stdout:
-
-```
-dict == false: TypeError
-true == {valueOf throws}: RangeError
-1 == dict: TypeError
-```
-
-### the formal model (ecma-run)
-
-`ecma-run 08-islooselyequal-boolean-bang.js`: exit status 0
-
-stdout:
-
-```
-normal: undefined
-dict == false: TypeError
-true == {valueOf throws}: RangeError
-1 == dict: TypeError
 ```
 
 ## 09-atomics-waitasync-timeout-assert.js
@@ -611,7 +513,7 @@ f fulfilled with 2
 stdout:
 
 ```
-normal: [object #19926]
+normal: [object #18874]
 f fulfilled with 2
 ```
 
@@ -1234,66 +1136,11 @@ fromAsync fulfils with [1,2]
 stdout:
 
 ```
-normal: [object #25236]
+normal: [object #21906]
 get size
 get flags
 [object Promise]
 fromAsync fulfils with [1,2]
-```
-
-## 34-revalidate-atomic-access.js
-
-### V8 (node)
-
-`node script-shim.cjs 34-revalidate-atomic-access.js`: exit status 0
-
-stdout:
-
-```
-Atomics.store: TypeError
-Atomics.add: TypeError
-Atomics.load: TypeError
-Atomics.compareExchange: TypeError
-```
-
-### SpiderMonkey (js140)
-
-`js140 34-revalidate-atomic-access.js`: exit status 0
-
-stdout:
-
-```
-Atomics.store: RangeError
-Atomics.add: RangeError
-Atomics.load: RangeError
-Atomics.compareExchange: RangeError
-```
-
-### JavaScriptCore (bun)
-
-`bun script-shim.cjs 34-revalidate-atomic-access.js`: exit status 0
-
-stdout:
-
-```
-Atomics.store: TypeError
-Atomics.add: TypeError
-Atomics.load: TypeError
-Atomics.compareExchange: TypeError
-```
-
-### the formal model (ecma-run)
-
-`ecma-run 34-revalidate-atomic-access.js`: exit status 0
-
-stdout:
-
-```
-normal: undefined
-Atomics.store: RangeError
-Atomics.add: RangeError
-Atomics.load: RangeError
-Atomics.compareExchange: RangeError
 ```
 
 ## 35-contains-awaitexpression-cover.js
@@ -1911,53 +1758,6 @@ paren: done
 stdout:
 
 (nothing)
-
-## 47-promise-job-null-realm-code.js
-
-### V8 (node)
-
-`node script-shim.cjs 47-promise-job-null-realm-code.js`: exit status 0
-
-stdout:
-
-```
-resolve(2) called by the null-realm Job
-a later Job runs
-```
-
-### SpiderMonkey (js140)
-
-`js140 47-promise-job-null-realm-code.js`: exit status 0
-
-stdout:
-
-```
-resolve(2) called by the null-realm Job
-a later Job runs
-```
-
-### JavaScriptCore (bun)
-
-`bun script-shim.cjs 47-promise-job-null-realm-code.js`: exit status 0
-
-stdout:
-
-```
-resolve(2) called by the null-realm Job
-a later Job runs
-```
-
-### the formal model (ecma-run)
-
-`ecma-run 47-promise-job-null-realm-code.js`: exit status 0
-
-stdout:
-
-```
-normal: [object #24161]
-resolve(2) called by the null-realm Job
-a later Job runs
-```
 
 ## Tests of the model cited by the reports
 

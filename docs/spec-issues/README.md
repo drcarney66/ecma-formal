@@ -1,14 +1,16 @@
-# Defects in ECMA-262 found by a step-by-step formalization
+# Defects in ECMA-262 and non-literal SpecTec readings
 
-Reports of defects in the text of ECMA-262, for the specification's editors
-and TC39. They come from a formal model that follows the specification
-algorithm by algorithm and step by step. Each report argues from the text
-alone, gives small programs whose behaviour shows the problem, and proposes a
-change. None of them has been filed with TC39.
+Reports of specification defects, ambiguities, and proposed normative changes
+recorded when formalizing ECMA-262 in SpecTec (`spec/spectec/`), prepared for
+the specification's editors and TC39. Every place where `spec/spectec/` or
+`lean/` bakes in a choice other than a literal reading of `spec.html` is
+notated here and on the Errata page; items already fixed upstream in the pinned
+revision (`b1eaed82f`) and formalization-only representation choices have been
+omitted.
 
 - **Revision examined:** tc39/ecma262 at commit `b1eaed82f` (`main` on
-  2026-11-12, the pinned revision `external/ecma262`, and still `main` on
-  2026-11-19; the section numbers below are its own).
+  2026-11-12, the pinned revision `external/ecma262`; the section numbers below
+  are its own).
 - **Tests:** test262 at commit `2e58f87d` (2026-11-11, the pinned revision
   `external/test262`).
 - **Engines** (the "Examples" section of each report):
@@ -18,125 +20,79 @@ change. None of them has been filed with TC39.
     is oven-sh/WebKit at `4d5e75eb` (`process.versions.webkit`), `bun`.
 
   The programs are in [examples/](examples/). A `.js` file is a Script: the
-  SpiderMonkey shell runs it as one (`js140 FILE`); Node.js and Bun would run
-  it as CommonJS or as a Module, so they run a three-line shim (in RESULTS.md) that evaluates
-  it with `vm.runInThisContext`, a Script in the main realm (sloppy mode,
-  `this` the global object, Annex B). A directory is a Module graph: its
-  `main.mjs` runs as a Module (`node main.mjs`, `bun main.mjs`,
-  `js140 -m main.mjs`). The programs define `print` as `console.log` when it
-  is missing. The SpiderMonkey 140 shell needs `-P atomics_wait_async=true`
-  for 09 and `--enable-import-attributes` for 15; RESULTS.md has its runs
-  with and without them (and of 04 with and without
-  `--enable-explicit-resource-management`). Every output quoted in the reports, with exit statuses and
-  error output, is in [examples/RESULTS.md](examples/RESULTS.md), which
-  `scripts/spec_issues_run.py` writes from fresh runs of every example on the
-  three engines and the model. The engines come from the flake's `engines`
-  dev shell (`flake.nix`); from the repository root:
+  SpiderMonkey shell runs it as one (`js140 FILE`); Node.js and Bun evaluate it
+  with `vm.runInThisContext` in [examples/RESULTS.md](examples/RESULTS.md)'s
+  three-line shim (a Script in the main realm). A directory is a Module graph
+  whose `main.mjs` runs as a Module (`node main.mjs`, `bun main.mjs`,
+  `js140 -m main.mjs`).
+- **The formal model:** from the repository root, after `lake build ecma-run`,
+  `.lake/build/bin/ecma-run FILE` runs Scripts and (with `--module`) Module
+  graphs on its fixed host (`--web-browser` enables Annex B).
+- **Upstream:** each report's header has an Upstream item checked against
+  `tc39/ecma262`, recorded in [upstream.tsv](upstream.tsv)
+  (`scripts/spec_issues_upstream.py`).
 
-  ```
-  nix develop .#engines --profile ~/.local/state/ecma-formal/devshell-engines-jsc -c true
-  nix develop ~/.local/state/ecma-formal/devshell-engines-jsc -c python3 scripts/spec_issues_run.py
-  ```
+## Defects of the text (50)
 
-  (The first command makes the profile, the second reruns everything; build
-  the model first, below.)
-- **The formal model:** from the repository root, after
-  `lake build ecma-run`, `.lake/build/bin/ecma-run FILE`: the machine,
-  Scripts and (with `--module`) Module graphs, on its fixed host. It first prints the Script's
-  completion (`normal: …`); the reports omit that line. RESULTS.md's model
-  outputs were last rerun on 2026-11-19 (commit `2eaba4f`), on the pinned
-  text.
-- **Upstream:** each report's header has an Upstream item: what a check of
-  tc39/ecma262 found on 2026-11-19 (the issues and pull requests that report,
-  fix or relate to the defect, with their state on that day, and the commits
-  that changed the text). The record of that check is
-  [upstream.tsv](upstream.tsv) (`scripts/spec_issues_upstream.py`); the
-  Upstream column below gives the first of them, or the fix. Four were fixed
-  before the pinned revision; see [Fixed upstream](#fixed-upstream).
-
-## Summary
-
-| # | Clause and step | Kind | What goes wrong | test262 | Upstream |
+| # | Clause and step | Kind | What goes wrong | SpecTec reading | Upstream |
 |---|---|---|---|---|---|
-| [01](01-number-multiply-zero-sign.md) | §6.1.6.1.4 Number::multiply, step 6 | contradiction | `+0 × -5` is +0 by step 6, -0 by the clause's description (IEEE 754) | none (S11.5.1_A4_T2's description states the IEEE rule; no assertion covers the case) | PR #4072 open |
-| [02](02-gather-available-ancestors-empty-cycle-root.md) | §16.2.1.6.1.3.3 GatherAvailableAncestors, step 1.a | failing read | a module whose evaluation threw has an ~empty~ [[CycleRoot]], which the step reads | none | issue #3766 open, PR #3769 open |
-| [03](03-builtin-async-return-value.md) | §10.3.3 BuiltinCallOrConstruct, step 10.b.iii | contradiction | `Array.fromAsync` fulfils with *undefined* | fromAsync tests | PR #4074 open |
-| [04](04-execute-module-tla-dispose.md) | §16.2.1.7.3.2 ExecuteModule, step 4.b | missing step | top-level `using`/`await using` in a module with top-level await are never disposed | await-using tests | issue #4039 open, PR #4007 closed unmerged |
-| [05](05-parsetext-error-objects.md) | §11.1.6 ParseText, step 5; §22.2.3.4 ParsePattern, step 1.a | missing context | a static semantics creates objects with no realm | none (unobservable) | none found |
-| [06](06-dowait-sync-timeout.md) | §25.4.3.14 DoWait, steps 28–31 | contradiction | a timed-out `Atomics.wait` returns *"ok"*; a second wait fails an Assert | Atomics.wait tests | none found |
-| [09](09-atomics-waitasync-timeout-assert.md) | §25.4.3.15 EnqueueAtomicsWaitAsyncTimeoutJob, steps 4 and 1.b.ii | parameter type; failing Assert | HostEnqueueTimeoutJob can get a negative delay, and the Assert depends on implementation-defined choices | none | none found |
-| [10](10-utc-large-local-time.md) | §21.4.1.18 GetUTCEpochNanoseconds, step 4 (from §21.4.1.26 UTC) | failing Assert; ambiguity | `new Date(0).setHours(1e21)`; MakeDay's "finite time value" makes `Date.UTC(275761, 0, -256)` *NaN* or a date (the engines: a date) | none | PR #3464 open |
-| [11](11-regexp-lastindex-inside-surrogate-pair.md) | §22.2.7.2 RegExpBuiltinExec, steps 13.b–24; §22.2.7.6 GetMatchString, step 1 | contradicted result; failing Assert | `/./gu` with `lastIndex` inside a surrogate pair reports index 1 and a lone surrogate; `/(?:)/gu` builds a Match Record that ends before it starts | none | issue #128 open, issue #2511 open |
-| [12](12-asyncblockstart-await-result.md) | §27.10.5.2 AsyncBlockStart, steps 3–4 (with §27.10.5.3 Await, step 8) | failing Assert | every async function that awaits: Await resumes the block with ~empty~, the Assert expects ~unused~ | none (an Assert is not observable) | issue #3435 open |
-| [13](13-promise-job-abrupt-completion.md) | §9.5 Jobs; §27.5.2.1 NewPromiseReactionJob, steps 1.h.i, 1.i, 2 | contradiction | a promise Job returns a throw completion; a *null*-realm Job runs code | none | none found |
-| [14](14-nativefunction-initialname.md) | §20.2.3.5 Function.prototype.toString, step 3 | no result | no NativeFunction has the PropertyName `a b` | none | related: PR #2695 open |
-| [15](15-synthetic-module-link.md) | §16.2.1.8.4.4 Link of a Synthetic Module Record, steps 1–4 | missing step | a second Link resets a JSON module's exports, observably between two graphs | none | issue #3989 open |
-| [19](19-other-questions.md) | several | editorial / clarification | HostLoadImportedModule "each time"; ShallowestContainedJSONValue and covers; ECMA-404 surrogates; a timeout past the last time value; Execution's cell; nine grammar questions | none | none found |
-| [20](20-dynamic-function-private-identifiers.md) | §20.2.1.1.1 CreateDynamicFunction, steps 18–29 | missing step; failing Assert | `new Function("o", "return o.#f")` is not a SyntaxError; its call fails MakePrivateReference's Assert | private-identifiers-not-empty.js | none found |
-| [21](21-identityescape-zwnj-zwj.md) | §22.2.1 Patterns, IdentityEscape[~UnicodeMode] | contradiction | since Unicode 15.1 made U+200C and U+200D ID_Continue, `\` ZWNJ and `\` ZWJ are SyntaxErrors without the `u` flag (main grammar) | S7.8.5_A1.4_T2.js, S7.8.5_A2.4_T2.js | none found |
-| [23](23-races-not-both.md) | §29.8 Races, step 1.a | vacuous condition | "not the case that both A hb B and B hb A" is always true for a strict partial order, so ordered conflicting events race (likely "neither … nor"; the model reads the literal text) | none | PR #4021 closed unmerged |
-| [24](24-lone-property-gc-assert.md) | §22.2.2.9 CompileToCharSet, LoneUnicodePropertyNameOrValue, step 2 | failing Assert | every lone binary property name (`/\p{Hex}/u`) reaches UnicodeMatchPropertyValue's Assert | property-escapes/generated/ (53 binary-property files; none fails) | issue #3586 open, PR #3587 open |
-| [25](25-number-shift-result.md) | §6.1.6.1.9–11 Number::leftShift, signedRightShift, unsignedRightShift, step 4; §6.1.6.1.2 Number::bitwiseNOT, step 2 | editorial (irregular step) | the shifts and NOT name operations on Numbers the spec never defines; only the range sentence fixes the 32-bit view (`1 << 31` is -2<sup>31</sup>) | left-shift/S11.7.1_A4_T4.js (#994) | PR #2274 open, a draft |
-| [26](26-annexb-modifiers-early-errors.md) | §B.1.2.1 Early Errors (ExtendedAtom `(?` modifiers) | missing rule | under §B.1.2, `/(?ii:a)/`, `/(?-:a)/` and `/(?i-i:a)/` have no early error, since the modifier rules of §22.2.1.1 are keyed on Atom | language/literals/regexp/early-err-modifiers-*.js, built-ins/RegExp/early-err-modifiers-*.js | none found |
-| [27](27-numerictorawbytes-encoding-steps.md) | §25.1.3.17 NumericToRawBytes, steps 1.a, 2.a, 3.a, 4.d.i, 4.e.i | editorial (irregular steps) | the byte order and the NaN latitude are sentences after the step's expression; "each implementation distinguishable NaN value" against §6.1.6.1's single NaN | none (no observable difference) | issue #3567 open |
-| [28](28-tobigint-boolean-literals.md) | §7.1.15 ToBigInt, the BigInt Conversions table's Boolean row | editorial (notation) | the results are source-text literals `1n`/`0n` and the two cases one sentence, unlike every other BigInt value and step | none (no observable difference) | none found |
-| [29](29-propname-coverinitializedname.md) | §13.2.5.1 ObjectLiteral early errors (`__proto__` rule); §8.6.5 PropName | missing case; editorial (no erratum of the model) | `({a = 1});` asks the PropName of a CoverInitializedName, which has none (unobservable) | cover-initialized-name.js | none found |
-| [31](31-sort-infinite-comparator.md) | §23.1.3.30.1 SortIndexedProperties, the consistent comparator definition | undefined value | a comparator result of ±∞ has no ℝ, so none of _a_ &lt;<sub>C</sub> _b_, =<sub>C</sub>, &gt;<sub>C</sub> holds and whether the comparator is consistent is undecided | none | none found |
-| [32](32-stringvalue-reservedword.md) | §13.1.1 Identifier early errors (`IdentifierName but not ReservedWord`) | missing case | "the StringValue of any ReservedWord" applies StringValue to productions it has no row for | language/identifiers/val-*-via-escape-*.js | issue #1865 open |
-| [33](33-createintrinsics-async-argument-position.md) | §9.3.2 CreateIntrinsics, step 2 | argument position | the CreateBuiltinFunction call passes _async_ in _prefix_'s position and passes no _prefix_: literally, `Array.fromAsync` gets [[Async]] *false* | built-ins/Array/fromAsync/ | issue #3534 open, issue #4046 open |
-| [35](35-contains-awaitexpression-cover.md) | §8.5.1 Contains, step 1.a (no row for UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead) | missing case | `async function f(x = await 1) {}` has no early error: no Parse Node is an instance of AwaitExpression, so the six "Contains \|AwaitExpression\|" rules never apply | instance-await-expr-in-param.js, early-errors-expression-formals-contains-await-expr.js, await-as-param-nested-arrow-body-position.js | none found |
-| [36](36-islabelledfunction-labelleditem.md) | §14.13.2 IsLabelledFunction, steps 1–2 | notation | a Statement node is never a LabelledStatement and has no LabelledItem child (§5.1.2), so literally `if (1) l: function f() {}` is valid | language/statements/*/labelled-fn-stmt*.js (18 files) | none found |
-| [37](37-split-code-units.md) | §22.1.3.23 String.prototype.split, step 10.d | type error | with an empty separator, the List passed to CreateArrayFromList holds code units, which are not ECMAScript language values; test262 requires one-code-unit Strings | separator-empty-string-instance-is-string.js | none found |
-| [38](38-ordinaryset-receiver-has-property.md) | §10.1.9.2 OrdinarySetWithOwnDescriptor, step 2.d.i | failing Assert; editorial (no erratum of the model) | after a Proxy receiver's trap answers *undefined* for a property its target has, "_receiver_ does not currently have a property" is vacuous on the receiver's own storage and false through the Proxy | none | none found |
-| [39](39-must-cover-other-rules.md) | §5.1.5 "must cover", item 4; the ArrowFunction and AsyncArrowFunction early errors | undefined value; clarification (no erratum of the model) | when a cover does not cover its \|n\|, the other rules of the production and those above it (Contains, BoundNames, IsSimpleParameterList through the cover) read "the \|n\| that is covered by" a node that does not exist | arrow-function/dstr/*ary-ptrn-rest-{init,not-final}-*.js, async-arrow-function/dflt-params-rest.js, early-errors-arrow-formals-lineterminator.js | none found |
-| [40](40-annexb-regexp-order-group-count.md) | §B.1.2 Regular Expressions Patterns (the ordering sentence; AtomEscape's group-number condition) | ambiguity; self-reference | "each alternative is considered only if previous production alternatives do not match" has no defined meaning over §5.1's parses, and the condition counts the groups of the Pattern it is choosing | annexB/built-ins/RegExp, annexB/language/literals/regexp/legacy-octal-escape.js | PR #2445 open |
-| [41](41-annexb-html-close-comment-token.md) | §B.1.1 HTML-like Comments (InputElementHashbangOrRegExp :: HTMLCloseComment) with §5.1.3 | missing case | an HTMLCloseComment input element is neither white space nor a comment, so §5.1.3 makes it a token the syntactic grammar has no terminal for: a first line `--> a comment` is a SyntaxError | annexB/language/comments/single-line-html-close-first-line-{1,2,3}.js (test262 PR #4002) | none found |
-| [42](42-annexb-module-goal-reparse.md) | §B.1.1 HTML-like Comments (the Module condition), §17.1, with §5.1.5 | clarification | the condition names the goal symbol \|Module\|; the reparses of tokens within a Module are outside B.1.1 only through §5.1.5's word "tokens", so a rescan of a cover's text has to carry the Module context (`(a <!--b)`) | none | none found |
-| [43](43-allocatesharedarraybuffer-byte-length.md) | §25.2.2.1 AllocateSharedArrayBuffer, step 9.c | type error | a growable SharedArrayBuffer's length is stored with SetValueInBuffer on a Shared Data Block, which takes a buffer object | 19 files construct a growable SharedArrayBuffer (built-ins/SharedArrayBuffer, Atomics, staging) | PR #4023 closed unmerged |
-| [44](44-lookahead-source-tokens.md) | §5.1.6.7 Lookahead Restrictions with §12.10 ASI, rule 1 (§14.5's `let` `[` lookahead) | ambiguity | whether a lookahead reads a semicolon that §12.10 inserted: `if (false) let` LF `[a] = 0;` is valid if it does, a SyntaxError if it reads the source's tokens (the engines) | language/statements/*/let-array-with-newline.js (9 files) | none found |
-| [45](45-unregister-iterates-cells.md) | §26.2.3.3 FinalizationRegistry.prototype.unregister, step 5 | ambiguity | step 5 removes cells from the List it iterates, and For each does not say what it visits then: walked by position, the second of two cells in a row with the token stays | unregister-object-token.js, unregister-symbol-token.js | none found |
-| [46](46-covered-node-parent.md) | §5.1.5 "must cover", items 2–3; §15.10.1 IsInTailPosition, steps 2–3 | missing case | a covered node is the root of its own tree, so `return (f(n - 1));` is not in a FunctionBody and is not a tail call | language/expressions/tco-pos.js | none found |
-| [47](47-promise-job-null-realm-code.md) | §9.5.5 HostEnqueuePromiseJob, its note; §27.5.2.1 NewPromiseReactionJob, steps 1.i, 2–3 | contradiction; editorial (no erratum of the model) | a *null*-realm Job calls the derived promise's resolving functions, which are user code when a species constructor provides them; the note says it calls none | none | none found |
-| [48](48-init-overlap-equal-ranges.md) | §29.6.6 happens-before, the third condition, with §29.1's "overlapping" | missing case | an ~init~ write is ordered only before events with *overlapping* ranges, and §29.1's definition excludes equal ranges, so a 1-byte access is unordered with its block's ~init~ write | none | none found |
-| [49](49-annexb-ischaracterclass-classcontrolletter.md) | §B.1.2.3 IsCharacterClass, with §B.1.2's `[~UnicodeMode] c ClassControlLetter` and §B.1.2.1's range rules | missing case | the range rules ask IsCharacterClass of `\c1` in `/[\c1-\c5]/`, and no clause defines it for `ClassEscape :: c ClassControlLetter` | none | none found |
-| [50](50-memory-range-same-block.md) | §29.6.2 reads-bytes-from, the first condition; §29.7.2 Coherent Reads, step 1.c.ii | missing case | a memory range is a Set of byte indices with no [[Block]], so a read may read, and coherence is judged against, writes to another block at the same index; with two blocks in one agent a read returns the other block's byte | none | none found |
-| [52](52-mv-decimalintegerliteral-zero.md) | §12.9.3.2 Static Semantics: MV, the row for `` DecimalIntegerLiteral :: `0` `` | editorial (stale row) | PR #3988 made \|DecimalIntegerLiteral\|'s first alternative \|DecimalDigit\| and left the row, which names a production the grammar no longer has (nothing observable: `0` is 0 through the chain production) | none | none found |
-| [53](53-string-maximum-length.md) | §6.1.4 The String Type; §22.1.3.16 repeat, step 7; StringPaddingBuiltinsImpl, step 7; concat, step 5.b; ApplyStringOrNumericBinaryOperator, step 1.c.iii; JoinIndexedProperties, steps 4.a, 4.d.iii | missing limit | Strings can be constructed up to length 2<sup>53</sup> - 1; every engine throws a *RangeError* past its smaller implementation limit, left unspecified in the text | none | issue #4063 closed |
+| [01](01-number-multiply-zero-sign.md) | §6.1.6.1.4 Number::multiply, step 6 | contradiction | `+0 × -5` is +0 by step 6, -0 by the clause's description (IEEE 754) | `proposed` | PR #4072 open |
+| [02](02-gather-available-ancestors-empty-cycle-root.md) | §16.2.1.6.1.3.3 GatherAvailableAncestors, step 1.a | failing read | a module whose evaluation threw has an ~empty~ [[CycleRoot]], which step 1.a reads | `literal` | issue #3766 open, PR #3769 open |
+| [03](03-builtin-async-return-value.md) | §10.3.3 BuiltinCallOrConstruct, step 10.b.iii | contradiction | `Array.fromAsync` fulfils with *undefined* | `test262` | PR #4074 open |
+| [04](04-execute-module-tla-dispose.md) | §16.2.1.7.3.2 ExecuteModule, step 4.b | missing step | top-level `using`/`await using` in a module with top-level await are never disposed | `test262` | issue #4039 open |
+| [05](05-parsetext-error-objects.md) | §11.1.6 ParseText, step 5; §22.2.3.4 ParsePattern, step 1.a | missing context / sort | static semantics creates *SyntaxError* objects with no realm and tests undefined sort `error` | `proposed` | issue #3868 open |
+| [06](06-dowait-sync-timeout.md) | §25.4.3.14 DoWait, steps 28–31 | contradiction | a timed-out `Atomics.wait` returns *"ok"*; a second wait fails AddWaiter's Assert | `test262` | none found |
+| [09](09-atomics-waitasync-timeout-assert.md) | §25.4.3.15 EnqueueAtomicsWaitAsyncTimeoutJob, steps 4 and 1.b.ii | parameter type; failing Assert | HostEnqueueTimeoutJob can get a negative delay, and the Assert fails on integral clocks | `literal` (host clamps delay) | none found |
+| [10](10-utc-large-local-time.md) | §21.4.1.18 GetUTCEpochNanoseconds, step 4; §21.4.1.28 MakeDay, step 8 | failing Assert; ambiguity | `new Date(0).setHours(1e21)` fails step 4's Assert; MakeDay's "finite time value" ambiguity | `literal` / `proposed` | PR #3464 open |
+| [11](11-regexp-lastindex-inside-surrogate-pair.md) | §22.2.7.2 RegExpBuiltinExec, steps 13.b–28; §22.2.7.6 GetMatchString, step 1 | contradicted result; failing Assert | `/./gu` inside a surrogate pair reports a lone surrogate; `/(?:)/gu` fails GetMatchString's Assert | `literal` (backward 13.b map) | issue #128 open, issue #2511 open |
+| [12](12-asyncblockstart-await-result.md) | §27.10.5.2 AsyncBlockStart, steps 3–4 | failing Assert | every async function that awaits resumes with ~empty~, failing step 4's ~unused~ Assert | `test262` | issue #3435 open |
+| [13](13-promise-job-abrupt-completion.md) | §9.5 Jobs; §9.5.5 HostEnqueuePromiseJob; §27.5.2.1 NewPromiseReactionJob | contradiction | a promise Job returns a throw completion; a *null*-realm Job runs user species code | `literal` (host preps realm) | none found |
+| [14](14-nativefunction-initialname.md) | §20.2.3.5 Function.prototype.toString, step 3 | no result | no NativeFunction has the PropertyName `a b` | `literal` (empty `""` allowed) | PR #2695 open |
+| [15](15-synthetic-module-link.md) | §16.2.1.8.4.4 Link of a Synthetic Module Record, steps 1–4 | missing step | a second Link resets a JSON module's exports, observably between two graphs | `literal` | issue #3989 open |
+| [20](20-dynamic-function-private-identifiers.md) | §20.2.1.1.1 CreateDynamicFunction, steps 18–29 | missing step; failing Assert | `new Function("o", "return o.#f")` skips `AllPrivateIdentifiersValid` and fails an Assert when called | `proposed` | none found |
+| [23](23-races-not-both.md) | §29.8 Races, step 1.a | vacuous condition | "not the case that both A hb B and B hb A" is always true for a strict partial order | `literal` | PR #4021 closed unmerged |
+| [24](24-lone-property-gc-assert.md) | §22.2.2.9 CompileToCharSet, step 2 | failing Assert | every lone binary property name (`/\p{Hex}/u`) fails UnicodeMatchPropertyValue's Assert | `test262` | issue #3586 open, PR #3587 open |
+| [26](26-annexb-modifiers-early-errors.md) | §B.1.2.1 Early Errors (ExtendedAtom `(?` modifiers) | missing rule | under §B.1.2, `/(?ii:a)/`, `/(?-:a)/` and `/(?i-i:a)/` lack §22.2.1.1's early errors | `test262` | none found |
+| [29](29-propname-coverinitializedname.md) | §13.2.5.1 ObjectLiteral early errors; §8.6.5 PropName | missing case | `({a = 1});` asks the PropName of a CoverInitializedName, which has no row | `proposed` | none found |
+| [31](31-sort-infinite-comparator.md) | §23.1.3.30.1 SortIndexedProperties, consistent comparator | undefined value | ℝ(±∞) is undefined in the consistent-comparator and sort-order conditions | `test262` | none found |
+| [32](32-stringvalue-reservedword.md) | §13.1.1 Identifier early errors | missing case | "the StringValue of any ReservedWord" applies StringValue where no row exists | `test262` | issue #1865 open |
+| [33](33-createintrinsics-async-argument-position.md) | §9.3.2 CreateIntrinsics, step 2 | argument position | CreateBuiltinFunction receives `_async_` in `_prefix_`'s parameter position | `test262` | issue #3534 open, issue #4046 open |
+| [35](35-contains-awaitexpression-cover.md) | §8.5.1 Contains, step 1.a | missing case | `async function f(x = await 1) {}` has no early error through `CoverAwaitExpression...` | `test262` | none found |
+| [36](36-islabelledfunction-labelleditem.md) | §14.13.2 IsLabelledFunction, steps 1–2 | notation | a `Statement` node is never a `LabelledStatement` and has no `LabelledItem` child (§5.1.2) | `test262` | none found |
+| [37](37-split-code-units.md) | §22.1.3.23 String.prototype.split, step 10.d | type error | passes a List of code units rather than one-unit Strings to CreateArrayFromList | `test262` | none found |
+| [38](38-ordinaryset-receiver-has-property.md) | §10.1.9.2 OrdinarySetWithOwnDescriptor, step 2.d.i | failing Assert | asserts `_receiver_` lacks `_propertyKey_`, failing on hiding Proxies and inherited properties | `proposed` | none found |
+| [39](39-must-cover-other-rules.md) | §5.1.5 "must cover", item 4; §15.3.1, §15.9.1 | undefined value | when a cover fails, sibling and ancestor rules read "the \|n\| that is covered by" nothing | `test262` | none found |
+| [40](40-annexb-regexp-order-group-count.md) | §B.1.2 Regular Expressions Patterns | ambiguity; self-reference | "previous production alternatives do not match" is undefined; group count is self-referential | `test262` | PR #2445 open |
+| [41](41-annexb-html-close-comment-token.md) | §B.1.1 HTML-like Comments with §5.1.3 | missing case | a first-line `-->` (`HTMLCloseComment`) is neither white space nor a comment, becoming an invalid token | `test262` | none found |
+| [43](43-allocatesharedarraybuffer-byte-length.md) | §25.2.2.1 AllocateSharedArrayBuffer, step 9.c | type error | growable SharedArrayBuffer passes a Shared Data Block to SetValueInBuffer | `test262` | PR #4023 closed unmerged |
+| [44](44-lookahead-source-tokens.md) | §5.1.6.7 Lookahead Restrictions with §12.10 ASI | ambiguity | whether a lookahead restriction reads a semicolon §12.10 inserted (`if (false) let\n[a] = 0;`) | `test262` | none found |
+| [45](45-unregister-iterates-cells.md) | §26.2.3.3 FinalizationRegistry.prototype.unregister, step 5 | ambiguity | removes cells from `[[Cells]]` while `For each` iterates it | `test262` | none found |
+| [46](46-covered-node-parent.md) | §5.1.5 "must cover", items 2–3; §15.10.1 IsInTailPosition | missing case | a covered node roots a separate parse tree, breaking `return (f(n - 1));` tail calls | `test262` | none found |
+| [48](48-init-overlap-equal-ranges.md) | §29.6.6 happens-before, third condition | missing case | orders `~init~` writes only before *overlapping* ranges, excluding equal 1-byte ranges | `literal` | none found |
+| [49](49-annexb-ischaracterclass-classcontrolletter.md) | §B.1.2.3 IsCharacterClass | missing case | no `IsCharacterClass` row for `ClassEscape :: c ClassControlLetter` (`/[\c1-\c5]/`) | `test262` | none found |
+| [50](50-memory-range-same-block.md) | §29.6.2 reads-bytes-from; §29.7.2 Coherent Reads | missing case | memory ranges omit `[[Block]]`, allowing reads and coherence across distinct blocks | `proposed` | none found |
+| [53](53-string-length-overflow.md) | §6.1.4 The String Type; §22.1.3.18 repeat, concat, `+`, join | contradiction | `"ab".repeat(2 ** 52)` and concatenations omit a `> 2^53 - 1` *RangeError* check | `proposed` | none found |
+| [55](55-regexp-unicode-escape-lookahead.md) | §22.2.1 Patterns, `RegExpUnicodeEscapeSequence` | ambiguity | escaped surrogate pairs (`/\\uD800\\uDC00+/u`) have two context-free parses | `test262` | none found |
+| [56](56-post-asi-lexical-goal.md) | §12 Lexical Grammar; §12.10.1 ASI | contradiction | literal scanning before ASI rejects `let a\n/x/.test("x")` and omits dynamic-function lexical goals | `test262` | none found |
+| [57](57-asi-for-lexical-header.md) | §12.10.1 ASI; §14.7.4 `ForStatement`; §5.1.6.7 | missing restriction | `for (let a\n a < 1; a++)` first `;` is inside `LexicalDeclaration`; declarative vs left-to-right ASI | `test262` | none found |
+| [58](58-cover-reparse-virtual-semicolons.md) | §5.1.5 "must cover", step 2; §12.10 ASI | missing case | cover reparsing omits virtual `;` inserted inside nested function/class bodies | `test262` | none found |
+| [59](59-regexp-exec-end-of-string.md) | §22.2.7.2 RegExpBuiltinExec, step 13.b | undefined index | at `_lastIndex_ = _length_`, step 13.b asks for out-of-bounds `element _lastIndex_ of _string_` | `test262` | none found |
+| [60](60-annexb-function-eval-empty.md) | §10.2.11, §16.1.7, §19.2.1.3 Annex B.3.2 vs §15.2.6 | contradiction | B.3.2 replacement steps end with `Return ~unused~` instead of `Return ~empty~` (`eval("{ function f() {} }")`) | `test262` | none found |
+| [61](61-annexb-quantifiable-assertion.md) | §B.1.2.5 CompileSubpattern | missing SDO / arity | prose substitution calls undefined 2-arg `CompileAtom` instead of 1-arg `CompileAssertion` on `/(?=a)*/` | `test262` | none found |
+| [62](62-annexb-capturing-parens-assert.md) | §22.2.1.2 CountLeftCapturingParensWithin, step 1; §B.1.2.2 | failing Assert | step 1 asserts `#sec-patterns`, failing on every quantified §B.1.2 `ExtendedAtom` | `test262` | none found |
+| [63](63-annexb-replacing-and-b33.md) | §B.3.2.1–3, §B.3.3, §B.1.1 | type errors / ambiguity | `Early Errors for _func_` on Function Object, `Contains` on Parse Node, undefined B.3.3 synthetic block | `test262` | none found |
+| [64](64-supplemental-covered-by.md) | §13.3.6.1, §15.8.5, §13.15.5 | undefined term | `CallMemberExpression` & `AwaitExpression` lack `"must cover"`; destructuring mismatches cover node | `test262` | none found |
+| [65](65-toisostring-year-form.md) | §21.4.4.36 Date.prototype.toISOString, step 7 | underspecification | leaves 4-digit `YYYY` vs expanded `+00YYYY` unspecified for years `0..9999` | `test262` | none found |
+| [66](66-module-diamond-circularity-asserts.md) | §16.2.1.7.2.1 GetExportedNames, 3.a; §16.2.1.7.2.2 ResolveExport, 3.a.i | failing Assert | shared mutable visited List triggers circularity `Assert:`s on acyclic diamond `export *` DAGs | `test262` | none found |
+| [67](67-memory-model-rmw-cycle.md) | §29.5.4–5, §29.6.5, §29.7.5, §29.5.3 | non-termination / gap | unequal overlapping RMWs cycle infinitely in `ValueOfReadEvent`; unquantified `reads-bytes-from` | `proposed` | none found |
+| [68](68-weakref-cells-and-unicode-sorts.md) | §9.9.3 Execution, 1.b; §25.4.3.11, 7; §22.2.2.9.8, 3; §16.2.1.5 | prose / sort defects | single-cell `FinalizationRegistry` loop, `NotifyWaiter` arg (#3328), nonexistent UCD column, `Synthetic Module Record` | `proposed` | issue #3328 open |
 
-Kinds: a *contradiction* is a step whose literal result disagrees with another
-normative statement of the specification; *no result* and *missing step* mean
-the text defines no behaviour (or omits one it clearly intends); a *failing
-Assert* or *failing `!`* is an assertion that a conforming execution can make
-false. A kind marked *no erratum of the model* (29, 38, 39, 47) is an editorial
-or clarification report: the model reads the text there by a register row of
-spec/formal/decisions.md, and nothing it runs depends on the report.
+## Proposed normative changes (3)
 
-## Fixed upstream
+Not defects of internal consistency: the text is consistent, and the proposal changes what it requires.
 
-Fixed in `b1eaed82f`; the model's errata are retired and the reports stay, as
-records, with a line saying so:
-
-- [07](07-typedarray-with-filter-bang.md): TypedArrayWithSetElementAbrupt and
-  TypedArrayFilterKeptUndefined, by 4feb0272b (PR #3979).
-- [08](08-islooselyequal-boolean-bang.md): IsLooselyEqualBooleanAbrupt, by
-  8a3e4aae (PR #4067).
-- [22](22-reads-bytes-from-unbound-result.md): ReadsBytesFromUnboundResult, by
-  d8cb8772 (PR #4064).
-- [34](34-revalidate-atomic-access.md): RevalidateAtomicAccess, by 5e0f8b33
-  (PR #3926, issue #3924).
-
-## A proposed normative change
-
-Not a defect: the text is consistent, and the proposal changes what it
-requires.
-
-| # | Clause and step | Kind | What it changes | test262 | Upstream |
+| # | Clause and step | Kind | What it changes | SpecTec reading | Upstream |
 |---|---|---|---|---|---|
-| [51](51-bigint-maximum-size.md) | §6.1.6.2 The BigInt Type; §6.1.6.2.3 exponentiate, step 3; §6.1.6.2.4 multiply, step 1; §6.1.6.2.7–8 add/subtract, step 1; §6.1.6.2.9 leftShift, step 2; §21.2.2.2 asUintN, step 3 | proposal | a BigInt "may be any size", so `2n ** (2n ** 40n)` has an exact result; implementations throw a *RangeError* past a maximum size (V8: 2<sup>30</sup> bits), which the proposal allows | none found | none found |
-
-## How the model resolves each defect
-
-Each erratum is an `emu-erratum` in `spec/formal/readings.emu` (38 at
-`b1eaed82f`, listed in `spec/formal/errata.txt`: 36 defects of the text and
-two proposals), with its resolution (`literal`, `test262`, `proposed` or
-`pending`) and the readings it applies.
+| [21](21-identityescape-zwnj-zwj.md) | §22.2.1 Patterns, `IdentityEscape[~UnicodeMode]` | proposal | restores `<ZWNJ>` and `<ZWJ>` as non-Unicode identity escapes after Unicode 15.1 added them to `ID_Continue` | `proposed` | none found |
+| [51](51-bigint-maximum-size.md) | §6.1.6.2 BigInt operations; §21.2.2.2 `BigInt.asUintN` | proposal | allows an implementation-defined maximum BigInt size throwing *RangeError* (`$BigIntTooLarge`, 2<sup>30</sup> bits in `Engine`) | `proposed` | issue #4063 closed |
+| [54](54-string-maximum-length.md) | §6.1.4 String operations (`repeat`, `padStart`, `concat`, `+`, `join`) | proposal | allows an implementation-defined maximum String length below 2<sup>53</sup> - 1 throwing *RangeError* (`$StringTooLarge`, 2<sup>28</sup> units in `Engine`) | `proposed` | issue #4063 closed |

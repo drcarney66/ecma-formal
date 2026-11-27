@@ -56,7 +56,7 @@ Outside `lean/`:
 | Where | What |
 |---|---|
 | `external/ecma262`, `external/test262` | the pinned specification and its tests (submodules) |
-| `spec/spectec` | the formal ECMA SpecTec specification (`grammars/`, `clauses/*.spectec`, and English-prose `prose/*.spectec`) |
+| `spec/spectec` | the formal ECMA SpecTec specification (`00..10-*.spectec`, `clauses/*.spectec`, and English-prose `prose/*.spectec`) |
 | `crates/spectec` | the SpecTec parser, roundtripper, prose renderer, and Lean generator (`lean/Ecma/Gen`, including `Prose*.lean`, and `lean/Ecma/Grammar/Gen`) |
 | `crates/spectec-html`, `spec/html` | bidirectional SpecTec ↔ `spec.html` algorithm & grammar printer/checker and name-keyed prose/layout metadata |
 | `crates/test262-runner` | test262 on `ecma-run` (`scripts/test262.py` drives it) |
@@ -155,7 +155,7 @@ have no runner here yet.
 
 The pages that need no build (the reading pages generated from `lean/Ecma` by `scripts/render_lean.py`, the
 pages of `site/`, the test262 page from a run's record by `scripts/test262_report.py`, and the errata page from
-the overlay and its programs' runs by `scripts/errata_page.py`):
+`site/errata.json` and its programs' runs by `scripts/errata_page.py`):
 
     nix develop $D -c python3 scripts/site_pages.py --out DIR \
         [--test262-record tests/test262/results/suite.tsv] [--errata-runs build/errata-runs.json]

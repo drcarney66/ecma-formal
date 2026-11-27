@@ -488,10 +488,11 @@ def status_lines() -> dict[str, str]:
 # Laws whose reading is known to differ from their sentence.
 DIFFERS = {
     "Ecma.Host.RegExpLaws.escapePattern": ("stricter", ("requires <code>\\/</code> and the line terminators' escapes, "
-                                           "where the text also allows <code>/</code>")),
-    "Ecma.Host.OptionalLaws.nativeFunctionSource": ("stricter", ("one form, <code>function name() { [native code] }"
+                                           "where the text also allows an unescaped <code>/</code> in a character class")),
+    "Ecma.Host.OptionalLaws.nativeFunctionSource": ("stricter", ("one ASCII form, <code>function name() { [native code] }"
                                                     "</code>, where the text allows any NativeFunction")),
-    "Ecma.Host.ChangeLaws.collect": ("weaker", "liveness's second condition, about future executions, is left out"),
+    "Ecma.Host.ChangeLaws.collect": ("weaker", ("approximates liveness by syntactic heap reachability at job boundaries "
+                                     "(omitting future-execution observability and cleanup-job scheduling guarantees)")),
     "Ecma.Host.JobLaws.agentNextJob": ("weaker", "there is no law about a timeout"),
 }
 
@@ -1141,13 +1142,13 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
                           'branch: ' + fmt(pp["summary"]["hand_lines"]) + ' lines written by hand, '
                           + fmt(pp["summary"]["lean_hand"]) + ' files of hand-written Lean changed.</p></li>') if pp else "",
         "proposal_link": (' (<a href="proposal.html">Applying a proposal</a> shows one applied)') if pp else "",
-        "errata_card": ('<li><h3><a href="errata.html">Errata</a></h3><p>The ' + fmt(ep["counts"]["errata"]) + ' specification '
-                        'defects and proposed changes recorded in <code>spec/DECISIONS.md</code>: the quoted sentences, '
-                        'the reading baked into SpecTec, and ' + fmt(ep["counts"]["with_program"]) + ' verified programs.'
+        "errata_card": ('<li><h3><a href="errata.html">Errata &amp; non-literal readings</a></h3><p>All ' + fmt(ep["counts"]["errata"]) + ' specification '
+                        'defects, non-literal SpecTec readings, and proposed changes recorded in <code>spec/DECISIONS.md</code> '
+                        '(with <a href="spec-issues/">full write-ups</a> and ' + fmt(ep["counts"]["with_program"]) + ' verified programs).'
                         '</p></li>') if ep else "",
         "t262_section": t262_section(tp),
-        "errata_sentence": (' <a href="errata.html">The errata page</a> quotes each entry\'s sentences and alternative '
-                            'readings, and verifies a demonstration program for each one that has one.') if ep else "",
+        "errata_sentence": (' <a href="errata.html">The errata page</a> and <a href="spec-issues/">spec-issue write-ups</a> quote each entry\'s sentences and alternative '
+                            'readings, and verify a demonstration program for each one that has one.') if ep else "",
         "t262_sentence": t262_sentence(tp),
         "axioms": ", ".join(f"<code>{x}</code>" for x in axioms()), "axiom_count": fmt(len(axioms())),
         "dbg_section": "", "dbg_revision": (" and the step debugger as <code>" + DBG + "</code>"

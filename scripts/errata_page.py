@@ -4,7 +4,7 @@
     python3 scripts/errata_page.py run --ecma-run .lake/build/bin/ecma-run --out build/errata-runs.json [-j 3]
     python3 scripts/errata_page.py check                     # the data and the quotations, no run
 
-The errata are the 38 active decisions in `spec/DECISIONS.md` (§1 Summary Table: resolution, kind, layer, where the
+The errata are the 56 active decisions in `spec/DECISIONS.md` (§1 Summary Table: resolution, kind, layer, where the
 literal text stops, source write-up) paired with `site/errata.json` (the step, rule, grammar and prose anchors in
 `external/ecma262/spec.html`, alternative readings, notes, and demonstration programs). SpecTec bakes one resolved
 reading directly into `spec/spectec/` for each erratum rather than switching readings at run time.
@@ -404,47 +404,7 @@ def check_data(errata: list[Erratum], data: dict, sp: Text) -> list[str]:
     for name in data.get("anchors", {}):
         if name not in {e.name for e in errata}:
             raise SystemExit(f"site/errata.json: anchors for no erratum {name}")
-    fixed_upstream()
     return findings
-
-
-# ---------------------------------------------------------------------------------------------------------------
-# What earlier reviews removed
-
-
-def fixed_upstream(active_names: set[str] | None = None) -> list[dict]:
-    """docs/spec-issues/README.md's "Fixed upstream": the errata and the commits that fixed their text, each
-    commit checked to be of external/ecma262 and before the pinned one, and none an active erratum."""
-    t = ISSUES.read_text()
-    m = re.search(r"(?ms)^## Fixed upstream\n(.*?)(?=^## |\Z)", t)
-    if not m:
-        raise SystemExit(f"{ISSUES}: no section Fixed upstream")
-    active = active_names if active_names is not None else {e.name for e in read_errata()}
-    out = []
-    for item in re.findall(r"(?ms)^- (.*?)(?=^- |\Z)", m.group(1)):
-        item = re.sub(r"\s+", " ", item).strip()
-        im = re.match(r"\[\d+\]\([^)]*\): (.*?), by ([0-9a-f]{7,40}) \((.*?)\)\.?$", item)
-        if not im:
-            raise SystemExit(f"{ISSUES}: an entry of Fixed upstream not read: {item!r}")
-        names = re.split(r",? and |, ", im.group(1))
-        for n in names:
-            if n in active:
-                raise SystemExit(f"{ISSUES}: {n} is listed in Fixed upstream but still active in {DECISIONS.name}")
-        commit = im.group(2)
-        full = subprocess.run(["git", "-C", str(ECMA262), "rev-parse", "--verify", "--quiet", commit + "^{commit}"],
-                              capture_output=True, text=True).stdout.strip()
-        shallow = subprocess.run(["git", "-C", str(ECMA262), "rev-parse", "--is-shallow-repository"],
-                                 capture_output=True, text=True).stdout.strip() == "true"
-        if full:
-            anc = subprocess.run(["git", "-C", str(ECMA262), "merge-base", "--is-ancestor", full, "HEAD"])
-            if anc.returncode != 0:
-                raise SystemExit(f"{ISSUES}: {commit} is not before the pinned external/ecma262")
-        elif not shallow:
-            raise SystemExit(f"{ISSUES}: {commit} is no commit of external/ecma262")
-        # A shallow checkout of external/ecma262 has no history to check the commit against: it is linked as given.
-        prs = re.findall(r"PR #(\d+)", im.group(3))
-        out.append({"names": names, "commit": full or commit, "short": commit, "prs": prs, "checked": bool(full)})
-    return out
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -452,7 +412,7 @@ def fixed_upstream(active_names: set[str] | None = None) -> list[dict]:
 
 
 def md(t: str, sp: Text | None = None, refs: bool = False) -> str:
-    """spec.html's (or the overlay's) markup of a sentence as the site's HTML: ecmarkdown's emphasis, the
+    """spec.html's markup of a sentence as the site's HTML: ecmarkdown's emphasis, the
     inline grammar, cross-references by their clause number; `refs` keeps the notes' references to the
     project's own files, which the page otherwise leaves out."""
     holes: list[str] = []
@@ -488,6 +448,7 @@ def md(t: str, sp: Text | None = None, refs: bool = False) -> str:
     t = re.sub(r'<emu-xref href="#([^"]+)"[^>]*>(.*?)</emu-xref>', xref, t, flags=re.DOTALL)
     t = re.sub(r"<emu-grammar>(.*?)</emu-grammar>", lambda m: hole(f'<code class="grammar">{esc(html.unescape(m.group(1)))}</code>'), t, flags=re.DOTALL)
     t = re.sub(r"<code>(.*?)</code>", lambda m: hole(f"<code>{esc(html.unescape(m.group(1)))}</code>"), t, flags=re.DOTALL)
+    t = re.sub(r"``\s*(.*?)\s*``", lambda m: hole(f"<code>{esc(html.unescape(m.group(1)))}</code>"), t)
     t = re.sub(r"`([^`]+)`", lambda m: hole(f"<code>{esc(html.unescape(m.group(1)))}</code>"), t)
     t = re.sub(r"<(/?)(sub|sup)>", lambda m: hole(f"<{m.group(1)}{m.group(2)}>"), t)
     t = re.sub(r"<[^>]+>", "", t)  # emu-meta, a, and the like: their text
@@ -574,7 +535,7 @@ def site_html(sp: Text, site: str, path: str) -> str:
         step = f", step {esc(own)}" + (" (inside the reading of that step)" if ".." in path else "")
     if cid in sp.nums:
         return clause_link(sp, cid) + step
-    return f"<code>{esc(cid)}</code> (a reading of the overlay){step}"
+    return f"<code>{esc(cid)}</code> (a helper clause of SpecTec){step}"
 
 
 def outcome_html(sp: Text, end: str) -> str:
@@ -768,21 +729,18 @@ def page(runs_file: dict, gallery: dict | None, builds: list[dict], run_name: st
     sw = Counter(e.switch for e in errata)
     with_prog = sum(1 for e in errata if data["programs"].get(e.name))
     nruns = len(want)
-    fixed = fixed_upstream({e.name for e in errata})
-    nfixed = sum(len(x["names"]) for x in fixed)
     how = (f'<section class="part" id="reading"><h2 class="part-title"><a class="self" href="#reading">How to read an '
            f'erratum</a></h2>'
            f'<p>Each erratum names the sentences of ECMA-262 it is about, quoted from the pinned <code>spec.html</code> '
-           f'(every step or rule checked by its SHA-256 hash so a change to the text fails the build), and the '
-           f'candidate readings: <em>the literal text</em>, the sentence as written; <em>the test262 reading</em>, '
-           f'what <code>test262</code> requires; <em>the proposed reading</em>, the text proposed in its place. '
-           f'Unlike an overlay with runtime flags, SpecTec bakes one resolved reading directly into '
-           f'<code>spec/spectec/</code> and records the rationale in <code>spec/DECISIONS.md</code>.</p>'
+           f'(every step or rule checked by its SHA-256 hash or normalized text so a change to the specification fails '
+           f'the build), and the candidate readings: <em>the literal text</em>, the sentence as written; '
+           f'<em>the test262 reading</em>, what <code>test262</code> requires; <em>the proposed reading</em>, the text '
+           f'proposed in its place. Unlike an overlay with runtime flags, SpecTec bakes one resolved reading directly '
+           f'into <code>spec/spectec/</code> and records every non-literal choice in <code>spec/DECISIONS.md</code>.</p>'
            f'<p>Across the {len(errata)} entries, SpecTec bakes in {dflt.get("test262", 0)} as <code>test262</code> '
-           f'requires, {dflt.get("literal", 0)} as written (so a program reaching a broken <code>Assert:</code> stops '
-           f'at that step), and {dflt.get("proposed", 0)} as proposed ({sw.get("spec", 0)} in algorithms and early '
-           f'errors, {sw.get("parser", 0)} in the grammars and parser, and {sw.get("none", 0)} in prose relations or '
-           f'unreachable rows).</p>'
+           f'requires, {dflt.get("proposed", 0)} as proposed, and {dflt.get("literal", 0)} keeping the literal wording '
+           f'as written ({sw.get("spec", 0)} in algorithms and early errors, {sw.get("parser", 0)} in the grammars and '
+           f'parser, and {sw.get("none", 0)} in prose relations).</p>'
            f'<p>{with_prog} entries have a demonstration program. Each was run when this site was built ({nruns} runs '
            f'on native <code>{esc(run_name)}</code>) and verified against the baked-in SpecTec outcome; the table '
            f'beside it also documents what an unchosen alternative reading would produce. An object\'s number in a '
@@ -790,30 +748,20 @@ def page(runs_file: dict, gallery: dict | None, builds: list[dict], run_name: st
     body = [how,
             section("defects", "Defects of the text", defects,
                     "<p>Places where the text, read as written, gives no answer, an answer that contradicts another "
-                    "sentence, or an answer test262 does not accept.</p>"),
+                    "sentence, or an answer test262 does not accept — including every place where SpecTec bakes in a "
+                    "non-literal choice so the formal specification and reference engine are well-defined.</p>"),
             section("proposals", "Proposed normative changes", proposals,
-                    "<p>Not a defect: the text is consistent, and the change would alter what it requires.</p>")]
-    items = []
-    for x in fixed:
-        prs = ", ".join(f'<a href="{PR_URL.format(n)}">#{n}</a>' for n in x["prs"])
-        items.append(f'<li>{" and ".join(f"<code>{esc(n)}</code>" for n in x["names"])}: fixed by '
-                     f'<a href="{COMMIT_URL.format(x["commit"])}"><code>{esc(x["short"])}</code></a>'
-                     f'{" (" + prs + ")" if prs else ""}.</li>')
-    pin = subprocess.run(["git", "-C", str(ECMA262), "rev-parse", "--short=9", "HEAD"], capture_output=True,
-                         text=True).stdout.strip()
-    body.append(f'<section class="part" id="removed"><h2 class="part-title"><a class="self" href="#removed">Removed '
-                f'because the editors fixed the text ({nfixed})</a></h2><p>Errata an earlier review found that '
-                f'upstream commits before <code>{esc(pin)}</code> resolved.</p><ul class="fixed">{"".join(items)}</ul></section>')
+                    "<p>Not a defect: the text is consistent, and the change alters what it requires (such as "
+                    "finite resource limits for BigInts and Strings or pre-Unicode-15.1 identity escapes).</p>")]
     toc = [("reading", "How to read an erratum", 1), ("defects", f"Defects of the text ({len(defects)})", 1)]
     toc += [(e.name, esc(e.name), 2) for e in defects]
     toc += [("proposals", f"Proposed normative changes ({len(proposals)})", 1)]
     toc += [(e.name, esc(e.name), 2) for e in proposals]
-    toc += [("removed", f"Removed: fixed upstream ({nfixed})", 1)]
-    lede = (f"<p>The {len(errata)} specification defects and proposed normative changes recorded when formalizing "
-            f"ECMA-262 in SpecTec ({len(defects)} defects of the text and {len(proposals)} proposed normative "
-            f"change{'s' if len(proposals) != 1 else ''}, from <code>spec/DECISIONS.md</code>): the sentences quoted "
-            f"from <code>spec.html</code>, the reading baked into <code>spec/spectec/</code>, the alternatives, and "
-            f"verified demonstration programs.</p>")
+    lede = (f"<p>The {len(errata)} specification defects, non-literal SpecTec readings, and proposed normative changes "
+            f"recorded when formalizing ECMA-262 in SpecTec ({len(defects)} defects of the text and {len(proposals)} "
+            f"proposed normative change{'s' if len(proposals) != 1 else ''}, from <code>spec/DECISIONS.md</code>): "
+            f"the sentences quoted from <code>spec.html</code>, the reading baked into <code>spec/spectec/</code>, "
+            f"the alternatives, and verified demonstration programs.</p>")
     return {"title": "Errata", "eyebrow": "Specification decisions · <code>spec/DECISIONS.md</code>, "
             "<code>site/errata.json</code>", "lede": lede, "body": "\n".join(body), "toc": toc,
             "findings": sorted(set(findings)), "counts": {"errata": len(errata), "defects": len(defects),

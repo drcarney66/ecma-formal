@@ -7,10 +7,11 @@
   (`#sec-static-semantics-boundnames`) and §15.1.3 IsSimpleParameterList (`#sec-static-semantics-issimpleparameterlist`).
 - **Kind:** undefined value (a rule's condition names a Parse Node that does not exist); every reading gives the same
   verdict, a SyntaxError.
-- **Model erratum:** none, because no program's result depends on it: the failed "must cover" rule already makes the
-  program an early SyntaxError, and ParseText leaves the number and order of the errors implementation-defined. The
-  model applies a node's rules only when the nodes it contains have none, and a node's own "must cover" rules before
-  its others, which gives the proposed wording's results.
+- **Model erratum:** `MustCoverEarlyErrorOrder`, baked-in SpecTec reading test262 (`spec/spectec/clauses/Helpers.spectec`,
+  `@formal-earlyerrorsof`; `lean/Ecma/Lower/LinEarly.lean`, `linOwn` and `linTree`). Without ordering, sibling and
+  ancestor early-error rules read `"the |n| that is covered by _p_"` on a failed cover and stop on a missing Parse Node;
+  SpecTec evaluates non-covered children bottom-up before parent rules and runs a production's `"must cover"` rules
+  before its other rules.
 - **Upstream:** Checked 2026-11-19: none found for this case (searched for "must cover" and "CoverInitializedName").
   Issue #2421 (closed, 2026-07), "Early Error rules and covering grammars", asked which early error rules apply to a
   cover; PR #3227 (merged 2026-07, commit 020735388), "Editorial: Don't check a cover for early errors", answered it

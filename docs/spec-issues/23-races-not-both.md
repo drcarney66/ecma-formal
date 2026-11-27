@@ -3,9 +3,8 @@
 - **Location:** §29.8 Races (`#sec-races`), step 1.a; §29.7.5 Valid Executions (`#sec-valid-executions`); §29.10
   Data Race Freedom (`#sec-data-race-freedom`).
 - **Kind:** a condition that is always true under the clause's own definitions.
-- **Model erratum:** `RacesNotBoth`, default reading literal; its readings: literal. The memory model's meaning
-  (`Race`, `lean/Ecma/MemoryModel.lean`) reads the literal text, and the machine does not run the memory model, so the
-  erratum is not switched at run time; its note in `spec/formal/readings.emu` gives the proposed wording below.
+- **Model erratum:** `RacesNotBoth`, baked-in SpecTec reading literal (`Ecma.MemoryModel.Race`,
+  `spec/spectec/prose/07-memory-model.spectec`); its note in `site/errata.json` gives the proposed wording below.
 - **Upstream:** Checked 2026-11-19: PR #4021 (closed without merging, 2026-10), "Normative: exclude happens-before
   ordered events from races", proposed requiring that neither event happens-before the other; no issue was found
   (searched for "not the case that both" and "Races"). The wording came with PR #3321 (merged 2024-05, commit

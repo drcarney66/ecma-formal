@@ -113,7 +113,8 @@ namespace Ecma {
     | _, _ => False
   end
 
-  --- §9.9.2 (sec-liveness): values strongly reachable from the roots of `s` without following
+  --- §9.5 (sec-jobs), §9.9.2 (sec-liveness): values strongly reachable from the roots of `s` (including
+  --- un-taken queued job arguments in `s.hostLog`) without following
   --- weak references (`WeakRef.[[WeakRefTarget]]`, `WeakSet.[[WeakSetData]]`, `WeakMap.[[WeakMapData]]`
   --- entries whose `[[Key]]` is not itself reachable, or `FinalizationRegistry` cell `[[WeakRefTarget]]` /
   --- `[[UnregisterToken]]` fields).
@@ -124,6 +125,7 @@ namespace Ecma {
     rule agent : Reachable(s, s.agent);
     rule evalStep {p} : Reachable(s, p.2) :- p mem s.evalSteps;
     rule passed {v} : Reachable(s, v) :- v mem s.passed;
+    rule pendingJob {k c args act rlm ans v} : Reachable(s, v) :- s.hostLog.reverse[k]? = some(.hook(c, args, act, rlm, ans)), HostCall.hook(c, args, act, rlm, ans).schedulesJob = true \/ Gen.clauses[c]? = some("sec-host-cleanup-finalization-registry"), s.hostLog.all(fun e => !e.takes(k)) = true, v mem args;
     rule waiterBlock {b i w} : Reachable(s, .ref(b)) :- (b, i, w) mem s.waiterLists;
     rule waiterRec {b i w} : Reachable(s, .ref(w)) :- (b, i, w) mem s.waiterLists;
     rule critical {w} : Reachable(s, .ref(w)) :- w mem s.critical;

@@ -2,10 +2,16 @@
 
 - **Location:** §11.1.6 Static Semantics: ParseText (`#sec-parsetext`), step 5; §22.2.3.4 Static Semantics:
   ParsePattern (`#sec-parsepattern`), step 1.a, and its §B.1.2.9 version (`#sec-parsepattern-annexb`).
-- **Kind:** missing context (no program observes it).
-- **Model erratum:** `ParseTextErrorObjects`, default reading literal; its readings: literal, proposed. In
-  the model's proposed reading, ParseText and ParsePattern return a singleton List containing a newly created
-  *SyntaxError* object (which matches every caller that only tests non-emptiness and lets hosts inspect an object).
+- **Kind:** missing context and undefined sort (`error`).
+- **Model erratum:** `ParseTextErrorObjects`, baked-in SpecTec reading proposed (`spec/spectec/clauses/Helpers.spectec`,
+  `@formal-parsetextin`, `@ph-syntax-errors`, `@sort-error`; `lean/Ecma/Lower/LinEarly.lean`, `newSyntaxError`).
+  Rather than following the literal text (which leaves the Realm Record unspecified when creating *SyntaxError* objects
+  and tests an undefined sort `error` in ten caller steps), SpecTec bakes in three choices: (1) `@formal-parsetextin`,
+  `ParsePattern` and early-error rules allocate a singleton *SyntaxError* object in `currentRealm`; (2) the test host
+  (`lean/Engine/Host/Opts.lean`) pushes an execution context for the target realm before top-level `ParseScript` and
+  `ParseModule` so `currentRealm` is defined on an otherwise empty stack; and (3) `@sort-error` defines `"error"` as an
+  `Object` with an `[[ErrorData]]` internal slot (`tc39/ecma262#3868`) so `ToNumber("x")`, `BigInt("x")` and other
+  `ParseText` callers do not stop on an undefined sort.
 - **Upstream:** Checked 2026-11-19: none found that reports it (searched for "ParseText" with realm and with
   SyntaxError). Issue #3868 (open, 2026-05), "How should ParseText results be consumed?", asks how callers test the
   result, not where its objects are created; issue #1462 (open, 2019-03), "Current Realm record when creating new
@@ -60,7 +66,7 @@ try { new RegExp("("); } catch (e) { print(e instanceof SyntaxError); }
 |---|---|
 | literal text | `true`, `true`, `true` |
 | V8, SpiderMonkey, JavaScriptCore | `true`, `true`, `true` |
-| formal model (literal reading) | `true`, `true`, `true` |
+| formal model (proposed reading baked into SpecTec) | `true`, `true`, `true` |
 
 A host hook such as test262's `$262.evalScript`, which throws the List's first element (INTERPRETING.md), is where
 the objects' realm could show.

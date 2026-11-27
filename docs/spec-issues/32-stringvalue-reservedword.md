@@ -82,6 +82,9 @@ the model's other readings agree; the defect is in the text only.
 
 The other repair, a StringValue row for `ReservedWord :: one of …` returning CodePointsToString of its code points,
 leaves "any |ReservedWord|" quantifying over nodes that do not exist at the site; the wording above avoids that.
+(SpecTec applies a companion patch in §22.2.2.9 `CompileToCharSet` rows for `CharacterClassEscape :: D`, `S`, and `W`,
+which invoke `<emu-grammar>CharacterClassEscape :: d</emu-grammar>` / `s` / `w` without a Parse Node or the
+`_regexpRecord_` argument: `S22.spectec` parses synthetic `"d"`, `"s"`, `"w"` nodes and passes `regexpRecord`.)
 
 ## test262
 

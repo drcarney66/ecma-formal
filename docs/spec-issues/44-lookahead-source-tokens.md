@@ -76,10 +76,9 @@ for (var s of sources) {
 | V8, SpiderMonkey, JavaScriptCore | SyntaxError | SyntaxError | no error | no error |
 | formal model (test262 and proposed readings) | SyntaxError | SyntaxError | no error | no error |
 
-Under its literal reading (`ecma-run --erratum LookaheadSourceTokens=literal`) the model's run of the example stops
-at the first source (`stop: residue formal-parsetextin#0 2`), and so does its run of `if (0) let` LF `[a] = 0;`
-(`tests/run/erratum_lookahead_source_tokens_literal.js`); under the default reading that Script is a SyntaxError
-(`tests/run/erratum_lookahead_source_tokens.js`: `throw: SyntaxError`).
+SpecTec bakes in the test262 reading (`pastVirt` and `SynLook` in `spec/spectec/prose/04-derives.spectec` examine source
+tokens past automatically inserted semicolons), so `if (0) let` LF `[a] = 0;` is rejected with `throw: SyntaxError`
+(`tests/run/erratum_lookahead_source_tokens.js`).
 
 ## Proposed wording
 

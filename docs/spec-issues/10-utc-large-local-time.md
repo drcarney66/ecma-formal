@@ -3,10 +3,12 @@
 - **Location:** §21.4.1.18 GetUTCEpochNanoseconds (`#sec-getutcepochnanoseconds`), step 4, reached from §21.4.1.26
   UTC ( _t_ ) (`#sec-utc-t`), step 4.a, through §21.4.1.20 GetNamedTimeZoneEpochNanoseconds
   (`#sec-getnamedtimezoneepochnanoseconds`), step 2; §21.4.1.28 MakeDay (`#sec-makeday`), step 8.
-- **Kind:** failing Assert, and a question on MakeDay's "finite time value".
-- **Model erratum:** `GetUTCEpochNanosecondsNaN`, default reading literal; its readings: literal, proposed (the
-  proposed reading makes UTC return *NaN* when MakeDay finds no first day of _t_'s month); the literal reading stops
-  at GetUTCEpochNanoseconds step 4.
+- **Kind:** failing Assert, MakeDay's ambiguous "finite time value", and `epoch nanoseconds count` return-range overflow.
+- **Model errata:** `GetUTCEpochNanosecondsNaN` (baked-in SpecTec reading: literal, stopping at `GetUTCEpochNanoseconds`
+  step 4) and `MakeDayFiniteTimeValue` (baked-in SpecTec reading: proposed in `spec/spectec/clauses/S21.spectec` and
+  `@sort-time-value`, reading MakeDay step 8's "finite time value" as any finite integral Number rather than restricting
+  to ±8.64 × 10<sup>15</sup> ms; additionally, return-sort checking is omitted at runtime so `GetUTCEpochNanoseconds`
+  exceeding `MinEpochNanoseconds..MaxEpochNanoseconds` on large `UTC(_t_)` inputs does not stop).
 - **Upstream:** Checked 2026-11-19: PR #3464 (open, 2024-10), "Editorial: Add "local-offset time value" for time
   values with local time zone offset applied", has a commit, "Editorial: Handle too large inputs early in UTC"
   (e8051bb98), that adds to UTC the range check proposed here; it is not merged. Related, open: issue #1087 (open,
@@ -85,10 +87,9 @@ print(new Date(2000, 0, 1, 1e21).getTime()); // the constructor: UTC(t)
 | V8, SpiderMonkey, JavaScriptCore | `8639987299200000` | `8640000000000000` | `NaN` | `NaN` | `NaN` |
 | formal model (literal reading) | (not printed) | (not printed) | (not printed) | stops at step 4's Assert | (not reached) |
 
-The model reads MakeDay step 8 as any integral Number (spec/formal/dates.emu, reading `definition` of
-`sec-makeday` step 8). Its literal reading stops at GetUTCEpochNanoseconds step 4 (`stop: erratum
-GetUTCEpochNanosecondsNaN sec-getutcepochnanoseconds#0 4`), and a run that stops reports only the stop. Under the
-proposed reading (`--erratum GetUTCEpochNanosecondsNaN=proposed`) it prints the engines' five lines.
+SpecTec bakes in reading MakeDay step 8 as any finite integral Number (`MakeDayFiniteTimeValue`, `spec/spectec/clauses/S21.spectec`).
+For `UTC`, SpecTec keeps the literal wording (`GetUTCEpochNanosecondsNaN`), so its run stops at `GetUTCEpochNanoseconds`
+step 4 (`stop: assertFailed sec-getutcepochnanoseconds#0 4`); under the proposed `UTC` guard it prints the engines' five lines.
 
 ## Proposed wording
 

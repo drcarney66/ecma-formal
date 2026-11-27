@@ -5,7 +5,7 @@
 <ul class="facts" aria-label="The specification in numbers">
 <li><b>{{spectec_struct_files}}</b><span>SpecTec modules of algorithms, grammars, tables &amp; early errors ({{spectec_struct_lines}} lines, bijective with <code>spec.html</code>)</span></li>
 <li><b>{{host_laws}}</b><span>SpecTec laws of the host, in {{host_topics}} topics</span></li>
-<li><b>{{model_laws}}</b><span>SpecTec laws of the model's values ({{num_laws}} of Numbers and {{byte_laws}} of Data Blocks), {{unicode_laws}} of Unicode, {{parent_laws}} of Parse Node parents, and {{parse_laws}} of parsing, covers &amp; Parse Nodes</span></li>
+<li><b>{{all_model_laws}}</b><span>SpecTec laws of the model ({{model_laws}} core, {{num_laws}} of Numbers, {{byte_laws}} of Data Blocks, {{unicode_laws}} of Unicode, and {{parent_laws}} of Parse Node parents) plus {{parse_laws}} of parsing, covers &amp; Parse Nodes</span></li>
 <li><b>{{errata}}</b><span>documented specification decisions: {{errata_defects}} defects of the text and {{errata_proposals}} proposed normative {{errata_proposals_noun}}</span></li>
 </ul>
 
@@ -33,7 +33,7 @@
 {{t262_section}}
 <h2 id="three">Three things to know first</h2>
 <ol class="steps">
-<li><strong>SpecTec and <code>spec.html</code> form a verified bijection.</strong> Every algorithm, equation, early-error rule, table and grammar production lives in <code>spec/spectec/</code> (<code>def @sec-…</code>, <code>grammar</code>, <code>early_error</code>, <code>syntax</code>, <code>field</code>, <code>enum</code>). <code>crates/spectec-html</code> splices <code>spec/spectec/</code> back into <code>spec.html</code> with zero byte diffs; <code>spectec roundtrip</code> checks SpecTec's own formatting; and <code>scripts/bijection.py</code> prints SpecTec back from downstream Lean byte for byte.</li>
+<li><strong>SpecTec and <code>spec.html</code> form a verified bijection.</strong> Every algorithm, equation, early-error rule, table and grammar production lives in <code>spec/spectec/</code> (<code>def @sec-…</code>, <code>grammar</code>, <code>early_error</code>, <code>syntax</code>, <code>field</code>, <code>enum</code>). <code>crates/spectec-html</code> splices <code>spec/spectec/</code> back into <code>spec.html</code> with zero byte diffs via explicit presentation and patch tables in <code>spec/html/</code>; <code>spectec roundtrip</code> checks SpecTec's own formatting; and <code>scripts/bijection.py</code> prints SpecTec back from downstream Lean byte for byte.</li>
 <li><strong>Where the English is prose, SpecTec states <code>syntax</code>, <code>relation</code> and <code>laws</code> — quoting <code>spec.html</code>.</strong> What the text assumes (that mathematical values form an ordered field, that Numbers are IEEE 754 binary64) and what it leaves to the host (time, job scheduling, locale, §29 memory) is written in <code>spec/spectec/prose/*.spectec</code>, and every law quotes the governing sentence of <code>spec.html</code> (<code>scripts/law_quotes.py</code>).</li>
 <li><strong>The downstream Lean claim is precise and has limits.</strong> <code>crates/spectec</code> compiles SpecTec to Lean 4, where the concrete engine and its parser are proved against the specification relying on Lean's {{axiom_count}} standard axioms alone (0 <code>native_decide</code> pins; {{runtime_pins}} shortcut and parser-table checks verified at run time). Every stated SpecTec law is proved; the debugger loop is outside the claim; <a href="what-is-proved.html">What is proved</a> lists all of it.</li>
 </ol>

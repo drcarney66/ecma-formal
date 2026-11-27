@@ -3,9 +3,13 @@
 - **Location:** §25.4.3.15 EnqueueAtomicsWaitAsyncTimeoutJob (`#sec-enqueueatomicswaitasynctimeoutjob`), steps 4 and
   1.b.ii; §25.4.3.14 DoWait (`#sec-dowait`), steps 22–24; §9.5.6 HostEnqueueTimeoutJob (`#sec-hostenqueuetimeoutjob`).
 - **Kind:** a call outside its parameter type (a negative delay), and a failing Assert.
-- **Model errata:** `AtomicsWaitAsyncTimeoutNegativeDelay` and `AtomicsWaitAsyncTimeoutAssert`, each default
-  reading literal; the readings of each: literal, proposed. Under the literal readings a run stops at step 4 when the
-  delay is negative and at step 1.b.ii when the Assert fails; the proposed readings are
+- **Model errata:** `AtomicsWaitAsyncTimeoutNegativeDelay` and `AtomicsWaitAsyncTimeoutAssert`, baked-in SpecTec
+  reading literal on `EnqueueAtomicsWaitAsyncTimeoutJob` steps 1.b.ii and 4 (`spec/spectec/clauses/S25.spectec`).
+  Note two non-literal choices alongside it: parameter sort checking is omitted at runtime so a negative `_delay_` passed
+  to `HostEnqueueTimeoutJob` does not trigger a sort stop, and the engine's host clock (`lean/Engine/Host/Strategy.lean`,
+  `msCeil`) clamps negative delays up to `0` ms (while `wakeFinite` in `spec/spectec/prose/16-host-laws-jobs.spectec`
+  treats agent suspension timeouts past `maxTime` = 8.64 × 10<sup>15</sup> ms as never waking by timeout). The proposed
+  readings are
   the Proposed wording below: step 4's delay clamped at *+0*𝔽, and the Assert stated for an integral clock.
 - **Upstream:** Checked 2026-11-19: none found (searched for "EnqueueAtomicsWaitAsyncTimeoutJob", whose one hit
   renames aliases, and "HostEnqueueTimeoutJob"). The operation came with PR #3049 (merged 2023-06, commit 3330e231b),

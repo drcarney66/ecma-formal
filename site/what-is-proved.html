@@ -7,7 +7,7 @@
 {{implements_struct}}
 <dl class="split">
 <dt>model</dt>
-<dd><p>Its values obey the SpecTec model laws (<a href="model.html#Model.Laws"><code>Model.Laws</code></a>, {{model_laws}} laws, including <code>num</code> for the {{num_laws}} laws of Numbers and <code>bytes</code> for the {{byte_laws}} laws of Data Blocks), the Unicode laws (<a href="model.html#Model.UnicodeLaws"><code>Model.UnicodeLaws</code></a>, {{unicode_laws}}), and the Parse Node parent laws (<a href="model.html#Model.ParentLaws"><code>Model.ParentLaws</code></a>, {{parent_laws}}).</p></dd>
+<dd><p>Its values obey all {{all_model_laws}} SpecTec model laws: <a href="model.html#Model.Laws"><code>Model.Laws</code></a> ({{model_laws}} core laws, joined with <a href="model.html#Model.NumLaws"><code>Model.NumLaws</code></a>'s {{num_laws}} for Numbers and <a href="model.html#Model.ByteLaws"><code>Model.ByteLaws</code></a>'s {{byte_laws}} for Data Blocks), the Unicode laws (<a href="model.html#Model.UnicodeLaws"><code>Model.UnicodeLaws</code></a>, {{unicode_laws}}), and the Parse Node parent laws (<a href="model.html#Model.ParentLaws"><code>Model.ParentLaws</code></a>, {{parent_laws}}).</p></dd>
 <dt>host</dt>
 <dd><p>Its host obeys every SpecTec law the specification requires of a host (<a href="host.html#Host.WF"><code>Host.WF</code></a>, {{host_laws}} laws across {{host_topics}} topics).</p></dd>
 <dt>step</dt>

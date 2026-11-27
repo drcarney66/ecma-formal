@@ -140,15 +140,19 @@ def linCovered (P : Prog) (p : ProdId) : Op :=
   .or ((P.early p).flatMap fun r => covSents ⟨P, #[]⟩ r.body)
 
 /-- The early errors of a node of production `p` and of its descendants (slot 0: the children's tuple; slot 1:
-a child): the node's own rules only when its descendants have none (EarlyErrorsOf, overlay clause
-formal-earlyerrorsof). -/
-def linTree (p : ProdId) : Code :=
-  [.let_ 0 tupNil,
-   .loop (some 1) (.kids none) []
-     [.br (.leaf .isNode [.var 1])
-       [.br (.call .covered [.var 1]) [] [tupAdd 0 (.on .earlyTree (.var 1) [])]] []],
-   .br (.leaf .tupEmpty [.var 0])
-     [.ret (.call (.earlyOwn [p]) [])]
-     [.ret (.var 0)]]
+a child): B.3.3 `IfStatement` productions redirect through `$CoveredBy(|IfStatement|, node)`, and otherwise a
+node's own rules run only when its non-covered descendants have none (`EarlyErrorsOf`, `@formal-earlyerrorsof`). -/
+def linTree (P : Prog) (p : ProdId) : Code :=
+  let b33 := ((P.overlayClause .functionDeclarationsInIfStatement).bind P.clauseProds).getD []
+  if b33.contains p then
+    [.ret (.on .earlyTree (.call (.prim Known.pCoveredBy) [.const (.nt Known.ntIfStatement []), .node]) [])]
+  else
+    [.let_ 0 tupNil,
+     .loop (some 1) (.kids none) []
+       [.br (.leaf .isNode [.var 1])
+         [.br (.call .covered [.var 1]) [] [tupAdd 0 (.on .earlyTree (.var 1) [])]] []],
+     .br (.leaf .tupEmpty [.var 0])
+       [.ret (.call (.earlyOwn [p]) [])]
+       [.ret (.var 0)]]
 
 end Ecma.Machine

@@ -56,7 +56,6 @@ def @sec-stringtocodepoints "StringToCodePoints" (kind ao params [string : Strin
 def @sec-parsetext "ParseText" (kind ao params [sourceText : String | seq<#"Unicode code point">, goalSymbol : doc "a nonterminal in one of the ECMAScript grammars"] -> #"Parse Node" | pred(sat @ph-type-syntax-errors())) vars [sourceText, goalSymbol] {
   if sourceText is ty {String} -> set var sourceText = @sec-stringtocodepoints(sourceText)
   return @formal-parsetextin(sourceText, goalSymbol, false, false, false)
-  return $""()
 }
 
 def @sec-isstrict "IsStrict" (kind ao params [parseNode : #"Parse Node"] -> Boolean) vars [parseNode] {

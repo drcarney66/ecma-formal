@@ -3,12 +3,12 @@
 - **Location:** §20.2.3.5 Function.prototype.toString (`#sec-function.prototype.tostring`), step 3, with §15.7.14
   ClassDefinitionEvaluation (`#sec-runtime-semantics-classdefinitionevaluation`), steps 14.b and 16.
 - **Kind:** no result (two requirements no String meets together).
-- **Model erratum:** `NativeFunctionInitialName`, default reading literal; its readings: literal, proposed (the
-  proposed reading is the proposed wording below); the literal reading has no erratum stop: where no String meets both
-  requirements, the host has no answer and the run stops as at any step the model cannot run (`stop: residue`).
-  Separately, as a choice of its own and not a reading of the text, the model admits at this step only
-  `function ` N `() { [native code] }`, with N empty or an ASCII name (optionally after `get ` or `set `, or
-  `[Symbol.` name `]`).
+- **Model erratum:** `NativeFunctionInitialName`, baked-in SpecTec reading literal for non-PropertyName `[[InitialName]]`
+  values such as `"a b"` (where no String meets both requirements and the run stops at `stop: residue`), paired with two
+  non-literal choices: `S20.spectec` allows an empty `""` `[[InitialName]]` without requiring a `|PropertyName|` Parse Node
+  (so anonymous built-ins such as `(() => {}).bind().toString()` succeed), and `NativeFunctionSource`
+  (`spec/spectec/prose/20-host-laws-order.spectec`) narrows `.ok` representations to `function ` N `() { [native code] }`
+  with N empty or an ASCII name (optionally after `get ` or `set `, or `[Symbol.` name `]`).
 - **Upstream:** Checked 2026-11-19: related: PR #2695 (open, 2022-03), "Normative: Allow toString of a built-in
   function to output a computed property name", adds a `[` StringLiteral `]` form of NativeFunctionName, which every
   String can take; a comment there (2022-08-04) says that per the July 2022 meeting it should be replaced by

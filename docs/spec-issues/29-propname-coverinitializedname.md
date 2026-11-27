@@ -5,8 +5,11 @@
   step 1 of the first row and step 2 of the second; §8.6.5 Static Semantics: PropName (`#sec-static-semantics-propname`).
 - **Kind:** missing case (an operation applied to a production it does not define). Not observable: every text that
   reaches it has another early error.
-- **Model erratum:** none, since no result depends on it: the model gives CoverInitializedName the row of
-  `PropertyDefinition : IdentifierReference`, as proposed below.
+- **Model erratum:** `PropNameCoverInitializedName`, baked-in SpecTec reading proposed (`spec/spectec/clauses/Helpers.spectec`,
+  `@row-propname-coverinitializedname`, `@formal-protopropertycount`; `spec/spectec/08-early-errors.spectec`). Rather
+  than leaving `PropName` undefined on `CoverInitializedName` (which stops with `sortError`), SpecTec adds the missing
+  `PropName` row for `CoverInitializedName : IdentifierReference Initializer`, evaluates duplicate-`__proto__` counts via
+  `@formal-protopropertycount`, and runs child early errors before parent rules.
 - **Upstream:** Checked 2026-11-19: none found (searched for "CoverInitializedName" and "PropName"). Issue #2607
   (open, 2022-01), "Editorial: missing syntax error (involving CoverCallExpressionAndAsyncArrowHead)", is about
   another case of the CoverInitializedName rule, `f({x = 0})`.

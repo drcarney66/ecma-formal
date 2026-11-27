@@ -287,13 +287,15 @@ def upstream_summary(item: str, rows: list[upstream.Row]) -> str:
     return esc(lead) + ", ".join(parts)
 
 
-def facts_html(iss: si.Issue, sp: errata_page.Text, errata: dict, kinds: dict[str, str],
+def facts_html(iss: si.Issue, sp: errata_page.Text, names: dict[str, str], errata: dict, kinds: dict[str, str],
                recs: dict[str, list[upstream.Row]]) -> str:
     rows = []
     for k in ("Location", "Kind", "Model erratum", "Model errata", "Model reading"):
         if k in iss.header:
             v = inline(iss.header[k])
-            v = re.sub(r"<code>#((?:sec|prod|table|figure|eqn|await)[A-Za-z0-9_.%@-]*)</code>",
+            v = re.sub(r'href="(\d\d-[\w-]+)\.md(#[^"]*)?"',
+                       lambda m: f'href="{m.group(1)}.html{m.group(2) or ""}"' if m.group(1) in names else m.group(0), v)
+            v = re.sub(r"<code>#((?:sec|prod|table|figure|eqn|await|step)[A-Za-z0-9_.%@-]*)</code>",
                        lambda m: f'<a class="clause" href="{esc(CLAUSE_URL.format(m.group(1)))}"><code>#{m.group(1)}</code></a>', v)
             rows.append(f"<dt>{esc(k)}</dt><dd>{v}</dd>")
     if "Upstream" in iss.header:
@@ -307,7 +309,9 @@ def facts_html(iss: si.Issue, sp: errata_page.Text, errata: dict, kinds: dict[st
         ers.append(f'<code>{esc(e)}</code>, retired: <a href="../errata.html#removed">removed because the editors fixed the text</a>')
     if ers:
         rows.append(f'<dt>On this site</dt><dd>{"<br>".join(ers)}</dd>')
-    return f'<dl class="split efacts">{"".join(rows)}</dl>'
+    dl = f'<dl class="split efacts">{"".join(rows)}</dl>'
+    return re.sub(r'href="(\d\d-[\w-]+)\.md(#[^"]*)?"',
+                  lambda m: f'href="{m.group(1)}.html{m.group(2) or ""}"' if m.group(1) in names else m.group(0), dl)
 
 
 def pages(builds: list[dict] | None = None, sp: errata_page.Text | None = None, strict: bool = True) -> list[Out]:
@@ -332,7 +336,7 @@ def pages(builds: list[dict] | None = None, sp: errata_page.Text | None = None, 
             raise SystemExit("spec issues: a quotation of the text does not match spec.html (scripts/spec_issues.py "
                              "check):\n  " + "\n  ".join(fails))
         anchor = "program" if i.example else None
-        body = facts_html(i, sp, all_errata, kinds, recs) + body_html(i, sp, names, set(all_errata), anchor)
+        body = facts_html(i, sp, names, all_errata, kinds, recs) + body_html(i, sp, names, set(all_errata), anchor)
         if i.example:
             body += program_html(i, builds, all_errata, unrunnable)
         toc = [(m.group(1), m.group(2), 1) for m in re.finditer(r'<h2 id="([^"]+)">(.*?)</h2>', body)]
@@ -349,15 +353,11 @@ def pages(builds: list[dict] | None = None, sp: errata_page.Text | None = None, 
 GROUPS = [
     ("defects", "Defects of the text", "defect",
      "The text, read as written, gives no answer, an answer that contradicts another sentence, or an answer "
-     "test262 does not accept. Each is an erratum of the model, with its readings on the Errata page."),
-    ("proposals", "A proposed normative change", "proposal",
+     "test262 does not accept. Each is an erratum recorded in SpecTec, with its readings on the Errata page."),
+    ("proposals", "Proposed normative changes", "proposal",
      "Not a defect: the text is consistent, and the change would alter what it requires."),
     ("other", "Editorial items and questions", "none",
-     "Irregular notation, a missing case nothing observable depends on, or a sentence that needs clarifying. The "
-     "model reads the text there without an erratum."),
-    ("fixed", "Fixed in the pinned text", "fixed",
-     "Defects the editors have since fixed: the pinned text no longer has them, and the model's errata for them are "
-     "retired. Each write-up keeps the argument as a record."),
+     "Irregular notation, a missing case nothing observable depends on, or a sentence that needs clarifying."),
 ]
 
 
@@ -417,10 +417,14 @@ def index_page(iss: list[si.Issue], sp: errata_page.Text, errata: dict, kinds: d
            f'<code>docs/spec-issues/upstream.tsv</code>; the site\'s build does not use the network.</p></section>')
     toc.insert(0, ("how", "How to read them", 1))
     n = len(iss)
-    lede = (f"<p>{n} write-ups of places where the text of ECMA-262 cannot be followed as written, or should say "
-            f"something else: {counts.get('defect', 0)} defects of the text, {counts.get('proposal', 0)} proposed "
-            f"normative change, {counts.get('none', 0)} editorial items and questions, and {counts.get('fixed', 0)} "
-            f"defects the editors have since fixed. Each argues from the text alone.</p>")
+    nd, np, no = counts.get("defect", 0), counts.get("proposal", 0), counts.get("none", 0)
+    parts_lede = [f"{nd} defect{'s' if nd != 1 else ''} of the text",
+                  f"{np} proposed normative change{'s' if np != 1 else ''}"]
+    if no:
+        parts_lede.append(f"{no} editorial item{'s' if no != 1 else ''} and question{'s' if no != 1 else ''}")
+    summary_str = ", ".join(parts_lede[:-1]) + (f" and {parts_lede[-1]}" if len(parts_lede) > 1 else parts_lede[0])
+    lede = (f"<p>{n} write-ups of places where the text of ECMA-262 cannot be followed as written, or where SpecTec "
+            f"bakes in a non-literal reading or proposed change: {summary_str}. Each argues from the text alone.</p>")
     return Out(f"{DIR}/index.html", "Spec issues", "From <code>docs/spec-issues/</code>", lede, how + "".join(secs), toc)
 
 

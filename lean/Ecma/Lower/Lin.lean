@@ -208,7 +208,7 @@ def Prog'.of (P : Prog) : Prog' where
   tstep t := (P.table t).map fun tb => tb.grid.tail.map (rowCode P)
   earlyRow p i := ((P.early p)[i]?).map (linRow P)
   earlyOwn ps := linOwn P ps
-  earlyTree p := linTree p
+  earlyTree p := linTree P p
   covered p := linCovered P p
   clauseRows c := (P.clauseTables c).map fun tb => tb.grid.tail.map (rowCode P)
 

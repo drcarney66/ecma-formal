@@ -39,7 +39,10 @@ Step 2 calls UnicodeMatchPropertyValue before it tests _s_. For a lone binary pr
 `\p{Hex}`, or a property of strings such as `\p{RGI_Emoji}` with the `v` flag), _s_ is no General_Category value, and
 UnicodeMatchPropertyValue's Assert (step 2) fails. Steps 3–4, which handle exactly these names, are never reached.
 Where the call does return, it returns a canonical General_Category value, so step 2's test is always true; and step
-2.a uses _s_, which may be an alias (`Lu`), as the value, not the canonical value the call computed.
+2.a uses _s_, which may be an alias (`Lu`), as the value, not the canonical value the call computed. (Note also that
+step 2.a returns the raw General_Category CharSet directly without calling `MaybeSimpleCaseFolding(_regexpRecord_,
+_charSet_)` as the two-part `General_Category=...` branch and binary-property step 5 do, so `/\P{Lu}/vi.test("A")`
+differs from `/\P{gc=Lu}/vi.test("A")`.)
 
 ## Examples
 

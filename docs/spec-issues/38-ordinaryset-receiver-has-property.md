@@ -4,8 +4,11 @@
   §10.5.5 [[GetOwnProperty]] of a Proxy exotic object
   (`#sec-proxy-object-internal-methods-and-internal-slots-getownproperty-p`), steps 10.a–e.
 - **Kind:** failing Assert (or, read on the receiver's own properties only, a vacuous one).
-- **Model erratum:** none: the Assert has no checkable meaning, so the model passes it unchecked and nothing
-  switches.
+- **Model erratum:** `OrdinarySetReceiverHasProperty`, baked-in SpecTec reading proposed (`spec/spectec/clauses/S10.spectec`,
+  line 190). Literal step 2.d.i (`Assert: _receiver_ does not currently have a property _propertyKey_`) fails both when a
+  Proxy receiver's `getOwnPropertyDescriptor` trap hides a configurable target property and when an ordinary `_receiver_`
+  inherits `_propertyKey_` from its prototype chain; SpecTec silences step 2.d.i with `assert pass` instead of checking
+  the literal `Assert:`.
 - **Upstream:** Checked 2026-11-19: none found (searched for "OrdinarySetWithOwnDescriptor"). The Assert is in the
   first Ecmarkup version of the text (commit 7461eea82); PR #3789 (merged 2026-04, commit bab3fbf29) renamed its
   aliases.

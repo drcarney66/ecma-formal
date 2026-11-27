@@ -2153,7 +2153,7 @@ sdo_row @sec-postfix-increment-operator-runtime-semantics-evaluation Evaluation 
     }
     else {
       assert oldValue is ty {BigInt}
-      let newValue = @sec-numeric-types-bigint-add(oldValue, num_z(1))
+      let newValue = ? @sec-numeric-types-bigint-add(oldValue, num_z(1))
     }
     perform ? @sec-putvalue(lhs, newValue)
     return oldValue
@@ -2173,7 +2173,7 @@ sdo_row @sec-postfix-decrement-operator-runtime-semantics-evaluation Evaluation 
     }
     else {
       assert oldValue is ty {BigInt}
-      let newValue = @sec-numeric-types-bigint-subtract(oldValue, num_z(1))
+      let newValue = ? @sec-numeric-types-bigint-subtract(oldValue, num_z(1))
     }
     perform ? @sec-putvalue(lhs, newValue)
     return oldValue
@@ -2193,7 +2193,7 @@ sdo_row @sec-prefix-increment-operator-runtime-semantics-evaluation Evaluation f
     }
     else {
       assert oldValue is ty {BigInt}
-      let newValue = @sec-numeric-types-bigint-add(oldValue, num_z(1))
+      let newValue = ? @sec-numeric-types-bigint-add(oldValue, num_z(1))
     }
     perform ? @sec-putvalue(expr, newValue)
     return newValue
@@ -2213,7 +2213,7 @@ sdo_row @sec-prefix-decrement-operator-runtime-semantics-evaluation Evaluation f
     }
     else {
       assert oldValue is ty {BigInt}
-      let newValue = @sec-numeric-types-bigint-subtract(oldValue, num_z(1))
+      let newValue = ? @sec-numeric-types-bigint-subtract(oldValue, num_z(1))
     }
     perform ? @sec-putvalue(expr, newValue)
     return newValue

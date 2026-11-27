@@ -549,19 +549,19 @@ def page(rec: dict, gallery: dict | None, builds: list[dict]) -> dict:
             f'<p class="muted">No row for <code>{esc(r["grammar"])}</code>.</p>'
         rd = "".join(errata_page.alg_html(x["text"], None) for x in r["reading"])
         rlis.append(f'<tbody><tr><td>{where}<br><span class="muted">{tag}</span></td><td class="spec">{sent}</td>'
-                    f'<td class="spec">{rd}</td></tr><tr class="why"><td colspan="3"><span class="muted">Why the '
-                    f'generator could not read it unaided:</span> {md(why)}</td></tr></tbody>')
+                    f'<td class="spec">{rd}</td></tr><tr class="why"><td colspan="3"><span class="muted">Why '
+                    f'SpecTec records an explicit step reading:</span> {md(why)}</td></tr></tbody>')
     rtable = ('<div class="tablebox"><table class="readings-t"><thead><tr><th>Clause, step</th><th>The proposal\'s '
               'sentence, as the merged text has it</th><th>The reading</th></tr></thead>' + "".join(rlis) + "</table></div>")
     counts = ", ".join(f"{v} {k}" for k, v in sorted(by_status.items(), key=lambda x: -x[1]))
     oth = "".join(f'<li><code>{esc(o["file"])}</code>: ' + "; ".join(
         [f"removed <code>{esc(x)}</code>" for x in o["removed"]] + [f"added <code>{esc(x)}</code>" for x in o["added"]]) + "</li>"
         for o in rec["other_overlay"])
-    body.append(f'<h3 id="readings">The readings ({nread})</h3><p>Each reading says what a sentence of the proposal means, '
-                f'in the notation the generator reads: {counts}. The proposal\'s sentence is quoted from the merged '
-                f'text, found by the hash the overlay '
-                f'records; the reasons are the branch\'s report\'s.</p>{rtable}'
-                + (f'<p>Other changes to the overlay:</p><ul>{oth}</ul>' if oth else ""))
+    body.append(f'<h3 id="readings">The readings ({nread})</h3><p>Each reading says what a sentence of the proposal means '
+                f'where the merged prose is informal or incomplete: {counts}. The proposal\'s sentence is quoted from the '
+                f'merged text (matched via <code>spec/html/step-patches.txt</code>); '
+                f'the reasons are the branch\'s report\'s.</p>{rtable}'
+                + (f'<p>Other SpecTec changes:</p><ul>{oth}</ul>' if oth else ""))
 
     # 4. What regenerating changed.
     regen = g["regenerated"]["files"]

@@ -55,5 +55,8 @@ B.1.2's committed parse in two passes). `StringNumericLiteral` and
 1. **M6** speed: a linear recursive descent (decisions from at most 3 tokens),
    checked node for node against the search.
 
-Spec-text questions met on the way are spec-issues
-[19.8](../spec-issues/19-other-questions.md).
+Spec-text issues and non-literal parser readings met on the way are documented in
+[55](../spec-issues/55-regexp-unicode-escape-lookahead.md),
+[56](../spec-issues/56-post-asi-lexical-goal.md),
+[57](../spec-issues/57-asi-for-lexical-header.md), and
+[58](../spec-issues/58-cover-reparse-virtual-semicolons.md).

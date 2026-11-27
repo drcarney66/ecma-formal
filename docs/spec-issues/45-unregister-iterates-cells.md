@@ -54,9 +54,8 @@ print(fr.unregister(token));
 | formal model, literal reading | `true` | `true` |
 | formal model, test262 and proposed readings (the default: test262) | `true` | `false` |
 
-The model's rows are `ecma-run --erratum UnregisterIteratesCopy=literal|test262|proposed` on the example. The
-model's test `tests/run/errata_unregister_two_cells_literal.js`, run with `--erratum UnregisterIteratesCopy=literal`,
-prints `normal: "true|true"`.
+SpecTec bakes in the test262 reading (`$Copy(finalizationRegistry[[Cells]])` in `spec/spectec/clauses/S26.spectec`), so
+`tests/run/errata_unregister_two_cells.js` prints `normal: "true|false"`.
 
 ## Proposed wording
 
