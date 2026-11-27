@@ -78,4 +78,53 @@ def gsiEntry : List (Val F) → Option (Run F (Option (Val F)))
   | [.str s, .math (.int i)] => if s.size ≤ scanLimit then some (always (gsiRun s i)) else none
   | _ => none
 
+/-- UTF16EncodeCodePoint(cp)'s code units, for 0 ≤ cp ≤ 0x10FFFF. -/
+def utf16Units (cp : Nat) : Array UInt16 :=
+  if cp ≤ 0xFFFF then #[UInt16.ofNat cp]
+  else
+    let d := cp - 0x10000
+    #[UInt16.ofNat (d / 0x400 + 0xD800), UInt16.ofNat (d % 0x400 + 0xDC00)]
+
+/-- UTF16EncodeCodePoint(cp) on valid Unicode code points `0 ≤ cp ≤ 0x10FFFF`. -/
+def utf16EncEntry : List (Val F) → Option (Run F (Option (Val F)))
+  | [.math (.int cp)] =>
+    if 0 ≤ cp ∧ cp ≤ 0x10FFFF then
+      some (always (pure (.str (utf16Units cp.toNat))))
+    else none
+  | _ => none
+
+/-- CodePointsToString's loop from element `i` of `xs`, at most `k` rounds, pushing UTF-16 code units onto `acc`. -/
+def encodeCps (xs : Array (Val F)) : Nat → Nat → Array UInt16 → Option (Array UInt16)
+  | 0, _, acc => some acc
+  | k + 1, i, acc =>
+    if i < xs.size then
+      match xs[i]? with
+      | some (.math (.int cp)) =>
+        if 0 ≤ cp ∧ cp ≤ 0x10FFFF then
+          let n := cp.toNat
+          let acc' :=
+            if n ≤ 0xFFFF then acc.push (UInt16.ofNat n)
+            else
+              let d := n - 0x10000
+              (acc.push (UInt16.ofNat (d / 0x400 + 0xD800))).push (UInt16.ofNat (d % 0x400 + 0xDC00))
+          encodeCps xs k (i + 1) acc'
+        else none
+      | _ => none
+    else some acc
+
+/-- CodePointsToString(text) on a List cell of valid Unicode code points up to `scanLimit`. -/
+def cptsRun (l : Nat) : Run F (Option (Val F)) := fun st =>
+  match st.heap.get l with
+  | some (.list xs _) =>
+    if xs.size ≤ scanLimit then
+      match encodeCps xs xs.size 0 #[] with
+      | some out => .ok (some (.str out)) st
+      | none => .ok none st
+    else .ok none st
+  | _ => .ok none st
+
+def cptsEntry : List (Val F) → Option (Run F (Option (Val F)))
+  | [.ref l] => some (cptsRun l)
+  | _ => none
+
 end Engine.Accel

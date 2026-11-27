@@ -17,7 +17,8 @@ sdo_row @sec-identifiercodepoints#1 IdentifierCodePoints form alg {
   steps {
     let codePoints = sdo IdentifierCodePoints(child 3 |IdentifierName|)
     let codePoint = sdo IdentifierCodePoint(child 5 |IdentifierPart|)
-    return $ListConcat([codePoints, [codePoint]])
+    perform $Append(?codePoint, ?codePoints)
+    return codePoints
   }
 }
 

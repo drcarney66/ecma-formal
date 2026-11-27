@@ -182,15 +182,80 @@ def containsRowsCheck : Bool :=
       | none => true
       | some (n, code) => r.vars.size == n && Code.optEqB (Engine.P'.row s k) (some code))
 
+/-! ## StringNumericValue and MV row shapes and check -/
+
+def snvStrNumLitCode : Code :=
+  [Ins.site [1], Ins.ret (Op.on (OnK.sdo Known.sdoStringNumericValue) (Op.child 5 Known.ntStrNumericLiteral) [])]
+
+def snvStrUnsignedDigitsCode : Code :=
+  [Ins.site [1], Ins.let_ 0 (Op.on (OnK.sdo Known.sdoMV) (Op.child 5 Known.ntDecimalDigits) []), Ins.site [2],
+   Ins.br ((Op.child 5 Known.ntExponentPart).bind (Op.and [Op.leaf (Leaf.isTy false false) [Op.call (CallK.prim Known.pPresent) [Op.bound]]]))
+     [Ins.let_ 1 (Op.on (OnK.sdo Known.sdoMV) (Op.child 5 Known.ntExponentPart) [])]
+     [Ins.let_ 1 (Op.const (Const.math Sign.none (Mag.num (Numeral.dec 0))))],
+   Ins.site [3], Ins.ret (Op.call (CallK.alg ⟨Known.cFormalRoundDecimalMV, 0⟩) [Op.var 0, Op.var 1])]
+
+def mvDecDigitsStepCode : Code :=
+  [Ins.site [1],
+   Ins.ret (Op.leaf (Leaf.bin BinOp.add)
+     [Op.leaf (Leaf.bin BinOp.mul)
+        [Op.on (OnK.sdo Known.sdoMV) (Op.child 5 Known.ntDecimalDigits) [],
+         Op.const (Const.math Sign.none (Mag.num (Numeral.dec 10)))],
+      Op.on (OnK.sdo Known.sdoMV) (Op.child 5 Known.ntDecimalDigit) []])]
+
+def mvDecDigitCode (d : Nat) : Code :=
+  [Ins.site [1], Ins.ret (Op.const (Const.math Sign.none (Mag.num (Numeral.dec d))))]
+
+def decDigitProds : List (ProdId × Nat) :=
+  [(Known.prodDecDigit0, 0), (Known.prodDecDigit1, 1), (Known.prodDecDigit2, 2), (Known.prodDecDigit3, 3),
+   (Known.prodDecDigit4, 4), (Known.prodDecDigit5, 5), (Known.prodDecDigit6, 6), (Known.prodDecDigit7, 7),
+   (Known.prodDecDigit8, 8), (Known.prodDecDigit9, 9)]
+
+def snvRowHas (s : SdoId) (k : ProdId) (n : Nat) (code : Code) : Bool :=
+  match Engine.P.row s k with
+  | some r => r.vars.size == n && Code.optEqB (Engine.P'.row s k) (some code)
+  | none => false
+
+def snvChainHas (s : SdoId) (k : ProdId) (ch : NtId) : Bool :=
+  (Engine.P.row s k).isNone && Engine.P.chain k == some ch
+
+def snvRowsCheck : Bool :=
+  Engine.P.sdoArity Known.sdoStringNumericValue == 0 &&
+  !Engine.P.sdoRc Known.sdoStringNumericValue &&
+  (Engine.P.sdoDefault Known.sdoStringNumericValue).isNone &&
+  Engine.P.sdoArity Known.sdoMV == 0 &&
+  !Engine.P.sdoRc Known.sdoMV &&
+  (Engine.P.sdoDefault Known.sdoMV).isNone &&
+  snvRowHas Known.sdoStringNumericValue Known.prodStrNumLit 0 snvStrNumLitCode &&
+  snvChainHas Known.sdoStringNumericValue Known.prodStrNumDec Known.ntStrDecimalLiteral &&
+  snvChainHas Known.sdoStringNumericValue Known.prodStrDecUnsigned Known.ntStrUnsignedDecimalLiteral &&
+  snvRowHas Known.sdoStringNumericValue Known.prodStrUnsignedDigits 2 snvStrUnsignedDigitsCode &&
+  snvChainHas Known.sdoMV Known.prodDecDigits1 Known.ntDecimalDigit &&
+  snvRowHas Known.sdoMV Known.prodDecDigitsStep 0 mvDecDigitsStepCode &&
+  decDigitProds.all fun (p, d) => snvRowHas Known.sdoMV p 0 (mvDecDigitCode d)
+
 /-! ## Pinned specification units and Boolean tests -/
 
--- Exact algorithm rows (6)
+-- Exact algorithm rows (20)
 pin_alg_def isWriteCode ⟨Known.cSortWriteSharedMemoryEvent, 0⟩
 pin_prog_alg_def isWriteAlg ⟨Known.cSortWriteSharedMemoryEvent, 0⟩
 pin_alg_def stcpCode ⟨Known.cStringToCodePoints, 0⟩
 pin_prog_alg_def stcpAlg ⟨Known.cStringToCodePoints, 0⟩
 pin_alg_def gsiCode ⟨Known.cGetStringIndex, 0⟩
 pin_prog_alg_def gsiAlg ⟨Known.cGetStringIndex, 0⟩
+pin_alg_def utf16EncCode ⟨Known.cUTF16EncodeCodePoint, 0⟩
+pin_prog_alg_def utf16EncAlg ⟨Known.cUTF16EncodeCodePoint, 0⟩
+pin_alg_def cptsCode ⟨Known.cCodePointsToString, 0⟩
+pin_prog_alg_def cptsAlg ⟨Known.cCodePointsToString, 0⟩
+pin_alg_def toNumCode ⟨Known.cToNumber, 0⟩
+pin_prog_alg_def toNumAlg ⟨Known.cToNumber, 0⟩
+pin_alg_def cnisCode ⟨Known.cCanonicalNumericIndexString, 0⟩
+pin_prog_alg_def cnisAlg ⟨Known.cCanonicalNumericIndexString, 0⟩
+pin_alg_def roundDecMVCode ⟨Known.cFormalRoundDecimalMV, 0⟩
+pin_prog_alg_def roundDecMVAlg ⟨Known.cFormalRoundDecimalMV, 0⟩
+pin_alg_def roundMVResCode ⟨Known.cRoundMVResult, 0⟩
+pin_prog_alg_def roundMVResAlg ⟨Known.cRoundMVResult, 0⟩
+pin_alg_def ph20DigitsCode ⟨Known.cPhTwentySignificantDigits, 0⟩
+pin_prog_alg_def ph20DigitsAlg ⟨Known.cPhTwentySignificantDigits, 0⟩
 
 -- CodePointAt and surrogate/code-unit sorts (12)
 pin_alg_def cpaCode ⟨Known.cCodePointAt, 0⟩
@@ -248,15 +313,30 @@ pin_prog_alg_def lsOgopAlg ⟨Known.cOrdinaryGetOwnProperty, 0⟩
 pin_alg_def lsOgpoCode ⟨Known.cOrdinaryGetPrototypeOf, 0⟩
 pin_prog_alg_def lsOgpoAlg ⟨Known.cOrdinaryGetPrototypeOf, 0⟩
 
-/-- Named list of all 55 pin checks (`ecma-run --check-pins`). -/
+/-- Named list of all 70 pin checks (`ecma-run --check-pins`). -/
 def pinChecks : List (String × (Unit → Bool)) :=
   [("containsRows", fun _ => containsRowsCheck),
+   ("snvRows", fun _ => snvRowsCheck),
    ("isWriteCode", fun _ => isWriteCode_ok),
    ("isWriteAlg", fun _ => isWriteAlg_ok),
    ("stcpCode", fun _ => stcpCode_ok),
    ("stcpAlg", fun _ => stcpAlg_ok),
    ("gsiCode", fun _ => gsiCode_ok),
    ("gsiAlg", fun _ => gsiAlg_ok),
+   ("utf16EncCode", fun _ => utf16EncCode_ok),
+   ("utf16EncAlg", fun _ => utf16EncAlg_ok),
+   ("cptsCode", fun _ => cptsCode_ok),
+   ("cptsAlg", fun _ => cptsAlg_ok),
+   ("toNumCode", fun _ => toNumCode_ok),
+   ("toNumAlg", fun _ => toNumAlg_ok),
+   ("cnisCode", fun _ => cnisCode_ok),
+   ("cnisAlg", fun _ => cnisAlg_ok),
+   ("roundDecMVCode", fun _ => roundDecMVCode_ok),
+   ("roundDecMVAlg", fun _ => roundDecMVAlg_ok),
+   ("roundMVResCode", fun _ => roundMVResCode_ok),
+   ("roundMVResAlg", fun _ => roundMVResAlg_ok),
+   ("ph20DigitsCode", fun _ => ph20DigitsCode_ok),
+   ("ph20DigitsAlg", fun _ => ph20DigitsAlg_ok),
    ("cpaCode", fun _ => cpaCode_ok),
    ("cpaAlg", fun _ => cpaAlg_ok),
    ("pairCode", fun _ => pairCode_ok),
@@ -312,7 +392,11 @@ def failedPins : List String :=
   pinChecks.filterMap fun (n, f) => if f () then none else some n
 
 def exactPinsOk : Bool :=
-  isWriteCode_ok && isWriteAlg_ok && stcpCode_ok && stcpAlg_ok && gsiCode_ok && gsiAlg_ok
+  isWriteCode_ok && isWriteAlg_ok && stcpCode_ok && stcpAlg_ok && gsiCode_ok && gsiAlg_ok &&
+  utf16EncCode_ok && utf16EncAlg_ok && cptsCode_ok && cptsAlg_ok &&
+  toNumCode_ok && toNumAlg_ok && cnisCode_ok && cnisAlg_ok &&
+  roundDecMVCode_ok && roundDecMVAlg_ok && roundMVResCode_ok && roundMVResAlg_ok &&
+  ph20DigitsCode_ok && ph20DigitsAlg_ok && snvRowsCheck
 
 def cpPinsOk : Bool :=
   cpaCode_ok && cpaAlg_ok && pairCode_ok && pairAlg_ok && unitCode_ok && unitAlg_ok &&
@@ -342,12 +426,27 @@ def pinsOkThunk : Thunk Bool := Thunk.mk fun _ => pinsOk
 /-- Hypothesis carrying all 55 pinned program equations when `pinsOk = true`. -/
 class PinsHold : Prop where
   containsRows_true : containsRowsCheck = true
+  snvRows_true : snvRowsCheck = true
   isWriteCode_pin : Engine.P'.alg ⟨Known.cSortWriteSharedMemoryEvent, 0⟩ = some isWriteCode
   isWriteAlg_pin : Engine.P.alg ⟨Known.cSortWriteSharedMemoryEvent, 0⟩ = some isWriteAlg
   stcpCode_pin : Engine.P'.alg ⟨Known.cStringToCodePoints, 0⟩ = some stcpCode
   stcpAlg_pin : Engine.P.alg ⟨Known.cStringToCodePoints, 0⟩ = some stcpAlg
   gsiCode_pin : Engine.P'.alg ⟨Known.cGetStringIndex, 0⟩ = some gsiCode
   gsiAlg_pin : Engine.P.alg ⟨Known.cGetStringIndex, 0⟩ = some gsiAlg
+  utf16EncCode_pin : Engine.P'.alg ⟨Known.cUTF16EncodeCodePoint, 0⟩ = some utf16EncCode
+  utf16EncAlg_pin : Engine.P.alg ⟨Known.cUTF16EncodeCodePoint, 0⟩ = some utf16EncAlg
+  cptsCode_pin : Engine.P'.alg ⟨Known.cCodePointsToString, 0⟩ = some cptsCode
+  cptsAlg_pin : Engine.P.alg ⟨Known.cCodePointsToString, 0⟩ = some cptsAlg
+  toNumCode_pin : Engine.P'.alg ⟨Known.cToNumber, 0⟩ = some toNumCode
+  toNumAlg_pin : Engine.P.alg ⟨Known.cToNumber, 0⟩ = some toNumAlg
+  cnisCode_pin : Engine.P'.alg ⟨Known.cCanonicalNumericIndexString, 0⟩ = some cnisCode
+  cnisAlg_pin : Engine.P.alg ⟨Known.cCanonicalNumericIndexString, 0⟩ = some cnisAlg
+  roundDecMVCode_pin : Engine.P'.alg ⟨Known.cFormalRoundDecimalMV, 0⟩ = some roundDecMVCode
+  roundDecMVAlg_pin : Engine.P.alg ⟨Known.cFormalRoundDecimalMV, 0⟩ = some roundDecMVAlg
+  roundMVResCode_pin : Engine.P'.alg ⟨Known.cRoundMVResult, 0⟩ = some roundMVResCode
+  roundMVResAlg_pin : Engine.P.alg ⟨Known.cRoundMVResult, 0⟩ = some roundMVResAlg
+  ph20DigitsCode_pin : Engine.P'.alg ⟨Known.cPhTwentySignificantDigits, 0⟩ = some ph20DigitsCode
+  ph20DigitsAlg_pin : Engine.P.alg ⟨Known.cPhTwentySignificantDigits, 0⟩ = some ph20DigitsAlg
   cpaCode_pin : Engine.P'.alg ⟨Known.cCodePointAt, 0⟩ = some cpaCode
   cpaAlg_pin : Engine.P.alg ⟨Known.cCodePointAt, 0⟩ = some cpaAlg
   pairCode_pin : Engine.P'.alg ⟨Known.cUTF16SurrogatePair, 0⟩ = some pairCode
@@ -398,10 +497,17 @@ class PinsHold : Prop where
   lsOgpoAlg_pin : Engine.P.alg ⟨Known.cOrdinaryGetPrototypeOf, 0⟩ = some lsOgpoAlg
 
 export PinsHold (
-  containsRows_true
+  containsRows_true snvRows_true
   isWriteCode_pin isWriteAlg_pin
   stcpCode_pin stcpAlg_pin
   gsiCode_pin gsiAlg_pin
+  utf16EncCode_pin utf16EncAlg_pin
+  cptsCode_pin cptsAlg_pin
+  toNumCode_pin toNumAlg_pin
+  cnisCode_pin cnisAlg_pin
+  roundDecMVCode_pin roundDecMVAlg_pin
+  roundMVResCode_pin roundMVResAlg_pin
+  ph20DigitsCode_pin ph20DigitsAlg_pin
   cpaCode_pin cpaAlg_pin
   pairCode_pin pairAlg_pin
   unitCode_pin unitAlg_pin
@@ -433,7 +539,9 @@ theorem pinsHold_of_ok (h : pinsOk = true) : PinsHold := by
   simp only [pinsOk, Bool.and_eq_true, and_assoc] at h
   rcases h with ⟨he, hcp, hco, hn, hr⟩
   simp only [exactPinsOk, Bool.and_eq_true, and_assoc] at he
-  rcases he with ⟨h_iwC, h_iwA, h_stC, h_stA, h_gsC, h_gsA⟩
+  rcases he with ⟨h_iwC, h_iwA, h_stC, h_stA, h_gsC, h_gsA,
+    h_u16C, h_u16A, h_cptsC, h_cptsA, h_tnC, h_tnA, h_cnC, h_cnA,
+    h_rdC, h_rdA, h_rmC, h_rmA, h_p20C, h_p20A, h_snvR⟩
   simp only [cpPinsOk, Bool.and_eq_true, and_assoc] at hcp
   rcases hcp with ⟨h_cpaC, h_cpaA, h_prC, h_prA, h_unC, h_unA, h_ldC, h_ldA, h_trC, h_trA, h_cuC, h_cuA⟩
   simp only [containsPinsOk, Bool.and_eq_true, and_assoc] at hco
@@ -445,12 +553,27 @@ theorem pinsHold_of_ok (h : pinsOk = true) : PinsHold := by
     h_lphC, h_lphA, h_lggC, h_lggA, h_lgoC, h_lgoA⟩
   exact
     { containsRows_true := h_cr
+      snvRows_true := h_snvR
       isWriteCode_pin := Engine.Pins.pin h_iwC
       isWriteAlg_pin := Engine.Pins.pin h_iwA
       stcpCode_pin := Engine.Pins.pin h_stC
       stcpAlg_pin := Engine.Pins.pin h_stA
       gsiCode_pin := Engine.Pins.pin h_gsC
       gsiAlg_pin := Engine.Pins.pin h_gsA
+      utf16EncCode_pin := Engine.Pins.pin h_u16C
+      utf16EncAlg_pin := Engine.Pins.pin h_u16A
+      cptsCode_pin := Engine.Pins.pin h_cptsC
+      cptsAlg_pin := Engine.Pins.pin h_cptsA
+      toNumCode_pin := Engine.Pins.pin h_tnC
+      toNumAlg_pin := Engine.Pins.pin h_tnA
+      cnisCode_pin := Engine.Pins.pin h_cnC
+      cnisAlg_pin := Engine.Pins.pin h_cnA
+      roundDecMVCode_pin := Engine.Pins.pin h_rdC
+      roundDecMVAlg_pin := Engine.Pins.pin h_rdA
+      roundMVResCode_pin := Engine.Pins.pin h_rmC
+      roundMVResAlg_pin := Engine.Pins.pin h_rmA
+      ph20DigitsCode_pin := Engine.Pins.pin h_p20C
+      ph20DigitsAlg_pin := Engine.Pins.pin h_p20A
       cpaCode_pin := Engine.Pins.pin h_cpaC
       cpaAlg_pin := Engine.Pins.pin h_cpaA
       pairCode_pin := Engine.Pins.pin h_prC

@@ -20,7 +20,7 @@ variable {M : Model} (D : LeafCtx M)
 def altsOf (P : Prog) (l : Val M) : Run M (List (List GTerminal)) := do
   let .ref a := l | Run.stop .sortError
   let .list xs _ ← readCell a | Run.stop .sortError
-  (M.seqFoldl (fun acc v => acc ++ [v]) [] xs).mapM fun
+  (M.seqFoldl (fun acc v => v :: acc) [] xs).reverse.mapM fun
     | .nt k _ => optOr .residue (P.alts k)
     | _ => Run.stop .sortError
 
@@ -33,11 +33,12 @@ def termPoints : GTerminal → Run M (List M.Math)
     | none => do
       let name := fun (s : String) => Prims.CharSets.seqOfList (M := M) (s.toList.map fun c => M.ofNat c.toNat)
       let es ← optOr .sortError (M.propSet (name "General_Category") (name "Space_Separator"))
-      M.seqFoldl (fun acc e => do
+      let rev ← M.seqFoldl (fun acc e => do
         let r ← acc
         match M.eq (M.seqLen e) (M.ofNat 1), M.seqGet e (M.ofNat 0) with
-        | true, some c => return r ++ [c]
+        | true, some c => return c :: r
         | _, _ => Run.stop .sortError) (Run.pure []) es
+      return rev.reverse
 
 /-- RightHandSideCharacters(ss): a new CharSet of the characters whose code points are on the
 right-hand sides of the nonterminals ss, each one terminal. TerminalAlternatives(nt): a new List
@@ -125,7 +126,7 @@ def progPrim (P : Prog) (H : Host M) (q : PrimId) (xs : List (Val M)) : Option (
   else if q == Known.pEvaluateBuiltin then some (match xs with
     | [f, this, .ref l, nt] => do
       let args ← match ← readCell l with
-        | .list vs _ => Run.pure (M.seqFoldl (fun acc v => acc ++ [v]) [] vs)
+        | .list vs _ => Run.pure (M.seqFoldl (fun acc v => v :: acc) [] vs).reverse
         | _ => Run.stop .sortError
       let r ← Run.within (·.passed) (fun t v => { t with passed := v }) (.ref l :: ·) do
         match ← readField f Known.fBehaviour with

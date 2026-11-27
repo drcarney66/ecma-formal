@@ -5,7 +5,9 @@ public import Engine.Proofs.Step.Rows.IsWrite
 public import Engine.Proofs.Step.Rows.CodePoints
 public import Engine.Proofs.Step.Rows.Stcp
 public import Engine.Proofs.Step.Rows.Gsi
+public import Engine.Proofs.Step.Rows.Utf16
 public import Engine.Proofs.Step.Rows.ToString
+public import Engine.Proofs.Step.Rows.ToNumber
 public import Engine.Proofs.Step.Rows.Contains
 public import Engine.Proofs.Step.Rows.LoopSkip
 public import Engine.Proofs.Step.Rows.LoopSkip.IntKeys
@@ -16,8 +18,7 @@ public import Engine.Proofs.Step.Rows.LoopSkip.IntKeys
 # The rows
 
 `exactRows_ok`: each row of `Engine.Accel.Table.exactRows` meets its obligation (`RowAlgOk`), from the rows proved
-(`Rows/`). `contains_sdoRows`: Contains' and ComputedPropertyContains' rows, the
-rows' table checked at runtime (`containsRows_true` under `PinsHold`).
+(`Rows/`). `contains_sdoRows` and `snv_sdoRow`: the SDO rows, their tables checked at runtime (`PinsHold`).
 -/
 
 namespace Engine.Machine
@@ -29,12 +30,17 @@ theorem exactRows_ok [PinsHold] (H : Host F) (chk : Bool) :
     ∀ row ∈ exactRows, RowAlgOk (Ctx.spec Engine.P' H chk) row := by
   intro row hrow
   simp only [exactRows, List.mem_cons, List.not_mem_nil, or_false] at hrow
-  rcases hrow with rfl | rfl | rfl | rfl | rfl
+  rcases hrow with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact isWrite_algRow H chk
   · exact stcp_algRow H chk
   · exact gsi_algRow H chk
+  · exact utf16Enc_algRow H chk
+  · exact cpts_algRow H chk
   · exact numToStr_algRow H chk
   · exact toStr_algRow H chk
+  · exact toNum_algRow H chk
+  · exact cnis_algRow H chk
+  · exact roundDecMV_algRow H chk
 
 /-- Contains' and ComputedPropertyContains' rows. -/
 theorem contains_sdoRows [PinsHold] (H : Host F) (chk : Bool) :

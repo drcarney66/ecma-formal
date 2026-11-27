@@ -4,6 +4,7 @@ public import Engine.Accel.Rows
 public import Engine.Accel.Algs
 public import Engine.Accel.Contains
 public import Engine.Accel.StringScan
+public import Engine.Accel.ToNumber
 public import Engine.Accel.ListUpdate
 
 @[expose] public section
@@ -29,8 +30,13 @@ structure Facts where
 def writeId : AlgId := ⟨Known.cSortWriteSharedMemoryEvent, 0⟩
 def stcpId : AlgId := ⟨Known.cStringToCodePoints, 0⟩
 def gsiId : AlgId := ⟨Known.cGetStringIndex, 0⟩
+def utf16EncId : AlgId := ⟨Known.cUTF16EncodeCodePoint, 0⟩
+def cptsId : AlgId := ⟨Known.cCodePointsToString, 0⟩
 def numToStrId : AlgId := ⟨Known.cNumberToString, 0⟩
 def toStrId : AlgId := ⟨Known.cToString, 0⟩
+def toNumId : AlgId := ⟨Known.cToNumber, 0⟩
+def cnisId : AlgId := ⟨Known.cCanonicalNumericIndexString, 0⟩
+def roundDecMVId : AlgId := ⟨Known.cFormalRoundDecimalMV, 0⟩
 
 /-- An algorithm's row. -/
 def algRow (a : AlgId) (e : Entry) (m : Mode) : Row F := ⟨.alg a, e, m⟩
@@ -40,13 +46,19 @@ def exactRows : Table F :=
   [algRow writeId isWriteEntry .exact,
     algRow stcpId stcpEntry .exact,
     algRow gsiId gsiEntry .exact,
+    algRow utf16EncId utf16EncEntry .exact,
+    algRow cptsId cptsEntry .exact,
     algRow numToStrId numToStrEntry .exact,
-    algRow toStrId toStrEntry .exact]
+    algRow toStrId toStrEntry .exact,
+    algRow toNumId toNumEntry .exact,
+    algRow cnisId cnisEntry .exact,
+    algRow roundDecMVId roundDecMVEntry .exact]
 
-/-- The SDOs' rows: Contains and ComputedPropertyContains. -/
+/-- The SDOs' rows: Contains, ComputedPropertyContains, and StringNumericValue. -/
 def sdoRows (Fc : Facts) : Table F :=
   [⟨.sdo Contains.sdoC, Contains.accelSdo Fc.tab Contains.sdoC, .exact⟩,
-    ⟨.sdo Contains.sdoCPC, Contains.accelSdo Fc.tab Contains.sdoCPC, .exact⟩]
+    ⟨.sdo Contains.sdoCPC, Contains.accelSdo Fc.tab Contains.sdoCPC, .exact⟩,
+    ⟨.sdo Known.sdoStringNumericValue, snvSdo, .exact⟩]
 
 /-- The primitives' rows: the List updates in place. -/
 def primRows : Table F :=

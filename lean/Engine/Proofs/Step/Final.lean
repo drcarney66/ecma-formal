@@ -36,7 +36,7 @@ theorem fastTable_alg [PinsHold] (o : Engine.Host.HostOpts) (cells : Engine.Host
   rcases hrow with ((hrow | hrow) | hrow) | hrow
   · exact exactRows_ok _ chk row hrow
   · simp only [sdoRows, List.mem_cons, List.not_mem_nil, or_false] at hrow
-    rcases hrow with rfl | rfl <;> trivial
+    rcases hrow with rfl | rfl | rfl <;> trivial
   · simp only [primRows, List.map, List.mem_cons, List.not_mem_nil, or_false] at hrow
     rcases hrow with rfl | rfl | rfl | rfl <;> trivial
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hrow
@@ -49,11 +49,12 @@ theorem sdo_at {k s : SdoId} {α : Type} {x : Option α} {y : α} (h : (if k = s
   · exact ⟨‹_›, h⟩
   · cases h
 
-/-- The table's rows at an SDO are Contains' and ComputedPropertyContains'. -/
+/-- The table's rows at an SDO are Contains', ComputedPropertyContains', and StringNumericValue's. -/
 theorem fastTable_sdo {Fc : Facts} {s : SdoId} {nd : F.Node}
     {vs : List (Val F)} {x : Run F (Val F)} (h : (fastTable Fc).sdo s nd vs = some x) :
     (s = Contains.sdoC ∧ Contains.accelSdo Fc.tab Contains.sdoC nd vs = some x) ∨
-    (s = Contains.sdoCPC ∧ Contains.accelSdo Fc.tab Contains.sdoCPC nd vs = some x) := by
+    (s = Contains.sdoCPC ∧ Contains.accelSdo Fc.tab Contains.sdoCPC nd vs = some x) ∨
+    (s = Known.sdoStringNumericValue ∧ snvSdo nd vs = some x) := by
   simp only [Table.sdo, fastTable, exactRows, sdoRows, primRows, loopRow, algRow,
     List.findSome?_cons, List.findSome?_nil, List.map, Row.sdo, List.cons_append, List.nil_append] at h
   split at h
@@ -63,8 +64,12 @@ theorem fastTable_sdo {Fc : Facts} {s : SdoId} {nd : F.Node}
   · split at h
     · cases h
       obtain ⟨h1, h2⟩ := sdo_at ‹_›
-      exact .inr ⟨h1.symm, h2⟩
-    · cases h
+      exact .inr (.inl ⟨h1.symm, h2⟩)
+    · split at h
+      · cases h
+        obtain ⟨h1, h2⟩ := sdo_at ‹_›
+        exact .inr (.inr ⟨h1.symm, h2⟩)
+      · cases h
 
 /-- The table's row at a loop is the sparse HasProperty loops'. -/
 theorem fastTable_loop {Fc : Facts} {p : List Nat} {t : Op}
@@ -88,9 +93,10 @@ theorem ctx_sound [PinsHold] (o : Engine.Host.HostOpts) (cells : Engine.Host.Cel
   alg := fun c a vs r _ hctl h =>
     alg_of_rows (fastTable_alg o cells chk) c a vs r hctl h
   sdo := fun c s nd vs r _ hctl _ h => by
-    rcases fastTable_sdo (Fc := facts Engine.P'.P) h with ⟨rfl, h'⟩ | ⟨rfl, h'⟩
+    rcases fastTable_sdo (Fc := facts Engine.P'.P) h with ⟨rfl, h'⟩ | ⟨rfl, h'⟩ | ⟨rfl, h'⟩
     · exact (contains_sdoRows _ chk).1 c nd vs r hctl h'
     · exact (contains_sdoRows _ chk).2 c nd vs r hctl h'
+    · exact snv_sdoRow _ chk c nd vs r hctl h'
   prim := fun c q xs r _ hctl h => ctx_prim Engine.P' _ chk c q xs r hctl h
   loop := fun c back l t run _ hctl hit h =>
     loopSkip_row _ chk lsIntKeys c back l t run hctl hit (fastTable_loop (Fc := facts Engine.P'.P) h)

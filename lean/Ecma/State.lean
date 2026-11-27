@@ -678,7 +678,7 @@ def indexOf (k : M.Str ⊕ M.Sym) : Option M.Math :=
 indices ascending (descending), then the other keys in creation order. -/
 def keysOrdered (o : Val M) (order : M.Math) : Run M (Val M) := do
   let (_, _, ps) ← objCell o
-  let ks := M.seqFoldl (fun l k => l ++ [k]) [] (M.propsKeys ps)
+  let ks := (M.seqFoldl (fun l k => k :: l) [] (M.propsKeys ps)).reverse
   let ks := if M.eq order (M.ofNat 1) then ks else
     let idx := (ks.filterMap fun k => (indexOf k).map (·, k)).mergeSort fun a b => !M.lt b.1 a.1
     let idx := if M.eq order (M.ofNat 2) then idx.reverse else idx

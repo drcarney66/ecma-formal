@@ -42,7 +42,7 @@ def builtinClo (X : Ctx M) (c : Cfg M) (f this nt : Val M) (l : M.Addr) : Option
   | some (.list vs _), some (.clo site caps) => match X.P.cloOf site.alg with
     | some (cs, nv) => match cs[site.idx]? with
       | some cl =>
-        let args := M.seqFoldl (fun acc v => acc ++ [v]) [] vs
+        let args := (M.seqFoldl (fun acc v => v :: acc) [] vs).reverse
         let k := (cl.params.getD []).length
         let sl := cloSlots cl nv caps (some (this, nt, .ref l))
           (args.take k ++ List.replicate (k - args.length) .missing)
@@ -64,7 +64,7 @@ def builtinAlg (X : Ctx M) (c : Cfg M) (f this nt : Val M) (l : M.Addr) : Option
       let inner := .ref l :: c.s.passed
       some (bindR { (c.push (.args .retC [] [])).push (.scope (.passed c.s.passed inner)) with
           s := { c.s with passed := inner } }
-        (builtinArgs alg.header this nt (M.seqFoldl (fun acc v => acc ++ [v]) [] vs)) fun ws c =>
+        (builtinArgs alg.header this nt (M.seqFoldl (fun acc v => v :: acc) [] vs).reverse) fun ws c =>
         c.enter ⟨g, none, #[], .eval, [], [], none⟩ (.invoke (.alg g ws)))
     | none => none
   | _, _ => none

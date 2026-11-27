@@ -157,7 +157,7 @@ def countExcept (xs : M.Seq (Val M)) (c : Option M.Math) : Option M.Math :=
 it (§5.2.2): its source's length less that of each instance of `k` among its descendants not
 within another. -/
 def pointsExcept (n : M.Node) (k : NtId) : M.Math :=
-  let xs := M.seqFoldl (fun acc d => if M.nodeNt d == k then acc ++ [d] else acc) [] (M.nodeDescendants n)
+  let xs := (M.seqFoldl (fun acc d => if M.nodeNt d == k then d :: acc else acc) [] (M.nodeDescendants n)).reverse
   let within (d e : M.Node) : Bool :=
     (M.nodeSpan e).1 ≤ (M.nodeSpan d).1 && (M.nodeSpan d).2 ≤ (M.nodeSpan e).2 && !(M.nodeSpan d == M.nodeSpan e)
   let outer := xs.filter fun d => !xs.any (within d ·)

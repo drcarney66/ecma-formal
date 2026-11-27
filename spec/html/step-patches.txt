@@ -12272,6 +12272,14 @@ attr row @sec-variable-statement-runtime-semantics-evaluation#3 5 "id=\"step-var
 | 1. Return the code point whose numeric value is the MV of |CodePoint|.
 @@end
 
+@@patch row @sec-identifiercodepoints#1 root:2..4
+@@spectec
+|     perform $Append(?codePoint, ?codePoints)
+|     return codePoints
+@@html
+| 1. Return the list-concatenation of _codePoints_ and « _codePoint_ ».
+@@end
+
 @@patch row @sec-identifiers-runtime-semantics-evaluation root:0..1
 @@spectec
 |     return ? @sec-resolvebinding(sdo StringValue(child 5 |Identifier|))
