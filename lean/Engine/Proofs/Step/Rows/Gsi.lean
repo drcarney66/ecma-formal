@@ -36,11 +36,11 @@ theorem gsi_loop [PinsHold] (H : Host F) (chk : Bool) (st : State F) (fs : List 
     (nd : Option F.Node) (s : Array UInt16) (i : Int) :
     ∀ (k p c : Nat) (rs : Array (Cell F)) (v5 : Val F) (q : List Nat) (r : Nat), p ≤ s.size → s.size - p ≤ k →
     Steps (Ctx.spec Engine.P' H chk)
-      ⟨{ st with heap := st.heap ++ rs },
+      ⟨{ st with heap := st.heap.pushMany rs },
         ⟨⟨Known.cGetStringIndex, 0⟩, nd, #[.str s, .math (.int i), .math (.int s.size), .math (.int p), .math (.int c), v5],
           .steps false true true, q, [.seq [.site [6], .ret (.var 2)]], none⟩ :: fs,
         .loop .round ⟨none, gsiIter, [5], gsiBody, .plain, r⟩⟩
-      ⟨{ st with heap := st.heap ++ (scanIdx s i k p c rs).2 }, fs, .val (.math (.int (scanIdx s i k p c rs).1))⟩ := by
+      ⟨{ st with heap := st.heap.pushMany (scanIdx s i k p c rs).2 }, fs, .val (.math (.int (scanIdx s i k p c rs).1))⟩ := by
   intro k
   induction k with
   | zero =>
@@ -71,7 +71,7 @@ theorem gsi_loop [PinsHold] (H : Host F) (chk : Bool) (st : State F) (fs : List 
         refine Steps.trans (cpa_steps H chk _ _ s p hlt) ?_
         gsteps
         refine Steps.next (step_field _ _ _ _ _ _ _ _ _ _ _ _ _ (cpRec_count _ _ (cpAt s p) (heap_push_get _ _))) ?_
-        rw [show (st.heap ++ rs).push (cpRec (cpAt s p)) = st.heap ++ rs.push (cpRec (cpAt s p)) from by simp]
+        rw [← Engine.Model.ChunkedHeap.pushMany_push]
         gsteps_round
         obtain ⟨h1, h2⟩ := cpAt_count s p hlt
         exact ih (p + (cpAt s p).2.1) (c + 1) (rs.push (cpRec (cpAt s p))) _ _ _ (by omega) (by omega)
@@ -88,14 +88,14 @@ theorem gsi_steps [PinsHold] (H : Host F) (chk : Bool) (st : State F) (fs : List
     Steps (Ctx.spec Engine.P' H chk)
       ⟨st, ⟨⟨Known.cGetStringIndex, 0⟩, nd, #[.str s, .math (.int i), .unbound, .unbound, .unbound, .unbound], .steps false true true,
         [], [], none⟩ :: fs, .code gsiCode⟩
-      ⟨{ st with heap := st.heap ++ (scanIdx s i s.size 0 0 #[]).2 }, fs,
+      ⟨{ st with heap := st.heap.pushMany (scanIdx s i s.size 0 0 #[]).2 }, fs,
         .val (.math (.int (scanIdx s i s.size 0 0 #[]).1))⟩ := by
   gsteps
   have hne : s ≠ #[] := fun h => hs (by rw [h]; rfl)
   refine Steps.valBool false (by simp [sameIs, Val.same, Val.used, utf16_empty, hne]) ?_
   gsteps_round
   have h := gsi_loop H chk st fs nd s i s.size 0 0 #[] .unbound [5] (0 + 1) (Nat.zero_le _) (by omega)
-  rw [Array.append_empty] at h
+  rw [Engine.Model.ChunkedHeap.pushMany_empty] at h
   exact h
 
 /-- GetStringIndex's steps at the empty String: 0, in the same state. -/
@@ -139,7 +139,7 @@ theorem gsi_row [PinsHold] (H : Host F) (chk : Bool) (c : Cfg F) (vs : List (Val
         rw [hcode]
         exact gsi_steps_empty H chk st fs nd i
       · have hr : gsiRun s i st = .ok (.math (.int (scanIdx s i s.size 0 0 #[]).1))
-            { st with heap := st.heap ++ (scanIdx s i s.size 0 0 #[]).2 } := by
+            { st with heap := st.heap.pushMany (scanIdx s i s.size 0 0 #[]).2 } := by
           unfold gsiRun; exact if_neg hs
         simp only [bindR, always, hr, Run.Res.bind]
         show Steps _ _ _

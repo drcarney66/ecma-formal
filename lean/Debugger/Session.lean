@@ -122,6 +122,8 @@ structure Session where
   /-- the List cell `print` appends its lines to, and how many of them were sent -/
   printCell : Option Nat := none
   printed : Nat := 0
+  /-- the host's external root cells (`out`, `realm`) preserved across manual `gc` requests -/
+  hostCells : Array Nat := #[8, 9]
   /-- the previous pause's state and slots, and the differences from them at this pause -/
   prev : Option (State F) := none
   prevSlots : SlotsSeen := []
@@ -433,44 +435,57 @@ def disconnect (r : Req) : IO Unit := do
 or an unknown one. -/
 def refuseOutOfPlace (r : Req) : IO Unit :=
   if ["continue", "next", "stepIn", "stepOut", "stackTrace", "scopes", "variables", "pause", "specHeap", "specState",
-      "specDiff"].contains r.command then
+      "specDiff", "gc"].contains r.command then
     refuse r "not paused"
   else if ["launch", "configurationDone"].contains r.command then refuse r "already launched"
   else refuse r s!"unknown request {r.command}"
 
-/-- Serves `r`; whether it resumes the run (at a pause) or completes the launch (before it). -/
-def handle (ph : Phase) (r : Req) : IO Bool := do
+/-- Serves `r`: the next `Phase`, and whether it resumes the run (at a pause) or completes the launch (before it). -/
+def handle (ph : Phase) (r : Req) : IO (Phase × Bool) := do
   match r.command, ph with
   | "initialize", _ =>
     respond r capabilities
     emit (event · "initialized")
-    return false
+    return (ph, false)
   | "launch", .setup =>
     let entry := r.flag "stopOnEntry"
     let mode : Mode := if entry then .stepIn else .run
     let reason := if entry then "entry" else "step"
     session.modify fun s => { s with launch := some r, stopInSetup := r.flag "stopInSetup", mode, reason }
     respond r
-    return (← session.get).configured
+    return (ph, (← session.get).configured)
   | "configurationDone", .setup =>
     session.modify ({ · with configured := true })
     respond r
-    return (← session.get).launch.isSome
-  | "setSpecBreakpoints", _ => setSpecBreakpoints r; return false
-  | "setExceptionBreakpoints", _ => setExceptionBreakpoints r; return false
-  | "setBreakpoints", _ => setBreakpoints r; return false
-  | "breakpointLocations", _ => breakpointLocations r; return false
-  | "threads", _ => respond r threads; return false
-  | "specAlgorithm", _ => specAlgorithm r; return false
-  | "source", _ => sourceReq r; return false
-  | "stackTrace", .paused p => stackTrace r p; return false
-  | "scopes", .paused p => scopesReq r p; return false
-  | "variables", .paused p => variablesReq r p; return false
-  | "specHeap", .paused p => specHeap r p; return false
-  | "specState", .paused p => specState r p; return false
-  | "specDiff", .paused p => specDiff r p; return false
-  | "pause", .paused _ => respond r; return false
-  | "disconnect", _ => disconnect r; return true
+    return (ph, (← session.get).launch.isSome)
+  | "setSpecBreakpoints", _ => setSpecBreakpoints r; return (ph, false)
+  | "setExceptionBreakpoints", _ => setExceptionBreakpoints r; return (ph, false)
+  | "setBreakpoints", _ => setBreakpoints r; return (ph, false)
+  | "breakpointLocations", _ => breakpointLocations r; return (ph, false)
+  | "threads", _ => respond r threads; return (ph, false)
+  | "specAlgorithm", _ => specAlgorithm r; return (ph, false)
+  | "source", _ => sourceReq r; return (ph, false)
+  | "stackTrace", .paused p => stackTrace r p; return (ph, false)
+  | "scopes", .paused p => scopesReq r p; return (ph, false)
+  | "variables", .paused p => variablesReq r p; return (ph, false)
+  | "specHeap", .paused p => specHeap r p; return (ph, false)
+  | "specState", .paused p => specState r p; return (ph, false)
+  | "specDiff", .paused p => specDiff r p; return (ph, false)
+  | "gc", .paused p =>
+    match p.collect with
+    | none => refuse r "no state at a stop"; return (ph, false)
+    | some collect =>
+      let s ← session.get
+      let (stats, st', fs') ← collect s.hostCells
+      let p' : Paused := { p with state := some st', frames := fun _ => fs' }
+      let d := match s.prev with
+        | some old => some (diff old st')
+        | none => none
+      session.modify ({ · with diff := d })
+      respond r stats.json
+      return (.paused p', false)
+  | "pause", .paused _ => respond r; return (ph, false)
+  | "disconnect", _ => disconnect r; return (ph, true)
   | cmd, .paused p =>
     let gran := (r.arg? "granularity").bind Json.str?
     let stmt := gran == some "statement"
@@ -487,14 +502,15 @@ def handle (ph : Phase) (r : Req) : IO Bool := do
     | some m =>
       session.modify ({ · with mode := m, reason := "step", stmtThrow := false })
       respond r (if cmd == "continue" then Json.mk [("allThreadsContinued", true)] else .obj #[])
-      return true
-    | none => refuseOutOfPlace r; return false
-  | _, _ => refuseOutOfPlace r; return false
+      return (ph, true)
+    | none => refuseOutOfPlace r; return (ph, false)
+  | _, _ => refuseOutOfPlace r; return (ph, false)
 
-/-- Serves requests in `ph` until one resumes or launches (true), or the input ends (false). -/
-partial def serve (ph : Phase) : IO Bool := do
-  let some r ← recv | return false
-  if ← handle ph r then return true else serve ph
+/-- Serves requests in `ph` until one resumes or launches (`some ph'`), or the input ends (`none`). -/
+partial def serve (ph : Phase) : IO (Option Phase) := do
+  let some r ← recv | return none
+  let (ph', done) ← handle ph r
+  if done then return some ph' else serve ph'
 
 /-! The whole spec stack. -/
 
@@ -594,7 +610,9 @@ def pauseAt (reason : String) (p : Paused) (filter : Option String := none) (hit
     | _, _ => none
   session.modify ({ · with printed, diff := d, changed := changedSlots s.prevSlots fs })
   emit (event · "stopped" (stoppedBody reason p (← session.get) filter hits))
-  if !(← serve (.paused p)) then IO.Process.exit 0
+  let some ph' ← serve (.paused p) | IO.Process.exit 0
+  let p := match ph' with | .paused p' => p' | _ => p
+  let fs := p.frames ()
   session.modify fun s => { s with prev := p.state <|> s.prev, prevSlots := slotsSeen fs, diff := none, changed := [] }
   pollReset
 
@@ -774,15 +792,16 @@ def openOn (inp out : IO.FS.Stream) (names : Names) (poll : Option System.FilePa
 /-- Requests until the program is launched and configured: the `launch` request, or none when the
 input ends first. -/
 def awaitLaunch : IO (Option Req) := do
-  if ← serve .setup then return (← session.get).launch else return none
+  if (← serve .setup).isSome then return (← session.get).launch else return none
 
 /-- Setup done: the hooks look from here on, the program's Parse Nodes are those of `prog`, the
 parses from its on are noted (`noteParses`), and `print` appends to the List cell `printCell`. A
 bundle's modules `mods` (`bundlePrograms`) are sources too; each, and a named program, is sent as a
 `loadedSource` event. -/
-def arm (prog : Option Program := none) (printCell : Option Nat := none) (mods : List Program := []) : IO Unit := do
+def arm (prog : Option Program := none) (printCell : Option Nat := none) (mods : List Program := [])
+    (hostCells : Array Nat := #[8, 9]) : IO Unit := do
   let srcs := mods.foldl Sources.add (Sources.ofProgram prog)
-  session.modify ({ · with armed := true, srcs, printCell, parsesSeen := (prog.map (·.stamp)).getD 0 })
+  session.modify ({ · with armed := true, srcs, printCell, hostCells, parsesSeen := (prog.map (·.stamp)).getD 0 })
   for p in (prog.filter (!·.name.isEmpty)).toList ++ mods do
     emit (event · "loadedSource" (Json.mk [("reason", "new"), ("source", p.sourceJson)]))
 

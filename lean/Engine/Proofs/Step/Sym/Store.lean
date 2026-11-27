@@ -23,9 +23,9 @@ open Ecma Ecma.Machine
 
 /-- The machine's transition at an Append to a List: its elements written with the new one, in place. -/
 theorem step_append (X : Ctx F) (s : State F) (fr : List (Frame F)) (x : Val F) (a : Nat) (xs : Array (Val F))
-    (o : Nat) (hx : x.used = x) (ha : s.heap[a]? = some (.list xs o)) :
+    (o : Nat) (hx : x.used = x) (ha : s.heap.get a = some (.list xs o)) :
     step X ⟨s, fr, .invoke (.prim Known.pAppend [x, .ref a])⟩ =
-      .inl ⟨{ s with heap := s.heap.setIfInBounds a (.list (xs.push x) o) }, fr, .val (.enum Known.eUnused)⟩ := by
+      .inl ⟨{ s with heap := s.heap.set a (.list (xs.push x) o) }, fr, .val (.enum Known.eUnused)⟩ := by
   have hm : ([x, .ref a] : List (Val F)).map Val.used = [x, .ref a] := by
     show [x.used, (Val.ref a).used] = _
     rw [hx]; rfl
@@ -33,49 +33,49 @@ theorem step_append (X : Ctx F) (s : State F) (fr : List (Frame F)) (x : Val F) 
   simp [leafV, bindR, bind, Run.bind, readCell, writeList, ha, Run.Res.bind, pure, Run.pure, Cfg.to]
 
 /-- `t`'s heap keeps `s`'s cells. -/
-def Keeps (s t : State F) : Prop := ∀ (a : Nat) (c : Cell F), s.heap[a]? = some c → t.heap[a]? = some c
+def Keeps (s t : State F) : Prop := ∀ (a : Nat) (c : Cell F), s.heap.get a = some c → t.heap.get a = some c
 
 /-- A state with a cell allocated keeps the cells. -/
 theorem Keeps.push (s : State F) (d : Cell F) : Keeps s { s with heap := s.heap.push d } := by
   intro a c h
-  have hlt : a < s.heap.size := (Array.getElem?_eq_some_iff.mp h).1
-  simp only [Array.getElem?_push]
-  simp only [show ¬ a = s.heap.size by omega, ↓reduceIte]
+  have hlt := Engine.Model.ChunkedHeap.get_lt_next h
+  have hne : a ≠ (s.heap.alloc d).1 := by simp only [Engine.Model.ChunkedHeap.alloc_fst]; omega
+  rw [show (s.heap.push d).get a = s.heap.get a from Engine.Model.ChunkedHeap.alloc_get_other s.heap d a hne]
   exact h
 
-theorem setIfInBounds_push_size {α : Type} (h : Array α) (c d : α) : (h.push c).setIfInBounds h.size d = h.push d := by
-  apply Array.ext_getElem?
-  intro k
-  by_cases hk : k = h.size
-  · subst hk; simp
-  · have hk' : ¬ h.size = k := fun e => hk e.symm
-    simp [Array.getElem?_push, hk, hk']
+theorem setIfInBounds_push_size {α : Type} (h : Engine.Model.ChunkedHeap α) (c d : α) :
+    (h.push c).set h.next d = h.push d :=
+  Engine.Model.ChunkedHeap.set_push_self h c d
 
-theorem heap_push_get {α : Type} (h : Array α) (r : α) : (h.push r)[h.size]? = some r := by simp
+theorem heap_push_get {α : Type} (h : Engine.Model.ChunkedHeap α) (r : α) :
+    (h.push r).get h.next = some r :=
+  Engine.Model.ChunkedHeap.alloc_get_self h r
 
-theorem heap_list_get {α : Type} (h : Array α) (l : α) (rs : Array α) : ((h.push l) ++ rs)[h.size]? = some l := by
-  simp [Array.getElem?_append]
+theorem heap_list_get {α : Type} (h : Engine.Model.ChunkedHeap α) (l : α) (rs : Array α) :
+    ((h.push l).pushMany rs).get h.next = some l :=
+  Engine.Model.ChunkedHeap.pushMany_keeps (h.push l) rs (heap_push_get h l)
 
-theorem heap_list_set {α : Type} (h : Array α) (l l' : α) (rs : Array α) :
-    ((h.push l) ++ rs).setIfInBounds h.size l' = (h.push l') ++ rs := by
-  apply Array.ext_getElem?
-  intro k
-  simp only [Array.getElem?_setIfInBounds, Array.getElem?_append, Array.getElem?_push, Array.size_push,
-    Array.size_append]
-  grind
+theorem heap_list_set {α : Type} (h : Engine.Model.ChunkedHeap α) (l l' : α) (rs : Array α) :
+    ((h.push l).pushMany rs).set h.next l' = (h.push l').pushMany rs := by
+  have hs : ((h.push l).get h.next).isSome = true := by rw [heap_push_get h l]; rfl
+  rw [Engine.Model.ChunkedHeap.set_pushMany_other (h.push l) rs h.next l' hs,
+      Engine.Model.ChunkedHeap.set_push_self h l l']
 
-theorem heap_rec_get {α : Type} (h : Array α) (l l' : α) (rs : Array α) (r : α) :
-    ((h.push l') ++ rs.push r)[((h.push l) ++ rs).size]? = some r := by
-  simp
+theorem heap_rec_get {α : Type} (h : Engine.Model.ChunkedHeap α) (l l' : α) (rs : Array α) (r : α) :
+    ((h.push l').pushMany (rs.push r)).get ((h.push l).pushMany rs).next = some r := by
+  rw [Engine.Model.ChunkedHeap.pushMany_push]
+  have hnx : ((h.push l).pushMany rs).next = ((h.push l').pushMany rs).next := by
+    simp [Engine.Model.ChunkedHeap.pushMany_next]
+  rw [hnx]
+  exact heap_push_get _ r
 
-theorem heap_list_get' {α : Type} (h : Array α) (l : α) (rs : Array α) (r : α) :
-    (((h.push l) ++ rs).push r)[h.size]? = some l := by
-  rw [← Array.append_push]
+theorem heap_list_get' {α : Type} (h : Engine.Model.ChunkedHeap α) (l : α) (rs : Array α) (r : α) :
+    (((h.push l).pushMany rs).push r).get h.next = some l := by
+  rw [← Engine.Model.ChunkedHeap.pushMany_push]
   exact heap_list_get h l (rs.push r)
 
-theorem heap_append_set {α : Type} (h : Array α) (l l' : α) (rs : Array α) (r : α) :
-    (((h.push l) ++ rs).push r).setIfInBounds h.size l' = (h.push l') ++ rs.push r := by
-  rw [← Array.append_push]
-  exact heap_list_set h l l' (rs.push r)
+theorem heap_append_set {α : Type} (h : Engine.Model.ChunkedHeap α) (l l' : α) (rs : Array α) (r : α) :
+    (((h.push l).pushMany rs).push r).set h.next l' = ((h.push l').pushMany rs).push r := by
+  rw [← Engine.Model.ChunkedHeap.pushMany_push, heap_list_set, Engine.Model.ChunkedHeap.pushMany_push]
 
 end Engine.Machine

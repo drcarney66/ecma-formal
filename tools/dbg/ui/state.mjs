@@ -28,7 +28,10 @@ export class StatePane {
     this.hostOpen = false;
     this.built = null;
     this.visible = false;
-    model.on("change", (what) => ["pause", "scopes", "state"].includes(what) && this.render());
+    model.on("change", (what) => {
+      if (what === "gc") this.built = null;
+      if (["pause", "scopes", "state", "gc"].includes(what)) this.render();
+    });
   }
 
   show(on) {
@@ -75,7 +78,8 @@ export class StatePane {
     if (!st) return this.root.append(el("div", "empty", "no state"));
     this.section("Agent Record");
     this.list("state-agent").append(this.tree.node("agent", st.agent));
-    this.root.append(el("div", "counts", `Symbols ${st.symbols} · parses ${st.parses} · contexts ${st.contexts} · heap ${st.heapSize} cells`));
+    const heapNote = st.liveCells !== undefined && st.liveCells < st.heapSize ? `${st.liveCells} live / ${st.heapSize} cells` : `${st.heapSize} cells`;
+    this.root.append(el("div", "counts", `Symbols ${st.symbols} · parses ${st.parses} · contexts ${st.contexts} · heap ${heapNote}`));
     this.section("Parses", "(each root)");
     const rs = this.list("state-roots");
     const prog = programRoot(st.roots);

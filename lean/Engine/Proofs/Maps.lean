@@ -130,51 +130,29 @@ theorem propsDel_absent : ∀ (p : WMap PKey α) (k : PKey), Impl.propsGet p k =
 
 /-! §6.1.7's store. -/
 
-theorem heapGet_empty : ∀ (a : Nat), Impl.heapGet (Impl.heapEmpty (α := α)) a = none := by
-  intro a
-  show (#[] : Array α)[a]? = none
-  simp
+theorem heapGet_empty : ∀ (a : Nat), Impl.heapGet (Impl.heapEmpty (α := α)) a = none :=
+  ChunkedHeap.get_empty
 
-theorem heapAlloc_fresh : ∀ (h : Array α) (v : α), Impl.heapGet h (Impl.heapAlloc h v).1 = none := by
-  intro h v
-  show h[h.size]? = none
-  simp
+theorem heapAlloc_fresh : ∀ (h : ChunkedHeap α) (v : α), Impl.heapGet h (Impl.heapAlloc h v).1 = none :=
+  ChunkedHeap.alloc_fresh
 
-theorem heapAlloc_get_self : ∀ (h : Array α) (v : α),
-    Impl.heapGet (Impl.heapAlloc h v).2 (Impl.heapAlloc h v).1 = some v := by
-  intro h v
-  show (h.push v)[h.size]? = some v
-  simp
+theorem heapAlloc_get_self : ∀ (h : ChunkedHeap α) (v : α),
+    Impl.heapGet (Impl.heapAlloc h v).2 (Impl.heapAlloc h v).1 = some v :=
+  ChunkedHeap.alloc_get_self
 
-theorem heapAlloc_get_other : ∀ (h : Array α) (v : α) (a : Nat), a ≠ (Impl.heapAlloc h v).1 →
-    Impl.heapGet (Impl.heapAlloc h v).2 a = Impl.heapGet h a := by
-  intro h v a ha
-  have ha : a ≠ h.size := ha
-  show (h.push v)[a]? = h[a]?
-  rw [Array.getElem?_push]
-  simp [ha]
+theorem heapAlloc_get_other : ∀ (h : ChunkedHeap α) (v : α) (a : Nat), a ≠ (Impl.heapAlloc h v).1 →
+    Impl.heapGet (Impl.heapAlloc h v).2 a = Impl.heapGet h a :=
+  ChunkedHeap.alloc_get_other
 
-theorem heapGet_set_self : ∀ (h : Array α) (a : Nat) (v : α), (Impl.heapGet h a).isSome = true →
-    Impl.heapGet (Impl.heapSet h a v) a = some v := by
-  intro h a v hs
-  have hs : (h[a]?).isSome = true := hs
-  show (h.setIfInBounds a v)[a]? = some v
-  have : a < h.size := by simpa using hs
-  simp [this]
+theorem heapGet_set_self : ∀ (h : ChunkedHeap α) (a : Nat) (v : α), (Impl.heapGet h a).isSome = true →
+    Impl.heapGet (Impl.heapSet h a v) a = some v :=
+  ChunkedHeap.get_set_self
 
-theorem heapGet_set_other : ∀ (h : Array α) (a : Nat) (v : α) (b : Nat), b ≠ a →
-    Impl.heapGet (Impl.heapSet h a v) b = Impl.heapGet h b := by
-  intro h a v b hb
-  show (h.setIfInBounds a v)[b]? = h[b]?
-  rw [Array.getElem?_setIfInBounds]
-  simp [Ne.symm hb]
+theorem heapGet_set_other : ∀ (h : ChunkedHeap α) (a : Nat) (v : α) (b : Nat), b ≠ a →
+    Impl.heapGet (Impl.heapSet h a v) b = Impl.heapGet h b :=
+  ChunkedHeap.get_set_other
 
-theorem heapSet_none : ∀ (h : Array α) (a : Nat) (v : α), Impl.heapGet h a = none → Impl.heapSet h a v = h := by
-  intro h a v hn
-  have hn : h[a]? = none := hn
-  show h.setIfInBounds a v = h
-  have : h.size ≤ a := by simpa using hn
-  simp only [Array.setIfInBounds]
-  rw [dif_neg (by omega)]
+theorem heapSet_none : ∀ (h : ChunkedHeap α) (a : Nat) (v : α), Impl.heapGet h a = none → Impl.heapSet h a v = h :=
+  ChunkedHeap.set_none
 
 end Engine.Impl

@@ -42,13 +42,13 @@ structure Setup where
   maxCells : Option Nat := none
 
 /-- Total payload bytes across all Data Block cells in `h`. -/
-def heapBlockBytes (h : @& Array (Cell F)) : Nat :=
-  h.foldl (fun acc cell => match cell with | .block b => acc + b.size | _ => acc) 0
+def heapBlockBytes (h : @& F.Heap (Cell F)) : Nat :=
+  h.foldLive (fun acc _ cell => match cell with | .block b => acc + b.size | _ => acc) 0
 
 /-- The store of `c` is past the set-up's ceiling. -/
 @[inline] def Setup.full (E : @& Setup) (c : @& Cfg F) : Bool :=
   match E.maxCells with
-  | some n => n < c.s.heap.size
+  | some n => n < c.s.heap.live
   | none => false
 
 /-- The set-up with a table's entries. -/
@@ -72,7 +72,7 @@ def blockTooBig (E : @& Setup) (c : @& Cfg F) : Bool :=
   match E.maxCells, c.ctl with
   | some n, .invoke (.prim q [.math sz]) =>
     if q == Known.pNewDataBlock then match Engine.Model.MathVal.idx sz with
-      | some k => n * 241 < c.s.heap.size * 241 + heapBlockBytes c.s.heap + k
+      | some k => n * 241 < c.s.heap.live * 241 + heapBlockBytes c.s.heap + k
       | none => false
     else false
   | _, _ => false

@@ -62,11 +62,12 @@ Requests (`Debugger.Session` serves them):
   inBuiltin?, spec {frames {lo, hi}, site?}} (`Debugger.JSStack`), with `totalFrames` and `contexts`,
   the stack's length;
 - at a pause: `specHeap` {from, count?, kind? (record | list | object | env)}: the cells of
-  `[from, from + count)`, each {addr, kind, type, summary, variablesReference}, and `heapSize`;
-  `specState`: the Agent Record, the Symbols and parses so far, each parse's root, the running
-  SDOs' Parse Nodes, the arguments Lists passed, and `host` {transitions, steps, hostLog,
+  `[from, from + count)`, each {addr, kind, type, summary, variablesReference}, `heapSize` and
+  `liveCells`; `specState`: the Agent Record, the Symbols and parses so far, each parse's root, the
+  running SDOs' Parse Nodes, the arguments Lists passed, and `host` {transitions, steps, hostLog,
   shapeLog}; `specDiff` {addr}: the cell at the previous pause (`old`, null if new since) and now
-  (`new`), each {kind, summary, variables}, and the names of the parts that changed.
+  (`new`), each {kind, summary, variables}, and the names of the parts that changed; `gc`: collects
+  unreachable store cells at the pause, returning {collected, liveBefore, liveAfter, heapSize}.
 
 Events: `initialized`; `stopped` {reason: entry | step | breakpoint | exception | pause,
 description? (throw, debugger statement), hitBreakpointIds? (the line breakpoints on the boundary), spec: {alg, secId, idx, path, reading?, text, depth, steps, transitions,
@@ -121,7 +122,7 @@ def exceptionFilters : Json :=
 def capabilities : Json :=
   Json.mk [("supportsConfigurationDoneRequest", true), ("supportsSteppingGranularity", true),
     ("supportsSpecBreakpoints", true), ("supportsBreakpointLocationsRequest", true),
-    ("exceptionBreakpointFilters", exceptionFilters)]
+    ("supportsGCRequest", true), ("exceptionBreakpointFilters", exceptionFilters)]
 
 /-- The one thread. -/
 def threads : Json := Json.mk [("threads", .arr #[Json.mk [("id", 1), ("name", "agent")]])]

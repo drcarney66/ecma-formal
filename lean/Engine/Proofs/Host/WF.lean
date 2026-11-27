@@ -383,7 +383,7 @@ theorem readList_ok {a : Impl.Addr} {s : State Impl} {xs : List (Val Impl)} {s' 
   unfold Engine.Host.readList at h
   simp only [bind, Run.bind, Ecma.readCell] at h
   revert h
-  cases hc : s.heap[a]? with
+  cases hc : s.heap.get a with
   | none => intro h; simp [hc, Run.Res.bind, Run.stop] at h
   | some x =>
     cases x with
@@ -398,7 +398,7 @@ theorem readList_esc {a : Impl.Addr} {s : State Impl} {v : Val Impl} {s' : State
     Engine.Host.readList a s ≠ .esc v s' := by
   unfold Engine.Host.readList
   simp only [bind, Run.bind, Ecma.readCell]
-  cases hc : s.heap[a]? with
+  cases hc : s.heap.get a with
   | none => simp [hc, Run.Res.bind, Run.stop]
   | some x => cases x <;> simp [hc, Run.Res.bind, Run.stop, pure, Run.pure]
 
@@ -486,7 +486,7 @@ theorem printLine_lk {c : Cells} {vs : List (Val Impl)} {s : State Impl} {r : Va
   split at h
   · simp only [Run.boundary, bind, Run.bind, readList, readCell] at h
     revert h
-    cases hc : s.heap[c.out]? with
+    cases hc : s.heap.get c.out with
     | none => intro h; cases h
     | some x =>
       intro h
@@ -574,7 +574,11 @@ theorem wf (c : Cells) : Host.WF (host c) where
     simp [hooks, Engine.Host.hooks, List.lookup, Run.boundary, Run.Res.boundary, listOf, alloc, bind, Run.bind, Run.Res.bind, pure,
       Run.pure] at h
     obtain ⟨rfl, rfl⟩ := h
-    simp [listElems, heapGet_alloc_new]⟩
+    have hnew : (Engine.Model.ChunkedHeap.alloc s.heap
+        (.list #[.str (Engine.Model.utf16 "type")] 0)).2.get s.heap.next =
+        some (.list #[.str (Engine.Model.utf16 "type")] 0) :=
+      Engine.Model.ChunkedHeap.alloc_get_self _ _
+    simp [listElems, hnew]⟩
   getCodeForEval k xs s r s' hk h := .inl (codeForEval_law hk h)
   hasSourceTextAvailable := ⟨fun _ => .bool true, fun k xs s r s' hk h => source_law hk h⟩
   resizeArrayBuffer k a n s r s' hk h := by

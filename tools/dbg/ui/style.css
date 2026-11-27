@@ -120,6 +120,7 @@ ol#stack, ol#jsstack, ul#breakpoints, ul.tree, ul.kids { list-style: none; margi
 #step .steptext.spectec { font: var(--dbg-mono); font-size: 12.5px; }
 #step .node { font: var(--dbg-mono); color: var(--dbg-dim); }
 #diff, #heap-diff { font: var(--dbg-mono); color: var(--dbg-dim); margin-bottom: .3em; }
+.gc-note { color: var(--dbg-good); }
 a.diff-link { color: var(--dbg-link); cursor: pointer; text-decoration: underline; }
 .tree { font: var(--dbg-mono); }
 .tree ul.kids { padding-left: 1.1em; }

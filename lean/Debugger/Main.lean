@@ -33,10 +33,11 @@ open Ecma Engine Ecma.Spec Engine.SpecHost Engine.Host.RealmLookup Engine.SpecRu
 open Engine.Host (Loaded loadProgram)
 
 /-- The watched dispatcher for `o` over the host `H`. -/
-def dispatchW (o : Opts) (H : Host Impl) : Engine.Host.Runner :=
+def dispatchW (o : Opts) (extraRoots : Array Nat := #[8, 9]) (H : Host Impl) : Engine.Host.Runner :=
   Debugger.Machine.dispatchW
     { Engine.Machine.ctx P' H o.checked with
       maxCells := if o.maxHeap == 0 then none else some (cellsFor o.maxHeap) } (obsOf o).sites
+    (if o.gc then some extraRoots else none)
 
 /-- The program's text: `source`, else the file `program`. -/
 def launchText (l : Req) : IO (Except String String) := do
@@ -60,7 +61,7 @@ def points (t : String) : Array Nat := (t.toList.map Char.toNat).toArray
 dispatcher. -/
 def preludes (o : Opts) (c : Cells) : State F → List (Array Nat) → AfterPreludes
   | s, [] => .ok s
-  | s, p :: ps => match runFrom (dispatchW o) o.host o.jobs c s p with
+  | s, p :: ps => match runFrom (dispatchW o #[c.out, c.realm]) o.host o.jobs c s p with
     | .ok v s' => if abrupt v then .ended s p (.ok v s') else preludes o c s' ps
     | r => .ended s p r
 
@@ -115,8 +116,8 @@ def main (argv : List String) : IO UInt32 := do
     let (prog, mods) := match o.source with
       | .module key => bundlePrograms prog key ld.bundle
       | _ => (prog, [])
-    Debugger.arm (some prog) (some c.out) mods
-    let r := runFrom (dispatchW o) o.host o.jobs cm s src o.source
+    Debugger.arm (some prog) (some c.out) mods #[cm.out, cm.realm]
+    let r := runFrom (dispatchW o #[cm.out, cm.realm]) o.host o.jobs cm s src o.source
     let (line, code, out, _) ← report o (cm, r)
     Debugger.finish line code out
   -- That state from a snapshot (`ECMA_SNAPSHOT`, as ecma-run's) where there is one, else written as one.
@@ -130,7 +131,7 @@ def main (argv : List String) : IO UInt32 := do
     | none => pure none
   match snap with
   | some (c, s) => go c s
-  | none => match setup (dispatchW o) o.host SpecRun.s0 with
+  | none => match setup (dispatchW { o with gc := false }) o.host SpecRun.s0 with
     | .ok c s =>
       let cm := { c with modules := o.modules, resolve := o.resolve }
       let c := if o.resolve then cm else c

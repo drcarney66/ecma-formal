@@ -122,7 +122,7 @@ end Same
 
 /-! Diffs. -/
 
-def heapOf (s : State F) : Array (Cell F) := s.heap
+def heapOf (s : State F) : Engine.Model.ChunkedHeap (Cell F) := s.heap
 
 def stackOf (s : State F) : Array (Val F) := s.stack
 
@@ -130,36 +130,44 @@ def stackOf (s : State F) : Array (Val F) := s.stack
 def diffLimit : Nat := 50
 
 /-- Two pauses' states compared: the new cells `[lo, hi)`, the earlier cells that differ (at most
-`diffLimit`, `truncated` if there are more) and whether the execution context stack differs. -/
+`diffLimit`, `truncated` if there are more), the earlier cells swept since `old`, and whether the
+execution context stack differs. -/
 structure Diff where
   lo : Nat
   hi : Nat
   changed : Array Nat
+  collected : Nat := 0
   truncated : Bool
   stackChanged : Bool
 
 def diff (old new : State F) : Diff := Id.run do
   let h0 := heapOf old
   let h1 := heapOf new
+  let noGC := h0.live == h0.next && h1.live == h1.next
   let mut changed := #[]
+  let mut collected := 0
   let mut truncated := false
-  for a in [0:min h0.size h1.size] do
-    match h0[a]?, h1[a]? with
+  for a in [0:min h0.next h1.next] do
+    match h0.get a, h1.get a with
     | some x, some y =>
       if !cellSame x y then
         if changed.size == diffLimit then
           truncated := true
-          break
-        changed := changed.push a
+          if noGC then break
+        else
+          changed := changed.push a
+    | some _, none =>
+      collected := collected + 1
     | _, _ => pure ()
   let s0 := stackOf old
   let s1 := stackOf new
   let stackChanged := s0.size != s1.size || (s0.zip s1).any fun (x, y) => !valSame x y
-  return { lo := h0.size, hi := h1.size, changed, truncated, stackChanged }
+  return { lo := h0.next, hi := h1.next, changed, collected, truncated, stackChanged }
 
 def Diff.json (d : Diff) : Json :=
-  Json.mk [("newCells", .arr #[.nat d.lo, .nat d.hi]), ("changed", .arr (d.changed.map Json.nat)),
-    ("truncated", d.truncated), ("stackChanged", d.stackChanged)]
+  let base := [("newCells", Json.arr #[.nat d.lo, .nat d.hi]), ("changed", .arr (d.changed.map Json.nat)),
+    ("truncated", .bool d.truncated), ("stackChanged", .bool d.stackChanged)]
+  Json.mk (if d.collected == 0 then base else base ++ [("collected", .nat d.collected)])
 
 /-- Each frame's algorithm and slot values, outermost first: what the next pause compares with. -/
 abbrev SlotsSeen := List (AlgId × List (Val F))
@@ -348,13 +356,13 @@ def heapLimit : Nat := 1000
 none), and the heap's size. -/
 def heapJson (n : Names) (s : State F) (lo count : Nat) (kind : Option String) : Json :=
   let h := heapOf s
-  let hi := min h.size (lo + min count heapLimit)
-  let cells := (List.range' lo (hi - lo)).filterMap fun a => h[a]?.bind fun c =>
+  let hi := min h.next (lo + min count heapLimit)
+  let cells := (List.range' lo (hi - lo)).filterMap fun a => (h.get a).bind fun c =>
     if kind.all (· == cellKind c) then
       some (Json.mk [("addr", .nat a), ("kind", cellKind c), ("type", cellTypeOf n c), ("summary", cellSummary n c),
         ("variablesReference", .nat (a + 1))])
     else none
-  Json.mk [("cells", .arr cells.toArray), ("heapSize", .nat h.size)]
+  Json.mk [("cells", .arr cells.toArray), ("heapSize", .nat h.next), ("liveCells", .nat h.live)]
 
 /-- `specDiff`: cell `a` at the previous pause (`old`, null if new since) and now (`new`), and the
 names of its parts that differ. -/
@@ -364,7 +372,7 @@ def cellDiffJson (n : Names) (prev : Option (State F)) (s : State F) (a : Nat) :
       ("variables", .arr (((cellVars n st a).getD []).map Var.json).toArray)]
   let old := prev.bind side
   let new := side s
-  if new.isNone then .error s!"no cell #{a}" else
+  if new.isNone then .error (if a < s.heap.next then s!"cell #{a} was collected" else s!"no cell #{a}") else
   let names : List String := match prev.bind (cellVars n · a), cellVars n s a with
     | some o, some nw =>
       ((markChanged o nw).filter fun (v : Var) => !v.attrs.isEmpty).map Var.name ++
@@ -392,7 +400,7 @@ def stateJson (n : Names) (s : State F) (host : List (String × Json)) : Json :=
     ("roots", .arr (s.roots.values.reverse.map (rootJson n s)).toArray),
     ("evalNodes", .arr (s.evalNodes.map fun nd => Json.str (Show.node n nd)).toArray),
     ("passed", .arr (s.passed.zipIdx.map fun (v, i) => (cellVar n s s!"[{i}]" v).json).toArray),
-    ("contexts", .nat (stackOf s).size), ("heapSize", .nat (heapOf s).size),
+    ("contexts", .nat (stackOf s).size), ("heapSize", .nat (heapOf s).next), ("liveCells", .nat (heapOf s).live),
     ("host", Json.mk (host ++ [("hostLog", .nat s.hostLog.length), ("shapeLog", .nat s.shapeLog.length)]))]
 
 /-! `variables`. -/
@@ -426,7 +434,7 @@ def variables (n : Names) (srcs : Sources) (p : Paused) (prev : Option (State F)
       | some vs => match prev.bind (cellVars n · a pg) with
         | some old => .ok (markChanged old vs)
         | none => .ok vs
-      | none => .error s!"no cell #{a}"
+      | none => .error (if a < s.heap.next then s!"cell #{a} was collected" else s!"no cell #{a}")
     | none => .error "no state at a stop"
 
 end Debugger

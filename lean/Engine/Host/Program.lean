@@ -235,7 +235,7 @@ def outcome (c : Cells) : Res Impl (Val Impl) → String × UInt32 × List Strin
   | .esc v s => ("throw: " ++ showThrown N s v, 1, [])
   | .stop r => (s!"stop: {stopName r}", 3, [])
 
-def s0 : State Impl := { heap := #[], stack := #[], resumed := .absent, agent := .absent }
+def s0 : State Impl := { heap := Impl.heapEmpty, stack := #[], resumed := .absent, agent := .absent }
 
 /-- A set-up's failure as a program's result. -/
 def setupFailed : Res Impl Cells → Res Impl (Val Impl)

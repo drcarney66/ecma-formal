@@ -152,6 +152,7 @@ function controls(model) {
     in: { run: () => model.stepIn(), on: paused },
     out: { run: () => model.stepOut(), on: paused },
     instruction: { run: () => model.stepInstruction(), on: paused },
+    gc: { run: () => model.gc(), on: paused },
     stop: { run: () => model.stop(), on: () => model.session !== null },
   };
 }
@@ -172,6 +173,7 @@ function key(e, inField = false) {
     case "i": return "in";
     case "o": return "out";
     case "n": return "jsnext";
+    case "g": return "gc";
     case "r": return "start";
     default: return null;
   }
@@ -207,7 +209,9 @@ export function statusLine(model) {
       const s = st.spec;
       const why = [st.reason, st.description, s.filter, s.stop].filter(Boolean).join(": ");
       const stmt = st.js?.statement ? ` · statement ${spanText(st.js.statement)}` : "";
-      return `paused (${why}) at ${s.alg} ${s.path} · depth ${s.depth}${stmt} · steps ${s.steps} · transitions ${s.transitions}`;
+      const g = model.snap?.gcStats;
+      const gc = g ? ` · gc -${g.collected} (${g.liveAfter} live)` : "";
+      return `paused (${why}) at ${s.alg} ${s.path} · depth ${s.depth}${stmt} · steps ${s.steps} · transitions ${s.transitions}${gc}`;
     }
     case "terminated":
       return `terminated: ${model.ending.outcome} (exit code ${model.ending.exitCode})`;

@@ -1,0 +1,28 @@
+// Manual `gc` at a pause: unreachable cells from earlier loop iterations are swept while
+// `keep` and the host's `print` cell remain intact; a second `gc` at the same pause collects 0.
+{"send": {"command": "initialize"}}
+{"expect": {"type": "response", "command": "initialize", "success": true, "body": {"supportsGCRequest": true}}}
+{"expect": {"type": "event", "event": "initialized"}}
+{"send": {"command": "launch", "arguments": {"program": "${program}"}}}
+{"expect": {"type": "response", "command": "launch", "success": true}}
+{"send": {"command": "setExceptionBreakpoints", "arguments": {"filters": ["debugger"]}}}
+{"expect": {"type": "response", "command": "setExceptionBreakpoints", "success": true}}
+{"send": {"command": "configurationDone"}}
+{"expect": {"type": "response", "command": "configurationDone", "success": true}}
+{"expect": {"type": "event", "event": "stopped", "body": {"reason": "breakpoint", "description": "debugger statement"}}}
+{"send": {"command": "specState"}}
+{"expect": {"type": "response", "command": "specState", "success": true, "body": {"heapSize": "${=hs}", "liveCells": "${hs}"}}}
+{"send": {"command": "gc"}}
+{"expect": {"type": "response", "command": "gc", "success": true, "body": {"collected": "${=col}", "liveBefore": "${hs}", "liveAfter": "${=la}", "heapSize": "${hs}"}}}
+{"send": {"command": "specState"}}
+{"expect": {"type": "response", "command": "specState", "success": true, "body": {"heapSize": "${hs}", "liveCells": "${la}"}}}
+{"send": {"command": "gc"}}
+{"expect": {"type": "response", "command": "gc", "success": true, "body": {"collected": 0, "liveBefore": "${la}", "liveAfter": "${la}", "heapSize": "${hs}"}}}
+{"send": {"command": "continue"}}
+{"expect": {"type": "response", "command": "continue", "success": true}}
+{"expect": {"type": "event", "event": "output", "body": {"category": "stdout", "output": "42\n"}}}
+{"expect": {"type": "event", "event": "terminated", "body": {"outcome": "normal: undefined", "exitCode": 0}}}
+{"send": {"command": "gc"}}
+{"expect": {"type": "response", "command": "gc", "success": false, "message": "not paused"}}
+{"send": {"command": "disconnect"}}
+{"expect": {"type": "response", "command": "disconnect", "success": true}}

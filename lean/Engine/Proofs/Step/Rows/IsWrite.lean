@@ -43,7 +43,7 @@ theorem sortTest_write (H : Host F) (call : AlgId → List (Val F) → Run F (Va
   cases v with
   | ref a =>
     simp only [isWrite, bind, Run.bind, readCell, pure]
-    generalize s.heap[a]? = o
+    generalize s.heap.get a = o
     rcases o with _ | c
     · simp [Run.Res.bind]
     · cases c <;> simp [Run.Res.bind, subSort_write, sWrite, Run.pure]

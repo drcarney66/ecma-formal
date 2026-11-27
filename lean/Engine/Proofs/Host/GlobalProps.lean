@@ -157,12 +157,12 @@ theorem globalProps_stepKeeps {dda : Option FieldId} {vs : List (Val Impl)} {s :
           obtain ⟨-, rfl⟩ := h
           have hne : ∀ q c, Impl.heapGet s₂.heap q = some c → (∀ sl ps, c ≠ .object sl ps) → g ≠ q :=
             fun q c hq hc e => by subst e; rw [hg] at hq; cases hq; exact hc _ _ rfl
-          have hset : ∀ q, g ≠ q → Impl.heapGet (s₂.heap.setIfInBounds g (.object sl
+          have hset : ∀ q, g ≠ q → Impl.heapGet (s₂.heap.set g (.object sl
               (Engine.Host.putNew (Engine.Host.putNew (Engine.Host.putNew ps "print" pp) "$262" po) "setTimeout" pt))) q =
-              Impl.heapGet s₂.heap q := fun q hq => by
-            simp only [Impl, Impl]; rw [Array.getElem?_setIfInBounds_ne hq]
+              Impl.heapGet s₂.heap q := fun q hq =>
+            Engine.Model.ChunkedHeap.get_set_other s₂.heap g _ q (Ne.symm hq)
           have hrec : ∀ q k fs, Impl.heapGet s.heap q = some (.record k fs) →
-              Impl.heapGet (s₂.heap.setIfInBounds g (.object sl
+              Impl.heapGet (s₂.heap.set g (.object sl
                 (Engine.Host.putNew (Engine.Host.putNew (Engine.Host.putNew ps "print" pp) "$262" po) "setTimeout" pt))) q =
                 some (.record k fs) := fun q k fs hq => by
             have hq₁ := hk.2 q _ hq
@@ -173,8 +173,8 @@ theorem globalProps_stepKeeps {dda : Option FieldId} {vs : List (Val Impl)} {s :
           · subst hag
             rw [hg] at ha₁; cases ha₁
             refine ⟨sl, _, ?_, objKept_putNew hrec hx' pp po pt⟩
-            simp only [Impl, Impl]
-            exact Array.getElem?_setIfInBounds_self_of_lt (Array.getElem?_eq_some_iff.mp hg).1
+            exact Engine.Model.ChunkedHeap.get_set_self s₂.heap g _
+              (by have hg' : s₂.heap.get g = _ := hg; rw [hg']; rfl)
           · exact ⟨sl₀, ps₀, by rw [hset a hag]; exact ha₁, objKept_keepsRec hrec sl₀ ps₀⟩
         · simp only [hx, Bool.false_eq_true, ↓reduceIte, Run.Res.bind, Bind.bind, Run.bind, Pure.pure, Run.pure,
             Run.Res.boundary, Res.ok.injEq] at h

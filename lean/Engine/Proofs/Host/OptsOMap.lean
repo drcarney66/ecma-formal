@@ -82,10 +82,10 @@ theorem recGet_resized (sl : Impl.Rec (Val Impl)) (fs : List FieldId) (v : Val I
 
 theorem heapGet_set_ne {α : Type} (h : Impl.Heap α) {p q : Nat} (c : α) (ne : p ≠ q) :
     Impl.heapGet (Impl.heapSet h p c) q = Impl.heapGet h q :=
-  Array.getElem?_setIfInBounds_ne ne
+  Engine.Model.ChunkedHeap.get_set_other h p c q (Ne.symm ne)
 
 theorem heapGet_set_self {α : Type} {h : Impl.Heap α} {p : Nat} {c c' : α} (hp : Impl.heapGet h p = some c) :
     Impl.heapGet (Impl.heapSet h p c') p = some c' :=
-  Array.getElem?_setIfInBounds_self_of_lt (Array.getElem?_eq_some_iff.mp hp).1
+  Engine.Model.ChunkedHeap.get_set_self h p c' (by have hp' : h.get p = some c := hp; rw [hp']; rfl)
 
 end Engine.Host

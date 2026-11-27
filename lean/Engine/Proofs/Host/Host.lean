@@ -348,14 +348,17 @@ theorem recGet_put (m : Engine.Model.WMap FieldId (Val Impl)) (f g : FieldId) (v
 /-- A value's cell, where it has one, is kept by an allocation. -/
 theorem heapGet_alloc {h : Impl.Heap (Cell Impl)} {x : Cell Impl} {b : Impl.Addr} {y : Cell Impl}
     (hb : Impl.heapGet h b = some y) : Impl.heapGet (Impl.heapAlloc h x).2 b = some y := by
-  simp only [Impl, Impl] at hb ⊢
-  rw [Array.getElem?_push, if_neg, hb]
-  rintro rfl
-  simp at hb
+  have hne : b ≠ (Impl.heapAlloc h x).1 := fun e => by
+    subst e
+    rw [show Impl.heapGet h (Impl.heapAlloc h x).1 = none from Engine.Model.ChunkedHeap.alloc_fresh h x] at hb
+    cases hb
+  rw [show Impl.heapGet (Impl.heapAlloc h x).2 b = Impl.heapGet h b from
+    Engine.Model.ChunkedHeap.alloc_get_other h x b hne]
+  exact hb
 
 theorem heapGet_alloc_new (h : Impl.Heap (Cell Impl)) (x : Cell Impl) :
-    Impl.heapGet (Impl.heapAlloc h x).2 (Impl.heapAlloc h x).1 = some x := by
-  simp [Impl, Impl]
+    Impl.heapGet (Impl.heapAlloc h x).2 (Impl.heapAlloc h x).1 = some x :=
+  Engine.Model.ChunkedHeap.alloc_get_self h x
 
 theorem fieldOf_kept {s s' : State Impl} (hh : ∀ b y, Impl.heapGet s.heap b = some y → Impl.heapGet s'.heap b = some y)
     {f : FieldId} {v w : Val Impl} (hv : fieldOf s f v = some w) : fieldOf s' f v = some w := by
@@ -363,7 +366,7 @@ theorem fieldOf_kept {s s' : State Impl} (hh : ∀ b y, Impl.heapGet s.heap b = 
   | .ref b, hv =>
     simp only [fieldOf] at hv ⊢
     split at hv
-    · rename_i fs hg; rw [show s'.heap[b]? = _ from hh _ _ hg]; exact hv
+    · rename_i fs hg; rw [show s'.heap.get b = _ from hh _ _ hg]; exact hv
     · cases hv
 
 theorem isRecordOf_kept {s s' : State Impl} (hh : ∀ b y, Impl.heapGet s.heap b = some y → Impl.heapGet s'.heap b = some y)
@@ -372,7 +375,7 @@ theorem isRecordOf_kept {s s' : State Impl} (hh : ∀ b y, Impl.heapGet s.heap b
   | .ref b, hv =>
     simp only [isRecordOf] at hv ⊢
     split at hv
-    · rename_i k fs t hg ht; rw [show s'.heap[b]? = _ from hh _ _ hg, ht]; exact hv
+    · rename_i k fs t hg ht; rw [show s'.heap.get b = _ from hh _ _ hg, ht]; exact hv
     · cases hv
 
 /-- GetActiveScriptOrModule's step over one execution context, in the heap `h`. -/
@@ -394,7 +397,7 @@ theorem active_eq (s : State Impl) : activeScriptOrModule s = s.stack.foldl (smS
   cases ctx with
   | ref a =>
     dsimp only
-    generalize s.heap[a]? = o
+    generalize s.heap.get a = o
     cases o with
     | none => rfl
     | some x =>
@@ -426,31 +429,31 @@ theorem active_push {s s' : State Impl} {a : Impl.Addr} {ec : SortId} {fs : Impl
       cases ctx with
       | ref b =>
         simp only [smStep]
-        cases hb : s.heap[b]? with
-        | some y => rw [show s'.heap[b]? = _ from hkeep b y hb]
+        cases hb : s.heap.get b with
+        | some y => rw [show s'.heap.get b = _ from hkeep b y hb]
         | none =>
-          cases hb' : s'.heap[b]? with
+          cases hb' : s'.heap.get b with
           | none => rfl
           | some y =>
             rcases hnew b y hb' with h1 | rfl
-            · have h1' : s.heap[b]? = some y := h1
+            · have h1' : s.heap.get b = some y := h1
               rw [hb] at h1'; cases h1'
-            · rw [show s'.heap[b]? = _ from ha] at hb'; cases hb'; simp only [show fs.get Known.fScriptOrModule = _ from hS]
+            · rw [show s'.heap.get b = _ from ha] at hb'; cases hb'; simp only [show fs.get Known.fScriptOrModule = _ from hS]
       | _ => rfl
     have ht : ∀ x, smStep s'.heap x (.ref a) = x := fun x => by
-      simp only [smStep, show s'.heap[a]? = _ from ha, show fs.get Known.fScriptOrModule = _ from hS]
+      simp only [smStep, show s'.heap.get a = _ from ha, show fs.get Known.fScriptOrModule = _ from hS]
     rw [ht, e, hn]
-  | _ => simp only [smStep, show s'.heap[a]? = _ from ha, show fs.get Known.fScriptOrModule = _ from hS]
+  | _ => simp only [smStep, show s'.heap.get a = _ from ha, show fs.get Known.fScriptOrModule = _ from hS]
 
 /-- An allocation adds only the new address. -/
 theorem heapGet_alloc_only {h : Impl.Heap (Cell Impl)} {x : Cell Impl} {b : Impl.Addr} {y : Cell Impl}
     (hb : Impl.heapGet (Impl.heapAlloc h x).2 b = some y) :
     Impl.heapGet h b = some y ∨ b = (Impl.heapAlloc h x).1 := by
-  simp only [Impl, Impl] at hb ⊢
-  rw [Array.getElem?_push] at hb
-  split at hb
-  · exact .inr ‹_›
-  · exact .inl hb
+  by_cases he : b = (Impl.heapAlloc h x).1
+  · exact .inr he
+  · rw [show Impl.heapGet (Impl.heapAlloc h x).2 b = Impl.heapGet h b from
+      Engine.Model.ChunkedHeap.alloc_get_other h x b he] at hb
+    exact .inl hb
 
 /-- A state whose stack is an execution context `a` pushed over a state `s` whose cells it keeps:
 prepared to evaluate ECMAScript code, with `sm` the active script or module, where `a`'s Realm `r` is a
@@ -467,7 +470,7 @@ theorem prepared_of {s s' : State Impl} {a : Impl.Addr} {ec : SortId} {fs : Impl
     rw [stackList, stackList, hst]
     exact Array.foldl_push
   have hf : ∀ f, fieldOf s' f (.ref a) = Impl.recGet fs f := by
-    intro f; simp [fieldOf, show s'.heap[a]? = _ from ha]
+    intro f; simp [fieldOf, show s'.heap.get a = _ from ha]
   refine ⟨⟨?_, stackList s, _, r, hl, by rw [hf, hR], isRecordOf_kept hkeep hRealm⟩, hact, ?_⟩
   · rw [hst]
     show Engine.Model.MathVal.eq (.int _) (.int _) = false
@@ -588,7 +591,7 @@ theorem printLine_unused (c : Cells) (vs : List (Val Impl)) (s : State Impl) (r 
   split at h
   · simp only [Run.boundary, bind, Run.bind, readList, readCell] at h
     revert h
-    generalize s.heap[c.out]? = o
+    generalize s.heap.get c.out = o
     cases o with
     | none => intro h; cases h
     | some x =>
@@ -848,7 +851,7 @@ theorem idx_ofNat (n : Nat) : Engine.Model.MathVal.idx (Impl.ofNat n) = some n :
 
 /-- SortStep's call answer: a new List « _j_, _k_, _st_ » at the end of the heap. -/
 theorem sortCall_fast (j k : Nat) (st : Val Impl) (s : State Impl) : sortCall (M := Impl) j k st s =
-    .ok (.ref s.heap.size) { s with heap := s.heap.push (.list #[.math (Impl.ofNat j), .math (Impl.ofNat k), st] 0) } :=
+    .ok (.ref s.heap.next) { s with heap := s.heap.push (.list #[.math (Impl.ofNat j), .math (Impl.ofNat k), st] 0) } :=
   rfl
 
 /-- SortStep's call answer names its pair and the state. -/
@@ -856,13 +859,13 @@ theorem sortCall_inj_fast {j k : Nat} {st : Val Impl} {j' k' : Nat} {st' : Val I
     (h : sortCall (M := Impl) j k st s = .ok r s') (h' : sortCall (M := Impl) j' k' st' s = .ok r s') :
     j = j' ∧ k = k' ∧ st = st' := by
   rw [sortCall_fast] at h h'
-  have e := congrArg (Array.toList (α := Cell Impl)) (congrArg State.heap (Res.ok.inj (h.trans h'.symm)).2)
-  simp only [Array.toList_push] at e
-  have e := List.append_cancel_left e
-  simp only [List.cons.injEq, Cell.list.injEq, and_true] at e
-  have e1 := congrArg (fun a : Array (Val Impl) => a[0]?) e
-  have e2 := congrArg (fun a : Array (Val Impl) => a[1]?) e
-  have e3 := congrArg (fun a : Array (Val Impl) => a[2]?) e
+  have eh := congrArg (fun x => x.get s.heap.next) (congrArg State.heap (Res.ok.inj (h.trans h'.symm)).2)
+  rw [show (s.heap.push _).get s.heap.next = some _ from Engine.Model.ChunkedHeap.alloc_get_self _ _,
+      show (s.heap.push _).get s.heap.next = some _ from Engine.Model.ChunkedHeap.alloc_get_self _ _] at eh
+  simp only [Option.some.injEq, Cell.list.injEq, and_true] at eh
+  have e1 := congrArg (fun a : Array (Val Impl) => a[0]?) eh
+  have e2 := congrArg (fun a : Array (Val Impl) => a[1]?) eh
+  have e3 := congrArg (fun a : Array (Val Impl) => a[2]?) eh
   simp only [List.getElem?_toArray, List.getElem?_cons_zero, List.getElem?_cons_succ, Option.some.injEq,
     Val.math.injEq] at e1 e2 e3
   have hj : some j = some j' :=
@@ -875,12 +878,12 @@ theorem sortCall_inj_fast {j k : Nat} {st : Val Impl} {j' k' : Nat} {st' : Val I
 theorem sortDone_ne_call_fast {σ : List Nat} {j k : Nat} {st : Val Impl} {s : State Impl} {r s'}
     (h : sortDone (M := Impl) σ s = .ok r s') (h' : sortCall (M := Impl) j k st s = .ok r s') : False := by
   rw [sortCall_fast] at h'
-  have hd : ∃ c s'', sortDone (M := Impl) σ s = .ok (.ref (Array.push s.heap c).size) s'' := ⟨_, _, rfl⟩
-  obtain ⟨_, s'', hd⟩ := hd
+  have hd : ∃ s'', sortDone (M := Impl) σ s = .ok (.ref (s.heap.next + 1)) s'' := ⟨_, rfl⟩
+  obtain ⟨s'', hd⟩ := hd
   rw [hd] at h
   have e := (Res.ok.inj (h.trans h'.symm)).1
   injection e with e
-  simp at e
+  omega
 
 /-! HostGlobalProperties: `globalProps` allocates and then changes only the global object's own
 properties. -/
@@ -1046,9 +1049,9 @@ theorem globalProps_law (dda : Option FieldId) (realm : Val Impl) (g : Impl.Addr
       rw [h₂] at h
       obtain ⟨sl, ps⟩ := y
       obtain ⟨rfl, hg⟩ := objectOf_ok h₂
-      have hlt : @LT.lt Nat _ g k₁.size := by
-        simp only [Impl, Impl] at hg
-        exact (Array.getElem?_eq_some_iff.mp hg).1
+      have hs_g : (k₁.get g).isSome = true := by
+        have hg' : k₁.get g = some (.object sl ps) := hg
+        rw [hg']; rfl
       simp only [Run.Res.bind, Bind.bind, Run.bind, Pure.pure, Run.pure] at h
       split at h
       · rename_i hx
@@ -1057,21 +1060,19 @@ theorem globalProps_law (dda : Option FieldId) (realm : Val Impl) (g : Impl.Addr
         simp only [Ecma.writeCell, Run.Res.bind, Run.bind, Run.pure] at h
         obtain ⟨rfl, rfl⟩ := h
         refine ⟨rfl, ⟨rfl, fun a c ha hc => ?_, fun sl₀ ps₀ h₀ => ?_⟩, fun sl₀ ps₀ h₀ => ?_⟩
-        · simp only [Impl, Impl] at g₁ ⊢
-          rw [Array.getElem?_setIfInBounds_ne (Ne.symm ha)]
+        · rw [show Impl.heapGet (Impl.heapSet k₁ g _) a = Impl.heapGet k₁ a from
+            Engine.Model.ChunkedHeap.get_set_other k₁ g _ a ha]
           exact g₁ a c hc
         · have := g₁ g _ h₀
           rw [hg] at this
           cases this
           refine ⟨Engine.Host.putNew (Engine.Host.putNew (Engine.Host.putNew ps "print" pp) "$262" po) "setTimeout" pt, ?_⟩
-          simp only [Impl, Impl]
-          exact Array.getElem?_setIfInBounds_self_of_lt hlt
+          exact Engine.Model.ChunkedHeap.get_set_self k₁ g _ hs_g
         · have := g₁ g _ h₀
           rw [hg] at this
           cases this
           refine .inr ⟨hx, pp, po, pt, ?_⟩
-          simp only [Impl, Impl]
-          exact Array.getElem?_setIfInBounds_self_of_lt hlt
+          exact Engine.Model.ChunkedHeap.get_set_self k₁ g _ hs_g
       · obtain ⟨rfl, rfl⟩ := h
         refine ⟨rfl, ⟨rfl, fun a c _ hc => g₁ a c hc, fun sl₀ ps₀ h₀ => ⟨ps₀, g₁ g _ h₀⟩⟩, fun sl₀ ps₀ h₀ => .inl (g₁ g _ h₀)⟩
     | _ => rw [h₂] at h; cases h

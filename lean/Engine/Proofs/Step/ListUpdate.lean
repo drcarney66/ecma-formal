@@ -28,13 +28,19 @@ theorem step_prim (X : Ctx F) (c : Cfg F) (q : PrimId) (xs : List (Val F)) (hc :
 open Engine.Accel.ListUpdate in
 /-- The update in place of a List cell is the write of its elements. -/
 theorem modifyIn_eq (a : Nat) (f : Array (Val F) → Array (Val F)) (s : State F) :
-    modifyIn a f s = match s.heap[a]? with
-      | some (.list xs o) => .ok true { s with heap := s.heap.setIfInBounds a (.list (f xs) o) }
+    modifyIn a f s = match s.heap.get a with
+      | some (.list xs o) => .ok true { s with heap := s.heap.set a (.list (f xs) o) }
       | some _ => .ok false s
       | none => .stop .sortError := by
   unfold modifyIn take
   dsimp only
-  split <;> simp_all
+  cases hg : s.heap.get a with
+  | none => rfl
+  | some c =>
+    cases c with
+    | list xs o =>
+      simp only [Engine.Model.ChunkedHeap.set_set_self s.heap a _ _ (by rw [hg]; rfl)]
+    | _ => rfl
 
 theorem primOn_append (x : Val F) (a : Nat) : primOn Known.pAppend [x, .ref a] = (do
     match ← readCell a with
@@ -44,7 +50,7 @@ theorem primOn_append (x : Val F) (a : Nat) : primOn Known.pAppend [x, .ref a] =
   simp (config := { decide := true }) only [↓reduceIte]
   funext s
   simp only [bind, Run.bind, readCell]
-  generalize s.heap[a]? = o
+  generalize s.heap.get a = o
   cases o with
   | none => rfl
   | some c => cases c <;> rfl
@@ -57,7 +63,7 @@ theorem primOn_prepend (x : Val F) (a : Nat) : primOn Known.pPrepend [x, .ref a]
   simp (config := { decide := true }) only [↓reduceIte]
   funext s
   simp only [bind, Run.bind, readCell]
-  generalize s.heap[a]? = o
+  generalize s.heap.get a = o
   cases o with
   | none => rfl
   | some c => cases c <;> rfl
@@ -74,7 +80,7 @@ theorem appendIn_eq (x : Val F) (a : Nat) : appendIn x a = primOn Known.pAppend 
   rw [primOn_append]
   funext s
   simp only [appendIn, bind, Run.bind, modifyIn_eq, readCell, writeList]
-  cases h : s.heap[a]? with
+  cases h : s.heap.get a with
   | none => simp [h, Run.Res.bind]
   | some c => cases c <;> simp [h, Run.Res.bind, Run.bind, Run.stop, pure, Run.pure, writeList]
 
@@ -83,7 +89,7 @@ theorem prependIn_eq (x : Val F) (a : Nat) : prependIn x a = primOn Known.pPrepe
   rw [primOn_prepend]
   funext s
   simp only [prependIn, bind, Run.bind, modifyIn_eq, readCell, writeList]
-  cases h : s.heap[a]? with
+  cases h : s.heap.get a with
   | none => simp [h, Run.Res.bind]
   | some c => cases c <;> simp [h, Run.Res.bind, Run.bind, Run.stop, pure, Run.pure, writeList]
 
@@ -162,19 +168,20 @@ theorem Reads.elemSeq (v : Val F) : Reads (Prims.CharSets.elemSeq v) := by
 
 open Engine.Accel.ListUpdate in
 theorem addCsIn_eq (a : Nat) (cs : Engine.Model.CharSet) (sq : F.Seq F.Math) (s : State F)
-    (h : s.heap[a]? = some (.charSet cs)) :
+    (h : s.heap.get a = some (.charSet cs)) :
     addCsIn a sq s = (writeCell a (.charSet (F.csAdd cs sq)) >>= fun _ => return .enum Known.eUnused) s := by
   unfold addCsIn take
-  simp [h, writeCell, bind, Run.bind, Run.Res.bind, pure, Run.pure]
+  simp only [h, writeCell, bind, Run.bind, Run.Res.bind, pure, Run.pure]
+  rw [Engine.Model.ChunkedHeap.set_set_self s.heap a _ _ (by rw [h]; rfl)]
 
 /-- A List's cell read: the state is unchanged and holds the List at the address. -/
 theorem listCell_ok {l : Val F} {s t : State F} {a : Nat} {xs : Array (Val F)}
-    (h : Prims.Lists.listCell l s = .ok (a, xs) t) : t = s ∧ ∃ o, s.heap[a]? = some (.list xs o) := by
+    (h : Prims.Lists.listCell l s = .ok (a, xs) t) : t = s ∧ ∃ o, s.heap.get a = some (.list xs o) := by
   unfold Prims.Lists.listCell at h
   split at h
   · rename_i b
     simp only [bind, Run.bind, Ecma.readCell] at h
-    cases hb : s.heap[b]? with
+    cases hb : s.heap.get b with
     | none => simp [hb, Run.Res.bind] at h
     | some c =>
       rw [hb] at h
@@ -189,7 +196,7 @@ theorem addIn_eq (e l : Val F) : addIn e l = Prims.Lists.setAdd [e, l] := by
   cases l <;> try rfl
   rename_i a
   simp only [addIn, Prims.Lists.setAdd, bind, Run.bind, Ecma.readCell, discard]
-  cases ha : s.heap[a]? with
+  cases ha : s.heap.get a with
   | none => simp [Run.Res.bind]
   | some cell =>
     cases cell with

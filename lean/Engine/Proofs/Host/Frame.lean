@@ -108,7 +108,7 @@ theorem resizeCand_stepKeeps (xs : List (Val Impl)) (s t : State Impl) (h : resi
             cases v with
             | ref d =>
               dsimp only
-              cases hdx : s.heap[d]? with
+              cases hdx : s.heap.get d with
               | none => intro h; cases h
               | some c' =>
                 cases c' with

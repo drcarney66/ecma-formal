@@ -8,6 +8,7 @@ public import Engine.Model.Digits
 public import Engine.Model.CharSet
 public import Engine.Model.Bytes
 public import Engine.Model.Radix
+public import Engine.Model.ChunkedHeap
 public import Ecma.Model.Laws
 
 @[expose] public section
@@ -32,7 +33,7 @@ code units, a store of cells in an array, and Parse Nodes with ParseText's parse
   Seq := Array
   Rec := WMap FieldId
   Props := WMap (Array UInt16 ⊕ (Nat × Option (Array UInt16)))
-  Heap := Array
+  Heap := ChunkedHeap
   Bytes := ByteArray
 
   ofNat n := .int n
@@ -135,10 +136,10 @@ code units, a store of cells in an array, and Parse Nodes with ParseText's parse
   propsDel := WMap.del
   propsKeys := WMap.keys
 
-  heapEmpty := #[]
-  heapAlloc h v := (h.size, h.push v)
-  heapGet h a := h[a]?
-  heapSet h a v := h.setIfInBounds a v
+  heapEmpty := ChunkedHeap.empty
+  heapAlloc := ChunkedHeap.alloc
+  heapGet := ChunkedHeap.get
+  heapSet := ChunkedHeap.set
 
   scf? c := (MathVal.idx c).bind fun n => (Engine.scfPoint? n).map fun (d : Nat) => MathVal.int d
   toLower xs := (Engine.lowerPoints (xs.toList.filterMap MathVal.idx)).toArray.map fun (c : Nat) => MathVal.int c

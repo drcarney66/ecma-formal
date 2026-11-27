@@ -39,15 +39,15 @@ def stcpLoop (r : Nat) : Loop F :=
 
 /-- The state with the List of the code points `cs` and the Records `rs` allocated. -/
 def stcpSt (st : State F) (cs : Array (Val F)) (rs : Array (Cell F)) : State F :=
-  { st with heap := ((st.heap.push (.list cs 0) : Array (Cell F)) ++ rs : Array (Cell F)) }
+  { st with heap := (st.heap.push (.list cs 0)).pushMany rs }
 
 /-- The loop's end and the return, where the position is not below the size. -/
 theorem stcp_end (st : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (s : Array UInt16)
     (p : Nat) (cs : Array (Val F)) (rs : Array (Cell F)) (v4 : Val F) (q : List Nat) (r : Nat) (hp : ¬ p < s.size) :
     Steps (Ctx.spec Engine.P' H chk) ⟨stcpSt st cs rs,
-        ⟨a, nd, #[.str s, .ref st.heap.size, .math (.int s.size), .math (.int p), v4], .steps false true true, q,
+        ⟨a, nd, #[.str s, .ref st.heap.next, .math (.int s.size), .math (.int p), v4], .steps false true true, q,
           [.seq [.site [5], .ret (.var 1)]], none⟩ :: fs, .loop .round (stcpLoop r)⟩
-      ⟨stcpSt st cs rs, fs, .val (.ref st.heap.size)⟩ := by
+      ⟨stcpSt st cs rs, fs, .val (.ref st.heap.next)⟩ := by
   gsteps
   refine Steps.valBool false (by mdecide) ?_
   gsteps
@@ -57,9 +57,9 @@ open Engine.Accel in
 theorem stcp_loop [PinsHold] (st : State F) (fs : List (Frame F)) (a : AlgId) (nd : Option F.Node) (s : Array UInt16) :
     ∀ (k p : Nat) (cs : Array (Val F)) (rs : Array (Cell F)) (v4 : Val F) (q : List Nat) (r : Nat), s.size - p ≤ k →
     Steps (Ctx.spec Engine.P' H chk) ⟨stcpSt st cs rs,
-        ⟨a, nd, #[.str s, .ref st.heap.size, .math (.int s.size), .math (.int p), v4], .steps false true true, q,
+        ⟨a, nd, #[.str s, .ref st.heap.next, .math (.int s.size), .math (.int p), v4], .steps false true true, q,
           [.seq [.site [5], .ret (.var 1)]], none⟩ :: fs, .loop .round (stcpLoop r)⟩
-      ⟨stcpSt st (scanCps s k p cs rs).1 (scanCps s k p cs rs).2, fs, .val (.ref st.heap.size)⟩ := by
+      ⟨stcpSt st (scanCps s k p cs rs).1 (scanCps s k p cs rs).2, fs, .val (.ref st.heap.next)⟩ := by
   intro k
   induction k with
   | zero =>
@@ -82,7 +82,7 @@ theorem stcp_loop [PinsHold] (st : State F) (fs : List (Frame F)) (a : AlgId) (n
       refine Steps.next (step_field _ _ _ _ _ _ _ _ _ _ _ _ _ (cpRec_cp _ _ t (heap_push_get _ _))) ?_
       gsteps
       refine Steps.next (step_append _ _ _ _ _ cs 0 rfl (heap_list_get' _ _ _ _)) ?_
-      simp only [heap_append_set]
+      simp only [← Engine.Model.ChunkedHeap.pushMany_push, heap_list_set]
       gsteps
       refine Steps.next (step_field _ _ _ _ _ _ _ _ _ _ _ _ _ (cpRec_count _ _ t (heap_rec_get _ _ _ _ _))) ?_
       iterate 4 gstep
@@ -90,7 +90,7 @@ theorem stcp_loop [PinsHold] (st : State F) (fs : List (Frame F)) (a : AlgId) (n
       gstep
       have e : ((p + t.2.1 : Nat) : Int) = (p : Int) + (t.2.1 : Int) := by omega
       have h := ih (p + t.2.1) (cs.push (.math (Model.MathVal.int t.1))) (rs.push (cpRec t))
-        (.ref ((st.heap.push (.list cs 0) : Array (Cell F)) ++ rs : Array (Cell F)).size) [3, 4] (r + 1) (by omega)
+        (.ref ((st.heap.push (.list cs 0)).pushMany rs).next) [3, 4] (r + 1) (by omega)
       unfold stcpSt at h
       rw [e] at h
       exact h
@@ -103,7 +103,7 @@ theorem stcp_steps [PinsHold] (st : State F) (fs : List (Frame F)) (a : AlgId) (
     Steps (Ctx.spec Engine.P' H chk)
       ⟨st, ⟨a, nd, #[.str s, .unbound, .unbound, .unbound, .unbound], .steps false true true, [], [], none⟩ :: fs,
         .code stcpCode⟩
-      ⟨stcpSt st (scanCps s s.size 0 #[] #[]).1 (scanCps s s.size 0 #[] #[]).2, fs, .val (.ref st.heap.size)⟩ := by
+      ⟨stcpSt st (scanCps s s.size 0 #[] #[]).1 (scanCps s s.size 0 #[] #[]).2, fs, .val (.ref st.heap.next)⟩ := by
   iterate 22 gstep
   simp only [Bool.false_eq_true, ↓reduceIte]
   have h := stcp_loop H chk st fs a nd s s.size 0 #[] #[] .unbound [4] (0 + 1) (by omega)

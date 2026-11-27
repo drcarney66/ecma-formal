@@ -3,6 +3,7 @@ module
 public import Engine.Run
 public import Ecma.Lower.Expand
 public import Engine.Machine
+public import Engine.GC
 public import Engine.Pins
 public import Engine.Host.Jobs
 public import Lean.CompactedRegion
@@ -13,7 +14,7 @@ public import Lean.CompactedRegion
 # `ecma-run`: a whole JS program through the specification
 
 ```
-ecma-run [--no-accel] [--checked] [--max-heap MB] [--stats] [--snapshot DIR]
+ecma-run [--no-accel] [--checked] [--gc] [--max-heap MB] [--stats] [--snapshot DIR]
         [--no-blame] [--sites] [--cover] [--host-seed N] [--resize-in-place]
         [--web-browser] [--can-block] [--annex-b SEC]... [--jobs-after-throw] [--prelude FILE]... [--module-dir DIR] [--module] [--bundle] [--parse-only] (FILE | --serve)
 ```
@@ -103,6 +104,8 @@ def cellsFor (mb : Nat) : Nat := (mb - baseMegabytes) * 1048576 / cellBytes
 structure Opts where
   checked : Bool := false
   noAccel : Bool := false
+  /-- `--gc`: mark-and-sweep garbage collection of unreachable store cells (`Engine.GC.runGC`). -/
+  gc : Bool := false
   checkPins : Bool := false
   /-- `--max-heap MB`: the store's ceiling, in megabytes (0: none). -/
   maxHeap : Nat := defaultMaxHeap
@@ -146,14 +149,16 @@ def specUnits : Thunk Engine.Machine.Units :=
     Engine.Machine.unitsMemo P Engine.Machine.specRows (keys.1 ++ keys.2.1 ++ hostIds)
 
 /-- The runner of `o` over the host `H`: the engine's set-up (`Engine.setupAt`, the one `Engine.implementation`
-is). -/
-def dispatchOf (o : Opts) (H : Host F) : Engine.Host.Runner :=
+is), or with `--gc` the garbage-collecting loop (`Engine.GC.dispatchGC`) preserving `extraRoots`. -/
+def dispatchOf (o : Opts) (extraRoots : Array Nat := #[]) (H : Host F) : Engine.Host.Runner :=
   let mc := if o.maxHeap == 0 then none else some (cellsFor o.maxHeap)
-  Engine.Machine.dispatch (Engine.setupAt H mc (!o.noAccel) o.checked) specUnits (obsOf o)
+  let E := Engine.setupAt H mc (!o.noAccel) o.checked
+  if o.gc then Engine.GC.dispatchGC E specUnits (obsOf o) extraRoots
+  else Engine.Machine.dispatch E specUnits (obsOf o)
 
 /-- `src`'s run (as `sr` has it) from the state `s` over the cells `c` (`runFrom`). -/
 def runNoted (o : Opts) (c : Cells) (s : State F) (src : Array Nat) (sr : Source := .script) : Res F (Val F) :=
-  runFrom (dispatchOf o) o.host o.jobs c s src sr
+  runFrom (dispatchOf o #[c.out, c.realm]) o.host o.jobs c s src sr
 
 
 /-! Preludes. -/
@@ -224,6 +229,7 @@ partial def parseRequest (o : Opts) : List String → Except String Opts
   | "--module" :: r => parseRequest { o with asModule := true } r
   | "--bundle" :: r => parseRequest { o with bundle := true } r
   | "--parse-only" :: r => parseRequest { o with parseOnly := true } r
+  | "--gc" :: r => parseRequest { o with gc := true } r
   | a :: _ => .error s!"unsupported {a}"
 
 partial def parse (o : Opts) : List String → Except String Opts
@@ -242,7 +248,7 @@ partial def parse (o : Opts) : List String → Except String Opts
   | "--serve" :: r => parse { o with serve := true } r
   | a :: r =>
     if a == "--resize-in-place" || a == "--web-browser" || a == "--can-block" || a == "--jobs-after-throw" ||
-        a == "--module" || a == "--bundle" || a == "--parse-only" then
+        a == "--module" || a == "--bundle" || a == "--parse-only" || a == "--gc" then
       parseRequest o [a] >>= (parse · r)
     else if a == "--host-seed" || a == "--annex-b" || a == "--prelude" || a == "--module-dir" then match r with
       | n :: r => parseRequest o [a, n] >>= (parse · r)
@@ -283,7 +289,7 @@ def setupFor (o : Opts) (cache : SetupCache) : IO (Res F Cells × Machine.ObsRec
   | some (_, r, k) => return (r, k, cache)
   | none =>
     Machine.resetObs
-    let r := setup (dispatchOf o) o.host SpecRun.s0
+    let r := setup (dispatchOf { o with gc := false }) o.host SpecRun.s0
     let k : Machine.ObsRecords ← match r with
       | .ok .. => do pure { cover := (← Machine.getObs).cover }
       | _ => Machine.getObs
@@ -459,7 +465,7 @@ def runSnap (o : Opts) (args : List String) (file : String) (texts : List String
       | .ok c s => match afterPreludes o c s pres with
         | .ok s' =>
           let most := ((← IO.getEnv "ECMA_SNAPSHOT_MAX_CELLS").bind String.toNat?).getD 0
-          if most == 0 || s'.heap.size ≤ most then writeSnapshot dir key c s'
+          if most == 0 || s'.heap.live ≤ most then writeSnapshot dir key c s'
           return runAfter o (.ok c s') (fun _ s => .ok s) src
         | a => return runAfter o (.ok c s) (fun _ _ => a) src
       | set => return runAfter o set (fun c s => afterPreludes o c s pres) src
@@ -495,7 +501,7 @@ def main (base : Opts) (args : List String) : IO UInt32 := do
     IO.println line
     for l in out do IO.println l
     if o.stats then match cr.2 with
-      | .ok _ s | .esc _ s => IO.eprintln s!"cells\t{s.heap.size}"
+      | .ok _ s | .esc _ s => IO.eprintln s!"cells\t{s.heap.live}"
       | .stop _ => IO.eprintln "cells\t-"
     if o.sites then for l in siteRecords site do IO.println l
     if o.cover then for l in ← coverRecords do IO.println l

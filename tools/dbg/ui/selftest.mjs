@@ -149,6 +149,9 @@ async function heapPanes(check, model) {
   link.click();
   await waitFor("a cell link", () => !$("heap-pane").hidden && document.querySelector(`#heap li.cell.focus[data-addr="${target}"] [data-path^="#${target}/"]`));
   check("tree: a cell opens in the heap, expanded", text(`#heap li.cell.focus[data-addr="${target}"] .type`) !== "", target);
+  click("btn-gc");
+  await waitFor("gc summary", () => text("#heap-diff").includes("gc: collected") && $("status").textContent.includes("gc -"));
+  check("heap: gc button updates status and diff", text("#heap-diff").includes("live of") && text("#heap-range").includes("live)"), text("#heap-diff"));
   click("btn-continue");
   await waitFor("heap.js's end", () => document.body.dataset.state === "terminated");
   check("heap: the end", text("#console").includes("terminated: normal: 2"), text("#console"));

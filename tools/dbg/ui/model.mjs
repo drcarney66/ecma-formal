@@ -241,7 +241,7 @@ export class Model {
     const gen = ++this.gen;
     this.snap = {
       gen, stopped: body, frames: [], totalFrames: null, selected: 0, jsFrames: null, jsSelected: null,
-      scopes: new Map(), vars: new Map(), spec: new Map(),
+      scopes: new Map(), vars: new Map(), spec: new Map(), gcStats: null,
     };
     this.span = null;
     this.state = "paused";
@@ -480,6 +480,24 @@ export class Model {
   // `specHeap`: the cells of [from, from + count), of `kind` if given.
   heap(from, count, kind) {
     return this.spec("specHeap", kind ? { from, count, kind } : { from, count });
+  }
+
+  // `gc`: collects unreachable store cells at the current pause and refreshes cached views.
+  async gc() {
+    const snap = this.snap;
+    if (this.state !== "paused" || !snap || !this.session) return null;
+    const s = this.session;
+    const r = await s.request("gc");
+    if (!this.current(s, snap.gen) || !r?.success) return null;
+    snap.gcStats = r.body;
+    snap.vars.clear();
+    snap.spec.clear();
+    const slots = snap.scopes.get(snap.selected)?.find((x) => x.name === "Slots");
+    if (slots) this.variables(slots.variablesReference);
+    this.emit("gc");
+    this.emit("pause");
+    this.emit("state");
+    return r.body;
   }
 
   // The pause's `stopped.spec.diff`, or null (the first pause, or not paused).

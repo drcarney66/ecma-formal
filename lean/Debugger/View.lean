@@ -117,6 +117,17 @@ def Sources.byRef? (s : Sources) (ref : Nat) : Option Program :=
 def pointsText (src : Array Nat) : String :=
   String.ofList (src.toList.map fun c => if 0xD800 ≤ c && c < 0xE000 then Char.ofNat 0xFFFD else Char.ofNat c)
 
+/-- Summary of a manual `gc` collection at a pause. -/
+structure GCStats where
+  liveBefore : Nat
+  liveAfter : Nat
+  collected : Nat
+  heapSize : Nat
+
+def GCStats.json (s : GCStats) : Json :=
+  Json.mk [("collected", .nat s.collected), ("liveBefore", .nat s.liveBefore),
+    ("liveAfter", .nat s.liveAfter), ("heapSize", .nat s.heapSize)]
+
 /-- A pause: the frames (innermost first, built on demand), the state (none at a stop, whose state
 the run no longer has), the depth, the step entered and the stop's name. -/
 structure Paused where
@@ -127,6 +138,8 @@ structure Paused where
   stop? : Option String := none
   /-- the contexts on the stack when the outermost frames' run started -/
   base : Nat := 0
+  /-- collects unreachable store cells at this pause (`extraRoots` → stats, swept state, and refreshed frames) -/
+  collect : Option (Array Nat → IO (GCStats × State F × List FrameView)) := none
 
 /-! Source positions. -/
 
@@ -346,14 +359,16 @@ def fieldOf (s : State F) (v : Val F) (f : FieldId) : Option (Val F) :=
 /-- A cell's kind, as a `type`. -/
 def cellType (n : Names) (s : State F) (v : Val F) : String :=
   match v with
-  | .ref a | .obj a => match cell? s (Show.addr a) with
+  | .ref a | .obj a =>
+    let addr := Show.addr a
+    match cell? s addr with
     | some (.record k _) => n.sort k
     | some (.env k _ _) => n.sort k
     | some (.list xs _) => s!"List ({xs.size})"
     | some (.block bs) => s!"Data Block ({bs.size})"
     | some (.charSet cs) => s!"CharSet ({(Engine.Model.MathVal.idx (F.csSize cs)).getD 0})"
     | some (.object ..) => "Object"
-    | none => "(no cell)"
+    | none => if addr < s.heap.next then "(collected)" else "(no cell)"
   | v => Show.type v
 
 /-- A value as a variable: its cell's kind as its type, a List's length as its indexed count. -/

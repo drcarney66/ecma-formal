@@ -36,7 +36,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DbgClient } from "../client.mjs";
-import { HEAP_PAGE, KIND_PAGE, diffLine, diffParts, diffRows, listLength, parseAddr } from "./heap.mjs";
+import { HEAP_PAGE, KIND_PAGE, diffLine, diffParts, diffRows, gcNote, listLength, parseAddr } from "./heap.mjs";
 import { FRAME_PAGE, Model, cellOf } from "./model.mjs";
 import { lineTable, programName, utf16 } from "./source.mjs";
 import { programRoot, splitContexts } from "./state.mjs";
@@ -426,6 +426,29 @@ async function bundle(client, dir) {
   m.stop();
 }
 
+async function gcTest(client, dir) {
+  const source = readFileSync(join(dir, "gc.js"), "utf8");
+  const m = new Model(client, { program: { name: "gc.js", source }, filters: ["debugger"] });
+  m.start();
+  await m.until(paused);
+  check(m.capabilities?.supportsGCRequest === true, "gc: supportsGCRequest");
+  const st0 = await m.spec("specState");
+  check(st0.liveCells === st0.heapSize, `gc: uncollected before gc (${st0.liveCells}/${st0.heapSize})`);
+  const g = await m.gc();
+  check(g && g.collected > 50 && g.liveBefore === st0.heapSize && g.liveAfter === st0.heapSize - g.collected, `gc: collected dead cells (${JSON.stringify(g)})`);
+  check(m.snap?.gcStats === g, "gc: snap.gcStats stored");
+  const st1 = await m.spec("specState");
+  check(st1.heapSize === st0.heapSize && st1.liveCells === g.liveAfter, `gc: specState refreshed (${st1.liveCells}/${st1.heapSize})`);
+  const page = await m.heap(0, HEAP_PAGE);
+  check(page.liveCells === g.liveAfter && page.heapSize === st0.heapSize, "gc: specHeap liveCells");
+  const g2 = await m.gc();
+  check(g2 && g2.collected === 0 && g2.liveAfter === g.liveAfter, `gc: second gc idempotent (${JSON.stringify(g2)})`);
+  m.cont();
+  await m.until(ended);
+  check(m.ending?.outcome === "normal: undefined" && m.output.some((o) => o.text === "42\n"), "gc: program finishes cleanly after sweep");
+  m.stop();
+}
+
 function pure() {
   const t = lineTable("a\r\nb\u2028\u{1F600}c\rd\n");
   const lines = t.lines.map(({ start, end }) => `${start}-${end}`).join();
@@ -440,6 +463,8 @@ function pure() {
   check(d === "since the last pause: 2 new cells, 1+ changed, stack changed", `diffLine: ${d}`);
   check(diffLine({ newCells: [0, 0] }).includes("0 changed"), "diffLine: no changed");
   check(diffParts({ newCells: [4, 5], changed: [] }).map((p) => p.text).join() === "1 new cell,0 changed", "diffParts");
+  check(diffLine({ newCells: [4, 5], changed: [], collected: 3 }) === "since the last pause: 1 new cell, 0 changed, 3 collected", "diffLine: collected");
+  check(gcNote({ collected: 10, liveAfter: 90, heapSize: 100 }) === "gc: collected 10 cells (90 live of 100)", "gcNote");
   check(listLength("List (13)") === 13 && listLength("Object") === 0, "listLength");
   check(parseAddr(" #12") === 12 && parseAddr("7") === 7 && parseAddr("x") === null, "parseAddr");
   const rows = diffRows({ old: null, new: { variables: [{ name: "a", value: "1" }] }, changed: ["a"] });
@@ -463,7 +488,7 @@ async function main() {
   }
   pure();
   const client = DbgClient.spawn(bin);
-  for (const [name, t] of [["stepping", stepping], ["pause", pausing], ["list", listing], ["heap", heap], ["relaunch", relaunch], ["tdz", tdz], ["jsstack", jsstack], ["linebp", linebp], ["eval", evalCode], ["bundle", bundle]]) {
+  for (const [name, t] of [["stepping", stepping], ["pause", pausing], ["list", listing], ["heap", heap], ["relaunch", relaunch], ["tdz", tdz], ["jsstack", jsstack], ["linebp", linebp], ["eval", evalCode], ["bundle", bundle], ["gc", gcTest]]) {
     const before = failed;
     try {
       await t(client, dir);

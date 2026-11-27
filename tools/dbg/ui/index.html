@@ -22,6 +22,7 @@
     <button id="btn-in" title="i or Alt+F11: the next spec step">step in (i)</button>
     <button id="btn-out" title="o or Alt+Shift+F11: the first spec step less deep">step out (o)</button>
     <button id="btn-instruction" title="F9: one transition">instruction (F9)</button>
+    <button id="btn-gc" title="g: collect unreachable store cells">gc (g)</button>
     <button id="btn-stop" title="end the session">■ stop</button>
     <label><input type="checkbox" id="stop-on-entry"> stop on entry</label>
   </div>
@@ -105,6 +106,7 @@
         <button id="heap-next" title="the next page">▶</button>
         <button id="heap-new" title="the cells new since the last pause">new</button>
         <button id="heap-changed" title="the cells changed since the last pause">changed</button>
+        <button id="heap-gc" title="g: collect unreachable store cells">gc</button>
         <input id="heap-addr" placeholder="#address" size="8">
         <button id="heap-go">go</button>
       </div>

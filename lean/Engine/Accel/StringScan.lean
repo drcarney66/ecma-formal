@@ -19,9 +19,6 @@ namespace Engine.Accel
 
 open Ecma Engine.Model
 
-/-- The heap as an Array. -/
-abbrev heapArr (st : State F) : Array (Cell F) := st.heap
-
 /-- The most code units a String scan entry walks. -/
 def scanLimit : Nat := 0x1000000
 
@@ -52,7 +49,7 @@ def scanCps (s : Array UInt16) : Nat → Nat → Array (Val F) → Array (Cell F
 /-- StringToCodePoints(s): a new List of its code points, then CodePointAt's Records. -/
 def stcpRun (s : Array UInt16) : Run F (Val F) := fun st =>
   let r := scanCps s s.size 0 #[] #[]
-  .ok (.ref (heapArr st).size) { st with heap := ((heapArr st).push (.list r.1 0) ++ r.2 : Array (Cell F)) }
+  .ok (.ref st.heap.next) { st with heap := (st.heap.push (.list r.1 0)).pushMany r.2 }
 
 def stcpEntry : List (Val F) → Option (Run F (Option (Val F)))
   | [.str s] => if s.size ≤ scanLimit then some (always (stcpRun s)) else none
@@ -75,7 +72,7 @@ def gsiRun (s : Array UInt16) (i : Int) : Run F (Val F) := fun st =>
   if s.size = 0 then .ok (.math (.int 0)) st
   else
     let r := scanIdx s i s.size 0 0 #[]
-    .ok (.math (.int r.1)) { st with heap := ((heapArr st) ++ r.2 : Array (Cell F)) }
+    .ok (.math (.int r.1)) { st with heap := st.heap.pushMany r.2 }
 
 def gsiEntry : List (Val F) → Option (Run F (Option (Val F)))
   | [.str s, .math (.int i)] => if s.size ≤ scanLimit then some (always (gsiRun s i)) else none

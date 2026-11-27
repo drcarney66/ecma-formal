@@ -63,7 +63,7 @@ theorem step_range_end (X : Ctx F) (s : State F) (fr : List (Frame F)) (x : Opti
 /-- A `For each` round's head at an element of the List: the variable bound to it, the body. -/
 theorem step_each_in (X : Ctx F) (s : State F) (fr : List (Frame F)) (x : Slot) (o1 : Op) (p : List Nat)
     (body : Code) (l : Nat) (xs : Array (Val F)) (o : Nat) (i : Nat) (r : Nat) (v : Val F)
-    (hl : s.heap[l]? = some (.list xs o)) (hv : xs[i]? = some v) :
+    (hl : s.heap.get l = some (.list xs o)) (hv : xs[i]? = some v) :
     step X ⟨s, fr, .loop .round ⟨some x, .each o1 false, p, body, .each l (.int i) false, r⟩⟩ =
       loopBody ((⟨s, fr, .loop .round ⟨some x, .each o1 false, p, body, .each l (.int i) false, r⟩⟩ : Cfg F).setSlot x v)
         ⟨some x, .each o1 false, p, body, .each l (.int ((i + 1 : Nat) : Int)) false, r⟩ := by
@@ -78,7 +78,7 @@ theorem step_each_in (X : Ctx F) (s : State F) (fr : List (Frame F)) (x : Slot) 
 /-- A `For each` round's head past the List's elements: the loop's end. -/
 theorem step_each_end (X : Ctx F) (s : State F) (fr : List (Frame F)) (x : Option Slot) (o1 : Op) (p : List Nat)
     (body : Code) (l : Nat) (xs : Array (Val F)) (o : Nat) (i : Nat) (r : Nat)
-    (hl : s.heap[l]? = some (.list xs o)) (hi : ¬ i < xs.size) :
+    (hl : s.heap.get l = some (.list xs o)) (hi : ¬ i < xs.size) :
     step X ⟨s, fr, .loop .round ⟨x, .each o1 false, p, body, .each l (.int i) false, r⟩⟩ =
       loopEnd ⟨s, fr, .loop .round ⟨x, .each o1 false, p, body, .each l (.int i) false, r⟩⟩
         ⟨x, .each o1 false, p, body, .each l (.int i) false, r⟩ := by

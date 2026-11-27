@@ -116,7 +116,7 @@ theorem ls_primF (i : Int) (s : State F) : Ecma.prim (M := F) Known.pF [.math (.
 
 /-- OwnPropertyHas of an object's cell. -/
 theorem ls_ownHas (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val F)) (ps : F.Props (Val F))
-    (ha : s.heap[a]? = some (.object sl ps)) :
+    (ha : s.heap.get a = some (.object sl ps)) :
     Ecma.prim (M := F) Known.pOwnHas [.obj a, .str t] s = .ok (.bool (F.propsGet ps (.inl t)).isSome) s := by
   show primOn (M := F) Known.pOwnHas [.obj a, .str t] s = _
   ts_prim_unfold
@@ -124,7 +124,7 @@ theorem ls_ownHas (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val F)) (ps :
 
 /-- A read of an object's internal slot. -/
 theorem ls_readSlot (s : State F) (a : Nat) (sl : F.Rec (Val F)) (ps : F.Props (Val F)) (f : FieldId) (v : Val F)
-    (ha : s.heap[a]? = some (.object sl ps)) (hf : F.recGet sl f = some v) :
+    (ha : s.heap.get a = some (.object sl ps)) (hf : F.recGet sl f = some v) :
     readField (.obj a) f s = .ok v s := by
   have hf' : Model.WMap.get sl f = some v := hf
   simp [readField, readCell, ha, hf', bind, Run.bind, Run.Res.bind, optOr, Run.pure]
@@ -141,7 +141,7 @@ theorem ls_step_imethod (X : Ctx F) (s : State F) (a : AlgId) (nd : Option F.Nod
 
 /-- OrdinaryGetOwnProperty(O, P) of an object without the key: undefined, the state as it was. -/
 theorem ls_ogop [PinsHold] (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val F)) (ps : F.Props (Val F))
-    (ha : s.heap[a]? = some (.object sl ps)) (hk : F.propsGet ps (.inl t) = none) (fr : List (Frame F)) :
+    (ha : s.heap.get a = some (.object sl ps)) (hk : F.propsGet ps (.inl t) = none) (fr : List (Frame F)) :
     Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cOrdinaryGetOwnProperty, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val .undefined⟩ := by
   ts_enter_alg lsOgopAlg_pin lsOgopCode_pin
@@ -155,7 +155,7 @@ theorem ls_ogop [PinsHold] (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val 
 
 /-- O.[[GetOwnProperty]](P) of an ordinary object without the key. -/
 theorem ls_ordGop [PinsHold] (s : State F) (a : Nat) (t : F.Str) (sl : F.Rec (Val F)) (ps : F.Props (Val F))
-    (ha : s.heap[a]? = some (.object sl ps)) (hk : F.propsGet ps (.inl t) = none) (fr : List (Frame F)) :
+    (ha : s.heap.get a = some (.object sl ps)) (hk : F.propsGet ps (.inl t) = none) (fr : List (Frame F)) :
     Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cOrdMethodGetOwnProperty, 0⟩ [.obj a, .str t])⟩
       ⟨s, fr, .val (.comp Known.eNormal .undefined (.enum Known.eEmpty))⟩ := by
   ts_enter_alg lsOrdGopAlg_pin lsOrdGopCode_pin
@@ -170,7 +170,7 @@ def lsProto (v : Val F) : Prop := v = .null ∨ ∃ p : Nat, v = .obj p
 
 /-- OrdinaryGetPrototypeOf(O). -/
 theorem ls_ogpo [PinsHold] (s : State F) (a : Nat) (sl : F.Rec (Val F)) (ps : F.Props (Val F)) (v : Val F)
-    (ha : s.heap[a]? = some (.object sl ps)) (hp : F.recGet sl Known.fPrototype = some v) (hv : lsProto v) (fr : List (Frame F)) :
+    (ha : s.heap.get a = some (.object sl ps)) (hp : F.recGet sl Known.fPrototype = some v) (hv : lsProto v) (fr : List (Frame F)) :
     Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cOrdinaryGetPrototypeOf, 0⟩ [.obj a])⟩ ⟨s, fr, .val v⟩ := by
   ts_enter_alg lsOgpoAlg_pin lsOgpoCode_pin
   show Steps _ ⟨s, ⟨_, none, #[.obj a], .steps false true true, [], [], none⟩ :: _, .code lsOgpoCode⟩ _
@@ -180,7 +180,7 @@ theorem ls_ogpo [PinsHold] (s : State F) (a : Nat) (sl : F.Rec (Val F)) (ps : F.
 
 /-- O.[[GetPrototypeOf]]() of an ordinary object. -/
 theorem ls_ordGpo [PinsHold] (s : State F) (a : Nat) (sl : F.Rec (Val F)) (ps : F.Props (Val F)) (v : Val F)
-    (ha : s.heap[a]? = some (.object sl ps)) (hp : F.recGet sl Known.fPrototype = some v) (hv : lsProto v) (fr : List (Frame F)) :
+    (ha : s.heap.get a = some (.object sl ps)) (hp : F.recGet sl Known.fPrototype = some v) (hv : lsProto v) (fr : List (Frame F)) :
     Steps (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.alg ⟨Known.cOrdMethodGetPrototypeOf, 0⟩ [.obj a])⟩
       ⟨s, fr, .val (.comp Known.eNormal v (.enum Known.eEmpty))⟩ := by
   ts_enter_alg lsOrdGpoAlg_pin lsOrdGpoCode_pin
@@ -210,7 +210,7 @@ theorem ls_algIs {o : Option (Val F)} {g : AlgId}
 /-- What `ordChain` read of the store at an object of the chain. -/
 theorem ls_ordChain_succ {s : State F} {n : Nat} {a : Nat} {ch : List (F.Props (Val F))}
     (h : ordChain s (n + 1) a = some ch) :
-    ∃ (sl : F.Rec (Val F)) (ps : F.Props (Val F)), s.heap[a]? = some (.object sl ps) ∧
+    ∃ (sl : F.Rec (Val F)) (ps : F.Props (Val F)), s.heap.get a = some (.object sl ps) ∧
       F.recGet sl Known.fHasProperty = some (.alg ⟨Known.cOrdMethodHasProperty, 0⟩) ∧ F.recGet sl Known.fGetOwnProperty = some (.alg ⟨Known.cOrdMethodGetOwnProperty, 0⟩) ∧
       F.recGet sl Known.fGetPrototypeOf = some (.alg ⟨Known.cOrdMethodGetPrototypeOf, 0⟩) ∧
       ((F.recGet sl Known.fPrototype = some .null ∧ ch = [ps]) ∨

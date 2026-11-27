@@ -48,8 +48,15 @@ export function diffParts(diff) {
     { text: `${hi - lo} new cell${hi - lo === 1 ? "" : "s"}`, view: { mode: "new" }, title: `[${lo}, ${hi})` },
     { text: `${n}${diff.truncated ? "+" : ""} changed`, view: { mode: "changed" }, title: diff.truncated ? "truncated: more cells changed" : "" },
   ];
+  if (diff.collected > 0) parts.push({ text: `${diff.collected} collected`, view: { mode: "new" }, title: "earlier cells reclaimed by GC" });
   if (diff.stackChanged) parts.push({ text: "stack changed", view: { state: true }, title: "the execution context stack" });
   return parts;
+}
+
+// One-line summary of a manual `gc` result.
+export function gcNote(g) {
+  if (!g) return "";
+  return `gc: collected ${g.collected} cell${g.collected === 1 ? "" : "s"} (${g.liveAfter} live of ${g.heapSize})`;
 }
 
 // The summary in one line.
@@ -59,21 +66,22 @@ export function diffLine(diff) {
 }
 
 // The summary as links: the cells into the heap pane, the stack into the state pane.
-export function diffSummary(model, diff) {
+export function diffSummary(model, diff, gcStats = null) {
   const parts = diffParts(diff);
   const box = el("span", "diff-summary");
   if (!parts.length) {
     box.textContent = diffLine(diff);
-    return box;
+  } else {
+    box.append("since the last pause: ");
+    parts.forEach((p, i) => {
+      const a = el("a", "diff-link", p.text);
+      a.dataset.view = p.view.mode ?? "state";
+      if (p.title) a.title = p.title;
+      a.onclick = () => (p.view.state ? model.openState() : model.openHeap(p.view));
+      box.append(...(i ? [", ", a] : [a]));
+    });
   }
-  box.append("since the last pause: ");
-  parts.forEach((p, i) => {
-    const a = el("a", "diff-link", p.text);
-    a.dataset.view = p.view.mode ?? "state";
-    if (p.title) a.title = p.title;
-    a.onclick = () => (p.view.state ? model.openState() : model.openHeap(p.view));
-    box.append(...(i ? [", ", a] : [a]));
-  });
+  if (gcStats) box.append(" · ", el("span", "gc-note", gcNote(gcStats)));
   return box;
 }
 
@@ -99,6 +107,7 @@ export class HeapPane {
     $("heap-next").onclick = () => this.page(1);
     $("heap-new").onclick = () => model.openHeap({ mode: "new" });
     $("heap-changed").onclick = () => model.openHeap({ mode: "changed" });
+    if ($("heap-gc")) $("heap-gc").onclick = () => model.gc();
     const go = () => {
       const a = parseAddr(this.addr.value);
       this.addr.classList.toggle("bad", a === null);
@@ -108,9 +117,9 @@ export class HeapPane {
     this.addr.onkeydown = (e) => e.key === "Enter" && go();
     model.on("change", (what) => {
       if (what === "heap") this.ask(model.heapAsk);
-      else if (what === "pause" || what === "state") {
+      else if (what === "pause" || what === "state" || what === "gc") {
         this.summary.textContent = "";
-        if (model.state === "paused") this.summary.append(diffSummary(model, model.diff()));
+        if (model.state === "paused") this.summary.append(diffSummary(model, model.diff(), model.snap?.gcStats));
         this.render();
       }
     });
@@ -156,6 +165,7 @@ export class HeapPane {
     }
     this.stale = false;
     const token = ++this.token;
+    if ($("heap-gc")) $("heap-gc").disabled = m.state !== "paused";
     if (m.state !== "paused") {
       this.list.textContent = "";
       this.range.textContent = "";
@@ -178,7 +188,8 @@ export class HeapPane {
       cells = body?.cells ?? [];
       this.size = body?.heapSize ?? 0;
       const to = Math.min(from + this.count(), this.size);
-      this.range.textContent = `[${from}, ${to}) of ${this.size}`;
+      const live = body?.liveCells !== undefined && body.liveCells < this.size ? ` (${body.liveCells} live)` : "";
+      this.range.textContent = `[${from}, ${to}) of ${this.size}${live}`;
     }
     $("heap-prev").disabled = this.view.mode !== "range" || this.view.from === 0;
     $("heap-next").disabled = this.view.mode !== "range" || this.view.from + this.count() >= this.size;

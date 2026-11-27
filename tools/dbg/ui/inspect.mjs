@@ -12,14 +12,17 @@ export class InspectPane {
     this.diff = $("diff");
     this.tree = new Tree(model, new Set(["Slots"]));
     this.built = null;
-    model.on("change", (what) => ["pause", "select", "scopes", "state"].includes(what) && this.render());
+    model.on("change", (what) => {
+      if (what === "gc") this.built = null;
+      if (["pause", "select", "scopes", "state", "gc"].includes(what)) this.render();
+    });
     this.render();
   }
 
   render() {
     const snap = this.model.state === "paused" ? this.model.snap : null;
     this.diff.textContent = "";
-    if (snap) this.diff.append(diffSummary(this.model, snap.stopped.spec?.diff));
+    if (snap) this.diff.append(diffSummary(this.model, snap.stopped.spec?.diff, snap.gcStats));
     const key = snap ? `${snap.gen}:${snap.selected}` : null;
     const scopes = snap?.scopes.get(snap.selected);
     if (key === this.built && (scopes || !snap)) return;

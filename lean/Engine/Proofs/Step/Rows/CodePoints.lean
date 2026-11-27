@@ -206,7 +206,7 @@ theorem cpa_rest [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt
       ⟨st, ⟨cpaAlg.id, none, #[.str s, .math (.int p), .math (.int s.size), .unbound, .unbound, .unbound],
         .steps false true true, [3], [.args (.let_ 3) [] [], .seq (cpaCode.drop 6)], none⟩ :: fr,
         .invoke (.prim Known.pUnitAt [.math (.int p), .str s])⟩
-      ⟨{ st with heap := st.heap.push (cpRec (cpAt s p)) }, fr, .val (.ref st.heap.size)⟩ := by
+      ⟨{ st with heap := st.heap.push (cpRec (cpAt s p)) }, fr, .val (.ref st.heap.next)⟩ := by
   mprim (prim_unitAt s p hp _)
   obtain ⟨u, hu⟩ : ∃ u : Int, u = ((s[p]?.getD 0).toNat : Nat) := ⟨_, rfl⟩
   have hu0 : 0 ≤ u := by omega
@@ -284,7 +284,7 @@ theorem cpa_rest [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt
 open Engine.Accel in
 theorem cpa_steps [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UInt16) (p : Nat) (hp : p < s.size) :
     Steps (Ctx.spec Engine.P' H chk) ⟨st, fr, .invoke (.alg ⟨Known.cCodePointAt, 0⟩ [.str s, .math (.int p)])⟩
-      ⟨{ st with heap := st.heap.push (cpRec (cpAt s p)) }, fr, .val (.ref st.heap.size)⟩ := by
+      ⟨{ st with heap := st.heap.push (cpRec (cpAt s p)) }, fr, .val (.ref st.heap.next)⟩ := by
   refine Steps.next (step_alg H chk _ _ _ _ _ _ cpaAlg_pin cpaCode_pin) ?_
   show Steps _ ⟨st, ⟨_, none, #[.str s, .math (.int p), .unbound, .unbound, .unbound, .unbound],
     .steps false true true, [], [], none⟩ :: _, .code cpaCode⟩ _
@@ -302,14 +302,14 @@ theorem cpa_steps [PinsHold] (st : State F) (fr : List (Frame F)) (s : Array UIn
 
 open Engine.Accel in
 /-- [[CodePoint]] of CodePointAt's Record. -/
-theorem cpRec_cp (st : State F) (a : Nat) (t : Int × Nat × Bool) (h : st.heap[a]? = some (cpRec t)) :
+theorem cpRec_cp (st : State F) (a : Nat) (t : Int × Nat × Bool) (h : st.heap.get a = some (cpRec t)) :
     readField (.ref a) Known.fCodePoint st = .ok (.math (Model.MathVal.int t.1)) st := by
   have e : (F.recGet (F.recSet (F.recSet (F.recSet F.recEmpty Known.fCodePoint (.math (Model.MathVal.int t.1))) Known.fCodeUnitCount
       (.math (Model.MathVal.int t.2.1))) Known.fIsUnpairedSurrogate (.bool t.2.2)) Known.fCodePoint : Option (Val F)) =
       some (.math (Model.MathVal.int t.1)) := by
     show Model.WMap.get (Model.WMap.put (Model.WMap.put (Model.WMap.put _ _ _) _ _) _ _) _ = _
     simp [Engine.Impl.wget_put, Known.fCodePoint, Known.fCodeUnitCount, Known.fIsUnpairedSurrogate]
-  have hc : readCell a st = .ok (cpRec t) st := by simp only [readCell, h]
+  have hc : readCell a st = .ok (cpRec t) st := by simp only [readCell, Impl, h]
   show Run.Res.bind (readCell a st) _ = _
   rw [hc]
   show optOr .sortError (F.recGet _ _) st = _
@@ -318,14 +318,14 @@ theorem cpRec_cp (st : State F) (a : Nat) (t : Int × Nat × Bool) (h : st.heap[
 
 open Engine.Accel in
 /-- [[CodeUnitCount]] of CodePointAt's Record. -/
-theorem cpRec_count (st : State F) (a : Nat) (t : Int × Nat × Bool) (h : st.heap[a]? = some (cpRec t)) :
+theorem cpRec_count (st : State F) (a : Nat) (t : Int × Nat × Bool) (h : st.heap.get a = some (cpRec t)) :
     readField (.ref a) Known.fCodeUnitCount st = .ok (.math (Model.MathVal.int t.2.1)) st := by
   have e : (F.recGet (F.recSet (F.recSet (F.recSet F.recEmpty Known.fCodePoint (.math (Model.MathVal.int t.1))) Known.fCodeUnitCount
       (.math (Model.MathVal.int t.2.1))) Known.fIsUnpairedSurrogate (.bool t.2.2)) Known.fCodeUnitCount : Option (Val F)) =
       some (.math (Model.MathVal.int t.2.1)) := by
     show Model.WMap.get (Model.WMap.put (Model.WMap.put (Model.WMap.put _ _ _) _ _) _ _) _ = _
     simp [Engine.Impl.wget_put, Known.fCodePoint, Known.fCodeUnitCount, Known.fIsUnpairedSurrogate]
-  have hc : readCell a st = .ok (cpRec t) st := by simp only [readCell, h]
+  have hc : readCell a st = .ok (cpRec t) st := by simp only [readCell, Impl, h]
   show Run.Res.bind (readCell a st) _ = _
   rw [hc]
   show optOr .sortError (F.recGet _ _) st = _

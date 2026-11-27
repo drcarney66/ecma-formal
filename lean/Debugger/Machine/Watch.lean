@@ -2,6 +2,7 @@ module
 
 public import Debugger.Machine.View
 public import Engine.Run
+public import Engine.GC
 
 @[expose] public section
 
@@ -142,7 +143,21 @@ unsafe def atStep.impl (P : Prog) (ps : List Parent) (pa : Parent) (n : Nat) (c 
     let look ← session.modifyGet (·.tick isStep esc throwing (rethrows c) carried c.s.parses)
     if look != Look.no then
       let ss ← session.get
-      let p := fun (_ : Unit) => paused P ps pa c ss.rootBase
+      let cfgRef ← IO.mkRef (none : Option (Cfg F))
+      let collect : Array Nat → IO (GCStats × State F × List FrameView) := fun extraRoots => do
+        let cur0 := (← cfgRef.swap none).getD c
+        let (st, cur1) := Engine.GC.collectCfg extraRoots cur0 (ps.flatMap (·.frames)) (ps.map (·.ctl))
+        cfgRef.set (some cur1)
+        let paCur := Parent.of cur1
+        let p1 := paused P ps paCur cur1 ss.rootBase
+        let stats : GCStats := {
+          liveBefore := st.liveBefore
+          liveAfter := st.liveAfter
+          collected := st.collected
+          heapSize := st.totalAllocated
+        }
+        return (stats, cur1.s, p1.frames ())
+      let p := fun (_ : Unit) => { paused P ps pa c ss.rootBase with collect := some collect }
       if look == Look.consider then
         (consider (enteredAt pa) (fun _ => depth ps c) (fun _ => stepNode ps pa) (fun _ => c.s.stack.size) (fun _ => frameNodes ps c)
           c.s.parses p).catchExceptions fun _ => pure ()
@@ -151,6 +166,8 @@ unsafe def atStep.impl (P : Prog) (ps : List Parent) (pa : Parent) (n : Nat) (c 
           | .esc v => v
           | _ => .absent
         (onThrow v (look == Look.rethrow) p).catchExceptions fun _ => pure ()
+      let c := (← cfgRef.swap none).getD c
+      return k c
     return k c
 
 /-- Before the transition from `c` (under the parents `ps`, `n` transitions left): `k c`, the
@@ -204,7 +221,15 @@ def noteW (_pa : Parent) (o : Out F) : Out F := o
 /-- A run under the parents `ps`, `n` numbering its transitions (a transfer skips a number, so that the session
 sees the resumed context's transitions as another computation's): each transition through `atStep`, a stop through `atStop`, a transfer through
 `atXfer`. With `sites`, a stop's frames are kept. -/
-partial def runW (E : Engine.Machine.Setup) (sites : Bool) (ps : List Parent) (n : Nat) (c : Cfg F) : Final F :=
+partial def runW (E : Engine.Machine.Setup) (sites : Bool) (ps : List Parent) (n : Nat) (c : Cfg F)
+    (gc : Option (Array Nat × Nat) := none) : Final F :=
+  let (gc, c) := match gc with
+    | some (roots, nextGC) =>
+      if c.s.heap.live ≥ nextGC then
+        let (st, c) := Engine.GC.collectCfg roots c (ps.flatMap (·.frames)) (ps.map (·.ctl))
+        (some (roots, Engine.GC.nextThreshold E.maxCells st.liveAfter), c)
+      else (some (roots, nextGC), c)
+    | none => (none, c)
   if E.full c then .stop .implLimit else
   let X := E.X
   let pa := Parent.of c
@@ -213,12 +238,13 @@ partial def runW (E : Engine.Machine.Setup) (sites : Bool) (ps : List Parent) (n
   let o := if xfer then atXfer o else o
   let o := if sites then noteW pa o else o
   match o with
-  | .inl c => runW E sites ps (if xfer then n + 2 else n + 1) c
+  | .inl c => runW E sites ps (if xfer then n + 2 else n + 1) c gc
   | .inr (.stop r) => atStop X.P ps pa r fun _ => .stop r
   | .inr f => f
 
 /-- `Engine.Machine.dispatch` over `runW`: every entry a watched run. -/
-def dispatchW (E : Engine.Machine.Setup) (sites : Bool) : Engine.Host.Runner :=
-  Engine.Machine.dispatchBy E (runW E sites [] 0)
+def dispatchW (E : Engine.Machine.Setup) (sites : Bool) (gcRoots : Option (Array Nat) := none) : Engine.Host.Runner :=
+  let gc := gcRoots.map (·, Engine.GC.initThreshold E.maxCells)
+  Engine.Machine.dispatchBy E (runW E sites [] 0 · gc)
 
 end Debugger.Machine

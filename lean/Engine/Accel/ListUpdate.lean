@@ -22,16 +22,16 @@ open Ecma Ecma.Prims.Lists
 abbrev F := Engine.Impl
 
 /-- `s`'s heap, and `s` without it. -/
-@[inline] def take (s : State F) : Array (Cell F) × State F := (s.heap, { s with heap := #[] })
+@[inline] def take (s : State F) : F.Heap (Cell F) × State F := (s.heap, { s with heap := F.heapEmpty })
 
 /-- The List cell at `a` with `f` applied to its elements, its slot cleared while `f` runs; `false`
 for another cell. -/
 def modifyIn (a : Nat) (f : Array (Val F) → Array (Val F)) : Run F Bool := fun s =>
   let (h, s) := take s
-  match h[a]? with
+  match h.get a with
   | some (.list xs o) =>
-    let h := h.setIfInBounds a (.list #[] o)
-    .ok true { s with heap := h.setIfInBounds a (.list (f xs) o) }
+    let h := h.set a (.list #[] o)
+    .ok true { s with heap := h.set a (.list (f xs) o) }
   | some _ => .ok false { s with heap := h }
   | none => .stop .sortError
 
@@ -46,10 +46,10 @@ def prependIn (x : Val F) (a : Nat) : Run F (Val F) := do
 /-- Add the CharSetElement sequence `sq` to the CharSet cell at `a`, clearing its slot while `csAdd` runs. -/
 def addCsIn (a : Nat) (sq : F.Seq F.Math) : Run F (Val F) := fun s =>
   let (h, s) := take s
-  match h[a]? with
+  match h.get a with
   | some (.charSet cs) =>
-    let h := h.setIfInBounds a (.charSet F.csEmpty)
-    .ok (.enum Known.eUnused) { s with heap := h.setIfInBounds a (.charSet (F.csAdd cs sq)) }
+    let h := h.set a (.charSet F.csEmpty)
+    .ok (.enum Known.eUnused) { s with heap := h.set a (.charSet (F.csAdd cs sq)) }
   | _ => .stop .sortError
 
 /-- Add e to the List or CharSet l unless it contains it. -/
