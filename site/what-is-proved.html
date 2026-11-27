@@ -58,7 +58,7 @@
 <li>The engine's host obeys all {{host_laws}} SpecTec host laws under every option set (<code>Engine.SpecHost.wfBy</code>).</li>
 <li>The code table the engine runs equals the compiled SpecTec program plus the host's own algorithms where the specification defines none (<code>Engine.P'_eq</code>).</li>
 <li>Each transition of the engine, shortcuts included, matches the specification's at every reachable configuration, with <strong>0 <code>native_decide</code> pins</strong>; the {{runtime_pins}} equations on the generated program that the shortcuts rely on are verified at run time (<code>Engine.Machine.pinsOk</code>; if any failed, <code>Engine.setupAt</code> falls back to <code>Engine.Machine.plain</code>).</li>
-<li>The laws of a Parse Node's parent (<code>Engine.Claims.parentLaws</code>) and of its children and descendants (<code>Engine.Claims.nodeLaws</code>).</li>
+<li>The parser's laws (<code>Engine.Claims.parseLaws</code>), the cover laws (<code>Engine.Claims.coverLaws</code>), and the laws of a Parse Node's parent (<code>Engine.Claims.parentLaws</code>) and of its children and descendants (<code>Engine.Claims.nodeLaws</code>).</li>
 <li>The set-ups covered: <code>{{RUN}}</code> by default and with <code>--no-accel</code>, under every <code>--checked</code>, <code>--max-heap</code>, every host option (<code>--host-seed</code>, <code>--web-browser</code>, <code>--annex-b</code>, <code>--can-block</code>, <code>--resize-in-place</code>), and with tracing, <code>--sites</code> and <code>--cover</code>.</li>
 </ul></section>
 <section id="trusted"><h3><span class="badge trusted">Trusted</span> Relied on, not proved</h3>
@@ -69,9 +69,7 @@
 </ul></section>
 <section id="owed"><h3><span class="badge owed">Owed</span> Stated, not proved</h3>
 <ul>
-<li>The parser's laws, <a href="parser-laws.html#Model.ParseLaws"><code>Model.ParseLaws</code></a>: a Parse Node the parser returns is a derivation of the source text under the SpecTec grammar, and where it returns none there is none.</li>
-<li>With them, <a href="parser-laws.html#Model.CoverLaws"><code>Model.CoverLaws</code></a>: the node a cover returns is a parse of the cover's source text with the goal.</li>
-<li>Neither is part of <code>Implements</code>, and no claim on this page depends on them.</li>
+<li>None: every SpecTec law stated of the model, the host, and the parser (<a href="parser-laws.html#Model.ParseLaws"><code>Model.ParseLaws</code></a>, <a href="parser-laws.html#Model.CoverLaws"><code>Model.CoverLaws</code></a>, <a href="parser-laws.html#Model.NodeLaws"><code>Model.NodeLaws</code></a>) is proved of the engine.</li>
 </ul></section>
 <section id="outside"><h3><span class="badge outside">Outside</span> Not covered by the claim</h3>
 <ul>
@@ -84,7 +82,7 @@
 <ol class="steps">
 <li><strong>That SpecTec is the English.</strong> The correspondence between <code>spec/spectec/</code> and <code>spec.html</code> is enforced by mechanical checks rather than a mathematical theorem: <code>crates/spectec-html</code> splices all SpecTec grammars, algorithms, equations and early errors back into <code>spec.html</code> with zero byte diffs (<code>scripts/html_bijection.py</code>), <code>spectec roundtrip</code> and <code>ecma-print</code> (<code>scripts/bijection.py</code>) verify the SpecTec ↔ Lean round-trips byte for byte, and <code>scripts/law_quotes.py</code> verifies every law's quotation against <code>spec.html</code>. The resolved decisions in <code>spec/DECISIONS.md</code> and the SpecTec readings of prose laws are reviewed by humans.</li>
 <li><strong>That every program gets an answer.</strong> The theorem governs runs that return from the engine's loop. A run may also stop at an implementation limit (the store ceiling or an exact power exceeding 2<sup>30</sup> bits), which the claim explicitly permits. Non-terminating runs produce no final value to compare.</li>
-<li><strong>That the parser is complete and sound.</strong> The parser's laws are owed. What is proved of a parse is structural well-formedness of children and descendants against grammar productions (<code>Engine.Claims.nodeLaws</code>), not full equivalence with §5.1 derivations.</li>
+<li><strong>That every source text is decided within fixed limits.</strong> The parser's soundness and completeness laws (<code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>) are proved where <code>Model.parse</code> decides, while fuel or nesting-depth limits leave the parse undecided (<code>.stop .implLimit</code>).</li>
 <li><strong>That every host law matches its sentence word for word.</strong> Two host laws read their sentence more strictly than written (candidates for proposed normative changes) and two read theirs more weakly: see <a href="host.html#all-laws">the host's laws</a>.</li>
 </ol>
 

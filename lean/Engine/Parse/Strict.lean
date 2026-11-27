@@ -21,7 +21,7 @@ open Ecma.Grammar
 variable {N : Type} (B : Builder N)
 
 /-- A node of the syntactic grammar (not a token's lexical leaf). -/
-def syn (n : N) : Bool := (ruleIn .syntactic (B.nt n)).isSome
+def syn (n : N) : Bool := hasRule .syntactic (B.nt n)
 
 /-- The builder's nodes as §11.2.2 reads them, within depth `d`: a lexical leaf has no children. -/
 def view (d : Nat) : NodeView N where
@@ -32,10 +32,7 @@ def view (d : Nat) : NodeView N where
   height _ := d
 
 /-- Production `p` is an overlay's that applies only to non-strict code (`GL.sloppyIds`). -/
-def sloppy (p : Nat) : Bool :=
-  match prodOf p with
-  | some P => P.grammar == .annexB && Gen.blocks.any fun b => b.kind matches .overlay _ _ .nonStrict && b.rules.contains P.rule
-  | none => false
+def sloppy (p : Nat) : Bool := isSloppy p
 
 /-- No node of a non-strict overlay production lies in strict mode code, from outside (`strict`) or
 by the tree (walked to depth `d`), `up` the node's ancestors, within depth `f`; none past it. -/

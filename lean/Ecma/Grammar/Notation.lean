@@ -75,6 +75,7 @@ structure Src where
   rule : Rule
   idx : Nat
   alt : Alt
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 def srcsOf (g : GrammarId) (r : Rule) : List Src :=
   (writtenAlts r).zipIdx.map fun (a, i) => ⟨g, r, i, a⟩

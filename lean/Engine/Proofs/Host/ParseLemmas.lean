@@ -19,6 +19,8 @@ theorem parse_some {cx : ParseCx} {st : Nat} {src : Array MathVal} {goal : NtId}
     ∃ n, outcome 0 src goal args (grammarCx cx) cx.strict = .ok n ∧
       m = restamp st n := by
   unfold parse at h
+  split at h
+  · cases h
   rw [hg] at h
   simp only [Bool.false_eq_true, if_false] at h
   split at h

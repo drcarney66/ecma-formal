@@ -7,13 +7,7 @@ public import Engine.Parse.Kernel
 /-!
 # The tripwire: what a Parse Node shows, checked against GL
 
-`check` reads a finished tree through the builder's views and lists each node whose production,
-nonterminal, parameters, children, span, stamp or text disagrees with GL: the production's
-left-hand side is the node's nonterminal, an Annex B production is an alternative in effect in the
-parse context, its guard holds, one child entry per written
-nonterminal item with the presence mask, each child's parameters `applyArgs` of the node's, the
-children's spans in order inside the node's, the invocation's stamp, and the text the span's
-code points. Code point grammars only: spans are code point offsets.
+`checkNode` reads a finished node through the builder's views and lists any disagreement with GL.
 -/
 
 namespace Engine.Parse
@@ -37,8 +31,8 @@ def grammarIds : List GrammarId := [.numericString, .lexical, .syntactic, .regEx
 
 /-- Production's right-hand side `P` is an alternative in effect in some grammar in context `cx`. -/
 def inEffect (cx : Ctx) (P : Prod) : Bool :=
-  grammarIds.any fun g => ((effAlts g cx P.rule.lhs.ctorIdx).getD []).any fun e =>
-    e.wg == P.grammar && e.idx == P.alt && e.rule == P.rule
+  grammarIds.any fun g => (altsOf cx g P.rule.lhs).any fun e =>
+    e.grammar == P.grammar && e.idx == P.alt && e.rule == P.rule
 
 /-- The failures of one node, without its descendants. -/
 def checkNode (B : Builder N) (cx : Ctx) (cs : Array Nat) (stamp : Nat) (n : N) :

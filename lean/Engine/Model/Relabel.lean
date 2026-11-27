@@ -12,15 +12,9 @@ the cover's own right-hand side: CoverParenthesizedExpressionAndArrowParameterLi
 ParenthesizedExpression, and CoverCallExpressionAndAsyncArrowHead : MemberExpression Arguments as
 CallMemberExpression. The covered node is the cover's subtree relabelled, as `parse` builds it: the children
 copied with spans from the cover's start, the new invocation's stamp and text views over the cover's code
-points; the root the goal's production with the cover's parameters (`Ecma.coverArgs`), indexed. The root is
-checked against GL (`Parse.checkNode`) and, under Annex B, the tree's NonStrictOk (`Parse.Strict.sloppyOk`);
-the children were checked in the parse that made the cover. Every node's children are checked to be its
-production's occurrences (`shaped`, as a parse's are: `Model.NodeLaws.child_cover`). Every other cover alternative and goal, and
-LookaheadSourceTokens read literally, give none: the cover's source text is parsed (as it is for B.3.3's
-reparse as the cover's own nonterminal, which `Ecma.reparse` does not ask the model's `cover` for).
-
-Owed with the parser's laws: `Ecma.Model.CoverLaws` (the node given is a parse of the cover's source text with the
-goal, at a cover parser invocations made).
+points; the root the goal's production with the cover's parameters (`Ecma.coverArgs`). The root is checked
+against GL (`Parse.checkNode`) and, under Annex B, the tree's NonStrictOk (`Parse.Strict.sloppyOk`); every
+node's children are checked to be its production's occurrences (`shaped`).
 -/
 
 namespace Engine.Model.Relabel
@@ -56,14 +50,16 @@ alternative in effect, unguarded and without optional symbols, when its right-ha
 def target (gx : Ctx) (p k : Nat) : Option Nat := do
   let P ← Engine.Parse.prodOf p
   let a ← P.altOf
-  let es ← Engine.Parse.effAlts .syntactic gx k
+  let goalNt ← Engine.Parse.ruleNt .syntactic k
+  let es := Engine.Parse.altsOf gx .syntactic goalNt
   let [e] := es | none
   guard (e.alt.guard.isEmpty && e.alt.opts == 0 && e.alt.rhs == present a.rhs P.mask)
-  Engine.Parse.effId e []
+  Engine.Parse.prodIdOf e []
 
 /-- The covered node of cover `n` at goal `k`, invocation `st`, with the parameters `args`, in context `cx`:
 `n`'s subtree relabelled, its root checked; none to decline. -/
 def relabel (cx : ParseCx) (st : Nat) (n : Node) (k : NtId) (args : List (ParamId × Bool)) : Option Node :=
+  if !Engine.Parse.parseTablesOkThunk.get then none else
   match n with
   | .mk _ lo hi p nt _ kids t => do
     guard (pairs.contains (nt, k))

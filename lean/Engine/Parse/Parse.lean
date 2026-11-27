@@ -13,9 +13,8 @@ public import Engine.Parse.Strict
 parameters its arguments set, built through the builder; "no parse" only after a complete
 decision of the grammar; otherwise a stop. The syntactic goals are decided over tokens
 (`Syntax`), the code point grammars (lexical, numeric string, RegExp, JSON) over code points (`Code`), a
-goal defined in several of them by each, |Pattern| among them. The grammar is the parse context's
-(`Ctx`: Annex B's overlays in effect); a syntactic tree with a node of an overlay production for
-non-strict code in strict mode code (`Strict.sloppyOk`) is no parse, the tree being the only one.
+goal defined in several of them by each, |Pattern| among them. A goal no grammar defines has no
+parse (`GrammarCtx.Parses` is `False`).
 -/
 
 namespace Engine.Parse
@@ -34,8 +33,8 @@ def parse (B : Builder N) (cx : Ctx) (strict : Bool) (stamp : Nat) (cs : Array N
     | .ok (some n) => .ok n
     | .ok none => .noParse
     | .error s => .stop s
-  if let some r := ruleTable.get[(GrammarId.syntactic.ctorIdx, goal)]? then
-    match out (Syntax.run B cs cx stamp r.lhs ps) with
+  if let some lhs := ruleNt .syntactic goal then
+    match out (Syntax.run B cs cx stamp lhs ps) with
     | .ok n =>
       if !cx.annexB.any then .ok n
       else match Strict.sloppyOk B (Syntax.depth cs.size + 1) strict (Syntax.depth cs.size + 1) [] n with
@@ -44,10 +43,9 @@ def parse (B : Builder N) (cx : Ctx) (strict : Bool) (stamp : Nat) (cs : Array N
         | none => .stop .depth
     | o => o
   else
-    let gs := codeGrammars.filterMap fun g => (ruleTable.get[(g.ctorIdx, goal)]?).map ((g, ·))
-    if gs.isEmpty then .stop (.unimplemented "a goal no grammar defines")
-    else gs.foldl (init := .noParse) fun acc (g, r) => match acc with
-      | .noParse => out (Code.run B cs g cx stamp r.lhs ps)
+    let gs := codeGrammars.filterMap fun g => (ruleNt g goal).map ((g, ·))
+    gs.foldl (init := .noParse) fun acc (g, lhs) => match acc with
+      | .noParse => out (Code.run B cs g cx stamp lhs ps)
       | done => done
 
 end Engine.Parse

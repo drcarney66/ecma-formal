@@ -38,24 +38,21 @@ it. Nesting depth past the bound is a host limit (undecided).
 ## The contract
 
 `Model.parse` gives `some (some n)` (a Parse Node), `some none` (no parse,
-only after a complete decision) or `none` (undecided: fuel, depth, an
-unimplemented construct, a kernel check, an Annex B goal). `Model.ParseLaws`
-(`Ecma.Model.NodeRel`) states what a parse must be; `Derives` and `Covers` are
-`Ecma.Grammar`'s.
+only after a complete decision) or `none` (undecided: fuel, depth, a kernel
+check, or ambiguity). `Model.ParseLaws`, `Model.CoverLaws`, and `Model.NodeLaws`
+(`Ecma.Model.NodeRel`) state what a parse and a cover must be, and all three are
+proved of `Engine.Impl` (`Engine.Claims.parseLaws`, `Engine.Claims.coverLaws`,
+`Engine.Claims.nodeLaws`). `Derives` and `Covers` are `Ecma.Grammar`'s.
 
-FastP decides every goal but StringNumericLiteral and StringIntegerLiteral:
-the syntactic goals over tokens and the code point goals (lexical, numeric
-string, RegExp; under Annex B, B.1.2's committed parse in two passes).
+`Engine.Parse.parse` decides the syntactic goals over tokens, `JSONText` (`json`),
+and the code point goals (lexical, numeric string, RegExp; under Annex B,
+B.1.2's committed parse in two passes). `StringNumericLiteral` and
+`StringIntegerLiteral` use the `parseNumeric` fast path verified by
+`verifyCodeNode`, falling back to `Engine.Parse.parse`.
 
 ## Next
 
-1. **M5.5** the assembly: `ParseLaws.sound` for FastP's code point goals; the
-   token alphabet's `AlphaRel` (`Rel` needs a `.lex` case) and syntactic
-   soundness; the instance hypotheses on `<USP>`, ID_Start and
-   SourceCharacter (FastP's `codePointsOf` checks only ≥ 0).
-2. **M4** ParseJSON and the strict context: check that FastP needs nothing
-   beyond the strict flag.
-4. **M6** speed: a linear recursive descent (decisions from at most 3 tokens),
+1. **M6** speed: a linear recursive descent (decisions from at most 3 tokens),
    checked node for node against the search.
 
 Spec-text questions met on the way are spec-issues

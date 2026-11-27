@@ -304,7 +304,8 @@ def pinChecks : List (String × (Unit → Bool)) :=
    ("lsOgopCode", fun _ => lsOgopCode_ok),
    ("lsOgopAlg", fun _ => lsOgopAlg_ok),
    ("lsOgpoCode", fun _ => lsOgpoCode_ok),
-   ("lsOgpoAlg", fun _ => lsOgpoAlg_ok)]
+   ("lsOgpoAlg", fun _ => lsOgpoAlg_ok),
+   ("parseTables", Engine.Parse.checkParseTables)]
 
 /-- Names of any failed pin checks. -/
 def failedPins : List String :=

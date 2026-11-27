@@ -8,6 +8,8 @@ public import Ecma.Implements
 public import Engine.Proofs.Laws
 public import Engine.Proofs.Nodes
 public import Engine.Proofs.Parse.Shape
+public import Engine.Proofs.Parse.Laws
+public import Engine.Proofs.Parse.Cover
 public import Engine.Proofs.Unicode
 public import Engine.Proofs.Host.Opts
 public import Engine.Proofs.Step.Kinds
@@ -38,16 +40,11 @@ whatever `--checked`, `--max-heap`, the host's options (`--host-seed`,
 observers are the identity to the logic). Outside the claim: the debugger's loop
 (`Debugger.Machine.runW`, `partial`).
 
-Also proved: Parent's laws (`parentLaws`) and the Parse Nodes' laws (`nodeLaws`): a parse's result and a covered
-node the model gives are checked against their productions' occurrences.
+Also proved: Parent's laws (`parentLaws`), the parser's laws (`parseLaws`), the cover laws (`coverLaws`), and the
+Parse Nodes' laws (`nodeLaws`) over `Engine.Model.codePrims`.
 
 Axioms of `Engine.implements` and of `Engine.run_sound`: `propext`, `Classical.choice`, `Quot.sound` and 0
 `native_decide` pins.
-
-Owed, and part of no claim here: the parser's laws. `Model.ParseLaws Impl` (a Parse Node `parse` gives is a parse
-of the text under the grammar, and where it gives none there is none) and, with it, `Model.CoverLaws Impl` (the
-node `cover` gives from a Parse Node of parser invocations in a context is a parse of that node's source text with
-the goal, in that context: `Ecma/Model/NodeRel.lean`). Neither is proved.
 
 Trusted:
 
@@ -94,5 +91,15 @@ theorem parentLaws : Model.ParentLaws Impl := Engine.Impl.parentLaws
 gives, has passed the check that every node's children are its production's occurrences (`Engine.shapeOk`). -/
 theorem nodeLaws (cx : Grammar.Ctx) (P : Grammar.CodePrims) (strict : Bool) :
     Model.NodeLaws Impl (Engine.Impl.grammarCtx cx P strict) := Engine.Impl.nodeLaws cx P strict
+
+/-- The parser's laws (`sound` and `complete`), proved over `Engine.Impl.grammarCtx` with `Engine.Model.codePrims`. -/
+theorem parseLaws (cx : Grammar.Ctx) (strict : Bool) :
+    Model.ParseLaws Impl (Engine.Impl.grammarCtx cx Engine.Model.codePrims strict) :=
+  Engine.Impl.parseLaws cx strict
+
+/-- The cover laws (`sound`), proved over `Engine.Impl.grammarCtx` with `Engine.Model.codePrims`. -/
+theorem coverLaws (cx : Grammar.Ctx) (strict : Bool) :
+    Model.CoverLaws Impl (Engine.Impl.grammarCtx cx Engine.Model.codePrims strict) :=
+  Engine.Impl.coverLaws cx strict
 
 end Engine.Claims

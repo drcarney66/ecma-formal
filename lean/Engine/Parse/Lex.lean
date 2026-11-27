@@ -10,14 +10,12 @@ public import Engine.Parse.Code
 `lexAt first goal i` reads the input elements from `i` under the lexical goal the parser chose (§12;
 with `first`, the input of a Script or Module, its first element is read under
 InputElementHashbangOrRegExp): white space, line terminators and comments (and then a
-HashbangComment at the start) are skipped, recording whether
-one of them is a line terminator for the syntactic grammar (`Element.breaks`); then the token is
-the longest sequence of code points one of the goal's token classes derives, each class decided
-by the code point search over the whole input, and its Parse Node built by the search
-(`lexAtPure`: on a state of its own). The
-token's class is the lexical nonterminal it is an instance of. A NumericLiteral whose next code
-point, by itself, is an IdentifierStart or a DecimalDigit is rejected by §12.9.3's follow rule.
-The token classes are decided in the parse context `cx`, and so are B.1.1's HTML-like comments in the trivia.
+HashbangComment at the start) are skipped, recording whether one of them is a line terminator for
+the syntactic grammar (`Element.breaks`); then the token is the longest sequence of code points one
+of the goal's token classes derives, each class decided by the code point search over the whole
+input, and its Parse Node built by the search (`lexAtPure`: on a state of its own). A NumericLiteral
+whose next code point, by itself, is an IdentifierStart or a DecimalDigit is rejected by §12.9.3's
+follow rule.
 -/
 
 namespace Engine.Parse.Lex
@@ -76,9 +74,7 @@ def wsEnd (k : Nat) : Nat :=
   if h : k < cs.size then if isWS B cs[k] then wsEnd (k + 1) else k else k
 termination_by cs.size - k
 
-/-- The end of B.1.1's HTMLCloseComment at `k`, the end of its line; none if none starts there. Its
-WhiteSpace, then SingleLineDelimitedComments (no line terminator), each with the WhiteSpace after
-it, then `-->`. -/
+/-- The end of B.1.1's HTMLCloseComment at `k`, the end of its line; none if none starts there. -/
 def htmlClose (k : Nat) : Option Nat :=
   let w := wsEnd B cs k
   match cs[w]?, cs[w + 1]?, cs[w + 2]? with
@@ -93,15 +89,11 @@ termination_by cs.size - k
 
 variable (cx : Ctx)
 
-/-- B.1.1's HTML-like comments are in effect: the lexical |Comment| has an overlay (Annex B, not a
-|Module|). -/
-def html : Bool := !(overlaysIn cx .lexical NT.Comment.ctorIdx).isEmpty
+/-- B.1.1's HTML-like comments are in effect (Annex B `htmlLikeComments`, not a |Module|). -/
+def html : Bool := cx.annexB.has .htmlLikeComments && !cx.module
 
 /-- B.1.1's comment at `k`, its end and whether it holds a line terminator; none if none starts
-there or B.1.1 is not in effect. The first element's HTMLCloseComment (at 0 with `first`); a
-SingleLineHTMLCloseComment (a line terminator sequence, then an HTMLCloseComment); a
-SingleLineHTMLOpenComment; a MultiLineComment with a line terminator and an HTMLCloseComment. Each
-is longer than the element the trivia reads there without B.1.1. -/
+there or B.1.1 is not in effect. -/
 def htmlAt (k : Nat) : Option (Nat × Bool) :=
   if !html cx then none
   else
@@ -131,9 +123,7 @@ def skipFrom : Nat → Nat → Bool → Nat × Bool
 /-- The trivia from `i`: where the next token may start, and whether a line terminator precedes it. -/
 def skip (i : Nat) : Nat × Bool := skipFrom B cs first cx (cs.size - i + 1) i false
 
-/-- The token classes of a lexical goal, finer than its alternatives: a Template is a
-NoSubstitutionTemplate or a TemplateHead, a TemplateSubstitutionTail a TemplateMiddle or a
-TemplateTail. -/
+/-- The token classes of a lexical goal, finer than its alternatives. -/
 def classes (goal : NT) : List NT :=
   let common : List NT := [.IdentifierName, .PrivateIdentifier, .Punctuator, .NumericLiteral, .StringLiteral,
     .NoSubstitutionTemplate, .TemplateHead]
@@ -167,7 +157,7 @@ def lexAt (goal : NT) (i : Nat) : SM T Lexed := do
   unless B.nt nd == cls.ctorIdx do throw (.check "a token's node of another nonterminal")
   if cls == .NumericLiteral then
     if let some c := cs[j]? then
-      if (0x30 ≤ c && c ≤ 0x39) || (← liftE (Code.dec B cs .lexical cx 64 .IdentifierStart [] j (j + 1))) then
+      if (0x30 ≤ c && c ≤ 0x39) || Code.dec B cs .lexical cx 16 .IdentifierStart [] j (j + 1) then
         return .follow j
   return .tok ⟨k, j, cls, lt⟩
 

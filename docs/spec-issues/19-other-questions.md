@@ -89,17 +89,22 @@ each over the Records _cell_ of _finalizationRegistry_.[[Cells]] whose [[WeakRef
    CountLeftCapturingParensWithin(…)" depends on the parse it constrains.
 4. **§12 "permitted".** That the Div and RegExp goals (and `}` and
    TemplateTail) never both apply is stated only in the emu-note at the start of
-   §12, which is not normative. Should it be?
+   §12, which is not normative. Should it be? The model (`GoalsAt`) reads each
+   token under the lexical goal its node in the derivation implies, evaluated
+   after any inserted semicolon (`spec/DECISIONS.md`, `lexical-goal-parse-position`).
 5. **Unambiguity.** ParseText (§11.1.6) step 4 ("the Parse Node") and §5.1.5's "unique
    for a given _p_" presume that the grammar is unambiguous, which the
    specification never states.
 6. **§5.1.5 "must cover".** It does not say whether a semicolon inserted by
    ASI inside _p_ belongs to the "sequence of tokens originally matched by _p_".
+   `GrammarCtx.CoverIs` keeps the virtual semicolons inside _p_ (`cover-matched-tokens`).
 7. **Lexical goals of the other ParseText goals.** §12 does not state the
    starting lexical goal for CreateDynamicFunction's FormalParameters, body and
-   expression goals.
+   expression goals; `GoalsAt` uses `InputElementHashbangOrRegExp` at offset 0
+   only for |Script| and |Module|.
 8. **§12.10 rules 1 and 3.** No input was found where rule 3 and a
-   restriction-aware rule 1 differ; not a defect as far as is known.
+   restriction-aware rule 1 differ (`ValidASI`, `asi-left-to-right`); not a
+   defect as far as is known.
 9. **Three places that are LR(2), not LR(1).** Each of these is a grammar-class
    question or an editorial one, not a defect: the grammar is unambiguous at
    all three, and the token after the next one always picks the parse.

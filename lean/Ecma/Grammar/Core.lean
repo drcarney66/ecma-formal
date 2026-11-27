@@ -37,7 +37,7 @@ inductive Colons where
   | one
   | two
   | three
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- §5.1.6 "Grammatical Parameters": how a reference sets a parameter: `+P` (set),
 `~P` (not set), `?P` (as the referring production's own). -/
@@ -45,13 +45,13 @@ inductive Sign where
   | plus
   | tilde
   | quest
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- A parameter argument of a nonterminal reference, `Name[+In, ?Yield]`. -/
 structure Arg where
   sign : Sign
   param : Param
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- The code points written `<NAME>` (§12.2 Table 34, §12.3 Table 35). -/
 inductive CodePointName where
@@ -64,7 +64,7 @@ inductive CodePointName where
   | CR
   | LS
   | PS
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- The code point a name stands for (§12.2 Table 34, §12.3 Table 35), or none
 for `<USP>`, the class "any code point in general category “Space_Separator”",
@@ -87,20 +87,20 @@ inductive Terminal where
   derivation relation ignores. -/
   | text (s : String) (alt : Bool)
   | cp (n : CodePointName)
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- A grammar symbol: a terminal, or a nonterminal with its parameter arguments. -/
 inductive Sym where
   | t (x : Terminal)
   | nt (n : NT) (args : List Arg)
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- An element of a lookahead token sequence: a terminal, or (in a lookahead
 sequence of the syntactic grammar) `[no LineTerminator here]`. -/
 inductive LookItem where
   | t (x : Terminal)
   | noLT
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- §5.1.6 "Lookahead restrictions": `[lookahead = seq]` (written `==`),
 `[lookahead ≠ seq]` (written `!=`), `[lookahead ∈ set]`, `[lookahead ∉ set]`
@@ -112,14 +112,14 @@ inductive Lookahead where
   | mem (seqs : List (List LookItem))
   | notMem (seqs : List (List LookItem))
   | notMemNT (n : NT)
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- §5.1.6 "but not": what follows `but not`: one symbol, or `one of` a list,
 separated by `or` (`orSep := true`) or by spaces. -/
 inductive Exclusion where
   | sym (s : Sym)
   | oneOf (syms : List Sym) (orSep : Bool)
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- §5.1.6: the descriptive phrases (a right-hand side `> …` where listing all
 alternatives would be impractical), and the conditions of `[> but only if …]`.
@@ -148,7 +148,7 @@ inductive Phrase where
   | mvNonSurrogate
   /-- `but only if the CapturingGroupNumber of |DecimalEscape| is ≤ CountLeftCapturingParensWithin(the |Pattern| containing |DecimalEscape|)` (B.1.2) -/
   | groupNumberAtMostCount
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- One element of a right-hand side (§5.1.6). -/
 inductive Item where
@@ -166,7 +166,7 @@ inductive Item where
   | onlyIf (c : Phrase)
   /-- `> …`: a descriptive phrase, the whole right-hand side. -/
   | phrase (p : Phrase)
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- One condition of a guard `[+P]`, `[~P]` or `[+P, ~Q]` before a right-hand
 side (§5.1.6): the alternative exists only when every condition holds, the
@@ -174,7 +174,7 @@ parameter set (`plus := true`) or not. -/
 structure Guard where
   plus : Bool
   param : Param
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- One alternative: its guard (no conditions when it has none), its right-hand
 side and its `#label`. -/
@@ -182,7 +182,7 @@ structure Alt where
   guard : List Guard
   rhs : List Item
   label : Option String
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- The alternative without its lookahead restrictions. -/
 def Alt.bare (a : Alt) : Alt := { a with rhs := a.rhs.filter fun | .lookahead _ => false | _ => true }
@@ -192,7 +192,7 @@ each terminal an alternative. -/
 inductive Body where
   | alts (as : List Alt)
   | oneOf (rows : List (List Terminal))
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- One definition of a nonterminal: `Lhs[Params] : alternatives`. -/
 structure Rule where
@@ -200,7 +200,7 @@ structure Rule where
   params : List Param
   colons : Colons
   body : Body
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- The grammars, in GL's order (`prodsOf`): the numeric string, lexical,
 syntactic (with its supplemental grammars), RegExp grammars, Annex B's
@@ -212,7 +212,7 @@ inductive GrammarId where
   | regExp
   | annexB
   | json
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-! ## Right-hand sides
 
@@ -234,7 +234,7 @@ structure Prod where
   /-- its written production's index in its grammar (its `Production` constructor) -/
   ctor : Nat
   mask : List Bool
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- The number of optional symbols of an alternative. -/
 def Alt.opts (a : Alt) : Nat := (a.rhs.filter fun | .sym _ true => true | _ => false).length
@@ -417,7 +417,7 @@ inductive Semi where
   `for ( LexicalDeclaration Expression? ; …`, where the `;` is the header's
   first: there it is `forHeader`. -/
   | forHeaderIfDeclaration
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- The `;` at right-hand side position `pos` (counting the items of
 `Alt.rhs` from 0) of production `prod`, and §12.10's answer for it. -/

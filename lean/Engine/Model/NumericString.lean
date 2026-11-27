@@ -19,8 +19,8 @@ For any other goal it leaves the parse undecided.
 
 <USP> is the instance's (`Engine.Model.usp`).
 
-Accelerator debt: soundness and completeness against `Ecma.Model.ParseLaws` (`Grammar.ParsesCode`
-over the numeric string grammar), owed.
+Every node produced by `parseNumeric` is verified by `Engine.verifyCodeNode` (with fallback to
+`Engine.Parse.parse`), so `Ecma.Model.ParseLaws` (`Engine.Claims.parseLaws`) holds unconditionally.
 -/
 
 namespace Engine
@@ -46,7 +46,7 @@ def Cx.text (cx : Cx) (lo hi : Nat) : Subarray Nat := cx.cs[lo...hi]
 /-- The node of `nt`'s alternative `alt` with `mask` over `lo` to `hi`. -/
 def Cx.node (cx : Cx) (g : GrammarId) (nt : NT) (alt : Nat) (mask : List Bool) (lo hi : Nat)
     (kids : Array (NtId × Option Node)) : Option Node :=
-  (ids[(g.ctorIdx, nt.ctorIdx, alt, mask)]?).map fun p => .mk cx.stamp lo hi p nt.ctorIdx [] kids (cx.text lo hi)
+  (Engine.Parse.prodIdBy g nt alt mask).map fun p => .mk cx.stamp lo hi p nt.ctorIdx [] kids (cx.text lo hi)
 
 /-- §12.2 <USP>: the instance's Space_Separator. -/
 def isUSP (c : Nat) : Bool := Engine.Model.usp c
@@ -212,7 +212,7 @@ on, `some none` no parse, for the goals StringNumericLiteral and StringIntegerLi
 (undecided) otherwise. -/
 def parseNumeric (stamp : Nat) (src : Array MathVal) (goal : NtId) (args : List (ParamId × Bool)) :
     Option (Option Node) := do
-  let cs ← src.mapM fun | .int i => if 0 ≤ i then some i.toNat else none | _ => none
+  let cs ← src.mapM fun | .int i => if 0 ≤ i ∧ i ≤ 0x10FFFF then some i.toNat else none | _ => none
   let cx : Cx := ⟨cs, stamp⟩
   let root := Option.map (withArgs (Engine.Parse.paramsOfArgs args))
   if goal == NT.StringNumericLiteral.ctorIdx then some (root (cx.padded .StringNumericLiteral .StrNumericLiteral Cx.strNumeric))

@@ -172,8 +172,6 @@ theorem outcome_shaped {stamp : Nat} {src : Array MathVal} {goal : NtId} {args :
     (h : outcome stamp src goal args cx strict = .ok n) : shaped n = true := by
   unfold outcome at h
   split at h
-  · cases h
-  split at h
   · split at h
     · cases h
     generalize Engine.Parse.parse builder cx strict stamp _ goal args = o at h
@@ -195,12 +193,21 @@ theorem parse_shaped {pc : ParseCx} {st : Nat} {src : Array MathVal} {goal : NtI
   · obtain ⟨m, ho, rfl⟩ := parse_some hg h
     exact shapeOk_restamp _ _ _ _ (Nat.le_refl _) (outcome_shaped ho)
   · unfold Engine.parse at h
-    simp only [hg, ↓reduceIte] at h
+    rw [hg] at h
+    simp only [↓reduceIte] at h
     split at h
+    · cases h
     · split at h
-      · cases h; assumption
-      · cases h
-    · next hne => exact absurd h (hne n)
+      · split at h
+        · next hs =>
+          simp only [Bool.and_eq_true] at hs
+          cases h
+          exact hs.1
+        · cases h
+      · split at h
+        · next m ho => cases h; exact shapeOk_restamp _ _ _ _ (Nat.le_refl _) (outcome_shaped ho)
+        · cases h
+        · cases h
 
 /-- §5.1.2 "the |X| of" at the engine's model: at every node of a parse, the `k`-th written occurrence of `nt` in the
 node's production. -/
@@ -229,6 +236,8 @@ theorem cover_shaped {pc : ParseCx} {st : Nat} {c : Node} {goal : NtId}
     shaped n = true := by
   obtain ⟨_, lo, hi, p, nt, _, kids, t⟩ := c
   unfold Engine.Model.Relabel.relabel at h
+  split at h
+  · cases h
   obtain ⟨-, h⟩ := guard_bind_some h
   obtain ⟨p', -, h⟩ := Option.bind_eq_some_iff.mp h
   obtain ⟨-, h⟩ := guard_bind_some h

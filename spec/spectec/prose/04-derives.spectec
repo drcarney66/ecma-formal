@@ -271,25 +271,6 @@ namespace Ecma.Grammar {
   --- A token sequence the goal derives.
   def Sentence (goal : NT) (ps : List(Param)) (toks : List(Token)) (t : Tree) : Prop := Derives(gl, cx, .syntactic, tokenAlphabet(gl, cx, P), toks, goal, ps, 0, toks.length, t)
 
-  --- Some sentence of the goal starts with these tokens.
-  def Viable (goal : NT) (ps : List(Param)) (pre : List(Token)) : Prop := exists rest t, Sentence(gl, cx, P, goal, ps, pre ++ rest, t)
-
-  --- §12.10, rule 3's "allowed by some production": viable when line
-  --- terminators are ignored.
-  def ViableAnyLT (goal : NT) (ps : List(Param)) (pre : List(Token)) : Prop := Viable(gl, cx, P, goal, ps, pre.map(fun tok => { tok with lt := false }))
-
-  --- §12.10: each virtual semicolon of `toks` is inserted as a rule says, before
-  --- an offending token (not allowed by any production) after a line terminator or
-  --- when it is `}`, or after `)` where it ends a do-while; at the end of input when
-  --- the tokens are no sentence; or before a restricted token after a line
-  --- terminator.
-  def ASIOk (goal : NT) (ps : List(Param)) (toks : List(Token)) : Prop := forall k tok, toks[k]? = some(tok) -> (forall why, tok.virt = some(why) -> (let pre := toks.take(k) in let next := toks[k + 1]? in match why with
-    | .offending => exists nx, next = some(nx) /\ nx.virt = none /\ not Viable(gl, cx, P, goal, ps, pre ++ [nx]) /\ (nx.lt \/ nx.text = "}".toList.map(Char.toNat))
-    | .paren => exists nx, next = some(nx) /\ not Viable(gl, cx, P, goal, ps, pre ++ [nx]) /\ pre.getLast?.map(fun _dot0 => _dot0.text) = some(")".toList.map(Char.toNat))
-    | .eof => next = none /\ not exists t, Sentence(gl, cx, P, goal, ps, pre, t)
-    | .restricted => exists nx, next = some(nx) /\ nx.lt /\ ViableAnyLT(gl, cx, P, goal, ps, pre ++ [nx]) /\ not Viable(gl, cx, P, goal, ps, pre ++ [nx])
-  end))
-
   --- §12.10's overriding condition at the `;` that ends the |LexicalDeclaration|
   --- of `for ( LexicalDeclaration …`: it is the header's first, never virtual.
   def ForHeadersExplicit (toks : List(Token)) : Tree -> Prop
@@ -317,75 +298,210 @@ namespace Ecma.Grammar {
     end
   }
 
-  --- The lexical goal §12 prescribes after the tokens `pre`, given whether this is
-  --- the start of a |Script| or |Module| and which of |RegularExpressionLiteral|,
-  --- |TemplateMiddle| or |TemplateTail| a sentence of the goal permits next ("is permitted").
-  def lexicalGoal (first : Bool) (regExp template : Bool) : NT := if first then .InputElementHashbangOrRegExp else match regExp, template with
-    | true, true => .InputElementRegExpOrTemplateTail
-    | true, false => .InputElementRegExp
-    | false, true => .InputElementTemplateTail
-    | false, false => .InputElementDiv
+  --- The lexical goal a lexical nonterminal is read under (§12).
+  def lexicalGoalOf (n : NT) : NT := if n == .RegularExpressionLiteral then .InputElementRegExp else if n == .TemplateMiddle || n == .TemplateTail then .InputElementTemplateTail else .InputElementDiv
+
+  --- The lexical goal the token at position `idx` of a syntactic derivation is read under: a lexical
+  --- nonterminal's own goal (`lexicalGoalOf`), a terminal's `InputElementDiv`.
+  def Tree.goalAt (idx : Nat) : Tree -> Option(NT)
+    | .leaf(i, j) => if i <= idx && idx < j then some(.InputElementDiv) else none
+    | .lex(k, lt) => if k == idx then lt.nt?.map(lexicalGoalOf) else none
+    | .node(_, _, _, _, _, kids) => inKids(kids)
   end
-
-  --- A nonterminal's instance may come next after `pre`.
-  def Permitted (goal : NT) (ps : List(Param)) (pre : List(Token)) (x : NT) : Prop := exists tok rest t lt, tok.virt = none /\ tokenAlphabet(gl, cx, P).leaf(x, tok, lt) /\ Sentence(gl, cx, P, goal, ps, pre ++ tok :: rest, t)
-
-  --- The shortest prefix of `toks` with `n` real tokens.
-  def realPrefix : Nat -> List(Token) -> List(Token)
-    | 0, _ | _, [] => []
-    | n + 1, tok :: toks => tok :: realPrefix(if tok.virt.isNone then n else n + 1, toks)
-  end
-
-  --- The parse `t` before position `p`: a node started before `p` whole when it ends by `p`, else with
-  --- its nonterminal, production, parameters and start, an end after `p` and its children started before
-  --- `p` cut; a node starting from `p`, a mark.
-  def Tree.cut (p : Nat) : Tree -> Tree
-    | t@(.node(n, id, ps, i, j, kids)) => if p <= i then .leaf(p, p) else if j <= p then t else .node(n, id, ps, i, p + 1, kids.attach.filterMap(fun ctor(d, _) => if d.span.1 < p then some(d.cut(p)) else none))
-    | t => if p <= t.span.1 then .leaf(p, p) else t
-  end
-
-  --- A real token of text `str`.
-  def realTok (str : String) (lt : Bool) : Token := ctor(str.toList.map(Char.toNat), lt, none)
-
-  --- The classes of leading token §12's goals tell apart.
-  syntax Lead {
-    --- a division or division-assignment
-    | div
-    --- a |RegularExpressionLiteral|
-    | re
-    --- a `}`
-    | rbrace
-    --- a |TemplateMiddle| or |TemplateTail|
-    | tm
+  where {
+    inKids : List(Tree) -> Option(NT)
+      | [] => none
+      | d :: ds => match d.goalAt(idx) with
+          | some(g) => some(g)
+          | none => inKids(ds)
+        end
+    end
   }
-  deriving [Repr, BEq, DecidableEq]
 
-  --- A real token of the class.
-  def Lead.Holds (c : Lead) (tok : Token) : Prop := tok.virt = none /\ match c with
-    | .div => tok.text = "/".toList.map(Char.toNat) \/ tok.text = "/=".toList.map(Char.toNat)
-    | .re => exists d, tokenAlphabet(gl, cx, P).leaf(.RegularExpressionLiteral, tok, d)
-    | .rbrace => tok.text = "}".toList.map(Char.toNat)
-    | .tm => exists d, tokenAlphabet(gl, cx, P).leaf(.TemplateMiddle, tok, d) \/ tokenAlphabet(gl, cx, P).leaf(.TemplateTail, tok, d)
+  --- The index in `toks` of the `n`-th real token.
+  def realIdx : Nat -> List(Token) -> Nat
+    | _, [] => 0
+    | 0, tok :: toks => if tok.virt.isNone then 0 else 1 + realIdx(0, toks)
+    | n + 1, tok :: toks => 1 + realIdx(if tok.virt.isNone then n else n + 1, toks)
   end
 
-  --- Definition reading of spec.html:16887's "syntactic grammar context that is consuming the input
-  --- elements": the parse's own position. The classes a token at position `p` of `toks` has in a parse
-  --- that is the parse `t` of `toks` before `p` (`Tree.cut`): the items of `t` open at `p` and their
-  --- ancestors' items fix the context, never another parse of the same prefix.
-  def Tree.nextBits (goal : NT) (ps : List(Param)) (toks : List(Token)) (t : Tree) (p : Nat) (c : Lead) : Prop := exists tok rest t', Lead.Holds(gl, cx, P, c, tok) /\ Sentence(gl, cx, P, goal, ps, toks.take(p) ++ tok :: rest, t') /\ t'.cut(p) = t.cut(p)
+  --- §12: the first input element of a |Script| or |Module| is read under
+  --- `InputElementHashbangOrRegExp`, trivia after that under `InputElementDiv`, and each token under
+  --- the lexical goal its node in `t` implies (`Tree.goalAt`, after any inserted `;` before it).
+  def GoalsAt (goal : NT) (els : List(Element)) (toks : List(Token)) (t : Tree) : Prop := forall k e, els[k]? = some(e) -> (if k == 0 && (goal == .Script || goal == .Module) then e.goal = .InputElementHashbangOrRegExp else if !e.isToken then e.goal = .InputElementDiv else t.goalAt(realIdx(els.take(k).filter(Element.isToken).length, toks)) = some(e.goal))
 
-  --- The leading classes permitted after the first `n` real tokens of the parse `t` of `toks`: at the
-  --- parse's position (`Tree.nextBits`), and after a semicolon §12.10 inserted there, those before it.
-  def PermitsAt (goal : NT) (ps : List(Param)) (toks : List(Token)) (t : Tree) (n : Nat) (c : Lead) : Prop := let pre := realPrefix(n, toks) in if toks[pre.length]?.bind(fun _dot0 => _dot0.virt).isSome then match c with
-    | .re => Permitted(gl, cx, P, goal, ps, pre, .RegularExpressionLiteral)
-    | .tm => Permitted(gl, cx, P, goal, ps, pre, .TemplateMiddle) \/ Permitted(gl, cx, P, goal, ps, pre, .TemplateTail)
-    | .div => exists str mem ["/", "/="], exists lt, Viable(gl, cx, P, goal, ps, pre ++ [realTok(str, lt)])
-    | .rbrace => exists lt, Viable(gl, cx, P, goal, ps, pre ++ [realTok("}", lt)])
-  end else t.nextBits(gl, cx, P, goal, ps, toks, pre.length, c)
+  ---!  ## §12.10: left-to-right automatic semicolon insertion 
 
-  --- §12: each input element of the parse `t` is read with the goal its context permits (`PermitsAt`),
-  --- trivia with the next token's.
-  def GoalsAt (goal : NT) (ps : List(Param)) (src : List(Nat)) (els : List(Element)) (toks : List(Token)) (t : Tree) : Prop := forall k e, els[k]? = some(e) -> (let n := tokensOf(src, els.take(k)).length in exists (r tm : Bool), (r = true <=> PermitsAt(gl, cx, P, goal, ps, toks, t, n, .re)) /\ (tm = true <=> PermitsAt(gl, cx, P, goal, ps, toks, t, n, .tm)) /\ e.goal = lexicalGoal(k == 0 && (goal == .Script || goal == .Module), r, tm))
+  --- One maximal non-token input element from `i` to `j` (`first`: whether the goal is |Script| or |Module|).
+  def TriviaElem (src : List(Nat)) (first : Bool) (i j : Nat) (e : Element) : Prop := i < j /\ j <= src.length /\ e.i = i /\ e.j = j /\ !e.isToken /\ let g := if first && i == 0 then .InputElementHashbangOrRegExp else .InputElementDiv in e.goal = g /\ Derives(gl, cx, .lexical, codeAlphabet(P), src, e.goal, [], i, j, e.tree) /\ forall h, j < h -> h <= src.length -> not exists t, Derives(gl, cx, .lexical, codeAlphabet(P), src, e.goal, [], i, h, t)
+
+  --- The trivia from `i` ends at `k` with line-terminator flag `lt`: maximal non-token elements until
+  --- none starts at `k`.
+  relation Trivia (src : List(Nat)) (first : Bool) : Nat -> Nat -> Bool -> Prop {
+    rule stop {i} : Trivia(src, first, i, i, false) :- not exists j e, TriviaElem(gl, cx, P, src, first, i, j, e);
+    rule step {i m k lt} (e : Element) : Trivia(src, first, i, k, e.breaks(src) || lt) :- TriviaElem(gl, cx, P, src, first, i, m, e), Trivia(src, first, m, k, lt);
+  }
+
+  --- The next token from `p` under lexical goal `lg` (`first`: |Script| or |Module|): after trivia to `a`
+  --- with `lt`, the maximal element `a` to `b` is a token passing §12.9.3's follow rule.
+  def ScanTok (src : List(Nat)) (first : Bool) (lg : NT) (p a b : Nat) (lt : Bool) (tree : Tree) : Prop := Trivia(gl, cx, P, src, first, p, a, lt) /\ a < b /\ b <= src.length /\ let g := if first && a == 0 then .InputElementHashbangOrRegExp else lg in Element.isToken(ctor(a, b, g, tree)) = true /\ Derives(gl, cx, .lexical, codeAlphabet(P), src, g, [], a, b, tree) /\ (forall h, b < h -> h <= src.length -> not exists t, Derives(gl, cx, .lexical, codeAlphabet(P), src, g, [], a, h, t)) /\ (tree.has(.NumericLiteral, a, b) = true -> b < src.length -> (forall n mem [NT.IdentifierStart, NT.DecimalDigit], not exists t, Derives(gl, cx, .lexical, codeAlphabet(P), src, n, [], b, b + 1, t)))
+
+  --- A virtual `;` in `vs` waits at boundary `s` (`2 * p`).
+  def vsPending (vs : List(Nat times Bool)) (s : Nat) : Bool := s % 2 == 0 && vs.any(fun (p, _) => p == s / 2)
+
+  --- Whether the virtual `;` at `p` was inserted after `)` (do-while).
+  def vsParen (vs : List(Nat times Bool)) (p : Nat) : Bool := vs.any(fun (q, b) => q == p && b)
+
+  --- No virtual `;` of `vs` lies strictly between `p` and `q`.
+  def noCross (vs : List(Nat times Bool)) (p q : Nat) : Bool := vs.all(fun (v, _) => !(p < v && v < q))
+
+  --- §12.10: a virtual `;` (`paren`: after `)`) may stand at item `k` of `s`.
+  def semiAllowed (s : Src) (k : Nat) (paren : Bool) : Prop := exists c cls, gl.ctorOf(s) = some(c) /\ (c, k, cls) mem gl.semis /\ match cls with
+    | .insertable | .forHeaderIfDeclaration => paren = false
+    | .doWhile => True
+    | .emptyStatement | .forHeader => False
+  end
+
+  --- §12.10: the `;` ending a `for` header's |LexicalDeclaration| is never virtual.
+  def forKeep (lhs n : NT) (j : Nat) : Bool := !(lhs == .ForStatement && n == .LexicalDeclaration && j % 2 == 1)
+
+  --- Terminal `x` at item `k` of `s` matches from boundary `i` to `j` under virtual semicolons `vs`.
+  def SynTerm (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) (s : Src) (k : Nat) (x : Terminal) (i j : Nat) : Prop := match x with
+    | .text(str, _) => if vsPending(vs, i) then str = ";" /\ semiAllowed(gl, s, k, vsParen(vs, i / 2)) /\ j = i + 1 else exists a b lt tr, ScanTok(gl, cx, P, src, first, .InputElementDiv, i / 2, a, b, lt, tr) /\ noCross(vs, i / 2, b) = true /\ slice(src, a, b) = str.toList.map(Char.toNat) /\ j = 2 * b
+    | .cp(_) => False
+  end
+
+  --- Lexical nonterminal `n` matches one token from boundary `i` to `j` under virtual semicolons `vs`.
+  def SynLeaf (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) (n : NT) (i j : Nat) : Prop := vsPending(vs, i) = false /\ exists a b lt tr t, ScanTok(gl, cx, P, src, first, lexicalGoalOf(n), i / 2, a, b, lt, tr) /\ noCross(vs, i / 2, b) = true /\ Derives(gl, cx, .lexical, codeAlphabet(P), slice(src, a, b), n, [], 0, b - a, t) /\ j = 2 * b
+
+  --- No line terminator precedes the token at boundary `i` (a virtual `;` has none).
+  def SynNoLT (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) (i : Nat) : Prop := vsPending(vs, i) = true \/ exists k lt, Trivia(gl, cx, P, src, first, i / 2, k, lt) /\ (src.length <= k \/ lt = false)
+
+  --- The boundary a lookahead reads from `i`: past a waiting virtual `;`.
+  def SynLook (vs : List(Nat times Bool)) (i : Nat) : Nat := if vsPending(vs, i) then i + 1 else i
+
+  --- The source tokens from boundary `i` start with the lookahead sequence.
+  def SynStarts (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) : List(LookItem) -> Nat -> Prop
+    | [], _ => True
+    | .noLT :: rest, i => SynNoLT(gl, cx, P, src, first, vs, SynLook(vs, i)) /\ SynStarts(src, first, vs, rest, i)
+    | .t(.text(str, _)) :: rest, i => exists a b lt tr, ScanTok(gl, cx, P, src, first, .InputElementDiv, SynLook(vs, i) / 2, a, b, lt, tr) /\ noCross(vs, SynLook(vs, i) / 2, b) = true /\ slice(src, a, b) = str.toList.map(Char.toNat) /\ SynStarts(src, first, vs, rest, 2 * b)
+    | .t(.cp(_)) :: _, _ => False
+  end
+
+  --- A syntactic lookahead restriction holds at boundary `i`.
+  def SynLookOk (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) : Lookahead -> Nat -> Prop
+    | .eq(q), i => SynStarts(gl, cx, P, src, first, vs, q, i)
+    | .ne(q), i => not SynStarts(gl, cx, P, src, first, vs, q, i)
+    | .mem(qs), i => exists q mem qs, SynStarts(gl, cx, P, src, first, vs, q, i)
+    | .notMem(qs), i => forall q mem qs, not SynStarts(gl, cx, P, src, first, vs, q, i)
+    | .notMemNT(_), _ => True
+  end
+
+  --- One symbol of a syntactic `but not` exclusion holds over boundaries `i` to `h`.
+  def SynSymEx (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) (s : Src) (k : Nat) (i h : Nat) : Sym -> Prop
+    | .t(x) => SynTerm(gl, cx, P, src, first, vs, s, k, x, i, h)
+    | .nt(n, _) => gl.alts(cx, .syntactic, n) = [] /\ SynLeaf(gl, cx, P, src, first, vs, n, i, h)
+  end
+
+  --- A syntactic `but not` exclusion holds over boundaries `i` to `h`.
+  def SynExcluded (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) (s : Src) (k : Nat) (i h : Nat) : Exclusion -> Prop
+    | .sym(y) => SynSymEx(gl, cx, P, src, first, vs, s, k, i, h, y)
+    | .oneOf(ys, _) => exists y mem ys, SynSymEx(gl, cx, P, src, first, vs, s, k, i, h, y)
+  end
+
+  --- No `[> but only if …]` condition immediately follows this item.
+  def noCondAfter : List(Item) -> Bool
+    | .onlyIf(_) :: _ => false
+    | _ => true
+  end
+
+  section {
+    var (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool))
+
+    mutual {
+      --- Syntactic nonterminal `n` with `ps` derives boundaries `i` to `j` under virtual semicolons `vs`.
+      relation SynDerives : NT -> List(Param) -> Nat -> Nat -> Prop {
+        rule node {n ps i j} (s : Src) : SynDerives(n, ps, i, j) :- s mem gl.alts(cx, .syntactic, n), s.alt.guard.all(Guard.holds(ps)) = true, SynSeq(s, ps, 0, s.alt.rhs, i, j);
+      }
+
+      --- Right-hand side items from index `k` of `s` derive boundaries `i` to `j` under `vs`.
+      relation SynSeq : Src -> List(Param) -> Nat -> List(Item) -> Nat -> Nat -> Prop {
+        rule nil {s ps k i} : SynSeq(s, ps, k, [], i, i);
+        rule absent {s ps k x is i j} : SynSeq(s, ps, k, .sym(x, true) :: is, i, j) :- SynSeq(s, ps, k + 1, is, i, j);
+        rule term {s ps k x o is i h j} : SynSeq(s, ps, k, .sym(.t(x), o) :: is, i, j) :- SynTerm(gl, cx, P, src, first, vs, s, k, x, i, h), SynSeq(s, ps, k + 1, is, h, j);
+        rule nt {s ps k n args o is i h j} : SynSeq(s, ps, k, .sym(.nt(n, args), o) :: is, i, j) :- gl.alts(cx, .syntactic, n) <> [], SynDerives(n, applyArgs(ps, args), i, h), forKeep(s.rule.lhs, n, h) = true, noCondAfter(is) = true, SynSeq(s, ps, k + 1, is, h, j);
+        rule leaf {s ps k n args o is i h j} : SynSeq(s, ps, k, .sym(.nt(n, args), o) :: is, i, j) :- gl.alts(cx, .syntactic, n) = [], SynLeaf(gl, cx, P, src, first, vs, n, i, h), forKeep(s.rule.lhs, n, h) = true, noCondAfter(is) = true, SynSeq(s, ps, k + 1, is, h, j);
+        rule butNotT {s ps k x ex is i h j} : SynSeq(s, ps, k, .butNot(.t(x), ex) :: is, i, j) :- SynTerm(gl, cx, P, src, first, vs, s, k, x, i, h), not SynExcluded(gl, cx, P, src, first, vs, s, k, i, h, ex), SynSeq(s, ps, k + 1, is, h, j);
+        rule butNotN {s ps k n args ex is i h j} : SynSeq(s, ps, k, .butNot(.nt(n, args), ex) :: is, i, j) :- gl.alts(cx, .syntactic, n) <> [], SynDerives(n, applyArgs(ps, args), i, h), not SynExcluded(gl, cx, P, src, first, vs, s, k, i, h, ex), SynSeq(s, ps, k + 1, is, h, j);
+        rule butNotLeaf {s ps k n args ex is i h j} : SynSeq(s, ps, k, .butNot(.nt(n, args), ex) :: is, i, j) :- gl.alts(cx, .syntactic, n) = [], SynLeaf(gl, cx, P, src, first, vs, n, i, h), not SynExcluded(gl, cx, P, src, first, vs, s, k, i, h, ex), SynSeq(s, ps, k + 1, is, h, j);
+        rule look {s ps k l is i j} : SynSeq(s, ps, k, .lookahead(l) :: is, i, j) :- SynLookOk(gl, cx, P, src, first, vs, l, i), SynSeq(s, ps, k + 1, is, i, j);
+        rule noLT {s ps k is i j} : SynSeq(s, ps, k, .noLT :: is, i, j) :- SynNoLT(gl, cx, P, src, first, vs, i), SynSeq(s, ps, k + 1, is, i, j);
+        rule empty {s ps k is i j} : SynSeq(s, ps, k, .empty :: is, i, j) :- SynSeq(s, ps, k + 1, is, i, j);
+        rule onlyIf {s ps k c is i j} : SynSeq(s, ps, k, .onlyIf(c) :: is, i, j) :- SynSeq(s, ps, k + 1, is, i, j);
+      }
+    }
+
+    var (goal : NT) (goalPs : List(Param))
+
+    mutual {
+      --- Nonterminal `n` with `ps` is opened at boundary `i` when parsing left to right from `(goal, goalPs, 0)`.
+      relation SynOpen : NT -> List(Param) -> Nat -> Prop {
+        rule root : SynOpen(goal, goalPs, 0);
+        rule nt {s ps k n args o is i} : SynOpen(n, applyArgs(ps, args), i) :- SynPrefix(s, ps, k, .sym(.nt(n, args), o) :: is, i), gl.alts(cx, .syntactic, n) <> [];
+        rule butNotN {s ps k n args ex is i} : SynOpen(n, applyArgs(ps, args), i) :- SynPrefix(s, ps, k, .butNot(.nt(n, args), ex) :: is, i), gl.alts(cx, .syntactic, n) <> [];
+      }
+
+      --- Item `k` on of `s` is reached at boundary `i` when parsing left to right from `(goal, goalPs, 0)`.
+      relation SynPrefix : Src -> List(Param) -> Nat -> List(Item) -> Nat -> Prop {
+        rule enter {n ps i} (s : Src) : SynPrefix(s, ps, 0, s.alt.rhs, i) :- SynOpen(n, ps, i), s mem gl.alts(cx, .syntactic, n), s.alt.guard.all(Guard.holds(ps)) = true;
+        rule absent {s ps k x is i} : SynPrefix(s, ps, k + 1, is, i) :- SynPrefix(s, ps, k, .sym(x, true) :: is, i);
+        rule term {s ps k x o is i h} : SynPrefix(s, ps, k + 1, is, h) :- SynPrefix(s, ps, k, .sym(.t(x), o) :: is, i), SynTerm(gl, cx, P, src, first, vs, s, k, x, i, h);
+        rule nt {s ps k n args o is i h} : SynPrefix(s, ps, k + 1, is, h) :- SynPrefix(s, ps, k, .sym(.nt(n, args), o) :: is, i), gl.alts(cx, .syntactic, n) <> [], SynDerives(gl, cx, P, src, first, vs, n, applyArgs(ps, args), i, h), forKeep(s.rule.lhs, n, h) = true, noCondAfter(is) = true;
+        rule leaf {s ps k n args o is i h} : SynPrefix(s, ps, k + 1, is, h) :- SynPrefix(s, ps, k, .sym(.nt(n, args), o) :: is, i), gl.alts(cx, .syntactic, n) = [], SynLeaf(gl, cx, P, src, first, vs, n, i, h), forKeep(s.rule.lhs, n, h) = true, noCondAfter(is) = true;
+        rule butNotT {s ps k x ex is i h} : SynPrefix(s, ps, k + 1, is, h) :- SynPrefix(s, ps, k, .butNot(.t(x), ex) :: is, i), SynTerm(gl, cx, P, src, first, vs, s, k, x, i, h), not SynExcluded(gl, cx, P, src, first, vs, s, k, i, h, ex);
+        rule butNotN {s ps k n args ex is i h} : SynPrefix(s, ps, k + 1, is, h) :- SynPrefix(s, ps, k, .butNot(.nt(n, args), ex) :: is, i), gl.alts(cx, .syntactic, n) <> [], SynDerives(gl, cx, P, src, first, vs, n, applyArgs(ps, args), i, h), not SynExcluded(gl, cx, P, src, first, vs, s, k, i, h, ex);
+        rule butNotLeaf {s ps k n args ex is i h} : SynPrefix(s, ps, k + 1, is, h) :- SynPrefix(s, ps, k, .butNot(.nt(n, args), ex) :: is, i), gl.alts(cx, .syntactic, n) = [], SynLeaf(gl, cx, P, src, first, vs, n, i, h), not SynExcluded(gl, cx, P, src, first, vs, s, k, i, h, ex);
+        rule look {s ps k l is i} : SynPrefix(s, ps, k + 1, is, i) :- SynPrefix(s, ps, k, .lookahead(l) :: is, i), SynLookOk(gl, cx, P, src, first, vs, l, i);
+        rule noLT {s ps k is i} : SynPrefix(s, ps, k + 1, is, i) :- SynPrefix(s, ps, k, .noLT :: is, i), SynNoLT(gl, cx, P, src, first, vs, i);
+        rule empty {s ps k is i} : SynPrefix(s, ps, k + 1, is, i) :- SynPrefix(s, ps, k, .empty :: is, i);
+        rule onlyIf {s ps k c is i} : SynPrefix(s, ps, k + 1, is, i) :- SynPrefix(s, ps, k, .onlyIf(c) :: is, i);
+      }
+    }
+
+    --- Boundary `h` is reached by a match when parsing left to right from `(goal, goalPs, 0)`.
+    relation SynHit : Nat -> Prop {
+      rule zero : SynHit(0);
+      rule term {s ps k x o is i h} : SynHit(h) :- SynPrefix(gl, cx, P, src, first, vs, goal, goalPs, s, ps, k, .sym(.t(x), o) :: is, i), SynTerm(gl, cx, P, src, first, vs, s, k, x, i, h);
+      rule nt {s ps k n args o is i h} : SynHit(h) :- SynPrefix(gl, cx, P, src, first, vs, goal, goalPs, s, ps, k, .sym(.nt(n, args), o) :: is, i), gl.alts(cx, .syntactic, n) <> [], SynDerives(gl, cx, P, src, first, vs, n, applyArgs(ps, args), i, h), forKeep(s.rule.lhs, n, h) = true, noCondAfter(is) = true;
+      rule leaf {s ps k n args o is i h} : SynHit(h) :- SynPrefix(gl, cx, P, src, first, vs, goal, goalPs, s, ps, k, .sym(.nt(n, args), o) :: is, i), gl.alts(cx, .syntactic, n) = [], SynLeaf(gl, cx, P, src, first, vs, n, i, h), forKeep(s.rule.lhs, n, h) = true, noCondAfter(is) = true;
+      rule butNotT {s ps k x ex is i h} : SynHit(h) :- SynPrefix(gl, cx, P, src, first, vs, goal, goalPs, s, ps, k, .butNot(.t(x), ex) :: is, i), SynTerm(gl, cx, P, src, first, vs, s, k, x, i, h), not SynExcluded(gl, cx, P, src, first, vs, s, k, i, h, ex);
+      rule butNotN {s ps k n args ex is i h} : SynHit(h) :- SynPrefix(gl, cx, P, src, first, vs, goal, goalPs, s, ps, k, .butNot(.nt(n, args), ex) :: is, i), gl.alts(cx, .syntactic, n) <> [], SynDerives(gl, cx, P, src, first, vs, n, applyArgs(ps, args), i, h), not SynExcluded(gl, cx, P, src, first, vs, s, k, i, h, ex);
+      rule butNotLeaf {s ps k n args ex is i h} : SynHit(h) :- SynPrefix(gl, cx, P, src, first, vs, goal, goalPs, s, ps, k, .butNot(.nt(n, args), ex) :: is, i), gl.alts(cx, .syntactic, n) = [], SynLeaf(gl, cx, P, src, first, vs, n, i, h), not SynExcluded(gl, cx, P, src, first, vs, s, k, i, h, ex);
+    }
+  }
+
+  --- A derivation of `(goal, ps)` spans the source text under virtual semicolons `vs`, none left after it.
+  def SynDone (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) (goal : NT) (ps : List(Param)) : Prop := exists e k lt, SynDerives(gl, cx, P, src, first, vs, goal, ps, 0, e) /\ Trivia(gl, cx, P, src, first, e / 2, k, lt) /\ src.length <= k /\ vsPending(vs, e) = false /\ vs.all(fun (p, _) => p <= e / 2) = true
+
+  --- §12.10: when no derivation spans the source text under `vs`, the next virtual `;` goes at the
+  --- furthest boundary reached (`f = 2 * p`), at end of input or before an offending token after a line
+  --- terminator, `}`, or `)` (for do-while).
+  def NextASI (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) (goal : NT) (ps : List(Param)) (p : Nat) (paren : Bool) : Prop := not SynDone(gl, cx, P, src, first, vs, goal, ps) /\ exists f, SynHit(gl, cx, P, src, first, vs, goal, ps, f) /\ (forall h, SynHit(gl, cx, P, src, first, vs, goal, ps, h) -> h <= f) /\ f % 2 = 0 /\ p = f / 2 /\ vs.all(fun (q, _) => q != p) = true /\ ((exists k lt, Trivia(gl, cx, P, src, first, p, k, lt) /\ src.length <= k /\ paren = false) \/ exists a b lt tr, ScanTok(gl, cx, P, src, first, .InputElementDiv, p, a, b, lt, tr) /\ if lt || slice(src, a, b) == "}".toList.map(Char.toNat) then paren = false else 0 < p /\ src[p - 1]? = some(0x29) /\ paren = true)
+
+  --- The virtual semicolons §12.10 inserts left to right from empty.
+  relation ValidASI (src : List(Nat)) (first : Bool) (goal : NT) (ps : List(Param)) : List(Nat times Bool) -> Prop {
+    rule nil : ValidASI(src, first, goal, ps, []);
+    rule step {vs p paren} : ValidASI(src, first, goal, ps, vs ++ [(p, paren)]) :- ValidASI(src, first, goal, ps, vs), NextASI(gl, cx, P, src, first, vs, goal, ps, p, paren);
+  }
+
+  --- The code point after the last real token before index `k` of `toks` (`0` before the first).
+  def tokPos (els : List(Element)) (toks : List(Token)) (k : Nat) : Nat := let es := els.filter(Element.isToken) in let r := toks.take(k).countP(fun tok => tok.virt.isNone) in if r == 0 then 0 else es[r - 1]?.map(fun e => e.j).getD(0)
+
+  --- The virtual semicolons of `toks` are `vs` at their token boundaries, none adjacent.
+  def toksMatchASI (els : List(Element)) (toks : List(Token)) (vs : List(Nat times Bool)) : Prop := (forall k t1 t2, toks[k]? = some(t1) -> toks[k + 1]? = some(t2) -> t1.virt = none \/ t2.virt = none) /\ (forall k tok why, toks[k]? = some(tok) -> tok.virt = some(why) -> (let w := if vsParen(vs, tokPos(els, toks, k)) then .paren else if k + 1 == toks.length then .eof else .offending in why = w /\ (tokPos(els, toks, k), vsParen(vs, tokPos(els, toks, k))) mem vs)) /\ forall p paren, (p, paren) mem vs -> (exists k tok, toks[k]? = some(tok) /\ tok.virt.isSome = true /\ tokPos(els, toks, k) = p)
+
+  --- §12.10: the virtual semicolons of `toks` are a sequence `ValidASI` inserts left to right.
+  def ASIOk (goal : NT) (ps : List(Param)) (src : List(Nat)) (els : List(Element)) (toks : List(Token)) : Prop := exists vs, ValidASI(gl, cx, P, src, goal == .Script || goal == .Module, goal, ps, vs) /\ toksMatchASI(els, toks, vs)
 
   ---!  ## B.1.2: ordered alternatives and the group-number condition 
 
@@ -423,6 +539,12 @@ namespace Ecma.Grammar {
 
   --- §22.2.1.5 CapturingGroupNumber: the MV of a |DecimalEscape|'s code points, decimal digits.
   def decimalMV (cs : List(Nat)) : Nat := cs.foldl(fun a c => 10 * a + (c - 0x30), 0)
+
+  --- One code point of a hexadecimal MV (§12.9.3; a NumericLiteralSeparator adds none).
+  def hexStep (v c : Nat) : Option(Nat) := if 0x30 <= c && c <= 0x39 then some(16 * v + (c - 0x30)) else if 0x61 <= c && c <= 0x66 then some(16 * v + (c - 0x61 + 10)) else if 0x41 <= c && c <= 0x46 then some(16 * v + (c - 0x41 + 10)) else if c == 0x5F then some(v) else none
+
+  --- §12.9.3: the MV of hexadecimal digits (with NumericLiteralSeparators).
+  def hexMV (cs : List(Nat)) : Option(Nat) := cs.foldl(fun acc c => acc.bind(fun v => hexStep(v, c)), some(0))
 
   --- B.1.2's condition of `AtomEscape :: DecimalEscape`, stratified: the CapturingGroupNumber of the
   --- |DecimalEscape| `t` is at most CountLeftCapturingParensWithin (§22.2.1.2, B.1.2.2) of a committed

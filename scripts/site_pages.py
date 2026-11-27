@@ -452,8 +452,12 @@ def status_lines() -> dict[str, str]:
         "Ecma.Host.WF": (proved + "of the engine's host under every option set: " + c("Engine.SpecHost.wfBy")
                          + ", which is <a href=\"implements.html#Implements.host\">" + c("Implements.host") + "</a>.",
                          ["Engine.SpecHost.wfBy"]),
-        "Ecma.Model.ParseLaws": (owed + "Stated and not proved: part of no claim.", []),
-        "Ecma.Model.CoverLaws": (owed + "Stated and not proved: part of no claim.", []),
+        "Ecma.Model.ParseLaws": (proved + "of the engine's model, for the specification's grammar under the engine's "
+                                 "readings: " + c("Engine.Claims.parseLaws") + ". Not a field of "
+                                 + c("Implements") + ".", ["Engine.Claims.parseLaws"]),
+        "Ecma.Model.CoverLaws": (proved + "of the engine's model, for the specification's grammar under the engine's "
+                                 "readings: " + c("Engine.Claims.coverLaws") + ". Not a field of "
+                                 + c("Implements") + ".", ["Engine.Claims.coverLaws"]),
         "Ecma.Model.NodeLaws": (proved + "of the engine's model, for the specification's grammar under the engine's "
                                 "readings: " + c("Engine.Claims.nodeLaws") + ". Not a field of "
                                 + c("Implements") + ".", ["Engine.Claims.nodeLaws"]),
@@ -878,10 +882,10 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
                       "Reading page · generated from <code>spec/spectec/prose/06-node-rel.spectec</code>",
                       "<p>What a model's parser must give, stated in SpecTec: a Parse Node related to a derivation of "
                       "the source text under the grammar (<code>relation Model.NodeRel</code>, <code>laws Model.ParseLaws</code>), "
-                      "and a covered node that is a parse of its cover's text (<code>laws Model.CoverLaws</code>). Both "
-                      "are stated and <strong>owed</strong>: no theorem proves them of the engine, and no claim depends "
-                      "on them. The laws of a Parse Node's children and descendants (<code>laws Model.NodeLaws</code>) "
-                      "are proved.</p>", body, toc))
+                      "a covered node that is a parse of its cover's text (<code>laws Model.CoverLaws</code>), and "
+                      "the laws of a Parse Node's children and descendants (<code>laws Model.NodeLaws</code>). All three "
+                      "are proved of the engine (<code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>, "
+                      "<code>Engine.Claims.nodeLaws</code>).</p>", body, toc))
 
     # The results page and the errata page, whose numbers the hand-written pages give.
     gallery = dbgopt and dbgopt.get("gallery")

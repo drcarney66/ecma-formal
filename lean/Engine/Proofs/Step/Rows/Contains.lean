@@ -764,9 +764,10 @@ def containsDfltTail : Code := [.site [2], .ret (.const (.val .false))]
 theorem contains_dflt_loop [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fs : List (Frame F))
     (nd : F.Node) (v : Val F) (sym : Contains.Sym) (hv : Contains.symOf v = some sym)
     (rec : SdoId → F.Node → Option Bool) (hrec : ContainsRec (Ctx.spec Engine.P' H chk) v rec) (await : Bool)
-    (haw : await = containsAwait sym nd) :
+    (haw : await = containsAwait sym nd)
+    (ts : List (Nat × String)) (hts : (Ctx.spec Engine.P' H chk).P.terms (F.nodeProd nd) = ts) :
     ∀ (f i j : Nat) (q : List Nat) (r : Nat) (x1 x2 : Val F) (b : Bool),
-      Contains.dfltAt.go sym rec (Engine.P.terms (F.nodeProd nd)) await f i ((F.nodeKids nd).toList.drop j) = some b →
+      Contains.dfltAt.go sym rec ts await f i ((F.nodeKids nd).toList.drop j) = some b →
       Steps (Ctx.spec Engine.P' H chk)
         ⟨s, ⟨⟨Known.cStaticContains, 0⟩, some nd, #[v, x1, x2], .steps false true true, q, [.seq containsDfltTail], none⟩ :: fs,
           .loop .round ⟨some 1, .kids none, [1], containsDfltBody, .kids nd i (.int j), r⟩⟩
@@ -779,10 +780,10 @@ theorem contains_dflt_loop [PinsHold] (H : Host F) (chk : Bool) (s : State F) (f
   | succ f ih =>
     intro i j q r x1 x2 b h
     rw [Contains.dfltAt.go.eq_def] at h
-    cases hl : (Engine.P.terms (F.nodeProd nd)).lookup i with
+    cases hl : ts.lookup i with
     | some t =>
       simp only [hl] at h
-      refine Steps.next (contains_kids_term _ _ _ _ _ _ _ _ _ _ _ t hl) ?_
+      refine Steps.next (contains_kids_term _ _ _ _ _ _ _ _ _ _ _ t (hts ▸ hl)) ?_
       dsimp only [loopBody, Cfg.setSlot, Cfg.atPath, Cfg.push, Cfg.mapTop, Cfg.to]
       simp only [List.setIfInBounds_toArray, List.set_cons_succ, List.set_cons_zero]
       cases hc : (sym == Contains.Sym.term t || await)
@@ -807,7 +808,7 @@ theorem contains_dflt_loop [PinsHold] (H : Host F) (chk : Bool) (s : State F) (f
         have hj : ¬ j < (F.nodeKids nd).size := by
           have := List.drop_eq_nil_iff.mp hk
           simpa using this
-        refine Steps.next (contains_kids_end _ _ _ _ _ _ _ _ _ _ _ hl hj) ?_
+        refine Steps.next (contains_kids_end _ _ _ _ _ _ _ _ _ _ _ (hts ▸ hl) hj) ?_
         dsimp only [loopEnd, Cfg.atPath, Cfg.mapTop, Cfg.to]
         csteps
         exact .refl _
@@ -815,7 +816,7 @@ theorem contains_dflt_loop [PinsHold] (H : Host F) (chk : Bool) (s : State F) (f
         simp only [hl, hk] at h
         obtain ⟨hcj, hks⟩ := contains_drop_cons hk
         have hcj' : (F.nodeKids nd)[j]? = some c := by simpa using hcj
-        refine Steps.next (contains_kids_node _ _ _ _ _ _ _ _ _ _ _ c hl hcj') ?_
+        refine Steps.next (contains_kids_node _ _ _ _ _ _ _ _ _ _ _ c (hts ▸ hl) hcj') ?_
         dsimp only [loopBody, Cfg.setSlot, Cfg.atPath, Cfg.push, Cfg.mapTop, Cfg.to]
         simp only [List.setIfInBounds_toArray, List.set_cons_succ, List.set_cons_zero]
         cases hc : (sym == Contains.Sym.nt (F.nodeNt c) || await)
@@ -865,7 +866,7 @@ theorem contains_dflt_steps [PinsHold] (H : Host F) (chk : Bool) (s : State F) (
     simp
   unfold Contains.dfltAt at hb
   rw [hks, hTt] at hb
-  have hgo := contains_dflt_loop H chk s fs nd v sym hv rec hrec (containsAwait sym nd) rfl
+  have hgo := contains_dflt_loop H chk s fs nd v sym hv rec hrec (containsAwait sym nd) rfl _ rfl
     Contains.depthMax 0 0
   rcases contains_symOf hv with ⟨k', rfl, rfl⟩ | ⟨t, rfl, rfl⟩
   all_goals
@@ -1078,6 +1079,17 @@ theorem contains_at_dflt [PinsHold] (H : Host F) (chk : Bool) (s : State F) (fr 
     cases fr <;> rfl
   exact Steps.next he (Steps.trans (hsteps _ _) (contains_scope_ret _ _ fr _ _ _))
 
+private theorem sdoEnter_chain {M : Model} (X : Ctx M) (c : Cfg M) (sd : SdoId) (nd : M.Node) (vs : List (Val M))
+    (k : NtId) (ch : M.Node)
+    (hrow : X.P.row sd (M.nodeProd nd) = none)
+    (hd : (X.P.sdoDefault sd).bind X.P.alg = none)
+    (hk : X.P.chain (M.nodeProd nd) = some k)
+    (hch : M.nodeChild nd k 0 = some (some ch)) :
+    sdoEnter X c sd nd vs =
+      { c.push (.scope (.nodes c.s.evalNodes (nd :: c.s.evalNodes))) with
+          s := { c.s with evalNodes := nd :: c.s.evalNodes } }.to (.invoke (.sdo sd ch vs)) := by
+  simp only [sdoEnter, hrow, hd, hk, hch]
+
 /-- The call at a chain production, of an SDO without a default definition: the call at its child. -/
 theorem contains_at_chain (H : Host F) (chk : Bool) (s : State F) (fr : List (Frame F))
     (sd : SdoId) (nd : F.Node) (v : Val F) (hsd : sd = Known.sdoContains ∨ sd = Known.sdoComputedPropertyContains) (b : Bool) (k : NtId) (ch : F.Node)
@@ -1089,11 +1101,7 @@ theorem contains_at_chain (H : Host F) (chk : Bool) (s : State F) (fr : List (Fr
   have he : step (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sdo sd nd [v])⟩ =
       .inl ⟨{ s with evalNodes := nd :: s.evalNodes },
           containsPush fr (.scope (.nodes s.evalNodes (nd :: s.evalNodes))), .invoke (.sdo sd ch [v])⟩ := by
-    rw [contains_enter H chk s fr sd nd v hsd]
-    unfold sdoEnter
-    simp only [spec_P, hrow, hd, hk]
-    have hch' : Engine.Model.nodeChild nd k 0 = some (some ch) := hch
-    rw [hch']
+    rw [contains_enter H chk s fr sd nd v hsd, sdoEnter_chain (Ctx.spec Engine.P' H chk) ⟨s, fr, .invoke (.sdo sd nd [v])⟩ sd nd [v] k ch hrow hd hk hch]
     cases fr <;> rfl
   exact Steps.next he (Steps.trans (hsteps _ _) (contains_scope_ret _ _ fr _ _ _))
 
@@ -1241,9 +1249,9 @@ theorem contains_walk [PinsHold] (H : Host F) (chk : Bool) (hrows : ContainsRows
       rcases hsd with rfl | rfl <;> rfl
     rw [hd] at h
     simp only [Bool.false_eq_true, ↓reduceIte] at h
-    rw [hT, hTd, hTc] at h
     split at h
-    · rename_i a heq
+    · rename_i a hrowT
+      have heq : (Engine.P.row sd (F.nodeProd nd)).map (·.id) = some a := (hT sd (F.nodeProd nd)).symm.trans hrowT
       cases hrow : Engine.P.row sd (F.nodeProd nd) with
       | none => rw [hrow] at heq; cases heq
       | some r =>
@@ -1254,13 +1262,16 @@ theorem contains_walk [PinsHold] (H : Host F) (chk : Bool) (hrows : ContainsRows
         | some beh =>
           rw [hbeh] at h
           exact contains_row_dispatch H chk hrows st fr sd nd v sym hv hsd r hrow _ ih beh hbeh b h
-    · rename_i heq
+    · rename_i hrowT
+      have heq : (Engine.P.row sd (F.nodeProd nd)).map (·.id) = none := (hT sd (F.nodeProd nd)).symm.trans hrowT
       have hrow : Engine.P.row sd (F.nodeProd nd) = none := by
         cases hrow : Engine.P.row sd (F.nodeProd nd) with
         | none => rfl
         | some r => rw [hrow] at heq; cases heq
       split at h
-      · rename_i a heq2
+      · rename_i a hdfltT
+        have heq2 : (Engine.P.sdoDefault sd).filter (fun a => (Engine.P.alg a).isSome) = some a :=
+          (hTd sd).symm.trans hdfltT
         have hdf : Engine.P.sdoDefault sd = some a := by
           cases hdf : Engine.P.sdoDefault sd with
           | none => rw [hdf] at heq2; cases heq2
@@ -1278,7 +1289,9 @@ theorem contains_walk [PinsHold] (H : Host F) (chk : Bool) (hrows : ContainsRows
           exact contains_at_dflt H chk st fr sd nd v hsd b hrow hdf fun s' fs' =>
             contains_dflt_steps H chk s' fs' nd v sym hv _ ih b T hTt h
         · cases h
-      · rename_i heq2
+      · rename_i hdfltT
+        have heq2 : (Engine.P.sdoDefault sd).filter (fun a => (Engine.P.alg a).isSome) = none :=
+          (hTd sd).symm.trans hdfltT
         have hnd : (Engine.P.sdoDefault sd).bind Engine.P.alg = none := by
           cases hdf : Engine.P.sdoDefault sd with
           | none => rfl
@@ -1292,7 +1305,8 @@ theorem contains_walk [PinsHold] (H : Host F) (chk : Bool) (hrows : ContainsRows
               | none => exact hx
               | some g => rw [hx] at hal; exact absurd rfl hal
         split at h
-        · rename_i k hk
+        · rename_i k hchT
+          have hk : Engine.P.chain (F.nodeProd nd) = some k := hTc ▸ hchT
           split at h
           · rename_i c hch
             exact contains_at_chain H chk st fr sd nd v hsd b k c hrow hnd hk hch (ih sd c b h)
