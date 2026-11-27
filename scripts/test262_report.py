@@ -89,8 +89,8 @@ def read_runner(path: Path) -> tuple[dict[str, str], dict[str, tuple[str, str]]]
         if not ln.strip():
             continue
         if ln.startswith("#"):
-            w = ln[1:].split()
-            head.update({w[i]: w[i + 1] for i in range(0, len(w) - 1, 2)})
+            for m in re.finditer(r"\b(build|stage|test262|timeout|rss-cap)\s+(\S+)", ln[1:]):
+                head[m.group(1)] = m.group(2)
             continue
         f = ln.split("\t")
         if len(f) < 4 or f[1] not in BUCKETS:
@@ -325,16 +325,20 @@ def page(record: Path, test262: Path = TEST262, conf_dir: Path = CONFS) -> dict:
         by2 = Counter(r[2] for r in rerun.values())
         rest = ", ".join(f"{by2[b]:,} {b}" for b in BUCKETS if b != "pass" and by2.get(b))
         lim2 = limits(meta["rerun-timeout"], meta["rerun-max-heap"], meta["rerun-rss-cap"])
+        gc2 = " and mark-and-sweep store collection (<code>--gc</code>)" if "--gc" in meta.get("rerun-command", "") else ""
         hit = all(r[0] in ("stop", "timeout", "timeout(fuel)") for r in rerun.values())
         which = "hit one of those limits" if hit else "did not pass in the first pass"
         body.append(f'<h3 id="second">The second pass</h3><p>The {len(rerun):,} tests that {which} '
-                    f'were run again with {lim2}: {p2:,} pass; {k2:,} still do not pass'
+                    f'were run again with {lim2}{gc2}: {p2:,} pass; {k2:,} still do not pass'
                     + (f" ({rest})" if rest else "") + ".</p>")
     body.append(
-        '<p><strong>Why the store has a ceiling.</strong> The engine\'s store only grows: every value the machine '
-        'makes stays in it, and no cell is ever freed, so the memory a run uses grows with the steps it takes. '
+        '<p><strong>Why the store has a ceiling.</strong> By default the engine\'s store only grows: every value the '
+        'machine makes stays in it, and no cell is freed, so the memory a run uses grows with the steps it takes. '
         '<code>ecma-run</code> therefore stops a run whose store reaches a ceiling (<code>--max-heap</code>, a stop '
-        'at an implementation limit) rather than let it take the machine\'s memory.</p>')
+        'at an implementation limit) rather than let it take the machine\'s memory. An optional flag, '
+        '<code>--gc</code> (outside <a href="what-is-proved.html#outside"><code>Engine.implements</code></a>), '
+        'sweeps unreachable cells in place while keeping live addresses monotonic, so <code>--max-heap</code> bounds '
+        'live cells rather than total allocations.</p>')
     body.append(
         '<h3 id="pass">What a pass is</h3><p>The runner (<code>crates/test262-runner</code>) runs each test on '
         '<code>ecma-run</code>, the engine\'s whole-program driver, after its harness (<code>assert.js</code>, '
@@ -443,8 +447,9 @@ def page(record: Path, test262: Path = TEST262, conf_dir: Path = CONFS) -> dict:
             _, d = mode_and(r[1])
             d = re.sub(r"\b[\w.-]*-run: ", "", d)
             if r[0] == "stop" and d.startswith("implLimit"):
+                with_gc = " and --gc" if "--gc" in meta.get("rerun-command", "") else ""
                 kinds[f"stopped at the store's ceiling of {size(store1)}: they pass with a store of "
-                      f"{size(meta['rerun-max-heap'])}"].append(t)
+                      f"{size(meta['rerun-max-heap'])}{with_gc}"].append(t)
             elif r[0] == "timeout":
                 kinds[f"over the {d} in the first pass"].append(t)
             else:

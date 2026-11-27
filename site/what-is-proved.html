@@ -78,6 +78,7 @@
 <section id="outside"><h3><span class="badge outside">Outside</span> Not covered by the claim</h3>
 <ul>
 <li>The step debugger's loop (<code>Debugger.Machine.runW</code>, a <code>partial</code> definition): <code>{{DBG}}</code> steps the same machine, but its interactive loop is not proved.</li>
+<li>Optional mark-and-sweep store collection (<code>{{RUN}} --gc</code> via <code>Engine.GC.runGC</code>, a <code>partial</code> loop, and <code>{{DBG}}</code>'s <code>"gc"</code> request): reclaiming unreachable cells in <code>Engine.Model.ChunkedHeap</code> while keeping live addresses monotonic is outside <code>Engine.implements</code>; default <code>{{RUN}}</code> runs without <code>--gc</code>.</li>
 <li>Test results: the theorem says nothing about which {{t262_link}} tests pass.</li>
 </ul></section>
 </div>

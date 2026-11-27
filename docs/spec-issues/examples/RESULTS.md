@@ -158,7 +158,7 @@ fromAsync fulfils with [1,2]
 stdout:
 
 ```
-normal: [object #19271]
+normal: [object #19124]
 fromAsync fulfils with [1,2]
 ```
 
@@ -513,7 +513,7 @@ f fulfilled with 2
 stdout:
 
 ```
-normal: [object #18874]
+normal: [object #18784]
 f fulfilled with 2
 ```
 
@@ -1136,7 +1136,7 @@ fromAsync fulfils with [1,2]
 stdout:
 
 ```
-normal: [object #21906]
+normal: [object #21285]
 get size
 get flags
 [object Promise]
