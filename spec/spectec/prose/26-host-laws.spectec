@@ -19,6 +19,6 @@ import Ecma.Host.Laws.Changes
 ---! governs it, and gives its reading (`scripts/law_quotes.py` checks the quotations against `spec.html`).
 
 namespace Ecma {
-  --- The laws of a host: those of every topic.
+  --- The laws of a host (§2, sec-conformance; §4.2, sec-hosts-and-implementations): those of every topic.
   laws Host.WF {M : Model} (H : Host(M)) extends [H.JobLaws, H.TimeLaws, H.MemoryLaws, H.RegExpLaws, H.OrderLaws, H.LocaleLaws, H.OptionalLaws, H.ValueLaws, H.HookLaws, H.ChangeLaws] {}
 }

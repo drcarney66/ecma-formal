@@ -55,8 +55,8 @@ namespace Ecma {
     def Model.digitsOf (x : M.Num) (r n : M.Math) (k : Nat) (s : M.Math) : Prop := 1 <= k /\ M.isInt(n) = true /\ M.isInt(s) = true /\ M.lt(s, M.pow(r, M.ofNat(k - 1))) = false /\ M.lt(s, M.pow(r, M.ofNat(k))) = true /\ M.numOf(M.mul(s, M.pow(r, M.sub(n, M.ofNat(k))))) = x
   }
 
-  --- The laws of the Number type: its value set (§6.1.6.1), "the Number value for x" as
-  --- roundTiesToEven, and IEEE 754-2019's operations.
+  --- The laws of the Number type: its value set (§6.1.6.1, sec-ecmascript-language-types-number-type),
+  --- "the Number value for x" as roundTiesToEven, and IEEE 754-2019's operations.
   laws Model.NumLaws (M : Model) {
     --- sec-ecmascript-language-types-number-type:
     --- "representing the double-precision floating point IEEE 754-2019 binary64 values"
@@ -211,7 +211,7 @@ namespace Ecma {
   --- §6.2.9: b is a byte value, an integer in [0, 255].
   def Model.isByte (M : Model) (b : M.Math) : Prop := M.isInt(b) = true /\ M.lt(b, M.ofNat(0)) = false /\ M.lt(b, M.ofNat(256)) = true
 
-  --- The laws of Data Block byte sequences (§6.2.9).
+  --- The laws of Data Block byte sequences (§6.2.9, sec-data-blocks).
   laws Model.ByteLaws (M : Model) {
     --- sec-data-blocks:
     --- "A Data Block value is created with a fixed number of bytes that each have the initial value 0."
@@ -251,7 +251,8 @@ namespace Ecma {
     law bytesFill_get : forall bs v i, M.isByte(v) -> M.isInt(i) = true -> M.lt(i, M.ofNat(0)) = false -> M.lt(i, M.bytesLen(bs)) = true -> M.bytesGet(M.bytesFill(bs, v), i) = some(v);
   }
 
-  --- The laws a model of the spec's sorts satisfies.
+  --- The laws a model of the spec's sorts satisfies (§5.2, sec-mathematical-operations;
+  --- §6, sec-ecmascript-data-types-and-values).
   laws Model.Laws (M : Model) {
     --- sec-mathematical-operations:
     --- "When applied to mathematical values, the operators refer to the usual mathematical operations."
@@ -726,7 +727,8 @@ namespace Ecma {
   --- A name's code points.
   def Model.codePointsOf (M : Model) (s : String) : M.Seq(M.Math) := s.toList.foldr(fun c q => M.seqCons(M.ofNat(c.toNat), q), M.seqNil)
 
-  --- The laws of the Unicode operations: only what the text relies on.
+  --- The laws of the Unicode operations (§6.1.4, sec-ecmascript-language-types-string-type;
+  --- §22.1.3.15, sec-string.prototype.normalize): only what the text relies on.
   laws Model.UnicodeLaws (M : Model) {
     --- sec-runtime-semantics-canonicalize-ch:
     --- "If the file CaseFolding.txt of the Unicode Character Database provides a simple or common case folding mapping for char, return the result of applying that mapping to char."
@@ -764,13 +766,13 @@ namespace Ecma {
   --- `n` is a child of `p`: one of `p`'s children is `n` by identity (`nodeEq`).
   def Model.KidOf {M : Model} (n p : M.Node) : Prop := exists c, Model.InSeq(c, M.nodeKids(p)) /\ M.nodeEq(c, n) = true
 
-  --- `p` is `r` or a Parse Node in the tree below `r`, at any depth.
+  --- `p` is `r` or a Parse Node in the tree below `r`, at any depth (§5.1.2, sec-parsing).
   relation Model.Within {M : Model} : M.Node -> M.Node -> Prop {
     rule root (r : M.Node) : Model.Within(r, r);
     rule kid {r c p : M.Node} : Model.Within(r, p) :- Model.InSeq(c, M.nodeKids(r)), Model.Within(c, p);
   }
 
-  --- `Model.nodeParent`'s laws (§5.1.2 Parent): an answer is a node at or below `r` of which `n` is a
+  --- `Model.nodeParent`'s laws (§5.1.2, sec-parsing): an answer is a node at or below `r` of which `n` is a
   --- child, and there is one wherever such a node is; with them `nodeAncestors`' and `nodeHeight`'s.
   laws Model.ParentLaws (M : Model) {
     --- sec-parsing:

@@ -30,16 +30,16 @@ def Param.name (p : Param) : String := Param.names.getD p.ctorIdx "?"
 instance : Repr NT := ⟨fun n _ => .text ("." ++ n.name)⟩
 instance : Repr Param := ⟨fun p _ => .text ("." ++ p.name)⟩
 
-/-- §5.1.1, §5.1.3, §5.1.4 and §5.2.4: the grammar a production belongs to, by
-its colons: `:` the syntactic grammar, `::` the lexical and RegExp grammars,
-`:::` the numeric string grammar. -/
+/-- §5.1.1 (sec-context-free-grammars), §5.1.3 (sec-lexical-and-regexp-grammars), §5.1.4 (sec-runtime-grammars)
+and §5.1.5 (sec-syntactic-grammar): the grammar a production belongs to, by its colons: `:` the syntactic grammar,
+`::` the lexical and RegExp grammars, `:::` the numeric string grammar. -/
 inductive Colons where
   | one
   | two
   | three
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- §5.1.6 "Grammatical Parameters": how a reference sets a parameter: `+P` (set),
+/-- §5.1.6 (sec-grammar-notation, "Grammatical Parameters"): how a reference sets a parameter: `+P` (set),
 `~P` (not set), `?P` (as the referring production's own). -/
 inductive Sign where
   | plus
@@ -47,13 +47,14 @@ inductive Sign where
   | quest
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- A parameter argument of a nonterminal reference, `Name[+In, ?Yield]`. -/
+/-- A parameter argument of a nonterminal reference (§5.1.6, sec-grammar-notation), `Name[+In, ?Yield]`. -/
 structure Arg where
   sign : Sign
   param : Param
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- The code points written `<NAME>` (§12.2 Table 34, §12.3 Table 35). -/
+/-- The code points written `<NAME>` (§12.2, sec-white-space, table-white-space-code-points;
+§12.3, sec-line-terminators, table-line-terminator-code-points). -/
 inductive CodePointName where
   | TAB
   | VT
@@ -80,7 +81,7 @@ def CodePointName.codePoint : CodePointName → Option Nat
   | .LS => some 0x2028
   | .PS => some 0x2029
 
-/-- A terminal symbol (§5.1.6): a code point sequence written in a fixed-width
+/-- A terminal symbol (§5.1.6, sec-grammar-notation): a code point sequence written in a fixed-width
 font (`` `if` ``; in spec.html between backticks), or a code point by name. -/
 inductive Terminal where
   /-- `alt`: spec.html spells it the other way (`Terminal.render`), which the
@@ -89,20 +90,21 @@ inductive Terminal where
   | cp (n : CodePointName)
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- A grammar symbol: a terminal, or a nonterminal with its parameter arguments. -/
+/-- A grammar symbol (§5.1.1, sec-context-free-grammars; §5.1.6, sec-grammar-notation): a terminal, or a
+nonterminal with its parameter arguments. -/
 inductive Sym where
   | t (x : Terminal)
   | nt (n : NT) (args : List Arg)
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- An element of a lookahead token sequence: a terminal, or (in a lookahead
+/-- An element of a lookahead token sequence (§5.1.6, sec-grammar-notation): a terminal, or (in a lookahead
 sequence of the syntactic grammar) `[no LineTerminator here]`. -/
 inductive LookItem where
   | t (x : Terminal)
   | noLT
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- §5.1.6 "Lookahead restrictions": `[lookahead = seq]` (written `==`),
+/-- §5.1.6 (sec-grammar-notation, "Lookahead Restrictions"): `[lookahead = seq]` (written `==`),
 `[lookahead ≠ seq]` (written `!=`), `[lookahead ∈ set]`, `[lookahead ∉ set]`
 with a set of sequences in braces, and `[lookahead ∉ N]` with a nonterminal
 whose language is a finite set of terminals. -/
@@ -114,17 +116,16 @@ inductive Lookahead where
   | notMemNT (n : NT)
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- §5.1.6 "but not": what follows `but not`: one symbol, or `one of` a list,
+/-- §5.1.6 (sec-grammar-notation, "but not"): what follows `but not`: one symbol, or `one of` a list,
 separated by `or` (`orSep := true`) or by spaces. -/
 inductive Exclusion where
   | sym (s : Sym)
   | oneOf (syms : List Sym) (orSep : Bool)
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- §5.1.6: the descriptive phrases (a right-hand side `> …` where listing all
+/-- §5.1.6 (sec-grammar-notation): the descriptive phrases (a right-hand side `> …` where listing all
 alternatives would be impractical), and the conditions of `[> but only if …]`.
-Their meaning is given by hand with the kernel (P1); the printer prints their
-spec.html text. -/
+Their meaning is given by hand with the kernel; the printer prints their spec.html text. -/
 inductive Phrase where
   /-- `> any Unicode code point` (§11.1, SourceCharacter) -/
   | anyCodePoint
@@ -150,7 +151,7 @@ inductive Phrase where
   | groupNumberAtMostCount
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- One element of a right-hand side (§5.1.6). -/
+/-- One element of a right-hand side (§5.1.6, sec-grammar-notation). -/
 inductive Item where
   /-- A symbol, optional when written with the `opt` subscript (`?` in spec.html). -/
   | sym (s : Sym) (opt : Bool)
@@ -169,14 +170,14 @@ inductive Item where
   deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- One condition of a guard `[+P]`, `[~P]` or `[+P, ~Q]` before a right-hand
-side (§5.1.6): the alternative exists only when every condition holds, the
+side (§5.1.6, sec-grammar-notation): the alternative exists only when every condition holds, the
 parameter set (`plus := true`) or not. -/
 structure Guard where
   plus : Bool
   param : Param
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- One alternative: its guard (no conditions when it has none), its right-hand
+/-- One alternative (§5.1.6, sec-grammar-notation): its guard (no conditions when it has none), its right-hand
 side and its `#label`. -/
 structure Alt where
   guard : List Guard
@@ -187,14 +188,15 @@ structure Alt where
 /-- The alternative without its lookahead restrictions. -/
 def Alt.bare (a : Alt) : Alt := { a with rhs := a.rhs.filter fun | .lookahead _ => false | _ => true }
 
-/-- A definition's alternatives, or `one of` (§5.1.6) with its rows of terminals,
+/-- A definition's alternatives, or `one of` (§5.1.6, sec-grammar-notation) with its rows of terminals,
 each terminal an alternative. -/
 inductive Body where
   | alts (as : List Alt)
   | oneOf (rows : List (List Terminal))
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- One definition of a nonterminal: `Lhs[Params] : alternatives`. -/
+/-- One definition of a nonterminal (§5.1.1, sec-context-free-grammars; §5.1.6, sec-grammar-notation):
+`Lhs[Params] : alternatives`. -/
 structure Rule where
   lhs : NT
   params : List Param
@@ -202,9 +204,9 @@ structure Rule where
   body : Body
   deriving Repr, BEq, DecidableEq, Inhabited
 
-/-- The grammars, in GL's order (`prodsOf`): the numeric string, lexical,
-syntactic (with its supplemental grammars), RegExp grammars, Annex B's
-overlays, and json.emu's JSON grammar. -/
+/-- The grammars (§5.1, sec-syntactic-and-lexical-grammars; Annex B, sec-additional-ecmascript-features-for-web-browsers),
+in GL's order (`prodsOf`): the numeric string, lexical, syntactic (with its supplemental grammars), RegExp grammars,
+Annex B's overlays, and json.emu's JSON grammar. -/
 inductive GrammarId where
   | numericString
   | lexical
@@ -224,7 +226,7 @@ before present, the first the most significant. A right-hand side's
 production id (`ProdId`) is its alphabetical index among all expanded
 right-hand sides (`prodsById`), exposed symbolically in `Ecma.Known`. -/
 
-/-- One right-hand side: a written production of a grammar and the presence of
+/-- One right-hand side (§5.1.6, sec-grammar-notation): a written production of a grammar and the presence of
 each of its optional symbols. -/
 structure Prod where
   grammar : GrammarId
@@ -273,10 +275,10 @@ def Prod.altOf (p : Prod) : Option Alt :=
   | .oneOf _ => none
 
 /-- The Annex B sections whose grammar is an overlay of the main grammar, by
-clause id: B.1.1 `sec-html-like-comments`, B.1.2
-`sec-regular-expressions-patterns`, B.3.3
-`sec-functiondeclarations-in-ifstatement-statement-clauses` and B.3.5
-`sec-initializers-in-forin-statement-heads`. -/
+clause id: B.1.1 sec-html-like-comments, B.1.2
+sec-regular-expressions-patterns, B.3.3
+sec-functiondeclarations-in-ifstatement-statement-clauses and B.3.5
+sec-initializers-in-forin-statement-heads. -/
 inductive AnnexB where
   | htmlLikeComments
   | regExpPatterns
@@ -291,7 +293,8 @@ def AnnexB.clause : AnnexB → String
   | .functionDeclarationsInIfStatement => "sec-functiondeclarations-in-ifstatement-statement-clauses"
   | .initializersInForIn => "sec-initializers-in-forin-statement-heads"
 
-/-- A set of Annex B sections (the ones a host supports), one membership bit per section. -/
+/-- A set of Annex B sections (the ones a host supports, Annex B, sec-additional-ecmascript-features-for-web-browsers),
+one membership bit per section. -/
 structure AnnexB.Set where
   html : Bool := false
   regExp : Bool := false
@@ -310,14 +313,13 @@ def AnnexB.Set.has (S : AnnexB.Set) : AnnexB → Bool
 def AnnexB.Set.any (S : AnnexB.Set) : Bool := S.html || S.regExp || S.ifFunctions || S.forInInit
 
 /-- How an overlay's rules combine with the main grammar's definitions of the
-same nonterminals, as its section says: `extend` (B.1.1 "is extended as
-follows", B.3.3 and B.3.5 "augments") is the union of the main definition's
+same nonterminals, as its section says (Annex B, sec-additional-ecmascript-features-for-web-browsers):
+`extend` (B.1.1 "is extended as follows", B.3.3 and B.3.5 "augments") is the union of the main definition's
 alternatives and the overlay's, an alternative the overlay restates (equal as
 an `Alt`) counted once: B.1.1 restates whole definitions (its
 `InputElementHashbangOrRegExp` repeats the main one's six alternatives and adds
 `HTMLCloseComment`), and a restated alternative is not a second production.
-The report lists the restated alternatives (`@@restated`,
-tests/parser/grammar_index.txt). `replace` is B.1.2's "is modified and
+`replace` is B.1.2's (sec-regular-expressions-patterns) "is modified and
 extended as follows … each alternative is considered only if previous
 production alternatives do not match": the overlay's definition, in its
 order, replaces the main one. -/
@@ -326,9 +328,9 @@ inductive OverlayMode where
   | replace
   deriving Repr, BEq, Inhabited
 
-/-- When an Annex B overlay applies, as its section's prose says (checked by the
-generator, which fails when the prose changes): `always` (B.1.2), `notModule`
-(B.1.1: "this extension is not allowed when parsing source text using the
+/-- When an Annex B overlay applies (Annex B, sec-additional-ecmascript-features-for-web-browsers),
+as its section's prose says: `always` (B.1.2, sec-regular-expressions-patterns), `notModule`
+(B.1.1, sec-html-like-comments: "this extension is not allowed when parsing source text using the
 goal symbol |Module|"), `nonStrict` (B.3.3 and B.3.5: "This production only
 applies when parsing non-strict code"). So the grammar a parse uses depends
 on the goal and on strictness, besides which Annex B sections the host
@@ -339,16 +341,16 @@ inductive OverlayCond where
   | nonStrict
   deriving Repr, BEq, Inhabited
 
-/-- What a definition block is: of the main grammar, a supplemental grammar
-(§5.1.5: "the interpretation of |cover| is refined using the following
-grammar"), or an Annex B overlay with its mode and its condition. -/
+/-- What a definition block is: of the main grammar (§5.1, sec-syntactic-and-lexical-grammars), a supplemental grammar
+(§5.1.5, sec-syntactic-grammar: "the interpretation of |cover| is refined using the following
+grammar"), or an Annex B overlay (sec-additional-ecmascript-features-for-web-browsers) with its mode and its condition. -/
 inductive BlockKind where
   | main
   | supplemental (cover : NT)
   | overlay (sec : AnnexB) (mode : OverlayMode) (cond : OverlayCond)
   deriving Repr, BEq, Inhabited
 
-/-- One grammar definition block: its grammar, clause id, kind and rules in order. -/
+/-- One grammar definition block (§5.1.6, sec-grammar-notation): its grammar, clause id, kind and rules in order. -/
 structure Block where
   grammar : GrammarId
   clause : String
@@ -398,7 +400,7 @@ structure Cover (P : Type) where
   refined : NT
   deriving Repr
 
-/-- §12.10 "Rules of Automatic Semicolon Insertion": where a `;` of the
+/-- §12.10.1 (sec-rules-of-automatic-semicolon-insertion): where a `;` of the
 syntactic grammar's right-hand sides may be a virtual (inserted) one. -/
 inductive Semi where
   /-- Rules 1–3 may insert it. -/

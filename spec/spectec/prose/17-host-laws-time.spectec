@@ -71,7 +71,7 @@ namespace Ecma {
   --- SystemTimeZoneString().
   def sysTimeZone (H : Host(M)) (s : State(M)) (id : M.Str) : Prop := H.choice(Known.pSupportsOnlyUTC, [], s) = .ok(.bool(true), s) /\ M.strEq(id, M.strLit("UTC")) = true \/ H.choice(Known.pSupportsOnlyUTC, [], s) = .ok(.bool(false), s) /\ H.choice(Known.pSystemTimeZoneString, [], s) = .ok(.str(id), s)
 
-  --- The laws of time and dates.
+  --- The laws of time and dates (§21.4.1.1, sec-time-values-and-time-range; §21.4.1.32, sec-date-time-string-format).
   laws Host.TimeLaws (H : Host(M)) {
     --- sec-date.now:
     --- "This function returns the time value designating the UTC date and time of the occurrence of the call to it."

@@ -20,22 +20,23 @@ open Ecma
 
 variable {M : Model}
 
-/-- The specification's context: the program's code, the host, and whether Asserts are checked. -/
+/-- The specification's context (§4.2, sec-hosts-and-implementations; §5.2, sec-algorithm-conventions):
+the program's code, the host, and whether Asserts are checked. -/
 def Ctx.spec (prog : Prog') (H : Host M) (chk : Bool) : Ctx M :=
   { prog, H, chk }
 
-/-- One transition. -/
+/-- One transition (§5.2, sec-algorithm-conventions). -/
 def Step (X : Ctx M) (c c' : Cfg M) : Prop := step X c = .inl c'
 
-/-- The machine ends at `c`, with `f`. -/
+/-- The machine ends at `c`, with `f` (§5.2, sec-algorithm-conventions). -/
 def Ends (X : Ctx M) (c : Cfg M) (f : Final M) : Prop := step X c = .inr f
 
-/-- Any number of transitions. -/
+/-- Any number of transitions (§5.2, sec-algorithm-conventions). -/
 inductive Steps (X : Ctx M) : Cfg M → Cfg M → Prop where
   | refl (c : Cfg M) : Steps X c c
   | step {c c' c'' : Cfg M} : Step X c c' → Steps X c' c'' → Steps X c c''
 
-/-- A run from `c` that ends with `f`. -/
+/-- A run from `c` that ends with `f` (§5.2, sec-algorithm-conventions). -/
 def Runs (X : Ctx M) (c : Cfg M) (f : Final M) : Prop := ∃ c', Steps X c c' ∧ Ends X c' f
 
 /-- The call `k` from the state `s` gives `v`, leaving the state `t`. -/

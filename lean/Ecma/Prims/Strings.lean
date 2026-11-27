@@ -23,10 +23,10 @@ variable {M : Model}
 def inRange (hi : Nat) (m : M.Math) : Bool :=
   M.isInt m && !M.lt m (M.ofNat 0) && !M.lt (M.ofNat hi) m
 
-/-- A code unit's value (§6.1.4). -/
+/-- A code unit's value (§6.1.4, sec-ecmascript-language-types-string-type). -/
 def isUnit (m : M.Math) : Bool := inRange 0xFFFF m
 
-/-- A code point's value (§6.1.4). -/
+/-- A code point's value (§6.1.4, sec-ecmascript-language-types-string-type). -/
 def isPoint (m : M.Math) : Bool := inRange 0x10FFFF m
 
 /-- The String of a List's elements: a code unit, or the code units of a String. -/
@@ -186,19 +186,19 @@ def unitOrPointOf (vs : List (Val M)) : Run M (Val M) :=
   | [.choice 1, .math n] => if isUnit n then Run.pure (.math n) else Run.stop .sortError
   | _ => Run.stop .sortError
 
-/-- Whether a code unit is a leading surrogate (§6.1.4). -/
+/-- Whether a code unit is a leading surrogate (§6.1.4, sec-ecmascript-language-types-string-type). -/
 def isLead (u : M.Math) : Bool := !M.lt u (M.ofNat 0xD800) && !M.lt (M.ofNat 0xDBFF) u
 
-/-- Whether a code unit is a trailing surrogate (§6.1.4). -/
+/-- Whether a code unit is a trailing surrogate (§6.1.4, sec-ecmascript-language-types-string-type). -/
 def isTrail (u : M.Math) : Bool := !M.lt u (M.ofNat 0xDC00) && !M.lt (M.ofNat 0xDFFF) u
 
-/-- §6.1.4: the code point of a surrogate pair. -/
+/-- §11.1.4 (sec-utf16decodesurrogatepair): the code point of a surrogate pair. -/
 def pairValue (c1 c2 : M.Math) : M.Math :=
   M.add (M.add (M.mul (M.sub c1 (M.ofNat 0xD800)) (M.ofNat 0x400)) (M.sub c2 (M.ofNat 0xDC00)))
     (M.ofNat 0x10000)
 
-/-- §6.1.4: a String's code points: a lead and trail surrogate pair as one, any other code unit as
-itself. -/
+/-- §6.1.4 (sec-ecmascript-language-types-string-type): a String's code points: a lead and trail surrogate pair as
+one, any other code unit as itself. -/
 def strPoints (t : M.Str) : M.Seq M.Math :=
   let (acc, pend) := M.seqFoldl (fun (st : M.Seq M.Math × Option M.Math) u => match st with
     | (acc, some l) =>

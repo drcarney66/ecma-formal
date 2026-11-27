@@ -14,7 +14,8 @@ namespace Ecma.MemoryModel.View {
 
   var {M : Model}
 
-  --- The name lookups of the view.
+  --- The name lookups of the view (§29.1, sec-memory-model-fundamentals; §29.2, sec-agent-event-records;
+  --- §29.3, sec-chosen-value-records; §29.4, sec-candidate-executions).
   syntax Names record {
     --- A field by its name (the first of that name).
     field? : String -> Option(FieldId);

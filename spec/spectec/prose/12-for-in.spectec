@@ -11,8 +11,8 @@ import Ecma.Ops.ProgPrim
 namespace Ecma {
   var {M : Model}
 
-  --- An action of the enumeration: call [[OwnPropertyKeys]], [[GetOwnProperty]] or [[GetPrototypeOf]]
-  --- of an object, return a key, or end.
+  --- An action of the enumeration (§14.7.5.9, sec-enumerate-object-properties): call [[OwnPropertyKeys]],
+  --- [[GetOwnProperty]] or [[GetPrototypeOf]] of an object, return a key, or end.
   syntax ForInAct (M : Model) {
     | keys (o : M.Addr)
     | own (o : M.Addr) (k : Val(M))
@@ -21,8 +21,8 @@ namespace Ecma {
     | done
   }
 
-  --- An action of the history with its result: the keys; *undefined* (`none`) or a Property
-  --- Descriptor and whether its [[Enumerable]] is *true*; the prototype, `none` for *null*.
+  --- An action of the history with its result (§14.7.5.9, sec-enumerate-object-properties): the keys; *undefined*
+  --- (`none`) or a Property Descriptor and whether its [[Enumerable]] is *true*; the prototype, `none` for *null*.
   syntax ForInEntry (M : Model) {
     | keys (o : M.Addr) (ks : List(Val(M)))
     | own (o : M.Addr) (k : Val(M)) (d : Option(Bool))
@@ -106,8 +106,8 @@ namespace Ecma {
     return .ref(<- alloc(.record(Known.sRecord, M.recSet(M.recSet(M.recSet(M.recEmpty, Known.fKind, .enum(k)), Known.fObject, o), Known.fKey, x))));
   }
 
-  --- A For-In Iterator's state: [[Object]] (`none` for *null*), [[ObjectWasVisited]],
-  --- [[VisitedKeys]], [[RemainingKeys]], and the key `next` returns before it continues.
+  --- A For-In Iterator's state (§14.7.5.10, sec-for-in-iterator-objects): [[Object]] (`none` for *null*),
+  --- [[ObjectWasVisited]], [[VisitedKeys]], [[RemainingKeys]], and the key `next` returns before it continues.
   syntax CfiSt (M : Model) record {
     cur : Option(M.Addr);
     was : Bool;
@@ -186,7 +186,8 @@ namespace Ecma {
 
   ---!  The conditions of ¶3 under which the iterator behaves as CreateForInIterator(_obj_)'s. 
 
-  --- `o` is _obj_ or an object of its prototype chain, by the [[Prototype]] slots of `s`.
+  --- `o` is _obj_ or an object of its prototype chain, by the [[Prototype]] slots of `s` (§14.7.5.9,
+  --- sec-enumerate-object-properties).
   relation InChain (s : State(M)) (obj : M.Addr) : M.Addr -> Prop {
     rule self : InChain(s, obj, obj);
     rule step {o p sl ps} : InChain(s, obj, p) :- InChain(s, obj, o), M.heapGet(s.heap, o) = some(.object(sl, ps)), M.recGet(sl, Known.fPrototype) = some(.obj(p));

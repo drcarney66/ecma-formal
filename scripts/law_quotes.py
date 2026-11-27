@@ -27,7 +27,12 @@ SPEC: Path | None = None
 FILES = [
     f for f in sorted((ROOT / "spec/spectec/prose").glob("*-host-laws-*.spectec"))
     if f.name != "14-host-laws-basic.spectec"
-] + [ROOT / "spec/spectec/prose/05-model-laws.spectec"]
+] + [
+    ROOT / "spec/spectec/prose/05-model-laws.spectec",
+    ROOT / "spec/spectec/prose/06-node-rel.spectec",
+    ROOT / "spec/spectec/prose/07-memory-model.spectec",
+    ROOT / "spec/spectec/prose/08-memory-read.spectec",
+]
 
 ID = r"(?:sec|table|figure|note|prod|eqn|step)-[A-Za-z0-9_.%-]+"
 

@@ -20,7 +20,8 @@ open Ecma
 
 variable {M : Model}
 
-/-- What the machine runs: the program's code, the host, and whether Asserts are checked. -/
+/-- What the machine runs (§4.2, sec-hosts-and-implementations; §5.2, sec-algorithm-conventions):
+the program's code, the host, and whether Asserts are checked. -/
 structure Ctx (M : Model) where
   prog : Prog'
   H : Host M
@@ -29,7 +30,9 @@ structure Ctx (M : Model) where
 /-- The program's static fields. -/
 abbrev Ctx.P (X : Ctx M) : Prog := X.prog.P
 
-/-- A call the machine makes, with its argument values: an algorithm, an SDO at a Parse Node, a closure, an internal
+/-- A call the machine makes, with its argument values (§5.2.2, sec-algorithm-conventions-abstract-operations;
+§5.2.3, sec-algorithm-conventions-syntax-directed-operations; §6.1.7, sec-object-type; §6.2.8,
+sec-abstract-closure; §9.5, sec-jobs): an algorithm, an SDO at a Parse Node, a closure, an internal
 method, a primitive, a sort's test, a table step, the early errors, a cover test or the host's Jobs. -/
 inductive Call (M : Model) where
   | alg (a : AlgId) (vs : List (Val M))
@@ -82,24 +85,25 @@ inductive Ctl (M : Model) where
   | ret (v : Val M)
   | esc (c : Val M)
 
-/-- A configuration: the state, the frames (innermost first) and the control. The frame stacks of the
-execution contexts a transfer suspended are the state's (`State.frames`). -/
+/-- A configuration (§5.2, sec-algorithm-conventions; §9.4, sec-execution-contexts): the state, the frames
+(innermost first) and the control. The frame stacks of the execution contexts a transfer suspended are the
+state's (`State.frames`). -/
 structure Cfg (M : Model) where
   s : State M
   frames : List (Frame M)
   ctl : Ctl M
 
-/-- How a run ends; `xfer`: a transfer passing `v`, and what the run does when it is resumed. -/
+/-- How a run ends (§5.2, sec-algorithm-conventions; §6.2.4, sec-completion-record-specification-type). -/
 inductive Final (M : Model) where
   | ok (v : Val M) (s : State M)
   | esc (c : Val M) (s : State M)
   | stop (r : Stop)
   | todo (form : String)
 
-/-- A step's result: the next configuration, or the run's end. -/
+/-- A step's result (§5.2, sec-algorithm-conventions): the next configuration, or the run's end. -/
 abbrev Out (M : Model) := Cfg M ⊕ Final M
 
-/-- A run of `call` from state `s`. -/
+/-- A run of `call` from state `s` (§5.2, sec-algorithm-conventions). -/
 def start (s : State M) (call : Call M) : Cfg M := { s := s, frames := [], ctl := .invoke call }
 
 /-- The Annex B overlay sections the host supports (B.1, B.3), so that their grammar applies: the host's logged

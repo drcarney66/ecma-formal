@@ -8,7 +8,7 @@ import Ecma.Host.Laws.Basic
 namespace Ecma {
   var {M : Model}
 
-  --- The laws of the host hooks.
+  --- The laws of the host hooks (§4.2, sec-hosts-and-implementations).
   laws Host.HookLaws (H : Host(M)) {
     --- sec-hosts-and-implementations:
     --- "A host hook must conform to at least the following requirements: It must return either a normal completion or a throw completion."

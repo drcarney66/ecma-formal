@@ -13,7 +13,7 @@ import Ecma.Model
 ---! ReadModifyWriteSharedMemory events reading from each other has no value, so it fails valid chosen reads.
 
 namespace Ecma.MemoryModel {
-  --- A Memory event's kind (§29.1).
+  --- A Memory event's kind (§29.1, sec-memory-model-fundamentals).
   syntax Kind {
     | read
     | write
@@ -23,7 +23,7 @@ namespace Ecma.MemoryModel {
   }
   deriving [DecidableEq, Repr]
 
-  --- A Shared Data Block event's [[Order]].
+  --- A Shared Data Block event's [[Order]] (§29.1, sec-memory-model-fundamentals).
   syntax Order {
     | seqCst
     | unordered
@@ -31,16 +31,17 @@ namespace Ecma.MemoryModel {
   }
   deriving [DecidableEq, Repr]
 
-  --- An Agent Events Record (§29.2): its [[EventList]] and [[AgentSynchronizesWith]].
+  --- An Agent Events Record (§29.2, sec-agent-event-records): its [[EventList]] and [[AgentSynchronizesWith]].
   syntax EventsRecord (E : Type) record {
     events : List(E);
     syncs : List(E times E);
   }
 
-  --- A candidate execution (§29.4) and the fields of its events (§29.1), events `E` by identity.
+  --- A candidate execution (§29.4, sec-candidate-executions) and the fields of its events (§29.1,
+  --- sec-memory-model-fundamentals), events `E` by identity.
   syntax Exec (M : Model) (E : Type) record {
     records : List(EventsRecord(E));
-    --- [[ChosenValues]]: each Chosen Value Record's [[Event]] and [[ChosenValue]]
+    --- [[ChosenValues]]: each Chosen Value Record's [[Event]] and [[ChosenValue]] (§29.3, sec-chosen-value-records)
     chosen : List(E times List(M.Math));
     kind : E -> Kind;
     order : E -> Order;
@@ -53,21 +54,28 @@ namespace Ecma.MemoryModel {
     modify : E -> List(M.Math) -> List(M.Math) -> Option(List(M.Math));
   }
 
-  --- A reads-bytes-from function (§29.6.2).
+  --- A reads-bytes-from function (§29.6.2, sec-reads-bytes-from).
   syntax Rbf (E : Type) = E -> List(E)
 
-  --- A Relation on Memory events.
+  --- A Relation on Memory events (§29.1, sec-memory-model-fundamentals; §29.6, sec-relations-of-candidate-executions).
   syntax Rel (E : Type) = E -> E -> Prop
 
-  --- The transitive closure of a Relation.
+  --- The transitive closure of a Relation (§29.6.4, sec-host-synchronizes-with; §29.6.6, sec-happens-before).
   relation Plus {E : Type} (r : Rel(E)) : Rel(E) {
     rule step {a b : E} : Plus(r, a, b) :- r(a, b);
     rule trans {a b c : E} : Plus(r, a, c) :- Plus(r, a, b), Plus(r, b, c);
   }
 
-  --- A strict partial order: irreflexive and transitive.
+  --- A strict partial order on Memory events (§29.6.4, sec-host-synchronizes-with; §29.7.5, sec-valid-executions):
+  --- irreflexive and transitive.
   laws StrictPartialOrder {E : Type} (r : Rel(E)) {
+    --- sec-valid-executions:
+    --- "execution admits a happens-before Relation that is a strict partial order."
+    --- Reading: a strict partial order relates no event to itself.
     law irrefl : forall a, not r(a, a);
+    --- sec-valid-executions:
+    --- "execution admits a happens-before Relation that is a strict partial order."
+    --- Reading: a strict partial order is transitive.
     law trans : forall a b c, r(a, b) -> r(b, c) -> r(a, c);
   }
 
@@ -122,14 +130,14 @@ namespace Ecma.MemoryModel {
   --- events with no cycle in its union with is-agent-order-before.
   def HostSync (hsw : Rel(E)) : Prop := StrictPartialOrder(hsw) /\ (forall a b, hsw(a, b) -> inHost(x, a) /\ inHost(x, b)) /\ forall a, not Plus(fun a b => hsw(a, b) \/ agentOrder(x, a, b), a, a)
 
-  --- synchronizes-with (§29.6.5): the least Relation closed under its three rules.
+  --- synchronizes-with (§29.6.5, sec-synchronizes-with): the least Relation closed under its three rules.
   relation SyncWith (rbf : Rbf(E)) (hsw : Rel(E)) : Rel(E) {
     rule rf {r w : E} : SyncWith(rbf, hsw, w, r) :- readsFrom(x, rbf, r, w), x.order(r) = .seqCst, x.order(w) = .seqCst, rangesEqual(x, r, w);
     rule agent {a b : E} (rec : EventsRecord(E)) : SyncWith(rbf, hsw, a, b) :- rec mem x.records, (a, b) mem rec.syncs;
     rule host {a b : E} : SyncWith(rbf, hsw, a, b) :- hsw(a, b);
   }
 
-  --- happens-before (§29.6.6): the least Relation closed under its four rules.
+  --- happens-before (§29.6.6, sec-happens-before): the least Relation closed under its four rules.
   relation HB (rbf : Rbf(E)) (hsw : Rel(E)) : Rel(E) {
     rule agent {a b : E} : HB(rbf, hsw, a, b) :- agentOrder(x, a, b);
     rule sync {a b : E} : HB(rbf, hsw, a, b) :- SyncWith(x, rbf, hsw, a, b);
@@ -138,14 +146,14 @@ namespace Ecma.MemoryModel {
   }
 
   mutual {
-    --- ComposeWriteEventBytes(_execution_, `loc`, `ws`) returns `bs` (§29.5.4).
+    --- ComposeWriteEventBytes(_execution_, `loc`, `ws`) returns `bs` (§29.5.4, sec-composewriteeventbytes).
     relation Compose (rbf : Rbf(E)) : M.Math -> List(E) -> List(M.Math) -> Prop {
       rule nil {loc : M.Math} : Compose(rbf, loc, [], []);
       rule write {loc byte : M.Math} {w : E} {ws : List(E)} {bs : List(M.Math)} : Compose(rbf, loc, w :: ws, byte :: bs) :- inRange(x, w, loc), x.kind(w) = .write, At(x.payload(w), M.sub(loc, x.byteIndex(w)), byte), Compose(rbf, M.add(loc, M.ofNat(1)), ws, bs);
       rule rmw {loc byte : M.Math} {w : E} {ws : List(E)} {bs bytes mod : List(M.Math)} : Compose(rbf, loc, w :: ws, byte :: bs) :- inRange(x, w, loc), x.kind(w) = .rmw, ValueOf(rbf, w, bytes), x.modify(w, bytes, x.payload(w)) = some(mod), At(mod, M.sub(loc, x.byteIndex(w)), byte), Compose(rbf, M.add(loc, M.ofNat(1)), ws, bs);
     }
 
-    --- ValueOfReadEvent(_execution_, `r`) returns `v` (§29.5.5).
+    --- ValueOfReadEvent(_execution_, `r`) returns `v` (§29.5.5, sec-valueofreadevent).
     relation ValueOf (rbf : Rbf(E)) : E -> List(M.Math) -> Prop {
       rule mk {r : E} {v : List(M.Math)} : ValueOf(rbf, r, v) :- forall w mem rbf(r), isWrite(x, w), M.eq(M.ofNat(rbf(r).length), x.elementSize(r)) = true, Compose(rbf, x.byteIndex(r), rbf(r), v);
     }
@@ -164,30 +172,68 @@ namespace Ecma.MemoryModel {
   --- one write that cannot tear with its memory range (step 1.a.ii.1); its Assert holds.
   def TearFreeReads (rbf : Rbf(E)) : Prop := forall r, inSdb(x, r) -> isRead(x, r) -> x.noTear(r) = true -> M.isInt(M.div(x.byteIndex(r), x.elementSize(r))) = true /\ forall w, readsFrom(x, rbf, r, w) -> x.noTear(w) = true -> not (rangesEqual(x, r, w) /\ exists v, rangesEqual(x, v, w) /\ x.noTear(v) = true /\ w <> v /\ readsFrom(x, rbf, r, v))
 
-  --- `mo` is an is-memory-order-before of `x` (§29.7.4).
+  --- `mo` is an is-memory-order-before of `x` (§29.7.4, sec-memory-order).
   laws MemoryOrder (rbf : Rbf(E)) (hsw : Rel(E)) (mo : Rel(E)) {
+    --- sec-memory-order:
+    --- "For a candidate execution execution, is-memory-order-before is a strict total order of all Memory events in EventSet(execution) that satisfies the following."
+    --- Reading: `mo` is a strict partial order (`StrictPartialOrder`).
     law order : StrictPartialOrder(mo);
+    --- sec-memory-order:
+    --- "For a candidate execution execution, is-memory-order-before is a strict total order of all Memory events in EventSet(execution) that satisfies the following."
+    --- Reading: any two distinct events in EventSet(_execution_) (`inEvents`) are ordered by `mo`.
     law total : forall a b, inEvents(x, a) -> inEvents(x, b) -> a <> b -> mo(a, b) \/ mo(b, a);
+    --- sec-memory-order:
+    --- "For a candidate execution execution, is-memory-order-before is a strict total order of all Memory events in EventSet(execution) that satisfies the following."
+    --- Reading: `mo` relates only events in EventSet(_execution_) (`inEvents`).
     law dom : forall a b, mo(a, b) -> inEvents(x, a) /\ inEvents(x, b);
+    --- sec-memory-order:
+    --- "For events eventA and eventB, eventA is-memory-order-before eventB in execution if eventA happens-before eventB in execution."
+    --- Reading: `mo` extends happens-before (`HB`).
     law hb : forall a b, HB(x, rbf, hsw, a, b) -> mo(a, b);
-    --- no ~seq-cst~ write with equal memory range comes between a read and the write it reads
+    --- sec-memory-order:
+    --- "For events readEvent and writeEvent such that readEvent reads-from writeEvent in execution, there is no WriteSharedMemory or ReadModifyWriteSharedMemory event value in SharedDataBlockEventSet(execution) such that value.[[Order]] is ~seq-cst~, writeEvent is-memory-order-before value in execution, value is-memory-order-before readEvent in execution, and any of the following conditions are true."
+    --- Reading: no ~seq-cst~ write with equal memory range comes in `mo` between a read and the write it reads from
+    --- under any of the three conditions.
     law sc : forall r w, readsFrom(x, rbf, r, w) -> not exists v, inSdb(x, v) /\ isWrite(x, v) /\ x.order(v) = .seqCst /\ mo(w, v) /\ mo(v, r) /\ (SyncWith(x, rbf, hsw, w, r) /\ rangesEqual(x, v, r) \/ HB(x, rbf, hsw, w, r) /\ HB(x, rbf, hsw, v, r) /\ x.order(w) = .seqCst /\ rangesEqual(x, w, v) \/ HB(x, rbf, hsw, w, r) /\ HB(x, rbf, hsw, w, v) /\ x.order(r) = .seqCst /\ rangesEqual(x, v, r));
-    --- a ~seq-cst~ write is memory-order after finitely many reads with its memory range
+    --- sec-memory-order:
+    --- "For each WriteSharedMemory or ReadModifyWriteSharedMemory event writeEvent in SharedDataBlockEventSet(execution), if writeEvent.[[Order]] is ~seq-cst~, then it is not the case that there is an infinite number of ReadSharedMemory or ReadModifyWriteSharedMemory events in SharedDataBlockEventSet(execution) with equal memory range that is memory-order before writeEvent."
+    --- Reading: every ~seq-cst~ write is after only finitely many reads with equal memory range in `mo`.
     law finite : forall w, inSdb(x, w) -> isWrite(x, w) -> x.order(w) = .seqCst -> (exists (l : List(E)), forall r, inSdb(x, r) -> isRead(x, r) -> rangesEqual(x, r, w) -> mo(r, w) -> r mem l);
   }
 
-  --- `x` has sequentially consistent atomics (§29.7.4): it admits an is-memory-order-before.
+  --- `x` has sequentially consistent atomics (§29.7.4, sec-memory-order): it admits an is-memory-order-before.
   def SeqCstAtomics (rbf : Rbf(E)) (hsw : Rel(E)) : Prop := exists mo, MemoryOrder(x, rbf, hsw, mo)
 
-  --- `x` is a valid execution (§29.7.5) with the host's host-synchronizes-with `hsw` and the
+  --- `x` is a valid execution (§29.7.5, sec-valid-executions) with the host's host-synchronizes-with `hsw` and the
   --- reads-bytes-from function `rbf`.
   laws ValidWith (rbf : Rbf(E)) (hsw : Rel(E)) {
+    --- sec-valid-executions:
+    --- "The host provides a host-synchronizes-with Relation for execution."
+    --- Reading: `hsw` is a host-synchronizes-with Relation for `x` (`HostSync`).
     law hostSync : HostSync(x, hsw);
+    --- sec-reads-bytes-from:
+    --- "For a candidate execution execution, its reads-bytes-from function is a mathematical function mapping Memory events in SharedDataBlockEventSet(execution) to Lists of events in SharedDataBlockEventSet(execution) that satisfies the following conditions."
+    --- Reading: `rbf` is a valid reads-bytes-from function for `x` (`Rbf.Valid`).
     law readsBytesFrom : Rbf.Valid(x, rbf);
+    --- sec-valid-executions:
+    --- "execution admits a happens-before Relation that is a strict partial order."
+    --- Reading: happens-before (`HB`) is a strict partial order (`StrictPartialOrder`).
     law happensBefore : StrictPartialOrder(HB(x, rbf, hsw));
+    --- sec-valid-executions:
+    --- "execution has valid chosen reads."
+    --- Reading: `x` has valid chosen reads (`ValidChosenReads`).
     law validChosenReads : ValidChosenReads(x, rbf);
+    --- sec-valid-executions:
+    --- "execution has coherent reads."
+    --- Reading: `x` has coherent reads (`CoherentReads`).
     law coherentReads : CoherentReads(x, rbf, hsw);
+    --- sec-valid-executions:
+    --- "execution has tear free reads."
+    --- Reading: `x` has tear free reads (`TearFreeReads`).
     law tearFreeReads : TearFreeReads(x, rbf);
+    --- sec-valid-executions:
+    --- "execution has sequentially consistent atomics."
+    --- Reading: `x` has sequentially consistent atomics (`SeqCstAtomics`).
     law seqCstAtomics : SeqCstAtomics(x, rbf, hsw);
   }
 

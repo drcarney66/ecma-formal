@@ -16,7 +16,8 @@ import Ecma.Grammar.Core
 ---! Nodes (the primitives StrictModeCode and HasUseStrictDirective, `Ecma.Prims.Nodes`).
 
 namespace Ecma.Grammar {
-  --- What §11.2.1 and §11.2.2 read of a tree's Parse Nodes: a node's nonterminal, its children that are
+  --- What §11.2.1 (sec-directive-prologues-and-the-use-strict-directive) and §11.2.2 (sec-strict-mode-code)
+  --- read of a tree's Parse Nodes: a node's nonterminal, its children that are
   --- Parse Nodes of nonterminals (left to right), the span of source text it matched, whether that source
   --- text is a given sequence of code points, and a bound on the depth of the tree below it (more than each
   --- child's: the walks below go no deeper).

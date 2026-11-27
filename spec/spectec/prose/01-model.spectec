@@ -12,7 +12,7 @@ import Ecma.Grammar.Core
 ---! identity.
 
 namespace Ecma {
-  --- The case view of a Number value (§6.1.6.1).
+  --- The case view of a Number value (§6.1.6.1, sec-ecmascript-language-types-number-type).
   syntax NumView (Math : Type) {
     | nan
     | posInf
@@ -23,10 +23,11 @@ namespace Ecma {
     | finite (m : Math)
   }
 
-  --- A parser invocation's context (§5.1.2): the Annex B sections whose grammar applies (those the host
-  --- supports, B.1 and B.3), whether the source text is strict mode code from outside (§11.2.2: eval code of a
-  --- direct eval in strict mode code), whether it is parsed for ParseJSON (§25.5.1), and whether it is
-  --- source text parsed with the goal symbol |Module| (B.1.1), or a reparse of tokens such a parse matched.
+  --- A parser invocation's context (§5.1.2, sec-parsing): the Annex B sections whose grammar applies (those the host
+  --- supports, B.1 and B.3, sec-additional-ecmascript-features-for-web-browsers), whether the source text is strict
+  --- mode code from outside (§11.2.2, sec-strict-mode-code: eval code of a direct eval in strict mode code), whether
+  --- it is parsed for ParseJSON (§25.5.1), and whether it is source text parsed with the goal symbol |Module| (B.1.1),
+  --- or a reparse of tokens such a parse matched.
   syntax ParseCx record {
     annexB : Grammar.AnnexB.Set;
     strict : Bool;
@@ -35,7 +36,7 @@ namespace Ecma {
   }
   deriving [Repr, BEq, Inhabited]
 
-  --- The Unicode Normalization Forms (UAX #15).
+  --- The Unicode Normalization Forms (UAX #15; §22.1.3.15, sec-string.prototype.normalize).
   syntax NormForm {
     | NFC
     | NFD
@@ -44,7 +45,8 @@ namespace Ecma {
   }
   deriving [Repr, BEq, DecidableEq, Inhabited]
 
-  --- A model of the spec's sorts and their primitive operations.
+  --- A model of the spec's sorts and their primitive operations (§5.2, sec-algorithm-conventions;
+  --- §6, sec-ecmascript-data-types-and-values).
   syntax Model record {
     --- mathematical values (§5.2.6)
     Math : Type;

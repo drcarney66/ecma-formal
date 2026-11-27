@@ -17,7 +17,12 @@ namespace Ecma
 section
 variable (M : Model)
 
-/-- The observable state. -/
+/-- The observable state across algorithm steps (§5.2, sec-algorithm-conventions): the store of
+objects, Records, Lists and Environment Records (§6.1.7, sec-object-type; §9.1, sec-environment-records),
+the execution context stack and suspended evaluations (§9.4, sec-execution-contexts), the surrounding
+agent (§9.6, sec-agents), and the parser, host-call and object-shape histories over which the
+specification's invariants and host laws (§9.5, sec-jobs; §14.7.5.9, sec-enumerate-object-properties)
+are stated. -/
 structure State where
   heap : M.Heap (Cell M)
   /-- the execution context stack, the running execution context last -/
@@ -66,17 +71,42 @@ structure State where
   /-- the frames of each suspended execution context (its code evaluation state, §9.4), the latest first -/
   frames : List (M.Addr × List (Machine.Frame M)) := []
 
+/-- The result of a step computation (§5.2, sec-algorithm-conventions): a normal value with the
+updated state, an abrupt completion escaping the algorithm (§6.2.4, sec-completion-record-specification-type),
+or a machine stop (`Stop`). -/
 inductive Res (α : Type) where
   | ok (a : α) (s : State M)
   /-- leaving the algorithm with an abrupt completion -/
   | esc (c : Val M) (s : State M)
   | stop (r : Stop)
 
+/-- The state-and-completion monad of leaf and host operations (§5.2, sec-algorithm-conventions). -/
 def Run (α : Type) : Type := State M → Res M α
 end
 
-/-- The number of host calls before a shape change. -/
+/-- The number of host calls before a shape change (§14.7.5.9, sec-enumerate-object-properties). -/
 abbrev ShapeChange.stamp {M : Model} (c : ShapeChange M) : Nat := c.before.length
+
+/-- Values held directly by a continuation of a suspended evaluation (§9.4, sec-execution-contexts). -/
+def Machine.Kont.Holds {M : Model} : Machine.Kont M → Val M → Prop
+  | .args _ done _, v => v ∈ done
+  | .all _ xs, v => v ∈ xs
+  | .bind w, v => v = w
+  | .scope (.passed outer inner), v => v ∈ outer ∨ v ∈ inner
+  | .loop l, v | .test l, v => match l.st with
+    | .each a _ _ | .keys a _ => v = .ref a
+    | _ => False
+  | .tstep _ _ _ key env _ _ _, v => v = key ∨ v ∈ env
+  | _, _ => False
+
+/-- Values held directly in a suspended execution context's frame (§9.4, sec-execution-contexts). -/
+def Machine.Frame.Holds {M : Model} (fr : Machine.Frame M) (v : Val M) : Prop :=
+  v ∈ fr.slots.toList ∨ ∃ k ∈ fr.konts, k.Holds v
+
+/-- Values held by the suspended evaluation (`[[CodeEvaluationState]]`, §9.4, sec-execution-contexts)
+of the execution context at `ctx`, which remain live while `ctx` is reachable (§9.9.2, sec-liveness). -/
+def State.suspendedHolds {M : Model} (s : State M) (ctx : M.Addr) (v : Val M) : Prop :=
+  ∃ frs, (ctx, frs) ∈ s.frames ∧ ∃ fr ∈ frs, fr.Holds v
 
 namespace Run
 variable {M : Model} {α β : Type}
@@ -88,7 +118,9 @@ def Res.bind : Res M α → (α → State M → Res M β) → Res M β
   | .esc c s, _ => .esc c s
   | .stop r, _ => .stop r
 
+/-- Monadic sequencing of `Run` computations (§5.2, sec-algorithm-conventions). -/
 @[inline] def bind (m : Run M α) (f : α → Run M β) : Run M β := fun s => Res.bind (m s) f
+/-- Stop the computation with reason `r` (§5.2, sec-algorithm-conventions). -/
 @[inline] def stop (r : Stop) : Run M α := fun _ => .stop r
 @[inline] def get : Run M (State M) := fun s => .ok s s
 @[inline] def set (s : State M) : Run M Unit := fun _ => .ok () s
@@ -98,11 +130,14 @@ instance : Monad (Run M) where
   pure := Run.pure
   bind := Run.bind
 
-/-- The algorithm boundary: an escaping completion becomes the return value. -/
+/-- The algorithm boundary (§5.2, sec-algorithm-conventions; §6.2.4, sec-completion-record-specification-type):
+an escaping completion becomes the return value. -/
 def Res.boundary : Res M (Val M) → Res M (Val M)
   | .esc c s => .ok c s
   | r => r
 
+/-- Run `m` at an algorithm boundary (§6.2.4, sec-completion-record-specification-type): an escaping
+completion becomes the return value. -/
 @[inline] def boundary (m : Run M (Val M)) : Run M (Val M) := fun s => Res.boundary (m s)
 
 /-- `r` with a state component `set` to `outer` when control leaves it, and to `inner` again when
@@ -203,6 +238,7 @@ def modifyBlock (a : M.Addr) (f : M.Bytes → M.Bytes) : Run M Unit := fun s =>
     .ok () { s with heap := M.heapSet h a (.block (f bs)) }
   | _ => .stop .sortError
 
+/-- Allocate a fresh cell in the store (§6.1.7, sec-object-type; §6.2.2, sec-list-and-record-specification-type). -/
 def alloc (c : Cell M) : Run M M.Addr := fun s =>
   let (a, h) := M.heapAlloc s.heap c
   .ok a { s with heap := h }
@@ -514,6 +550,7 @@ def bool : Val M → Run M Bool
   | .bool b => Run.pure b
   | _ => Run.stop .sortError
 
+/-- Allocate a new 0-indexed List value holding `vs` (§6.2.2, sec-list-and-record-specification-type). -/
 def listOf (vs : List (Val M)) : Run M (Val M) := do
   return .ref (← alloc (.list (vs.foldl M.seqPush M.seqNil) 0))
 

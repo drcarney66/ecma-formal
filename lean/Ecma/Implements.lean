@@ -31,42 +31,45 @@ none (sec-conformance: an implementation "may provide additional types, values, 
 functions beyond those described in this specification"). -/
 def Spec.program (extras : AlgId → Option Alg) : Prog' := Prog'.of (Spec.src.expanded extras)
 
-/-- An implementation over the model `M`: its own algorithms, its host, and its transition under
-whether Asserts are checked. A transition may take many of the specification's steps at once, or
-compute one differently. -/
+/-- An implementation over the model `M` (§2, sec-conformance; §4.2, sec-hosts-and-implementations):
+its own algorithms, its host, and its transition under whether Asserts are checked. A transition may
+take many of the specification's steps at once, or compute one differently. -/
 structure Implementation (M : Model) where
   extras : AlgId → Option Alg
   host : Host M
   step : Bool → Cfg M → Out M
 
-/-- The specification's machine for `I`: the specification's program with `I`'s algorithms, and `I`'s host. -/
+/-- The specification's machine for `I` (§5.2, sec-algorithm-conventions): the specification's program
+with `I`'s algorithms, and `I`'s host. -/
 def Implementation.spec (I : Implementation M) (chk : Bool) : Ctx M :=
   Ctx.spec (Spec.program I.extras) I.host chk
 
-/-- The configurations the machine `X` reaches: from a call in a state with no suspended execution context, by its
-transitions, and by a further call from the state a run ended in, whatever else of that state the host changed
-meanwhile (its suspended execution contexts it may not). -/
+/-- The configurations the machine `X` reaches (§5.2, sec-algorithm-conventions; §9.4,
+sec-execution-contexts; §9.5, sec-jobs): from a call in a state with no suspended execution context,
+by its transitions, and by a further call from the state a run ended in, whatever else of that state
+the host changed meanwhile (its suspended execution contexts it may not). -/
 inductive Reached (X : Ctx M) : Cfg M → Prop where
   | first (s : State M) (k : Call M) : s.frames = [] → Reached X (start s k)
   | step {c c' : Cfg M} : Reached X c → Step X c c' → Reached X c'
   | next {c : Cfg M} {v : Val M} {s s' : State M} (k : Call M) :
       Reached X c → Ends X c (.ok v s) → s'.frames = s.frames → Reached X (start s' k)
 
-/-- A run of `I` from `c` that ends with `f`. -/
+/-- A run of `I` from `c` that ends with `f` (§2, sec-conformance). -/
 inductive Implementation.Runs (I : Implementation M) (chk : Bool) :
     Cfg M → Final M → Prop where
   | ends {c : Cfg M} {f : Final M} : I.step chk c = .inr f → I.Runs chk c f
   | step {c c' : Cfg M} {f : Final M} : I.step chk c = .inl c' → I.Runs chk c' f → I.Runs chk c f
 
-/-- `I` implements the specification. -/
+/-- `I` implements the specification (§2, sec-conformance; §4.2, sec-hosts-and-implementations;
+§5.2, sec-algorithm-conventions). -/
 structure Implements (I : Implementation M) : Prop where
-  /-- its values are the specification's: the model's laws -/
+  /-- its values are the specification's: the model's laws (§6, sec-ecmascript-data-types-and-values) -/
   model : Model.Laws M ∧ Model.UnicodeLaws M ∧ Model.ParentLaws M
-  /-- its host meets every requirement the specification makes of a host -/
+  /-- its host meets every requirement the specification makes of a host (§4.2, sec-hosts-and-implementations) -/
   host : Host.WF I.host
   /-- each transition it takes from a configuration the specification's machine reaches is some transitions of
-  that machine, and where it ends, that machine's run ends so; or it gives up at a limit of its own (it never
-  answers otherwise than the specification) -/
+  that machine, and where it ends, that machine's run ends so; or it gives up at a limit of its own (§2,
+  sec-conformance; §5.2, sec-algorithm-conventions) -/
   step : ∀ chk c, Reached (I.spec chk) c →
     match I.step chk c with
     | .inl c' => Steps (I.spec chk) c c'

@@ -54,10 +54,10 @@ namespace Ecma {
   --- execution context (Table 27) and a generator's (Table 28).
   def contextField (f : FieldId) : Prop := f = Known.fCodeState \/ f = Known.fFunction \/ f = Known.fRealm \/ f = Known.fScriptOrModule \/ f = Known.fLexicalEnvironment \/ f = Known.fVariableEnvironment \/ f = Known.fPrivateEnvironment \/ f = Known.fGenerator
 
-  --- `a` is one of _realm_'s intrinsics in `s`: an object _realm_.[[Intrinsics]] holds, or one a property
-  --- of an intrinsic holds ([[Value]], [[Get]] or [[Set]]). Right after CreateIntrinsics(_realm_) these are
-  --- the objects it created (IntrinsicObjects: the well-known intrinsics and every object their
-  --- properties hold).
+  --- §6.1.7.4 (sec-well-known-intrinsic-objects), §9.3 (sec-code-realms): `a` is one of _realm_'s intrinsics in
+  --- `s`: an object _realm_.[[Intrinsics]] holds, or one a property of an intrinsic holds ([[Value]], [[Get]] or
+  --- [[Set]]). Right after CreateIntrinsics(_realm_) these are the objects it created (IntrinsicObjects: the
+  --- well-known intrinsics and every object their properties hold).
   relation intrinsicOf (s : State(M)) (realm : M.Addr) : M.Addr -> Prop {
     rule named {k fs i k' is f a} : intrinsicOf(s, realm, a) :- M.heapGet(s.heap, realm) = some(.record(k, fs)), M.recGet(fs, Known.fIntrinsics) = some(.ref(i)), M.heapGet(s.heap, i) = some(.record(k', is)), M.recGet(is, f) = some(.obj(a));
     rule held {o sl ps key p k fs f a} : intrinsicOf(s, realm, a) :- intrinsicOf(s, realm, o), M.heapGet(s.heap, o) = some(.object(sl, ps)), M.propsGet(ps, key) = some(.ref(p)), M.heapGet(s.heap, p) = some(.record(k, fs)), f = Known.fValue \/ f = Known.fGetter \/ f = Known.fSetter, M.recGet(fs, f) = some(.obj(a));
@@ -103,23 +103,6 @@ namespace Ecma {
     | c, c' => c' = c
   end
 
-  --- Values held directly by a continuation.
-  def Machine.Kont.Holds {M : Model} : Machine.Kont(M) -> Val(M) -> Prop
-    | .args(_, done, _), v => v mem done
-    | .all(_, xs), v => v mem xs
-    | .bind(w), v => v = w
-    | .scope(.passed(outer, inner)), v => v mem outer \/ v mem inner
-    | .loop(l), v | .test(l), v => match l.st with
-        | .each(a, _, _) | .keys(a, _) => v = .ref(a)
-        | _ => False
-      end
-    | .tstep(_, _, _, key, env, _, _, _), v => v = key \/ v mem env
-    | _, _ => False
-  end
-
-  --- Values directly in a suspended execution context's frame.
-  def Machine.Frame.Holds {M : Model} (fr : Machine.Frame(M)) (v : Val(M)) : Prop := v mem fr.slots.toList \/ exists k mem fr.konts, k.Holds(v)
-
   --- Subvalues referenced by a compound value.
   def Val.Holds {M : Model} : Val(M) -> Val(M) -> Prop
     | .comp(_, x, y), v => v = x \/ v = y
@@ -130,7 +113,7 @@ namespace Ecma {
     | _, _ => False
   end
 
-  --- §9.9.2 (`sec-liveness`): values strongly reachable from the roots of `s` without following
+  --- §9.9.2 (sec-liveness): values strongly reachable from the roots of `s` without following
   --- weak references (`WeakRef.[[WeakRefTarget]]`, `WeakSet.[[WeakSetData]]`, `WeakMap.[[WeakMapData]]`
   --- entries whose `[[Key]]` is not itself reachable, or `FinalizationRegistry` cell `[[WeakRefTarget]]` /
   --- `[[UnregisterToken]]` fields).
@@ -145,7 +128,7 @@ namespace Ecma {
     rule waiterRec {b i w} : Reachable(s, .ref(w)) :- (b, i, w) mem s.waiterLists;
     rule critical {w} : Reachable(s, .ref(w)) :- w mem s.critical;
     rule shared {b} : Reachable(s, .ref(b)) :- b mem s.shared;
-    rule frame {ctx frs fr v} : Reachable(s, v) :- (ctx, frs) mem s.frames, Reachable(s, .ref(ctx)), fr mem frs, fr.Holds(v);
+    rule codeState {ctx v} : Reachable(s, v) :- Reachable(s, .ref(ctx)), s.suspendedHolds(ctx, v);
     rule val {u v} : Reachable(s, v) :- Reachable(s, u), u.Holds(v);
     rule objSlot {a sl ps f v} : Reachable(s, v) :- Reachable(s, .obj(a)), M.heapGet(s.heap, a) = some(.object(sl, ps)), f <> Known.fWeakRefTarget, f <> fieldNamed("WeakMapData"), f <> fieldNamed("WeakSetData"), f <> Known.fCells, M.recGet(sl, f) = some(v);
     rule objKeySym {a sl ps sym u} : Reachable(s, .sym(sym)) :- Reachable(s, .obj(a)), M.heapGet(s.heap, a) = some(.object(sl, ps)), M.propsGet(ps, .inr(sym)) = some(u);
@@ -163,7 +146,8 @@ namespace Ecma {
   --- (sec-liveness): every cell as `Cell.Emptied` says, every other component as it was.
   def Collected (s : State(M)) (xs : List(Val(M))) (s' : State(M)) : Prop := (forall x mem xs, ((exists a, x = .obj(a)) \/ exists y, x = .sym(y)) /\ not keptAlive(s, x) /\ not Reachable(s, x)) /\ s' = { s with heap := s'.heap } /\ forall a, M.heapGet(s'.heap, a).isSome = M.heapGet(s.heap, a).isSome /\ forall c, M.heapGet(s.heap, a) = some(c) -> (exists c', M.heapGet(s'.heap, a) = some(c') /\ Cell.Emptied(s, xs, a, c, c'))
 
-  --- The laws of what a host step may change.
+  --- The laws of what a host step may change (§6.1.7.3, sec-invariants-of-the-essential-internal-methods;
+  --- §9.6, sec-agents; §9.9.3, sec-weakref-execution).
   laws Host.ChangeLaws (H : Host(M)) {
     --- sec-invariants-of-the-essential-internal-methods:
     --- "An implementation must not allow these invariants to be circumvented in any manner such as by providing alternative interfaces that implement the functionality of the essential internal methods without enforcing their invariants."
@@ -207,8 +191,8 @@ namespace Ecma {
     --- "If cleanupResult is an abrupt completion, perform any host-defined steps for reporting the error."
     --- Reading: HostReportCleanupError answers ~unused~.
     law hostReportCleanupError : forall vs s r s', H.choice(Known.pHostReportCleanupError, vs, s) = .ok(r, s') -> r = .enum(Known.eUnused);
-    --- No sentence: HostReportErrors is HTML's report-an-exception hook called by the readings overlay on an
-    --- abrupt settle result of a PromiseReactionJob.
+    --- No sentence: HostReportErrors is HTML's report-an-exception hook invoked on an abrupt settle result in
+    --- PromiseReactionJob (sec-newpromisereactionjob).
     --- Reading: HostReportErrors answers ~unused~.
     law hostReportErrors : forall vs s r s', H.choice(Known.pHostReportErrors, vs, s) = .ok(r, s') -> r = .enum(Known.eUnused);
     --- sec-cleanup-finalization-registry step 3:

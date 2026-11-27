@@ -319,7 +319,7 @@ pub fn emit(spec: &Spec, ids: &Ids, out_dir: &Path, grammar_index_path: Option<&
     // 1. Symbols.lean
     {
         let mut body = String::new();
-        writeln!(body, "/-- Grammar parameters (§5.1.6), sorted alphabetically from `spec/spectec/`. -/").unwrap();
+        writeln!(body, "/-- Grammar parameters (§5.1.6, sec-grammar-notation), sorted alphabetically from `spec/spectec/`. -/").unwrap();
         writeln!(body, "inductive Param where").unwrap();
         for p in &ids.param.names {
             writeln!(body, "  | {p}").unwrap();
@@ -328,7 +328,7 @@ pub fn emit(spec: &Spec, ids: &Ids, out_dir: &Path, grammar_index_path: Option<&
         let pnames: Vec<_> = ids.param.names.iter().map(|s| lean_str(s)).collect();
         writeln!(body, "def Param.names : List String :=\n  [{}]\n", pnames.join(",\n   ")).unwrap();
 
-        writeln!(body, "/-- Grammar nonterminals, sorted alphabetically from `spec/spectec/`. -/").unwrap();
+        writeln!(body, "/-- Grammar nonterminals (§5.1, sec-syntactic-and-lexical-grammars; Annex A, sec-grammar-summary), sorted alphabetically from `spec/spectec/`. -/").unwrap();
         writeln!(body, "inductive NT where").unwrap();
         for n in &ids.nt.names {
             writeln!(body, "  | {n}").unwrap();

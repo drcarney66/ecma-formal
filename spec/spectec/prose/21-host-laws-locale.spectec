@@ -27,7 +27,7 @@ namespace Ecma {
   --- the same canonical decomposition (NFD, UAX #15).
   def canonEquiv (a b : M.Str) : Prop := M.normalize(.NFD, Prims.Strings.strPoints(a)) = M.normalize(.NFD, Prims.Strings.strPoints(b))
 
-  --- The laws of the locale-sensitive methods.
+  --- The laws of the locale-sensitive methods (§22.1.3.11, sec-string.prototype.localecompare).
   laws Host.LocaleLaws (H : Host(M)) {
     --- sec-localizedlistseparator:
     --- "LocalizedListSeparator ( ): a String"

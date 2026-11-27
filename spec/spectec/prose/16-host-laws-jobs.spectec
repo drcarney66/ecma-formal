@@ -33,7 +33,7 @@ namespace Ecma {
 
   var {M : Model}
 
-  --- A logged call is one of the host-defined operation with that sec-id.
+  --- A logged call is one of the host-defined operation with that `sec-…` clause id.
   def HostCall.callOf (sec : String) : HostCall(M) -> Bool
     | .hook(c, _, _, _, _) => Gen.clauses[c]? == some(sec)
     | _ => false
@@ -68,7 +68,7 @@ namespace Ecma {
   --- ECMAScript code, and the script or module active at that call is active.
   def promisePrepared (s : State(M)) (k : Nat) (s' : State(M)) : Prop := forall c job realm xs sm rl r, s.hostLog.reverse[k]? = some(.hook(c, job :: realm :: xs, sm, rl, r)) -> Gen.clauses[c]? = some("sec-hostenqueuepromisejob") -> realm <> .null -> preparedToEvaluate(s') /\ activeIs(s', sm)
 
-  --- The laws of jobs and agents.
+  --- The laws of jobs and agents (§9.5, sec-jobs; §9.6, sec-agents).
   laws Host.JobLaws (H : Host(M)) {
     --- sec-jobs, the requirements' first item:
     --- "At some future point in time, when there is no running context in the agent for which the job is scheduled and that agent's execution context stack is empty, the implementation must: … Invoke the Job Abstract Closure."

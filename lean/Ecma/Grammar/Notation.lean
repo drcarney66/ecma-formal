@@ -15,14 +15,16 @@ reference (`applyArgs`) and guards, and chain and unit productions. Definitions 
 
 namespace Ecma.Grammar
 
-/-- What a parse is under: the goal is a Module, and the Annex B overlay sections the host
-supports (normative optional). Strictness is regional (`NonStrictOk`). -/
+/-- What a parse is under (§5.1.2, sec-parsing; Annex B, sec-additional-ecmascript-features-for-web-browsers):
+the goal is a Module, and the Annex B overlay sections the host supports (normative optional). Strictness is
+regional (`NonStrictOk`). -/
 structure Ctx where
   module : Bool
   annexB : AnnexB.Set
   deriving Repr, BEq, Inhabited
 
-/-- GL as the derivation relation reads it: each grammar's rules in spec order, the
+/-- GL as the derivation relation reads it (§5.1, sec-syntactic-and-lexical-grammars; §5.1.6,
+sec-grammar-notation; §12.10, sec-automatic-semicolon-insertion): each grammar's rules in spec order, the
 production ids of their right-hand sides, the definition blocks (the overlays'
 sections, modes and conditions), and §12.10's class of each `;` of the syntactic
 grammar (written production, position). -/
@@ -68,7 +70,7 @@ def writtenAlts (r : Rule) : List Alt :=
   | .alts as => as
   | .oneOf rows => rows.flatten.map fun t => ⟨[], [.sym (.t t) false], none⟩
 
-/-- An alternative in effect: the grammar and rule it is written in and its
+/-- An alternative in effect (§5.1.6, sec-grammar-notation): the grammar and rule it is written in and its
 index among the rule's written productions. -/
 structure Src where
   grammar : GrammarId
@@ -77,9 +79,11 @@ structure Src where
   alt : Alt
   deriving Repr, BEq, DecidableEq, Inhabited
 
+/-- All written alternatives of rule `r` in grammar `g` as `Src` entries (§5.1.6, sec-grammar-notation). -/
 def srcsOf (g : GrammarId) (r : Rule) : List Src :=
   (writtenAlts r).zipIdx.map fun (a, i) => ⟨g, r, i, a⟩
 
+/-- The rules of grammar `g` in `gl` (§5.1, sec-syntactic-and-lexical-grammars). -/
 def GL.rulesOf (gl : GL) (g : GrammarId) : List Rule := (gl.grammars.lookup g).getD []
 
 /-- The pinned definition of `n` in grammar `g`, or in its base grammar. -/

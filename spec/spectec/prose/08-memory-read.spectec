@@ -11,7 +11,8 @@ import Ecma.MemoryModel
 namespace Ecma.MemoryModel {
   var {M : Model} {E : Type}
 
-  --- The new event of a shared read: its kind and fields.
+  --- The new event of a shared read (§29.1, sec-memory-model-fundamentals; §25.1.3.15,
+  --- sec-getrawbytesfromsharedblock; §25.1.3.19, sec-getmodifysetvalueinbuffer): its kind and fields.
   syntax NewEvent (M : Model) record {
     kind : Kind;
     order : Order;
@@ -23,13 +24,25 @@ namespace Ecma.MemoryModel {
     modify : List(M.Math) -> List(M.Math) -> Option(List(M.Math));
   }
 
-  --- A read event of a shared read: a ReadSharedMemory or ReadModifyWriteSharedMemory event, not
-  --- ~init~, its [[ByteIndex]] a non-negative integer, aligned where it cannot tear (tear free reads,
-  --- step 1.a.i).
+  --- A read event of a shared read (§29.1, sec-memory-model-fundamentals; §29.7.3, sec-tear-free-aligned-reads):
+  --- a ReadSharedMemory or ReadModifyWriteSharedMemory event, not ~init~, its [[ByteIndex]] a non-negative integer,
+  --- aligned where it cannot tear.
   laws NewEvent.IsRead (r : NewEvent(M)) {
+    --- sec-memory-model-fundamentals:
+    --- "A read event is either a ReadSharedMemory or a ReadModifyWriteSharedMemory."
+    --- Reading: the new event's kind is `.read` or `.rmw`.
     law kind : r.kind = .read \/ r.kind = .rmw;
+    --- sec-memory-model-fundamentals:
+    --- "[[Order]] ~seq-cst~ or ~unordered~"
+    --- Reading: a read event's [[Order]] is not ~init~.
     law order : r.order <> .init;
+    --- sec-memory-model-fundamentals:
+    --- "[[ByteIndex]] a non-negative integer"
+    --- Reading: the event's [[ByteIndex]] is a non-negative integer.
     law byteIndex : exists n, r.byteIndex = M.ofNat(n);
+    --- sec-tear-free-aligned-reads step 1.a.i:
+    --- "Assert: The remainder of dividing readEvent.[[ByteIndex]] by readEvent.[[ElementSize]] is 0."
+    --- Reading: when [[NoTear]] is *true*, [[ByteIndex]] is an integer multiple of [[ElementSize]].
     law aligned : r.noTear = true -> M.isInt(M.div(r.byteIndex, r.elementSize)) = true;
   }
 

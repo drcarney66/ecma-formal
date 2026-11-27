@@ -19,69 +19,73 @@ parsed headers; the machine stops with a sort error on ill-sorted data.
 
 namespace Ecma
 
-/-- An algorithm-local variable: an index into `Alg.vars`. -/
+/-- An algorithm-local variable (§5.2, sec-algorithm-conventions): an index into `Alg.vars`. -/
 abbrev Slot := Nat
-/-- A record field, internal slot or method, or execution-context component: `[[F]]`. -/
+/-- A record field, internal slot or method, or execution-context component (§6.1.7, sec-object-type;
+§6.2.2, sec-list-and-record-specification-type; §9.4, sec-execution-contexts): `[[F]]`. -/
 abbrev FieldId := Nat
-/-- An enum constant: `~normal~`. -/
+/-- An enum constant (§5.2, sec-algorithm-conventions): `~normal~`. -/
 abbrev EnumId := Nat
-/-- A well-known intrinsic, `%Array.prototype%`: interned as a field name of a Realm's [[Intrinsics]]. -/
+/-- A well-known intrinsic (§6.1.7.4, sec-well-known-intrinsic-objects), `%Array.prototype%`: interned as a field
+name of a Realm's [[Intrinsics]]. -/
 abbrev IntrinsicId := FieldId
-/-- A syntax-directed operation, by name. -/
+/-- A syntax-directed operation (§5.2.3, sec-algorithm-conventions-syntax-directed-operations), by name. -/
 abbrev SdoId := Nat
-/-- A right-hand side of GL: alphabetically assigned production ID (`Grammar.GL.ids`). -/
+/-- A right-hand side of GL (§5.1.6, sec-grammar-notation): alphabetically assigned production ID (`Grammar.GL.ids`). -/
 abbrev ProdId := Nat
-/-- A nonterminal of GL: `Grammar.NT`'s constructor index, sorted alphabetically. -/
+/-- A nonterminal of GL (§5.1, sec-syntactic-and-lexical-grammars): `Grammar.NT`'s constructor index, sorted alphabetically. -/
 abbrev NtId := Nat
-/-- A grammatical parameter of GL (`Yield`, `Await`, …): `Grammar.Param`'s constructor index, sorted
-alphabetically. -/
+/-- A grammatical parameter of GL (§5.1.6, sec-grammar-notation: `Yield`, `Await`, …): `Grammar.Param`'s constructor
+index, sorted alphabetically. -/
 abbrev ParamId := Nat
-/-- A declared primitive: notation-level operations (𝔽, ℝ, ℤ, abs, floor, …) and channel (b). -/
+/-- A declared primitive (§5.2, sec-algorithm-conventions; §4.2, sec-hosts-and-implementations): notation-level
+operations (𝔽, ℝ, ℤ, abs, floor, …) and host choices. -/
 abbrev PrimId := Nat
-/-- A sort name of the type-noun lexicon. -/
+/-- A sort name of the type-noun lexicon (§6, sec-ecmascript-data-types-and-values). -/
 abbrev SortId := Nat
-/-- A concrete-method name (§5.2.2): `_envRec_.HasBinding(…)`. -/
+/-- A concrete-method name (§5.2.2, sec-algorithm-conventions-abstract-operations): `_envRec_.HasBinding(…)`. -/
 abbrev MethodId := Nat
-/-- A clause of spec.html (its `id`), sorted alphabetically. -/
+/-- A clause of spec.html (§5.2, sec-algorithm-conventions: its `id`), sorted alphabetically. -/
 abbrev ClauseId := Nat
 
-/-- An `emu-table`, by its index in `Ecma.Gen.tables` flattened, sorted alphabetically. -/
+/-- An `emu-table` (§5.2, sec-algorithm-conventions), by its index in `Ecma.Gen.tables` flattened, sorted alphabetically. -/
 abbrev TableId := Nat
 
-/-- An algorithm: a clause and its position among the clause's algorithms. -/
+/-- An algorithm (§5.2, sec-algorithm-conventions): a clause and its position among the clause's algorithms. -/
 structure AlgId where
   clause : ClauseId
   idx : Nat
   deriving BEq, Inhabited
 
-/-- The 𝔽 or ℤ subscript of a literal. -/
+/-- The 𝔽 or ℤ subscript of a numeric literal (§5.2.6, sec-mathematical-operations). -/
 inductive Sub where
   | none
   | f
   | z
   deriving BEq, Inhabited
 
-/-- A numeral as written: `53`, `0x10FFFF` (digits kept for width and case), and `0.05`
-as `frac 0 5 2` (whole part, fraction digits as a number, their count). -/
+/-- A numeral as written (§5.2.6, sec-mathematical-operations): `53`, `0x10FFFF` (digits kept for width and case),
+and `0.05` as `frac 0 5 2` (whole part, fraction digits as a number, their count). -/
 inductive Numeral where
   | dec (n : Nat)
   | hex (n : Nat) (digits : String)
   | frac (whole : Nat) (fraction : Nat) (places : Nat)
   deriving BEq, Inhabited
 
+/-- The sign of a numeric literal (§5.2.6, sec-mathematical-operations). -/
 inductive Sign where
   | none
   | plus
   | minus
   deriving BEq, Inhabited
 
-/-- A magnitude: a numeral or ∞. -/
+/-- A magnitude (§5.2.6, sec-mathematical-operations): a numeral or ∞. -/
 inductive Mag where
   | num (n : Numeral)
   | inf
   deriving BEq, Inhabited
 
-/-- A value literal `*…*` (§5.2: ECMAScript language values and Number/BigInt values). -/
+/-- A value literal `*…*` (§5.2, sec-algorithm-conventions; §6.1, sec-ecmascript-language-types). -/
 inductive ValLit where
   | undefined
   | null
@@ -98,26 +102,28 @@ inductive ValLit where
   | bigN (n : Numeral)
   deriving BEq, Inhabited
 
+/-- Logical conjunction or disjunction in a step condition (§5.2, sec-algorithm-conventions). -/
 inductive Conj where
   | and
   | or
   deriving BEq, Inhabited
 
+/-- Unary operator in an algorithm expression (§5.2.6, sec-mathematical-operations). -/
 inductive UnOp where
   | neg
   /-- Boolean negation -/
   | not
   deriving BEq, Inhabited
 
-/-- A spec datum without a literal form: a sort, the alternative a template's choice takes, or the value
-of an omitted optional part. -/
+/-- A spec datum without a literal form (§5.2, sec-algorithm-conventions): a sort, the alternative a template's
+choice takes, or the value of an omitted optional part. -/
 inductive DataLit where
   | sort (s : SortId)
   | choice (i : Nat)
   | absent
   deriving BEq, Inhabited
 
-/-- §5.2.6's arithmetic; `pow` is `<sup>`. -/
+/-- §5.2.6 (sec-mathematical-operations) arithmetic operators; `pow` is `<sup>`. -/
 inductive BinOp where
   | add
   | sub
@@ -131,6 +137,7 @@ inductive BinOp where
   | times
   deriving BEq, Inhabited
 
+/-- Relational comparison operators (§5.2.6, sec-mathematical-operations). -/
 inductive RelOp where
   | lt
   | le
@@ -140,7 +147,7 @@ inductive RelOp where
   | ne
   deriving BEq, Inhabited
 
-/-- The functions of §21.3 the steps name ("the sine of x", `ln(x)`): `Model.fn`'s argument. -/
+/-- The functions of §21.3 (sec-math-object) the steps name ("the sine of x", `ln(x)`): `Model.fn`'s argument. -/
 inductive MathFn where
   | sin
   | cos
@@ -163,19 +170,20 @@ inductive MathFn where
   | cbrt
   deriving BEq, Inhabited
 
-/-- What a call names: an operation by the clause defining it (`idx` 0), or a primitive. -/
+/-- What a call names (§5.2.2, sec-algorithm-conventions-abstract-operations): an operation by the clause defining it
+(`idx` 0), or a primitive. -/
 inductive Callee where
   | alg (a : AlgId)
   | prim (p : PrimId)
   deriving BEq, Inhabited
 
-/-- A primitive's documentation: its signature and one-line meaning ("" for notation primitives). -/
+/-- A primitive's documentation (§5.2, sec-algorithm-conventions): its signature and one-line meaning ("" for notation primitives). -/
 structure PrimDoc where
   sig : String
   meaning : String
   deriving BEq, Inhabited
 
-/-- The kinds of Abstract Closure literal. -/
+/-- The kinds of Abstract Closure literal (§6.2.8, sec-abstract-closure). -/
 inductive CloKind where
   | abstract
   | job
@@ -184,11 +192,11 @@ inductive CloKind where
   | readModifyWrite
   deriving BEq, Inhabited
 
-/-- The error constructors of `Throw a *TypeError* exception`. -/
+/-- The error constructors of `Throw a *TypeError* exception` (§6.1.7.4, sec-well-known-intrinsic-objects). -/
 abbrev ErrorId := IntrinsicId
 
 mutual
-/-- Expressions. -/
+/-- Algorithm expressions (§5.2, sec-algorithm-conventions). -/
 inductive Expr where
   | var (x : Slot)
   | val (v : ValLit)
@@ -266,14 +274,14 @@ inductive Expr where
   /-- a condition's Boolean as a value -/
   | ofCond (c : Cond)
 
-/-- A predicate of a subject: `is v`, `is not either a String or a Symbol`, `is present`. -/
+/-- A predicate of a subject (§5.2, sec-algorithm-conventions): `is v`, `is not either a String or a Symbol`, `is present`. -/
 inductive Pred where
   | isVal (neg neither : Bool) (vs : List Expr)
   | isTy (neg neither : Bool) (ts : List TyExpr)
   /-- `f` on `args` and then the subject, a Boolean; negated when `neg` -/
   | call (f : Callee) (args : List Expr) (neg : Bool)
 
-/-- Conditions of If, Assert, Repeat while/until. -/
+/-- Conditions of If, Assert, Repeat while/until (§5.2, sec-algorithm-conventions). -/
 inductive Cond where
   /-- a subject and the predicates it shares: `e is finite and is not v` -/
   | preds (e : Expr) (p : Pred) (rest : List (Conj × Pred))
@@ -288,7 +296,8 @@ inductive Cond where
   /-- an unchecked condition by its key: an Assert passes over it, elsewhere a residue -/
   | pass (key : String)
 
-/-- Type expressions: header types and the type nouns of steps. -/
+/-- Type expressions (§5.2, sec-algorithm-conventions; §6, sec-ecmascript-data-types-and-values):
+header types and the type nouns of steps. -/
 inductive TyExpr where
   | sort (mods : List SortId) (s : SortId)
   | listOf (t : TyExpr)
@@ -310,19 +319,19 @@ inductive TyExpr where
   | pred (p : Pred)
 end
 
-/-- The place `Set` writes. -/
+/-- The place `Set` writes (§5.2, sec-algorithm-conventions). -/
 inductive Place where
   | var (x : Slot)
   | field (e : Expr) (f : FieldId)
   | expr (e : Expr)
 
 mutual
-/-- A step's body: an inline statement (`If c, return x.`) or nested steps. -/
+/-- A step's body (§5.2, sec-algorithm-conventions): an inline statement (`If c, return x.`) or nested steps. -/
 inductive Body where
   | inline (s : Stmt)
   | block (ns : List Stmt)
 
-/-- Statement forms (§5.2 and the spec's conventions). -/
+/-- Statement forms (§5.2, sec-algorithm-conventions). -/
 inductive Stmt where
   | let_ (x : Slot) (e : Expr)
   | set (p : Place) (e : Expr)
@@ -382,7 +391,7 @@ inductive Stmt where
   /-- a block of steps (for instance, a macro expansion) -/
   | block (ns : List Stmt)
 
-/-- An `Else if c, …` step (`c` present) or an `Else, …` step (`c` absent). -/
+/-- An `Else if c, …` step (`c` present) or an `Else, …` step (`c` absent) (§5.2, sec-algorithm-conventions). -/
 inductive Arm where
   | mk (c : Option Cond) (b : Body)
 end
@@ -395,8 +404,8 @@ instance : Inhabited Stmt := ⟨.ret none⟩
 instance : Inhabited Body := ⟨.block []⟩
 instance : Inhabited Arm := ⟨.mk none (.block [])⟩
 
-/-- An Abstract Closure literal: `a new Abstract Closure with parameters (…) that captures …
-and performs the following steps when called:`. Its slots are the algorithm's. -/
+/-- An Abstract Closure literal (§6.2.8, sec-abstract-closure): `a new Abstract Closure with parameters (…)
+that captures … and performs the following steps when called:`. Its slots are the algorithm's. -/
 structure CloLit where
   kind : CloKind
   /-- `atomically` -/
@@ -408,7 +417,7 @@ structure CloLit where
   /-- this, NewTarget, the passed arguments List: slots a built-in call binds -/
   frame : Option (Slot × Slot × Slot) := none
 
-/-- An algorithm's kind, from its clause's `type`. -/
+/-- An algorithm's kind (§5.2, sec-algorithm-conventions), from its clause's `type`. -/
 inductive AlgKind where
   | ao
   | sdo
@@ -421,7 +430,7 @@ inductive AlgKind where
   | untyped
   deriving BEq, Inhabited
 
-/-- A parameter: its variable, type (structured headers only), whether it is optional
+/-- A parameter (§5.2, sec-algorithm-conventions): its variable, type (structured headers only), whether it is optional
 (`optional _x_`, `[ , _x_ ]`) and whether it is a rest parameter (`..._args_`). -/
 structure Param where
   x : Slot
@@ -429,7 +438,7 @@ structure Param where
   optional : Bool
   rest : Bool
 
-/-- A parsed structured header (`<h1>` and `dl.header`). -/
+/-- A parsed structured header (§5.2, sec-algorithm-conventions: `<h1>` and `dl.header`). -/
 structure Header where
   kind : AlgKind
   params : List Param
@@ -437,7 +446,8 @@ structure Header where
   /-- the `for:` receiver and its type -/
   recv : Option (Slot × TyExpr)
 
-/-- One algorithm: a clause's definition with its header and variable table. -/
+/-- One algorithm (§5.2, sec-algorithm-conventions; §5.2.2, sec-algorithm-conventions-abstract-operations):
+a clause's definition with its header and variable table. -/
 structure Alg where
   id : AlgId
   name : String
@@ -472,21 +482,21 @@ structure SdoRow where
 /-- The rows with the annex rows first, so that a later main row on the same key replaces them. -/
 def SdoRow.mainLast (rs : List SdoRow) : List SdoRow := rs.filter (·.annex) ++ rs.filter (!·.annex)
 
-/-- An argument of a `SortTest`: the value itself (`subject`), or an enum constant. -/
+/-- An argument of a `SortTest` (§6, sec-ecmascript-data-types-and-values): the value itself (`subject`), or an enum constant. -/
 inductive SortArg where
   | subject
   | enum (e : EnumId)
   deriving BEq, Inhabited
 
-/-- A runtime membership test for a data sort: none, an algorithm, or a primitive on `SortArg`s. -/
+/-- A runtime membership test for a data sort (§6, sec-ecmascript-data-types-and-values): none, an algorithm, or a primitive on `SortArg`s. -/
 inductive SortTest where
   | none
   | alg (a : AlgId)
   | prim (p : PrimId) (args : List SortArg) (neg : Bool)
   deriving BEq, Inhabited
 
-/-- A data sort: its direct supertypes, and its test (the value is the subject); a Record
-sort's values are the Records of its kind and of its subsorts'. -/
+/-- A data sort (§6, sec-ecmascript-data-types-and-values): its direct supertypes, and its test (the value is the
+subject); a Record sort's values are the Records of its kind and of its subsorts'. -/
 structure SortDef where
   super : List SortId := []
   test : SortTest := .none
@@ -494,14 +504,15 @@ structure SortDef where
   record : Bool := false
   deriving BEq, Inhabited
 
-/-- A terminal of a grammar's right-hand side (§5.1.6): its source text, or a code point by its
+/-- A terminal of a grammar's right-hand side (§5.1.6, sec-grammar-notation): its source text, or a code point by its
 name in Tables 34 and 35 (`<USP>` the Space_Separator class). -/
 inductive GTerminal where
   | text (s : String)
   | cp (name : String)
   deriving BEq, Inhabited
 
-/-- The declaration tables: names by id, for printing and resolution. -/
+/-- The declaration tables (§5.1, sec-syntactic-and-lexical-grammars; §5.2, sec-algorithm-conventions):
+names by id, for printing and resolution. -/
 structure Decls where
   clauses : Array String
   /-- per clause, the operation it defines (its `aoid` or title), or "" -/

@@ -81,7 +81,7 @@ namespace Ecma {
   --- switches places them.
   def interleaved (s : State(M)) (ex : Val(M)) (mo : MemoryModel.Rel(M.Addr)) : Prop := forall a b pa pb, (.ref(a), pa) mem placedEvents(s, cutsOf(s.hostLog), ex) -> (.ref(b), pb) mem placedEvents(s, cutsOf(s.hostLog), ex) -> a <> b -> placeLe(pa, pb) = true -> mo(a, b)
 
-  --- The laws of shared memory and buffers.
+  --- The laws of shared memory and buffers (§6.2.9, sec-data-blocks; §29, sec-memory-model).
   laws Host.MemoryLaws (H : Host(M)) {
     --- sec-numerictorawbytes step 1:
     --- "An implementation must always choose the same encoding for each implementation distinguishable NaN value."

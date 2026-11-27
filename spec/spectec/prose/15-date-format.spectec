@@ -22,8 +22,8 @@ namespace Ecma {
   --- The days of month `mo` (1 to 12) of year `y`.
   def daysInMonth (y : Int) (mo : Nat) : Nat := [31, 28 + leapDays(y), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31].getD(mo - 1, 0)
 
-  --- A date-time form's time part (§21.4.1.32): `THH:mm`, then optionally `:ss` and then optionally
-  --- `.sss`, then the UTC offset representation: none, *"Z"* (`some none`), or a sign (`true` for
+  --- A date-time form's time part (§21.4.1.32, sec-date-time-string-format): `THH:mm`, then optionally `:ss` and then
+  --- optionally `.sss`, then the UTC offset representation: none, *"Z"* (`some none`), or a sign (`true` for
   --- *"-"*), `HH`, *":"* and `mm`.
   syntax DateTimePart record {
     h : Nat;
@@ -32,8 +32,8 @@ namespace Ecma {
     off : Option(Option(Bool times Nat times Nat));
   }
 
-  --- A String of the Date Time String Format's shape (§21.4.1.32): `YYYY`, or an expanded year's
-  --- sign (`true` for *"-"*) and six digits; optionally `-MM` and then optionally `-DD`; optionally a
+  --- A String of the Date Time String Format's shape (§21.4.1.32, sec-date-time-string-format): `YYYY`, or an
+  --- expanded year's sign (`true` for *"-"*) and six digits; optionally `-MM` and then optionally `-DD`; optionally a
   --- time part.
   syntax DateForm record {
     sign : Option(Bool);

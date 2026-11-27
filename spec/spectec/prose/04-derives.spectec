@@ -26,7 +26,7 @@ import Ecma.Grammar.Notation
 namespace Ecma.Grammar {
   ---!  ## Derivations 
 
-  --- A Parse Node: a nonterminal instance with its production id, its
+  --- A Parse Node in a derivation tree (§5.1.2, sec-parsing): a nonterminal instance with its production id, its
   --- parameters and its span of the input; a leaf (a terminal or a phrase) and its
   --- span; or input element `k` as an instance of another grammar's nonterminal,
   --- with that grammar's derivation `t` over the element's code points.
@@ -49,12 +49,14 @@ namespace Ecma.Grammar {
     | _ => false
   end
 
+  --- The nonterminal of a derivation tree node (§5.1.2, sec-parsing); none for a terminal leaf.
   def Tree.nt? : Tree -> Option(NT)
     | .node(n, ..) => some(n)
     | .leaf(..) => none
     | .lex(_, t) => t.nt?
   end
 
+  --- The input span `(i, j)` matched by a derivation tree node (§5.1.2, sec-parsing).
   def Tree.span : Tree -> Nat times Nat
     | .leaf(i, j) => (i, j)
     | .lex(k, _) => (k, k + 1)
@@ -64,7 +66,7 @@ namespace Ecma.Grammar {
   --- The elements `i` to `j` of the input.
   def slice {T : Type} (inp : List(T)) (i j : Nat) : List(T) := inp.drop(i).take(j - i)
 
-  --- A grammar's terminals.
+  --- A grammar's terminal interface (§5.1.6, sec-grammar-notation).
   syntax Alphabet (T : Type) record {
     --- terminal `x`, at item `k` of right-hand side `s`, matches these input elements
     term : Src -> Nat -> Terminal -> List(T) -> Prop;
@@ -122,14 +124,14 @@ namespace Ecma.Grammar {
     var (gl : GL) (cx : Ctx) (g : GrammarId)
 
     mutual {
-      --- One stratum: nonterminal `n` with parameters `ps` derives the input `i` to
+      --- One stratum (§5.1.6, sec-grammar-notation): nonterminal `n` with parameters `ps` derives the input `i` to
       --- `j` as node `t`, the exclusions read in `neg`.
       relation Step : NT -> List(Param) -> Nat -> Nat -> Tree -> Prop {
         rule node {n ps i j m kids id} (s : Src) : Step(n, ps, i, j, .node(n, id, ps, i, j, kids)) :- s mem gl.alts(cx, g, n), s.alt.guard.all(Guard.holds(ps)), gl.prodId(s, m) = some(id), Seq(s, ps, 0, s.alt.rhs, i, j, m, kids);
         rule lex {n ps i t} {e : T} : Step(n, ps, i, i + 1, .lex(i, t)) :- gl.alts(cx, g, n) = [], inp[i]? = some(e), A.leaf(n, e, t);
       }
 
-      --- Items `k` on of right-hand side `s` derive the input `i` to `j`, with the
+      --- Items `k` on of right-hand side `s` derive the input `i` to `j` (§5.1.6, sec-grammar-notation), with the
       --- optional symbols' presences `m` and the nodes `ts`.
       relation Seq : Src -> List(Param) -> Nat -> List(Item) -> Nat -> Nat -> List(Bool) -> List(Tree) -> Prop {
         rule nil {s ps k i} : Seq(s, ps, k, [], i, i, [], []);
@@ -160,8 +162,8 @@ namespace Ecma.Grammar {
 
   ---!  ## Code points: the lexical, RegExp and numeric string grammars 
 
-  --- The (b) primitives of the code point grammars: the descriptive phrases'
-  --- classes, `<USP>`, and the `[> but only if …]` conditions (each reads a static
+  --- The (b) primitives of the code point grammars (§5.1.6, sec-grammar-notation): the descriptive phrases'
+  --- classes, `<USP>` (§12.2, sec-white-space), and the `[> but only if …]` conditions (each reads a static
   --- semantics of the node before it, which the Ecma program supplies).
   syntax CodePrims record {
     phrase : Phrase -> Nat -> Prop;
@@ -169,6 +171,8 @@ namespace Ecma.Grammar {
     cond : Phrase -> List(Nat) -> Tree -> Prop;
   }
 
+  --- The terminal alphabet of the code-point grammars (§5.1.6, sec-grammar-notation;
+  --- §12, sec-ecmascript-language-lexical-grammar).
   def codeAlphabet (P : CodePrims) : Alphabet(Nat) {
     term _ _ x w := match x with
       | .text(s, _) => w = s.toList.map(Char.toNat)
@@ -188,8 +192,8 @@ namespace Ecma.Grammar {
 
   ---!  ## Source text, input elements and tokens (§5.1.3, §11, §12) 
 
-  --- An input element: its span of the source text, the lexical goal it was
-  --- read with, and its derivation.
+  --- An input element (§5.1.3, sec-lexical-and-regexp-grammars; §12, sec-ecmascript-language-lexical-grammar):
+  --- its span of the source text, the lexical goal it was read with, and its derivation.
   syntax Element record {
     i : Nat;
     j : Nat;
@@ -220,8 +224,8 @@ namespace Ecma.Grammar {
   --- after a |NumericLiteral| is not an |IdentifierStart| or a |DecimalDigit|.
   def Scans (src : List(Nat)) (els : List(Element)) : Prop := els.zipIdx.all(fun (e, k) => e.i == (if k == 0 then 0 else els[k - 1]?.map(fun _dot0 => _dot0.j).getD(0))) = true /\ els.getLast?.map(fun _dot0 => _dot0.j).getD(0) = src.length /\ forall e mem els, e.i < e.j /\ Derives(gl, cx, .lexical, codeAlphabet(P), src, e.goal, [], e.i, e.j, e.tree) /\ (forall h, e.j < h -> h <= src.length -> not exists t, Derives(gl, cx, .lexical, codeAlphabet(P), src, e.goal, [], e.i, h, t)) /\ (e.tree.has(.NumericLiteral, e.i, e.j) = true -> e.j < src.length -> (forall n mem [NT.IdentifierStart, NT.DecimalDigit], not exists t, Derives(gl, cx, .lexical, codeAlphabet(P), src, n, [], e.j, e.j + 1, t)))
 
-  --- Why §12.10 inserted a virtual semicolon: rule 1 (an offending token after
-  --- a line terminator, or `}`), rule 1's `)` of a do-while, rule 2, rule 3.
+  --- Why §12.10 (sec-automatic-semicolon-insertion) inserted a virtual semicolon: rule 1 (an offending token after
+  --- a line terminator, or `}`), rule 1's `)` of a do-while, rule 2, rule 3 (sec-rules-of-automatic-semicolon-insertion).
   syntax Why {
     | offending
     | paren
@@ -230,8 +234,8 @@ namespace Ecma.Grammar {
   }
   deriving [Repr, BEq, Inhabited]
 
-  --- A token of the syntactic grammar: its code points, whether a line
-  --- terminator precedes it, and, for a virtual semicolon, why it was inserted.
+  --- A token of the syntactic grammar (§5.1.5, sec-syntactic-grammar; §12.10, sec-automatic-semicolon-insertion):
+  --- its code points, whether a line terminator precedes it, and, for a virtual semicolon, why it was inserted.
   syntax Token record {
     text : List(Nat);
     lt : Bool;
@@ -335,8 +339,8 @@ namespace Ecma.Grammar {
   --- One maximal non-token input element from `i` to `j` (`first`: whether the goal is |Script| or |Module|).
   def TriviaElem (src : List(Nat)) (first : Bool) (i j : Nat) (e : Element) : Prop := i < j /\ j <= src.length /\ e.i = i /\ e.j = j /\ !e.isToken /\ let g := if first && i == 0 then .InputElementHashbangOrRegExp else .InputElementDiv in e.goal = g /\ Derives(gl, cx, .lexical, codeAlphabet(P), src, e.goal, [], i, j, e.tree) /\ forall h, j < h -> h <= src.length -> not exists t, Derives(gl, cx, .lexical, codeAlphabet(P), src, e.goal, [], i, h, t)
 
-  --- The trivia from `i` ends at `k` with line-terminator flag `lt`: maximal non-token elements until
-  --- none starts at `k`.
+  --- The trivia from `i` ends at `k` with line-terminator flag `lt` (§5.1.3, sec-lexical-and-regexp-grammars;
+  --- §12.2, sec-white-space; §12.4, sec-comments): maximal non-token elements until none starts at `k`.
   relation Trivia (src : List(Nat)) (first : Bool) : Nat -> Nat -> Bool -> Prop {
     rule stop {i} : Trivia(src, first, i, i, false) :- not exists j e, TriviaElem(gl, cx, P, src, first, i, j, e);
     rule step {i m k lt} (e : Element) : Trivia(src, first, i, k, e.breaks(src) || lt) :- TriviaElem(gl, cx, P, src, first, i, m, e), Trivia(src, first, m, k, lt);
@@ -419,12 +423,14 @@ namespace Ecma.Grammar {
     var (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool))
 
     mutual {
-      --- Syntactic nonterminal `n` with `ps` derives boundaries `i` to `j` under virtual semicolons `vs`.
+      --- Syntactic nonterminal `n` with `ps` derives boundaries `i` to `j` under virtual semicolons `vs`
+      --- (§5.1.5, sec-syntactic-grammar; §12.10, sec-automatic-semicolon-insertion).
       relation SynDerives : NT -> List(Param) -> Nat -> Nat -> Prop {
         rule node {n ps i j} (s : Src) : SynDerives(n, ps, i, j) :- s mem gl.alts(cx, .syntactic, n), s.alt.guard.all(Guard.holds(ps)) = true, SynSeq(s, ps, 0, s.alt.rhs, i, j);
       }
 
-      --- Right-hand side items from index `k` of `s` derive boundaries `i` to `j` under `vs`.
+      --- Right-hand side items from index `k` of `s` derive boundaries `i` to `j` under `vs`
+      --- (§5.1.5, sec-syntactic-grammar; §12.10, sec-automatic-semicolon-insertion).
       relation SynSeq : Src -> List(Param) -> Nat -> List(Item) -> Nat -> Nat -> Prop {
         rule nil {s ps k i} : SynSeq(s, ps, k, [], i, i);
         rule absent {s ps k x is i j} : SynSeq(s, ps, k, .sym(x, true) :: is, i, j) :- SynSeq(s, ps, k + 1, is, i, j);
@@ -444,14 +450,16 @@ namespace Ecma.Grammar {
     var (goal : NT) (goalPs : List(Param))
 
     mutual {
-      --- Nonterminal `n` with `ps` is opened at boundary `i` when parsing left to right from `(goal, goalPs, 0)`.
+      --- Nonterminal `n` with `ps` is opened at boundary `i` when parsing left to right from `(goal, goalPs, 0)`
+      --- (§12.10, sec-automatic-semicolon-insertion).
       relation SynOpen : NT -> List(Param) -> Nat -> Prop {
         rule root : SynOpen(goal, goalPs, 0);
         rule nt {s ps k n args o is i} : SynOpen(n, applyArgs(ps, args), i) :- SynPrefix(s, ps, k, .sym(.nt(n, args), o) :: is, i), gl.alts(cx, .syntactic, n) <> [];
         rule butNotN {s ps k n args ex is i} : SynOpen(n, applyArgs(ps, args), i) :- SynPrefix(s, ps, k, .butNot(.nt(n, args), ex) :: is, i), gl.alts(cx, .syntactic, n) <> [];
       }
 
-      --- Item `k` on of `s` is reached at boundary `i` when parsing left to right from `(goal, goalPs, 0)`.
+      --- Item `k` on of `s` is reached at boundary `i` when parsing left to right from `(goal, goalPs, 0)`
+      --- (§12.10, sec-automatic-semicolon-insertion).
       relation SynPrefix : Src -> List(Param) -> Nat -> List(Item) -> Nat -> Prop {
         rule enter {n ps i} (s : Src) : SynPrefix(s, ps, 0, s.alt.rhs, i) :- SynOpen(n, ps, i), s mem gl.alts(cx, .syntactic, n), s.alt.guard.all(Guard.holds(ps)) = true;
         rule absent {s ps k x is i} : SynPrefix(s, ps, k + 1, is, i) :- SynPrefix(s, ps, k, .sym(x, true) :: is, i);
@@ -468,7 +476,8 @@ namespace Ecma.Grammar {
       }
     }
 
-    --- Boundary `h` is reached by a match when parsing left to right from `(goal, goalPs, 0)`.
+    --- Boundary `h` is reached by a match when parsing left to right from `(goal, goalPs, 0)`
+    --- (§12.10, sec-automatic-semicolon-insertion).
     relation SynHit : Nat -> Prop {
       rule zero : SynHit(0);
       rule term {s ps k x o is i h} : SynHit(h) :- SynPrefix(gl, cx, P, src, first, vs, goal, goalPs, s, ps, k, .sym(.t(x), o) :: is, i), SynTerm(gl, cx, P, src, first, vs, s, k, x, i, h);
@@ -488,7 +497,7 @@ namespace Ecma.Grammar {
   --- terminator, `}`, or `)` (for do-while).
   def NextASI (src : List(Nat)) (first : Bool) (vs : List(Nat times Bool)) (goal : NT) (ps : List(Param)) (p : Nat) (paren : Bool) : Prop := not SynDone(gl, cx, P, src, first, vs, goal, ps) /\ exists f, SynHit(gl, cx, P, src, first, vs, goal, ps, f) /\ (forall h, SynHit(gl, cx, P, src, first, vs, goal, ps, h) -> h <= f) /\ f % 2 = 0 /\ p = f / 2 /\ vs.all(fun (q, _) => q != p) = true /\ ((exists k lt, Trivia(gl, cx, P, src, first, p, k, lt) /\ src.length <= k /\ paren = false) \/ exists a b lt tr, ScanTok(gl, cx, P, src, first, .InputElementDiv, p, a, b, lt, tr) /\ if lt || slice(src, a, b) == "}".toList.map(Char.toNat) then paren = false else 0 < p /\ src[p - 1]? = some(0x29) /\ paren = true)
 
-  --- The virtual semicolons §12.10 inserts left to right from empty.
+  --- The virtual semicolons §12.10 (sec-automatic-semicolon-insertion) inserts left to right from empty.
   relation ValidASI (src : List(Nat)) (first : Bool) (goal : NT) (ps : List(Param)) : List(Nat times Bool) -> Prop {
     rule nil : ValidASI(src, first, goal, ps, []);
     rule step {vs p paren} : ValidASI(src, first, goal, ps, vs ++ [(p, paren)]) :- ValidASI(src, first, goal, ps, vs), NextASI(gl, cx, P, src, first, vs, goal, ps, p, paren);

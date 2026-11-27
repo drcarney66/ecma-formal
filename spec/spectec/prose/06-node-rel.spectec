@@ -13,8 +13,9 @@ import Ecma.Grammar.StrictCode
 
 namespace Ecma {
   --- The model's Parse Node `n` is the derivation tree `t` of parser invocation `st` over the code
-  --- points `text`; `span i j` is the span of `text` that input elements `i` to `j` occupy (§5.2.2: from
-  --- the first's start to the last's end, the white space and comments between them included).
+  --- points `text` (§5.1.2, sec-parsing); `span i j` is the span of `text` that input elements `i` to `j` occupy
+  --- (§5.2.3, sec-algorithm-conventions-syntax-directed-operations: from the first's start to the last's end, the
+  --- white space and comments between them included).
   relation Model.NodeRel (M : Model) (st : Nat) (text : List(Nat)) : (Nat -> Nat -> Nat times Nat) -> M.Node -> Grammar.Tree -> Prop {
     rule node {span : Nat -> Nat -> Nat times Nat} {n : M.Node} {nt : Grammar.NT} {id : Nat} {ps : List(Grammar.Param)} {i j : Nat} {kids : List(Grammar.Tree)} : Model.NodeRel(M, st, text, span, n, .node(nt, id, ps, i, j, kids)) :- M.nodeNt(n) = nt.ctorIdx, M.nodeProd(n) = id, forall p, p mem M.nodeArgs(n) <=> p mem ps, M.nodeStamp(n) = st, M.nodeSpan(n) = span(i, j), M.seqLen(M.nodeSource(n)) = M.ofNat(Grammar.slice(text, span(i, j).1, span(i, j).2).length), forall (k : Nat), M.seqGet(M.nodeSource(n), M.ofNat(k)) = Grammar.slice(text, span(i, j).1, span(i, j).2)[k]?.map(M.ofNat), M.seqLen(M.nodeKids(n)) = M.ofNat(kids.filter(fun _dot0 => !_dot0.isLeaf).length), forall k, M.seqGet(M.nodeKids(n), M.ofNat(k)).isSome = (k < kids.filter(fun _dot0 => !_dot0.isLeaf).length), forall k t c, kids.filter(fun _dot0 => !_dot0.isLeaf)[k]? = some(t) -> M.seqGet(M.nodeKids(n), M.ofNat(k)) = some(c) -> Model.NodeRel(M, st, text, span, c, t);
     --- a terminal (§5.1.2: its Parse Node has no children)
@@ -31,9 +32,9 @@ namespace Ecma {
   --- The code points of `src` that tokens `i` to `j` of `toks` span.
   def Grammar.tokenText (src : List(Nat)) (els : List(Grammar.Element)) (toks : List(Grammar.Token)) (i j : Nat) : List(Nat) := Grammar.slice(src, Grammar.tokenSpan(els, toks, i, j).1, Grammar.tokenSpan(els, toks, i, j).2)
 
-  --- What a model's parse is stated against: the grammar data, the context, the code
-  --- point grammars' primitives, and whether its source text is strict mode code from outside (§11.2.2: eval
-  --- code of a direct eval contained in strict mode code).
+  --- What a model's parse is stated against (§5.1, sec-syntactic-and-lexical-grammars): the grammar data, the
+  --- context, the code point grammars' primitives, and whether its source text is strict mode code from outside
+  --- (§11.2.2, sec-strict-mode-code: eval code of a direct eval contained in strict mode code).
   syntax GrammarCtx record {
     gl : Grammar.GL;
     cx : Grammar.Ctx;
@@ -94,9 +95,9 @@ namespace Ecma {
   --- The code points of a List as the model's sequence.
   def Model.seqOfNats (M : Model) (src : List(Nat)) : M.Seq(M.Math) := src.foldl(fun s c => M.seqPush(s, M.ofNat(c)), M.seqNil)
 
-  --- `Model.parse`'s laws, stated and never assumed, per invocation context: a Parse Node it gives is a
-  --- parse under the grammar in that context, its nodes carrying the invocation's stamp, and where it gives none
-  --- no tree is a parse (`GrammarCtx.Parses`).
+  --- `Model.parse`'s laws (§5.1.2, sec-parsing; §11.1.6, sec-parsetext), stated and never assumed, per invocation
+  --- context: a Parse Node it gives is a parse under the grammar in that context, its nodes carrying the
+  --- invocation's stamp, and where it gives none no tree is a parse (`GrammarCtx.Parses`).
   laws Model.ParseLaws (M : Model) (G : GrammarCtx) {
     --- sec-parsetext:
     --- "If the parse succeeded and no early errors were found, return the Parse Node (an instance of goalSymbol) at the root of the parse tree resulting from the parse."
@@ -111,18 +112,18 @@ namespace Ecma {
     law complete : forall pc st src (goal : Grammar.NT) args ps, ParamsOf(args, ps) -> M.parse(pc, st, M.seqOfNats(src), goal.ctorIdx, args) = some(none) -> (forall t, not G.at(pc).Parses(goal, ps, src, t));
   }
 
-  --- The Parse Nodes of parser invocations in context `pc`: a parse's result,
-  --- the covered node the model gives from such a node (`Model.cover`), and their descendants.
+  --- The Parse Nodes of parser invocations in context `pc` (§5.1.2, sec-parsing; §5.1.5, sec-syntactic-grammar):
+  --- a parse's result, the covered node the model gives from such a node (`Model.cover`), and their descendants.
   relation Model.Parsed (M : Model) (pc : ParseCx) : M.Node -> Prop {
     rule parse {st : Nat} {src : M.Seq(M.Math)} {goal : NtId} {args : List(ParamId times Bool)} {n : M.Node} : Model.Parsed(M, pc, n) :- M.parse(pc, st, src, goal, args) = some(some(n));
     rule cover {st : Nat} {n : M.Node} {k : NtId} {args : List(ParamId times Bool)} {r : M.Node} : Model.Parsed(M, pc, r) :- Model.Parsed(M, pc, n), M.cover(pc, st, n, k, args) = some(r);
     rule desc {n d : M.Node} : Model.Parsed(M, pc, d) :- Model.Parsed(M, pc, n), d mem seqList(M.nodeDescendants(n));
   }
 
-  --- `Model.cover`'s law (§5.1.5 "P must cover K"), stated and never assumed, per invocation context:
-  --- the node it gives from a Parse Node `n` of parser invocations in that context, with a goal and arguments,
-  --- is a parse of `n`'s source text with that goal under the grammar in that context, its nodes carrying the new
-  --- invocation's stamp: what `ParseLaws.sound` says of `Model.parse`'s node for that text.
+  --- `Model.cover`'s law (§5.1.5, sec-syntactic-grammar: "P must cover K"), stated and never assumed, per invocation
+  --- context: the node it gives from a Parse Node `n` of parser invocations in that context, with a goal and
+  --- arguments, is a parse of `n`'s source text with that goal under the grammar in that context, its nodes carrying
+  --- the new invocation's stamp: what `ParseLaws.sound` says of `Model.parse`'s node for that text.
   --- Nothing is said of a node no parser invocation made, nor of one made in another context.
   laws Model.CoverLaws (M : Model) (G : GrammarCtx) {
     --- sec-syntactic-grammar:
@@ -159,7 +160,7 @@ namespace Ecma {
     end
   }
 
-  --- The laws of `nodeChild` and `nodeDescendants` (§5.1.2), over the grammar `G`: a written
+  --- The laws of `nodeChild` and `nodeDescendants` (§5.1.2, sec-parsing), over the grammar `G`: a written
   --- occurrence's child is the next child with its nonterminal; in a parse and in a covered node the model
   --- gives, the absent ones are the production's absent optional symbols; the descendants are the children's
   --- pre-order flattening.

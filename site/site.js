@@ -60,6 +60,7 @@
 
     // Folding: one control to open or close every fold of the page.
     var folds = Array.prototype.slice.call(document.querySelectorAll("details.lean-fold"));
+    var auxFolds = Array.prototype.slice.call(document.querySelectorAll("details.aux-fold"));
     var title = document.querySelector("main > header.title");
     if (folds.length > 3 && title) {
       var p = document.createElement("p");
@@ -82,19 +83,28 @@
       title.appendChild(p);
     }
 
-    // A link into a folded part opens it.
-    var reveal = function () {
-      var id = decodeURIComponent(location.hash.slice(1));
+    // A link into a folded part opens every ancestor <details> (including folded auxiliary definitions).
+    var revealId = function (id) {
       var el = id && document.getElementById(id);
       for (var e = el; e; e = e.parentElement) if (e.tagName === "DETAILS") e.open = true;
+      return el;
+    };
+    var reveal = function () {
+      revealId(decodeURIComponent(location.hash.slice(1)));
     };
     window.addEventListener("hashchange", reveal);
     reveal();
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+      if (!a) return;
+      var id = decodeURIComponent(a.getAttribute("href").slice(1));
+      if (id) revealId(id);
+    });
 
     // Printing shows every fold.
     var closed = [];
     window.addEventListener("beforeprint", function () {
-      closed = folds.filter(function (d) { return !d.open; });
+      closed = folds.concat(auxFolds).filter(function (d) { return !d.open; });
       closed.forEach(function (d) { d.open = true; });
     });
     window.addEventListener("afterprint", function () { closed.forEach(function (d) { d.open = false; }); });

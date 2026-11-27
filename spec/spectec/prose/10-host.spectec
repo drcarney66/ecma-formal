@@ -4,15 +4,15 @@ import Ecma.Ops.Args
 ---! # The host
 ---!
 ---! What the specification leaves to the host (`Host`): the host-defined and implementation-defined operations, by
----! clause, and its choices at the points the specification names, by primitive. Every call of the host is logged
----! (`Run.hostStep`): the host reads the state and the log, and only the machine appends to the log. The laws a host
----! must meet are `Ecma.Host.Laws`.
+---! clause, and its choices at the points the specification names, by primitive. Every call of the host is logged in
+---! `State.hostLog`: the host reads the state and the log, and only the machine appends to the log. The laws a host
+---! must meet are `Host.WF`.
 
 namespace Ecma {
   var {M : Model}
 
-  --- The host: the operations the specification leaves to it (host-defined and
-  --- implementation-defined operations, by clause), and its choices at the points the
+  --- The host (§2, sec-conformance; §4.2, sec-hosts-and-implementations): the operations the specification leaves to
+  --- it (host-defined and implementation-defined operations, by clause), and its choices at the points the
   --- specification names (implementation-approximated values, implementation-defined choices,
   --- whether it is a web browser), by primitive, and its choice of integers.
   syntax Host (M : Model) record {

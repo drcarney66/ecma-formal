@@ -108,6 +108,7 @@ class ModDoc:
 class Module:
     path: Path
     items: list  # ModDoc | Decl
+    opens: list[list[str]] = field(default_factory=list)
 
 
 def anchor_of(full: str) -> str:
@@ -159,6 +160,7 @@ def parse_file(path: Path) -> Module:
         return lo + 1
 
     items: list = []
+    opens: list[list[str]] = []
     stack: list[tuple[str, list[str]]] = []
     i, doc, doc_line, prefix = 0, None, 0, ""
     n = len(src)
@@ -215,15 +217,27 @@ def parse_file(path: Path) -> Module:
         if first.startswith("section"):
             stack.append(("sec", first.split()[1:]))
             continue
+        if first == "mutual" or first.startswith("mutual "):
+            stack.append(("mut", []))
+            continue
         if first.startswith("end"):
             if not stack:
                 raise RenderError(f"{path}:{start}: `end` with nothing open")
             stack.pop()
             continue
-        if first.startswith(("variable", "open ")):
+        if first.startswith("open "):
+            for op in first[5:].split():
+                if op != "in":
+                    p = op.split(".")
+                    opens.append(p if p[0] == "Ecma" else cur_ns() + p)
             continue
-        m = re.match(r"(?:(?:private|protected|noncomputable|partial|unsafe)\s+)*(" + "|".join(DECL_KEYWORDS)
-                     + r")\s+([^\s({\[:]+)", first)
+        if first.startswith("variable"):
+            continue
+        if re.match(r"(?:@\[[^\]]*\]\s*)*(?:(?:private|protected|noncomputable)\s+)*instance\s*(?:[\[\(\{].*)?:", first):
+            doc, prefix = None, ""
+            continue
+        m = re.match(r"(?:@\[[^\]]*\]\s*)*(?:(?:private|protected|noncomputable|partial|unsafe)\s+)*("
+                     + "|".join(DECL_KEYWORDS) + r")\s+([^\s({\[:]+)", first)
         if not m:
             raise RenderError(f"{path}:{start}: a command the renderer does not know: {first[:80]!r}")
         kind, name = m.group(1), m.group(2)
@@ -237,7 +251,7 @@ def parse_file(path: Path) -> Module:
         doc, prefix = None, ""
     if doc is not None:
         raise RenderError(f"{path}:{doc_line}: a docstring with no declaration")
-    return Module(path, items)
+    return Module(path, items, opens)
 
 
 def _members(d: Decl, cmd: str, start: int) -> None:
@@ -249,7 +263,6 @@ def _members(d: Decl, cmd: str, start: int) -> None:
     head_end = h if h < len(lines) else len(lines) - 1
     head = "\n".join(lines[: head_end + 1])
     d.head = (d.code[: len(d.code) - len(cmd)]) + head
-    d.is_prop = bool(re.search(r":\s*Prop\b", head))
     em = re.search(r"\bextends\b(.*?)(?:\bwhere\b|$)", head, re.DOTALL)
     if em:
         d.extends = [x.strip() for x in em.group(1).split(",") if x.strip()]
@@ -387,6 +400,7 @@ def _spectec_members(d: Decl, dedented_cmd: str, start: int) -> None:
 def parse_spectec_file(path: Path) -> Module:
     lines = path.read_text().split("\n")
     items: list = []
+    opens: list[list[str]] = []
     stack: list[tuple[str, int, list[str]]] = []  # (kind, indent, ns_parts)
     doc: str | None = None
     doc_line = 0
@@ -464,7 +478,13 @@ def parse_spectec_file(path: Path) -> Module:
             stack.append(("mut", ind, []))
             k += 1
             continue
-        if s.startswith(("open ", "var ")):
+        if s.startswith("open "):
+            for op in s[5:].split():
+                p = op.split(".")
+                opens.append(p if p[0] == "Ecma" else cur_ns() + p)
+            k += 1
+            continue
+        if s.startswith("var "):
             k += 1
             continue
         m_decl = re.match(r"(inline def|def|syntax|relation|laws)\s+([^\s({\[:=]+)", s)
@@ -502,11 +522,109 @@ def parse_spectec_file(path: Path) -> Module:
         raise RenderError(f"{path}:{n}: unclosed `{stack[-1][0]}` block")
     if doc is not None:
         raise RenderError(f"{path}:{doc_line}: a docstring with no declaration")
-    return Module(path, items)
+    return Module(path, items, opens)
 
 
 # ---------------------------------------------------------------------------------------------------------------
 # The index of names, for links
+
+
+# Conventional parameter names in SpecTec/Lean declarations, for resolving `M.numView`, `H.asks`, etc.
+VAR_TYPES = {
+    "M": "Ecma.Model",
+    "H": "Ecma.Host",
+    "G": "Ecma.GrammarCtx",
+    "V": "Ecma.Grammar.NodeView",
+    "P": "Ecma.Grammar.CodePrims",
+    "A": "Ecma.Grammar.Alphabet",
+    "N": "Ecma.MemoryModel.View.Names",
+    "L": "Ecma.Grammar.GL",
+    "S": "Ecma.Grammar.AnnexB.Set",
+    "I": "Ecma.Implementation",
+    "X": "Ecma.Machine.Ctx",
+    "D": "Ecma.LeafCtx",
+}
+PRIMARY_KINDS = ("syntax", "syntax record", "relation", "laws", "structure", "inductive", "class")
+MACHINE_EXTERNALS = {
+    "Frame": "Machine call frame (lean/Ecma/Machine/Frame.lean)",
+    "Machine.Frame": "Machine call frame (lean/Ecma/Machine/Frame.lean)",
+    "Ctl": "Machine control state (lean/Ecma/Machine/Config.lean)",
+    "Prog'": "Linearized SpecTec program table (lean/Ecma/Lower/Lin.lean)",
+    "Prog'.of": "Linearize expanded SpecTec program (lean/Ecma/Lower/Lin.lean)",
+    "Spec.src.expanded": "Macro-expanded SpecTec program (lean/Ecma/Lower/Expand.lean)",
+    "step": "Single transition of the specification machine (lean/Ecma/Machine/Step.lean)",
+}
+
+
+class KnownCatalog:
+    """Symbolic `Known.*` and `Gen.*` identifiers mapped to their ECMA-262 names and reading-page anchors."""
+
+    def __init__(self) -> None:
+        self.known: dict[str, int] = {}
+        self.arrays: dict[str, list[str]] = {}
+        known_path = ROOT / "lean/Ecma/Gen/Known.lean"
+        decls_path = ROOT / "lean/Ecma/Gen/Decls.lean"
+        if known_path.is_file():
+            for m in re.finditer(r"(?m)^(?:\@\[[^\]]*\]\s*)?def\s+(\w+)\s*:\s*Nat\s*:=\s*(\d+)", known_path.read_text()):
+                self.known[m.group(1)] = int(m.group(2))
+        if decls_path.is_file():
+            dsrc = decls_path.read_text()
+            for arr in ("clauses", "fields", "enums", "prims", "sorts", "nts", "prods", "sdos"):
+                m = re.search(rf"(?m)^def {arr} : Array String := #\[(.*?)\]$", dsrc)
+                if m:
+                    self.arrays[arr] = [bytes(s, "utf-8").decode("unicode_escape")
+                                        for s in re.findall(r'"((?:\\.|[^"\\])*)"', m.group(1))]
+
+    def lookup(self, tok: str, spec: SpecText, index: "Index", here: str) -> tuple[str | None, str | None]:
+        if tok in MACHINE_EXTERNALS:
+            p = "" if here == "how-it-works.html" else "how-it-works.html"
+            return f"{p}#downstream", MACHINE_EXTERNALS[tok]
+        if tok.startswith("Gen."):
+            parts = tok.split(".")
+            if len(parts) >= 2 and parts[1] in ("clauses", "fields", "enums", "sorts", "sortDefs"):
+                return index.href(f"Decls.{parts[1]}", ["Ecma"], here), f"Declaration table Decls.{parts[1]}"
+        if not tok.startswith("Known."):
+            return None, None
+        kname = tok.split(".", 1)[1]
+        if kname == "algNewError":
+            return index.href("AlgId", ["Ecma"], here), "AlgId: NewError"
+        idx = self.known.get(kname)
+        if idx is None:
+            return None, None
+
+        def at(arr: str) -> str | None:
+            xs = self.arrays.get(arr, [])
+            return xs[idx] if 0 <= idx < len(xs) else None
+
+        if kname.startswith("c"):
+            cid = at("clauses")
+            if cid and spec.exists(cid):
+                num = spec.nums.get(cid, "")
+                return CLAUSE_URL.format(cid), f"ClauseId: {('§' + num + ' ') if num else ''}{spec.short_title(cid)} ({cid})"
+            return index.href("ClauseId", ["Ecma"], here), f"ClauseId: {cid or kname}"
+        if kname.startswith("f"):
+            nm = at("fields") or kname[1:]
+            return index.href("FieldId", ["Ecma"], here), f"FieldId: [[{nm}]]"
+        if kname.startswith("e"):
+            nm = at("enums") or kname[1:].lower()
+            return index.href("EnumId", ["Ecma"], here), f"EnumId: ~{nm}~"
+        if kname.startswith("s") and not kname.startswith("sdo"):
+            nm = at("sorts") or kname[1:]
+            return index.href("SortId", ["Ecma"], here), f"SortId: {nm}"
+        if kname.startswith("p") and not kname.startswith("prod"):
+            nm = at("prims") or kname[1:]
+            return index.href("PrimId", ["Ecma"], here), f"PrimId: {nm}"
+        if kname.startswith("nt"):
+            nm = at("nts") or kname[2:]
+            href = index.href(f"Grammar.NT.{nm}", ["Ecma"], here) or index.href("NtId", ["Ecma"], here)
+            return href, f"NtId: |{nm}|"
+        if kname.startswith("prod"):
+            nm = at("prods") or kname[4:]
+            return index.href("ProdId", ["Ecma"], here), f"ProdId: {nm}"
+        if kname.startswith("sdo"):
+            nm = at("sdos") or kname[3:]
+            return index.href("SdoId", ["Ecma"], here), f"SdoId: {nm}"
+        return None, None
 
 
 class Index:
@@ -515,17 +633,31 @@ class Index:
     def __init__(self) -> None:
         self.names: dict[str, tuple[str, str]] = {}
         self.decls: dict[str, Decl] = {}
+        self.by_method: dict[str, list[str]] = {}
+        self.by_field: dict[str, list[str]] = {}
+        self.mod_opens: dict[Path, list[list[str]]] = {}
+        self.known = KnownCatalog()
 
-    def add_module(self, mod: Module, page: str) -> None:
-        for it in mod.items:
-            if isinstance(it, Decl):
-                self.names[it.full] = (page, it.anchor)
-                self.decls[it.full] = it
-                for m in it.members:
-                    self.names[f"{it.full}.{m.name}"] = (page, m.anchor)
+    def add_module(self, mod: Module, page: str, only: set[str] | None = None) -> None:
+        self.mod_opens[mod.path] = mod.opens
+        kept = [it for it in mod.items if isinstance(it, Decl) and (only is None or it.full in only)]
+        for it in kept:
+            self.names[it.full] = (page, it.anchor)
+            self.decls[it.full] = it
+            for m in it.members:
+                mfull = f"{it.full}.{m.name}"
+                self.names[mfull] = (page, m.anchor)
+                if it.kind in ("syntax record", "structure", "class"):
+                    self.by_field.setdefault(m.name, []).append(mfull)
+        # Index `Type.method` declarations (whose parent prefix is a declared type) for receiver-dot lookup.
+        for it in kept:
+            if "." in it.full:
+                owner, meth = it.full.rsplit(".", 1)
+                if owner in self.decls and it.full not in self.by_method.get(meth, []):
+                    self.by_method.setdefault(meth, []).append(it.full)
         # A structure's parents' fields are its fields too (`Host.WF.elapsedMono`).
-        for it in mod.items:
-            if isinstance(it, Decl) and it.extends:
+        for it in kept:
+            if it.extends:
                 for p in it.extends:
                     pname = re.sub(r"^H\.", "Host.", p.split()[0])
                     pd = self.resolve_decl(pname, it.ns)
@@ -533,24 +665,50 @@ class Index:
                         for m in pd.members:
                             self.names.setdefault(f"{it.full}.{m.name}", (page, m.anchor))
 
-    def resolve_decl(self, name: str, ns: list[str]) -> Decl | None:
-        full = self.resolve(name, ns)
+    def resolve_decl(self, name: str, ns: list[str], opens: list[list[str]] | None = None) -> Decl | None:
+        full = self.resolve(name, ns, opens)
         return self.decls.get(full) if full else None
 
-    def resolve(self, name: str, ns: list[str]) -> str | None:
+    def resolve(self, name: str, ns: list[str], opens: list[list[str]] | None = None,
+                use_fields: bool = True) -> str | None:
         name = name.strip()
         for k in range(len(ns), -1, -1):
             cand = ".".join(ns[:k] + [name])
             if cand in self.names:
                 return cand
-        for root in ("Ecma", "Ecma.Machine"):
-            cand = f"{root}.{name}"
+        for op in (opens or []):
+            cand = ".".join(op + [name])
             if cand in self.names:
                 return cand
+        cand = f"Ecma.{name}"
+        if cand in self.names:
+            return cand
+        if "." in name:
+            recv, meth = name.rsplit(".", 1)
+            if recv in VAR_TYPES:
+                cand = f"{VAR_TYPES[recv]}.{meth}"
+                if cand in self.names:
+                    return cand
+            if recv == "x" and f"Ecma.MemoryModel.Exec.{meth}" in self.names and "MemoryModel" in ns:
+                return f"Ecma.MemoryModel.Exec.{meth}"
+            # Receiver-dot call or field (`e.tree.has`, `s.heap`, `G.gl.rulesOf`): match `Type.meth` when unambiguous.
+            if not self.resolve(recv, ns, opens, use_fields=use_fields):
+                tables = (self.by_method, self.by_field) if use_fields else (self.by_method,)
+                for table in tables:
+                    cands = table.get(meth, [])
+                    if len(cands) == 1:
+                        return cands[0]
+                    ns_prefix = ".".join(ns) + "."
+                    local = [c for c in cands if c.startswith(ns_prefix)]
+                    if len(local) == 1:
+                        return local[0]
+                    by_recv = [c for c in (local or cands) if c.rsplit(".", 2)[-2].lower() == recv.split(".")[-1].lower()]
+                    if len(by_recv) == 1:
+                        return by_recv[0]
         return None
 
-    def href(self, name: str, ns: list[str], here: str) -> str | None:
-        full = self.resolve(name, ns)
+    def href(self, name: str, ns: list[str], here: str, opens: list[list[str]] | None = None) -> str | None:
+        full = self.resolve(name, ns, opens)
         if not full:
             return None
         page, anchor = self.names[full]
@@ -633,19 +791,26 @@ class Prose:
     def __init__(self, spec: SpecText, index: Index, page: str) -> None:
         self.spec, self.index, self.page = spec, index, page
         self.where = page
+        self.opens: list[list[str]] = []
         self.unlinked: list[str] = []
 
     def code_span(self, text: str, ns: list[str]) -> str:
         t = text.strip()
         name = t.split()[0] if t else t
         href = None
-        if re.fullmatch(r"[A-Za-z_][\w'.]*", t):
-            href = self.index.href(t, ns, self.page)
-        elif t and re.fullmatch(r"[A-Za-z_][\w'.]*", name):
+        title = None
+        if re.fullmatch(r"[A-Za-z_][\w'.?]*", t):
+            href = self.index.href(t, ns, self.page, self.opens)
+            if not href:
+                href, title = self.index.known.lookup(t, self.spec, self.index, self.page)
+        elif t and re.fullmatch(r"[A-Za-z_][\w'.?]*", name):
             # `Model.NodeRel M src n t`: the head of an application links.
-            href = self.index.href(name, ns, self.page)
+            href = self.index.href(name, ns, self.page, self.opens)
+            if not href:
+                href, title = self.index.known.lookup(name, self.spec, self.index, self.page)
         inner = f"<code>{esc(text)}</code>"
-        return f'<a class="name" href="{esc(href)}">{inner}</a>' if href else inner
+        tattr = f' title="{esc(title)}"' if title else ""
+        return f'<a class="name" href="{esc(href)}"{tattr}>{inner}</a>' if href else inner
 
     def clause_link(self, cid: str, label: str | None = None) -> str:
         self.spec.need(cid, self.where)
@@ -787,9 +952,30 @@ def highlight(code: str, prose: Prose | None, ns: list[str], own: str | None = N
             cls = "k"
         elif own and tok == own:
             cls = "d"
-        elif prose and ("." in tok or tok[0].isupper() or len(tok) > 3):
-            href = prose.index.href(tok, ns, prose.page)
-            cls = f"a:{href}" if href else None
+        elif prose and m.start() > 0 and code[m.start() - 1] == "." and not (m.start() >= 2 and code[m.start() - 2] in ")]"):
+            # Anonymous enum constructor literal (`.NFD`, `.ArrowFunction`, `.USP`): link capitalized enum constructors.
+            if tok[0].isupper() and "." not in tok:
+                href = (prose.index.href(f"NormForm.{tok}", ns, prose.page, prose.opens)
+                        or prose.index.href(f"Grammar.CodePointName.{tok}", ns, prose.page, prose.opens)
+                        or prose.index.href(f"Grammar.NT.{tok}", ns, prose.page, prose.opens))
+                if href:
+                    cls = f"a:{href}"
+        elif prose and ((m.start() >= 2 and code[m.start() - 1] == "." and code[m.start() - 2] in ")]")
+                        or "." in tok or tok[0].isupper() or len(tok) > 3):
+            chained = m.start() >= 2 and code[m.start() - 1] == "." and code[m.start() - 2] in ")]" and "." not in tok
+            qtok = f"_recv.{tok}" if chained else tok
+            href = prose.index.href(qtok, ns, prose.page, prose.opens) or (
+                prose.index.href(tok, ns, prose.page, prose.opens) if chained else None)
+            if not href and "." in tok:
+                # Multi-dot chain (`G.gl.rulesOf`, `L.blocks.any`): try last `.method` or receiver prefix.
+                href = (prose.index.href(f"_recv.{tok.rsplit('.', 1)[-1]}", ns, prose.page, prose.opens)
+                        or prose.index.href(f"{tok.split('.', 1)[0]}.{tok.split('.')[1]}", ns, prose.page, prose.opens))
+            if href:
+                cls = f"a:{href}"
+            else:
+                khref, ktitle = prose.index.known.lookup(tok, prose.spec, prose.index, prose.page)
+                if khref:
+                    cls = f"at:{ktitle}\t{khref}" if ktitle else f"a:{khref}"
         pieces.append((cls, tok))
         pos = m.end()
     pieces.append((None, code[pos:]))
@@ -799,6 +985,9 @@ def highlight(code: str, prose: Prose | None, ns: list[str], own: str | None = N
             return ""
         if cls is None:
             return esc(text)
+        if cls.startswith("at:"):
+            ktitle, khref = cls[3:].split("\t", 1)
+            return f'<a href="{esc(khref)}" title="{esc(ktitle)}">{esc(text)}</a>'
         if cls.startswith("a:"):
             return f'<a href="{esc(cls[2:])}">{esc(text)}</a>'
         return f'<span class="{cls}">{esc(text)}</span>'
@@ -895,19 +1084,48 @@ class Renderer:
         self.findings: list[str] = []  # docstrings that break the convention or are missing
         self.rendered: set[str] = set()
 
-    def module(self, mod: Module, heading: int = 2, skip_first_title: bool = False) -> str:
+    def module(self, mod: Module, heading: int = 2, skip_first_title: bool = False,
+               only: set[str] | None = None, fold_aux: bool = False, fold_abbrevs: bool = True) -> str:
         """A module's prose and entries. The first heading of its first module docstring is the section's title."""
-        out = []
+        out: list[str] = []
+        self.prose.opens = mod.opens
         rel = mod.path.relative_to(ROOT) if mod.path.is_relative_to(ROOT) else mod.path
-        for k, it in enumerate(mod.items):
+        items = [it for it in mod.items if isinstance(it, ModDoc) or only is None or it.full in only]
+        aux_kinds = {"def", "inline def"} | ({"abbrev"} if fold_abbrevs else set())
+        aux_buf: list[tuple[Decl, str]] = []
+
+        def flush_aux() -> None:
+            nonlocal aux_buf
+            if not aux_buf:
+                return
+            n = len(aux_buf)
+            noun = "Auxiliary definition" if n == 1 else f"Auxiliary definitions ({n})"
+            preview = ", ".join(f"<code>{esc(d.anchor)}</code>" for d, _ in aux_buf[:4])
+            if n > 4:
+                preview += ", …"
+            inner = "\n".join(h for _, h in aux_buf)
+            out.append(f'<details class="aux-fold"><summary>{noun}: {preview}</summary>'
+                       f'<div class="aux-body">{inner}</div></details>')
+            aux_buf = []
+
+        for k, it in enumerate(items):
             if isinstance(it, ModDoc):
+                # Skip a non-initial subsection docstring whose declarations were all filtered out by `only`.
+                if k > 0 and (k + 1 >= len(items) or isinstance(items[k + 1], ModDoc)):
+                    continue
+                flush_aux()
                 self.prose.where = f"{rel}:{it.line}"
                 text = it.text
                 if k == 0 and skip_first_title:
                     text = re.sub(r"^\s*#\s+[^\n]*\n", "", text, count=1)
-                out.append(f'<div class="prose moddoc">{self.prose.block(text, it.ns, heading + 1)}</div>')
+                if text.strip():
+                    out.append(f'<div class="prose moddoc">{self.prose.block(text, it.ns, heading + 1)}</div>')
+            elif fold_aux and it.kind in aux_kinds:
+                aux_buf.append((it, self.decl(it, rel)))
             else:
+                flush_aux()
                 out.append(self.decl(it, rel))
+        flush_aux()
         return "\n".join(out)
 
     def _lang(self, path: Path) -> str:
@@ -916,6 +1134,10 @@ class Renderer:
     def decl(self, d: Decl, rel: Path) -> str:
         self.rendered.add(d.full)
         self.prose.where = f"{rel}:{d.line}"
+        if d.kind in PRIMARY_KINDS:
+            has_cite = bool(ID_RE.search(d.doc or "")) or any(ID_RE.search(m.doc or "") for m in d.members)
+            if not has_cite:
+                raise RenderError(f"{rel}:{d.line} {d.anchor}: {d.kind} has no spec.html clause reference in its docstring")
         lang = self._lang(d.path)
         src = f'<a class="src" href="#{esc(d.anchor)}" title="{esc(str(rel))} line {d.line}">{esc(rel.name)}:{d.line}</a>'
         head = (f'<header class="entry-head"><span class="kind">{esc(d.kind)}</span> '
@@ -977,14 +1199,18 @@ class Renderer:
             last_key = key
             group.append('<div class="lawgroup">' + self._sentence(law) + self._law(d, m, law, shared=False))
         close_group()
-        return f'<div class="members">{"".join(out)}</div>'
+        inner = f'<div class="members">{"".join(out)}</div>'
+        if not d.is_prop and len(d.members) > 30:
+            return f'<details class="lean-fold"><summary>{len(d.members)} constructors</summary>{inner}</details>'
+        return inner
 
     def _plain_member(self, d: Decl, m: Member) -> str:
         lang = self._lang(d.path)
-        doc = f'<div class="prose">{self.prose.block(m.doc, d.ns)}</div>' if m.doc else ""
+        mns = d.ns + [d.name]
+        doc = f'<div class="prose">{self.prose.block(m.doc, mns)}</div>' if m.doc else ""
         return (f'<article class="member" id="{esc(m.anchor)}"><div class="member-head">'
                 f'<a class="self name" href="#{esc(m.anchor)}"><code>{esc(m.name)}</code></a></div>{doc}'
-                f'<pre class="lean">{highlight(m.code, self.prose, d.ns, m.name, lang=lang)}</pre></article>')
+                f'<pre class="lean">{highlight(m.code, self.prose, mns, m.name, lang=lang)}</pre></article>')
 
     def clause_label(self, cid: str) -> str:
         num = self.spec.nums.get(cid)

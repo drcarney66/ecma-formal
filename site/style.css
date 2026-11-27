@@ -241,6 +241,17 @@ details.lean-fold > summary::-webkit-details-marker { display: none; }
 details.lean-fold > summary::before { content: "▸"; display: inline-block; width: 1.1em; color: var(--accent); transition: transform 0.15s; }
 details.lean-fold[open] > summary::before { transform: rotate(90deg); }
 details.lean-fold > summary:hover { color: var(--ink); }
+details.aux-fold { margin: 1.25rem 0; padding-top: 0.7rem; border-top: 1px dashed var(--rule); }
+details.aux-fold > summary {
+  cursor: pointer; font-size: var(--step--1); color: var(--ink-2);
+  list-style: none; padding: 0.15rem 0;
+}
+details.aux-fold > summary::-webkit-details-marker { display: none; }
+details.aux-fold > summary::before { content: "▸"; display: inline-block; width: 1.1em; color: var(--accent); transition: transform 0.15s; }
+details.aux-fold[open] > summary::before { transform: rotate(90deg); }
+details.aux-fold > summary:hover { color: var(--ink); }
+details.aux-fold > summary code { background: var(--surface); padding: 0.05em 0.25em; border-radius: 3px; }
+details.aux-fold > .aux-body { margin-top: 0.5rem; padding-left: 1rem; border-left: 2px solid var(--rule); }
 
 /* Structure members (fields, constructors) */
 .members { margin-top: 0.75rem; }

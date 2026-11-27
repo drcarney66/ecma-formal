@@ -20,12 +20,13 @@
 </ul>
 
 <h2 id="pages">The specification, set for reading</h2>
-<p>Generated directly from the SpecTec prose modules (<code>spec/spectec/prose/</code>): each declaration with its documentation first, each law with its clause and the sentence it reads, the SpecTec folded beside it (plus the downstream <code>Implements</code> contract).</p>
+<p>Generated from the SpecTec prose modules (<code>spec/spectec/prose/</code>) and their transitive closure: every object and law cites its governing ECMA-262 clause, every law quotes the sentence it reads, and every referenced identifier is clickable (with auxiliary definitions folded until clicked).</p>
 <ul class="cards two">
 <li><h3><a href="model.html">The model and its laws</a></h3><p>The sorts of the specification as SpecTec carriers, values and operations, and the laws a model obeys.</p></li>
 <li><h3><a href="host.html">The host and its laws</a></h3><p>What the specification leaves to the host, and the {{host_laws}} SpecTec laws it requires, by topic.</p></li>
-<li><h3><a href="implements.html">Implements</a></h3><p>What it is for a downstream implementation to conform to the specification, in full, with the definitions of a run.</p></li>
-<li><h3><a href="parser-laws.html">The parser's laws</a></h3><p>Parse Nodes, grammar derivations and cover laws in SpecTec. All proved of the engine (<code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>, <code>Engine.Claims.nodeLaws</code>).</p></li>
+<li><h3><a href="memory-model.html">The memory model (§29)</a></h3><p>Candidate executions, happens-before, sequentially consistent memory order, valid executions ({{memory_laws}} quoted laws), and races.</p></li>
+<li><h3><a href="parser-laws.html">The parser's laws</a></h3><p>Parse Nodes, §5.1 grammar derivations, §12 lexical scanning &amp; ASI, and cover laws in SpecTec. All proved of the engine.</p></li>
+<li><h3><a href="implements.html">Implements</a></h3><p>What it is for a downstream implementation to conform to the specification, with the observable state and §5.2 notation types.</p></li>
 </ul>
 
 {{dbg_section}}

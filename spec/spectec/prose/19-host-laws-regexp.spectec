@@ -14,9 +14,9 @@ namespace Ecma {
   --- What follows the `\` in a LineTerminator's escape: `n`, `r`, `u2028`, `u2029`.
   def terminatorEscape (c : Nat) : List(Nat) := if c == 0x0A then [110] else if c == 0x0D then [114] else if c == 0x2028 then [117, 50, 48, 50, 56] else [117, 50, 48, 50, 57]
 
-  --- `Escaped b p e`: `e` is `p` with code units escaped (§22.2.6.13.1 step 5): a `/` kept or written `\/`, a
-  --- LineTerminator written as its escape (`terminatorEscape`), every other unit kept. `b`: the unit before is an
-  --- unescaped `\`, so that a LineTerminator after it is written as the escape's letters alone.
+  --- `Escaped b p e`: `e` is `p` with code units escaped (§22.2.6.13.1, sec-escaperegexppattern, step 5): a `/` kept
+  --- or written `\/`, a LineTerminator written as its escape (`terminatorEscape`), every other unit kept. `b`: the
+  --- unit before is an unescaped `\`, so that a LineTerminator after it is written as the escape's letters alone.
   relation Escaped : Bool -> List(Nat) -> List(Nat) -> Prop {
     rule nil (b) : Escaped(b, [], []);
     rule keep {b c p e} : Escaped(b, c :: p, c :: e) :- lineTerminatorUnit(c) = false, Escaped(!b && c == 92, p, e);
@@ -42,7 +42,7 @@ namespace Ecma {
   --- |Pattern| either.
   def BodySafe (e : List(Nat)) : Prop := e <> [] /\ bodySafe(false, false, e) = true
 
-  --- The law of EscapeRegExpPattern.
+  --- The law of EscapeRegExpPattern (§22.2.6.13.1, sec-escaperegexppattern).
   laws Host.RegExpLaws (H : Host(M)) {
     --- sec-escaperegexppattern steps 4–5:
     --- "Let escapedPattern be a String in the form of a patternSymbol equivalent to pattern interpreted as UTF-16 encoded Unicode code points"

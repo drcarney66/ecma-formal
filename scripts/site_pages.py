@@ -70,8 +70,9 @@ NAV = [
               ("errata.html", "Errata"), ("spec-issues/", "Spec issues"),
               ("proposal.html", "Applying a proposal"), ("test262.html", "test262"),
               ("slides.html", "TC39 #117 slides")]),
-    ("The Specification", [("model.html", "The model"), ("host.html", "The host"), ("implements.html", "Implements"),
-                           ("parser-laws.html", "Parser laws")]),
+    ("The Specification", [("model.html", "The model"), ("host.html", "The host"),
+                           ("memory-model.html", "Memory model"), ("parser-laws.html", "Parser laws"),
+                           ("implements.html", "Implements")]),
     ("Try it", [("examples.html", "Examples"), ("debugger/", "Debugger")]),
 ]
 DBG_UI = ROOT / "tools/dbg/ui/index.html"
@@ -427,6 +428,8 @@ class Section:
     files: list[str]
     intro: str = ""  # HTML before the modules
     after: str = ""  # HTML after them
+    fold_aux: bool = False  # fold helper `def`s so primary `syntax`, `relation` and `laws` stand out
+    fold_abbrevs: bool = True  # when `fold_aux`, whether `abbrev` is folded too
 
 
 def status_lines() -> dict[str, str]:
@@ -461,6 +464,15 @@ def status_lines() -> dict[str, str]:
         "Ecma.Model.NodeLaws": (proved + "of the engine's model, for the specification's grammar under the engine's "
                                 "readings: " + c("Engine.Claims.nodeLaws") + ". Not a field of "
                                 + c("Implements") + ".", ["Engine.Claims.nodeLaws"]),
+        "Ecma.MemoryModel.ValidWith": (proved + "preserved across shared reads by " + c("Ecma.MemoryModel.snoc_valid")
+                                       + ", which discharges <a href=\"host.html#Host.MemoryLaws.chooseReadsValid\">"
+                                       + c("Host.MemoryLaws.chooseReadsValid") + "</a>.", ["Ecma.MemoryModel.snoc_valid"]),
+        "Ecma.MemoryModel.MemoryOrder": (proved + "preserved across shared reads as part of "
+                                         + c("Ecma.MemoryModel.snoc_valid") + ".", []),
+        "Ecma.MemoryModel.StrictPartialOrder": (proved + "for happens-before and memory-order across shared reads in "
+                                                + c("Ecma.MemoryModel.snoc_valid") + ".", []),
+        "Ecma.MemoryModel.NewEvent.IsRead": (proved + "of each shared-read event in "
+                                             + c("Engine.Proofs.Host.MemoryImpl") + ".", []),
     }
     for t in ["JobLaws", "TimeLaws", "MemoryLaws", "RegExpLaws", "OrderLaws", "LocaleLaws", "OptionalLaws",
               "ValueLaws", "HookLaws", "ChangeLaws"]:
@@ -509,12 +521,13 @@ class Site:
             self.modules[rel] = m
         return self.modules[rel]
 
-    def register(self, page: str, sections: list[Section]) -> None:
+    def register(self, page: str, sections: list[Section], only: set[str] | None = None) -> None:
         for s in sections:
             for f in s.files:
-                self.index.add_module(self.module(f), page)
+                self.index.add_module(self.module(f), page, only=only)
 
-    def render(self, page: str, sections: list[Section], opts: rl.Options) -> tuple[str, list, rl.Renderer]:
+    def render(self, page: str, sections: list[Section], opts: rl.Options,
+               only: set[str] | None = None) -> tuple[str, list, rl.Renderer]:
         r = rl.Renderer(self.spec, self.index, page, opts)
         body, toc = [], []
         for s in sections:
@@ -522,13 +535,135 @@ class Site:
             parts = [(f'<section class="part" id="{s.anchor}"><h2 class="part-title"><a class="self" '
                      f'href="#{s.anchor}">{html.escape(s.title)}</a></h2>'), s.intro]
             for f in s.files:
-                parts.append(f'<div class="module"><p class="module-src">From <code>{f}</code></p>'
-                             f'{r.module(self.module(f), heading=2, skip_first_title=True)}</div>')
+                mod_html = r.module(self.module(f), heading=2, skip_first_title=True, only=only,
+                                    fold_aux=s.fold_aux, fold_abbrevs=s.fold_abbrevs)
+                if mod_html.strip():
+                    parts.append(f'<div class="module"><p class="module-src">From <code>{f}</code></p>{mod_html}</div>')
             parts.append(s.after + "</section>")
             body.append("\n".join(parts))
         r.check_laws()
         self.findings += r.findings + r.prose.unlinked
         return "\n".join(body), toc, r
+
+
+# Abstraction boundaries where a specification-level predicate intentionally hides internal bytecode frames.
+BOUNDARY_OPAQUE = {"Ecma.Machine.Frame.Holds", "Ecma.Machine.Kont.Holds", "Ecma.Machine.Ctl", "Ecma.Val.used"}
+FORBIDDEN_PLUMBING = {
+    "Ecma.Books", "Ecma.State.books", "Ecma.State.restoreBooks", "Ecma.State.hostView",
+    "Ecma.Res.hostStep", "Ecma.Run.hostStep", "Ecma.Host.hookL", "Ecma.Host.choiceL",
+    "Ecma.Host.supports", "Ecma.Host.allocL", "Ecma.hostPrim", "Ecma.builtinBind",
+    "Ecma.Val.used", "Ecma.Machine.Frame.Holds", "Ecma.Machine.Kont.Holds",
+    "Ecma.Implementation.Runs", "Ecma.Machine.Calls",
+}
+
+
+def compute_closure(site: Site, page_sections: list[tuple[str, list[Section]]]) -> set[str]:
+    """Exact code-level transitive closure from `Model`, `Host`, `Implements`, `MemoryModel` and all `laws` blocks."""
+    temp = rl.Index()
+    all_decls: dict[str, rl.Decl] = {}
+    mods: list[tuple[str, rl.Module, set[str]]] = []
+    for page, secs in page_sections:
+        for s in secs:
+            for f in s.files:
+                mod = site.module(f)
+                allowed = {it.full for it in mod.items if isinstance(it, rl.Decl) and it.full not in BOUNDARY_OPAQUE}
+                mods.append((page, mod, allowed))
+                for it in mod.items:
+                    if isinstance(it, rl.Decl) and it.full in allowed:
+                        all_decls[it.full] = it
+    # Two-pass registration so `Index.by_method` sees types declared in earlier/later modules alike.
+    for page, mod, allowed in mods:
+        temp.add_module(mod, page, only=allowed)
+    for it in all_decls.values():
+        if "." in it.full:
+            owner, meth = it.full.rsplit(".", 1)
+            if owner in temp.decls and it.full not in temp.by_method.get(meth, []):
+                temp.by_method.setdefault(meth, []).append(it.full)
+
+    roots = {
+        "Ecma.Model", "Ecma.Model.Laws", "Ecma.Model.NumLaws", "Ecma.Model.ByteLaws",
+        "Ecma.Model.UnicodeLaws", "Ecma.Model.ParentLaws",
+        "Ecma.Model.ParseLaws", "Ecma.Model.CoverLaws", "Ecma.Model.NodeLaws",
+        "Ecma.MemoryModel.Valid", "Ecma.MemoryModel.ValidWith",
+        "Ecma.MemoryModel.DataRaceFree", "Ecma.MemoryModel.ReadsValid",
+        "Ecma.Host", "Ecma.Host.WF",
+        "Ecma.Implements", "Ecma.Machine.Runs",
+    }
+    missing_roots = sorted(roots - set(all_decls))
+    if missing_roots:
+        raise SystemExit(f"closure roots missing from candidate modules: {missing_roots}")
+
+    def owner_of(resolved: str) -> str | None:
+        if resolved in all_decls:
+            return resolved
+        parent = resolved.rsplit(".", 1)[0] if "." in resolved else ""
+        return parent if parent in all_decls else None
+
+    seen = set(roots)
+    queue = list(sorted(roots))
+    while queue:
+        cur = queue.pop()
+        d = all_decls[cur]
+        opens = temp.mod_opens.get(d.path, [])
+        # `State.suspendedHolds` abstracts frame/continuation reachability at the State boundary.
+        if cur == "Ecma.State.suspendedHolds":
+            chunks = [(d.head.split(":=", 1)[0], d.name)]
+        elif d.members:
+            chunks = [(d.head, d.name)] + [(mem.code, mem.name) for mem in d.members]
+        else:
+            chunks = [(d.code, d.name)]
+        for ext in d.extends:
+            ename = re.sub(r"^H\.", "Host.", ext.split()[0])
+            r = temp.resolve(ename, d.ns, opens)
+            tgt = owner_of(r) if r else None
+            if tgt and tgt not in seen:
+                seen.add(tgt)
+                queue.append(tgt)
+        for refs_src, own_name in chunks:
+            skipped_own = False
+            for m in rl.TOKEN.finditer(refs_src):
+                if m.lastgroup != "id":
+                    continue
+                tok = m.group(0)
+                chained = m.start() >= 2 and refs_src[m.start() - 1] == "." and refs_src[m.start() - 2] in ")]" and "." not in tok
+                if m.start() > 0 and refs_src[m.start() - 1] == "." and not chained:
+                    # Anonymous constructor literal (`.ok`, `.leaf`, `.ref`): not a top-level identifier reference.
+                    continue
+                if not skipped_own and tok in (own_name, own_name.split(".")[-1]) and not chained:
+                    skipped_own = True
+                    continue
+                if tok == d.name and not chained:
+                    continue
+                qtok = f"_recv.{tok}" if chained else tok
+                cands = []
+                r = temp.resolve(qtok, d.ns, opens, use_fields=False) or (
+                    temp.resolve(tok, d.ns, opens, use_fields=False) if chained else None)
+                if r:
+                    cands.append(r)
+                if "." in tok:
+                    for pre in (tok.split(".", 1)[0], tok.rsplit(".", 1)[0]):
+                        rp = temp.resolve(pre, d.ns, opens, use_fields=False)
+                        if rp:
+                            cands.append(rp)
+                for rc in cands:
+                    tgt = owner_of(rc)
+                    if tgt and tgt not in seen:
+                        seen.add(tgt)
+                        queue.append(tgt)
+                # `Known.c...` / `Known.f...` / `Gen.clauses` link to identifier types (`FieldId`, `Decls`, `NT`, …).
+                khref, _ = temp.known.lookup(tok, site.spec, temp, "")
+                if khref and "#" in khref and not khref.startswith("http"):
+                    anch = khref.split("#", 1)[1]
+                    for cand_root in ("Ecma.", "Ecma.Grammar."):
+                        owner = owner_of(cand_root + anch)
+                        if owner and owner not in seen:
+                            seen.add(owner)
+                            queue.append(owner)
+
+    leaked = sorted(seen & FORBIDDEN_PLUMBING)
+    if leaked:
+        raise SystemExit(f"machine plumbing leaked into specification closure: {leaked}")
+    return seen
 
 
 def host_sections() -> list[Section]:
@@ -540,18 +675,21 @@ def host_sections() -> list[Section]:
         m = re.search(r"(?m)^\s*laws\s+Host\.(\w+)", f.read_text())
         if m:
             files[m.group(1)] = f"spec/spectec/prose/{f.name}"
-    secs = [Section("host", "The host", ["spec/spectec/prose/10-host.spectec"]),
-            Section("laws", "The laws of a host", ["spec/spectec/prose/26-host-laws.spectec"])]
+    secs = [Section("host", "The host", ["spec/spectec/prose/10-host.spectec"], fold_aux=True),
+            Section("laws", "The laws of a host", ["spec/spectec/prose/26-host-laws.spectec"], fold_aux=True)]
     for t in topics:
         if t not in files:
             raise SystemExit(f"Host.WF extends {t}, which no *-host-laws-*.spectec file defines")
         title = re.search(r"---!\s*#\s*([^\n]+)", (ROOT / files[t]).read_text()).group(1).strip()
-        secs.append(Section(t, title[0].upper() + title[1:], [files[t]]))
-    rest = [("basic", "spec/spectec/prose/14-host-laws-basic.spectec"),
-            ("dateformat", "spec/spectec/prose/15-date-format.spectec")]
-    for anchor, f in rest:  # Basic (what the laws are stated over), DateFormat (definitions only)
-        title = re.search(r"---!\s*#\s*([^\n]+)", (ROOT / f).read_text()).group(1).strip()
-        secs.append(Section(anchor, title[0].upper() + title[1:], [f]))
+        secs.append(Section(t, title[0].upper() + title[1:], [files[t]], fold_aux=True))
+    secs.append(Section("basic", "What the host's laws are stated over",
+                        ["spec/spectec/prose/14-host-laws-basic.spectec", "spec/spectec/prose/13-jobs.spectec"],
+                        fold_aux=True))
+    secs.append(Section("dateformat", "The Date Time String Format, over code units",
+                        ["spec/spectec/prose/15-date-format.spectec", "spec/spectec/prose/11-date-parse.spectec"],
+                        fold_aux=True))
+    secs.append(Section("forin", "EnumerateObjectProperties as a host strategy",
+                        ["spec/spectec/prose/12-for-in.spectec"], fold_aux=True))
     return secs
 
 
@@ -821,22 +959,45 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     sub = {x.split()[3]: x.split()[2] for x in tree}
     facts = {"rev": rev, "dirty": dirty, "ecma262": sub["external/ecma262"], "test262": sub["external/test262"]}
 
-    model_secs = [Section("model", "The model", ["spec/spectec/prose/01-model.spectec"]),
-                  Section("values", "Values, cells and stops", ["spec/spectec/prose/02-value.spectec"]),
-                  Section("laws", "The laws of a model", ["spec/spectec/prose/05-model-laws.spectec"])]
+    model_secs = [Section("model", "The model", ["spec/spectec/prose/01-model.spectec"], fold_aux=True),
+                  Section("values", "Values, cells and stops", ["spec/spectec/prose/02-value.spectec"], fold_aux=True),
+                  Section("laws", "The laws of a model", ["spec/spectec/prose/05-model-laws.spectec"], fold_aux=True),
+                  Section("strings", "UTF-16 code points (§6.1.4)", ["lean/Ecma/Prims/Strings.lean"], fold_aux=True)]
     host_secs = host_sections()
+    mem_secs = [Section("executions", "Candidate executions, relations and validity (§29.1–§29.10)",
+                        ["spec/spectec/prose/07-memory-model.spectec"], fold_aux=True),
+                Section("reads", "Adding a shared read to a candidate execution",
+                        ["spec/spectec/prose/08-memory-read.spectec"], fold_aux=True),
+                Section("view", "Reading a candidate execution from the store",
+                        ["spec/spectec/prose/09-memory-view.spectec"], fold_aux=True)]
+    parse_secs = [Section("nodes", "Parse Nodes, derivations and their laws",
+                          ["spec/spectec/prose/06-node-rel.spectec"], fold_aux=True),
+                  Section("derives", "Grammar derivations, lexical scanning and ASI (§5.1, §12)",
+                          ["spec/spectec/prose/04-derives.spectec"], fold_aux=True),
+                  Section("strict", "Strict mode code (§11.2.2)",
+                          ["spec/spectec/prose/03-strict-code.spectec"], fold_aux=True),
+                  Section("grammar", "Grammar notation (§5.1.6)",
+                          ["lean/Ecma/Grammar/Gen/Symbols.lean", "lean/Ecma/Grammar/Core.lean",
+                           "lean/Ecma/Grammar/Notation.lean"], fold_aux=True)]
     impl_secs = [Section("implements", "What it is to implement the specification", ["lean/Ecma/Implements.lean"]),
-                 Section("runs", "Runs", ["lean/Ecma/Machine/Run.lean"])]
-    parse_secs = [Section("nodes", "Parse Nodes, derivations and their laws", ["spec/spectec/prose/06-node-rel.spectec"])]
-    for page, secs in (("model.html", model_secs), ("host.html", host_secs), ("implements.html", impl_secs),
-                       ("parser-laws.html", parse_secs)):
-        site.register(page, secs)
+                 Section("runs", "Runs", ["lean/Ecma/Machine/Run.lean"]),
+                 Section("state", "Observable state and step monad", ["lean/Ecma/State.lean"], fold_aux=True,
+                         fold_abbrevs=False),
+                 Section("configs", "Configurations and calls", ["lean/Ecma/Machine/Config.lean"], fold_aux=True,
+                         fold_abbrevs=False),
+                 Section("syntax", "Algorithm notation and specification identifiers (§5.2)",
+                         ["lean/Ecma/Notation/Syntax.lean"], fold_aux=True, fold_abbrevs=False)]
+    reading_pages = [("model.html", model_secs), ("host.html", host_secs), ("memory-model.html", mem_secs),
+                     ("parser-laws.html", parse_secs), ("implements.html", impl_secs)]
+    closure = compute_closure(site, reading_pages)
+    for page, secs in reading_pages:
+        site.register(page, secs, only=closure)
 
     opts = rl.Options(status=site.status)
     pages: list[Page] = []
 
     # The model.
-    body, toc, r_model = site.render("model.html", model_secs, opts)
+    body, toc, r_model = site.render("model.html", model_secs, opts, only=closure)
     model_laws = [x for x in r_model.laws]
     pages.append(Page("model.html", "The model and its laws",
                       "Reading page · generated from <code>spec/spectec/prose/01-model.spectec</code>, <code>02-value.spectec</code>, <code>05-model-laws.spectec</code>",
@@ -844,12 +1005,13 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
                       f"(mathematical values, Numbers, BigInts, Strings, Symbols, Parse Nodes, Lists, Data Blocks, "
                       f"CharSets, Records, the store) a carrier and its operations, over which specification values "
                       f"(<code>syntax Val</code>) and store cells (<code>syntax Cell</code>) are defined. "
-                      f"The SpecTec <code>laws</code> blocks state what the prose assumes of them: {fmt(len(model_laws))} laws, "
-                      f"each quoting the sentence it reads. Laws that quote the same sentence share one quotation.</p>",
+                      f"Every object cites its governing ECMA-262 clause, and the SpecTec <code>laws</code> blocks "
+                      f"state what the prose assumes of them: {fmt(len(model_laws))} laws, each quoting the sentence "
+                      f"it reads.</p>",
                       body, toc))
 
     # The host.
-    body, toc, r_host = site.render("host.html", host_secs, opts)
+    body, toc, r_host = site.render("host.html", host_secs, opts, only=closure)
     table, nhost = law_table(r_host, site.spec)
     nosent = sum(1 for d, m, law in r_host.laws if d.full.startswith("Ecma.Host.") and law.no_sentence is not None)
     summary = (f'<section class="part" id="all-laws"><h2 class="part-title"><a class="self" href="#all-laws">All '
@@ -862,31 +1024,47 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     toc.insert(2, ("all-laws", f"All {nhost} laws", 1))
     pages.append(Page("host.html", "The host and its laws",
                       "Reading page · generated from <code>spec/spectec/prose/10-host.spectec</code> and <code>spec/spectec/prose/*-host-laws*.spectec</code>",
-                      f"<p>What the specification leaves to the host, and the {nhost} SpecTec laws it requires of one, "
-                      f"by topic. Each law names its clause, quotes the sentence that governs it, and says how "
-                      f"SpecTec reads it ({nosent} have no single sentence and say why). "
-                      f"<code>scripts/law_quotes.py</code> checks every quotation against the pinned <code>spec.html</code>.</p>",
+                      f"<p>What the specification leaves to the host (<a href=\"https://tc39.es/ecma262/#sec-hosts-and-implementations\">§4.2</a>), "
+                      f"and the {nhost} SpecTec laws it requires of one, by topic, restricted to the transitive closure "
+                      f"of <code>Host</code> and <code>Host.WF</code>. Each object and law names its clause, quotes "
+                      f"the sentence that governs it, and says how SpecTec reads it ({nosent} have no single sentence "
+                      f"and say why). Auxiliary definitions are folded and expand on click.</p>",
                       body, toc, wide=False))
 
-    # Implements and runs.
-    body, toc, _ = site.render("implements.html", impl_secs, opts)
-    pages.append(Page("implements.html", "What it is to implement the specification",
-                      "Reading page · generated from <code>lean/Ecma/Implements.lean</code>, <code>lean/Ecma/Machine/Run.lean</code>",
-                      "<p>The downstream Lean conformance contract that bridges the compiled SpecTec specification "
-                      "to the concrete engine, in full, with the definitions of a run it uses. "
-                      "<a href=\"what-is-proved.html\">What is proved</a> reads it field by field.</p>", body, toc))
+    # The §29 memory model.
+    body, toc, r_mem = site.render("memory-model.html", mem_secs, opts, only=closure)
+    memory_laws = [x for x in r_mem.laws]
+    pages.append(Page("memory-model.html", "The memory model (§29)",
+                      "Reading page · generated from <code>spec/spectec/prose/07-memory-model.spectec</code>, <code>08-memory-read.spectec</code>, <code>09-memory-view.spectec</code>",
+                      f"<p>ECMA-262 <a href=\"https://tc39.es/ecma262/#sec-memory-model\">§29</a> formalized in SpecTec: "
+                      f"candidate executions (<code>Exec</code>), Agent Events Records, happens-before (<code>HB</code>), "
+                      f"sequentially consistent memory order (<code>MemoryOrder</code>), valid executions "
+                      f"(<code>ValidWith</code>), and races (§29.1–§29.10), with {fmt(len(memory_laws))} quoted "
+                      f"laws, plus how <a href=\"host.html#Host.MemoryLaws.chooseReadsValid\"><code>chooseReadsValid</code></a> "
+                      f"reads a candidate execution from the store and appends a shared read.</p>",
+                      body, toc))
 
     # The parser's laws.
-    body, toc, r_parse = site.render("parser-laws.html", parse_secs, opts)
+    body, toc, r_parse = site.render("parser-laws.html", parse_secs, opts, only=closure)
     parse_laws = [x for x in r_parse.laws]
     pages.append(Page("parser-laws.html", "The parser's laws",
-                      "Reading page · generated from <code>spec/spectec/prose/06-node-rel.spectec</code>",
-                      "<p>What a model's parser must give, stated in SpecTec: a Parse Node related to a derivation of "
-                      "the source text under the grammar (<code>relation Model.NodeRel</code>, <code>laws Model.ParseLaws</code>), "
-                      "a covered node that is a parse of its cover's text (<code>laws Model.CoverLaws</code>), and "
-                      "the laws of a Parse Node's children and descendants (<code>laws Model.NodeLaws</code>). All three "
-                      "are proved of the engine (<code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>, "
+                      "Reading page · generated from <code>spec/spectec/prose/06-node-rel.spectec</code>, <code>04-derives.spectec</code>, <code>03-strict-code.spectec</code>",
+                      "<p>What a model's parser must give, stated in SpecTec with its complete §5.1 / §11.2.2 / §12 "
+                      "derivation closure: a Parse Node related to a derivation of the source text under the grammar "
+                      "(<code>relation Model.NodeRel</code>, <code>laws Model.ParseLaws</code>), a covered node that "
+                      "reparses its cover's matched tokens (<code>laws Model.CoverLaws</code>), and the laws of a "
+                      "Parse Node's children and descendants (<code>laws Model.NodeLaws</code>). All three are proved "
+                      "of the engine (<code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>, "
                       "<code>Engine.Claims.nodeLaws</code>).</p>", body, toc))
+
+    # Implements and runs.
+    body, toc, _ = site.render("implements.html", impl_secs, opts, only=closure)
+    pages.append(Page("implements.html", "What it is to implement the specification",
+                      "Reading page · generated from <code>lean/Ecma/Implements.lean</code>, <code>lean/Ecma/Machine/Run.lean</code>, <code>lean/Ecma/State.lean</code>",
+                      "<p>The downstream Lean conformance contract (<a href=\"https://tc39.es/ecma262/#sec-conformance\">§2</a>) "
+                      "that bridges the compiled SpecTec specification to the concrete engine, together with the "
+                      "observable state, configuration and §5.2 identifier types in its transitive closure. "
+                      "<a href=\"what-is-proved.html\">What is proved</a> reads it field by field.</p>", body, toc))
 
     # The results page and the errata page, whose numbers the hand-written pages give.
     gallery = dbgopt and dbgopt.get("gallery")
@@ -941,8 +1119,9 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
         "parent_laws": fmt(model_counts.get("Model.ParentLaws", 0)),
         "unicode_laws": fmt(model_counts.get("Model.UnicodeLaws", 0)),
         "parse_laws": fmt(len(parse_laws)),
+        "memory_laws": fmt(len(memory_laws)),
         "all_model_laws": fmt(len(model_laws)),
-        "total_laws": fmt(len(model_laws) + len(parse_laws) + len(host_laws)),
+        "total_laws": fmt(len(model_laws) + len(parse_laws) + len(memory_laws) + len(host_laws)),
         "pins": fmt(pins()),
         "runtime_pins": fmt(runtime_pins()),
         "stmt:implements": code("-- lean/Engine/Proofs/Model.lean, in namespace Engine\n"

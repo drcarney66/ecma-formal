@@ -11,7 +11,7 @@ namespace Ecma {
   --- `n` is a Number with positive sign, greater than or equal to +0 and less than 1.
   def unitNum (n : M.Num) : Prop := M.numView(n) = .posZero \/ exists m, M.numView(n) = .finite(m) /\ M.lt(M.ofNat(0), m) = true /\ M.lt(m, M.ofNat(1)) = true
 
-  --- The laws of the values the implementation chooses.
+  --- The laws of the values the implementation chooses (§5.2, sec-algorithm-conventions; §21.3, sec-math-object).
   laws Host.ValueLaws (H : Host(M)) {
     --- sec-math.cbrt step 3, and every "implementation-approximated Number value" of the Math functions:
     --- "Return an implementation-approximated Number value representing the cube root of ℝ(n)."

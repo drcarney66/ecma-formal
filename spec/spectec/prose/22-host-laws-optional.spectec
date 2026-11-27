@@ -27,7 +27,8 @@ namespace Ecma {
 
   var {M : Model}
 
-  --- The laws of the optional features.
+  --- The laws of the optional features (§2.1, sec-conformance-normative-optional; Annex B,
+  --- sec-additional-ecmascript-features-for-web-browsers).
   laws Host.OptionalLaws (H : Host(M)) {
     --- sec-additional-ecmascript-features-for-web-browsers:
     --- "The ECMAScript language syntax and semantics defined in this annex are required when the ECMAScript host is a web browser."
