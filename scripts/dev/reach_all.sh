@@ -8,10 +8,10 @@ R=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$R"
 L="lean --run $R/scripts/dev/reach.lean"
 # The proved claims (Engine/Claims.lean, Proofs/Model.lean), what it is to implement the specification
-# (Ecma/Implements.lean), the laws stated and owed, the run relations (Ecma/Machine/Run.lean), and
+# (Ecma/Implements.lean), the proved parser/cover/node claims, the run relations (Ecma/Machine/Run.lean), and
 # the specification's definitions no law reads (valid executions, races and data race freedom, 29.7.5-29.10).
 CL="+Engine.implements +Engine.run_sound +Engine.run_sound_reached +Engine.Claims.parentLaws +Engine.Claims.nodeLaws
-  +Ecma.Implements +Ecma.Spec.program +Ecma.Model.ParseLaws +Ecma.Model.CoverLaws
+  +Engine.Claims.parseLaws +Engine.Claims.coverLaws +Ecma.Implements +Ecma.Spec.program +Ecma.Model.ParseLaws +Ecma.Model.CoverLaws
   +Ecma.Machine.Ctx.spec +Ecma.Machine.Step +Ecma.Machine.Ends +Ecma.Machine.Steps +Ecma.Machine.Runs
   +Ecma.Machine.Calls
   +Ecma.MemoryModel.Valid +Ecma.MemoryModel.DataRaceFree"

@@ -1,6 +1,6 @@
 <!-- title: How it works -->
 <!-- eyebrow: ECMA-262 formalized in SpecTec, bijective with <code>spec.html</code>, compiled and proved in Lean -->
-<!-- lede: <p>The specification lives in <strong>SpecTec</strong> (<code>spec/spectec/</code>) in two parts: structured SpecTec for ECMA-262's algorithms, grammars, early errors and tables (bijective with <code>spec.html</code>), and prose SpecTec modules for its abstract sorts, grammar and memory relations, and the {{total_laws}} model and host laws that quote the English text. Everything else — the Lean specification semantics, the proved reference engine, and the WebAssembly debugger — is downstream of SpecTec.</p> -->
+<!-- lede: <p>The specification lives in <strong>SpecTec</strong> (<code>spec/spectec/</code>) in two parts: structured SpecTec for ECMA-262's algorithms, grammars, early errors and tables (bijective with <code>spec.html</code>), and prose SpecTec modules for its abstract sorts, grammar and memory relations, and the {{total_laws}} model, parser and host laws that quote the English text. Everything else — the Lean specification semantics, the proved reference engine, and the WebAssembly debugger — is downstream of SpecTec.</p> -->
 
 <h2 id="whole">The whole</h2>
 
@@ -34,7 +34,7 @@
 <text class="dg-t" x="252" y="163">Prose SpecTec (prose/)</text>
 <text class="dg-s" x="252" y="181">{{spectec_prose_files}} modules ({{spectec_prose_lines}} lines)</text>
 <text class="dg-m" x="252" y="199">syntax · relation · laws · def</text>
-<text class="dg-s" x="252" y="216">Model ({{all_model_laws}} laws) · Host ({{host_laws}} laws)</text>
+<text class="dg-s" x="252" y="216">Model ({{all_model_laws}}) · Parser ({{parse_laws}}) · Host ({{host_laws}})</text>
 <text class="dg-s" x="252" y="232">every law quotes spec.html</text>
 <path class="dg-a" d="M482,76 L552,100" marker-end="url(#ah)"/>
 <path class="dg-a" d="M482,192 L552,162" marker-end="url(#ah)"/>
@@ -48,8 +48,8 @@
 <text class="dg-s" x="568" y="181">Gen/ gitignored</text>
 <rect class="dg-box proved" x="318" y="318" width="434" height="86" rx="5"/>
 <text class="dg-t" x="330" y="341">The engine: lean/Engine</text>
-<text class="dg-s" x="330" y="359">concrete model &amp; host, parser, verified shortcuts</text>
-<text class="dg-m" x="330" y="377">theorem Engine.implements · theorem Engine.run_sound</text>
+<text class="dg-s" x="330" y="359">concrete model &amp; host, proved parser, verified shortcuts</text>
+<text class="dg-m" x="330" y="377">Engine.implements · run_sound · parseLaws · coverLaws</text>
 <text class="dg-s" x="330" y="394">0 native_decide pins · {{axiom_count}} standard axioms · {{runtime_pins}} runtime checks</text>
 <path class="dg-a" d="M650,318 L650,198" marker-end="url(#ah)"/>
 <text class="dg-l" x="658" y="264">implements</text>
@@ -96,7 +96,7 @@
 <ul class="steps">
 <li><strong><code>syntax</code> (abstract sorts, records and variants):</strong> <a href="model.html#Model"><code>Ecma.Model</code></a> declares the abstract carriers and operations of every specification sort (mathematical values, IEEE 754 binary64 Numbers, BigInts, UTF-16 Strings, Symbols, Parse Nodes, Lists, Data Blocks, CharSets, Records, property tables and the store) without fixing any implementation; <a href="model.html#Val"><code>Val</code></a>, <a href="model.html#Cell"><code>Cell</code></a> and <a href="host.html#Host"><code>Host</code></a> define runtime values, store cells and the host interface over any <code>Model</code>.</li>
 <li><strong><code>relation</code> (inductive inference rules):</strong> Declarative specifications such as §5.1 grammar derivations (<code>Derives</code>), the correspondence between abstract Parse Nodes and derivation trees (<a href="parser-laws.html#Model.NodeRel"><code>Model.NodeRel</code></a>), and §29 candidate-execution orders are written as Horn-style inference rules (<code>rule name : Conclusion :- Premise1, Premise2;</code>).</li>
-<li><strong><code>laws</code> (axiomatic requirements quoting <code>spec.html</code>):</strong> <a href="model.html#Model.Laws"><code>Model.Laws</code></a> ({{model_laws}} laws, including {{num_laws}} for Numbers and {{byte_laws}} for Data Blocks) and <a href="host.html#Host.WF"><code>Host.WF</code></a> ({{host_laws}} laws across {{host_topics}} topics, constraining host hooks and choices over the host-call log) state what any conforming model and host must satisfy. Every <code>law</code> begins with a <code>--- sec-id:</code> docstring quoting the governing sentence of <code>spec.html</code> and giving a one-line <code>Reading:</code>, checked against <code>spec.html</code> by <code>scripts/law_quotes.py</code> (see <a href="host.html#Host.TimeLaws.timeoutAfter"><code>timeoutAfter</code></a>).</li>
+<li><strong><code>laws</code> (axiomatic requirements quoting <code>spec.html</code>):</strong> <a href="model.html#Model.Laws"><code>Model.Laws</code></a> ({{model_laws}} laws, including {{num_laws}} for Numbers and {{byte_laws}} for Data Blocks), <a href="parser-laws.html#Model.ParseLaws"><code>Model.ParseLaws</code></a> / <a href="parser-laws.html#Model.CoverLaws"><code>Model.CoverLaws</code></a> / <a href="parser-laws.html#Model.NodeLaws"><code>Model.NodeLaws</code></a> ({{parse_laws}} laws for parsing, covers and Parse Nodes), and <a href="host.html#Host.WF"><code>Host.WF</code></a> ({{host_laws}} laws across {{host_topics}} topics, constraining host hooks and choices over the host-call log) state what any conforming model, parser and host must satisfy. Every <code>law</code> begins with a <code>--- sec-id:</code> docstring quoting the governing sentence of <code>spec.html</code> and giving a one-line <code>Reading:</code>, checked against <code>spec.html</code> by <code>scripts/law_quotes.py</code> (see <a href="host.html#Host.TimeLaws.timeoutAfter"><code>timeoutAfter</code></a>).</li>
 <li><strong><code>def</code> (pure specification helpers):</strong> Total helper functions over <code>Model</code> and <code>State</code> used to state relations and laws cleanly, with no tactics, proofs or <code>partial</code> recursion.</li>
 </ul>
 
@@ -107,7 +107,7 @@
 <p>Everything under <code>lean/</code> consumes the compiled SpecTec specification:</p>
 <ul class="steps">
 <li><strong>Specification semantics (<code>lean/Ecma</code>):</strong> <code>lean/Ecma/Lower</code> expands editorial macros such as <code>IfAbruptRejectPromise</code> and linearizes SpecTec algorithm bodies while preserving step paths; <code>Ecma.Machine.step</code> defines one small-step transition over call frames for any <code>Model</code> and <code>Host</code> (<a href="implements.html#Machine.Runs"><code>Machine.Runs</code></a>); and <a href="implements.html#Implements"><code>Ecma.Implements</code></a> states what it means for an implementation to conform. <code>lean/Ecma</code> contains zero theorems, tactics, <code>partial</code> defs or <code>unsafe</code> code (<code>scripts/quick_check.py</code>).</li>
-<li><strong>Reference engine and proofs (<code>lean/Engine</code>):</strong> Concrete carriers (exact rationals, IEEE 754 binary64, UTF-16 arrays, a flat heap), a parser over the SpecTec grammars, a concrete host with jobs, agents, modules and <code>$262</code>, and verified fast-path shortcuts ({{engine_lines}} lines of implementation, {{proof_lines}} lines of proofs). It runs JavaScript programs and {{t262_link}} as <code>{{RUN}}</code>, and <a href="what-is-proved.html">What is proved</a> explains <code>Engine.implements</code> and <code>Engine.run_sound</code>.</li>
+<li><strong>Reference engine and proofs (<code>lean/Engine</code>):</strong> Concrete carriers (exact rationals, IEEE 754 binary64, UTF-16 arrays, a flat heap), a proved parser over all six SpecTec grammars (<code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>, <code>Engine.Claims.nodeLaws</code>), a concrete host with jobs, agents, modules and <code>$262</code>, and verified fast-path shortcuts ({{engine_lines}} lines of implementation, {{proof_lines}} lines of proofs). It runs JavaScript programs and {{t262_link}} as <code>{{RUN}}</code>, and <a href="what-is-proved.html">What is proved</a> explains <code>Engine.implements</code> and <code>Engine.run_sound</code>.</li>
 <li><strong>Interactive step debugger (<code>lean/Debugger</code>):</strong> Drives the specification machine step by step as <code>{{DBG}}</code> ({{debugger_lines}} lines, native and 64-bit WebAssembly), pausing on clauses, step paths, throws and <code>Assert:</code> stops.</li>
 </ul>
 
@@ -131,7 +131,7 @@
 <tr><td><code>spec/html/*.txt</code></td><td class="num">{{spectec_html_files}}</td><td class="num">{{spectec_html_lines}}</td><td>ecmarkup presentation templates &amp; metadata for <code>spectec-html</code></td></tr>
 <tr><td><code>lean/Ecma</code> (hand-written)</td><td class="num">{{ecma_files}}</td><td class="num">{{ecma_lines}}</td><td>downstream small-step machine, lowering &amp; <code>Implements</code> contract (<code>Gen/</code> is gitignored)</td></tr>
 <tr><td><code>lean/Engine</code> (outside proofs)</td><td class="num">{{engine_files}}</td><td class="num">{{engine_lines}}</td><td>concrete VM model, parser, host &amp; shortcuts</td></tr>
-<tr><td><code>lean/Engine/Proofs</code></td><td class="num">{{proof_files}}</td><td class="num">{{proof_lines}}</td><td>conformance proofs (<code>Engine.implements</code>, <code>Engine.run_sound</code>)</td></tr>
+<tr><td><code>lean/Engine/Proofs</code></td><td class="num">{{proof_files}}</td><td class="num">{{proof_lines}}</td><td>conformance &amp; parser proofs (<code>Engine.implements</code>, <code>Engine.run_sound</code>, <code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>)</td></tr>
 <tr><td><code>lean/Debugger</code></td><td class="num">{{debugger_files}}</td><td class="num">{{debugger_lines}}</td><td>step debugger (<code>{{DBG}}</code>, native &amp; Wasm64)</td></tr>
 </tbody>
 </table>

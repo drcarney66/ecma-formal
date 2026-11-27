@@ -877,7 +877,8 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
                       "<a href=\"what-is-proved.html\">What is proved</a> reads it field by field.</p>", body, toc))
 
     # The parser's laws.
-    body, toc, _ = site.render("parser-laws.html", parse_secs, opts)
+    body, toc, r_parse = site.render("parser-laws.html", parse_secs, opts)
+    parse_laws = [x for x in r_parse.laws]
     pages.append(Page("parser-laws.html", "The parser's laws",
                       "Reading page · generated from <code>spec/spectec/prose/06-node-rel.spectec</code>",
                       "<p>What a model's parser must give, stated in SpecTec: a Parse Node related to a derivation of "
@@ -939,14 +940,19 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
         "byte_laws": fmt(model_counts.get("Model.ByteLaws", 0)),
         "parent_laws": fmt(model_counts.get("Model.ParentLaws", 0)),
         "unicode_laws": fmt(model_counts.get("Model.UnicodeLaws", 0)),
+        "parse_laws": fmt(len(parse_laws)),
         "all_model_laws": fmt(len(model_laws)),
-        "total_laws": fmt(len(model_laws) + len(host_laws)),
+        "total_laws": fmt(len(model_laws) + len(parse_laws) + len(host_laws)),
         "pins": fmt(pins()),
         "runtime_pins": fmt(runtime_pins()),
         "stmt:implements": code("-- lean/Engine/Proofs/Model.lean, in namespace Engine\n"
                                 + statement(impl_rel, "implements")),
         "stmt:run_sound": code("-- lean/Engine/Proofs/Model.lean, in namespace Engine\n"
                                + statement(impl_rel, "run_sound")),
+        "stmt:parseLaws": code("-- lean/Engine/Claims.lean, in namespace Engine.Claims\n"
+                               + statement(LEAN / "Engine/Claims.lean", "parseLaws")),
+        "stmt:coverLaws": code("-- lean/Engine/Claims.lean, in namespace Engine.Claims\n"
+                               + statement(LEAN / "Engine/Claims.lean", "coverLaws")),
         "implements_struct": code("-- lean/Ecma/Implements.lean, in namespace Ecma\n" + implements_struct()),
         "stmt:implementation": code("-- lean/Engine/Claims.lean, in namespace Engine\n"
                                     + definition(LEAN / "Engine/Claims.lean", "implementation")),

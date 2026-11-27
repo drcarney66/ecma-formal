@@ -69,7 +69,7 @@
         <text x="523" y="132" text-anchor="middle" class="p-sub-svg">spec/spectec/ ({{spectec_total_files}} files)</text>
         <text x="523" y="162" text-anchor="middle" class="p-mono-svg">def @sec-… · grammar</text>
         <text x="523" y="192" text-anchor="middle" class="p-mono-svg">syntax · relation · laws</text>
-        <text x="523" y="222" text-anchor="middle" class="p-muted-svg">{{all_model_laws}} model + {{host_laws}} host laws</text>
+        <text x="523" y="222" text-anchor="middle" class="p-muted-svg">{{all_model_laws}} model · {{parse_laws}} parser · {{host_laws}} host laws</text>
         <text x="523" y="252" text-anchor="middle" class="p-muted-svg">roundtrip + Lean bijection</text>
 
         <!-- Arrow: SpecTec -> Lean 4 Engine -->
@@ -79,8 +79,8 @@
         <!-- Lean 4 Engine & Proofs -->
         <rect class="dg-box proved" x="730" y="36" width="210" height="122" rx="12" stroke-width="2.5"/>
         <text x="835" y="76" text-anchor="middle" class="p-title-svg">Lean 4 Engine</text>
-        <text x="835" y="106" text-anchor="middle" class="p-mono-svg">Engine.implements</text>
-        <text x="835" y="132" text-anchor="middle" class="p-muted-svg">proved · runs test262</text>
+        <text x="835" y="106" text-anchor="middle" class="p-mono-svg">Engine.implements + parser</text>
+        <text x="835" y="132" text-anchor="middle" class="p-muted-svg">all laws proved · runs test262</text>
 
         <!-- Arrow: Lean 4 Engine -> Debugger -->
         <path class="dg-a" d="M835,160 L835,200" stroke-width="2.8" marker-end="url(#arr)"/>
@@ -407,7 +407,7 @@
               </blockquote>
               <div class="translate-note">
                 <span class="badge rd">How it translates</span>
-                <span>Each prose requirement becomes a <code>law</code> in a SpecTec <code>laws</code> block ({{all_model_laws}} model + {{host_laws}} host laws), quoting the governing <code>spec.html</code> sentence verbatim (checked by <code>law_quotes.py</code>).</span>
+                <span>Each prose requirement becomes a <code>law</code> in a SpecTec <code>laws</code> block ({{all_model_laws}} model, {{parse_laws}} parser &amp; {{host_laws}} host laws), quoting the governing <code>spec.html</code> sentence verbatim (checked by <code>law_quotes.py</code>).</span>
               </div>
             </div>
           </div>
@@ -599,8 +599,8 @@
         <li class="reveal-item" data-reveal="3">
           <strong>Generated JS reference VM</strong>
           <ul>
-            <li>Executable engine compiled straight from SpecTec &amp; <code>spec.html</code> (native &amp; Wasm)</li>
-            <li>Verified shortcuts incrementally replacing slow spec steps (<code>Engine.implements</code>)</li>
+            <li>Executable engine &amp; proved parser compiled from SpecTec &amp; <code>spec.html</code> (native &amp; Wasm)</li>
+            <li>Verified shortcuts &amp; grammar kernel proved with 0 sorrys (<code>Engine.implements</code>, <code>Engine.Claims.parseLaws</code>)</li>
           </ul>
         </li>
       </ul>

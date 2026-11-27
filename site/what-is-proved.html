@@ -49,6 +49,10 @@
 <h3 id="run-sound">Every run of the engine is the specification's</h3>
 {{stmt:run_sound}}
 <p>If the engine's run loop (<code>runT</code>), started on a call in a state with no suspended execution context, returns a result <code>f</code>, then the specification's machine, running the compiled SpecTec program with the engine's host, has a run from the same configuration that ends with <code>f</code>; or <code>f</code> is a stop at an implementation limit. A companion, <code>Engine.run_sound_reached</code>, proves the same from any configuration the specification's machine reaches, covering jobs and runs after preludes.</p>
+<h3 id="parser-theorems">The parser and cover laws, sound and complete</h3>
+{{stmt:parseLaws}}
+{{stmt:coverLaws}}
+<p>In <code>lean/Engine/Claims.lean</code> (proved in <code>lean/Engine/Proofs/Parse/Laws.lean</code> and <code>Cover.lean</code>): for every parser context and strictness flag, <code>Model.parse</code> is both sound and complete against <code>GrammarCtx.ParseIs</code> / <code>GrammarCtx.Parses</code> (<a href="parser-laws.html#Model.ParseLaws"><code>Model.ParseLaws</code></a>), and <code>Model.cover</code> is sound against <code>GrammarCtx.CoverIs</code> (<a href="parser-laws.html#Model.CoverLaws"><code>Model.CoverLaws</code></a>), alongside <code>Engine.Claims.nodeLaws</code> and <code>Engine.Claims.parentLaws</code>.</p>
 
 <h2 id="ledger">Proved, trusted, owed, outside</h2>
 <div class="ledger">
@@ -57,8 +61,8 @@
 <li>The engine's values obey the SpecTec model laws and Unicode laws (<code>Engine.Impl.laws</code>, <code>Engine.Impl.unicodeLaws</code>).</li>
 <li>The engine's host obeys all {{host_laws}} SpecTec host laws under every option set (<code>Engine.SpecHost.wfBy</code>).</li>
 <li>The code table the engine runs equals the compiled SpecTec program plus the host's own algorithms where the specification defines none (<code>Engine.P'_eq</code>).</li>
-<li>Each transition of the engine, shortcuts included, matches the specification's at every reachable configuration, with <strong>0 <code>native_decide</code> pins</strong>; the {{runtime_pins}} equations on the generated program that the shortcuts rely on are verified at run time (<code>Engine.Machine.pinsOk</code>; if any failed, <code>Engine.setupAt</code> falls back to <code>Engine.Machine.plain</code>).</li>
-<li>The parser's laws (<code>Engine.Claims.parseLaws</code>), the cover laws (<code>Engine.Claims.coverLaws</code>), and the laws of a Parse Node's parent (<code>Engine.Claims.parentLaws</code>) and of its children and descendants (<code>Engine.Claims.nodeLaws</code>).</li>
+<li>Each transition of the engine, shortcuts included, matches the specification's at every reachable configuration, with <strong>0 <code>native_decide</code> pins</strong>; the {{runtime_pins}} checks on the generated program and parser tables are verified at run time (<code>Engine.Machine.pinsOk</code>; if any failed, <code>Engine.setupAt</code> falls back to <code>Engine.Machine.plain</code>).</li>
+<li>The parser's soundness and completeness laws (<code>Engine.Claims.parseLaws</code>), the cover soundness law (<code>Engine.Claims.coverLaws</code>), and the laws of a Parse Node's parent (<code>Engine.Claims.parentLaws</code>) and of its children and descendants (<code>Engine.Claims.nodeLaws</code>), over <code>Engine.Model.codePrims</code>.</li>
 <li>The set-ups covered: <code>{{RUN}}</code> by default and with <code>--no-accel</code>, under every <code>--checked</code>, <code>--max-heap</code>, every host option (<code>--host-seed</code>, <code>--web-browser</code>, <code>--annex-b</code>, <code>--can-block</code>, <code>--resize-in-place</code>), and with tracing, <code>--sites</code> and <code>--cover</code>.</li>
 </ul></section>
 <section id="trusted"><h3><span class="badge trusted">Trusted</span> Relied on, not proved</h3>
