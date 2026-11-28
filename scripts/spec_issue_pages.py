@@ -158,7 +158,7 @@ def body_html(iss: si.Issue, sp: errata_page.Text, names: dict[str, str], errata
         elif page.startswith("examples/"):
             href = f"#{example_anchor}" if example_anchor else "results.html"
         elif page in ("README.md", "./"):
-            href = "index.html"
+            href = "../errata.html"
         return f'href="{esc(href)}"'
 
     h = re.sub(r'href="([^"]*)"', link, h)
@@ -212,7 +212,8 @@ def results_page(sp: errata_page.Text) -> Out:
             "standard output and standard error, exactly as recorded by <code>scripts/spec_issues_run.py</code>. "
             "The model's runs were made from this repository's build; the engines' runs are the record of the "
             "versions below.</p>")
-    return Out(f"{DIR}/results.html", "The examples' runs", "Spec issues · <code>docs/spec-issues/examples/RESULTS.md</code>",
+    return Out(f"{DIR}/results.html", "The examples' runs",
+               '<a href="../errata.html">Spec issues &amp; errata</a> · <code>docs/spec-issues/examples/RESULTS.md</code>',
                lede, h, toc)
 
 
@@ -303,7 +304,7 @@ def facts_html(iss: si.Issue, sp: errata_page.Text, names: dict[str, str], errat
     ers = []
     for e in iss.errata:
         er = errata[e]
-        ers.append(f'<a href="../errata.html#{esc(e)}"><code>{esc(e)}</code></a> on the Errata page '
+        ers.append(f'<a href="../errata.html#{esc(e)}"><code>{esc(e)}</code></a> on Spec issues &amp; errata '
                    f'({esc(KIND_LABEL[er.kind])}; SpecTec bakes in {esc(errata_page.READING_LABEL[er.default])})')
     for e in iss.retired:
         ers.append(f'<code>{esc(e)}</code>, retired: <a href="../errata.html#removed">removed because the editors fixed the text</a>')
@@ -343,9 +344,8 @@ def pages(builds: list[dict] | None = None, sp: errata_page.Text | None = None, 
         if i.example:
             toc.append(("program", "The program", 1))
         out.append(Out(f"{DIR}/{i.slug}.html", f"{i.num}. {inline(i.title)}",
-                       f'<a href="index.html">Spec issues</a> · {esc(KIND_LABEL[kind_of(i, kinds)])} · '
+                       f'<a href="../errata.html">Spec issues &amp; errata</a> · {esc(KIND_LABEL[kind_of(i, kinds)])} · '
                        f'<code>docs/spec-issues/{esc(i.path.name)}</code>', "", body, toc))
-    out.append(index_page(iss, sp, all_errata, kinds, recs))
     out.append(results_page(sp))
     return out
 

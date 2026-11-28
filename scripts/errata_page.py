@@ -593,7 +593,8 @@ def alts_html(sp: Text, q: Quote) -> str:
     return f'<dl class="readings">{"".join(out)}</dl>' if out else ""
 
 
-def program_html(sp: Text, e: Erratum, p: dict, runs: dict, gallery: dict, builds: list[dict], run_name: str) -> str:
+def program_html(sp: Text, e: Erratum, p: dict, runs: dict, gallery: dict, builds: list[dict], run_name: str,
+                 results_hrefs: list[str] | None = None) -> str:
     pid = p["program"]
     f = program_file(pid)
     rows = []
@@ -624,6 +625,8 @@ def program_html(sp: Text, e: Erratum, p: dict, runs: dict, gallery: dict, build
                 continue
             q = f"?example={pid}" + ("" if b == first else f"&amp;build={b}")
             links.append(f'<button type="button" class="open" data-dbg-open="debugger/{q}">Open in the debugger</button>')
+    for rhref in (results_hrefs or []):
+        links.append(f'<a class="open" href="{esc(rhref)}">Cross-engine runs</a>')
     args = header_args(f.read_text(), e.name)
     run_line = " ".join([run_name, *args, f.relative_to(ROOT).as_posix()])
     return (f'<div class="program"><p class="prog-head">The program <code>{esc(f.relative_to(ROOT).as_posix())}</code>'
@@ -631,6 +634,23 @@ def program_html(sp: Text, e: Erratum, p: dict, runs: dict, gallery: dict, build
             f'<div class="tablebox"><table class="outcomes"><tbody>{"".join(rows)}</tbody></table></div>'
             f'{"<p class=opens>" + " ".join(links) + "</p>" if links else ""}'
             f'<details class="jssrc"><summary>Source</summary><pre class="js">{esc(f.read_text())}</pre></details></div>')
+
+
+def issue_example_html(ex: Path, builds: list[dict], unrunnable: dict[str, str], results_href: str, si_dir: Path) -> str:
+    """Fallback program block when an erratum's program lives under docs/spec-issues/examples/."""
+    files = sorted(p for p in ex.rglob("*") if p.is_file()) if ex.is_dir() else [ex]
+    ident = ex.name if ex.is_dir() else ex.stem
+    srcs = "".join(f'<details class="jssrc"><summary>Source <code>{esc(f.relative_to(si_dir).as_posix())}</code></summary>'
+                   f'<pre class="js">{esc(f.read_text())}</pre></details>' for f in files)
+    links = []
+    if ident not in unrunnable and builds:
+        links.append(f'<button type="button" class="open" data-dbg-open="debugger/?example={esc(ident)}">Open in the debugger</button>')
+    links.append(f'<a class="open" href="{esc(results_href)}">Cross-engine runs</a>')
+    kind = "Module graph" if ex.is_dir() else "Script"
+    note = f' <span class="muted">(not offered in browser debugger: {esc(unrunnable[ident])})</span>' if ident in unrunnable else ""
+    return (f'<div class="program"><p class="prog-head">Example ({kind}): '
+            f'<code>docs/spec-issues/examples/{esc(ex.name)}</code>{note}</p>'
+            f'<p class="opens">{" ".join(links)}</p>{srcs}</div>')
 
 
 def writeups(e: Erratum) -> list[tuple[str, str]]:
@@ -646,8 +666,10 @@ def writeups(e: Erratum) -> list[tuple[str, str]]:
 
 
 def erratum_html(sp: Text, e: Erratum, quotes: list[Quote], data: dict, runs: dict, gallery: dict, builds: list[dict],
-                 run_name: str) -> str:
-    wl = "".join(f'<a class="open" href="{esc(href)}">Write-up {md(title)}</a>' for href, title in writeups(e))
+                 run_name: str, iss_for_e: list, recs: dict, unrunnable: dict[str, str], sip) -> str:
+    wl = " ".join(f'<a class="open" href="spec-issues/{esc(i.slug)}.html">Write-up {i.num}: {sip.inline(i.title)} →</a>'
+                  for i in iss_for_e) or "".join(f'<a class="open" href="{esc(href)}">Write-up {md(title)} →</a>'
+                                                  for href, title in writeups(e))
     parts = [f'<article class="erratum" id="{esc(e.name)}"><h3><a class="self" href="#{esc(e.name)}">{esc(e.name)}</a></h3>',
              f'<p class="erratum-meta"><span class="badge rd">SpecTec: {esc(e.default)}</span>'
              f'<span class="badge sw-{e.switch}">layer: {esc(e.switch)}</span></p>',
@@ -671,19 +693,31 @@ def erratum_html(sp: Text, e: Erratum, quotes: list[Quote], data: dict, runs: di
     facts.append(f"<dt>In SpecTec</dt><dd>{READING_LABEL[e.default][0].upper() + READING_LABEL[e.default][1:]}.{res}</dd>")
     title, sentence = LAYER[e.switch]
     facts.append(f"<dt>Layer</dt><dd>{title}. {sentence}</dd>")
+    ups = [re.sub(r'href="(\d\d-[\w-]+)\.md(#[^"]*)?"', r'href="spec-issues/\1.html\2"',
+                  sip.upstream_html(i.header["Upstream"], recs.get(i.num, [])))
+           for i in iss_for_e if "Upstream" in i.header]
+    if ups:
+        facts.append(f'<dt>Upstream</dt><dd>{"<br>".join(ups)}</dd>')
     parts.append(f'<dl class="split efacts">{"".join(facts)}</dl>')
+    ex_issues = [i for i in iss_for_e if i.example]
+    results_hrefs = [f"spec-issues/results.html#{sip.results_anchor(i.example.name)}" for i in ex_issues]
     progs = data["programs"].get(e.name, [])
     if progs:
-        parts += [program_html(sp, e, p, runs, gallery, builds, run_name) for p in progs]
+        parts += [program_html(sp, e, p, runs, gallery, builds, run_name,
+                               results_hrefs if idx == 0 else None) for idx, p in enumerate(progs)]
+    elif ex_issues:
+        parts += [issue_example_html(i.example, builds, unrunnable,
+                                     f"spec-issues/results.html#{sip.results_anchor(i.example.name)}", sip.si.DIR)
+                  for i in ex_issues]
     else:
-        parts.append('<p class="noprog">No program on this site shows this erratum.</p>')
+        parts.append('<p class="noprog">No JavaScript program on this site shows this erratum (an axiomatic §29 relation).</p>')
     parts.append("</article>")
     return "\n".join(x for x in parts if x)
 
 
 def page(runs_file: dict, gallery: dict | None, builds: list[dict], run_name: str, sp: Text | None = None) -> dict:
-    """errata.html's title, lede, body and table of contents. `runs_file` is `run`'s output, which must be of
-    the data as it is and have passed."""
+    """errata.html's title, lede, body and table of contents — unified with the spec-issue index and upstream data."""
+    import spec_issue_pages as sip
     errata = read_errata()
     data = json.loads(DATA.read_text())
     sp = sp or Text()
@@ -705,67 +739,127 @@ def page(runs_file: dict, gallery: dict | None, builds: list[dict], run_name: st
     if len(defects) + len(proposals) != len(errata):
         raise SystemExit("errata: a kind neither defect nor proposal")
 
+    all_issues = sip.si.issues()
+    iss_by_err: dict[str, list] = {}
+    for i in all_issues:
+        for ename in i.errata:
+            iss_by_err.setdefault(ename, []).append(i)
+    recs = sip.upstream.by_writeup()
+    try:
+        import dbg_spec_examples
+        unrunnable = dict(dbg_spec_examples.UNRUNNABLE)
+    except ImportError:
+        unrunnable = {}
+
+    def has_any_prog(e: Erratum) -> bool:
+        return bool(data["programs"].get(e.name)) or any(i.example for i in iss_by_err.get(e.name, []))
+
     def table(es: list[Erratum]) -> str:
         trs = []
         for e in es:
             q = quotes_of(e, sp, data.get("anchors", {}), findings)[0]
             num = sp.nums.get(q.cid, "")
-            n = len(data["programs"].get(e.name, []))
-            trs.append(f'<tr><td><a href="#{esc(e.name)}"><code>{esc(e.name)}</code></a></td>'
-                       f'<td><span class="secnum">{esc(num)}</span> {esc(sp.short(q.cid))}</td>'
-                       f'<td>{esc(e.default)}</td><td>{esc(e.switch)}</td><td class="num">{"yes" if n else ""}</td></tr>')
+            cl_cell = (f'<a class="clause" href="{esc(CLAUSE_URL.format(q.cid))}"><span class="secnum">{esc(num)}</span> '
+                       f'{esc(sp.short(q.cid))}</a>' if num else esc(sp.short(q.cid)))
+            iss_e = iss_by_err.get(e.name, [])
+            w_cell = "<br>".join(f'<a href="spec-issues/{esc(i.slug)}.html">{i.num}. {sip.inline(i.title)}</a>'
+                                 for i in iss_e)
+            up_parts = [u for i in iss_e if (u := sip.upstream_summary(i.header.get("Upstream", ""), recs.get(i.num, [])))]
+            up_cell = "<br>".join(dict.fromkeys(up_parts))
+            prog = "yes" if has_any_prog(e) else ""
+            plain_q = " ".join([
+                e.name, q.cid, num, sp.short(q.cid), e.default, e.switch,
+                *(f"{i.num} {i.title} {i.header.get('Upstream', '')}" for i in iss_e),
+            ]).lower()
+            trs.append(f'<tr data-q="{esc(plain_q)}">'
+                       f'<td class="tname"><a href="#{esc(e.name)}"><code>{esc(e.name)}</code></a></td>'
+                       f'<td class="tclause">{cl_cell}</td>'
+                       f'<td class="twriteup">{w_cell}</td>'
+                       f'<td class="trd"><span class="badge rd">{esc(e.default)}</span> '
+                       f'<span class="badge sw-{e.switch}">{esc(e.switch)}</span></td>'
+                       f'<td class="up">{up_cell}</td>'
+                       f'<td class="num">{prog}</td></tr>')
         return ('<div class="tablebox"><table class="errata-index"><thead><tr><th>Erratum</th><th>Clause</th>'
-                '<th>SpecTec reading</th><th>Layer</th><th class="num">Program</th></tr></thead><tbody>'
-                + "".join(trs) + "</tbody></table></div>")
+                '<th>Write-up</th><th>SpecTec</th><th>Upstream</th><th class="num">Program</th>'
+                '</tr></thead><tbody>' + "".join(trs) + "</tbody></table></div>")
 
-    def section(sid: str, title: str, es: list[Erratum], intro: str) -> str:
+    def section(sid: str, title: str, es: list[Erratum], intro: str, with_filter: bool = False) -> str:
+        flt = (f'<div class="filter"><label for="lawfilter">Filter the {len(errata)} entries</label>'
+               f'<input id="lawfilter" type="search" placeholder="a clause, an erratum, a write-up, an upstream PR" '
+               f'autocomplete="off"><span class="filter-count" aria-live="polite"></span></div>'
+               if with_filter else "")
         arts = [erratum_html(sp, e, quotes_of(e, sp, data.get("anchors", {}), findings), data, runs, gallery, builds,
-                             run_name) for e in es]
+                             run_name, iss_by_err.get(e.name, []), recs, unrunnable, sip) for e in es]
         return (f'<section class="part" id="{sid}"><h2 class="part-title"><a class="self" href="#{sid}">{esc(title)} '
-                f'({len(es)})</a></h2>{intro}{table(es)}{"".join(arts)}</section>')
+                f'({len(es)})</a></h2>{intro}{flt}{table(es)}{"".join(arts)}</section>')
 
     from collections import Counter
     dflt = Counter(e.default for e in errata)
     sw = Counter(e.switch for e in errata)
-    with_prog = sum(1 for e in errata if data["programs"].get(e.name))
+    with_prog = sum(1 for e in errata if has_any_prog(e))
     nruns = len(want)
-    how = (f'<section class="part" id="reading"><h2 class="part-title"><a class="self" href="#reading">How to read an '
-           f'erratum</a></h2>'
-           f'<p>Each erratum names the sentences of ECMA-262 it is about, quoted from the pinned <code>spec.html</code> '
-           f'(every step or rule checked by its SHA-256 hash or normalized text so a change to the specification fails '
-           f'the build), and the candidate readings: <em>the literal text</em>, the sentence as written; '
-           f'<em>the test262 reading</em>, what <code>test262</code> requires; <em>the proposed reading</em>, the text '
-           f'proposed in its place. Unlike an overlay with runtime flags, SpecTec bakes one resolved reading directly '
-           f'into <code>spec/spectec/</code> and records every non-literal choice in <code>spec/DECISIONS.md</code>.</p>'
-           f'<p>Across the {len(errata)} entries, SpecTec bakes in {dflt.get("test262", 0)} as <code>test262</code> '
-           f'requires, {dflt.get("proposed", 0)} as proposed, and {dflt.get("literal", 0)} keeping the literal wording '
-           f'as written ({sw.get("spec", 0)} in algorithms and early errors, {sw.get("parser", 0)} in the grammars and '
-           f'parser, and {sw.get("none", 0)} in prose relations).</p>'
-           f'<p>{with_prog} entries have a demonstration program. Each was run when this site was built ({nruns} runs '
-           f'on native <code>{esc(run_name)}</code>) and verified against the baked-in SpecTec outcome; the table '
-           f'beside it also documents what an unchosen alternative reading would produce. An object\'s number in a '
-           f'result line is written <code>#N</code>.</p></section>')
-    body = [how,
+    checked = ", ".join(sorted({r.checked_on for v in recs.values() for r in v})) or "no date"
+    eng_list = [a for a, _ in sip.engines() if not a.startswith("the formal model")]
+    eng_items = "".join(f"<li><strong>{esc(a)}</strong>: {sip.inline(b)}</li>"
+                        for a, b in sip.engines() if not a.startswith("the formal model"))
+    eng_items += ("<li><strong>The formal model</strong>: <code>ecma-run</code>, built from this repository at the "
+                  "commit this site was built from.</li>")
+    pin = sip.subprocess_out(["git", "-C", str(ECMA262), "rev-parse", "--short=9", "HEAD"])
+    t262 = sip.subprocess_out(["git", "-C", str(ROOT / "external/test262"), "rev-parse", "--short=8", "HEAD"])
+
+    tiles = (f'<ul class="facts" aria-label="Summary">'
+             f'<li><b>{len(errata)}</b><span>Specification decisions ({len(defects)} defects, {len(proposals)} proposals)</span></li>'
+             f'<li><b>{len(all_issues)}</b><span>Long-form write-ups (<code>docs/spec-issues/</code>)</span></li>'
+             f'<li><b>{with_prog}</b><span>Entries with runnable example programs</span></li>'
+             f'<li><b>{len(eng_list) + 1}</b><span>Engines compared in <a href="spec-issues/results.html">recorded runs</a></span></li>'
+             f'</ul>')
+
+    how = (f'<section class="part" id="reading"><h2 class="part-title"><a class="self" href="#reading">How to read this '
+           f'page</a></h2>'
+           f'<p>Each entry names the sentences of ECMA-262 (at <code>{esc(pin)}</code>) it concerns, quoted from the '
+           f'pinned <code>spec.html</code> (every step, grammar production, or rule checked by SHA-256 hash or '
+           f'normalized text when the site builds), alongside its candidate readings: <em>the literal text</em> as '
+           f'written; <em>the test262 reading</em> required by <code>test262</code> (at <code>{esc(t262)}</code>); and '
+           f'<em>the proposed reading</em> drafted in its place. SpecTec bakes one resolved reading directly into '
+           f'<code>spec/spectec/</code> and records every non-literal choice in <code>spec/DECISIONS.md</code>: across '
+           f'the {len(errata)} entries, {dflt.get("test262", 0)} follow <code>test262</code>, {dflt.get("proposed", 0)} '
+           f'bake in a proposed fix, and {dflt.get("literal", 0)} keep the literal wording ({sw.get("spec", 0)} in '
+           f'algorithms and early errors, {sw.get("parser", 0)} in the grammars and parser, and {sw.get("none", 0)} in '
+           f'prose relations).</p>'
+           f'<p>Every entry links to its long-form committee write-up (<code>docs/spec-issues/NN-*.md</code>), which '
+           f'traces the issue step by step from the specification text alone, tracks upstream <code>tc39/ecma262</code> '
+           f'and <code>tc39/test262</code> issues and pull requests (checked {esc(checked)} in '
+           f'<code>docs/spec-issues/upstream.tsv</code>), and proposes an editorial change.</p>'
+           f'<p>{with_prog} of the {len(errata)} entries have a runnable JavaScript example: {len(data["programs"])} '
+           f'are verified on native <code>{esc(run_name)}</code> ({nruns} runs checked at build time, with object '
+           f'addresses normalized to <code>#N</code>), and the write-ups\' examples are also recorded across '
+           f'<a href="spec-issues/results.html">all four engines</a>:</p>'
+           f'<ul>{eng_items}</ul></section>')
+    body = [tiles, how,
             section("defects", "Defects of the text", defects,
                     "<p>Places where the text, read as written, gives no answer, an answer that contradicts another "
                     "sentence, or an answer test262 does not accept — including every place where SpecTec bakes in a "
-                    "non-literal choice so the formal specification and reference engine are well-defined.</p>"),
+                    "non-literal choice so the formal specification and reference engine are well-defined.</p>",
+                    with_filter=True),
             section("proposals", "Proposed normative changes", proposals,
                     "<p>Not a defect: the text is consistent, and the change alters what it requires (such as "
                     "finite resource limits for BigInts and Strings or pre-Unicode-15.1 identity escapes).</p>")]
-    toc = [("reading", "How to read an erratum", 1), ("defects", f"Defects of the text ({len(defects)})", 1)]
+    toc = [("reading", "How to read this page", 1), ("defects", f"Defects of the text ({len(defects)})", 1)]
     toc += [(e.name, esc(e.name), 2) for e in defects]
     toc += [("proposals", f"Proposed normative changes ({len(proposals)})", 1)]
     toc += [(e.name, esc(e.name), 2) for e in proposals]
-    lede = (f"<p>The {len(errata)} specification defects, non-literal SpecTec readings, and proposed normative changes "
-            f"recorded when formalizing ECMA-262 in SpecTec ({len(defects)} defects of the text and {len(proposals)} "
-            f"proposed normative change{'s' if len(proposals) != 1 else ''}, from <code>spec/DECISIONS.md</code>): "
-            f"the sentences quoted from <code>spec.html</code>, the reading baked into <code>spec/spectec/</code>, "
-            f"the alternatives, and verified demonstration programs.</p>")
-    return {"title": "Errata", "eyebrow": "Specification decisions · <code>spec/DECISIONS.md</code>, "
-            "<code>site/errata.json</code>", "lede": lede, "body": "\n".join(body), "toc": toc,
-            "findings": sorted(set(findings)), "counts": {"errata": len(errata), "defects": len(defects),
-                                             "proposals": len(proposals), "runs": nruns, "with_program": with_prog}}
+    lede = (f"<p>All {len(errata)} specification defects, non-literal SpecTec readings, and proposed normative changes "
+            f"encountered when formalizing ECMA-262 ({len(defects)} defects of the text and {len(proposals)} "
+            f"proposed normative change{'s' if len(proposals) != 1 else ''}, paired with {len(all_issues)} long-form "
+            f"write-ups): the sentences quoted from <code>spec.html</code>, the reading baked into "
+            f"<code>spec/spectec/</code>, upstream TC39 status, and verified demonstration programs.</p>")
+    return {"title": "Spec issues & errata",
+            "eyebrow": "Specification issues &amp; decisions · <code>spec/DECISIONS.md</code>, "
+                       "<code>docs/spec-issues/</code>",
+            "lede": lede, "body": "\n".join(body), "toc": toc,
+            "findings": sorted(set(findings)),
+            "counts": {"errata": len(errata), "defects": len(defects), "proposals": len(proposals),
+                       "runs": nruns, "with_program": with_prog, "writeups": len(all_issues)}}
 
 
 # ---------------------------------------------------------------------------------------------------------------

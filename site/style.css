@@ -453,7 +453,22 @@ pre.js { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surfa
   details.lean-fold > summary::before { content: ""; }
 }
 
-/* The errata */
+/* The errata & spec-issues index */
+table.errata-index td { vertical-align: top; }
+table.errata-index td.tclause { font-size: 0.9em; }
+table.errata-index td.twriteup { min-width: 12rem; }
+table.errata-index td.trd { white-space: nowrap; }
+table.errata-index td.up { min-width: 7rem; font-size: 0.85em; }
+@media (max-width: 46rem) {
+  table.errata-index, table.errata-index tbody, table.errata-index tr, table.errata-index td { display: block; width: auto; }
+  table.errata-index thead { display: none; }
+  table.errata-index tr { border-bottom: 1px solid var(--rule); padding: 0.35rem 0; }
+  table.errata-index td { border-bottom: 0; padding: 0.1rem 0.6rem; }
+  table.errata-index td.num { text-align: left; }
+  table.errata-index td.up:not(:empty)::before { content: "Upstream: "; color: var(--ink-2); }
+  table.errata-index td.num:not(:empty)::before { content: "Program: "; color: var(--ink-2); }
+  table.errata-index td.twriteup, table.errata-index td.up { min-width: 0; }
+}
 article.erratum { border-top: 1px solid var(--rule); padding: 1.1rem 0 0.6rem; margin-top: 1.4rem; }
 article.erratum h3 { margin: 0 0 0.35rem; font-size: 1.2rem; }
 article.erratum h3 a.self { color: var(--ink); text-decoration: none; }

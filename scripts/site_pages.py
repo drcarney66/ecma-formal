@@ -67,7 +67,7 @@ REWORD: list[tuple[str, str, str]] = [
 # The pages, in three dropdown menus next to the site's name. Home is the site's name.
 NAV = [
     ("Read", [("how-it-works.html", "How it works"), ("what-is-proved.html", "What is proved"),
-              ("errata.html", "Errata"), ("spec-issues/", "Spec issues"),
+              ("errata.html", "Spec issues & errata"),
               ("proposal.html", "Applying a proposal"), ("test262.html", "test262"),
               ("slides.html", "TC39 #117 slides")]),
     ("The Specification", [("model.html", "The model"), ("host.html", "The host"),
@@ -1142,18 +1142,19 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
                           'branch: ' + fmt(pp["summary"]["hand_lines"]) + ' lines written by hand, '
                           + fmt(pp["summary"]["lean_hand"]) + ' files of hand-written Lean changed.</p></li>') if pp else "",
         "proposal_link": (' (<a href="proposal.html">Applying a proposal</a> shows one applied)') if pp else "",
-        "errata_card": ('<li><h3><a href="errata.html">Errata &amp; non-literal readings</a></h3><p>All ' + fmt(ep["counts"]["errata"]) + ' specification '
-                        'defects, non-literal SpecTec readings, and proposed changes recorded in <code>spec/DECISIONS.md</code> '
-                        '(with <a href="spec-issues/">full write-ups</a> and ' + fmt(ep["counts"]["with_program"]) + ' verified programs).'
-                        '</p></li>') if ep else "",
+        "errata_card": ('<li><h3><a href="errata.html">Spec issues &amp; errata</a></h3><p>All '
+                        + fmt(ep["counts"]["errata"]) + ' specification defects, non-literal SpecTec readings, and '
+                        'proposed changes (' + fmt(ep["counts"]["writeups"]) + ' long-form write-ups, upstream TC39 '
+                        'tracking, and ' + fmt(ep["counts"]["with_program"]) + ' runnable examples).</p></li>') if ep else "",
         "t262_section": t262_section(tp),
-        "errata_sentence": (' <a href="errata.html">The errata page</a> and <a href="spec-issues/">spec-issue write-ups</a> quote each entry\'s sentences and alternative '
-                            'readings, and verify a demonstration program for each one that has one.') if ep else "",
+        "errata_sentence": (' <a href="errata.html">Spec issues &amp; errata</a> quotes each entry\'s sentences and '
+                            'alternative readings, tracks upstream issues and PRs, links to its long-form write-up, and '
+                            'verifies a demonstration program where one applies.') if ep else "",
         "t262_sentence": t262_sentence(tp),
         "axioms": ", ".join(f"<code>{x}</code>" for x in axioms()), "axiom_count": fmt(len(axioms())),
         "dbg_section": "", "dbg_revision": (" and the step debugger as <code>" + DBG + "</code>"
                                             + ("." if pp else "; the application of a proposal is not on this site yet.")),
-        "slides_errata_link": '<a href="errata.html">Errata</a>' if ep else "Errata",
+        "slides_errata_link": '<a href="errata.html">Spec issues &amp; errata</a>' if ep else "Spec issues &amp; errata",
         "slides_errata_count_link": f'<a href="errata.html">{fmt(total_errata)} documented errata</a>' if ep else f'{fmt(total_errata)} documented errata',
         "slides_examples_link": '<a href="examples.html">All debugger examples</a>' if gallery else "All debugger examples",
         "slides_proposal_link": '<a href="proposal.html">Deep dive: applying <code>import defer</code></a>' if pp else "Applying <code>import defer</code>",
@@ -1191,14 +1192,14 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
     if tp:
         pages.append(Page("test262.html", tp["title"], tp["eyebrow"], tp["lede"], tp["body"], tp["toc"], wide=True))
     if ep:
-        pages.append(Page("errata.html", ep["title"], ep["eyebrow"], ep["lede"], ep["body"], ep["toc"]))
+        pages.append(Page("errata.html", ep["title"], ep["eyebrow"], ep["lede"], ep["body"], ep["toc"], wide=True))
     if pp:
         pages.append(Page("proposal.html", pp["title"], pp["eyebrow"], pp["lede"], pp["body"], pp["toc"], wide=True))
 
     # The spec-issue write-ups (scripts/spec_issue_pages.py), under spec-issues/.
     for o in spec_issue_pages.pages((dbgopt or {}).get("builds", []), errata_page.Text()):
         check_lean_names(o.body, o.file)
-        pages.append(Page(o.file, o.title, o.eyebrow, o.lede, o.body, o.toc, nav="spec-issues/",
+        pages.append(Page(o.file, o.title, o.eyebrow, o.lede, o.body, o.toc, nav="errata.html",
                           wide=o.file.endswith("results.html")))
 
     # The page GitHub Pages serves for an address with no page: its links are from the site's root, since it is
@@ -1207,8 +1208,7 @@ def build(out: Path, spec_path: Path, t262: Path | None, dbgopt: dict | None = N
                       f'<p>The site\'s pages are in its navigation above; <a href="{base_path}index.html">the home page</a> '
                       'says what is here.</p>', prefix=base_path))
 
-    names = ({p.file for p in pages} | ({"debugger/"} if dbgopt and dbgopt.get("debugger") else set())
-             | {"spec-issues/"})
+    names = {p.file for p in pages} | ({"debugger/"} if dbgopt and dbgopt.get("debugger") else set())
     for k, (f, old, _new) in enumerate(REWORD):
         if k not in site.reword_used:
             raise SystemExit(f"REWORD: {f} no longer has {old!r}: remove the entry")

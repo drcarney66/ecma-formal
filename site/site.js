@@ -38,10 +38,10 @@
     var cb = document.getElementById("corner-theme");
     if (cb) cb.addEventListener("click", toggleTheme);
 
-    // The table of laws: rows whose text has every word typed.
+    // The table of laws or errata: rows whose text has every word typed.
     var input = document.getElementById("lawfilter");
     if (input) {
-      var rows = Array.prototype.slice.call(document.querySelectorAll(".lawtable tbody tr"));
+      var rows = Array.prototype.slice.call(document.querySelectorAll("tr[data-q]"));
       var count = document.querySelector(".filter-count");
       var run = function () {
         var words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
