@@ -58,30 +58,8 @@
       run();
     }
 
-    // Folding: one control to open or close every fold of the page.
     var folds = Array.prototype.slice.call(document.querySelectorAll("details.lean-fold"));
     var auxFolds = Array.prototype.slice.call(document.querySelectorAll("details.aux-fold"));
-    var title = document.querySelector("main > header.title");
-    if (folds.length > 3 && title) {
-      var p = document.createElement("p");
-      p.className = "foldall";
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "theme";
-      btn.id = "foldall";
-      var firstSum = folds[0].querySelector("summary");
-      var foldLang = firstSum && firstSum.textContent.indexOf("SpecTec") === 0 ? "SpecTec" : "Lean";
-      var set = function (open) {
-        folds.forEach(function (d) { d.open = open; });
-        btn.textContent = open ? "Fold all " + foldLang : "Show all " + foldLang + " (" + folds.length + ")";
-        btn.setAttribute("aria-pressed", open ? "true" : "false");
-      };
-      var open = load("lean-open") === "1";
-      set(open);
-      btn.addEventListener("click", function () { open = !open; save("lean-open", open ? "1" : null); set(open); });
-      p.appendChild(btn);
-      title.appendChild(p);
-    }
 
     // A link into a folded part opens every ancestor <details> (including folded auxiliary definitions).
     var revealId = function (id) {
