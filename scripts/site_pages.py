@@ -66,9 +66,11 @@ REWORD: list[tuple[str, str, str]] = [
 
 # The pages, in three dropdown menus next to the site's name. Home is the site's name.
 NAV = [
-    ("Read", [("how-it-works.html", "How it works"), ("what-is-proved.html", "What is proved"),
+    ("Read", [("how-it-works.html", "How it works"),
+              ("proposal.html", "Applying a proposal"),
               ("errata.html", "Spec issues & errata"),
-              ("proposal.html", "Applying a proposal"), ("test262.html", "test262"),
+              ("what-is-proved.html", "What is proved"),
+              ("test262.html", "test262 results"),
               ("slides.html", "TC39 #117 slides")]),
     ("The Specification", [("model.html", "The model"), ("host.html", "The host"),
                            ("memory-model.html", "Memory model"), ("parser-laws.html", "Parser laws"),
@@ -831,19 +833,20 @@ def t262_sentence(tp: dict | None) -> str:
     ran = sum(v for k, v in c.items() if k != "skip")
     return (f' In its latest recorded run of test262 (at <code>{html.escape(tp["meta"]["test262"][:9])}</code>, '
             f'{html.escape(tp["meta"]["date"])}), {fmt(c.get("pass", 0))} of the {fmt(ran)} tests run pass'
-            f'{" (in either of its two passes, the second with larger limits)" if tp.get("rerun") else ""}; '
-            f'<a href="test262.html">test262</a> lists every other.')
+            f'{" (including the 600 s --gc pass)" if tp.get("rerun") else ""}; '
+            f'<a href="test262.html">test262 results</a> gives the breakdown by directory.')
 
 
 def t262_section(tp: dict | None) -> str:
     if not tp:
         return ""
     c = tp["counts"]
+    fc = tp.get("first_counts", c)
     ran = sum(v for k, v in c.items() if k != "skip")
-    return ('<h2 id="results">Results</h2>\n<ul class="cards two">\n<li><h3><a href="test262.html">test262</a></h3>'
-            f'<p>One run of the conformance suite on the engine: {fmt(c.get("pass", 0))} of {fmt(ran)} tests pass'
-            f'{" in one of its two passes" if tp.get("rerun") else ""}. '
-            'Every test that does not pass, by cause; what is not run, and why.</p></li>\n</ul>')
+    extra = (f' ({fmt(fc.get("pass", 0))} in the 60 s default pass, rising to {fmt(c.get("pass", 0))} '
+             f'under the 600 s <code>--gc</code> pass; 0 failures, 0 stops)' if tp.get("rerun") else "")
+    return ('<h2 id="results">Results</h2>\n<ul class="cards two">\n<li><h3><a href="test262.html">test262 results</a></h3>'
+            f'<p>TC39\'s conformance suite on <code>{RUN}</code>: {fmt(c.get("pass", 0))} of {fmt(ran)} tests pass{extra}.</p></li>\n</ul>')
 
 
 def proposals_117_fragments(dbgopt: dict | None) -> dict[str, str]:

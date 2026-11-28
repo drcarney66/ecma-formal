@@ -384,7 +384,8 @@ dl.legend dt { font-weight: 600; white-space: nowrap; }
 dl.legend dd { margin: 0; color: var(--ink-2); }
 table.t262 td.barcell { width: 9rem; min-width: 6rem; }
 table.t262 tr.bad td:first-child code { color: var(--ink); }
-table.t262 tr:not(.bad) td { color: var(--ink-2); }
+table.t262 tr.total-row td { color: var(--ink); font-weight: 600; border-bottom: 2px solid var(--rule); background: var(--surface); }
+table.t262 tr:not(.bad):not(.total-row) td { color: var(--ink-2); }
 .tablebox.tall { max-height: 32rem; overflow-y: auto; }
 ul.results { list-style: none; padding: 0; font-size: var(--step--1); }
 ul.results li { max-width: none; padding: 0.35rem 0; border-bottom: 1px solid var(--rule); }

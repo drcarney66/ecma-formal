@@ -492,8 +492,9 @@ def page(rec: dict, gallery: dict | None, builds: list[dict]) -> dict:
         f'<code>{esc(rec["branch"]["name"])}</code> ({bref}): the proposal\'s text merged into the specification\'s, the '
         f'Lean specification regenerated from the result, the engine built and its claims checked, and the proposal\'s '
         f'test262 tests run.</p>'
-        f'<ul class="facts"><li><b>{s["hand_lines"]:,}</b><span>lines written by hand, in {s["hand_files"]} files: the pin, '
-        f'{len(rec["answers"])} answers to the merge, {nread} readings, list files and tests</span></li>'
+        f'<ul class="facts"><li><b>{s["hand_lines"]:,}</b><span>lines added by hand (−{s["hand_removed"]:,} removed) across '
+        f'{s["hand_files"]} files: the pin, {len(rec["answers"])} merge answers, SpecTec definitions &amp; HTML metadata '
+        f'(including {nread} step readings), and tests</span></li>'
         f'<li><b>{s["lean_hand"]}</b><span>files of hand-written Lean changed</span></li>'
         f'<li><b>{tc.get("pass", 0):,}</b><span>of the proposal\'s {sum(tc.values()):,} test262 tests '
         f'(<code>{esc(t["feature"])}</code>) pass; {tc.get("skip", 0)} not run, none fails</span></li></ul>')

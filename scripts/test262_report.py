@@ -295,229 +295,141 @@ def page(record: Path, test262: Path = TEST262, conf_dir: Path = CONFS) -> dict:
         return f'<a href="{esc(TESTS_URL.format(rev=rev, path=t))}"><code>{esc(t)}</code></a>'
 
     body = []
-    # The totals.
-    tiles = [("Tests run", ran), ("Pass", passed), ("Do not pass", len(nonpass)), ("Not run", by.get("skip", 0))]
-    body.append('<h2 id="totals">Totals</h2><ul class="facts">' + "".join(
-        f"<li><b>{v:,}</b><span>{esc(k)}</span></li>" for k, v in tiles) + "</ul>")
+    skip_n = by.get("skip", 0)
     spec_n = layer_n.get("specification", 0)
-    verdict = ("No test fails, or stops, for a reason of the specification layer: every test that does not pass "
-               "stopped at a limit of the engine or ran out of time or memory." if spec_n == 0 else
-               f"{spec_n:,} tests do not pass for a reason of the specification layer (a wrong answer, or a stop "
-               f"of the specification's machine): they are listed first below.")
-    if rerun:
-        p2 = sum(1 for r in rerun.values() if r[2] == "pass")
-        head = (f"{passed:,} of the {ran:,} tests run pass ({pct(passed, ran)}), counting a test as passing if it "
-                f"passes in either of the two passes below.")
-    else:
-        head = f"{passed:,} of the {ran:,} tests run pass ({pct(passed, ran)})."
-    body.append(f'<p class="verdict"><strong>{esc(head)}</strong> {esc(verdict)}</p>')
-    trs = []
-    for b in BUCKETS:
-        if b == "skip" or not by.get(b):
-            continue
-        trs.append(f'<tr><td>{esc(b)}</td><td class="num">{by[b]:,}</td><td class="num">{pct(by[b], ran)}</td></tr>')
-    body.append(f'<h3 id="first">The first pass</h3><p>Every test, under {lim1}: {first_pass:,} pass '
-                f'({pct(first_pass, ran)} of the tests run).</p>'
-                '<div class="tablebox"><table class="t262 totals"><thead><tr><th>Result</th><th class="num">Tests</th>'
-                '<th class="num">Share of the tests run</th></tr></thead><tbody>' + "".join(trs) + "</tbody></table></div>")
-    if rerun:
-        k2 = len(rerun) - p2
-        by2 = Counter(r[2] for r in rerun.values())
-        rest = ", ".join(f"{by2[b]:,} {b}" for b in BUCKETS if b != "pass" and by2.get(b))
-        lim2 = limits(meta["rerun-timeout"], meta["rerun-max-heap"], meta["rerun-rss-cap"])
-        gc2 = " and mark-and-sweep store collection (<code>--gc</code>)" if "--gc" in meta.get("rerun-command", "") else ""
-        hit = all(r[0] in ("stop", "timeout", "timeout(fuel)") for r in rerun.values())
-        which = "hit one of those limits" if hit else "did not pass in the first pass"
-        body.append(f'<h3 id="second">The second pass</h3><p>The {len(rerun):,} tests that {which} '
-                    f'were run again with {lim2}{gc2}: {p2:,} pass; {k2:,} still do not pass'
-                    + (f" ({rest})" if rest else "") + ".</p>")
-    body.append(
-        '<p><strong>Why the store has a ceiling.</strong> By default the engine\'s store only grows: every value the '
-        'machine makes stays in it, and no cell is freed, so the memory a run uses grows with the steps it takes. '
-        '<code>ecma-run</code> therefore stops a run whose store reaches a ceiling (<code>--max-heap</code>, a stop '
-        'at an implementation limit) rather than let it take the machine\'s memory. An optional flag, '
-        '<code>--gc</code> (outside <a href="what-is-proved.html#outside"><code>Engine.implements</code></a>), '
-        'sweeps unreachable cells in place while keeping live addresses monotonic, so <code>--max-heap</code> bounds '
-        'live cells rather than total allocations.</p>')
-    body.append(
-        '<h3 id="pass">What a pass is</h3><p>The runner (<code>crates/test262-runner</code>) runs each test on '
-        '<code>ecma-run</code>, the engine\'s whole-program driver, after its harness (<code>assert.js</code>, '
-        '<code>sta.js</code>, <code>doneprintHandle.js</code> for an <code>async</code> test, then the test\'s '
-        '<code>includes</code>) run as Scripts in the same realm. A test runs twice, in non-strict code and in strict '
-        'code (<code>"use strict";</code> before the test alone), unless its flags say otherwise: once for '
-        '<code>onlyStrict</code>, <code>noStrict</code> or <code>raw</code> (<code>raw</code> without the harness), '
-        'and once, as a module, for <code>module</code>. A run passes when it completes normally, or, for a negative '
-        'test, throws an error of the expected constructor (a <code>parse</code> negative test is only parsed); an '
-        '<code>async</code> test passes when its <code>$DONE</code> prints <code>Test262:AsyncTestComplete</code>. '
-        'The test passes when every run passes, and counts once, under the worse of its runs; when the first run '
-        'does not pass for want of an answer (a stop, a time-out, or the test host lacking something), the second '
-        'is not run. Every run executes the test\'s own assertions, the harness\'s functions that throw a '
-        '<code>Test262Error</code>. A test over the wall clock or the memory cap is a time-out.</p>')
+    stop_n = sum(1 for b, _ in final.values() if b == "stop")
+    fail_stop_n = spec_n + stop_n
+    t1 = meta["timeout"]
+    t2 = meta.get("rerun-timeout", "")
 
-    # Not run.
+    if rerun:
+        tiles = [
+            ("Tests run", f"{ran:,}", f"{skip_n:,} skipped by {stage}.conf"),
+            (f"Pass ({t1} s pass)", f"{first_pass:,}", f"{pct(first_pass, ran)} · {size(store1)} store, proved"),
+            (f"Pass ({t2} s pass)", f"{passed:,}", f"{pct(passed, ran)} · +{passed - first_pass:,} with {size(meta['rerun-max-heap'])} & --gc"),
+            ("Failures / stops", f"{fail_stop_n:,}", f"{len(nonpass):,} wall-clock time-outs"),
+        ]
+    else:
+        tiles = [
+            ("Tests run", f"{ran:,}", f"{skip_n:,} skipped by {stage}.conf"),
+            ("Pass", f"{passed:,}", pct(passed, ran)),
+            ("Failures / stops", f"{fail_stop_n:,}", f"{len(nonpass):,} time-outs"),
+        ]
+    body.append('<ul class="facts" aria-label="Totals">' + "".join(
+        f"<li><b>{esc(v)}</b><span>{esc(k)} — {esc(sub)}</span></li>" for k, v, sub in tiles) + "</ul>")
+
+    # Single unified table by two-level directory, with Pass (first pass) and Pass (long-timeout pass) columns.
+    dirs1: dict[str, Counter] = defaultdict(Counter)
+    dirs2: dict[str, Counter] = defaultdict(Counter)
+    for t, r in rows.items():
+        parts = t.split("/")
+        d = "/".join(parts[:2]) if len(parts) > 2 else parts[0]
+        dirs1[d][r[0]] += 1
+        b_fin = r[2] if r[2] is not None else r[0]
+        dirs2[d][b_fin] += 1
+
+    has_other = fail_stop_n > 0 or by_final.get("unsupported", 0) > 0
+
+    def row_html(label_html: str, c1: Counter, c2: Counter, is_total: bool = False) -> str:
+        r_cnt = sum(c2.values()) - c2.get("skip", 0)
+        p1_cnt = c1.get("pass", 0)
+        p2_cnt = c2.get("pass", 0)
+        to_cnt = c2.get("timeout", 0) + c2.get("timeout(fuel)", 0)
+        oth_cnt = r_cnt - p2_cnt - to_cnt
+        sk_cnt = c2.get("skip", 0)
+        np_cnt = r_cnt - p2_cnt
+        cls = ' class="total-row"' if is_total else (' class="bad"' if np_cnt else "")
+        cols = [f"<td>{label_html}</td>", f'<td class="num">{r_cnt:,}</td>', f'<td class="num">{p1_cnt:,}</td>']
+        if rerun:
+            delta = f' <span class="muted">(+{p2_cnt - p1_cnt:,})</span>' if p2_cnt > p1_cnt else ""
+            cols.append(f'<td class="num">{p2_cnt:,}{delta}</td>')
+        if has_other:
+            cols.append(f'<td class="num">{oth_cnt:,}</td>' if (oth_cnt or is_total) else '<td class="num"></td>')
+        cols.append(f'<td class="num">{to_cnt:,}</td>' if (to_cnt or is_total) else '<td class="num"></td>')
+        cols.append(f'<td class="num">{sk_cnt:,}</td>' if (sk_cnt or is_total) else '<td class="num"></td>')
+        cols.append(f'<td class="num">{pct(p2_cnt, r_cnt) if r_cnt else "–"}</td>')
+        return f"<tr{cls}>{''.join(cols)}</tr>"
+
+    ths = [
+        "<th>Directory</th>",
+        '<th class="num">Run</th>',
+        f'<th class="num">Pass ({esc(t1)} s)</th>' if rerun else '<th class="num">Pass</th>',
+    ]
+    if rerun:
+        gc_lbl = ", --gc" if "--gc" in meta.get("rerun-command", "") else ""
+        ths.append(f'<th class="num">Pass ({esc(t2)} s{esc(gc_lbl)})</th>')
+    if has_other:
+        ths.append('<th class="num">Fail / stop</th>')
+    ths += ['<th class="num">Time-out</th>', '<th class="num">Skipped</th>', '<th class="num">Pass rate</th>']
+
+    total_row = row_html("<strong>Total</strong>", by, by_final, is_total=True)
+    dir_rows = "".join(row_html(f"<code>{esc(d)}</code>", dirs1[d], dirs2[d]) for d in sorted(dirs2))
+    body.append(
+        '<h2 id="results">Results by directory</h2>'
+        '<p>Two levels of <code>test262/test/</code>; rows with remaining time-outs are highlighted.</p>'
+        '<div class="tablebox"><table class="t262 dirs"><thead><tr>' + "".join(ths) + "</tr></thead>"
+        "<tbody>" + total_row + dir_rows + "</tbody></table></div>"
+    )
+
+    if nonpass:
+        tl = "".join(f"<li>{link(t)} <span class=muted>{esc(mode_and(d)[0])}</span></li>"
+                     for t, (_, d) in sorted(nonpass.items()))
+        top_dirs = Counter("/".join(t.split("/")[:2]) for t in nonpass)
+        where = ", ".join(f"{esc(d)} ({v})" for d, v in top_dirs.most_common(5)) + (" …" if len(top_dirs) > 5 else "")
+        body.append(
+            f'<details class="jssrc"><summary>Show all {len(nonpass):,} non-passing tests '
+            f'({where})</summary><ul class="results">{tl}</ul></details>'
+        )
+
+    # Compact setup & skipped summary.
     top = sorted(p.name for p in (test262 / "test").iterdir() if p.is_dir())
     paths = [p for p, _ in secs.get("paths", [])]
     not_in = [d for d in top if d not in paths]
-    skip_by: Counter = Counter(r[1] for r in rows.values() if r[0] == "skip")
-    feat_reason = {f: r for f, r in secs.get("skip-features", [])}
-    flag_reason = {f: r for f, r in secs.get("skip-flags", [])}
-    feat_n: Counter = Counter()
-    for d, k in skip_by.items():
-        m = re.match(r"feature (.*)$", d)
-        if m:
-            for f in m.group(1).split(", "):
-                feat_n[f] += k
-    by_reason: dict[str, list[str]] = defaultdict(list)
-    for f, r in secs.get("skip-features", []):
-        by_reason[r].append(f)
-    missing: list[str] = []
-    items = []
-    for r, fs in by_reason.items():
-        if not r:
-            missing += fs
-        cnt = sum(feat_n.get(f, 0) for f in fs)
-        feats = ", ".join(f"<code>{esc(f)}</code>{f' ({feat_n[f]:,})' if feat_n.get(f) else ''}" for f in fs)
-        items.append(f"<li><p>{esc(r) if r else '<em>No reason given.</em>'} <span class=muted>{cnt:,} tests.</span>"
-                     f"</p><p class=featlist>{feats}</p></li>")
-    flags = [(f, r) for f, r in secs.get("skip-flags", [])]
-    for f, r in flags:
-        if not r:
-            missing.append(f"flag {f}")
-        items.append(f"<li><p>The flag <code>{esc(f)}</code>: {esc(r) if r else '<em>no reason given</em>'}.</p></li>")
-    head_text = " ".join(conf_header(conf))
-    head_sents = re.split(r"(?<=[.;)])\s+", head_text)
+    lim2_txt = ""
+    if rerun:
+        lim2 = limits(meta["rerun-timeout"], meta["rerun-max-heap"], meta["rerun-rss-cap"])
+        gc2 = (" and mark-and-sweep store collection (<code>--gc</code>, outside "
+               '<a href="what-is-proved.html#outside"><code>Engine.implements</code></a>)'
+               if "--gc" in meta.get("rerun-command", "") else "")
+        lim2_txt = (f" The <strong>{esc(t2)} s pass</strong> reruns the {len(rerun):,} non-passing tests with "
+                    f"{lim2}{gc2}, adding {passed - first_pass:,} passes.")
 
-    def said(name: str) -> str:
-        """The configuration header's sentence that names `name`, if any."""
-        hit = next((x for x in head_sents if name in x), "")
-        return f' <span class="muted">(the configuration\'s header: <q>{esc(hit)}</q>)</span>' if hit else ""
-    excl = secs.get("exclude", [])
-    ex_items = "".join(f"<li><code>{esc(p)}</code>: {esc(r) if r else '<em>no reason given beside it</em>' + said(p)}</li>"
-                       for p, r in excl)
-    missing += [p for p, r in excl if not r]
-    multi = sum(k for d, k in skip_by.items() if "," in d)
     body.append(
-        f'<h2 id="not-run">What is not run, and why</h2>'
-        f'<p>The run is the stage <code>{esc(stage)}</code> of <code data-verbatim>tests/test262/{esc(stage)}.conf</code>. '
-        f'It runs the directories {", ".join(f"<code>{esc(p)}</code>" for p in paths)}; not '
-        f'{", ".join(f"<code>{esc(d)}</code>{said(d)}" for d in not_in) or "none"}.</p>'
-        f'<p>Left out of those directories (<code>[exclude]</code>):</p><ul>{ex_items}</ul>'
-        f'<p>{by.get("skip", 0):,} tests are not run because they need a feature the configuration leaves out '
-        f'(<code>[skip-features]</code>; a test that needs several counts under each, {multi:,} do), by the '
-        f'reason the configuration gives:</p><ul class="skips">{"".join(items)}</ul>'
-        + (f'<p>The configuration gives no reason for {", ".join(f"<code>{esc(x)}</code>" for x in missing)}.</p>'
-           if missing else '<p>The configuration gives a reason for every feature it leaves out.</p>'))
+        f'<h2 id="setup">How the suite was run</h2>'
+        f'<p><code>crates/test262-runner</code> runs each test on <code>ecma-run</code> after its harness in both '
+        f'non-strict and strict mode (once for <code>onlyStrict</code>, <code>noStrict</code>, <code>raw</code>, or '
+        f'<code>module</code>), executing the test\'s own assertions. The <strong>{esc(t1)} s pass</strong> runs '
+        f'default proved <code>ecma-run</code> under {lim1}.{lim2_txt}</p>'
+        f'<p><strong>Skipped ({skip_n:,} tests, <code data-verbatim>tests/test262/{esc(stage)}.conf</code>):</strong> '
+        f'runs {", ".join(f"<code>{esc(p)}</code>" for p in paths)} (leaving out '
+        f'{", ".join(f"<code>{esc(d)}</code>" for d in not_in) or "none"} and <code>staging/sm</code>), and skips '
+        f'tests gated on features outside the pinned ECMA-262 specification (<code>Temporal</code>, unmerged '
+        f'proposals, ECMA-402, and non-standard <code>caller</code>).</p>'
+    )
 
-    # Every test that does not pass, by cause.
-    after = " after the second pass" if rerun else ""
-    sections = [f'<h2 id="not-passing">Every test that does not pass{after}, by cause ({len(nonpass):,})</h2>']
+    run = ('<dl class="split">'
+           f'<dt>engine</dt><dd><code>ecma-run</code> at commit <code>{esc(meta["engine"])}</code> · '
+           f'test262 at <code>{esc(rev[:12])}</code> ({esc(meta["date"])})</dd>'
+           f'<dt>{esc(t1)} s command</dt><dd><pre class="cmd" data-verbatim>{esc(meta["command"])}</pre></dd>')
     if rerun:
-        sections.append("<p>A test's result here is the second pass's where it was run again, else the first's.</p>")
-    rows_c = []
-    for g, title, _ in GROUPS:
-        k = sum(len(v) for v in causes.get(g, {}).values())
-        layer = "specification" if g in ("fail", "spec") else "engine"
-        rows_c.append(f'<tr class="{"bad" if layer == "specification" and k else ""}"><td><a href="#c-{g}">{esc(title)}'
-                      f'</a></td><td>{"the specification layer" if layer == "specification" else "the engine"}</td>'
-                      f'<td class="num">{k:,}</td></tr>')
-    sections.append('<div class="tablebox"><table class="t262 causes"><thead><tr><th>Cause</th><th>Where it lies</th>'
-                    '<th class="num">Tests</th></tr></thead><tbody>' + "".join(rows_c) + "</tbody></table></div>")
-    for g, title, what in GROUPS:
-        cs = causes.get(g, {})
-        k = sum(len(v) for v in cs.values())
-        if not k:
-            sections.append(f'<h3 id="c-{g}">{esc(title)}</h3><p>None.</p>')
-            continue
-        lis = []
-        for c, ts in sorted(cs.items(), key=lambda x: (-len(x[1]), x[0])):
-            dirs = Counter("/".join(t.split("/")[:2]) for t, _ in ts)
-            where = ", ".join(f"{esc(d)} ({v})" for d, v in dirs.most_common(6)) + (" …" if len(dirs) > 6 else "")
-            tl = "".join(f"<li>{link(t)} <span class=muted>{esc(m)}</span></li>" for t, m in ts)
-            lis.append(f'<li><details><summary><b class="num">{len(ts):,}</b> {c} <span class="muted">· {where}'
-                       f'</span></summary><ul class="results">{tl}</ul></details></li>')
-        sections.append(f'<h3 id="c-{g}">{esc(title)} ({k:,})</h3><p>{esc(what)}</p><ul class="sites">{"".join(lis)}</ul>')
-    body.append("".join(sections))
-
-    # What passed only in the second pass, by what stopped it in the first, then by directory (folded).
-    toc_more = []
-    if rerun:
-        later = {t: r for t, r in rerun.items() if r[2] == "pass"}
-        kinds: dict[str, list[str]] = defaultdict(list)
-        for t, r in sorted(later.items()):
-            _, d = mode_and(r[1])
-            d = re.sub(r"\b[\w.-]*-run: ", "", d)
-            if r[0] == "stop" and d.startswith("implLimit"):
-                with_gc = " and --gc" if "--gc" in meta.get("rerun-command", "") else ""
-                kinds[f"stopped at the store's ceiling of {size(store1)}: they pass with a store of "
-                      f"{size(meta['rerun-max-heap'])}{with_gc}"].append(t)
-            elif r[0] == "timeout":
-                kinds[f"over the {d} in the first pass"].append(t)
-            else:
-                kinds[f"{r[0]} in the first pass ({d})"].append(t)
-        lis = []
-        for kind, ts in sorted(kinds.items(), key=lambda x: -len(x[1])):
-            dirs: dict[str, list[str]] = defaultdict(list)
-            for t in ts:
-                dirs["/".join(t.split("/")[:2])].append(t)
-            dl = "".join(f'<li><details><summary><b class="num">{len(v):,}</b> <code>{esc(d)}</code></summary>'
-                         f'<ul class="results">{"".join(f"<li>{link(t)}</li>" for t in v)}</ul></details></li>'
-                         for d, v in sorted(dirs.items(), key=lambda x: (-len(x[1]), x[0])))
-            lis.append(f'<li><p><b class="num">{len(ts):,}</b> {esc(kind)}.</p><ul class="sites">{dl}</ul></li>')
-        body.append(f'<h2 id="second-only">Passing only in the second pass ({len(later):,})</h2>'
-                    f'<p>Tests that did not pass under the first pass\'s limits and pass under the second\'s, by what '
-                    f'the first pass recorded, then by directory.</p><ul class="later">{"".join(lis)}</ul>')
-        toc_more = [("second-only", "Passing only in the second pass", 1)]
-
-    # By directory.
-    dirs: dict[str, Counter] = defaultdict(Counter)
-    for t, (b, _) in final.items():
-        parts = t.split("/")
-        dirs["/".join(parts[:2]) if len(parts) > 2 else parts[0]][b] += 1
-    trs = []
-    for d in sorted(dirs):
-        c = dirs[d]
-        r = sum(c.values()) - c.get("skip", 0)
-        np_ = r - c.get("pass", 0)
-        trs.append(f'<tr{" class=bad" if np_ else ""}><td><code>{esc(d)}</code></td><td class="num">{r:,}</td>'
-                   f'<td class="num">{c.get("pass", 0):,}</td><td class="num">{np_ or ""}</td>'
-                   f'<td class="num">{c.get("skip", 0) or ""}</td><td class="num">{pct(c.get("pass", 0), r) if r else "–"}</td></tr>')
-    body.append('<h2 id="directories">By directory</h2><p>Two levels of test262\'s <code>test/</code>'
-                + (", a test passing if it passes in either pass" if rerun else "")
-                + '; a row is marked where a test does not pass.</p><div class="tablebox tall"><table class="t262 dirs"><thead><tr>'
-                '<th>Directory</th><th class="num">Run</th><th class="num">Pass</th><th class="num">Not passing</th>'
-                '<th class="num">Not run</th><th class="num">Pass rate</th></tr></thead><tbody>' + "".join(trs)
-                + "</tbody></table></div>")
-
-    # The run.
-    run = ('<h2 id="run">The run</h2><dl class="split">'
-           f'<dt>engine</dt><dd><code>ecma-run</code> built from commit <code>{esc(meta["engine"])}</code> of this repository</dd>'
-           f'<dt>test262</dt><dd><code>{esc(rev)}</code></dd>'
-           f'<dt>selection</dt><dd><code data-verbatim>tests/test262/{esc(stage)}.conf</code>, {n:,} tests</dd>'
-           f'<dt>first pass</dt><dd>{esc(meta["date"])}; {lim1}; {esc(meta["jobs"])} jobs at a time'
-           + (f'; {esc(meta["note"])}' if meta.get("note") else "") + "</dd>"
-           f'<dt>command</dt><dd><pre class="cmd" data-verbatim>{esc(meta["command"])}</pre></dd>'
-           f'<dt>runner build</dt><dd><code>{esc(meta["runner-build"])}</code> (the hash of the tools and the run\'s '
-           f'configuration, as <code>crates/test262-runner</code> records it)</dd>')
-    if rerun:
-        run += (f'<dt>second pass</dt><dd>{esc(meta["rerun-date"])}; the {len(rerun):,} tests the first pass did not '
-                f'pass; {limits(meta["rerun-timeout"], meta["rerun-max-heap"], meta["rerun-rss-cap"])}; '
-                f'{esc(meta["rerun-jobs"])} jobs at a time; runner build <code>{esc(meta["rerun-runner-build"])}</code></dd>'
-                f'<dt>command</dt><dd><pre class="cmd" data-verbatim>{esc(meta["rerun-command"])}</pre></dd>')
-    run += (f'<dt>record</dt><dd><code data-verbatim>{esc(record.relative_to(ROOT).as_posix() if record.is_relative_to(ROOT) else record.name)}</code>: '
-            f'this page is made from it (<code>scripts/test262_report.py</code>)</dd></dl>')
+        run += f'<dt>{esc(t2)} s command</dt><dd><pre class="cmd" data-verbatim>{esc(meta["rerun-command"])}</pre></dd>'
+    run += (f'<dt>record</dt><dd><code data-verbatim>{esc(record.relative_to(ROOT).as_posix() if record.is_relative_to(ROOT) else record.name)}</code></dd>'
+            '</dl>')
     body.append(run)
 
-    toc = [("totals", "Totals", 1), ("first", "The first pass", 2)] + ([("second", "The second pass", 2)] if rerun else []) \
-        + [("pass", "What a pass is", 2), ("not-run", "What is not run", 1), ("not-passing", "Not passing, by cause", 1)] \
-        + [(f"c-{g}", t, 2) for g, t, _ in GROUPS] + toc_more + [("directories", "By directory", 1), ("run", "The run", 1)]
-    either = ", counting a test that passes in either of two passes" if rerun else ""
+    toc = [("results", "Results by directory", 1), ("setup", "How the suite was run", 1)]
+    lede = (
+        f"<p>TC39's conformance suite (<code>{esc(rev[:9])}</code>) on <code>ecma-run</code> "
+        f"(commit <code>{esc(meta['engine'])}</code>): <strong>{first_pass:,}</strong> of "
+        f"<strong>{ran:,}</strong> tests pass in the default {esc(t1)} s pass ({pct(first_pass, ran)}), "
+        + (f"rising to <strong>{passed:,}</strong> ({pct(passed, ran)}) with the {esc(t2)} s pass — "
+           if rerun else "— ")
+        + f"with <strong>{fail_stop_n}</strong> failures or stops.</p>"
+    )
     return {
-        "title": "test262",
-        "eyebrow": f"One run of test262 on the engine · <code>{esc(record.name)}</code>",
-        "lede": (f"<p>test262 is TC39's conformance suite. This page reports one run of it on the engine, "
-                 f"<code>ecma-run</code> at commit <code>{esc(meta['engine'])}</code>, test262 at "
-                 f"<code>{esc(rev[:9])}</code>, on {esc(meta['date'])}: {passed:,} of the {ran:,} tests run pass "
-                 f"({pct(passed, ran)}){either}.</p>"),
+        "title": "test262 results",
+        "eyebrow": f"Conformance suite on <code>ecma-run</code> · <code>{esc(record.name)}</code>",
+        "lede": lede,
         "body": "\n".join(body),
         "toc": toc,
         "counts": dict(by_final),
