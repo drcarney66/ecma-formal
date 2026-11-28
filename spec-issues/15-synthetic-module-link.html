@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>15. A second Link of a Synthetic Module Record resets its exports, observably with JSON modules · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/15-synthetic-module-link.md</code></p>
+<h1>15. A second Link of a Synthetic Module Record resets its exports, observably with JSON modules</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§16.2.1.8.4.4 Link ( ) of a Synthetic Module Record (<a class="clause" href="https://tc39.es/ecma262/#sec-smr-Link"><code>#sec-smr-Link</code></a>), steps 1–4, reached from §16.2.1.6.1.2.1 InnerModuleLinking (<a class="clause" href="https://tc39.es/ecma262/#sec-InnerModuleLinking"><code>#sec-InnerModuleLinking</code></a>), step 1.a, and §16.2.1.6.1.3.1 InnerModuleEvaluation (<a class="clause" href="https://tc39.es/ecma262/#sec-innermoduleevaluation"><code>#sec-innermoduleevaluation</code></a>), step 1.a.</dd><dt>Kind</dt><dd>missing step (an idempotence check).</dd><dt>Model erratum</dt><dd><code>SyntheticModuleLinkResets</code>, default reading literal; its readings: literal, proposed (the proposed reading is the proposed wording below); the literal reading has no stop.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3989">#3989</a> (open, 2026-09), "Bug: Link() and Evaluate() on synthetic module records should be idempotent", reports it for Link and Evaluate and says it is "not observable on the web because both JSON modules and CSS modules are pre-evaluated"; it has no comments, and no pull request was found.</dd><dt>On this site</dt><dd><a href="../errata.html#SyntheticModuleLinkResets"><code>SyntheticModuleLinkResets</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the literal text)</dd></dl><h2 id="text">Text</h2>
+<p>Link of a Synthetic Module Record:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>realm</var> be <var>module</var>.[[Realm]].</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Let <var>envRecord</var> be NewModuleEnvironment(<var>realm</var>.[[GlobalEnv]]).</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> Set <var>module</var>.[[Environment]] to <var>envRecord</var>.</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> For each String <var>exportName</var> of <var>module</var>.[[ExportNames]], do</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Perform ! <var>envRecord</var>.CreateMutableBinding(<var>exportName</var>, <span class="val">false</span>).</p><p class="q-step" style="--d:1"><span class="q-num">b.</span> Perform ! <var>envRecord</var>.InitializeBinding(<var>exportName</var>, <span class="val">undefined</span>).</p></blockquote>
+<p>InnerModuleLinking:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> If <var>module</var> is not a Cyclic Module Record, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Perform ? <var>module</var>.Link().</p></blockquote>
+<p>InnerModuleEvaluation:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> If <var>module</var> is not a Cyclic Module Record, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Perform ? EvaluateModuleSync(<var>module</var>).</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>Every graph that reaches a Synthetic Module Record links it again and evaluates it again. Link replaces its
+environment with one whose bindings are <em>undefined</em>, and an importer's indirect binding reads the module's current
+[[Environment]] (§9.1.1.5.1 GetBindingValue), so every earlier importer sees <em>undefined</em> until Evaluate runs again.
+For a JSON module, re-evaluation sets the same value back, which hides the reset once Evaluate has run again; but
+between the two, a module that the second graph evaluates first can read the old importer's binding. Below,
+<code>main.mjs</code> imports <code>j.json</code>; a later <code>import("./other.mjs")</code> links <code>j.json</code> again and evaluates <code>probe.mjs</code>, which
+calls back into <code>main.mjs</code>, before <code>j.json</code>.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/15-synthetic-module-link/</a> (outputs:
+<a href="results.html#15-synthetic-module-link">the recorded runs</a>):</p>
+<pre class="js"><code>// j.json
+{&quot;a&quot;: 1}
+// main.mjs
+import j from &quot;./j.json&quot; with { type: &quot;json&quot; };
+export function readJ() { return j; }
+print(&quot;main sees &quot; + JSON.stringify(j));
+import(&quot;./other.mjs&quot;).then(function () { print(&quot;after other: &quot; + JSON.stringify(j)); },
+                           function (e) { print(&quot;rejected: &quot; + e); });
+// other.mjs
+import &quot;./probe.mjs&quot;;
+import k from &quot;./j.json&quot; with { type: &quot;json&quot; };
+export { k };
+// probe.mjs
+import { readJ } from &quot;./main.mjs&quot;;
+print(&quot;probe sees &quot; + JSON.stringify(readJ()));
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>main sees {"a":1}</code>, <code>probe sees undefined</code>, <code>after other: {"a":1}</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey (with <code>--enable-import-attributes</code>), JavaScriptCore</td>
+<td><code>main sees {"a":1}</code>, <code>probe sees {"a":1}</code>, <code>after other: {"a":1}</code></td>
+</tr>
+<tr>
+<td>formal model (literal reading)</td>
+<td><code>main sees {"a":1}</code>, <code>probe sees undefined</code>, <code>after other: {"a":1}</code></td>
+</tr>
+<tr>
+<td>formal model (proposed reading)</td>
+<td><code>main sees {"a":1}</code>, <code>probe sees {"a":1}</code>, <code>after other: {"a":1}</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Without <code>--enable-import-attributes</code>, the SpiderMonkey 140 shell rejects the import attribute (a SyntaxError). SpecTec
+bakes in the literal reading (<code>ecma-run --module --module-dir examples/15-synthetic-module-link/
+examples/15-synthetic-module-link/main.mjs</code>), reproducing the <code>probe sees undefined</code> reset before <code>other.mjs</code> re-evaluates <code>j.json</code>.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: return when the module is already linked, as a Cyclic Module Record's Link does through its [[Status]]:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -29135,6 +29135,7 @@
+             &lt;/dl&gt;
+
+             &lt;emu-alg&gt;
++              1. If _module_.[[Environment]] is not &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;, return NormalCompletion(&lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;).
+               1. Let _realm_ be _module_.[[Realm]].
+               1. Let _envRecord_ be NewModuleEnvironment(_realm_.[[GlobalEnv]]).
+               1. Set _module_.[[Environment]] to _envRecord_.
+</code></pre>
+<p>Evaluate has the same shape, but making it idempotent needs state that a Synthetic Module Record does not have (it
+has no [[Status]]), for example a stored promise to return; the check above is enough for the reset shown here.</p>
+<h2 id="test262">test262</h2>
+<p>No test imports a JSON module from two graphs linked at different times and reads it in between.
+<code>language/import/import-attributes/json-idempotency.js</code> links its JSON module again with a dynamic <code>import()</code>, but
+reads it only once that import has settled, after the second Evaluate has set the value back.</p><section id="program"><h2>The program</h2><p>The example is a Module graph (its <code>main.mjs</code> runs as a Module). Its runs on the engines and on the model: <a href="results.html#15-synthetic-module-link">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=15-synthetic-module-link">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/15-synthetic-module-link/j.json</code></summary><pre class="js">{&quot;a&quot;: 1}
+</pre></details><details class="jssrc"><summary>Source <code>examples/15-synthetic-module-link/main.mjs</code></summary><pre class="js">// Link of a Synthetic Module Record: InnerModuleLinking 1.a calls it for each
+// importer, and each call gives the module a new environment whose bindings
+// are undefined until InnerModuleEvaluation evaluates it again. other.mjs
+// imports probe.mjs before j.json, so probe.mjs runs between the two.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+import j from &quot;./j.json&quot; with { type: &quot;json&quot; };
+export function readJ() { return j; }
+print(&quot;main sees &quot; + JSON.stringify(j));
+import(&quot;./other.mjs&quot;).then(function () { print(&quot;after other: &quot; + JSON.stringify(j)); },
+                           function (e) { print(&quot;rejected: &quot; + e); });
+</pre></details><details class="jssrc"><summary>Source <code>examples/15-synthetic-module-link/other.mjs</code></summary><pre class="js">import &quot;./probe.mjs&quot;;
+import k from &quot;./j.json&quot; with { type: &quot;json&quot; };
+export { k };
+</pre></details><details class="jssrc"><summary>Source <code>examples/15-synthetic-module-link/probe.mjs</code></summary><pre class="js">import { readJ } from &quot;./main.mjs&quot;;
+var print = globalThis.print || console.log;
+print(&quot;probe sees &quot; + JSON.stringify(readJ()));
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

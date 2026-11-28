@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>53. String operations omit &gt; 2^53 - 1 length checks required by §6.1.4&#x27;s maximum String length · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/53-string-length-overflow.md</code></p>
+<h1>53. String operations omit <code>&gt; 2^53 - 1</code> length checks required by §6.1.4's maximum String length</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§6.1.4 The String Type (<a class="clause" href="https://tc39.es/ecma262/#sec-ecmascript-language-types-string-type"><code>#sec-ecmascript-language-types-string-type</code></a>), first paragraph; §22.1.3.18 <code>String.prototype.repeat</code> (<a class="clause" href="https://tc39.es/ecma262/#sec-string.prototype.repeat"><code>#sec-string.prototype.repeat</code></a>), step 7; §22.1.3.5 <code>String.prototype.concat</code> (<a class="clause" href="https://tc39.es/ecma262/#sec-string.prototype.concat"><code>#sec-string.prototype.concat</code></a>), step 5.b; §13.15.3 ApplyStringOrNumericBinaryOperator (<a class="clause" href="https://tc39.es/ecma262/#sec-applystringornumericbinaryoperator"><code>#sec-applystringornumericbinaryoperator</code></a>), step 1.c.iii; §23.1.3.18.1 JoinIndexedProperties (<a class="clause" href="https://tc39.es/ecma262/#sec-joinindexedproperties"><code>#sec-joinindexedproperties</code></a>), steps 4.a and 4.d.iii.</dd><dt>Kind</dt><dd>contradiction (operations form String values exceeding §6.1.4's <code>2^53 - 1</code> maximum length without throwing a <em>RangeError</em>).</dd><dt>Model erratum</dt><dd><code>StringLengthOverflow</code>, baked-in SpecTec reading proposed (<code>$StringTooLarge</code> in <code>spec/spectec/clauses/S13.spectec</code>, <code>S22.spectec</code>, <code>S23.spectec</code>, and <code>Host.ValueLaws.stringTooLarge</code> in <code>spec/spectec/prose/23-host-laws-values.spectec</code>, with <code>Engine.Host</code> answering <code>*true*</code> past <code>2^28</code> and therefore past <code>2^53 - 1</code>; for the smaller finite-memory host limit <code>2^28</code>, see <a href="54-string-maximum-length.html">54</a>).</dd><dt>Upstream</dt><dd>Checked 2026-11-20: none found for the missing <code>&gt; 2^53 - 1</code> check in <code>repeat</code>, <code>concat</code>, <code>+</code> and <code>JoinIndexedProperties</code> (searched for String with "maximum length" and "RangeError"). Related: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/4063">#4063</a> (closed, 2026-10), "Specify that exceeding resource limits may throw".</dd><dt>On this site</dt><dd><a href="../errata.html#StringLengthOverflow"><code>StringLengthOverflow</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>§6.1.4:</p>
+<blockquote class="sentence q-text"><p>The String type is the set of all ordered sequences of zero or more 16-bit unsigned integer values (“elements”) up to a maximum length of 2<sup>53</sup> - 1 elements.</p></blockquote>
+<p><code>String.prototype.repeat</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">5.</span> If <var>n</var> &lt; 0 or <var>n</var> = +∞, throw a <span class="val">RangeError</span> exception.</p><p class="q-step" style="--d:0"><span class="q-num">6.</span> If <var>n</var> = 0, return the empty String.</p><p class="q-step" style="--d:0"><span class="q-num">7.</span> Return the String value that is made from <var>n</var> copies of <var>string</var> appended together.</p></blockquote>
+<p><code>String.prototype.concat</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">b.</span> Set <var>result</var> to the string-concatenation of <var>result</var> and <var>nextString</var>.</p></blockquote>
+<p><code>ApplyStringOrNumericBinaryOperator</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">iii.</span> Return the string-concatenation of <var>leftString</var> and <var>rightString</var>.</p></blockquote>
+<p><code>JoinIndexedProperties</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">a.</span> If <var>k</var> &gt; 0, set <var>result</var> to the string-concatenation of <var>result</var> and <var>separator</var>.</p></blockquote>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">iii.</span> Set <var>result</var> to the string-concatenation of <var>result</var> and <var>elementString</var>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>§6.1.4 bounds every String value to at most 2<sup>53</sup> - 1 code units (while <code>StringPaddingBuiltinsImpl</code> clamps
+<code>ToLength(_maxLength_)</code> to ≤ 2<sup>53</sup> - 1, and <code>Array.prototype.push</code> / <code>TypedArray</code> operations explicitly throw past
+2<sup>53</sup> - 1).
+However, <code>String.prototype.repeat</code>, <code>String.prototype.concat</code>, string <code>+</code> (<code>ApplyStringOrNumericBinaryOperator</code>), and
+<code>JoinIndexedProperties</code> have no length check before forming their result:</p>
+<ul>
+<li><code>"ab".repeat(2 ** 52)</code> passes step 5 (<code>_n_ = 2^52</code> is finite and non-negative), then step 7 asks for a String value of
+  length <code>2^53 &gt; 2^53 - 1</code>, which does not exist in §6.1.4's String type!</li>
+<li>Likewise, concatenating or joining two Strings whose lengths sum past <code>2^53 - 1</code> demands a String value outside the
+  String type rather than throwing a <em>RangeError</em>.</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<pre class="js"><code>try { &quot;ab&quot;.repeat(2 ** 52); } catch (e) { print(&quot;repeat &gt; 2^53-1: &quot; + e.constructor.name); }
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>"ab".repeat(2 ** 52)</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td>asks for a <code>2^53</code>-element String value, contradicting §6.1.4</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>RangeError</code></td>
+</tr>
+<tr>
+<td>formal model (proposed reading)</td>
+<td><code>repeat &gt; 2^53-1: RangeError</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Before constructing the result String in <code>String.prototype.repeat</code> step 7 (<code>_n_ × the length of _string_</code>),
+<code>String.prototype.concat</code> step 5.b, <code>ApplyStringOrNumericBinaryOperator</code> step 1.c.iii, and <code>JoinIndexedProperties</code> steps
+4.a and 4.d.iii, throw a <em>RangeError</em> exception if the resulting length would exceed 2<sup>53</sup> - 1 (or the
+implementation's smaller maximum String length; see <a href="54-string-maximum-length.html">54</a>).</p>
+<h2 id="test262">test262</h2>
+<p><code>built-ins/String/prototype/repeat/</code> tests negative and <code>+Infinity</code> counts (<code>repeat(-1)</code>, <code>repeat(Infinity)</code>), not finite
+counts whose product with <code>_string_</code>'s length exceeds <code>2^53 - 1</code>.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

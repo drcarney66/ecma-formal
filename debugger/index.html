@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debugger · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<!-- Cross-origin isolation from the site-root service worker where the server gives none; a no-op where it does. -->
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<link rel="stylesheet" href="ui/style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body class="dbg" data-state="idle" data-root="./" data-engine="worker" data-version="d850cd3">
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu here"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/" aria-current="page">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<noscript><p class="dbg-noscript">The debugger is a script. Every example's source, and what it shows, is on the <a href="../examples.html">examples page</a>.</p></noscript>
+<div id="dbg-head" class="dbg-ui">
+  <div id="controls">
+    <button id="btn-start" title="r: start or restart a session on the program">▶ start</button>
+    <button id="btn-continue" title="c or F8: continue or pause">▶ continue (c)</button>
+    <button id="btn-pause" title="c or F8: pause">⏸ pause</button>
+    <button id="btn-jsnext" title="n or F10: the next statement no deeper, or the caller">next (n)</button>
+    <button id="btn-jsin" title="F11: the next statement">in (F11)</button>
+    <button id="btn-jsout" title="Shift+F11: out to the caller">out (⇧F11)</button>
+    <button id="btn-next" title="s or Alt+F10: the next spec step no deeper">step next (s)</button>
+    <button id="btn-in" title="i or Alt+F11: the next spec step">step in (i)</button>
+    <button id="btn-out" title="o or Alt+Shift+F11: the first spec step less deep">step out (o)</button>
+    <button id="btn-instruction" title="F9: one transition">instruction (F9)</button>
+    <button id="btn-gc" title="g: collect unreachable store cells">gc (g)</button>
+    <button id="btn-stop" title="end the session">■ stop</button>
+    <label><input type="checkbox" id="stop-on-entry"> stop on entry</label>
+  </div>
+  <div id="build-row">
+    <label for="build">Build</label>
+    <select id="build" title="the debugger's build: changing it reloads the page with the same example"></select>
+    <span class="head-sep" aria-hidden="true">·</span>
+    <span class="head-label">View</span>
+    <span id="spec-notation" class="seg-toggle" role="group" aria-label="Specification notation"><button type="button" data-notation="ecma" class="on" title="v: show ECMA-262 specification prose">ECMA-262</button><button type="button" data-notation="spectec" title="v: show SpecTec definition">SpecTec</button></span>
+    <span id="build-note"></span>
+  </div>
+  <div id="status">loading</div>
+  <div id="wasm-progress" hidden aria-live="polite">
+    <div class="wasm-progress-row">
+      <span id="wasm-progress-label"></span>
+      <span id="wasm-progress-pct"></span>
+    </div>
+    <div class="wasm-progress-track"><div id="wasm-progress-fill"></div></div>
+  </div>
+  <p id="narrow">The debugger's panes need a window at least 60rem wide; here they are stacked one under another.</p>
+</div>
+<div id="unsupported" hidden>
+  <h2>This browser cannot run the debugger</h2>
+  <p id="unsupported-why"></p>
+  <p id="unsupported-what"></p>
+  <p id="unsupported-examples"></p>
+  <pre id="unsupported-source" class="code" hidden></pre>
+</div>
+<div id="panes" class="dbg-ui">
+  <section id="source-pane" class="pane">
+    <h2>Source <span id="program-name"></span></h2>
+    <div class="tools">
+      <select id="examples"></select>
+      <input type="file" id="open-file" accept=".js,.mjs,text/javascript">
+      <button id="edit">edit</button>
+      <button id="apply" hidden>apply and start</button>
+      <button id="cancel" hidden>cancel</button>
+    </div>
+    <nav id="source-tabs" hidden></nav>
+    <div id="source" class="code"></div>
+    <textarea id="editor" class="code" spellcheck="false" hidden></textarea>
+  </section>
+  <section id="console-pane" class="pane">
+    <h2>Console <button id="clear-console">clear</button></h2>
+    <div id="console" class="code"></div>
+  </section>
+  <section id="jsstack-pane" class="pane">
+    <h2>JS stack <span id="jsstack-count"></span></h2>
+    <ol id="jsstack"></ol>
+  </section>
+  <section id="stack-pane" class="pane">
+    <h2>Spec stack <span id="stack-count"></span></h2>
+    <ol id="stack"></ol>
+    <button id="more-frames" hidden>more frames</button>
+  </section>
+  <section id="step-pane" class="pane">
+    <h2>Step</h2>
+    <div id="step"></div>
+  </section>
+  <section id="right-pane" class="pane">
+    <nav id="tabs">
+      <button data-tab="inspect" class="on">Inspector</button>
+      <button data-tab="heap">Heap</button>
+      <button data-tab="state">State</button>
+    </nav>
+    <div id="inspect-pane" class="tab">
+      <div id="diff"></div>
+      <ul id="inspect" class="tree"></ul>
+    </div>
+    <div id="heap-pane" class="tab" hidden>
+      <div class="tools">
+        <select id="heap-kind" title="the cells' kind">
+          <option value="">all kinds</option>
+          <option value="record">record</option>
+          <option value="list">list</option>
+          <option value="object">object</option>
+          <option value="env">env</option>
+        </select>
+        <button id="heap-prev" title="the previous page">◀</button>
+        <span id="heap-range"></span>
+        <button id="heap-next" title="the next page">▶</button>
+        <button id="heap-new" title="the cells new since the last pause">new</button>
+        <button id="heap-changed" title="the cells changed since the last pause">changed</button>
+        <button id="heap-gc" title="g: collect unreachable store cells">gc</button>
+        <input id="heap-addr" placeholder="#address" size="8">
+        <button id="heap-go">go</button>
+      </div>
+      <div id="heap-diff"></div>
+      <ul id="heap" class="tree"></ul>
+    </div>
+    <div id="state-pane" class="tab" hidden>
+      <div id="state"></div>
+    </div>
+  </section>
+  <section id="breakpoints-pane" class="pane">
+    <h2>Breakpoints</h2>
+    <ul id="breakpoints"></ul>
+    <div class="tools">
+      <input id="bp-alg" placeholder="algorithm: sec-id, sec-id#idx or name">
+      <input id="bp-path" placeholder="step (2.a)" size="6">
+      <button id="bp-add">add</button>
+    </div>
+    <div id="filters"></div>
+  </section>
+</div>
+<script type="module" src="ui/app.mjs?v=d850cd3"></script>
+</body>
+</html>

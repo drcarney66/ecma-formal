@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>50. reads-bytes-from and coherent reads ask only for a byte index in a memory range, which names no [[Block]] · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/50-memory-range-same-block.md</code></p>
+<h1>50. reads-bytes-from and coherent reads ask only for a byte index in a memory range, which names no [[Block]]</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§29.1 Memory Model Fundamentals (<a class="clause" href="https://tc39.es/ecma262/#sec-memory-model-fundamentals"><code>#sec-memory-model-fundamentals</code></a>), the paragraph defining "memory range"; §29.6.2 reads-bytes-from (<a class="clause" href="https://tc39.es/ecma262/#sec-reads-bytes-from"><code>#sec-reads-bytes-from</code></a>), the first condition; §29.7.2 Coherent Reads (<a class="clause" href="https://tc39.es/ecma262/#sec-coherent-reads"><code>#sec-coherent-reads</code></a>), step 1.c.ii.</dd><dt>Kind</dt><dd>a missing condition (a test against a Set of integers that drops the event's [[Block]]).</dd><dt>Model erratum</dt><dd><code>MemoryRangeSameBlock</code>, default reading proposed; its readings: literal, proposed. The model's memory-model meaning (<code>Rbf.Valid</code> and <code>CoherentReads</code> in <code>lean/Ecma/MemoryModel.lean</code>) reads the proposed wording; the readings are not switched at run time.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "memory range"; the hits rename or link the term).</dd><dt>On this site</dt><dd><a href="../errata.html#MemoryRangeSameBlock"><code>MemoryRangeSameBlock</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>§29.1:</p>
+<blockquote class="sentence q-text"><p>Let the memory range of a Shared Data Block event <var>e</var> be the Set of all integers in the interval from <var>e</var>.[[ByteIndex]] (inclusive) to <var>e</var>.[[ByteIndex]] + <var>e</var>.[[ElementSize]] (exclusive). Two events&#x27; memory ranges are equal when the events have the same [[Block]], [[ByteIndex]], and [[ElementSize]]. …</p></blockquote>
+<p>§29.6.2 reads-bytes-from:</p>
+<blockquote class="sentence q-text"><p>Each event <var>writeEvent</var> with index <var>i</var> in <var>writes</var> has <var>readEvent</var>.[[ByteIndex]] + <var>i</var> in its memory range.</p></blockquote>
+<p>§29.7.2 Coherent Reads, step 1.c.ii:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:2"><span class="q-num">ii.</span> If there exists a WriteSharedMemory or ReadModifyWriteSharedMemory event <var>value</var> that has <var>byteLocation</var> in its memory range such that <var>writeEvent</var> happens-before <var>value</var> in <var>execution</var> and <var>value</var> happens-before <var>readEvent</var> in <var>execution</var>, then</p><p class="q-step" style="--d:3"><span class="q-num">1.</span> Return <span class="val">false</span>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>A memory range is a Set of integers, so "has <em>n</em> in its memory range" holds for an event on any Shared Data Block whose
+byte indices include <em>n</em>. The relations "equal", "overlapping" and "disjoint" compare [[Block]]s explicitly; these two
+tests do not. Read literally:</p>
+<ul>
+<li>reads-bytes-from lets a read take its bytes from a write to another block at the same indices;</li>
+<li>coherent reads rejects an execution in which a write to another block at the read's index happens between the
+  write the read reads from and the read.</li>
+</ul>
+<p>Together they change single-agent results. With two one-byte SharedArrayBuffers in one agent:</p>
+<pre class="js"><code>const a = new Int8Array(new SharedArrayBuffer(1));
+const b = new Int8Array(new SharedArrayBuffer(1));
+b[0] = 1;
+a[0]; // literally 1
+</code></pre>
+<p>The candidates for the read of <code>a[0]</code> are a's <span class="const">init</span> write, b's <span class="const">init</span> write and the write of <code>b[0]</code>. Both <span class="const">init</span>
+writes happen-before the write of <code>b[0]</code> (agent order), which happens-before the read and has byte 0 in its memory
+range, so step 1.c.ii rejects both; the only coherent choice is the write to b, and the read returns 1. Under the proposed
+wording it returns 0, a's initial value.</p>
+<h2 id="examples">Examples</h2>
+<p>The program above: literally <code>1</code>, under the proposed wording <code>0</code>. It is not among the recorded examples
+(<a href="results.html">the recorded runs</a>), and the formal model's memory-model meaning is a relation on candidate
+executions, not a program the driver runs.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: name the [[Block]] in both tests.</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -53046,1 +53046,1 @@
+-            &lt;li&gt;Each event _writeEvent_ with index _i_ in _writes_ has _readEvent_.[[ByteIndex]] + _i_ in its memory range.&lt;/li&gt;
++            &lt;li&gt;Each event _writeEvent_ with index _i_ in _writes_ has _readEvent_.[[Block]] as its [[Block]] and _readEvent_.[[ByteIndex]] + _i_ in its memory range.&lt;/li&gt;
+@@ -53164,1 +53164,1 @@
+-            1. If there exists a WriteSharedMemory or ReadModifyWriteSharedMemory event _value_ that has _byteLocation_ in its memory range such that _writeEvent_ happens-before _value_ in _execution_ and _value_ happens-before _readEvent_ in _execution_, then
++            1. If there exists a WriteSharedMemory or ReadModifyWriteSharedMemory event _value_ whose [[Block]] is _readEvent_.[[Block]] and that has _byteLocation_ in its memory range such that _writeEvent_ happens-before _value_ in _execution_ and _value_ happens-before _readEvent_ in _execution_, then
+</code></pre>
+<p>The alternative, a memory range that is a Set of (block, index) pairs, changes the definitions of "equal",
+"overlapping" and "disjoint" too; the two-line fix leaves them as they are.</p>
+<h2 id="test262">test262</h2>
+<p>Any test that, in one agent, writes one SharedArrayBuffer and then reads another at the same index separates the
+readings: under the literal text the read takes the other buffer's value. No test is written to check this case.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>40. Annex B: what §B.1.2&#x27;s ordered alternatives choose, and which |Pattern| its group-number condition counts · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/40-annexb-regexp-order-group-count.md</code></p>
+<h1>40. Annex B: what §B.1.2's ordered alternatives choose, and which |Pattern| its group-number condition counts</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§B.1.2 Regular Expressions Patterns (<a class="clause" href="https://tc39.es/ecma262/#sec-regular-expressions-patterns"><code>#sec-regular-expressions-patterns</code></a>), its first paragraph and AtomEscape's second alternative, with its note; §22.2.1.2 CountLeftCapturingParensWithin (<a class="clause" href="https://tc39.es/ecma262/#sec-countleftcapturingparenswithin"><code>#sec-countleftcapturingparenswithin</code></a>) and §B.1.2.2 CountLeftCapturingParensWithin and CountLeftCapturingParensBefore (<a class="clause" href="https://tc39.es/ecma262/#sec-countleftcapturingparens-annexb"><code>#sec-countleftcapturingparens-annexb</code></a>).</dd><dt>Kind</dt><dd>ambiguity (the ordering sentence); self-reference (the condition).</dd><dt>Model erratum</dt><dd><code>AnnexBRegExpOrder</code> and <code>AnnexBGroupCount</code>, default reading test262 for both; the readings of each: literal, test262, proposed. The test262 and proposed readings read the ordering as commitment for the nonterminals §B.1.2 gives, and take the count from a parse with the condition taken as true: the proposed wording below. Under the literal reading the run stops on a pattern with more than one parse.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: PR <a class="ext" href="https://github.com/tc39/ecma262/pull/2445">#2445</a> (open, 2021-06), "Editorial: Eliminate order-disambiguation from Annex B Pattern-grammar", replaces the ordering sentence by lookahead restrictions; its ConstrainedDecimalEscape keeps the condition's "the |Pattern| containing |DecimalEscape|"; it is not merged. PR <a class="ext" href="https://github.com/tc39/ecma262/pull/2228">#2228</a> (merged 2020-12, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/67dc0c208"><code>67dc0c208</code></a>), "Editorial: Swap 2 alternatives of Term in Annex B", swapped Term's alternatives because, under the ordering sentence, <code>Atom</code> matches wherever <code>Atom Quantifier</code> would.</dd><dt>On this site</dt><dd><a href="../errata.html#AnnexBRegExpOrder"><code>AnnexBRegExpOrder</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)<br><a href="../errata.html#AnnexBGroupCount"><code>AnnexBGroupCount</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>The first paragraph of §B.1.2 (its "…" is a cross-reference to §22.2.1 Patterns):</p>
+<blockquote class="sentence q-text"><p>The syntax of … is modified and extended as follows. These changes introduce ambiguities that are broken by the ordering of grammar productions and by contextual information. When parsing using the following grammar, each alternative is considered only if previous production alternatives do not match.</p></blockquote>
+<blockquote class="sentence q-text"><p>AtomEscape[UnicodeMode, NamedCaptureGroups] :: [+UnicodeMode] DecimalEscape [~UnicodeMode] DecimalEscape [&gt; but only if the CapturingGroupNumber of <span class="nt">DecimalEscape</span> is ≤ CountLeftCapturingParensWithin(the <span class="nt">Pattern</span> containing <span class="nt">DecimalEscape</span>)]</p><p class="q-gap">…</p></blockquote>
+<p>and the note after the grammar (the guard elided is [~UnicodeMode]):</p>
+<blockquote class="sentence q-text"><p>When the same left-hand sides occurs with both [+UnicodeMode] and … guards it is to control the disambiguation priority.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>The grammar needs an order: <code>/a{1}/</code> is one Term (<code>a</code> quantified) or four (<code>a</code>, <code>{</code>, <code>1</code>, <code>}</code>), <code>\b</code> is an Assertion
+or an identity escape, <code>\1</code> a DecimalEscape or a LegacyOctalEscapeSequence. §5.1 defines a grammar's language and
+parse trees declaratively; the sentence is procedural, and says neither what an alternative "matches" nor how nested
+choices combine. Three readings:</p>
+<ul>
+<li>Commitment for every nonterminal, as in a parsing expression grammar: no pattern with a Term parses, since §22.2.1's
+  <code>Alternative :: [empty] | Alternative Term</code> always takes <code>[empty]</code>. But Alternative and Disjunction are §22.2.1's,
+  not "the following grammar".</li>
+<li>Commitment for the nonterminals §B.1.2 gives: a node uses an alternative only if no earlier alternative of its
+  nonterminal derives any span from where it starts. It is well defined and gives the engines' answers: <code>\b</code> is an
+  Assertion wherever it occurs, so <code>/\b*/</code> has nothing to repeat.</li>
+<li>A priority among complete parses (a later alternative is used only where no earlier one leads to a parse of the
+  whole pattern): also well defined, but it accepts <code>/\b*/</code>, <code>/\B+/</code> and <code>/a\b?/</code>, whose only complete parse
+  quantifies <code>b</code> read as an identity escape.</li>
+</ul>
+<p>The condition reads "the |Pattern| containing |DecimalEscape|", the tree being chosen, and whether <code>\N</code> is a
+DecimalEscape is part of that choice: it is evaluated on the tree it selects. For <code>/\1(a)/</code> the Pattern has one
+capturing group however <code>\1</code> is read, so only the backreference is consistent; but the text gives no rule for finding
+the tree, and a pattern whose count depended on the choice could have no consistent parse or two. It does not: the
+alternatives the condition decides between derive only digits, never a <code>(</code>. So the count can be taken from the parse
+with the condition true.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/40-annexb-regexp-order-group-count.js</a> (outputs:
+<a href="results.html#40-annexb-regexp-order-group-countjs">the recorded runs</a>) compiles each pattern with no flags and tests
+the string against it:</p>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th>pattern on string</th>
+<th>commitment for B.1.2's nonterminals</th>
+<th>priority among complete parses</th>
+<th>V8, SpiderMonkey, JavaScriptCore</th>
+<th>formal model, §B.1.2 on (test262, proposed)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a{1}</code> on <code>a</code></td>
+<td><code>true</code> (one Term)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>\b*</code> on ``</td>
+<td>SyntaxError (<code>\b</code> an Assertion)</td>
+<td><code>true</code> (<code>b*</code>)</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>a\b?</code> on <code>ab</code></td>
+<td>SyntaxError</td>
+<td><code>true</code> (<code>b?</code>)</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>\x4</code> on <code>x4</code></td>
+<td><code>true</code> (identity escape <code>x</code>, then <code>4</code>)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>{,1}</code> on <code>{,1}</code></td>
+<td><code>true</code> (four pattern characters)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>[\b]</code> on backspace</td>
+<td><code>true</code> (ClassEscape <code>b</code>)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>\c1</code> on <code>\c1</code></td>
+<td><code>true</code> (a lone <code>\</code>, then <code>c1</code>)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>\1(a)</code> on <code>a</code></td>
+<td><code>true</code> (a backreference)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>\2(a)(b)</code> on <code>ab</code></td>
+<td><code>true</code> (a backreference)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>\3(a)(b)</code> on <code>\x03ab</code></td>
+<td><code>true</code> (an octal escape)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>(a)\10</code> on <code>a\x08</code></td>
+<td><code>true</code> (an octal escape)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>\1</code> on <code>\x01</code></td>
+<td><code>true</code> (an octal escape)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The formal model's column is <code>ecma-run --annex-b sec-regular-expressions-patterns</code>, under the test262 and the
+proposed readings of both errata (the same output). Under the literal reading of either
+erratum the run stops at the first pattern, <code>a{1}</code>, which has more than one parse (<code>stop: residue
+formal-parsetextin#0 2</code>). The model's run in RESULTS.md is on ecma-run's default host, with Annex B off, and is not a
+witness here.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -53867,7 +53867,7 @@
+
+     &lt;emu-annex id=&quot;sec-regular-expressions-patterns&quot;&gt;
+       &lt;h1&gt;Regular Expressions Patterns&lt;/h1&gt;
+-      &lt;p&gt;The syntax of &lt;emu-xref href=&quot;#sec-patterns&quot;&gt;&lt;/emu-xref&gt; is modified and extended as follows. These changes introduce ambiguities that are broken by the ordering of grammar productions and by contextual information. When parsing using the following grammar, each alternative is considered only if previous production alternatives do not match.&lt;/p&gt;
++      &lt;p&gt;The syntax of &lt;emu-xref href=&quot;#sec-patterns&quot;&gt;&lt;/emu-xref&gt; is modified and extended as follows. These changes introduce ambiguities that are broken by the ordering of grammar productions and by contextual information. When parsing using the following grammar, a Parse Node of a nonterminal whose productions are given below uses an alternative only if no earlier alternative of that nonterminal matches any sequence of code points starting at the same position.&lt;/p&gt;
+       &lt;p&gt;This alternative pattern grammar and semantics only changes the syntax and semantics of BMP patterns. The following grammar extensions include productions parameterized with the [UnicodeMode] parameter. However, none of these extensions change the syntax of Unicode patterns recognized when parsing with the [UnicodeMode] parameter present on the goal symbol.&lt;/p&gt;
+       &lt;h2&gt;Syntax&lt;/h2&gt;
+       &lt;emu-grammar type=&quot;definition&quot;&gt;
+@@ -53916,7 +53916,7 @@
+
+         AtomEscape[UnicodeMode, NamedCaptureGroups] ::
+           [+UnicodeMode] DecimalEscape
+-          [~UnicodeMode] DecimalEscape [&gt; but only if the CapturingGroupNumber of |DecimalEscape| is &amp;le; CountLeftCapturingParensWithin(the |Pattern| containing |DecimalEscape|)]
++          [~UnicodeMode] DecimalEscape [&gt; but only if the CapturingGroupNumber of |DecimalEscape| is &amp;le; CountLeftCapturingParensWithin(_P_), where _P_ is the |Pattern| that results from parsing the source text matched by the |Pattern| containing |DecimalEscape| again, with this condition taken to be true]
+           CharacterClassEscape[?UnicodeMode]
+           CharacterEscape[?UnicodeMode, ?NamedCaptureGroups]
+           [+NamedCaptureGroups] `k` GroupName[?UnicodeMode]
+</code></pre>
+<h2 id="test262">test262</h2>
+<p><code>annexB/built-ins/RegExp</code> and <code>annexB/language/literals/regexp</code> test these choices (<code>legacy-octal-escape.js</code> for
+<code>\1</code>, <code>RegExp-decimal-escape-not-capturing.js</code> for <code>\2</code> with one group, <code>extended-pattern-char.js</code>,
+<code>identity-escape.js</code>, <code>quantifiable-assertion-followed-by.js</code>); they pass under both commitment for B.1.2's
+nonterminals and priority among complete parses. None tests <code>/\b*/</code> or <code>/a\b?/</code> under Annex B, where the two
+readings differ.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#40-annexb-regexp-order-group-countjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=40-annexb-regexp-order-group-count">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/40-annexb-regexp-order-group-count.js</code></summary><pre class="js">// §B.1.2: &quot;each alternative is considered only if previous production alternatives do not match&quot;, and
+// AtomEscape&#x27;s DecimalEscape &quot;only if the CapturingGroupNumber of DecimalEscape is ≤
+// CountLeftCapturingParensWithin(the Pattern containing DecimalEscape)&quot;. Each pattern is compiled with no
+// flags; the string is matched against it.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var cases = [[&quot;a{1}&quot;, &quot;a&quot;], [&quot;\\b*&quot;, &quot;&quot;], [&quot;a\\b?&quot;, &quot;ab&quot;], [&quot;\\x4&quot;, &quot;x4&quot;], [&quot;{,1}&quot;, &quot;{,1}&quot;], [&quot;[\\b]&quot;, &quot;\b&quot;],
+             [&quot;\\c1&quot;, &quot;\\c1&quot;], [&quot;\\1(a)&quot;, &quot;a&quot;], [&quot;\\2(a)(b)&quot;, &quot;ab&quot;], [&quot;\\3(a)(b)&quot;, &quot;\x03ab&quot;], [&quot;(a)\\10&quot;, &quot;a\x08&quot;],
+             [&quot;\\1&quot;, &quot;\x01&quot;]];
+for (var [p, s] of cases) {
+  var r;
+  try { r = String(new RegExp(p).test(s)); } catch (e) { r = e.constructor.name; }
+  print(JSON.stringify(p) + &quot; on &quot; + JSON.stringify(s) + &quot;: &quot; + r);
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

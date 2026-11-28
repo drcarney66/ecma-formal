@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>29. ({a = 1});: the __proto__ early error asks for the PropName of a CoverInitializedName, which has none · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/29-propname-coverinitializedname.md</code></p>
+<h1>29. <code>({a = 1});</code>: the <code>__proto__</code> early error asks for the PropName of a CoverInitializedName, which has none</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§13.2.5.1 Static Semantics: Early Errors (<a class="clause" href="https://tc39.es/ecma262/#sec-object-initializer-static-semantics-early-errors"><code>#sec-object-initializer-static-semantics-early-errors</code></a>), the <code>__proto__</code> rule; §13.2.5.4 Static Semantics: PropertyNameList (<a class="clause" href="https://tc39.es/ecma262/#sec-static-semantics-propertynamelist"><code>#sec-static-semantics-propertynamelist</code></a>), step 1 of the first row and step 2 of the second; §8.6.5 Static Semantics: PropName (<a class="clause" href="https://tc39.es/ecma262/#sec-static-semantics-propname"><code>#sec-static-semantics-propname</code></a>).</dd><dt>Kind</dt><dd>missing case (an operation applied to a production it does not define). Not observable: every text that reaches it has another early error.</dd><dt>Model erratum</dt><dd><code>PropNameCoverInitializedName</code>, baked-in SpecTec reading proposed (<code>spec/spectec/clauses/Helpers.spectec</code>, <code>@row-propname-coverinitializedname</code>, <code>@formal-protopropertycount</code>; <code>spec/spectec/08-early-errors.spectec</code>). Rather than leaving <code>PropName</code> undefined on <code>CoverInitializedName</code> (which stops with <code>sortError</code>), SpecTec adds the missing <code>PropName</code> row for <code>CoverInitializedName : IdentifierReference Initializer</code>, evaluates duplicate-<code>__proto__</code> counts via <code>@formal-protopropertycount</code>, and runs child early errors before parent rules.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "CoverInitializedName" and "PropName"). Issue <a class="ext" href="https://github.com/tc39/ecma262/issues/2607">#2607</a> (open, 2022-01), "Editorial: missing syntax error (involving CoverCallExpressionAndAsyncArrowHead)", is about another case of the CoverInitializedName rule, <code>f({x = 0})</code>.</dd><dt>On this site</dt><dd><a href="../errata.html#PropNameCoverInitializedName"><code>PropNameCoverInitializedName</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>§13.2.5.1:</p>
+<blockquote class="sentence q-text"><p>ObjectLiteral : <code>{</code> PropertyDefinitionList <code>,</code>? <code>}</code></p><p>It is a Syntax Error if the PropertyNameList of <span class="nt">PropertyDefinitionList</span> contains any duplicate entries for <span class="val">&quot;__proto__&quot;</span> and at least two of those entries were obtained from productions of the form PropertyDefinition : PropertyName <code>:</code> AssignmentExpression. …</p><p>PropertyDefinition : CoverInitializedName</p><p>It is a Syntax Error if any source text is matched by this production.</p></blockquote>
+<p>PropertyNameList:</p>
+<blockquote class="sentence q-text"><p>PropertyDefinitionList : PropertyDefinition 1. Let <var>propertyName</var> be the PropName of <span class="nt">PropertyDefinition</span>.</p></blockquote>
+<p>PropName has rows for <code>PropertyDefinition : IdentifierReference</code>, <code>PropertyDefinition : ... AssignmentExpression</code> and
+<code>PropertyDefinition : PropertyName : AssignmentExpression</code>, and reaches MethodDefinition's rows through the chain
+production <code>PropertyDefinition : MethodDefinition</code>. <code>PropertyDefinition : CoverInitializedName</code> is a chain production
+too, but <code>CoverInitializedName : IdentifierReference Initializer</code> has two nonterminals and no row.</p>
+<h2 id="problem">Problem</h2>
+<p>An ObjectLiteral that contains a CoverInitializedName and is not reparsed as an ObjectAssignmentPattern, such as
+<code>({a = 1});</code> as an ExpressionStatement, is subject to both rules above. The <code>__proto__</code> rule evaluates
+PropertyNameList and with it the PropName of every PropertyDefinition, including the CoverInitializedName, whose
+PropName the text does not define. Early errors are not ordered, so the rule's evaluation cannot be skipped because
+the other rule already applies. The program is a SyntaxError by the CoverInitializedName rule in any case, so no output shows the gap, but the
+<code>__proto__</code> rule has no value for it.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/29-propname-coverinitializedname.js</a> (outputs:
+<a href="results.html#29-propname-coverinitializednamejs">the recorded runs</a>) parses each source as a Script:</p>
+<pre class="js"><code>var sources = [&quot;({a = 1});&quot;, &quot;({__proto__: 1, __proto__ = 2});&quot;, &quot;({a = 1} = {});&quot;];
+for (var s of sources) {
+  try { (0, eval)(s); print(JSON.stringify(s) + &quot;: no error&quot;); }
+  catch (e) { print(JSON.stringify(s) + &quot;: &quot; + e.constructor.name); }
+}
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>({a = 1});</code></th>
+<th><code>({__proto__: 1, __proto__ = 2});</code></th>
+<th><code>({a = 1} = {});</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>SyntaxError</code>; the <code>__proto__</code> rule is undefined</td>
+<td>likewise</td>
+<td>no error (a pattern)</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+<td>no error</td>
+</tr>
+<tr>
+<td>formal model (the row proposed below)</td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+<td>no error</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>CoverInitializedName gets the name of its IdentifierReference, as the shorthand form does:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -10112,7 +10112,11 @@
+       &lt;h1&gt;Static Semantics: PropName ( ): a String or &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;&lt;/h1&gt;
+       &lt;dl class=&quot;header&quot;&gt;
+       &lt;/dl&gt;
+-      &lt;emu-grammar&gt;PropertyDefinition : IdentifierReference&lt;/emu-grammar&gt;
++      &lt;emu-grammar&gt;
++        PropertyDefinition : IdentifierReference
++
++        CoverInitializedName : IdentifierReference Initializer
++      &lt;/emu-grammar&gt;
+       &lt;emu-alg&gt;
+         1. Return the StringValue of |IdentifierReference|.
+       &lt;/emu-alg&gt;
+</code></pre>
+<p>Returning <span class="const">empty</span>, as for a spread, would do equally well: the name is never compared, because a
+CoverInitializedName is not of the form the rule counts.</p>
+<h2 id="test262">test262</h2>
+<p><code>language/expressions/object/cover-initialized-name.js</code>, a negative parse test of <code>({ a = 1 });</code>, reaches the gap; it
+requires the SyntaxError, which the text gives through the CoverInitializedName rule whatever the <code>__proto__</code> rule
+yields.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#29-propname-coverinitializednamejs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=29-propname-coverinitializedname">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/29-propname-coverinitializedname.js</code></summary><pre class="js">// The ObjectLiteral `__proto__` early error asks for the PropName of every PropertyDefinition, and PropName
+// has no row for CoverInitializedName. Each source is parsed as a Script (indirect eval).
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var sources = [&quot;({a = 1});&quot;, &quot;({__proto__: 1, __proto__ = 2});&quot;, &quot;({a = 1} = {});&quot;];
+for (var s of sources) {
+  try { (0, eval)(s); print(JSON.stringify(s) + &quot;: no error&quot;); }
+  catch (e) { print(JSON.stringify(s) + &quot;: &quot; + e.constructor.name); }
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

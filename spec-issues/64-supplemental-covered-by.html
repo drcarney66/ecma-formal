@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>64. Supplemental syntax &quot;covered by&quot; without &quot;must cover&quot;, and DestructuringAssignmentTarget cover-node mismatch · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/64-supplemental-covered-by.md</code></p>
+<h1>64. Supplemental syntax <code>"covered by"</code> without <code>"must cover"</code>, and <code>DestructuringAssignmentTarget</code> cover-node mismatch</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§13.3.6.1 Function Calls Evaluation (<a class="clause" href="https://tc39.es/ecma262/#sec-function-calls-runtime-semantics-evaluation"><code>#sec-function-calls-runtime-semantics-evaluation</code></a>), step 1; §15.8.5 Async Function Definitions Evaluation (<a class="clause" href="https://tc39.es/ecma262/#sec-async-function-definitions-runtime-semantics-evaluation"><code>#sec-async-function-definitions-runtime-semantics-evaluation</code></a>), step 1; §13.15.5 Destructuring Assignment (<a class="clause" href="https://tc39.es/ecma262/#sec-destructuring-assignment"><code>#sec-destructuring-assignment</code></a>), early errors, against §13.15.5.5 IteratorDestructuringAssignmentEvaluation (<a class="clause" href="https://tc39.es/ecma262/#sec-runtime-semantics-iteratordestructuringassignmentevaluation"><code>#sec-runtime-semantics-iteratordestructuringassignmentevaluation</code></a>) and §13.15.5.6 KeyedDestructuringAssignmentEvaluation (<a class="clause" href="https://tc39.es/ecma262/#sec-runtime-semantics-keyeddestructuringassignmentevaluation"><code>#sec-runtime-semantics-keyeddestructuringassignmentevaluation</code></a>), step 1.a; with §5.1.5 (<a class="clause" href="https://tc39.es/ecma262/#sec-syntactic-grammar"><code>#sec-syntactic-grammar</code></a>).</dd><dt>Kind</dt><dd>undefined Parse Node reference (<code>"covered by"</code> used where no <code>"must cover"</code> rule exists, and on a parent node rather than the covering child).</dd><dt>Model erratum</dt><dd><code>SupplementalCoveredBy</code>, baked-in SpecTec reading test262 (<code>Ecma.reparse</code> / <code>$CoveredBy</code> in <code>lean/Ecma/Ops/Parse.lean</code> and <code>ProgPrim.lean</code>). Whenever <code>(n, k)</code> was not pre-populated by a <code>"must cover"</code> early-error rule, <code>$CoveredBy</code> reparses <code>n</code>'s source text on demand under goal <code>k</code>.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "CallMemberExpression" and "DestructuringAssignmentTarget" with "covered by"). PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3223">#3223</a> (open, 2023-11) refactors §5.1.5's cover text without adding <code>"must cover"</code> rules for <code>CallMemberExpression</code> or <code>AwaitExpression</code>.</dd><dt>On this site</dt><dd><a href="../errata.html#SupplementalCoveredBy"><code>SupplementalCoveredBy</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>§13.3.6.1 (<code>CallExpression : CoverCallExpressionAndAsyncArrowHead</code>):</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>expr</var> be the <span class="nt">CallMemberExpression</span> that is covered by <span class="nt">CoverCallExpressionAndAsyncArrowHead</span>.</p></blockquote>
+<p>§15.8.5 (<code>UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead</code>):</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>expr</var> be the <span class="nt">AwaitExpression</span> that is covered by <span class="nt">CoverAwaitExpressionAndAwaitUsingDeclarationHead</span>.</p></blockquote>
+<p>§13.15.5 (<code>DestructuringAssignmentTarget : LeftHandSideExpression</code>):</p>
+<blockquote class="sentence q-text"><p><span class="nt">LeftHandSideExpression</span> must cover an <span class="nt">AssignmentPattern</span>.</p></blockquote>
+<p>against §13.15.5.6 (<code>KeyedDestructuringAssignmentEvaluation</code>):</p>
+<blockquote class="sentence q-text"><p>Let <var>assignmentPattern</var> be the <span class="nt">AssignmentPattern</span> that is covered by <span class="nt">DestructuringAssignmentTarget</span>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<ol>
+<li><strong>Supplemental syntax without <code>"must cover"</code>.</strong> §5.1.5 defines <em>"the <em>n</em> that is covered by <em>p</em>"</em> exclusively as the
+   result of an early-error rule of the form <em>"<em>p</em> must cover an <em>n</em>"</em>. No <code>"must cover"</code> rule anywhere in ECMA-262
+   names <code>|CallMemberExpression|</code> or <code>|AwaitExpression|</code> (only prose in §13.3 and §13.5 says their interpretation <em>"is
+   refined using"</em> the supplemental grammar), so step 1 of ordinary function call evaluation (<code>f()</code>) and <code>await</code>
+   evaluation (<code>await 1</code>) names an undefined term!</li>
+<li><strong>Mismatched covering node in destructuring.</strong> §13.15.5's <code>"must cover"</code> rule is on <code>|LeftHandSideExpression|</code>, yet
+   <code>IteratorDestructuringAssignmentEvaluation</code> and <code>KeyedDestructuringAssignmentEvaluation</code> ask for the
+   <code>|AssignmentPattern|</code> covered by its parent <code>|DestructuringAssignmentTarget|</code>.</li>
+</ol>
+<h2 id="examples">Examples</h2>
+<pre class="js"><code>async function run() {
+  var a, b;
+  ({ x: { a }, y: [b] } = { x: { a: 10 }, y: [20] });
+  return (await Promise.resolve(a)) + b;
+}
+run().then(v =&gt; print(v));
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>run()</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal §5.1.5 (<code>"covered by"</code> defined only for <code>"must cover"</code> target nodes)</td>
+<td>undefined on <code>CallMemberExpression</code>, <code>AwaitExpression</code>, and <code>DestructuringAssignmentTarget</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>30</code></td>
+</tr>
+<tr>
+<td>formal model (test262 reading)</td>
+<td><code>30</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Extend §5.1.5 to define <em>"the <em>n</em> that is covered by <em>p</em>"</em> for Supplemental Syntax refinements as well as <code>"must cover"</code>
+rules, and in <code>IteratorDestructuringAssignmentEvaluation</code> / <code>KeyedDestructuringAssignmentEvaluation</code> read the
+<code>|AssignmentPattern|</code> covered by the <code>|LeftHandSideExpression|</code> of <code>|DestructuringAssignmentTarget|</code>.</p>
+<h2 id="test262">test262</h2>
+<p>Every function call <code>f()</code>, <code>await x</code>, and nested destructuring assignment exercises these three sites.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

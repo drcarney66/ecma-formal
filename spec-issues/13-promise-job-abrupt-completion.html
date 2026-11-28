@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13. NewPromiseReactionJob can return a throw completion, and null-realm promise Jobs run user code without a specified agent or realm · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/13-promise-job-abrupt-completion.md</code></p>
+<h1>13. NewPromiseReactionJob can return a throw completion, and <em>null</em>-realm promise Jobs run user code without a specified agent or realm</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§9.5 Jobs and Host Operations to Enqueue Jobs (<a class="clause" href="https://tc39.es/ecma262/#sec-jobs"><code>#sec-jobs</code></a>), the list of requirements; §9.5.5 HostEnqueuePromiseJob (<a class="clause" href="https://tc39.es/ecma262/#sec-hostenqueuepromisejob"><code>#sec-hostenqueuepromisejob</code></a>), its requirements and note; against §27.5.2.1 NewPromiseReactionJob (<a class="clause" href="https://tc39.es/ecma262/#sec-newpromisereactionjob"><code>#sec-newpromisereactionjob</code></a>), steps 1.h.i, 1.i and 2–3.</dd><dt>Kind</dt><dd>contradiction (a Job against §9.5's normal-completion requirement, and a <em>null</em>-realm Job running user species resolving functions against §9.5.5's note and missing target-agent / realm preparation).</dd><dt>Model erratum</dt><dd><code>PromiseJobAbruptCompletion</code>, baked-in SpecTec reading literal for the abrupt-completion check (<code>checked_jobs [@sec-newpromisereactionjob]</code>, stopping at <code>sec-jobs -</code> when a promise Job returns an abrupt completion), paired with two non-literal host-layer choices for <em>null</em>-realm promise Jobs: <code>jobAgentOf</code> and <code>Host.mayRun</code> (<code>spec/spectec/prose/14-host-laws-basic.spectec</code>, <code>16-host-laws-jobs.spectec</code>) assign a <em>null</em>-realm Job to the surrounding agent with per-agent FIFO ordering, and <code>Engine.Host.prepareJobOn</code> (<code>lean/Engine/Host/Strategy.lean</code>) pushes an execution context for the agent's realm even when <code>_realm_</code> is <em>null</em> so user species resolving functions or callable Proxies have a running execution context and current Realm Record.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "NewPromiseReactionJob" and "HostEnqueuePromiseJob"). PR <a class="ext" href="https://github.com/tc39/ecma262/pull/2772">#2772</a> (open, a draft, 2022-05), "Remove Job from Promise Resolve Functions", is about the resolving functions' own Job; issue <a class="ext" href="https://github.com/tc39/ecma262/issues/2222">#2222</a> (open, 2020-11), "Promise.prototype.finally should use onFinally's realm for newly creating functions", is about <code>finally</code>'s functions; PR <a class="ext" href="https://github.com/tc39/ecma262/pull/1597">#1597</a> (merged 2020-03, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/c59502090"><code>c59502090</code></a>) and PR <a class="ext" href="https://github.com/tc39/ecma262/pull/1984">#1984</a> (merged 2020-08, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/a59a820d3"><code>a59a820d3</code></a>) introduced the <em>null</em> realm for handler-less reactions and §9.5.5's note.</dd><dt>On this site</dt><dd><a href="../errata.html#PromiseJobAbruptCompletion"><code>PromiseJobAbruptCompletion</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the literal text)</dd></dl><h2 id="text">Text</h2>
+<p>§9.5, of the host operations that enqueue Jobs:</p>
+<blockquote class="sentence q-text"><p>Their implementations must conform to the following requirements: …</p><p>The Abstract Closure must return a normal completion, implementing its own handling of errors.</p></blockquote>
+<p>NewPromiseReactionJob:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:1"><span class="q-num">h.</span> If <var>handlerResult</var> is an abrupt completion, then</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> Return ? Call(<var>promiseCapability</var>.[[Reject]], <span class="val">undefined</span>, « <var>handlerResult</var>.[[Value]] »).</p><p class="q-step" style="--d:1"><span class="q-num">i.</span> Return ? Call(<var>promiseCapability</var>.[[Resolve]], <span class="val">undefined</span>, « <var>handlerResult</var>.[[Value]] »).</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Let <var>handlerRealm</var> be <span class="val">null</span>.</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> If <var>reaction</var>.[[Handler]] is not <span class="const">empty</span>, then …</p></blockquote>
+<p>HostEnqueuePromiseJob (<a class="clause" href="https://tc39.es/ecma262/#sec-hostenqueuepromisejob"><code>#sec-hostenqueuepromisejob</code></a>) and its note:</p>
+<blockquote class="sentence q-text"><p>If <var>realm</var> is not <span class="val">null</span>, each time <var>job</var> is invoked the implementation must perform implementation-defined steps such that execution is prepared to evaluate ECMAScript code at the time of <var>job</var>&#x27;s invocation.</p></blockquote>
+<blockquote class="sentence q-text"><p>… If the handler is <span class="val">undefined</span>, <var>realm</var> is <span class="val">null</span>. … When the <var>realm</var> is <span class="val">null</span>, no user ECMAScript code will be evaluated and no new ECMAScript objects (e.g. Error objects) will be created.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p><em>promiseCapability</em> is the capability of the promise that <code>then</code> derived, made by NewPromiseCapability(<em>C</em>) for the
+species constructor <em>C</em> of the original promise, which the program chooses. Its executor may hand
+GetCapabilitiesExecutor resolving functions that are user ECMAScript functions or Proxies, and that throw:</p>
+<ol>
+<li><strong>Abrupt Job completion.</strong> Step 1.i (or 1.h.i) returns a throw completion, breaking §9.5's requirement that every
+   Job Abstract Closure return a normal completion. Unlike <code>HostEnqueueFinalizationRegistryCleanupJob</code> (which catches
+   abrupt completions and reports them via host-defined steps), <code>NewPromiseReactionJob</code> propagates <code>?</code> directly.</li>
+<li><strong>User code, realm preparation, and agent ownership when <code>_realm_</code> is <code>*null*</code>.</strong> When a reaction has no handler
+   (<code>q.then()</code>), steps 2–3 leave <code>_handlerRealm_</code> equal to <code>*null*</code>, yet step 1.i still calls <code>_promiseCapability_.[[Resolve]]</code>
+   — running user code and creating objects (e.g. a callable Proxy's <code>_argArray_</code> in the current realm), directly
+   contradicting <code>HostEnqueuePromiseJob</code>'s note (<code>test262</code>'s <code>deferred-is-resolved-value.js</code> requires running that
+   species resolve function). Moreover, <code>HostEnqueuePromiseJob</code> omits execution-context preparation when <code>_realm_</code> is
+   <code>*null*</code> and never specifies which agent owns a <code>*null*</code>-realm Job or whether FIFO ordering is per-agent.</li>
+</ol>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/13-promise-job-abrupt-completion.js</a> (outputs:
+<a href="results.html#13-promise-job-abrupt-completionjs">the recorded runs</a>):</p>
+<pre class="js"><code>function Bad(executor) {
+  executor(function (v) { print(&quot;resolve(&quot; + v + &quot;) called; it throws&quot;); throw new Error(&quot;boom&quot;); },
+           function () {});
+}
+Bad[Symbol.species] = Bad;
+var p = Promise.resolve(1);
+p.constructor = Bad;
+p.then(function (v) { print(&quot;handler &quot; + v); return v; });
+var q = Promise.resolve(2);
+q.constructor = Bad;
+q.then();   // no handler: the Job's realm is null
+Promise.resolve(3).then(function () { print(&quot;a later Job runs&quot;); });
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>handler 1</code>, <code>resolve(1) called; it throws</code>, then the Job returns a throw completion, which §9.5 forbids</td>
+</tr>
+<tr>
+<td>V8 (Node.js)</td>
+<td><code>handler 1</code>, <code>resolve(1) called; it throws</code>, <code>resolve(2) called; it throws</code>, <code>a later Job runs</code>; exit status 0, nothing reported</td>
+</tr>
+<tr>
+<td>SpiderMonkey (js140)</td>
+<td>the same lines, each throw reported on stderr (<code>Error: boom</code>); exit status 3</td>
+</tr>
+<tr>
+<td>JavaScriptCore (Bun)</td>
+<td>the same lines, each throw reported (<code>error: boom</code>); exit status 1</td>
+</tr>
+<tr>
+<td>formal model (literal reading)</td>
+<td>stops at the Job's completion, <code>stop: assertFailed sec-jobs -</code>; exit status 3</td>
+</tr>
+<tr>
+<td>formal model (proposed reading)</td>
+<td>runs to completion: <code>handler 1</code>, <code>resolve(1) called; it throws</code>, <code>resolve(2) called; it throws</code>, <code>a later Job runs</code>; exit status 0</td>
+</tr>
+</tbody>
+</table></div>
+<p>All three engines run every later Job. Their hosts disagree on what follows the throw: Node.js ignores it; the
+SpiderMonkey shell and Bun report each one, go on, and end with a non-zero exit status.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: let the Job handle the error itself, as HostEnqueueFinalizationRegistryCleanupJob's Job does:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -50686,8 +50686,11 @@
+               1. Return &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;.
+             1. Assert: _promiseCapability_ is a PromiseCapability Record.
+             1. If _handlerResult_ is an abrupt completion, then
+-              1. Return ? Call(_promiseCapability_.[[Reject]], *undefined*, « _handlerResult_.[[Value]] »).
+-            1. Return ? Call(_promiseCapability_.[[Resolve]], *undefined*, « _handlerResult_.[[Value]] »).
++              1. Let _settleResult_ be Completion(Call(_promiseCapability_.[[Reject]], *undefined*, « _handlerResult_.[[Value]] »)).
++            1. Else,
++              1. Let _settleResult_ be Completion(Call(_promiseCapability_.[[Resolve]], *undefined*, « _handlerResult_.[[Value]] »)).
++            1. If _settleResult_ is an abrupt completion, perform any host-defined steps for reporting the error.
++            1. Return &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;.
+           1. Let _handlerRealm_ be *null*.
+           1. If _reaction_.[[Handler]] is not &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;, then
+             1. Let _getHandlerRealmResult_ be Completion(GetFunctionRealm(_reaction_.[[Handler]].[[Callback]])).
+</code></pre>
+<p>The alternative, also proposed, is to drop the requirement for promise Jobs and say that the host reports an abrupt
+Job result; and in §9.5.5 <code>HostEnqueuePromiseJob</code>, specify that a <code>*null*</code>-realm Job runs in the surrounding agent
+(with per-agent FIFO order) and update the note to acknowledge user species resolving functions.</p>
+<h2 id="test262">test262</h2>
+<p>No test makes a reaction Job's resolving function throw: the
+<code>built-ins/Promise/{all,allKeyed,allSettled,allSettledKeyed,any}/capability-resolve-throws-*.js</code> tests make the
+combinator's own capability throw, not the capability of a promise that <code>then</code> derived. A test could not observe the
+difference anyway: what the host does with the completion is host-defined either way.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#13-promise-job-abrupt-completionjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=13-promise-job-abrupt-completion">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/13-promise-job-abrupt-completion.js</code></summary><pre class="js">// §9.5 &quot;The Abstract Closure must return a normal completion&quot; against
+// NewPromiseReactionJob 1.i &quot;Return ? Call(promiseCapability.[[Resolve]], …)&quot;,
+// with a capability whose resolve function throws (a species constructor).
+// The second reaction has no handler: its Job&#x27;s realm is null, yet it calls
+// the program&#x27;s resolve function (§9.5: such a job &quot;does not evaluate
+// ECMAScript code&quot;).
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+function Bad(executor) {
+  executor(function (v) { print(&quot;resolve(&quot; + v + &quot;) called; it throws&quot;); throw new Error(&quot;boom&quot;); },
+           function () {});
+}
+Bad[Symbol.species] = Bad;
+var p = Promise.resolve(1);
+p.constructor = Bad;
+p.then(function (v) { print(&quot;handler &quot; + v); return v; });
+var q = Promise.resolve(2);
+q.constructor = Bad;
+q.then();   // no handler: the Job&#x27;s realm is null
+Promise.resolve(3).then(function () { print(&quot;a later Job runs&quot;); });
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

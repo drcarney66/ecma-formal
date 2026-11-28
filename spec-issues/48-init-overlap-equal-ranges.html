@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>48. happens-before orders an init write only before events with overlapping ranges, which excludes the equal range of a 1-byte access · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/48-init-overlap-equal-ranges.md</code></p>
+<h1>48. happens-before orders an <span class="const">init</span> write only before events with <em>overlapping</em> ranges, which excludes the equal range of a 1-byte access</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§29.6.6 happens-before (<a class="clause" href="https://tc39.es/ecma262/#sec-happens-before"><code>#sec-happens-before</code></a>), the third condition, with §29.1 Memory Model Fundamentals (<a class="clause" href="https://tc39.es/ecma262/#sec-memory-model-fundamentals"><code>#sec-memory-model-fundamentals</code></a>), the paragraph defining "overlapping", and §6.2.9.2 CreateSharedByteDataBlock (<a class="clause" href="https://tc39.es/ecma262/#sec-createsharedbytedatablock"><code>#sec-createsharedbytedatablock</code></a>), step 6.a; §29.6.5 synchronizes-with (<a class="clause" href="https://tc39.es/ecma262/#sec-synchronizes-with"><code>#sec-synchronizes-with</code></a>), its note; §29.7.2 Coherent Reads (<a class="clause" href="https://tc39.es/ecma262/#sec-coherent-reads"><code>#sec-coherent-reads</code></a>); §29.7.4 Sequentially Consistent Atomics (<a class="clause" href="https://tc39.es/ecma262/#sec-memory-order"><code>#sec-memory-order</code></a>); §29.7.5 Valid Executions (<a class="clause" href="https://tc39.es/ecma262/#sec-valid-executions"><code>#sec-valid-executions</code></a>); §29.8 Races (<a class="clause" href="https://tc39.es/ecma262/#sec-races"><code>#sec-races</code></a>); §29.9 Data Races (<a class="clause" href="https://tc39.es/ecma262/#sec-data-races"><code>#sec-data-races</code></a>).</dd><dt>Kind</dt><dd>a definition that excludes a case its rule needs ("overlapping" excludes "equal").</dd><dt>Model erratum</dt><dd><code>InitHappensBeforeOverlap</code>, default reading literal; its readings: literal, proposed. The model's memory-model meaning (<code>HB.init</code> in <code>lean/Ecma/MemoryModel.lean</code>) keeps the text's "overlapping"; the proposed reading is the diff under "Proposed wording", which the erratum carries as a note (the rule is a list item, not an algorithm step), and it is not switched at run time.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "happens-before" with init, and "overlapping"). The rule has its present form from PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3321">#3321</a> (merged 2024-05, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/1babaf809"><code>1babaf809</code></a>); before it, it read "[[HappensBefore]] contains (<em>E</em>, <em>D</em>) if <em>E</em>.[[Order]] is <span class="const">init</span> and <em>E</em> and <em>D</em> have overlapping ranges". PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3396">#3396</a> (merged 2025-11, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/f1bdd8c02"><code>f1bdd8c02</code></a>) renamed "range" to "memory range".</dd><dt>On this site</dt><dd><a href="../errata.html#InitHappensBeforeOverlap"><code>InitHappensBeforeOverlap</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the literal text)</dd></dl><h2 id="text">Text</h2>
+<p>§29.1, the memory range definitions:</p>
+<blockquote class="sentence q-text"><p>Let the memory range of a Shared Data Block event <var>e</var> be the Set of all integers in the interval from <var>e</var>.[[ByteIndex]] (inclusive) to <var>e</var>.[[ByteIndex]] + <var>e</var>.[[ElementSize]] (exclusive). Two events&#x27; memory ranges are equal when the events have the same [[Block]], [[ByteIndex]], and [[ElementSize]]. Two events&#x27; memory ranges are overlapping when the events have the same [[Block]], the ranges are not equal, and their intersection is non-empty. Two events&#x27; memory ranges are disjoint when the events do not have the same [[Block]] or their ranges are neither equal nor overlapping.</p></blockquote>
+<p>§29.6.6 happens-before:</p>
+<blockquote class="sentence q-text"><p>For events <var>eventA</var> and <var>eventB</var>, <var>eventA</var> happens-before <var>eventB</var> in <var>execution</var> if any of the following conditions are true.</p><p><var>eventA</var> is-agent-order-before <var>eventB</var> in <var>execution</var>.</p><p><var>eventA</var> synchronizes-with <var>eventB</var> in <var>execution</var>.</p><p>SharedDataBlockEventSet(<var>execution</var>) contains both <var>eventA</var> and <var>eventB</var>, <var>eventA</var>.[[Order]] is <span class="const">init</span>, and <var>eventA</var> and <var>eventB</var> have overlapping memory ranges.</p><p>There is an event <var>eventC</var> such that <var>eventA</var> happens-before <var>eventC</var> and <var>eventC</var> happens-before <var>eventB</var> in <var>execution</var>.</p></blockquote>
+<p>§29.6.5 synchronizes-with, after its definition:</p>
+<blockquote class="sentence q-text"><p>In a candidate execution <var>execution</var>, <span class="const">init</span> events do not participate in this Relation and are instead constrained directly by happens-before.</p></blockquote>
+<p>CreateSharedByteDataBlock:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">6.</span> For each index <var>index</var> of <var>dataBlock</var>, do</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Append WriteSharedMemory { [[Order]]: <span class="const">init</span>, [[NoTear]]: <span class="val">true</span>, [[Block]]: <var>dataBlock</var>, [[ByteIndex]]: <var>index</var>, [[ElementSize]]: 1, [[Payload]]: <var>zero</var> } to <var>eventsRecord</var>.[[EventList]].</p></blockquote>
+<p>The same chapter already writes the complement the other way, in Races (§29.8, step 1.a.i): "<em>eventA</em>
+and <em>eventB</em> do not have disjoint memory ranges".</p>
+<h2 id="problem">Problem</h2>
+<p>The <span class="const">init</span> writes are one per byte: [[ElementSize]] is 1 and [[ByteIndex]] is the byte's index. The third condition
+orders such a write <em>init</em><sub>i</sub> before an event <em>eventB</em> only if their memory ranges are <em>overlapping</em>, and the
+definition of "overlapping" says "the ranges are not equal". An event of [[ElementSize]] 1 at [[ByteIndex]] <em>i</em> in the
+same block (a read or write through an <code>Int8Array</code>, <code>Uint8Array</code> or <code>Uint8ClampedArray</code>, or <code>DataView</code>'s
+<code>getInt8</code>/<code>setInt8</code>/<code>getUint8</code>/<code>setUint8</code>, or <code>Atomics</code> on those) has a memory range <em>equal</em> to <em>init</em><sub>i</sub>'s, so
+the third condition does not apply to it. An event of any larger size at or around <em>i</em> has an intersecting, unequal
+range, so it does. The rule therefore holds for every access size except the one that the <span class="const">init</span> events themselves
+have, which §29.6.5's note ("<span class="const">init</span> events … are instead constrained directly by happens-before") says happens-before is
+meant to constrain.</p>
+<p>What is left to order <em>init</em><sub>i</sub> before a 1-byte event <em>eventB</em> is the other three conditions: agent order
+(true when <em>eventB</em> is in the agent that created the block, whose EventList holds the <span class="const">init</span> events), and
+synchronizes-with or a chain through the host's host-synchronizes-with (§29.1's note names "sending a SharedArrayBuffer from one agent to another" among the host-specific synchronizing
+events a host should account for). An agent
+that obtains the block with no such chain is the case the third condition exists for, and for 1-byte events it
+orders nothing.</p>
+<p>Take such an agent, with a 1-byte write <em>W</em> followed in its agent order by a 1-byte read <em>R</em> of the same byte, and the
+candidate execution in which <em>R</em> reads-bytes-from <em>init</em><sub>i</sub> (and so reads 0):</p>
+<ul>
+<li>Valid Chosen Reads holds: the chosen value is that of <em>init</em><sub>i</sub>.</li>
+<li>Coherent Reads (§29.7.2) fails only if <em>R</em> happens-before <em>init</em><sub>i</sub> (no) or some write <em>value</em> at the byte
+  has <em>init</em><sub>i</sub> happens-before <em>value</em> and <em>value</em> happens-before <em>R</em>. <em>W</em> happens-before <em>R</em> by agent order,
+  but <em>init</em><sub>i</sub> happens-before <em>W</em> needs the third condition, which does not apply. So it holds.</li>
+<li>Sequentially Consistent Atomics (§29.7.4): the three disjuncts with a <span class="const">seq-cst</span> <em>value</em> all need <em>writeEvent</em>
+  (here <em>init</em><sub>i</sub>) to synchronize-with or happen-before the read or the write; none does. So it holds even when
+  <em>W</em> and <em>R</em> are <code>Atomics.store</code> and <code>Atomics.load</code>.</li>
+</ul>
+<p>So, literally, <code>Atomics.store(i8, 0, 1)</code> followed by <code>Atomics.load(i8, 0)</code> in that agent may return 0, the initial
+value, which is the coherence the rule is there to give. With an <code>Int16Array</code> over the same block, the same two
+accesses (<code>Atomics.store(i16, 0, 1)</code>, <code>Atomics.load(i16, 0)</code>) overlap <em>init</em><sub>0</sub> and <em>init</em><sub>1</sub>,
+<code>init</code> happens-before the write, and the load cannot return 0.</p>
+<p>The same gap shows in Races (§29.8) and so in data races (§29.9): <em>init</em><sub>i</sub> and a 1-byte write <em>W</em> not ordered by
+happens-before race (step 1.a.i: a write and a write whose ranges are not disjoint), and, because an <span class="const">init</span> event is
+not <span class="const">seq-cst</span>, they are in a data race (step 1.a), even if <em>W</em> is <span class="const">seq-cst</span>. A program whose accesses are all
+<code>Atomics</code> calls on an <code>Int8Array</code> is then not data race free in an agent with no chain from the creator, while the
+same program on an <code>Int32Array</code> is, assuming the corrected Races step 1.a of <a href="23-races-not-both.html">23</a>
+(literally, "it is not the case that both <em>eventA</em> happens-before <em>eventB</em> in <em>execution</em> and <em>eventB</em>
+happens-before <em>eventA</em> in <em>execution</em>" always holds, so <em>init</em><sub>i</sub> races every non-disjoint write of any
+size, <span class="const">init</span> is not <span class="const">seq-cst</span>, and neither program is data race free).</p>
+<p>An embedding that sends a block with a host-synchronizes-with edge never reaches this case, so an engine whose host
+always supplies the edge is not affected. The text is the problem, not an implementation: nothing requires every channel by which an agent can obtain a
+block to provide that edge ("hosts can add host-specific synchronizing events"), and a reader who takes the third
+condition as "init writes happen before everything that touches their byte" gets a different model from the one
+the text defines.</p>
+<h2 id="examples">Examples</h2>
+<p>No program is run here: the case needs a host that hands an agent a block with no host-synchronizes-with edge from
+its creator, which a host that sends blocks supplies, so no engine was run for it; the formal model's memory-model
+meaning is a relation on candidate executions and does not run programs. The shape under the literal text (the text's
+reading, not a program that behaves so):</p>
+<pre class="js"><code>// agent B, handed a SharedArrayBuffer sab by a channel with no host-synchronizes-with edge from its creator
+const i8 = new Int8Array(sab);
+Atomics.store(i8, 0, 1);
+Atomics.load(i8, 0); // literally: 0 is allowed (the load reads init_0)
+</code></pre>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: make the condition the complement of disjoint, as Races writes it, and exclude the event itself: an
+<span class="const">init</span> event's own range is equal to itself, so "do not have disjoint memory ranges" alone makes <em>init</em><sub>i</sub>
+happens-before <em>init</em><sub>i</sub>, and a strict partial order (the second condition of §29.7.5 Valid Executions)
+would then fail for every execution that creates a block.</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -53121,1 +53121,1 @@
+-            &lt;li&gt;SharedDataBlockEventSet(_execution_) contains both _eventA_ and _eventB_, _eventA_.[[Order]] is &lt;span class=&quot;const&quot;&gt;init&lt;/span&gt;, and _eventA_ and _eventB_ have overlapping memory ranges.&lt;/li&gt;
++            &lt;li&gt;SharedDataBlockEventSet(_execution_) contains both _eventA_ and _eventB_, _eventA_.[[Order]] is &lt;span class=&quot;const&quot;&gt;init&lt;/span&gt;, _eventA_ and _eventB_ are not the same Shared Data Block event, and _eventA_ and _eventB_ do not have disjoint memory ranges.&lt;/li&gt;
+</code></pre>
+<p>Two <span class="const">init</span> events never have equal ranges but are different events, so for them the new wording gives the same
+result as the old (their ranges are disjoint); for a non-<span class="const">init</span> <em>eventB</em> with an equal range the new wording adds the
+edge. The definitions of "overlapping" and "disjoint" stay as they are: the synchronizes-with, Sequentially Consistent
+Atomics and data race clauses (§29.6.5, §29.7.4, §29.9) use "equal" and "overlapping" apart on purpose.</p>
+<h2 id="test262">test262</h2>
+<p>No test: the difference needs a host without a host-synchronizes-with edge from the creator to the receiver, which test262
+cannot construct.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

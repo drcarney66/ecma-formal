@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>46. A covered Parse Node is outside the tree that covers it · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/46-covered-node-parent.md</code></p>
+<h1>46. A covered Parse Node is outside the tree that covers it</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§5.1.5 The Syntactic Grammar (<a class="clause" href="https://tc39.es/ecma262/#sec-syntactic-grammar"><code>#sec-syntactic-grammar</code></a>), the definition of "must cover", items 2–3; with §15.10.1 Static Semantics: IsInTailPosition (<a class="clause" href="https://tc39.es/ecma262/#sec-isintailposition"><code>#sec-isintailposition</code></a>), steps 2–3, §15.10.2 Static Semantics: HasCallInTailPosition (<a class="clause" href="https://tc39.es/ecma262/#sec-static-semantics-hascallintailposition"><code>#sec-static-semantics-hascallintailposition</code></a>), its row for <code>PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList</code>, and §13.2.9.2 and §13.3.6.1 Runtime Semantics: Evaluation (<a class="clause" href="https://tc39.es/ecma262/#sec-grouping-operator-runtime-semantics-evaluation"><code>#sec-grouping-operator-runtime-semantics-evaluation</code></a>, <a class="clause" href="https://tc39.es/ecma262/#sec-function-calls-runtime-semantics-evaluation"><code>#sec-function-calls-runtime-semantics-evaluation</code></a>).</dd><dt>Kind</dt><dd>missing case (the tree relations "contained within", "most closely contains" and "the parent of" are not defined for a covered node).</dd><dt>Model erratum</dt><dd><code>CoveredNodeParent</code>, default reading test262; its readings: literal, test262, proposed. The test262 and proposed readings put the covered node in the cover's place in the tree, as the proposed wording says; the readings are switched in the model's parser.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "must cover" and "IsInTailPosition"). PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3223">#3223</a> (open, 2023-11) moves the definition into a new subsection, Cover Productions, with items 2–3 as they are (it makes "covered by" the defined term).</dd><dt>On this site</dt><dd><a href="../errata.html#CoveredNodeParent"><code>CoveredNodeParent</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>§5.1.5, "<em>p</em> must cover an <em>n</em>", items 2 and 3:</p>
+<blockquote class="sentence q-text"><p>The sequence of tokens originally matched by <var>p</var> is parsed again using <var>n</var> as the goal symbol. …</p></blockquote>
+<blockquote class="sentence q-text"><p>If the sequence of tokens can be parsed as a single instance of <var>n</var>, with no tokens left over, then:</p><p>We refer to that instance of <var>n</var> (a Parse Node, unique for a given <var>p</var>) as &quot;the <var>n</var> that is covered by <var>p</var>&quot;.</p></blockquote>
+<p>IsInTailPosition:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">2.</span> If <var>call</var> is not contained within a <span class="nt">FunctionBody</span>, a <span class="nt">ConciseBody</span>, or an <span class="nt">AsyncConciseBody</span>, return <span class="val">false</span>.</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> Let <var>body</var> be the <span class="nt">FunctionBody</span>, <span class="nt">ConciseBody</span>, or <span class="nt">AsyncConciseBody</span> that most closely contains <var>call</var>.</p></blockquote>
+<p>The evaluation of <code>PrimaryExpression : CoverParenthesizedExpressionAndArrowParameterList</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>expr</var> be the <span class="nt">ParenthesizedExpression</span> that is covered by <span class="nt">CoverParenthesizedExpressionAndArrowParameterList</span>.</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Return ? Evaluation of <var>expr</var>.</p></blockquote>
+<p>and of <code>CallExpression : CoverCallExpressionAndAsyncArrowHead</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">7.</span> Let <var>thisCall</var> be this <span class="nt">CallExpression</span>.</p><p class="q-step" style="--d:0"><span class="q-num">8.</span> Let <var>tailCall</var> be IsInTailPosition(<var>thisCall</var>).</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>Item 2 parses the tokens again with <em>n</em> as the goal symbol, so the covered <em>n</em> is the root of a parse tree of its
+own: nothing makes it a child of <em>p</em>'s parent. Evaluation runs on the covered node and its descendants, and a query
+that walks up the tree from one of them stops at <em>n</em>.</p>
+<p>In a strict function, <code>return (f(n - 1));</code> evaluates the |ParenthesizedExpression| covered by the cover, and the
+call's |CallExpression| lies in that separate tree. It is contained within no |FunctionBody|, so IsInTailPosition
+returns <em>false</em> at step 2 and the call is not a tail call, while <code>return f(n - 1);</code> is one. HasCallInTailPosition's
+row for the cover recurses into the covered node, which is pointless unless a call there can be in
+tail position: the intent is that the parentheses change nothing. Every "contained within", "most closely
+contains" and "the parent of" that starts inside a covered node has the same gap.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/46-covered-node-tail-call.js</a> (outputs:
+<a href="results.html#46-covered-node-tail-calljs">the recorded runs</a>), a strict Script:</p>
+<pre class="js"><code>&quot;use strict&quot;;
+function plain(n) { if (n === 0) return &quot;done&quot;; return plain(n - 1); }
+function paren(n) { if (n === 0) return &quot;done&quot;; return (paren(n - 1)); }
+for (var [name, fn] of [[&quot;plain&quot;, plain], [&quot;paren&quot;, paren]]) {
+  try { print(name + &quot;: &quot; + fn(100000)); }
+  catch (e) { print(name + &quot;: &quot; + e.constructor.name); }
+}
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>plain(100000)</code></th>
+<th><code>paren(100000)</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td>a tail call: <code>done</code></td>
+<td>not a tail call: 100000 frames (an engine may run out of stack)</td>
+</tr>
+<tr>
+<td>JavaScriptCore (proper tail calls)</td>
+<td><code>done</code></td>
+<td><code>done</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey (no proper tail calls)</td>
+<td><code>RangeError</code> / <code>InternalError</code></td>
+<td><code>RangeError</code> / <code>InternalError</code></td>
+</tr>
+<tr>
+<td>formal model, test262 reading (the default)</td>
+<td>no result in 120 s</td>
+<td>no result in 120 s</td>
+</tr>
+<tr>
+<td>formal model, literal reading</td>
+<td><code>stop</code> (see below)</td>
+<td><code>stop</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>JavaScriptCore is the only engine of the three with proper tail calls, and it treats both as tail calls. SpecTec bakes in
+the test262 reading (<code>State.covers</code> in <code>lean/Ecma/Ops/Parse.lean</code> and <code>Model.ParentLaws</code> in
+<code>spec/spectec/prose/05-model-laws.spectec</code> splice each covered node's parent to the covering node's parent); it does not
+finish 100000 calls within RESULTS.md's 120 s limit, while with 200 calls (<code>tests/run/erratum_covered_node_parent.js</code>) it
+succeeds in constant stack space.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>A proposed new item of the definition:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -405,6 +405,7 @@
+         &lt;li&gt;If the sequence of tokens can be parsed as a single instance of _n_, with no tokens left over, then:
+           &lt;ol&gt;
+             &lt;li&gt;We refer to that instance of _n_ (a Parse Node, unique for a given _p_) as “the _n_ that is &lt;dfn&gt;covered&lt;/dfn&gt; by _p_”.&lt;/li&gt;
++            &lt;li&gt;The _n_ that is covered by _p_ takes the place of _p_ in the parse tree: its parent is the parent of _p_, and it and every Parse Node it contains are contained within each Parse Node that contains _p_.&lt;/li&gt;
+             &lt;li&gt;Early error rules are applied to the _n_ that is covered by _p_ and to its descendants, as modified by further cases of “must cover”.&lt;/li&gt;
+           &lt;/ol&gt;
+         &lt;/li&gt;
+</code></pre>
+<h2 id="test262">test262</h2>
+<p><code>language/expressions/tco-pos.js</code> (flags onlyStrict, feature tail-call-optimization) calls
+<code>(function f(n) { … return (f(n - 1)); }($MAX_ITERATIONS))</code> and requires it to finish: under the literal text the
+parenthesized call is not a tail call and the test needs <code>$MAX_ITERATIONS</code> frames.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#46-covered-node-tail-calljs">the examples' runs</a>.</p><p class="muted">Not offered in the debugger: the run does not end within RESULTS.md&#x27;s 120 s natively, and the Worker build is slower.</p><details class="jssrc"><summary>Source <code>examples/46-covered-node-tail-call.js</code></summary><pre class="js">&quot;use strict&quot;;
+// IsInTailPosition: the call in `return (paren(n - 1))` lies in the ParenthesizedExpression that the cover
+// covers, which §5.1.4 parses as a separate tree containing no FunctionBody.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+function plain(n) { if (n === 0) return &quot;done&quot;; return plain(n - 1); }
+function paren(n) { if (n === 0) return &quot;done&quot;; return (paren(n - 1)); }
+for (var [name, fn] of [[&quot;plain&quot;, plain], [&quot;paren&quot;, paren]]) {
+  try { print(name + &quot;: &quot; + fn(100000)); }
+  catch (e) { print(name + &quot;: &quot; + e.constructor.name); }
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,2631 @@
+{
+ "groups": [
+  {
+   "id": "tour",
+   "title": "The tour",
+   "intro": "Four short programs, each with breakpoints set where the specification's algorithms do the work. The debugger's guided script for them, stop by stop, is docs/debugger/DEMO.md."
+  },
+  {
+   "id": "language",
+   "title": "The language, step by step",
+   "intro": "Ordinary JavaScript, paused in the algorithms that give it its meaning: environments, calls into built-ins, eval, generators, modules."
+  },
+  {
+   "id": "corners",
+   "title": "Corners of the specification",
+   "intro": "Programs that go where fewer readers go: Proxy traps, the job queue, using declarations, with, Annex B, regular expressions, top-level await, timeouts, iterator helpers."
+  },
+  {
+   "id": "errata",
+   "title": "Errata: resolved readings and literal Assert stops",
+   "intro": "Each of these programs reaches a sentence documented on the Errata page (spec/DECISIONS.md). Where SpecTec bakes in the test262 or proposed reading, the program runs as engines and test262 expect; where SpecTec keeps the literal text, the run pauses and stops at the exact Assert or step where the text gives no answer."
+  },
+  {
+   "id": "proposal",
+   "title": "A proposal: import defer",
+   "intro": "Three programs that use the syntax of tc39/proposal-defer-import-eval. Under the specification's build each is a SyntaxError, since ECMA-262 has no such syntax. Under the build \"Proposal: import defer\", made from a branch where the proposal's text is merged into the specification's, each runs, and the breakpoints stop in the proposal's own algorithms."
+  },
+  {
+   "id": "proposals-117",
+   "title": "TC39 #117 agenda proposals (November 2026)",
+   "intro": "Thirteen more ECMA-262 proposals from the 117th TC39 plenary agenda (Stages 0–3, alongside import defer above). Each runs under its own lazy-loaded WebAssembly build and pauses inside the proposal's specification algorithm; under the baseline specification build each shows how ECMA-262 behaves today."
+  },
+  {
+   "id": "errata-programs",
+   "title": "The errata page's programs",
+   "intro": "Additional programs from the Errata page, opened under the specification build."
+  }
+ ],
+ "examples": [
+  {
+   "id": "demo/get",
+   "group": "tour",
+   "demo": "get.js",
+   "title": "A property get, up the prototype chain",
+   "line": "GetValue calls the object's [[Get]], which is OrdinaryGet; for a property the object lacks, OrdinaryGet calls its prototype's [[Get]] with the same receiver.",
+   "breakpoints": [
+    {
+     "alg": "sec-ordinaryget",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "OrdinaryGet",
+       "path": "1",
+       "frames": [
+        "OrdinaryGet",
+        "[[Get]]",
+        "GetValue"
+       ]
+      },
+      {
+       "alg": "OrdinaryGet",
+       "path": "1",
+       "frames": [
+        "OrdinaryGet",
+        "[[Get]]",
+        "GetValue"
+       ]
+      },
+      {
+       "alg": "OrdinaryGet",
+       "path": "1",
+       "frames": [
+        "OrdinaryGet",
+        "[[Get]]",
+        "OrdinaryGet",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: 8"
+    }
+   },
+   "name": "get.js",
+   "file": "tools/dbg/demo/get.js",
+   "source": "let proto = { z: 5 };\nlet point = { x: 3, __proto__: proto };\nlet a = point.x;\nlet b = point.z;\na + b;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "demo/call",
+   "group": "tour",
+   "demo": "call.js",
+   "title": "A function call",
+   "line": "EvaluateCall evaluates the arguments and calls Call, the function's [[Call]] makes a new execution context, and OrdinaryCallEvaluateBody runs the body.",
+   "breakpoints": [
+    {
+     "alg": "sec-evaluatecall",
+     "path": "7"
+    },
+    {
+     "alg": "sec-ordinarycallevaluatebody",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "EvaluateCall",
+       "path": "7"
+      },
+      {
+       "alg": "OrdinaryCallEvaluateBody",
+       "path": "1",
+       "frames": [
+        "OrdinaryCallEvaluateBody",
+        "[[Call]]",
+        "Call",
+        "EvaluateCall"
+       ]
+      }
+     ],
+     "end": "normal: 5"
+    }
+   },
+   "name": "call.js",
+   "file": "tools/dbg/demo/call.js",
+   "source": "function add(a, b) {\n  var s = a + b;\n  return s;\n}\nvar r = add(2, 3);\nr;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "demo/forof",
+   "group": "tour",
+   "demo": "forof.js",
+   "title": "A for-of loop",
+   "line": "ForIn/OfBodyEvaluation asks the iterator for its next result at step 8.a once per round, and once more to find that it is done.",
+   "breakpoints": [
+    {
+     "alg": "ForIn/OfBodyEvaluation",
+     "path": "8.a"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "ForIn/OfBodyEvaluation",
+       "path": "8.a",
+       "frames": [
+        "ForIn/OfBodyEvaluation",
+        "ForInOfLoopEvaluation"
+       ]
+      },
+      {
+       "alg": "ForIn/OfBodyEvaluation",
+       "path": "8.a"
+      },
+      {
+       "alg": "ForIn/OfBodyEvaluation",
+       "path": "8.a"
+      }
+     ],
+     "end": "normal: 30"
+    }
+   },
+   "name": "forof.js",
+   "file": "tools/dbg/demo/forof.js",
+   "source": "let sum = 0;\nfor (const v of [10, 20]) {\n  sum = sum + v;\n}\nsum;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "demo/throw",
+   "group": "tour",
+   "demo": "throw.js",
+   "title": "A throw caught",
+   "line": "The throw statement's Evaluation makes a throw completion inside the called function; it returns through [[Call]] to the try statement, and CatchClauseEvaluation binds it.",
+   "breakpoints": [
+    {
+     "alg": "sec-runtime-semantics-catchclauseevaluation",
+     "path": "1"
+    }
+   ],
+   "filters": [
+    "throw"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-throw-statement-runtime-semantics-evaluation",
+       "path": "3",
+       "frames": [
+        "Evaluation",
+        "[[Call]]",
+        "Call",
+        "EvaluateCall"
+       ]
+      },
+      {
+       "alg": "CatchClauseEvaluation",
+       "path": "1"
+      }
+     ],
+     "end": "normal: \"negative\""
+    }
+   },
+   "name": "throw.js",
+   "file": "tools/dbg/demo/throw.js",
+   "source": "function check(n) {\n  if (n < 0) throw new RangeError(\"negative\");\n  return n;\n}\nlet msg;\ntry {\n  check(-1);\n} catch (e) {\n  msg = e.message;\n}\nmsg;\n",
+   "args": [],
+   "lines": []
+  },
+  {
+   "id": "run/iscallable",
+   "group": "language",
+   "title": "IsCallable, step by step",
+   "line": "The worked example of How it works. EvaluateCall asks IsCallable of each callee that is an Object: a function has a [[Call]] internal method, and step 2 returns true; an ordinary object has none, step 3 returns false, and the call throws a TypeError.",
+   "breakpoints": [
+    {
+     "alg": "sec-iscallable",
+     "path": "2"
+    },
+    {
+     "alg": "sec-iscallable",
+     "path": "3"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "IsCallable",
+       "path": "2",
+       "frames": [
+        "IsCallable",
+        "sort-ECMAScript-function-object",
+        "MakeConstructor"
+       ]
+      },
+      {
+       "alg": "IsCallable",
+       "path": "2",
+       "frames": [
+        "IsCallable",
+        "EvaluateCall"
+       ]
+      },
+      {
+       "alg": "IsCallable",
+       "path": "2",
+       "frames": [
+        "IsCallable",
+        "Call",
+        "EvaluateCall"
+       ]
+      },
+      {
+       "alg": "IsCallable",
+       "path": "2",
+       "frames": [
+        "IsCallable",
+        "EvaluateCall"
+       ]
+      },
+      {
+       "alg": "IsCallable",
+       "path": "3",
+       "frames": [
+        "IsCallable",
+        "EvaluateCall"
+       ]
+      }
+     ],
+     "end": "normal: \"function|TypeError\""
+    }
+   },
+   "name": "iscallable.js",
+   "file": "tests/run/iscallable.js",
+   "source": "// expect: normal: \"function|TypeError\"\n// IsCallable (§7.2.3), asked by EvaluateCall of a callee that is an Object: a function\n// has a [[Call]] internal method (step 2 returns true); an ordinary object has none,\n// step 3 returns false, and the call throws a TypeError.\nfunction f() { return \"function\"; }\nvar o = {};\nvar r = f();\ntry { o(); } catch (e) { r += \"|\" + e.constructor.name; }\nr;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/s2_let_tdz",
+   "group": "language",
+   "title": "A let binding read before its declaration",
+   "line": "The declarative Environment Record's GetBindingValue finds the binding uninitialized and throws a ReferenceError, which the catch clause receives.",
+   "breakpoints": [
+    {
+     "alg": "sec-declarative-environment-records-getbindingvalue-n-s"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-declarative-environment-records-getbindingvalue-n-s",
+       "path": "1",
+       "frames": [
+        "GetBindingValue",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: \"ReferenceError\""
+    }
+   },
+   "name": "s2_let_tdz.js",
+   "file": "tests/run/s2_let_tdz.js",
+   "source": "// S2 end to end: reading a let binding before its declaration throws a ReferenceError.\n// expect: normal: \"ReferenceError\"\ntry { t; let t = 1; } catch (e) { e.name }\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/loop",
+   "group": "language",
+   "title": "A for loop's binding, copied each round",
+   "line": "ForBodyEvaluation calls CreatePerIterationEnvironment before the first round and after each, so each round has its own binding of i.",
+   "breakpoints": [
+    {
+     "alg": "sec-createperiterationenvironment"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "CreatePerIterationEnvironment",
+       "path": "1",
+       "frames": [
+        "CreatePerIterationEnvironment",
+        "ForBodyEvaluation"
+       ]
+      },
+      {
+       "alg": "CreatePerIterationEnvironment",
+       "path": "1",
+       "frames": [
+        "CreatePerIterationEnvironment",
+        "ForBodyEvaluation"
+       ]
+      }
+     ],
+     "end": "normal: 1"
+    }
+   },
+   "name": "loop.js",
+   "file": "tests/dbg/loop.js",
+   "source": "var s = 0;\nfor (let i = 0; i < 3; i++) {\n  s = s + i;\n}\nwhile (s > 1) s = s - 2;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/getter",
+   "group": "language",
+   "title": "An accessor property",
+   "line": "OrdinaryGet finds an accessor descriptor and, at step 7, calls its getter with the receiver as this; the getter's body runs in OrdinaryCallEvaluateBody.",
+   "breakpoints": [
+    {
+     "alg": "sec-ordinaryget",
+     "path": "7"
+    },
+    {
+     "alg": "sec-ordinarycallevaluatebody",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "OrdinaryGet",
+       "path": "7",
+       "frames": [
+        "OrdinaryGet",
+        "[[Get]]",
+        "GetValue"
+       ]
+      },
+      {
+       "alg": "OrdinaryCallEvaluateBody",
+       "path": "1",
+       "frames": [
+        "OrdinaryCallEvaluateBody",
+        "[[Call]]",
+        "Call",
+        "OrdinaryGet"
+       ]
+      }
+     ],
+     "end": "normal: [object #N]"
+    }
+   },
+   "name": "getter.js",
+   "file": "tests/dbg/getter.js",
+   "source": "var o = {};\nObject.defineProperty(o, \"v\", { get: function () {\n  var k = 41;\n  return k + 1;\n} });\nvar w = o.v;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/map",
+   "group": "language",
+   "title": "A built-in that calls back",
+   "line": "Array.prototype.map runs as a built-in function's steps under BuiltinCallOrConstruct, and calls the callback for each element; the JS stack shows the built-in between the two functions.",
+   "breakpoints": [
+    {
+     "alg": "sec-array.prototype.map"
+    },
+    {
+     "alg": "sec-ordinarycallevaluatebody",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "Array.prototype.map",
+       "path": "1",
+       "frames": [
+        "Array.prototype.map",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "OrdinaryCallEvaluateBody",
+       "path": "1",
+       "frames": [
+        "OrdinaryCallEvaluateBody",
+        "[[Call]]",
+        "Call",
+        "Array.prototype.map"
+       ]
+      }
+     ],
+     "end": "normal: undefined"
+    }
+   },
+   "name": "map.js",
+   "file": "tests/dbg/map.js",
+   "source": "var a = [1, 2].map(function (x) {\n  var y = x * 10;\n  return y;\n});\nvar b = a.map(function (x) { return x + 1; });\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/eval",
+   "group": "language",
+   "title": "Direct eval and new Function",
+   "line": "A direct eval goes through PerformEval and new Function through CreateDynamicFunction; each parses its own source text, which the debugger opens as a source of its own.",
+   "breakpoints": [
+    {
+     "alg": "sec-performeval"
+    },
+    {
+     "alg": "sec-createdynamicfunction"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "PerformEval",
+       "path": "1"
+      },
+      {
+       "alg": "CreateDynamicFunction",
+       "path": "1",
+       "frames": [
+        "CreateDynamicFunction",
+        "Construct",
+        "EvaluateNew"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "10"
+     ]
+    }
+   },
+   "name": "eval.js",
+   "file": "tests/dbg/eval.js",
+   "source": "var a = 1;\nvar b = eval(\"var c = a + 1;\\nc * 2\");\nvar f = new Function(\"x\", \"var y = x + 1;\\nreturn y * 2;\");\nvar r = f(b);\nprint(r);\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/generator",
+   "group": "language",
+   "title": "A generator",
+   "line": "Each yield is GeneratorYield, which suspends the generator's execution context; next() resumes it through GeneratorResume.",
+   "breakpoints": [
+    {
+     "alg": "sec-generatoryield"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "GeneratorYield",
+       "path": "1",
+       "frames": [
+        "GeneratorYield",
+        "Yield",
+        "GeneratorStart"
+       ]
+      },
+      {
+       "alg": "GeneratorYield",
+       "path": "1",
+       "frames": [
+        "GeneratorYield",
+        "Yield",
+        "GeneratorResume"
+       ]
+      }
+     ],
+     "end": "normal: 3"
+    }
+   },
+   "name": "generator.js",
+   "file": "tests/dbg/generator.js",
+   "source": "function* g() {\n  var a = 1;\n  yield a;\n  a = a + 1;\n  yield a;\n}\nvar it = g();\nvar x = it.next().value;\nx = x + it.next().value;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/strict",
+   "group": "language",
+   "title": "A string that is not a directive",
+   "line": "\"use strict\" followed by .length on the next line is one expression statement, not a Use Strict Directive: IsStrict finds the script non-strict.",
+   "breakpoints": [
+    {
+     "alg": "sec-isstrict"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "IsStrict",
+       "path": "1"
+      }
+     ],
+     "end": "normal: 10"
+    }
+   },
+   "name": "strict.js",
+   "file": "tests/dbg/strict.js",
+   "source": "\"use strict\"\n.length;\ndebugger;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/heap",
+   "group": "language",
+   "title": "Objects in the store",
+   "line": "Each debugger statement pauses; the Heap tab shows the object's cell, and after the assignment the cell that changed.",
+   "filters": [
+    "debugger"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-debugger-statement-runtime-semantics-evaluation",
+       "path": "1"
+      },
+      {
+       "alg": "sec-debugger-statement-runtime-semantics-evaluation",
+       "path": "1"
+      },
+      {
+       "alg": "sec-debugger-statement-runtime-semantics-evaluation",
+       "path": "1"
+      }
+     ],
+     "end": "normal: 2"
+    }
+   },
+   "name": "heap.js",
+   "file": "tests/dbg/heap.js",
+   "source": "debugger;\nvar o = {a: 1};\ndebugger;\no.a = 2;\ndebugger;\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": []
+  },
+  {
+   "id": "dbg/bundle",
+   "group": "language",
+   "title": "Three modules",
+   "line": "The entry module's LoadRequestedModules, then Link, then Evaluate; each module of the bundle opens as a source of its own.",
+   "breakpoints": [
+    {
+     "alg": "sec-LoadRequestedModules"
+    },
+    {
+     "alg": "sec-moduledeclarationlinking"
+    },
+    {
+     "alg": "sec-moduleevaluation"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "LoadRequestedModules",
+       "path": "1"
+      },
+      {
+       "alg": "Link",
+       "path": "1"
+      },
+      {
+       "alg": "Evaluate",
+       "path": "1"
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "42"
+     ]
+    }
+   },
+   "name": "bundle.js",
+   "file": "tests/dbg/bundle.js",
+   "source": "// Flags: --bundle\n\n// JS_BUNDLE_MODULE:lib/math.mjs\nexport function double(x) {\n  return x * 2;\n}\n// JS_BUNDLE_MODULE:lib/show.mjs\nimport { double } from \"./math.mjs\";\nexport function show(x) {\n  print(double(x));\n}\n// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs\nimport { show } from \"./lib/show.mjs\";\nshow(21);\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/proxy_traps",
+   "group": "corners",
+   "title": "Proxy traps",
+   "line": "A get on a Proxy is the Proxy's own [[Get]], which calls the handler's get trap; every other trap is called the same way, and a missing one forwards to the target.",
+   "breakpoints": [
+    {
+     "alg": "sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver",
+       "path": "1",
+       "frames": [
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: \"get:a,has:a,set:b,getOwnPropertyDescriptor:b,defineProperty:b,delete:b,ownKeys,getOwnPropertyDescriptor:a,defineProperty:c,getPrototypeOf,setPrototypeOf,isExtensible,preventExtensions|1|true|2|a,c|true\""
+    }
+   },
+   "name": "proxy_traps.js",
+   "file": "tests/run/proxy_traps.js",
+   "source": "// Proxy exotic objects (§10.5): every trap is called with the target, and a\n// missing trap forwards to the target. Reflect.set with the Proxy as receiver\n// defines the property through the Proxy (OrdinarySetWithOwnDescriptor, §10.1.9.2).\n// expect: normal: \"get:a,has:a,set:b,getOwnPropertyDescriptor:b,defineProperty:b,delete:b,ownKeys,getOwnPropertyDescriptor:a,defineProperty:c,getPrototypeOf,setPrototypeOf,isExtensible,preventExtensions|1|true|2|a,c|true\"\nvar log = [];\nvar target = { a: 1 };\nvar handler = {\n  get: function (t, k, r) { log.push(\"get:\" + String(k)); return Reflect.get(t, k, r); },\n  has: function (t, k) { log.push(\"has:\" + String(k)); return k in t; },\n  set: function (t, k, v, r) { log.push(\"set:\" + String(k)); return Reflect.set(t, k, v, r); },\n  deleteProperty: function (t, k) { log.push(\"delete:\" + String(k)); return delete t[k]; },\n  ownKeys: function (t) { log.push(\"ownKeys\"); return Reflect.ownKeys(t); },\n  getOwnPropertyDescriptor: function (t, k) {\n    log.push(\"getOwnPropertyDescriptor:\" + String(k));\n    return Object.getOwnPropertyDescriptor(t, k);\n  },\n  defineProperty: function (t, k, d) { log.push(\"defineProperty:\" + String(k)); return Reflect.defineProperty(t, k, d); },\n  getPrototypeOf: function (t) { log.push(\"getPrototypeOf\"); return Object.getPrototypeOf(t); },\n  setPrototypeOf: function (t, p) { log.push(\"setPrototypeOf\"); return Reflect.setPrototypeOf(t, p); },\n  isExtensible: function (t) { log.push(\"isExtensible\"); return Object.isExtensible(t); },\n  preventExtensions: function (t) { log.push(\"preventExtensions\"); return Reflect.preventExtensions(t); }\n};\nvar p = new Proxy(target, handler);\nvar a = p.a;\nvar has = \"a\" in p;\np.b = 2;\nvar b = target.b;\ndelete p.b;\nReflect.ownKeys(p);\nObject.getOwnPropertyDescriptor(p, \"a\");\nObject.defineProperty(p, \"c\", { value: 3, configurable: true, enumerable: true });\nObject.getPrototypeOf(p);\nObject.setPrototypeOf(p, Object.prototype);\nObject.isExtensible(p);\nObject.preventExtensions(p);\nlog.join(\",\") + \"|\" + a + \"|\" + has + \"|\" + b + \"|\" + Object.keys(target).join(\",\") + \"|\" +\n  (Object.isExtensible(target) === false)\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/promise_job_order",
+   "group": "corners",
+   "title": "Promise jobs in order",
+   "line": "then calls PerformPromiseThen, which makes a job with NewPromiseReactionJob; the jobs run after the script in the order they were queued, and resolving with a promise takes two more.",
+   "breakpoints": [
+    {
+     "alg": "sec-newpromisereactionjob"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "NewPromiseReactionJob",
+       "path": "1",
+       "frames": [
+        "NewPromiseReactionJob",
+        "PerformPromiseThen",
+        "Promise.prototype.then"
+       ]
+      }
+     ],
+     "end": "normal: \"0\"",
+     "printed": [
+      "0,1,2,3,4",
+      "b,c,a,d"
+     ]
+    }
+   },
+   "name": "promise_job_order.js",
+   "file": "tests/run/promise_job_order.js",
+   "source": "// expect: normal: \"0\"\n// print: 0,1,2,3,4\n// print: b,c,a,d\n// Promise jobs run in FIFO order after the Script (§9.5, §27.5.2); resolving\n// with a promise takes two more jobs (NewPromiseResolveThenableJob, then the\n// reaction that resolves).\nvar log = [];\nPromise.resolve().then(function () { log.push(1); }).then(function () { log.push(3); });\nPromise.resolve().then(function () { log.push(2); }).then(function () { log.push(4); print(log.join(\",\")); });\nvar order = [];\nvar p = Promise.resolve(1);\nnew Promise(function (r) { r(p); }).then(function () { order.push(\"a\"); });\np.then(function () { order.push(\"b\"); }).then(function () { order.push(\"c\"); })\n  .then(function () { order.push(\"d\"); print(order.join(\",\")); });\nlog.push(0);\nlog.join(\",\")\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/using_dispose",
+   "group": "corners",
+   "title": "using declarations",
+   "line": "At the end of the block, DisposeResources calls each resource's dispose method in the reverse order of the declarations; DisposableStack.prototype.dispose does the same.",
+   "breakpoints": [
+    {
+     "alg": "sec-disposeresources"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "DisposeResources",
+       "path": "1"
+      }
+     ],
+     "end": "normal: \"b,a,s\""
+    }
+   },
+   "name": "using_dispose.js",
+   "file": "tests/run/using_dispose.js",
+   "source": "// `using` declarations (§14.3.1) dispose their resources in reverse order when\n// the Block ends (DisposeResources, §7.5.5); DisposableStack.prototype.use too.\n// expect: normal: \"b,a,s\"\nvar log = [];\nfunction res(n) { return { [Symbol.dispose]() { log.push(n); } }; }\n{\n  using a = res(\"a\"), b = res(\"b\");\n}\nvar stack = new DisposableStack();\nstack.use(res(\"s\"));\nstack.dispose();\nlog.join()\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/s2_with",
+   "group": "corners",
+   "title": "The with statement",
+   "line": "Inside with, ResolveBinding goes through GetIdentifierReference to the object Environment Record's HasBinding, which reads @@unscopables.",
+   "breakpoints": [
+    {
+     "alg": "sec-object-environment-records-hasbinding-n"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "sec-object-environment-records-hasbinding-n",
+       "path": "1",
+       "frames": [
+        "HasBinding.2",
+        "GetIdentifierReference",
+        "ResolveBinding"
+       ]
+      }
+     ],
+     "end": "normal: \"1,5,outer,undefined,2\""
+    }
+   },
+   "name": "s2_with.js",
+   "file": "tests/run/s2_with.js",
+   "source": "// The with statement (§14.11): names resolve in the object first, assignments\n// go to its properties, @@unscopables hides names, and the scope ends after.\n// expect: normal: \"1,5,outer,undefined,2\"\nvar v = \"outer\", a = 0, o = { a: 1, v: 2 };\nvar r = [];\nwith (o) { r.push(a); v = 5; }\nr.push(o.v, v);\no[Symbol.unscopables] = { a: true };\nwith (o) { r.push(typeof b); a = 2; }\nr.push(a);\nr.join()\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/annexb_block_function",
+   "group": "corners",
+   "title": "A function in a block, on a web browser's host",
+   "line": "With the host a web browser, FunctionDeclarationInstantiation also gives the enclosing function a var binding of the block's function (B.3.2.1): typeof f is undefined before the block and function after it.",
+   "breakpoints": [
+    {
+     "alg": "sec-functiondeclarationinstantiation"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "FunctionDeclarationInstantiation",
+       "path": "1",
+       "frames": [
+        "FunctionDeclarationInstantiation",
+        "OrdinaryCallEvaluateBody",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: \"undefined,function,2\""
+    }
+   },
+   "name": "annexb_block_function.js",
+   "file": "tests/run/annexb_block_function.js",
+   "source": "// On a web-browser host, a FunctionDeclaration in a Block is also a var of the\n// enclosing function (§B.3.2.1), set when the declaration is evaluated.\n// args: --web-browser\n// expect: normal: \"undefined,function,2\"\nfunction g() {\n  var before = typeof f;\n  { function f() { return 2; } }\n  return [before, typeof f, f()].join();\n}\ng()\n",
+   "args": [
+    "--web-browser"
+   ],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/regexp_duplicate_named_groups",
+   "group": "corners",
+   "title": "Duplicate named groups",
+   "line": "Two groups of one name are an early error unless MightBothParticipate finds them in different alternatives; the check runs while the pattern is parsed.",
+   "breakpoints": [
+    {
+     "alg": "sec-mightbothparticipate"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "MightBothParticipate",
+       "path": "1",
+       "frames": [
+        "MightBothParticipate",
+        "ParsePattern"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "SyntaxError SyntaxError SyntaxError ok ok",
+      "SyntaxError",
+      "y"
+     ]
+    }
+   },
+   "name": "regexp_duplicate_named_groups.js",
+   "file": "tests/run/regexp_duplicate_named_groups.js",
+   "source": "// Two GroupSpecifiers with one CapturingGroupName are a SyntaxError unless\n// some Disjunction has them in different Alternatives (§22.2.1.1, Pattern ::\n// Disjunction; MightBothParticipate, §22.2.1.4), in nested Disjunctions too,\n// for new RegExp and for a RegularExpressionLiteral (§13.2.7.2).\n// expect: normal: undefined\n// print: SyntaxError SyntaxError SyntaxError ok ok\n// print: SyntaxError\n// print: y\nfunction t(s) { try { new RegExp(s); return \"ok\"; } catch (e) { return e.name; } }\nprint(t(\"(?:(?<a>x)|y)(?:z|(?<a>w))\") + \" \" + t(\"(?<a>x)(?:|(?<a>z))\") + \" \" + t(\"(?<a>(?<a>x))\") + \" \" +\n  t(\"(?<a>x)|(?<a>y)\") + \" \" + t(\"((?<a>x)|y|(?:z|(?<a>w)))\"));\ntry { eval(\"/(?:(?<a>x)|y)(?:z|(?<a>w))\\\\k<a>/\"); print(\"parsed\"); } catch (e) { print(e.name); }\nprint(/(?:(?<a>x)|(?<a>y))\\k<a>/.exec(\"yy\").groups.a);\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/module_top_level_await",
+   "group": "corners",
+   "title": "Top-level await",
+   "line": "A module whose body awaits is evaluated by ExecuteAsyncModule, which runs the body with AsyncBlockStart, so the rest of the body runs from the promise jobs. Read literally, AsyncBlockStart's step 4 has no answer (erratum AsyncBlockStartAwaitResult) and the run stops there.",
+   "breakpoints": [
+    {
+     "alg": "sec-asyncblockstart"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "AsyncBlockStart",
+       "path": "1",
+       "frames": [
+        "AsyncBlockStart",
+        "ExecuteModule",
+        "ExecuteAsyncModule"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "before",
+      "3 after"
+     ]
+    }
+   },
+   "name": "module_top_level_await.js",
+   "file": "tests/run/module_top_level_await.js",
+   "source": "// module: yes\n// expect: normal: undefined\n// print: before\n// print: 3 after\n// A Module whose body contains `await` has [[HasTLA]] true: ExecuteModule\n// runs it with AsyncBlockStart (§16.2.1.7.3.2 step 4.b), so the body suspends\n// at each Await and the rest of it runs from the promise jobs.\nprint(\"before\");\nvar a = await Promise.resolve(1);\nvar b = await 2;\nprint((a + b) + \" after\");\n",
+   "args": [
+    "--module"
+   ],
+   "lines": []
+  },
+  {
+   "id": "run/settimeout_order",
+   "group": "corners",
+   "title": "Timeouts after promise jobs",
+   "line": "The test host's setTimeout performs HostEnqueueTimeoutJob: the promise jobs run first, then each timeout job once its delay has passed on the host's clock.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "function,2,undefined",
+      "sync",
+      "promise",
+      "t0",
+      "t5",
+      "t10,true"
+     ]
+    }
+   },
+   "name": "settimeout_order.js",
+   "file": "tests/run/settimeout_order.js",
+   "source": "// expect: normal: undefined\n// print: function,2,undefined\n// print: sync\n// print: promise\n// print: t0\n// print: t5\n// print: t10,true\n// setTimeout (the test host's global) performs HostEnqueueTimeoutJob of a Job that calls its callback:\n// the promise Jobs run first, then each timeout Job once its delay has passed; a negative delay is 0.\nvar before = Date.now();\nprint([typeof setTimeout, setTimeout.length, typeof setTimeout(function () { print(\"t0\"); }, -3)].join(\",\"));\nsetTimeout(function () { print(\"t5\"); }, 5);\nsetTimeout(function () { print([\"t10\", Date.now() - before >= 10].join(\",\")); }, 10);\nPromise.resolve().then(function () { print(\"promise\"); });\nprint(\"sync\");\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/iterator_helpers",
+   "group": "corners",
+   "title": "Iterator helpers",
+   "line": "Iterator.prototype.map and the other helpers make iterator objects whose next runs the helper's steps; Iterator.from, concat and zip build on the same protocol.",
+   "breakpoints": [
+    {
+     "alg": "sec-iterator.prototype.map"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "Iterator.prototype.map",
+       "path": "1",
+       "frames": [
+        "Iterator.prototype.map",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: \"10,30,50|2,3|3,4,5|1,1,2,2|15|true,false,3|1+2|a,b,c|1:x,2:y|u,v,w\""
+    }
+   },
+   "name": "iterator_helpers.js",
+   "file": "tests/run/iterator_helpers.js",
+   "source": "// expect: normal: \"10,30,50|2,3|3,4,5|1,1,2,2|15|true,false,3|1+2|a,b,c|1:x,2:y|u,v,w\"\n// Iterator helpers (§27.1.3.3), Iterator.from, Iterator.concat and Iterator.zip (§27.1.3.2).\nvar parts = [];\nparts.push([1, 2, 3, 4, 5].values().filter(function (x) { return x % 2; })\n  .map(function (x) { return x * 10; }).toArray().join(\",\"));\nparts.push([1, 2, 3, 4].values().drop(1).take(2).toArray().join(\",\"));\nparts.push([1, 2, 3, 4, 5].values().drop(2).toArray().join(\",\"));\nparts.push([1, 2].values().flatMap(function (x) { return [x, x]; }).toArray().join(\",\"));\nparts.push([1, 2, 3, 4, 5].values().reduce(function (a, b) { return a + b; }));\nparts.push([[1, 2].values().some(function (x) { return x > 1; }),\n  [1, 2].values().every(function (x) { return x > 1; }),\n  [1, 2, 3].values().find(function (x) { return x > 2; })].join(\",\"));\nvar seen = [];\n[1, 2].values().forEach(function (x) { seen.push(x); });\nparts.push(seen.join(\"+\"));\nvar n = 0;\nvar plain = { next: function () { n++; return n <= 3 ? { value: \"abc\"[n - 1], done: false } : { done: true }; } };\nparts.push(Iterator.from(plain).toArray().join(\",\"));\nparts.push(Iterator.zip([[1, 2], [\"x\", \"y\", \"z\"]]).map(function (p) { return p.join(\":\"); }).toArray().join(\",\"));\nparts.push(Iterator.concat([\"u\"], [\"v\", \"w\"]).toArray().join(\",\"));\nparts.join(\"|\")\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/number_multiply_zero_sign",
+   "group": "errata",
+   "title": "NumberMultiplyZeroSign: +0 × −5",
+   "line": "Number::multiply step 6 gives 𝔽(0), which is +0, where IEEE 754 and every engine give −0. The default reading gives −0, so 1 / (0 * -5) is -Infinity; the literal text gives +0 and Infinity.",
+   "breakpoints": [
+    {
+     "alg": "sec-numeric-types-number-multiply",
+     "path": "6"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "Number::multiply",
+       "path": "6",
+       "frames": [
+        "Number::multiply",
+        "ApplyStringOrNumericBinaryOperator"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "-Infinity,-Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity"
+     ]
+    }
+   },
+   "name": "number_multiply_zero_sign.js",
+   "file": "tests/run/number_multiply_zero_sign.js",
+   "source": "// expect: normal: undefined\n// print: -Infinity,-Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity\n// Number::multiply step 6 gives 𝔽(0) = +0 for +0 × -5; the clause's\n// description (IEEE 754-2019) and every engine give -0 (Erratum\n// NumberMultiplyZeroSign, read by default as proposed: no test262 assertion\n// covers the case). A product that underflows keeps\n// its sign by 𝔽 itself.\nprint(String([1 / (0 * -5), 1 / (-5 * 0), 1 / (0 * 5), 1 / (-0 * 5), 1 / (-0 * -5), 1 / (0 * 0),\n  1 / (1e-300 * -1e-300)]));\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/errata_sort_infinite_comparator",
+   "group": "errata",
+   "title": "SortInfiniteComparator: a comparator returning ±Infinity",
+   "line": "SortIndexedProperties takes ℝ of the comparator's result, which ±∞ does not have. The default reading orders by the result's sign; the literal text stops in SortIndexedProperties.",
+   "breakpoints": [
+    {
+     "alg": "sec-sortindexedproperties"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "SortIndexedProperties",
+       "path": "1",
+       "frames": [
+        "SortIndexedProperties",
+        "Array.prototype.sort"
+       ]
+      }
+     ],
+     "end": "normal: \"1,2,3|3,2,1\""
+    }
+   },
+   "name": "errata_sort_infinite_comparator.js",
+   "file": "tests/run/errata_sort_infinite_comparator.js",
+   "source": "// expect: normal: \"1,2,3|3,2,1\"\n// A comparator that returns ±Infinity (Erratum SortInfiniteComparator): under\n// the test262 reading the order is the host's, and the test host's goes by the\n// result's sign.\nvar r = [];\nr.push([3, 1, 2].sort(function (a, b) { return a < b ? -Infinity : a > b ? Infinity : 0; }).join());\nr.push([1, 3, 2].sort(function (a, b) { return a < b ? Infinity : a > b ? -Infinity : 0; }).join());\nr.join(\"|\");\n",
+   "args": [],
+   "lines": []
+  },
+  {
+   "id": "run/erratum_unit_chain_child",
+   "group": "errata",
+   "title": "UnitChainChild: a labelled function in an if body",
+   "line": "IsLabelledFunction takes \"the LabelledItem of\" a Statement that has one only through its chain of single children. The default reading follows the chain and the early error makes it a SyntaxError; the literal text stops at IsLabelledFunction step 2.",
+   "breakpoints": [
+    {
+     "alg": "sec-islabelledfunction"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "IsLabelledFunction",
+       "path": "1"
+      }
+     ],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "erratum_unit_chain_child.js",
+   "file": "tests/run/erratum_unit_chain_child.js",
+   "source": "// IsLabelledFunction takes \"the |LabelledItem| of\" a |Statement| node through\n// its unit chain (Erratum UnitChainChild, test262's reading): the labelled\n// function in an if body is the Early Error of sec-if-statement-static-semantics-early-errors.\n// args: --web-browser\n// expect: throw: SyntaxError\nif (1) l: function f() {}\n",
+   "args": [
+    "--web-browser"
+   ],
+   "lines": []
+  },
+  {
+   "id": "dbg/async",
+   "group": "errata",
+   "title": "AsyncBlockStartAwaitResult: an async function",
+   "line": "An async function's body runs under AsyncBlockStart and suspends at each await. Its step 4, read literally, has no answer for the result of the body's last await, and the run stops there; the default reading goes on, and the function's promise resolves to 2.",
+   "breakpoints": [
+    {
+     "alg": "sec-asyncblockstart"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "AsyncBlockStart",
+       "path": "1",
+       "frames": [
+        "AsyncBlockStart",
+        "AsyncFunctionStart"
+       ]
+      }
+     ],
+     "end": "normal: [object #N]",
+     "printed": [
+      "2"
+     ]
+    }
+   },
+   "name": "async.js",
+   "file": "tests/dbg/async.js",
+   "source": "async function h() {\n  var a = 1;\n  await a;\n  a = a + 1;\n  return a;\n}\nvar p = h();\np.then(function (v) { print(v); });\nvar z = 3;\n",
+   "args": [],
+   "lines": []
+  },
+  {
+   "id": "run/atomics_wait_sync_timeout",
+   "group": "errata",
+   "title": "DoWaitSyncTimeout: Atomics.wait that times out",
+   "line": "On a host whose agent can block, DoWait waits until its timeout. The default reading gives the woken waiter the result \"timed-out\" and removes it from the WaiterList; as the text is written it returns \"ok\" and leaves the waiter in the WaiterList, so the second Atomics.wait fails AddWaiter step 2's Assert.",
+   "breakpoints": [
+    {
+     "alg": "sec-dowait"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "DoWait",
+       "path": "1",
+       "frames": [
+        "DoWait",
+        "Atomics.wait"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "timed-out,timed-out,true,true,0 ; not-equal"
+     ]
+    }
+   },
+   "name": "atomics_wait_sync_timeout.js",
+   "file": "tests/run/atomics_wait_sync_timeout.js",
+   "source": "// Atomics.wait on an agent that can block (§25.4.3.14, SuspendThisAgent\n// §25.4.3.11): with one agent nothing notifies the waiter, so it wakes when\n// the host's clock reaches its timeout time. Erratum DoWaitSyncTimeout: the\n// woken waiter's [[Result]] is \"timed-out\" and it leaves the WaiterList, so a\n// second wait on the same location does not fail AddWaiter step 2's Assert\n// and a later Atomics.notify finds no waiter.\n// args: --can-block\n// expect: normal: undefined\n// print: timed-out,timed-out,true,true,0 ; not-equal\nvar i32 = new Int32Array(new SharedArrayBuffer(8));\nvar t0 = Date.now();\nvar first = Atomics.wait(i32, 0, 0, 10);\nvar t1 = Date.now();\nvar second = Atomics.wait(i32, 0, 0, 5);\nvar t2 = Date.now();\nvar notified = Atomics.notify(i32, 0);\nAtomics.store(i32, 1, 3);\nprint([first, second, t1 - t0 >= 10, t2 - t1 >= 5, notified].join() + \" ; \" + Atomics.wait(i32, 1, 0, 10));\nvoid 0;\n",
+   "args": [
+    "--can-block"
+   ],
+   "lines": []
+  },
+  {
+   "id": "run/dynamic_function_private_identifiers",
+   "group": "errata",
+   "title": "CreateDynamicFunctionPrivateIdentifiers: new Function with #names",
+   "line": "CreateDynamicFunction parses the parameters and the body on their own, where a private name refers to no class. The default reading makes that a SyntaxError for both (test262 requires it of the body); the literal text has no such check and makes the function.",
+   "breakpoints": [
+    {
+     "alg": "sec-createdynamicfunction"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "CreateDynamicFunction",
+       "path": "1",
+       "frames": [
+        "CreateDynamicFunction",
+        "Construct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "body: SyntaxError",
+      "params: SyntaxError",
+      "generator body: SyntaxError"
+     ]
+    }
+   },
+   "name": "dynamic_function_private_identifiers.js",
+   "file": "tests/run/dynamic_function_private_identifiers.js",
+   "source": "// expect: normal: undefined\n// print: body: SyntaxError\n// print: params: SyntaxError\n// print: generator body: SyntaxError\n// CreateDynamicFunction steps 18-29: no goal it parses with applies\n// AllPrivateIdentifiersValid (Erratum CreateDynamicFunctionPrivateIdentifiers).\n// The default reading, the proposed one, adds after step 25\n// \"If AllPrivateIdentifiersValid of _body_ with argument « » is false, throw a\n// SyntaxError exception\" and the same of _params_ (spec/formal/readings.emu):\n// engines parse the parameters and the body as one source text and throw for\n// both. The test262 reading checks the body only, which is all test262's\n// built-ins/Function/private-identifiers-not-empty.js asserts\n// (dynamic_function_private_identifiers_test262.js); the literal text checks\n// neither (dynamic_function_private_identifiers_literal.js).\ntry { new Function(\"o\", \"return o.#f\"); print(\"body: no error\"); }\ncatch (e) { print(\"body: \" + e.constructor.name); }\ntry { new Function(\"a = {}.#g\", \"\"); print(\"params: no error\"); }\ncatch (e) { print(\"params: \" + e.constructor.name); }\nvar GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;\ntry { GeneratorFunction(\"o\", \"yield o.#h\"); print(\"generator body: no error\"); }\ncatch (e) { print(\"generator body: \" + e.constructor.name); }\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/errata_unregister_two_cells",
+   "group": "errata",
+   "title": "UnregisterIteratesCopy: two cells with one token",
+   "line": "FinalizationRegistry.prototype.unregister removes cells from the list it iterates. The default reading removes both cells with the token, so a second unregister returns false; as written it skips the second cell, and the second call returns true.",
+   "breakpoints": [
+    {
+     "alg": "sec-finalization-registry.prototype.unregister"
+    }
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "FinalizationRegistry.prototype.unregister",
+       "path": "1"
+      }
+     ],
+     "end": "normal: \"true|false\""
+    }
+   },
+   "name": "errata_unregister_two_cells.js",
+   "file": "tests/run/errata_unregister_two_cells.js",
+   "source": "// expect: normal: \"true|false\"\n// Two cells with one unregister token, in a row (Erratum\n// UnregisterIteratesCopy): the test262 reading removes both.\nvar fr = new FinalizationRegistry(function () {});\nvar token = {};\nfr.register({}, 1, token);\nfr.register({}, 2, token);\n[fr.unregister(token), fr.unregister(token)].join(\"|\");\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/date_utc_large_local_time",
+   "group": "errata",
+   "title": "GetUTCEpochNanosecondsNaN: a local time out of range",
+   "line": "setHours(1e21) asks UTC for a local time far out of range: GetUTCEpochNanoseconds finds no time value, and the Assert of its step 4 fails. SpecTec keeps the literal text here, so the run stops at the failed Assert.",
+   "breakpoints": [
+    {
+     "alg": "sec-getutcepochnanoseconds"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "GetUTCEpochNanoseconds",
+       "path": "1",
+       "frames": [
+        "GetUTCEpochNanoseconds",
+        "UTC",
+        "Date.prototype.setHours"
+       ]
+      },
+      {
+       "alg": "GetUTCEpochNanoseconds",
+       "path": "4"
+      }
+     ],
+     "end": "stop: assertFailed sec-getutcepochnanoseconds#0 4",
+     "printed": [
+      "NaN"
+     ]
+    }
+   },
+   "name": "date_utc_large_local_time.js",
+   "file": "tests/run/date_utc_large_local_time.js",
+   "source": "// expect: stop: assertFailed sec-getutcepochnanoseconds#0 4\n// UTC ( t ) of a large finite local time: setHours(1e21) gives t = 3.6e24,\n// GetUTCEpochNanoseconds step 1's MakeDay finds no time value on the month's\n// first day (NaN), and the Assert of its step 4 fails. No test262 test\n// reaches it, and the default reading is the text as written (Erratum\n// GetUTCEpochNanosecondsNaN), so the run stops.\n// Engines give NaN. The UTC setter does not call UTC ( t ): NaN.\nprint(String(new Date(0).setUTCHours(1e21)));\nprint(String(new Date(0).setHours(1e21)));\n",
+   "args": [],
+   "lines": []
+  },
+  {
+   "id": "run/regexp_lastindex_inside_pair",
+   "group": "errata",
+   "title": "GetMatchStringStartAfterEnd: lastIndex inside a surrogate pair",
+   "line": "With /u and lastIndex on the second half of a surrogate pair, RegExpBuiltinExec starts the empty match at the pair's start, and GetMatchString's Assert (start before end) fails at step 1. SpecTec keeps the literal text here, so the run stops at the failed Assert.",
+   "breakpoints": [
+    {
+     "alg": "sec-regexpbuiltinexec"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "RegExpBuiltinExec",
+       "path": "1"
+      },
+      {
+       "alg": "GetMatchString",
+       "path": "1",
+       "frames": [
+        "GetMatchString",
+        "RegExpBuiltinExec"
+       ]
+      }
+     ],
+     "end": "stop: assertFailed sec-getmatchstring#0 1"
+    }
+   },
+   "name": "regexp_lastindex_inside_pair.js",
+   "file": "tests/run/regexp_lastindex_inside_pair.js",
+   "source": "// expect: stop: assertFailed sec-getmatchstring#0 1\n// RegExpBuiltinExec with /u and lastIndex on the trailing surrogate of a pair:\n// step 13.b starts at the code point that contains it, the empty pattern\n// matches there with [[EndIndex]] 0, and step 24's Match Record { 1, 0 } fails\n// GetMatchString step 1's Assert. No test262 test sets lastIndex inside a\n// pair before an empty match; the default reading is the text as written\n// (Erratum GetMatchStringStartAfterEnd), so the run stops.\n// V8 and SpiderMonkey report index 0; JavaScriptCore reports index 1.\n// (The non-empty case, which does not stop, is\n// regexp_lastindex_inside_pair_nonempty.js.)\nvar r = /(?:)/gu;\nr.lastIndex = 1;\nr.exec(\"\\u{1F600}\");\n",
+   "args": [],
+   "lines": []
+  },
+  {
+   "id": "run/promise_job_abrupt",
+   "group": "errata",
+   "title": "PromiseJobAbruptCompletion: a reaction job that throws",
+   "line": "A promise reaction job, made by NewPromiseReactionJob, returns a throw completion when the species constructor's resolve function throws, which a job must not do. SpecTec keeps the literal text here, so the run stops when the job returns.",
+   "breakpoints": [
+    {
+     "alg": "sec-newpromisereactionjob"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "builds": {
+    "spec": {
+     "pauses": [
+      {
+       "alg": "NewPromiseReactionJob",
+       "path": "1",
+       "frames": [
+        "NewPromiseReactionJob",
+        "PerformPromiseThen"
+       ]
+      }
+     ],
+     "end": "stop: assertFailed sec-jobs -"
+    }
+   },
+   "name": "promise_job_abrupt.js",
+   "file": "tests/run/promise_job_abrupt.js",
+   "source": "// expect: stop: assertFailed sec-jobs -\n// NewPromiseReactionJob 1.i returns `? Call(promiseCapability.[[Resolve]], …)`;\n// with a species constructor whose resolve throws, the Job returns a throw\n// completion, which §9.5 says a Job must not. No test262 test makes a\n// reaction Job's resolving function throw; the default reading is the text\n// as written (Erratum PromiseJobAbruptCompletion), so the run\n// stops. (Engine hosts differ: node goes on silently; the SpiderMonkey shell\n// and Bun, with JavaScriptCore, report the throw and go on.)\nfunction Bad(executor) {\n  executor(function () { throw new Error(\"boom\"); }, function () {});\n}\nBad[Symbol.species] = Bad;\nvar p = Promise.resolve(1);\np.constructor = Bad;\np.then(function (v) { print(\"handler \" + v); return v; });\nPromise.resolve(3).then(function () { print(\"a later Job\"); });\n",
+   "args": [],
+   "lines": []
+  },
+  {
+   "id": "run/import_defer_basic",
+   "group": "proposal",
+   "title": "import defer: a namespace evaluated at its first read",
+   "line": "With proposal-defer-import-eval, `import defer * as heavy` links heavy.mjs with the graph but leaves it unevaluated: InitializeEnvironment asks GetModuleNamespace for its ~defer~ namespace, and the first read of an export goes through the namespace's [[Get]] and GetModuleExportsList to EvaluateModuleSync. Reading %Symbol.toStringTag% does not evaluate it.",
+   "breakpoints": [
+    {
+     "alg": "sec-getmodulenamespace",
+     "path": "1"
+    },
+    {
+     "alg": "sec-EvaluateModuleSync",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "defer": {
+     "pauses": [
+      {
+       "alg": "GetModuleNamespace",
+       "path": "1",
+       "frames": [
+        "GetModuleNamespace",
+        "InitializeEnvironment",
+        "InnerModuleLinking"
+       ]
+      },
+      {
+       "alg": "EvaluateModuleSync",
+       "path": "1",
+       "frames": [
+        "EvaluateModuleSync",
+        "GetModuleExportsList",
+        "[[Get]]",
+        "GetValue"
+       ]
+      },
+      {
+       "alg": "EvaluateModuleSync",
+       "path": "1",
+       "frames": [
+        "EvaluateModuleSync",
+        "GetModuleExportsList",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "[object Deferred Module]",
+      "main starts; heavy evaluates; read 42; read again 42"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "import_defer_basic.js",
+   "file": "tests/run/import_defer_basic.js",
+   "source": "// args: --bundle\n// expect: throw: SyntaxError\n// ECMA-262 as it stands has no `import defer` and no `import.defer()`: this is a SyntaxError.\n// With proposal-defer-import-eval applied (branch proposal-defer-import-eval; the debugger's build\n// \"Proposal: import defer\") it completes normally and prints:\n//   [object Deferred Module]\n//   main starts; heavy evaluates; read 42; read again 42\n// proposal-defer-import-eval: `import defer * as heavy` loads and links heavy.mjs with the graph but evaluates it at the\n// first read of an export (the namespace's [[Get]]: GetModuleExportsList, EvaluateModuleSync); %Symbol.toStringTag%\n// is read without evaluating it (IsSymbolLikeNamespaceKey), and is \"Deferred Module\" (ModuleNamespaceCreate).\n// JS_BUNDLE_MODULE:log.mjs\nexport const log = [];\n// JS_BUNDLE_MODULE:heavy.mjs\nimport { log } from \"./log.mjs\";\nlog.push(\"heavy evaluates\");\nexport const answer = 42;\n// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs\nimport { log } from \"./log.mjs\";\nimport defer * as heavy from \"./heavy.mjs\";\nlog.push(\"main starts\");\nprint(Object.prototype.toString.call(heavy));\nlog.push(\"read \" + heavy.answer);\nlog.push(\"read again \" + heavy.answer);\nprint(log.join(\"; \"));\n",
+   "args": [
+    "--bundle"
+   ],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/import_defer_dynamic",
+   "group": "proposal",
+   "title": "import.defer(): a promise for an unevaluated namespace",
+   "line": "`import.defer()` loads and links the module, and ContinueDynamicImport's ~defer~ branch asks GatherAsynchronousTransitiveDependencies what must be evaluated first (nothing here) before it settles the promise. The module exports `then`, but a deferred namespace has no `then` (IsSymbolLikeNamespaceKey), so settling the promise does not evaluate it; reading `x` does.",
+   "breakpoints": [
+    {
+     "alg": "sec-ContinueDynamicImport",
+     "path": "1"
+    },
+    {
+     "alg": "sec-GatherAsynchronousTransitiveDependencies",
+     "path": "1"
+    },
+    {
+     "alg": "sec-IsSymbolLikeNamespaceKey",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "defer": {
+     "pauses": [
+      {
+       "alg": "ContinueDynamicImport",
+       "path": "1",
+       "frames": [
+        "ContinueDynamicImport",
+        "FinishLoadingImportedModule"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "ContinueDynamicImport"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[Get]]",
+        "Get",
+        "CreateResolvingFunctions"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[GetOwnProperty]]",
+        "OrdinaryGet",
+        "[[Get]]"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[HasProperty]]",
+        "HasProperty"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[GetOwnProperty]]",
+        "OrdinaryHasProperty",
+        "[[HasProperty]]"
+       ]
+      },
+      {
+       "alg": "IsSymbolLikeNamespaceKey",
+       "path": "1",
+       "frames": [
+        "IsSymbolLikeNamespaceKey",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "promise settled; then in ns: false; dep evaluates; x is 1"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "import_defer_dynamic.js",
+   "file": "tests/run/import_defer_dynamic.js",
+   "source": "// args: --bundle\n// expect: throw: SyntaxError\n// ECMA-262 as it stands has no `import defer` and no `import.defer()`: this is a SyntaxError.\n// With proposal-defer-import-eval applied (branch proposal-defer-import-eval; the debugger's build\n// \"Proposal: import defer\") it completes normally and prints:\n//   promise settled; then in ns: false; dep evaluates; x is 1\n// proposal-defer-import-eval: `import.defer()` settles with a deferred namespace without evaluating the module\n// (ContinueDynamicImport, GatherAsynchronousTransitiveDependencies finds nothing); \"then\" is not an export of a\n// deferred namespace (GetModuleNamespace), so the promise's resolution does not evaluate it either\n// (IsSymbolLikeNamespaceKey); reading `x` does.\n// JS_BUNDLE_MODULE:dep.mjs\nglobalThis.order.push(\"dep evaluates\");\nexport function then(resolve) { globalThis.order.push(\"then called\"); resolve(\"oops\"); }\nexport const x = 1;\n// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs\nglobalThis.order = [];\nconst ns = await import.defer(\"./dep.mjs\");\norder.push(\"promise settled\");\norder.push(\"then in ns: \" + (\"then\" in ns));\norder.push(\"x is \" + ns.x);\nprint(order.join(\"; \"));\n",
+   "args": [
+    "--bundle"
+   ],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/import_defer_tla",
+   "group": "proposal",
+   "title": "import defer and top-level await",
+   "line": "The proposal's README graph: c is deferred, but its dependency d awaits at top level, so InnerModuleEvaluation asks GatherAsynchronousTransitiveDependencies for c's asynchronous dependencies and evaluates d (and e) with the graph; f and c wait for the first read of c's namespace, which EvaluateModuleSync evaluates synchronously.",
+   "breakpoints": [
+    {
+     "alg": "sec-GatherAsynchronousTransitiveDependencies",
+     "path": "1"
+    },
+    {
+     "alg": "sec-EvaluateModuleSync",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "defer": {
+     "pauses": [
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "InnerModuleEvaluation",
+        "Evaluate"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies",
+        "InnerModuleEvaluation"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies",
+        "InnerModuleEvaluation"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies",
+        "InnerModuleEvaluation"
+       ]
+      },
+      {
+       "alg": "GatherAsynchronousTransitiveDependencies",
+       "path": "1",
+       "frames": [
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies",
+        "GatherAsynchronousTransitiveDependencies"
+       ]
+      },
+      {
+       "alg": "EvaluateModuleSync",
+       "path": "1",
+       "frames": [
+        "EvaluateModuleSync",
+        "GetModuleExportsList",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "before access: b, e, d, a",
+      "after access: b, e, d, a, f, c"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "import_defer_tla.js",
+   "file": "tests/run/import_defer_tla.js",
+   "source": "// args: --bundle\n// expect: throw: SyntaxError\n// ECMA-262 as it stands has no `import defer` and no `import.defer()`: this is a SyntaxError.\n// With proposal-defer-import-eval applied (branch proposal-defer-import-eval; the debugger's build\n// \"Proposal: import defer\") it completes normally and prints:\n//   before access: b, e, d, a\n//   after access: b, e, d, a, f, c\n// proposal-defer-import-eval, the README's graph: c is deferred, but its dependency d has top-level await, so d and\n// its dependency e evaluate with the graph (InnerModuleEvaluation, GatherAsynchronousTransitiveDependencies); f and\n// c wait for the first read of c's namespace.\n// JS_BUNDLE_MODULE:order.mjs\nexport const order = [];\n// JS_BUNDLE_MODULE:b.mjs\nimport { order } from \"./order.mjs\";\norder.push(\"b\");\n// JS_BUNDLE_MODULE:e.mjs\nimport { order } from \"./order.mjs\";\norder.push(\"e\");\n// JS_BUNDLE_MODULE:d.mjs\nimport { order } from \"./order.mjs\";\nimport \"./e.mjs\";\nawait 0;\norder.push(\"d\");\n// JS_BUNDLE_MODULE:f.mjs\nimport { order } from \"./order.mjs\";\norder.push(\"f\");\n// JS_BUNDLE_MODULE:c.mjs\nimport { order } from \"./order.mjs\";\nimport \"./d.mjs\";\nimport \"./f.mjs\";\norder.push(\"c\");\nexport let value = 2;\n// JS_BUNDLE_MODULE_ENTRYPOINT:a.mjs\nimport { order } from \"./order.mjs\";\nimport \"./b.mjs\";\nimport defer * as c from \"./c.mjs\";\norder.push(\"a\");\nprint(\"before access: \" + order.join(\", \"));\nc.value;\nprint(\"after access: \" + order.join(\", \"));\n",
+   "args": [
+    "--bundle"
+   ],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_import_text",
+   "group": "proposals-117",
+   "title": "Stage 3: Import Text (with { type: \"text\" })",
+   "line": "HostLoadImportedModule dispatches on the type: \"text\" import attribute to CreateTextModule, wrapping the UTF-8 decoded text in a Synthetic Module Record shared between static and dynamic imports.",
+   "args": [
+    "--bundle"
+   ],
+   "breakpoints": [
+    {
+     "alg": "sec-create-text-module",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "import-text": {
+     "pauses": [
+      {
+       "alg": "CreateTextModule",
+       "path": "1",
+       "frames": [
+        "CreateTextModule",
+        "InnerModuleLoading",
+        "LoadRequestedModules"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "Hello from ECMA-262 Import Text! | cached=true"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   },
+   "name": "proposal_import_text.js",
+   "file": "tests/dbg/proposal_import_text.js",
+   "source": "// JS_BUNDLE_MODULE:greeting.txt\nHello from ECMA-262 Import Text!\n// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs\nimport greeting from \"./greeting.txt\" with { type: \"text\" };\nconst dyn = await import(\"./greeting.txt\", { with: { type: \"text\" } });\nprint(greeting.trim() + \" | cached=\" + (greeting === dyn.default));\n",
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_thenable_curtailment",
+   "group": "proposals-117",
+   "title": "Stage 3: Thenable Curtailment",
+   "line": "Promise.resolve inspects whether looking up \"then\" could run user code via RequiresDeferredPromiseResolution, then dispatches user-defined thenables through PerformPromiseResolveThenable.",
+   "breakpoints": [
+    {
+     "alg": "sec-perform-promise-resolve-thenable",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "thenable-curtailment": {
+     "pauses": [
+      {
+       "alg": "PerformPromiseResolveThenable",
+       "path": "1",
+       "frames": [
+        "PerformPromiseResolveThenable",
+        "NewPromiseResolveThenableJob"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "then-called -> microtask -> resolved:42"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "then-called -> microtask -> resolved:42"
+     ]
+    }
+   },
+   "name": "proposal_thenable_curtailment.js",
+   "file": "tests/dbg/proposal_thenable_curtailment.js",
+   "source": "const events = [];\nconst thenable = {\n  then(resolve) {\n    events.push(\"then-called\");\n    resolve(42);\n  }\n};\nconst p = Promise.resolve(thenable);\nPromise.resolve().then(() => events.push(\"microtask\"));\np.then((v) => {\n  events.push(\"resolved:\" + v);\n  print(events.join(\" -> \"));\n});\nvoid 0;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_deferred_reexports",
+   "group": "proposals-117",
+   "title": "Stage 2.7: Deferred Re-exports (export defer)",
+   "line": "Importing barrel.mjs links export defer { x } from \"./heavy.mjs\" without evaluating heavy.mjs; reading barrel.x triggers EnsureDeferredExportEvaluated on the module namespace.",
+   "args": [
+    "--bundle"
+   ],
+   "breakpoints": [
+    {
+     "alg": "sec-EnsureDeferredExportEvaluated",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "deferred-reexports": {
+     "pauses": [
+      {
+       "alg": "EnsureDeferredExportEvaluated",
+       "path": "1",
+       "frames": [
+        "EnsureDeferredExportEvaluated",
+        "[[Get]]",
+        "GetValue"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "after barrel import: barrel",
+      "after reading barrel.x=99: barrel,heavy"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "proposal_deferred_reexports.js",
+   "file": "tests/dbg/proposal_deferred_reexports.js",
+   "source": "// JS_BUNDLE_MODULE:log.mjs\nexport const events = [];\n// JS_BUNDLE_MODULE:heavy.mjs\nimport { events } from \"./log.mjs\";\nevents.push(\"heavy\");\nexport const x = 99;\n// JS_BUNDLE_MODULE:barrel.mjs\nimport { events } from \"./log.mjs\";\nexport defer { x } from \"./heavy.mjs\";\nevents.push(\"barrel\");\n// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs\nimport { events } from \"./log.mjs\";\nimport * as barrel from \"./barrel.mjs\";\nprint(\"after barrel import: \" + events.join(\",\"));\nconst v = barrel.x;\nprint(\"after reading barrel.x=\" + v + \": \" + events.join(\",\"));\n",
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_json_parseimmutable",
+   "group": "proposals-117",
+   "title": "Stage 2.7: JSON.parse Options (freeze & nullPrototypeObjects)",
+   "line": "CreateJSONParseOptions validates the options bag for { freeze: true } and { nullPrototypeObjects: true }, producing frozen null-prototype graphs or mutable null-prototype objects.",
+   "breakpoints": [
+    {
+     "alg": "sec-createjsonparseoptions",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "json-parseimmutable": {
+     "pauses": [
+      {
+       "alg": "CreateJSONParseOptions",
+       "path": "1",
+       "frames": [
+        "CreateJSONParseOptions",
+        "JSON.parse",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "CreateJSONParseOptions",
+       "path": "1",
+       "frames": [
+        "CreateJSONParseOptions",
+        "JSON.parse",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "frozen=true, proto=null, ownProto=true, nullMutable=2"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "frozen=false, proto=[object Object], ownProto=true, nullMutable=2"
+     ]
+    }
+   },
+   "name": "proposal_json_parseimmutable.js",
+   "file": "tests/dbg/proposal_json_parseimmutable.js",
+   "source": "const imm = JSON.parse('{\"x\":[1,{\"y\":2}],\"__proto__\":{\"safe\":true}}', { freeze: true });\nconst nullOnly = JSON.parse('{\"mutable\":1}', { nullPrototypeObjects: true });\nnullOnly.mutable = 2;\nprint([\n  \"frozen=\" + Object.isFrozen(imm.x[1]),\n  \"proto=\" + Object.getPrototypeOf(imm),\n  \"ownProto=\" + imm.__proto__.safe,\n  \"nullMutable=\" + nullOnly.mutable\n].join(\", \"));\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_esm_phase_imports",
+   "group": "proposals-117",
+   "title": "Stage 2.7: ESM Phase Imports (import source & ModuleSource)",
+   "line": "import source and import.source() bind a ModuleSource object inheriting from %AbstractModuleSource%; dynamic import(depSrc) unwraps its Module Source Record via GetModuleSourceRecord and coalesces evaluation.",
+   "args": [
+    "--bundle"
+   ],
+   "breakpoints": [
+    {
+     "alg": "sec-getmodulesourcerecord",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "esm-phase-imports": {
+     "pauses": [
+      {
+       "alg": "GetModuleSourceRecord",
+       "path": "1",
+       "frames": [
+        "GetModuleSourceRecord",
+        "EvaluateImportCall"
+       ]
+      },
+      {
+       "alg": "GetModuleSourceRecord",
+       "path": "1",
+       "frames": [
+        "GetModuleSourceRecord",
+        "get %AbstractModuleSource%.prototype [ %Symbol.toStringTag% ]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "ModuleSource, sameSource=true, sameNs=true, runs=1, answer=42"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "proposal_esm_phase_imports.js",
+   "file": "tests/dbg/proposal_esm_phase_imports.js",
+   "source": "// JS_BUNDLE_MODULE:dep.js\nexport let runs = 0;\nruns++;\nexport const answer = 42;\n// JS_BUNDLE_MODULE_ENTRYPOINT:main.js\nimport source depSrc from \"./dep.js\";\nconst dynSrc = await import.source(\"./dep.js\");\nconst ns1 = await import(depSrc);\nconst ns2 = await import(\"./dep.js\");\nprint([\n  depSrc[Symbol.toStringTag],\n  \"sameSource=\" + (depSrc === dynSrc),\n  \"sameNs=\" + (ns1 === ns2),\n  \"runs=\" + ns1.runs,\n  \"answer=\" + ns1.answer\n].join(\", \"));\n",
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_immutable_arraybuffer",
+   "group": "proposals-117",
+   "title": "Stage 2.7: Immutable ArrayBuffers",
+   "line": "sliceToImmutable copies a subrange and transferToImmutable detaches the source buffer into a new buffer with [[ArrayBufferDetachKey]] ~immutable~, causing TypedArray writes to throw a TypeError.",
+   "breakpoints": [
+    {
+     "alg": "sec-arraybuffer.prototype.transfertoimmutable",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "immutable-arraybuffer": {
+     "pauses": [
+      {
+       "alg": "ArrayBuffer.prototype.transferToImmutable",
+       "path": "1",
+       "frames": [
+        "ArrayBuffer.prototype.transferToImmutable",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "slice=20,30, detached=true, immutable=true, writeThrew=true"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   },
+   "name": "proposal_immutable_arraybuffer.js",
+   "file": "tests/dbg/proposal_immutable_arraybuffer.js",
+   "source": "\"use strict\";\nconst ab = new ArrayBuffer(4);\nnew Uint8Array(ab).set([10, 20, 30, 40]);\nconst sliced = ab.sliceToImmutable(1, 3);\nconst moved = ab.transferToImmutable(6);\nconst view = new Uint8Array(moved);\nlet writeThrew = false;\ntry { view[0] = 99; } catch (e) { writeThrew = e instanceof TypeError; }\nprint([\n  \"slice=\" + Array.from(new Uint8Array(sliced)).join(\",\"),\n  \"detached=\" + ab.detached,\n  \"immutable=\" + moved.immutable,\n  \"writeThrew=\" + writeThrew\n].join(\", \"));\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_error_code_property",
+   "group": "proposals-117",
+   "title": "Stage 2: Error.code property",
+   "line": "Error, NativeError, and SuppressedError constructors delegate to InstallErrorOwnProperties, installing non-enumerable code alongside cause from the options object.",
+   "breakpoints": [
+    {
+     "alg": "sec-installerrorownproperties",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "error-code-property": {
+     "pauses": [
+      {
+       "alg": "InstallErrorOwnProperties",
+       "path": "1",
+       "frames": [
+        "InstallErrorOwnProperties",
+        "Error",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "InstallErrorOwnProperties",
+       "path": "1",
+       "frames": [
+        "InstallErrorOwnProperties",
+        "TypeError",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "InstallErrorOwnProperties",
+       "path": "1",
+       "frames": [
+        "InstallErrorOwnProperties",
+        "SuppressedError",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "code=ECONNREFUSED, enumerable=false, suppressedCode=EDISPOSE"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   },
+   "name": "proposal_error_code_property.js",
+   "file": "tests/dbg/proposal_error_code_property.js",
+   "source": "const err = new Error(\"connect failed\", { code: \"ECONNREFUSED\", cause: \"timeout\" });\nconst sup = new SuppressedError(err, new TypeError(\"close failed\"), \"disposal failed\", { code: \"EDISPOSE\" });\nconst desc = Object.getOwnPropertyDescriptor(err, \"code\");\nprint([\n  \"code=\" + err.code,\n  \"enumerable=\" + desc.enumerable,\n  \"suppressedCode=\" + sup.code\n].join(\", \"));\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_fma",
+   "group": "proposals-117",
+   "title": "Stage 2: Math.fusedMultiplyAdd",
+   "line": "For a = 1 + 2^-52 and b = 1 - 2^-52, naive a * b + (-1) rounds a * b to 1 first and yields 0; Math.fusedMultiplyAdd computes a * b + c in R with a single rounding, preserving -2^-104.",
+   "breakpoints": [
+    {
+     "alg": "sec-math.fusedMultiplyAdd",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "fma": {
+     "pauses": [
+      {
+       "alg": "Math.fusedMultiplyAdd",
+       "path": "1",
+       "frames": [
+        "Math.fusedMultiplyAdd",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "naive=0, fma=-4.930380657631324e-32, exactMatch=true"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   },
+   "name": "proposal_fma.js",
+   "file": "tests/dbg/proposal_fma.js",
+   "source": "// (1 + 2^-52) * (1 - 2^-52) = 1 - 2^-104 in R.\n// Naive a * b + (-1) rounds a * b to 1 first and loses the -2^-104 residual!\nconst a = 1 + 2 ** -52;\nconst b = 1 - 2 ** -52;\nconst naive = a * b + (-1);\nconst exact = Math.fusedMultiplyAdd(a, b, -1);\nprint(\"naive=\" + naive + \", fma=\" + exact + \", exactMatch=\" + (exact === -(2 ** -104)));\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_composites",
+   "group": "proposals-117",
+   "title": "Stage 2: Composites",
+   "line": "Composite(...) canonicalizes integer-index keys before lexicographic string keys, freezes the object with null prototype, and interns structural duplicates in the Realm's [[CompositeRegistry]].",
+   "breakpoints": [
+    {
+     "alg": "sec-composite-function-arg",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "composites": {
+     "pauses": [
+      {
+       "alg": "Composite",
+       "path": "1",
+       "frames": [
+        "Composite",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "Composite",
+       "path": "1",
+       "frames": [
+        "Composite",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "Composite",
+       "path": "1",
+       "frames": [
+        "Composite",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "interned=true | keys=2,10,x,y | inSet=true"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: ReferenceError"
+    }
+   },
+   "name": "proposal_composites.js",
+   "file": "tests/dbg/proposal_composites.js",
+   "source": "const c1 = Composite({ y: 4, x: 1, 10: \"ten\", 2: \"two\" });\nconst c2 = Composite({ 2: \"two\", x: 1, 10: \"ten\", y: 4 });\nconst visited = new Set([c1]);\nprint([\n  \"interned=\" + (c1 === c2),\n  \"keys=\" + Object.keys(c1).join(\",\"),\n  \"inSet=\" + visited.has(Composite({ x: 1, y: 4, 2: \"two\", 10: \"ten\" }))\n].join(\" | \"));\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_cancellation",
+   "group": "proposals-117",
+   "title": "Stage 1: Cancellation (AbortController & AbortSignal)",
+   "line": "new AbortController() allocates an AbortSignal via CreateAbortSignal; a block-scoped using registration disposes cleanly before ac.abort(\"timeout\") runs SignalAbort and rejects Atomics.waitAsync.",
+   "breakpoints": [
+    {
+     "alg": "sec-createabortsignal",
+     "path": "1"
+    },
+    {
+     "alg": "sec-signalabort",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "cancellation": {
+     "pauses": [
+      {
+       "alg": "CreateAbortSignal",
+       "path": "1",
+       "frames": [
+        "CreateAbortSignal",
+        "AbortController",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "SignalAbort",
+       "path": "1",
+       "frames": [
+        "SignalAbort",
+        "AbortController.prototype.abort",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "aborted:timeout, waitAsync:timeout"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: ReferenceError"
+    }
+   },
+   "name": "proposal_cancellation.js",
+   "file": "tests/dbg/proposal_cancellation.js",
+   "source": "const ac = new AbortController();\nconst events = [];\n{\n  using _scoped = ac.signal.addAbortCallback(() => events.push(\"disposed-listener\"));\n}\nac.signal.addAbortCallback(() => events.push(\"aborted:\" + ac.signal.reason));\nconst sab = new SharedArrayBuffer(4);\nconst wait = Atomics.waitAsync(new Int32Array(sab), 0, 0, { signal: ac.signal });\nac.abort(\"timeout\");\nwait.value.catch((reason) => {\n  events.push(\"waitAsync:\" + reason);\n  print(events.join(\", \"));\n});\nvoid 0;\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_iterator_transfer",
+   "group": "proposals-117",
+   "title": "Stage 0: Iterator.prototype.transfer",
+   "line": "Iterator.prototype.transfer moves a suspended generator's state and execution context onto a fresh Generator instance while marking the source generator ~completed~.",
+   "expand": [
+    "Slots/O",
+    "Slots/genContext"
+   ],
+   "breakpoints": [
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "1"
+    },
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "3.f"
+    },
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "3.j.i"
+    },
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "3.k"
+    },
+    {
+     "alg": "sec-iterator.prototype.transfer",
+     "path": "3.l"
+    }
+   ],
+   "builds": {
+    "iterator-transfer": {
+     "pauses": [
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "1",
+       "frames": [
+        "Iterator.prototype.transfer",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "3.f"
+      },
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "3.j.i"
+      },
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "3.k"
+      },
+      {
+       "alg": "Iterator.prototype.transfer",
+       "path": "3.l"
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "a=first, origDone=true, b=second, finallyRuns=1"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   },
+   "name": "proposal_iterator_transfer.js",
+   "file": "tests/dbg/proposal_iterator_transfer.js",
+   "source": "let cleanedUp = 0;\nfunction* items() {\n  try {\n    yield \"first\";\n    yield \"second\";\n  } finally {\n    cleanedUp++;\n  }\n}\nconst orig = items();\nconst a = orig.next().value;\nconst moved = orig.transfer();\nconst origDone = orig.next().done;\nconst b = moved.next().value;\nmoved.return();\nprint(\"a=\" + a + \", origDone=\" + origDone + \", b=\" + b + \", finallyRuns=\" + cleanedUp);\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_trim_chars",
+   "group": "proposals-117",
+   "title": "Stage 0: Trim Specific Characters",
+   "line": "String.prototype.trim accepts an optional characters string and forwards it to TrimString, which trims matching Unicode code points via StringToCodePoints rather than UTF-16 code units.",
+   "breakpoints": [
+    {
+     "alg": "sec-string.prototype.trim",
+     "path": "2"
+    }
+   ],
+   "builds": {
+    "trim-chars": {
+     "pauses": [
+      {
+       "alg": "String.prototype.trim",
+       "path": "2",
+       "frames": [
+        "String.prototype.trim",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "String.prototype.trim",
+       "path": "2",
+       "frames": [
+        "String.prototype.trim",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "path=ecma-262, astralPreserved=true"
+     ]
+    },
+    "spec": {
+     "pauses": [
+      {
+       "alg": "String.prototype.trim",
+       "path": "2",
+       "frames": [
+        "String.prototype.trim",
+        "BuiltinCallOrConstruct"
+       ]
+      },
+      {
+       "alg": "String.prototype.trim",
+       "path": "2",
+       "frames": [
+        "String.prototype.trim",
+        "BuiltinCallOrConstruct"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "path=/__ecma-262__/, astralPreserved=true"
+     ]
+    }
+   },
+   "name": "proposal_trim_chars.js",
+   "file": "tests/dbg/proposal_trim_chars.js",
+   "source": "const path = \"/__ecma-262__/\".trim(\"/_\");\n// U+1F601 (\\uD83D\\uDE01) shares high surrogate \\uD83D with U+1F600 (\\uD83D\\uDE00)\nconst astral = \"\\u{1F601}ok\\u{1F601}\".trim(\"\\u{1F600}\");\nprint(\"path=\" + path + \", astralPreserved=\" + (astral === \"\\u{1F601}ok\\u{1F601}\"));\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "dbg/proposal_popcount",
+   "group": "proposals-117",
+   "title": "Stage 0: Bitwise counting (Math.popcount32 & Math.ctz32)",
+   "line": "Math.popcount32 counts 1 bits and Math.ctz32 counts trailing 0 bits of ToUint32(n), returning 32 when the 32-bit unsigned value is 0.",
+   "breakpoints": [
+    {
+     "alg": "sec-math.popcount32",
+     "path": "1"
+    },
+    {
+     "alg": "sec-math.ctz32",
+     "path": "1"
+    }
+   ],
+   "builds": {
+    "popcount": {
+     "pauses": [
+      {
+       "alg": "Math.popcount32",
+       "path": "1",
+       "frames": [
+        "Math.popcount32",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "Math.ctz32",
+       "path": "1",
+       "frames": [
+        "Math.ctz32",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      },
+      {
+       "alg": "Math.ctz32",
+       "path": "1",
+       "frames": [
+        "Math.ctz32",
+        "BuiltinCallOrConstruct",
+        "[[Call]]"
+       ]
+      }
+     ],
+     "end": "normal: undefined",
+     "printed": [
+      "popcount32(0xaaaaaaaa)=16, ctz32(0)=32, ctz32(12)=2"
+     ]
+    },
+    "spec": {
+     "pauses": [],
+     "end": "throw: TypeError"
+    }
+   },
+   "name": "proposal_popcount.js",
+   "file": "tests/dbg/proposal_popcount.js",
+   "source": "const pop = Math.popcount32(0xaaaaaaaa);\nconst ctzZero = Math.ctz32(0);\nconst ctz12 = Math.ctz32(12);\nprint(\"popcount32(0xaaaaaaaa)=\" + pop + \", ctz32(0)=\" + ctzZero + \", ctz32(12)=\" + ctz12);\n",
+   "args": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/erratum_stringvalue_reserved_word",
+   "group": "errata-programs",
+   "title": "StringValueReservedWord: an escaped reserved word",
+   "line": "var \\u0069f spells the reserved word if with an escape; the default reading makes it a SyntaxError.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "erratum_stringvalue_reserved_word.js",
+   "file": "tests/run/erratum_stringvalue_reserved_word.js",
+   "source": "// An |IdentifierName| spelling `if` with an escape is the String value of a\n// terminal of |ReservedWord| (Erratum StringValueReservedWord, test262's reading).\n// expect: throw: SyntaxError\nvar \\u0069f;\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/erratum_lookahead_source_tokens",
+   "group": "errata-programs",
+   "title": "LookaheadSourceTokens: let and a newline",
+   "line": "After if (0) let and a line break, ExpressionStatement's lookahead reads the source's tokens past the inserted semicolon; the default reading gives no parse, a SyntaxError.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "erratum_lookahead_source_tokens.js",
+   "file": "tests/run/erratum_lookahead_source_tokens.js",
+   "source": "// The inserted `;` after `let` is no source token: ExpressionStatement's lookahead\n// reads `let [` and the program has no parse (Erratum LookaheadSourceTokens,\n// test262's reading).\n// expect: throw: SyntaxError\nif (0) let\n[a] = 0;\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/erratum_html_close_comment_token",
+   "group": "errata-programs",
+   "title": "HTMLCloseCommentToken: --> on the first line",
+   "line": "On a host with B.1.1, a first-line --> is an HTMLCloseComment; the default reading takes it as a comment, and the program gives 1.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: 1"
+    }
+   },
+   "name": "erratum_html_close_comment_token.js",
+   "file": "tests/run/erratum_html_close_comment_token.js",
+   "source": "--> the Script's first input element: an HTMLCloseComment\n// A first-line `-->` is an HTMLCloseComment, a comment (Erratum\n// HTMLCloseCommentToken, test262's reading).\n// args: --annex-b sec-html-like-comments\n// expect: normal: 1\n1\n",
+   "args": [
+    "--annex-b",
+    "sec-html-like-comments"
+   ],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/erratum_annexb_regexp_order",
+   "group": "errata-programs",
+   "title": "AnnexBRegExpOrder: /\\b*/",
+   "line": "Under B.1.2's grammar the alternatives commit in order: \\b is an Assertion, which no quantifier follows, so the pattern is a SyntaxError.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "erratum_annexb_regexp_order.js",
+   "file": "tests/run/erratum_annexb_regexp_order.js",
+   "source": "// B.1.2's alternatives commit in order: `\\b*` is an Assertion, which no\n// quantifier follows, and the literal has no parse (Erratum AnnexBRegExpOrder,\n// test262's reading).\n// args: --annex-b sec-regular-expressions-patterns\n// expect: throw: SyntaxError\n/\\b*/;\n",
+   "args": [
+    "--annex-b",
+    "sec-regular-expressions-patterns"
+   ],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/erratum_annexb_group_count",
+   "group": "errata-programs",
+   "title": "AnnexBGroupCount: /(a)\\1/",
+   "line": "Under B.1.2's grammar \\1 with one capturing group is a backreference: the group count comes from a committed parse.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: true"
+    }
+   },
+   "name": "erratum_annexb_group_count.js",
+   "file": "tests/run/erratum_annexb_group_count.js",
+   "source": "// `\\1` with one capturing group is a backreference: the group count is read\n// from a committed parse (Erratum AnnexBGroupCount, test262's reading).\n// args: --annex-b sec-regular-expressions-patterns\n// expect: normal: true\n/(a)\\1/.test(\"aa\");\n",
+   "args": [
+    "--annex-b",
+    "sec-regular-expressions-patterns"
+   ],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/erratum_annexb_modifier_early_errors",
+   "group": "errata-programs",
+   "title": "AnnexBModifierEarlyErrors: /(?ii:a)/",
+   "line": "§22.2.1.1's modifier rules apply to B.1.2's ExtendedAtom under the default reading: a repeated modifier is a SyntaxError.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: SyntaxError"
+    }
+   },
+   "name": "erratum_annexb_modifier_early_errors.js",
+   "file": "tests/run/erratum_annexb_modifier_early_errors.js",
+   "source": "// §22.2.1.1's modifier rules hold on B.1.2's ExtendedAtom: `(?ii:a)` repeats a\n// modifier (Erratum AnnexBModifierEarlyErrors, test262's reading).\n// args: --annex-b sec-regular-expressions-patterns\n// expect: throw: SyntaxError\n/(?ii:a)/;\n",
+   "args": [
+    "--annex-b",
+    "sec-regular-expressions-patterns"
+   ],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/erratum_covered_node_parent",
+   "group": "errata-programs",
+   "title": "CoveredNodeParent: a tail call in parentheses",
+   "line": "The covered ParenthesizedExpression takes its cover's place in the tree, so return (f(n - 1)) is in tail position.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: 0"
+    }
+   },
+   "name": "erratum_covered_node_parent.js",
+   "file": "tests/run/erratum_covered_node_parent.js",
+   "source": "// Erratum CoveredNodeParent at its test262 reading: the covered\n// |ParenthesizedExpression| takes its cover's place, so `return (f(n - 1))` is\n// in tail position (test262 tco-pos.js).\n// expect: normal: 0\n\"use strict\";\nfunction f(n) {\n  if (n === 0) return 0;\n  return (f(n - 1));\n}\nf(3);\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/builtin_async_return",
+   "group": "errata-programs",
+   "title": "BuiltinReturnCompletion: Array.fromAsync's result",
+   "line": "Array.fromAsync's promise is fulfilled with the array under the default reading of BuiltinCallOrConstruct step 10.b.iii.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "undefined",
+      "1,2"
+     ]
+    }
+   },
+   "name": "builtin_async_return.js",
+   "file": "tests/run/builtin_async_return.js",
+   "source": "// expect: normal: undefined\n// print: undefined\n// print: 1,2\n// BuiltinCallOrConstruct step 10.b.iii under Erratum BuiltinReturnCompletion\n// (its test262 reading): \"Return array\" of Array.fromAsync is a normal\n// completion, which the resultsClosure gives to AsyncBlockStart as a return\n// completion, so the promise is fulfilled with the array; disposeAsync's\n// \"Return ? DisposeResources(…)\" fulfils it with undefined.\nArray.fromAsync([1, 2]).then(function (a) { print(a.join(\",\")); });\nnew AsyncDisposableStack().disposeAsync().then(function (v) { print(String(v)); });\nvoid 0;\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/errata_execute_module_dispose",
+   "group": "errata-programs",
+   "title": "ExecuteModuleAsyncDisposeResources: await using in a module",
+   "line": "A module with top-level await disposes its await using resources after its body under the default reading; read literally, never.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "end",
+      "disposed"
+     ]
+    }
+   },
+   "name": "errata_execute_module_dispose.js",
+   "file": "tests/run/errata_execute_module_dispose.js",
+   "source": "// module: yes\n// expect: normal: undefined\n// print: end\n// print: disposed\n// A module with top-level await and `await using` (Erratum ExecuteModuleAsyncDisposeResources):\n// the test262 reading disposes the module's resources after its body.\nawait using x = { [Symbol.asyncDispose]() { print(\"disposed\"); } };\nawait 0;\nprint(\"end\");\n",
+   "args": [
+    "--module"
+   ],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/regexp_identity_escape_join_controls",
+   "group": "errata-programs",
+   "title": "IdentityEscapeJoinControls: \\ before ZWNJ and ZWJ",
+   "line": "Without the u or v flag, a backslash before U+200C or U+200D is an IdentityEscape under the default reading.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "U+200C: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+      "U+200D: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+      "U+200B: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+      "U+200E: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError",
+      "U+61: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError",
+      "U+B7: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError"
+     ]
+    }
+   },
+   "name": "regexp_identity_escape_join_controls.js",
+   "file": "tests/run/regexp_identity_escape_join_controls.js",
+   "source": "// Erratum IdentityEscapeJoinControls, at its test262 reading: without the\n// u or v flag, `\\` U+200C (ZWNJ) and `\\` U+200D (ZWJ) are IdentityEscapes,\n// as test262's language/literals/regexp/S7.8.5_A1.4_T2.js and\n// S7.8.5_A2.4_T2.js require, although Unicode 15.1 made both UnicodeIDContinue.\n// ecma-run's default host does not support §B.1.2, so this is the main grammar:\n// the other UnicodeIDContinue code points (`a`, U+00B7) stay SyntaxErrors, and\n// U+200B and U+200E (not ID_Continue) are IdentityEscapes. The u and v flags\n// allow neither. The characters are invisible: the patterns are built with\n// fromCharCode.\n// expect: normal: undefined\n// print: U+200C: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError\n// print: U+200D: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError\n// print: U+200B: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError\n// print: U+200E: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError\n// print: U+61: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError\n// print: U+B7: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError\nfunction t(f) { try { return f(); } catch (e) { return e.name; } }\nfor (var cu of [0x200C, 0x200D, 0x200B, 0x200E, 0x61, 0xB7]) {\n  var ch = String.fromCharCode(cu), src = \"\\\\\" + ch;\n  print(\"U+\" + cu.toString(16).toUpperCase() + \": \" + [\n    \"literal \" + t(() => { var re = eval(\"/\" + src + \"/\"); return re.source === src && re.test(ch) && !re.test(\"x\"); }),\n    \"class \" + t(() => eval(\"/[\" + src + \"]/\").test(ch)),\n    \"a-literal \" + t(() => eval(\"/a\" + src + \"/\").test(\"a\" + ch)),\n    \"RegExp \" + t(() => new RegExp(src).exec(\"x\" + ch)[0] === ch),\n    \"u \" + t(() => new RegExp(src, \"u\")),\n    \"v \" + t(() => new RegExp(src, \"v\")),\n  ].join(\", \"));\n}\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/errata_allocate_sab_byte_length",
+   "group": "errata-programs",
+   "title": "AllocateSharedArrayBufferByteLengthStore: a growable SharedArrayBuffer",
+   "line": "grow reads the byte length that AllocateSharedArrayBuffer stored in a Shared Data Block.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: 2"
+    }
+   },
+   "name": "errata_allocate_sab_byte_length.js",
+   "file": "tests/run/errata_allocate_sab_byte_length.js",
+   "source": "// expect: normal: 2\n// A growable SharedArrayBuffer (Erratum AllocateSharedArrayBufferByteLengthStore): the\n// test262 reading stores the byte length in its Shared Data Block, which grow reads.\nvar b = new SharedArrayBuffer(1, { maxByteLength: 4 });\nb.grow(2);\nb.byteLength;\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/await_in_params_early_errors",
+   "group": "errata-programs",
+   "title": "ContainsAwaitCover: await in parameters",
+   "line": "The early errors \"X Contains AwaitExpression\" see an await expression, which parses as a cover.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: undefined",
+     "printed": [
+      "async function: SyntaxError",
+      "async function expression: SyntaxError",
+      "async generator: SyntaxError",
+      "async generator expression: SyntaxError",
+      "async method: SyntaxError",
+      "async generator method: SyntaxError",
+      "arrow in async body: SyntaxError",
+      "async arrow in async body: SyntaxError",
+      "AsyncFunction: SyntaxError",
+      "AsyncGeneratorFunction: SyntaxError",
+      "await in async body: no error",
+      "static block in async function: no error",
+      "var await in nested function: no error",
+      "async arrow parameters: no error",
+      "await in static block: SyntaxError",
+      "var await in static block function: no error"
+     ]
+    }
+   },
+   "name": "await_in_params_early_errors.js",
+   "file": "tests/run/await_in_params_early_errors.js",
+   "source": "// expect: normal: undefined\n// print: async function: SyntaxError\n// print: async function expression: SyntaxError\n// print: async generator: SyntaxError\n// print: async generator expression: SyntaxError\n// print: async method: SyntaxError\n// print: async generator method: SyntaxError\n// print: arrow in async body: SyntaxError\n// print: async arrow in async body: SyntaxError\n// print: AsyncFunction: SyntaxError\n// print: AsyncGeneratorFunction: SyntaxError\n// print: await in async body: no error\n// print: static block in async function: no error\n// print: var await in nested function: no error\n// print: async arrow parameters: no error\n// print: await in static block: SyntaxError\n// print: var await in static block function: no error\n// The early errors \"X Contains |AwaitExpression|\" (§15.3.1, §15.6.1, §15.8.1,\n// §15.9.1): an `await` expression is the cover of UnaryExpression :\n// CoverAwaitExpressionAndAwaitUsingDeclarationHead, which Contains counts as an\n// AwaitExpression (Erratum ContainsAwaitCover, its test262 reading).\n// Contains does not look into nested functions, and a static block's rule is\n// on the terminal `await`.\nvar AsyncFunction = (async function () {}).constructor;\nvar AsyncGeneratorFunction = (async function* () {}).constructor;\nfunction check(name, run) {\n  try { run(); print(name + \": no error\"); }\n  catch (e) { print(name + \": \" + e.constructor.name); }\n}\nfunction script(src) { return function () { (0, eval)(src); }; }\ncheck(\"async function\", script(\"async function f(x = await 1) {}\"));\ncheck(\"async function expression\", script(\"(async function (x = await 1) {})\"));\ncheck(\"async generator\", script(\"async function* f(x = await 1) {}\"));\ncheck(\"async generator expression\", script(\"(async function* (x = await 1) {})\"));\ncheck(\"async method\", script(\"({ async m(x = await 1) {} })\"));\ncheck(\"async generator method\", script(\"({ async *m(x = await 1) {} })\"));\ncheck(\"arrow in async body\", script(\"async function g() { (x = await 1) => 0; }\"));\ncheck(\"async arrow in async body\", script(\"async function g() { async (x = await 1) => 0; }\"));\ncheck(\"AsyncFunction\", function () { AsyncFunction(\"x = await 1\", \"\"); });\ncheck(\"AsyncGeneratorFunction\", function () { AsyncGeneratorFunction(\"x = await 1\", \"\"); });\ncheck(\"await in async body\", script(\"async function h() { await 1; }\"));\ncheck(\"static block in async function\", script(\"(async function () { class C { static { } } })\"));\ncheck(\"var await in nested function\", script(\"async function k(x = function () { var await; }) {}\"));\ncheck(\"async arrow parameters\", script(\"async (x = 1) => await x;\"));\ncheck(\"await in static block\", script(\"class C { static { await 0; } }\"));\ncheck(\"var await in static block function\", script(\"class C { static { (function () { var await; }); } }\"));\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/errata_split_code_units",
+   "group": "errata-programs",
+   "title": "SplitCodeUnitStrings: \"ab\".split(\"\")",
+   "line": "Each element is a String of one code unit under the default reading; read literally, the Array holds code units.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: \"string\""
+    }
+   },
+   "name": "errata_split_code_units.js",
+   "file": "tests/run/errata_split_code_units.js",
+   "source": "// expect: normal: \"string\"\n// String.prototype.split with the empty String as separator (Erratum SplitCodeUnitStrings):\n// the test262 reading makes each element a String of one code unit.\ntypeof \"ab\".split(\"\")[1];\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/errata_createintrinsics_async_argument",
+   "group": "errata-programs",
+   "title": "CreateIntrinsicsAsyncArgument: an accessor's name and Array.fromAsync",
+   "line": "Under the default reading a getter gets its prefix and Array.fromAsync is async.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: \"get size|true\""
+    }
+   },
+   "name": "errata_createintrinsics_async_argument.js",
+   "file": "tests/run/errata_createintrinsics_async_argument.js",
+   "source": "// expect: normal: \"get size|true\"\n// CreateIntrinsics step 2 (Erratum CreateIntrinsicsAsyncArgument): the\n// test262 reading passes a getter its prefix and Array.fromAsync its [[Async]].\nvar r = [];\nr.push(Object.getOwnPropertyDescriptor(Map.prototype, \"size\").get.name);\nr.push(Array.fromAsync([1]) instanceof Promise);\nr.join(\"|\");\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/errata_ischaracterclass_control_letter",
+   "group": "errata-programs",
+   "title": "IsCharacterClassControlLetter: /[\\c1-\\c5]/",
+   "line": "On a host with B.1.2, a class range between two \\c escapes asks IsCharacterClass of each; the default reading gives that production a row.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "normal: true"
+    }
+   },
+   "name": "errata_ischaracterclass_control_letter.js",
+   "file": "tests/run/errata_ischaracterclass_control_letter.js",
+   "source": "// expect: normal: true\n// args: --annex-b sec-regular-expressions-patterns\n// A class range between two \\c escapes of B.1.2 (Erratum IsCharacterClassControlLetter):\n// the test262 reading gives IsCharacterClass a row for ClassEscape :: `c` ClassControlLetter.\n/[\\c1-\\c5]/.test(\"\\x11\");\n",
+   "args": [
+    "--annex-b",
+    "sec-regular-expressions-patterns"
+   ],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  },
+  {
+   "id": "run/bigint_huge_left_shift",
+   "group": "errata-programs",
+   "title": "BigIntMaximumSize: 1n << 2n ** 31n",
+   "line": "The proposed text throws a RangeError past the implementation's maximum BigInt size; read as written, the engine stops at its own limit.",
+   "builds": {
+    "spec": {
+     "pauses": [],
+     "end": "throw: RangeError"
+    }
+   },
+   "name": "bigint_huge_left_shift.js",
+   "file": "tests/run/bigint_huge_left_shift.js",
+   "source": "// expect: throw: RangeError\n// BigInt::leftShift whose result has more than 2^30 bits throws a RangeError\n// (erratum BigIntMaximumSize, proposed reading), not a runtime abort\n// (BigInt.shiftLeft).\n2n << (1n << 64n);\n",
+   "args": [],
+   "breakpoints": [],
+   "lines": [],
+   "filters": []
+  }
+ ]
+}

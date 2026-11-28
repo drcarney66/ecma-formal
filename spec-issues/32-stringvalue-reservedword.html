@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>32. Identifier early errors take the StringValue of a |ReservedWord|, which StringValue does not define · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/32-stringvalue-reservedword.md</code></p>
+<h1>32. Identifier early errors take the StringValue of a |ReservedWord|, which StringValue does not define</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§13.1.1 Static Semantics: Early Errors (<a class="clause" href="https://tc39.es/ecma262/#sec-identifiers-static-semantics-early-errors"><code>#sec-identifiers-static-semantics-early-errors</code></a>), the last rule for <code>Identifier : IdentifierName but not ReservedWord</code>, with §13.1.2 Static Semantics: StringValue (<a class="clause" href="https://tc39.es/ecma262/#sec-static-semantics-stringvalue"><code>#sec-static-semantics-stringvalue</code></a>) and §12.7.2 Keywords and Reserved Words (<a class="clause" href="https://tc39.es/ecma262/#sec-keywords-and-reserved-words"><code>#sec-keywords-and-reserved-words</code></a>).</dd><dt>Kind</dt><dd>missing case (a syntax-directed operation applied to a nonterminal it has no rows for).</dd><dt>Model erratum</dt><dd><code>StringValueReservedWord</code>, default reading test262; its readings: literal, test262, proposed. Read literally, the run stops at the rule (StringValue has no row); the test262 and proposed readings compare with the String value of the code points of each terminal of |ReservedWord| other than <code>yield</code> and <code>await</code>.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/1865">#1865</a> (open, 2020-02), ""StringValue of ReservedWord" is used but not defined", reports it; a reply there (2020-02-05) answers that "A reserved word is an IdentifierName", so that StringValue's |IdentifierName| row is meant to apply. No pull request was found.</dd><dt>On this site</dt><dd><a href="../errata.html#StringValueReservedWord"><code>StringValueReservedWord</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>The rule:</p>
+<blockquote class="sentence q-text"><p>It is a Syntax Error if the StringValue of <span class="nt">IdentifierName</span> is the StringValue of any <span class="nt">ReservedWord</span> except for <code>yield</code> or <code>await</code>.</p></blockquote>
+<p>StringValue's rows are for |IdentifierName|, <code>IdentifierReference</code>/<code>BindingIdentifier</code>/<code>LabelIdentifier</code> :
+<code>yield</code> and <code>await</code>, <code>Identifier : IdentifierName but not ReservedWord</code>, |PrivateIdentifier| and
+<code>ModuleExportName : StringLiteral</code>. |ReservedWord| is</p>
+<blockquote class="sentence q-text"><p>ReservedWord :: one of <code>await</code> <code>break</code> <code>case</code> … <code>yield</code></p></blockquote>
+<p>and §12.7.2 says "A reserved word is an |IdentifierName| that cannot be used as an identifier."</p>
+<h2 id="problem">Problem</h2>
+<p>StringValue is a syntax-directed operation: it is defined on the Parse Nodes of the productions it has rows for.
+The rule applies it to "any |ReservedWord|", which is neither a Parse Node at the rule's site (the node is
+|Identifier|, whose only child is an |IdentifierName|) nor a nonterminal with a StringValue row. One might read
+"reserved word" as the defined term of §12.7.2, an |IdentifierName|, so that StringValue's |IdentifierName| row
+applies; but the rule names the nonterminal |ReservedWord|, whose productions have a single terminal each
+(<code>ReservedWord :: `if`</code>), and a
+<code>ReservedWord</code> Parse Node is not an |IdentifierName| Parse Node, so the |IdentifierName| row does not reach it.</p>
+<p>The intended meaning is clear from the note after the rule ("such escapes cannot be used to write an |Identifier|
+whose code point sequence is the same as a |ReservedWord|") and from test262: the comparison is with the String
+value of each reserved word's code points. The fix states that directly. (§12.7.2's note, "rule out identifiers
+with the same StringValue as a reserved word", is informal and can stay.)</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/32-stringvalue-reservedword.js</a> (outputs:
+<a href="results.html#32-stringvalue-reservedwordjs">the recorded runs</a>), each source parsed as a Script:</p>
+<pre class="js"><code>var sources = [&quot;var \\u0069f = 1;&quot;, &quot;var i\\u0066 = 1;&quot;, &quot;var \\u{63}lass = 1;&quot;, &quot;var \\u0079ield = 1;&quot;,
+               &quot;var \\u0061wait = 1;&quot;, &quot;var \\u0069g = 1;&quot;];
+for (var s of sources) {
+  try { (0, eval)(s); print(s + &quot;: no error&quot;); }
+  catch (e) { print(s + &quot;: &quot; + e.constructor.name); }
+}
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>\u0069f</code></th>
+<th><code>i\u0066</code></th>
+<th><code>\u{63}lass</code></th>
+<th><code>\u0079ield</code></th>
+<th><code>\u0061wait</code></th>
+<th><code>\u0069g</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+<tr>
+<td>formal model, test262 and proposed readings</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+</tbody>
+</table></div>
+<p>"—": the rule is undefined for every name; the model's literal reading stops at the first source. The engines and
+the model's other readings agree; the defect is in the text only.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -18406,7 +18406,7 @@
+           It is a Syntax Error if the goal symbol of the syntactic grammar is |Module| and the StringValue of |IdentifierName| is *&quot;await&quot;*.
+         &lt;/li&gt;
+         &lt;li&gt;
+-          It is a Syntax Error if the StringValue of |IdentifierName| is the StringValue of any |ReservedWord| except for `yield` or `await`.
++          It is a Syntax Error if the StringValue of |IdentifierName| is the String value of the code points of a terminal symbol of |ReservedWord| other than `yield` and `await`.
+         &lt;/li&gt;
+       &lt;/ul&gt;
+       &lt;emu-note&gt;
+</code></pre>
+<p>The other repair, a StringValue row for <code>ReservedWord :: one of …</code> returning CodePointsToString of its code points,
+leaves "any |ReservedWord|" quantifying over nodes that do not exist at the site; the wording above avoids that.
+(SpecTec applies a companion patch in §22.2.2.9 <code>CompileToCharSet</code> rows for <code>CharacterClassEscape :: D</code>, <code>S</code>, and <code>W</code>,
+which invoke <code>&lt;emu-grammar&gt;CharacterClassEscape :: d&lt;/emu-grammar&gt;</code> / <code>s</code> / <code>w</code> without a Parse Node or the
+<code>_regexpRecord_</code> argument: <code>S22.spectec</code> parses synthetic <code>"d"</code>, <code>"s"</code>, <code>"w"</code> nodes and passes <code>regexpRecord</code>.)</p>
+<h2 id="test262">test262</h2>
+<p><code>language/identifiers/val-*-via-escape-hex.js</code> and <code>val-*-via-escape-hex4.js</code> (e.g. <code>val-if-via-escape-hex4.js</code>,
+<code>var \u0069\u0066 = 123;</code>) require the SyntaxError for each unconditionally reserved word. They pass under the proposed
+wording; under the literal text the rule is undefined.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#32-stringvalue-reservedwordjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=32-stringvalue-reservedword">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/32-stringvalue-reservedword.js</code></summary><pre class="js">// Identifier early errors: &quot;the StringValue of IdentifierName is the StringValue of any ReservedWord except
+// for yield or await&quot;, and StringValue has no row for ReservedWord. Each source is parsed as a Script.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var sources = [&quot;var \\u0069f = 1;&quot;, &quot;var i\\u0066 = 1;&quot;, &quot;var \\u{63}lass = 1;&quot;, &quot;var \\u0079ield = 1;&quot;,
+               &quot;var \\u0061wait = 1;&quot;, &quot;var \\u0069g = 1;&quot;];
+for (var s of sources) {
+  try { (0, eval)(s); print(s + &quot;: no error&quot;); }
+  catch (e) { print(s + &quot;: &quot; + e.constructor.name); }
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

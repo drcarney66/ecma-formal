@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11. /u with lastIndex inside a surrogate pair: a match reported one code unit late, and a Match Record that ends before it starts · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/11-regexp-lastindex-inside-surrogate-pair.md</code></p>
+<h1>11. <code>/u</code> with <code>lastIndex</code> inside a surrogate pair: a match reported one code unit late, and a Match Record that ends before it starts</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§22.2.7.2 RegExpBuiltinExec (<a class="clause" href="https://tc39.es/ecma262/#sec-regexpbuiltinexec"><code>#sec-regexpbuiltinexec</code></a>), steps 13.b, 15, 22, 24 and 28; §22.2.7.5 Match Records (<a class="clause" href="https://tc39.es/ecma262/#sec-match-records"><code>#sec-match-records</code></a>); §22.2.7.6 GetMatchString (<a class="clause" href="https://tc39.es/ecma262/#sec-getmatchstring"><code>#sec-getmatchstring</code></a>), step 1 (also §22.2.7.7 GetMatchIndexPair (<a class="clause" href="https://tc39.es/ecma262/#sec-getmatchindexpair"><code>#sec-getmatchindexpair</code></a>), step 1).</dd><dt>Kind</dt><dd>a result that every engine tried contradicts (and on which they disagree), and, for an empty match, an ill-formed Match Record and a failing Assert.</dd><dt>Model erratum</dt><dd><code>GetMatchStringStartAfterEnd</code>, baked-in SpecTec reading literal on <code>GetMatchString</code> step 1's <code>Assert:</code>, paired with a non-literal reading baked into <code>@ph-input-index-of</code> (<code>spec/spectec/clauses/Helpers.spectec</code>) for <code>RegExpBuiltinExec</code> step 13.b: <code>@ph-input-index-of</code> maps a trailing-surrogate <code>_lastIndex_</code> backward to the code-point index of the containing surrogate pair (and returns <code>$ListLen(_input_)</code> at <code>_lastIndex_ == _length_</code>, see <a href="59-regexp-exec-end-of-string.html">59</a>). Because <code>_lastIndex_</code> itself is not moved back, an empty match (<code>/(?:)/gu</code>) stops at <code>GetMatchString</code> step 1, while a non-empty match (<code>/./gu</code> at <code>lastIndex = 1</code> on <code>"\u{1F600}x"</code>) returns the lone trailing surrogate <code>"\uDE00"</code> at <code>index: 1</code>. The proposed reading moves <code>_lastIndex_</code> back to the start of the code point as well.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/128">#128</a> (open, 2015-10), "Unicode RegExp with index points trail surrogate in surrogate pair is not covered in the spec", and issue <a class="ext" href="https://github.com/tc39/ecma262/issues/2511">#2511</a> (open, 2021-09), "Underspecified behavior of global unicode regular expressions with lastIndex inside a surrogate pair", ask what the index of step 13.b means inside a pair; on <a class="ext" href="https://github.com/tc39/ecma262/issues/2511">#2511</a> (2021-09-11) the author of that step's wording answered that it refers to the code point of the pair, and <a class="ext" href="https://github.com/tc39/ecma262/issues/2511">#2511</a> was called a duplicate of <a class="ext" href="https://github.com/tc39/ecma262/issues/128">#128</a>.</dd><dt>On this site</dt><dd><a href="../errata.html#GetMatchStringStartAfterEnd"><code>GetMatchStringStartAfterEnd</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the literal text)</dd></dl><h2 id="text">Text</h2>
+<p>RegExpBuiltinExec:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">13.</span> Repeat, while <var>matchSucceeded</var> is <span class="val">false</span>,</p><p class="q-step" style="--d:1"><span class="q-num">b.</span> Let <var>inputIndex</var> be the index into <var>input</var> of the character that was obtained from element <var>lastIndex</var> of <var>string</var>.</p><p class="q-step" style="--d:1"><span class="q-num">c.</span> Let <var>result</var> be <var>matcher</var>(<var>input</var>, <var>inputIndex</var>).</p><p class="q-step" style="--d:0"><span class="q-num">14.</span> Let <var>endIndex</var> be <var>result</var>.[[EndIndex]].</p><p class="q-step" style="--d:0"><span class="q-num">15.</span> If <var>fullUnicode</var> is <span class="val">true</span>, set <var>endIndex</var> to GetStringIndex(<var>string</var>, <var>endIndex</var>).</p><p class="q-step" style="--d:0"><span class="q-num">16.</span> If <var>global</var> is <span class="val">true</span> or <var>sticky</var> is <span class="val">true</span>, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Perform ? Set(<var>regexp</var>, <span class="val">&quot;lastIndex&quot;</span>, 𝔽(<var>endIndex</var>), <span class="val">true</span>).</p><p class="q-gap">…</p><p class="q-step" style="--d:0"><span class="q-num">22.</span> Perform ! CreateDataPropertyOrThrow(<var>array</var>, <span class="val">&quot;index&quot;</span>, 𝔽(<var>lastIndex</var>)).</p><p class="q-gap">…</p><p class="q-step" style="--d:0"><span class="q-num">24.</span> Let <var>match</var> be the Match Record { [[StartIndex]]: <var>lastIndex</var>, [[EndIndex]]: <var>endIndex</var> }.</p><p class="q-gap">…</p><p class="q-step" style="--d:0"><span class="q-num">28.</span> Let <var>matchedSubstring</var> be GetMatchString(<var>string</var>, <var>match</var>).</p></blockquote>
+<p>The Match Record table gives [[EndIndex]] the value "an integer ≥ [[StartIndex]]". GetMatchString: "1. Assert:
+<em>match</em>.[[StartIndex]] ≤ <em>match</em>.[[EndIndex]] ≤ the length of <em>string</em>."</p>
+<h2 id="problem">Problem</h2>
+<p>With the u or v flag, <em>input</em> is the String's code points. When <em>lastIndex</em> is the index of the trailing surrogate of
+a pair, step 13.b gives the code point that contains it, which begins one code unit earlier. Nothing moves
+<em>lastIndex</em> back with it, and steps 22 and 24 report the match from <em>lastIndex</em>:</p>
+<ul>
+<li><strong>A non-empty match.</strong> <code>/./gu</code> with <code>lastIndex = 1</code> on <code>"\u{1F600}x"</code> matches the code point U+1F600, so
+  <em>endIndex</em> is 2. Step 22 reports <code>index</code> 1, and step 28's <em>matchedSubstring</em> is the substring from 1 to 2, the
+  lone trailing surrogate 0xDE00. No Assert is involved; every engine tried contradicts this result.</li>
+<li><strong>An empty match.</strong> If the pattern matches the empty String there, <em>endIndex</em> is the start of that code point,
+  <em>lastIndex</em> - 1, and step 24 builds the Match Record { [[StartIndex]]: <em>lastIndex</em>, [[EndIndex]]: <em>lastIndex</em> - 1
+  }, which the Match Record table does not allow. Step 28's GetMatchString Assert fails (with the d flag,
+  GetMatchIndexPair's too).</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/11-regexp-lastindex-inside-surrogate-pair.js</a>
+(outputs: <a href="results.html#11-regexp-lastindex-inside-surrogate-pairjs">the recorded runs</a>):</p>
+<pre class="js"><code>var n = /./gu;
+n.lastIndex = 1;
+var mn = n.exec(&quot;\u{1F600}x&quot;);
+print(&quot;non-empty: index &quot; + mn.index + &quot;, match length &quot; + mn[0].length +
+  &quot;, first unit &quot; + mn[0].charCodeAt(0).toString(16) + &quot;, lastIndex &quot; + n.lastIndex);
+var r = /(?:)/gu;
+r.lastIndex = 1;
+var m = r.exec(&quot;\u{1F600}&quot;);
+print(&quot;empty: index &quot; + m.index + &quot;, match length &quot; + m[0].length + &quot;, lastIndex &quot; + r.lastIndex);
+var rd = /(?:)/gud;
+rd.lastIndex = 1;
+var md = rd.exec(&quot;\u{1F600}&quot;);
+print(&quot;indices[0] &quot; + JSON.stringify(md.indices[0]));
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>non-empty</th>
+<th>empty</th>
+<th><code>indices[0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>index 1, match length 1, first unit de00, lastIndex 2</code></td>
+<td>GetMatchString's Assert fails ({ [[StartIndex]]: 1, [[EndIndex]]: 0 })</td>
+<td>(not reached)</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey</td>
+<td><code>index 0, match length 2, first unit d83d, lastIndex 2</code></td>
+<td><code>index 0, match length 0, lastIndex 0</code></td>
+<td><code>[0,0]</code></td>
+</tr>
+<tr>
+<td>JavaScriptCore</td>
+<td><code>index 2, match length 1, first unit 78, lastIndex 3</code></td>
+<td><code>index 1, match length 0, lastIndex 1</code></td>
+<td><code>[1,1]</code></td>
+</tr>
+<tr>
+<td>formal model (literal reading)</td>
+<td>(not printed)</td>
+<td>stops at GetMatchString step 1</td>
+<td>(not printed)</td>
+</tr>
+<tr>
+<td>formal model (proposed reading)</td>
+<td><code>index 0, match length 2, first unit d83d, lastIndex 2</code></td>
+<td><code>index 0, match length 0, lastIndex 0</code></td>
+<td><code>[0,0]</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>V8 and SpiderMonkey start the match, and report it, at the start of the code point that contains <em>lastIndex</em> (index
+0). JavaScriptCore does not match the code point that begins before <em>lastIndex</em>: its non-empty match is the next code
+point (<code>x</code>, at index 2), and its empty match lies at index 1, between the two code units of the pair, a position that
+the code-point <em>input</em> does not have. No engine produces the literal result. SpecTec stops at
+GetMatchString step 1 (<code>stop: assertFailed sec-getmatchstring#0 1</code>) on the empty-match case, and a run that stops
+reports only the stop; under the proposed reading below it prints V8's
+and SpiderMonkey's lines.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: start the match, and report it, at the first code unit of the code point, as V8 and SpiderMonkey do. This
+fixes both cases. (The other repair, moving <em>lastIndex</em> forward to the next code-point boundary, is JavaScriptCore's
+non-empty result; its empty match would then be at index 2.)</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -39823,6 +39823,7 @@
+                 1. Perform ? &lt;emu-meta suppress-effects=&quot;user-code&quot;&gt;Set(_regexp_, *&quot;lastIndex&quot;*, *+0*&lt;sub&gt;𝔽&lt;/sub&gt;, *true*)&lt;/emu-meta&gt;.
+               1. Return *null*.
+             1. Let _inputIndex_ be the index into _input_ of the character that was obtained from element _lastIndex_ of _string_.
++            1. If _fullUnicode_ is *true*, set _lastIndex_ to GetStringIndex(_string_, _inputIndex_).
+             1. Let _result_ be _matcher_(_input_, _inputIndex_).
+             1. If _result_ is &lt;span class=&quot;const&quot;&gt;failure&lt;/span&gt;, then
+               1. If _sticky_ is *true*, then
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>No test sets <code>lastIndex</code> inside a surrogate pair before a /u match. <code>built-ins/RegExp/prototype/exec/u-lastindex-adv.js</code>
+and <code>built-ins/RegExp/prototype/Symbol.split/u-lastindex-adv-thru-*.js</code> advance through pairs with
+AdvanceStringIndex, which never stops inside one.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#11-regexp-lastindex-inside-surrogate-pairjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=11-regexp-lastindex-inside-surrogate-pair">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/11-regexp-lastindex-inside-surrogate-pair.js</code></summary><pre class="js">// RegExpBuiltinExec with /u and lastIndex on the trailing surrogate of a pair.
+// A non-empty match (steps 13.b, 22, 24, 28): the literal text reports index 1
+// and a lone trailing surrogate as the match.
+// An empty match: match = { [[StartIndex]]: 1, [[EndIndex]]: 0 }, which the
+// Match Record table does not allow, and GetMatchString step 1&#x27;s Assert fails.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var n = /./gu;
+n.lastIndex = 1;
+var mn = n.exec(&quot;\u{1F600}x&quot;);
+print(&quot;non-empty: index &quot; + mn.index + &quot;, match length &quot; + mn[0].length +
+  &quot;, first unit &quot; + mn[0].charCodeAt(0).toString(16) + &quot;, lastIndex &quot; + n.lastIndex);
+var r = /(?:)/gu;
+r.lastIndex = 1;
+var m = r.exec(&quot;\u{1F600}&quot;);
+print(&quot;empty: index &quot; + m.index + &quot;, match length &quot; + m[0].length + &quot;, lastIndex &quot; + r.lastIndex);
+var rd = /(?:)/gud;
+rd.lastIndex = 1;
+var md = rd.exec(&quot;\u{1F600}&quot;);
+print(&quot;indices[0] &quot; + JSON.stringify(md.indices[0]));
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

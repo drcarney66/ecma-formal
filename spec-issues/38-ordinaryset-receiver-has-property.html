@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>38. OrdinarySetWithOwnDescriptor asserts what a Proxy receiver&#x27;s trap need not tell · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/38-ordinaryset-receiver-has-property.md</code></p>
+<h1>38. OrdinarySetWithOwnDescriptor asserts what a Proxy receiver's trap need not tell</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§10.1.9.2 OrdinarySetWithOwnDescriptor (<a class="clause" href="https://tc39.es/ecma262/#sec-ordinarysetwithowndescriptor"><code>#sec-ordinarysetwithowndescriptor</code></a>), step 2.d.i, against §10.5.5 [[GetOwnProperty]] of a Proxy exotic object (<a class="clause" href="https://tc39.es/ecma262/#sec-proxy-object-internal-methods-and-internal-slots-getownproperty-p"><code>#sec-proxy-object-internal-methods-and-internal-slots-getownproperty-p</code></a>), steps 10.a–e.</dd><dt>Kind</dt><dd>failing Assert (or, read on the receiver's own properties only, a vacuous one).</dd><dt>Model erratum</dt><dd><code>OrdinarySetReceiverHasProperty</code>, baked-in SpecTec reading proposed (<code>spec/spectec/clauses/S10.spectec</code>, line 190). Literal step 2.d.i (<code>Assert: _receiver_ does not currently have a property _propertyKey_</code>) fails both when a Proxy receiver's <code>getOwnPropertyDescriptor</code> trap hides a configurable target property and when an ordinary <code>_receiver_</code> inherits <code>_propertyKey_</code> from its prototype chain; SpecTec silences step 2.d.i with <code>assert pass</code> instead of checking the literal <code>Assert:</code>.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "OrdinarySetWithOwnDescriptor"). The Assert is in the first Ecmarkup version of the text (commit <a class="ext" href="https://github.com/tc39/ecma262/commit/7461eea82"><code>7461eea82</code></a>); PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3789">#3789</a> (merged 2026-04, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/bab3fbf29"><code>bab3fbf29</code></a>) renamed its aliases.</dd><dt>On this site</dt><dd><a href="../errata.html#OrdinarySetReceiverHasProperty"><code>OrdinarySetReceiverHasProperty</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>OrdinarySetWithOwnDescriptor:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">2.</span> If IsDataDescriptor(<var>ownDesc</var>) is <span class="val">true</span>, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> If <var>ownDesc</var>.[[Writable]] is <span class="val">false</span>, return <span class="val">false</span>.</p><p class="q-step" style="--d:1"><span class="q-num">b.</span> If <var>receiver</var> is not an Object, return <span class="val">false</span>.</p><p class="q-step" style="--d:1"><span class="q-num">c.</span> Let <var>existingDesc</var> be ? <var>receiver</var>.[[GetOwnProperty]](<var>propertyKey</var>).</p><p class="q-step" style="--d:1"><span class="q-num">d.</span> If <var>existingDesc</var> is <span class="val">undefined</span>, then</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> Assert: <var>receiver</var> does not currently have a property <var>propertyKey</var>.</p><p class="q-step" style="--d:2"><span class="q-num">ii.</span> Return ? CreateDataProperty(<var>receiver</var>, <var>propertyKey</var>, <var>value</var>).</p></blockquote>
+<p>[[GetOwnProperty]] of a Proxy exotic object, after its <code>getOwnPropertyDescriptor</code> trap returns <em>undefined</em>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">10.</span> If <var>trapResultObj</var> is <span class="val">undefined</span>, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> If <var>targetDesc</var> is <span class="val">undefined</span>, return <span class="val">undefined</span>.</p><p class="q-step" style="--d:1"><span class="q-num">b.</span> If <var>targetDesc</var>.[[Configurable]] is <span class="val">false</span>, throw a <span class="val">TypeError</span> exception.</p><p class="q-step" style="--d:1"><span class="q-num">c.</span> Let <var>extensibleTarget</var> be ? IsExtensible(<var>target</var>).</p><p class="q-step" style="--d:1"><span class="q-num">d.</span> If <var>extensibleTarget</var> is <span class="val">false</span>, throw a <span class="val">TypeError</span> exception.</p><p class="q-step" style="--d:1"><span class="q-num">e.</span> Return <span class="val">undefined</span>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>The Assert rests on the answer <em>receiver</em>.[[GetOwnProperty]] gave one step before. For an ordinary receiver that
+answer is the receiver's own property, and the Assert holds. For a Proxy receiver it is the trap's answer, and step
+10.e lets the trap report <em>undefined</em> for a configurable property of an extensible target. Then step 2.d.i either
+reads "have a property" as the receiver's own properties, which a Proxy exotic object does not hold, so the Assert
+holds for every Proxy and says nothing; or it looks through the Proxy to its target, which has the property, so the
+Assert fails in a conforming execution. Neither reading makes it a useful invariant, and step 2.d.ii does not need
+it: CreateDataProperty calls <em>receiver</em>.[[DefineOwnProperty]], which handles a property that exists.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/38-ordinaryset-receiver-has-property.js</a> (outputs:
+<a href="results.html#38-ordinaryset-receiver-has-propertyjs">the recorded runs</a>):</p>
+<pre class="js"><code>var t = { x: 1 };
+var p = new Proxy(t, { getOwnPropertyDescriptor() { return undefined; } });
+print(Reflect.set({}, &quot;x&quot;, 5, p));
+print(t.x);
+</code></pre>
+<p><code>Reflect.set</code> reaches step 2 with <em>ownDesc</em> the default data descriptor of step 1.c (<code>{}</code> and its prototypes have
+no <code>x</code>) and <em>receiver</em> <code>p</code>; the trap answers <em>undefined</em> while <code>t</code> has <code>x</code>, and CreateDataProperty redefines <code>t.x</code>
+through the Proxy.</p>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>Reflect.set(...)</code></th>
+<th><code>t.x</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal step 2.d.i, read through the Proxy</td>
+<td>the Assert fails</td>
+<td>—</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>true</code></td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td>formal model (the Assert not checked)</td>
+<td><code>true</code></td>
+<td><code>5</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -13129,7 +13129,7 @@
+             1. If _receiver_ is not an Object, return *false*.
+             1. Let _existingDesc_ be ? &lt;emu-meta effects=&quot;user-code&quot;&gt;_receiver_.[[GetOwnProperty]](_propertyKey_)&lt;/emu-meta&gt;.
+             1. If _existingDesc_ is *undefined*, then
+-              1. Assert: _receiver_ does not currently have a property _propertyKey_.
++              1. NOTE: If _receiver_ is a Proxy exotic object, its target may have a property _propertyKey_.
+               1. Return ? CreateDataProperty(_receiver_, _propertyKey_, _value_).
+             1. If IsAccessorDescriptor(_existingDesc_) is *true*, return *false*.
+             1. If _existingDesc_.[[Writable]] is *false*, return *false*.
+</code></pre>
+<p>(Deleting the step, with no note, would do as well.)</p>
+<h2 id="test262">test262</h2>
+<p>None found makes a receiver's <code>getOwnPropertyDescriptor</code> trap hide a target property on this path
+(<code>built-ins/Reflect/set</code> and <code>built-ins/Proxy/set</code> use ordinary receivers or a forwarding trap). An Assert has no
+observable effect, so no test fails under either reading.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#38-ordinaryset-receiver-has-propertyjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=38-ordinaryset-receiver-has-property">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/38-ordinaryset-receiver-has-property.js</code></summary><pre class="js">// OrdinarySetWithOwnDescriptor 2.d.i asserts that the receiver &quot;does not currently have&quot; the property right
+// after a Proxy receiver&#x27;s trap said undefined for a property its target has.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var t = { x: 1 };
+var p = new Proxy(t, { getOwnPropertyDescriptor() { return undefined; } });
+print(Reflect.set({}, &quot;x&quot;, 5, p));
+print(t.x);
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

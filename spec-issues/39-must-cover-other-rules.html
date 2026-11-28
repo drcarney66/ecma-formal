@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>39. Early error rules read &quot;the |n| that is covered by&quot; a cover that covers nothing · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/39-must-cover-other-rules.md</code></p>
+<h1>39. Early error rules read "the |n| that is covered by" a cover that covers nothing</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§5.1.5 The Syntactic Grammar (<a class="clause" href="https://tc39.es/ecma262/#sec-syntactic-grammar"><code>#sec-syntactic-grammar</code></a>), the definition of "must cover", its item 4; with the early errors of §15.3.1 ArrowFunction (<a class="clause" href="https://tc39.es/ecma262/#sec-arrow-function-definitions-static-semantics-early-errors"><code>#sec-arrow-function-definitions-static-semantics-early-errors</code></a>) and §15.9.1 AsyncArrowFunction (<a class="clause" href="https://tc39.es/ecma262/#sec-async-arrow-function-definitions-static-semantics-early-errors"><code>#sec-async-arrow-function-definitions-static-semantics-early-errors</code></a>), and the covered-node steps of §8.5.1 Contains (<a class="clause" href="https://tc39.es/ecma262/#sec-static-semantics-contains"><code>#sec-static-semantics-contains</code></a>), §8.2.1 BoundNames (<a class="clause" href="https://tc39.es/ecma262/#sec-static-semantics-boundnames"><code>#sec-static-semantics-boundnames</code></a>) and §15.1.3 IsSimpleParameterList (<a class="clause" href="https://tc39.es/ecma262/#sec-static-semantics-issimpleparameterlist"><code>#sec-static-semantics-issimpleparameterlist</code></a>).</dd><dt>Kind</dt><dd>undefined value (a rule's condition names a Parse Node that does not exist); every reading gives the same verdict, a SyntaxError.</dd><dt>Model erratum</dt><dd><code>MustCoverEarlyErrorOrder</code>, baked-in SpecTec reading test262 (<code>spec/spectec/clauses/Helpers.spectec</code>, <code>@formal-earlyerrorsof</code>; <code>lean/Ecma/Lower/LinEarly.lean</code>, <code>linOwn</code> and <code>linTree</code>). Without ordering, sibling and ancestor early-error rules read <code>"the |n| that is covered by _p_"</code> on a failed cover and stop on a missing Parse Node; SpecTec evaluates non-covered children bottom-up before parent rules and runs a production's <code>"must cover"</code> rules before its other rules.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found for this case (searched for "must cover" and "CoverInitializedName"). Issue <a class="ext" href="https://github.com/tc39/ecma262/issues/2421">#2421</a> (closed, 2026-07), "Early Error rules and covering grammars", asked which early error rules apply to a cover; PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3227">#3227</a> (merged 2026-07, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/020735388"><code>020735388</code></a>), "Editorial: Don't check a cover for early errors", answered it with item 1. PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3223">#3223</a> (open, 2023-11), "Editorial: Separate cover grammar text into a subsection with autolink targets", moves the definition into a new subsection, Cover Productions, with its items as they are.</dd><dt>On this site</dt><dd><a href="../errata.html#MustCoverEarlyErrorOrder"><code>MustCoverEarlyErrorOrder</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>§5.1.5 defines "<em>p</em> must cover an <em>n</em>" by a list of four items (item 3 with two sub-items), quoted here in order:</p>
+<blockquote class="sentence q-text"><p>No early error rules are applied to <var>p</var> or any of its descendants.</p><p>The sequence of tokens originally matched by <var>p</var> is parsed again using <var>n</var> as the goal symbol. …</p><p>If the sequence of tokens can be parsed as a single instance of <var>n</var>, with no tokens left over, then:</p><p>We refer to that instance of <var>n</var> (a Parse Node, unique for a given <var>p</var>) as “the <var>n</var> that is covered by <var>p</var>”.</p><p>Early error rules are applied to the <var>n</var> that is covered by <var>p</var> and to its descendants, …</p><p>Otherwise (if the parse fails), it is an early Syntax Error.</p></blockquote>
+<p>The rule is one of a production above <em>p</em>, beside rules that look through <em>p</em>:</p>
+<blockquote class="sentence q-text"><p>ArrowFunction : ArrowParameters <code>=&gt;</code> ConciseBody</p><p>It is a Syntax Error if <span class="nt">ArrowParameters</span> Contains <span class="nt">YieldExpression</span> is <span class="val">true</span>.</p><p>…</p><p>ArrowParameters : CoverParenthesizedExpressionAndArrowParameterList</p><p><span class="nt">CoverParenthesizedExpressionAndArrowParameterList</span> must cover an <span class="nt">ArrowFormalParameters</span>.</p><p>AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead <code>=&gt;</code> AsyncConciseBody</p><p><span class="nt">CoverCallExpressionAndAsyncArrowHead</span> must cover an <span class="nt">AsyncArrowHead</span>.</p><p>It is a Syntax Error if any element of the BoundNames of <span class="nt">CoverCallExpressionAndAsyncArrowHead</span> also occurs in the LexicallyDeclaredNames of <span class="nt">AsyncConciseBody</span>.</p></blockquote>
+<p>Contains, BoundNames and IsSimpleParameterList at these covers begin with "Let <em>formals</em> be the
+|ArrowFormalParameters| that is covered by |CoverParenthesizedExpressionAndArrowParameterList|." or "Let <em>head</em> be
+the |AsyncArrowHead| that is covered by |CoverCallExpressionAndAsyncArrowHead|." The rules of §16.1.1 that a
+Script's |StatementList| not Contain <code>super</code> or |NewTarget| reach every arrow function of the Script the same way.</p>
+<h2 id="problem">Problem</h2>
+<p>When the reparse of item 2 fails there is no "<em>n</em> that is covered by <em>p</em>", so the conditions above refer to nothing,
+and their steps have no result. Item 1 stops rules from applying to <em>p</em> and below it, not to the productions above
+it. §5.2.5 asks an implementation to "validate all of the early error rules of the productions used to parse" the
+source, and §11.1.6 ParseText, step 2, to "analyse the parse result for any early error conditions"; neither says that a rule
+whose condition cannot be evaluated is skipped, nor in what order the rules are evaluated. The verdict is not in
+doubt, since item 4 is itself an early error, but a reader evaluating the rules as written meets an undefined step
+before reaching it.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/39-must-cover-other-rules.js</a> (outputs:
+<a href="results.html#39-must-cover-other-rulesjs">the recorded runs</a>) evaluates each source with indirect eval and prints
+the error's constructor:</p>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th>source</th>
+<th>literal text</th>
+<th>V8, SpiderMonkey, JavaScriptCore</th>
+<th>formal model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>([...x = []]) =&gt; {};</code></td>
+<td>no result (Contains through the cover)</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>([...x, y]) =&gt; {};</code></td>
+<td>no result</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>(a, ...b,) =&gt; {};</code></td>
+<td>SyntaxError (no parse: not a cover case)</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>async (...x = []) =&gt; {};</code></td>
+<td>no result (BoundNames through the cover)</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>async\n(foo) =&gt; {};</code></td>
+<td>no result</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>(x) =&gt; {};</code></td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -408,7 +408,7 @@
+             &lt;li&gt;Early error rules are applied to the _n_ that is covered by _p_ and to its descendants, as modified by further cases of “must cover”.&lt;/li&gt;
+           &lt;/ol&gt;
+         &lt;/li&gt;
+-        &lt;li&gt;Otherwise (if the parse fails), it is an early Syntax Error.&lt;/li&gt;
++        &lt;li&gt;Otherwise (if the parse fails), it is an early Syntax Error, and an early error rule whose evaluation needs the _n_ that is covered by _p_ is not applied.&lt;/li&gt;
+       &lt;/ol&gt;
+     &lt;/emu-clause&gt;
+
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>The SyntaxErrors are required by <code>language/expressions/arrow-function/dstr/{,dflt-}ary-ptrn-rest-{init,not-final}-*.js</code>,
+<code>language/expressions/async-arrow-function/{dflt-params-rest,early-errors-arrow-formals-lineterminator,rest-params-trailing-comma-early-error}.js</code>
+and their siblings in the other function forms; every reading that reaches item 4 passes them.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#39-must-cover-other-rulesjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=39-must-cover-other-rules">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/39-must-cover-other-rules.js</code></summary><pre class="js">// Each source has a cover that does not cover what an early error rule says it must; the
+// other rules of the same and enclosing productions read static semantics through the cover.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var sources = [
+  &quot;([...x = []]) =&gt; {};&quot;,
+  &quot;([...x, y]) =&gt; {};&quot;,
+  &quot;(a, ...b,) =&gt; {};&quot;,
+  &quot;async (...x = []) =&gt; {};&quot;,
+  &quot;async\n(foo) =&gt; {};&quot;,
+  &quot;(x) =&gt; {};&quot;,
+];
+for (var s of sources) {
+  try {
+    (0, eval)(s);
+    print(JSON.stringify(s) + &quot;: no error&quot;);
+  } catch (e) {
+    print(JSON.stringify(s) + &quot;: &quot; + e.constructor.name);
+  }
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

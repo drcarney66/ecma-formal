@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>24. CompileToCharSet asks UnicodeMatchPropertyValue for a General_Category value before testing that it is one · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/24-lone-property-gc-assert.md</code></p>
+<h1>24. CompileToCharSet asks UnicodeMatchPropertyValue for a General_Category value before testing that it is one</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§22.2.2.9 CompileToCharSet (<a class="clause" href="https://tc39.es/ecma262/#sec-compiletocharset"><code>#sec-compiletocharset</code></a>), UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue, step 2, with §22.2.2.9.8 UnicodeMatchPropertyValue (<a class="clause" href="https://tc39.es/ecma262/#sec-runtime-semantics-unicodematchpropertyvalue-p-v"><code>#sec-runtime-semantics-unicodematchpropertyvalue-p-v</code></a>), step 2.</dd><dt>Kind</dt><dd>failing Assert (for every lone binary property name), and a condition that is true whenever it is defined.</dd><dt>Model erratum</dt><dd><code>LonePropertyGeneralCategoryAssert</code>, default reading test262; its readings: literal, test262, proposed. The test262 and proposed readings are the same step 2, the proposed wording below; under the literal reading the model stops where UnicodeMatchPropertyValue's Assert fails.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3586">#3586</a> (open, 2025-05), "UnicodeMatchPropertyValue assertion fails by UnicodePropertyValueExpression", reports it for <code>/[\p{Hex}]/u</code>; PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3587">#3587</a> (open, 2025-05), "Editorial: Fix incorrect use of UnicodeMatchPropertyValue", fixes it by testing <em>s</em> first, with other changes (Script_Extensions), and is not merged.</dd><dt>On this site</dt><dd><a href="../errata.html#LonePropertyGeneralCategoryAssert"><code>LonePropertyGeneralCategoryAssert</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>CompileToCharSet, UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>s</var> be the source text matched by <span class="nt">LoneUnicodePropertyNameOrValue</span>.</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> If UnicodeMatchPropertyValue(<code>General_Category</code>, <var>s</var>) is a Unicode property value or property value alias for the General_Category (gc) property listed in PropertyValueAliases.txt, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Return the CharSet containing all Unicode code points whose character database definition includes the property “General_Category” with value <var>s</var>.</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> Let <var>p</var> be UnicodeMatchProperty(<var>regexpRecord</var>, <var>s</var>).</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Assert: <var>p</var> is a binary Unicode property or binary property alias listed in the “Property name and aliases” column of …, or a binary Unicode property of strings listed in the “Property name” column of ….</p></blockquote>
+<p>UnicodeMatchPropertyValue (<em>p</em>: ECMAScript source text, <em>v</em>: ECMAScript source text), returning a Unicode property
+value:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">2.</span> Assert: <var>v</var> is a property value or property value alias for the Unicode property <var>p</var> listed in PropertyValueAliases.txt.</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> Let <var>value</var> be the canonical property value of <var>v</var> as given in the “Canonical property value” column of the corresponding row.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>Step 2 calls UnicodeMatchPropertyValue before it tests <em>s</em>. For a lone binary property name (<code>\p{ASCII}</code>, <code>\p{Any}</code>,
+<code>\p{Hex}</code>, or a property of strings such as <code>\p{RGI_Emoji}</code> with the <code>v</code> flag), <em>s</em> is no General_Category value, and
+UnicodeMatchPropertyValue's Assert (step 2) fails. Steps 3–4, which handle exactly these names, are never reached.
+Where the call does return, it returns a canonical General_Category value, so step 2's test is always true; and step
+2.a uses <em>s</em>, which may be an alias (<code>Lu</code>), as the value, not the canonical value the call computed. (Note also that
+step 2.a returns the raw General_Category CharSet directly without calling <code>MaybeSimpleCaseFolding(_regexpRecord_,
+_charSet_)</code> as the two-part <code>General_Category=...</code> branch and binary-property step 5 do, so <code>/\P{Lu}/vi.test("A")</code>
+differs from <code>/\P{gc=Lu}/vi.test("A")</code>.)</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/24-lone-property-gc-assert.js</a> (outputs:
+<a href="results.html#24-lone-property-gc-assertjs">the recorded runs</a>):</p>
+<pre class="js"><code>/\p{Lu}/u.test(&quot;A&quot;);          // a General_Category value
+/\p{ASCII}/u.test(&quot;a&quot;);       // binary properties
+/\p{Hex}/u.test(&quot;f&quot;);
+/\p{Any}/u.test(&quot;\u{10FFFF}&quot;);
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>\p{Lu}</code></th>
+<th><code>\p{ASCII}</code>, <code>\p{Hex}</code>, <code>\p{Any}</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>true</code></td>
+<td>UnicodeMatchPropertyValue's Assert fails</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td>formal model (test262 reading)</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td>formal model (literal reading)</td>
+<td><code>true</code></td>
+<td><code>stop: erratum LonePropertyGeneralCategoryAssert sec-runtime-semantics-unicodematchpropertyvalue-p-v#0 2</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Under the literal reading the example stops at its first binary property and prints only the stop line; <code>\p{Lu}</code> alone
+prints <code>true</code>.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: test <em>s</em> first, then take the canonical value from UnicodeMatchPropertyValue.</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -38772,8 +38772,9 @@
+         &lt;emu-grammar&gt;UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue&lt;/emu-grammar&gt;
+         &lt;emu-alg&gt;
+           1. Let _s_ be the source text matched by |LoneUnicodePropertyNameOrValue|.
+-          1. If UnicodeMatchPropertyValue(`General_Category`, _s_) is a Unicode property value or property value alias for the General_Category (gc) property listed in &lt;a href=&quot;https://unicode.org/Public/UCD/latest/ucd/PropertyValueAliases.txt&quot;&gt;&lt;code&gt;PropertyValueAliases.txt&lt;/code&gt;&lt;/a&gt;, then
+-            1. Return the CharSet containing all Unicode code points whose character database definition includes the property “General_Category” with value _s_.
++          1. If _s_ is a Unicode property value or property value alias for the General_Category (gc) property listed in &lt;a href=&quot;https://unicode.org/Public/UCD/latest/ucd/PropertyValueAliases.txt&quot;&gt;&lt;code&gt;PropertyValueAliases.txt&lt;/code&gt;&lt;/a&gt;, then
++            1. Let _v_ be UnicodeMatchPropertyValue(StringToCodePoints(*&quot;General_Category&quot;*), _s_).
++            1. Return the CharSet containing all Unicode code points whose character database definition includes the property “General_Category” with value _v_.
+           1. Let _p_ be UnicodeMatchProperty(_regexpRecord_, _s_).
+           1. Assert: _p_ is a binary Unicode property or binary property alias listed in the “&lt;emu-not-ref&gt;Property name and aliases&lt;/emu-not-ref&gt;” column of &lt;emu-xref href=&quot;#table-binary-unicode-properties&quot;&gt;&lt;/emu-xref&gt;, or a binary Unicode property of strings listed in the “&lt;emu-not-ref&gt;Property name&lt;/emu-not-ref&gt;” column of &lt;emu-xref href=&quot;#table-binary-unicode-properties-of-strings&quot;&gt;&lt;/emu-xref&gt;.
+           1. Let _charSet_ be the CharSet containing all CharSetElements whose character database definition includes the property _p_ with value “True”.
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>The binary-property files of <code>built-ins/RegExp/property-escapes/generated/</code> (53 of them: <code>ASCII.js</code>, <code>Any.js</code>,
+<code>Hex_Digit.js</code>, …) and those of its <code>strings/</code> directory (properties of strings, with the <code>v</code> flag) compile a lone
+binary property name; under the literal text each reaches the Assert. An Assert has no observable effect, so none
+fails.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#24-lone-property-gc-assertjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=24-lone-property-gc-assert">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/24-lone-property-gc-assert.js</code></summary><pre class="js">// CompileToCharSet, UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue, step 2 calls
+// UnicodeMatchPropertyValue(General_Category, s) before testing s; for a binary property name s its
+// Assert (step 2) fails.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var cases = [
+  [&quot;/\\p{Lu}/u.test(&#x27;A&#x27;)&quot;, () =&gt; /\p{Lu}/u.test(&quot;A&quot;)],
+  [&quot;/\\p{ASCII}/u.test(&#x27;a&#x27;)&quot;, () =&gt; /\p{ASCII}/u.test(&quot;a&quot;)],
+  [&quot;/\\p{Hex}/u.test(&#x27;f&#x27;)&quot;, () =&gt; /\p{Hex}/u.test(&quot;f&quot;)],
+  [&quot;/\\p{Any}/u.test(&#x27;\\u{10FFFF}&#x27;)&quot;, () =&gt; /\p{Any}/u.test(&quot;\u{10FFFF}&quot;)],
+];
+for (var [src, run] of cases) {
+  try { print(src + &quot;: &quot; + run()); } catch (e) { print(src + &quot;: &quot; + e.constructor.name); }
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

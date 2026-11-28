@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>57. ASI in for ( LexicalDeclaration … ) headers, left-to-right prefix order, and [no LineTerminator here] in lookahead sets · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/57-asi-for-lexical-header.md</code></p>
+<h1>57. ASI in <code>for ( LexicalDeclaration … )</code> headers, left-to-right prefix order, and <code>[no LineTerminator here]</code> in lookahead sets</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§12.10.1 Rules of Automatic Semicolon Insertion (<a class="clause" href="https://tc39.es/ecma262/#sec-rules-of-automatic-semicolon-insertion"><code>#sec-rules-of-automatic-semicolon-insertion</code></a>), overriding condition; §14.7.4 The <code>for</code> Statement (<a class="clause" href="https://tc39.es/ecma262/#sec-for-statement"><code>#sec-for-statement</code></a>); §5.1.5 The Syntactic Grammar (<a class="clause" href="https://tc39.es/ecma262/#sec-syntactic-grammar"><code>#sec-syntactic-grammar</code></a>); §5.1.6.7 Lookahead Restrictions (<a class="clause" href="https://tc39.es/ecma262/#sec-lookahead-restrictions"><code>#sec-lookahead-restrictions</code></a>).</dd><dt>Kind</dt><dd>missing restriction and grammar-formalism gap (<code>ForStatement</code>'s <code>LexicalDeclaration</code> owns the first header <code>;</code>, §5.1.5's declarative ASI conflicts with §12.10.1's left-to-right rule, and <code>[no LineTerminator here]</code> inside a lookahead set is undefined in §5.1.6.7).</dd><dt>Model erratum</dt><dd><code>ForLexicalHeaderASI</code>, baked-in SpecTec reading test262 (layer <code>parser</code>, <code>ForHeadersExplicit</code>, <code>ValidASI</code>, and <code>LookItem.noLT</code> in <code>spec/spectec/prose/04-derives.spectec</code>). SpecTec forbids virtual <code>;</code> as the final token of a <code>LexicalDeclaration</code> child of <code>ForStatement</code>, formalizes left-to-right maximal viable prefix ASI, and defines <code>LookItem.noLT</code> inside lookahead sequences.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "header of a <code>for</code> statement" with "LexicalDeclaration").</dd><dt>On this site</dt><dd><a href="../errata.html#ForLexicalHeaderASI"><code>ForLexicalHeaderASI</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>§12.10.1:</p>
+<blockquote class="sentence q-text"><p>However, there is an additional overriding condition on the preceding rules: a semicolon is never inserted automatically if the semicolon would then be parsed as an empty statement or if that semicolon would become one of the two semicolons in the header of a <code>for</code> statement</p></blockquote>
+<p>§14.7.4:</p>
+<blockquote class="sentence q-text"><p>ForStatement[Yield, Await, Return] : <code>for</code> <code>(</code> [lookahead != <code>let</code> <code>[</code>] Expression[~In, ?Yield, ?Await]? <code>;</code> Expression[+In, ?Yield, ?Await]? <code>;</code> Expression[+In, ?Yield, ?Await]? <code>)</code> Statement[?Yield, ?Await, ?Return] <code>for</code> <code>(</code> <code>var</code> VariableDeclarationList[~In, ?Yield, ?Await] <code>;</code> Expression[+In, ?Yield, ?Await]? <code>;</code> Expression[+In, ?Yield, ?Await]? <code>)</code> Statement[?Yield, ?Await, ?Return] <code>for</code> <code>(</code> LexicalDeclaration[~In, ?Yield, ?Await] Expression[+In, ?Yield, ?Await]? <code>;</code> Expression[+In, ?Yield, ?Await]? <code>)</code> Statement[?Yield, ?Await, ?Return]</p></blockquote>
+<h2 id="problem">Problem</h2>
+<ol>
+<li><strong><code>for ( LexicalDeclaration … )</code> first semicolon.</strong> In the third <code>ForStatement</code> production, <code>ForStatement</code> itself has
+   only <em>one</em> <code>;</code> terminal on its right-hand side — the first semicolon of <code>for (let a = 1; a &lt; 2; a++)</code> is the trailing
+   <code>;</code> inside <code>LexicalDeclaration : LetOrConst BindingList ;</code> (or <code>UsingDeclaration</code> / <code>AwaitUsingDeclaration</code>), where
+   ASI is normally permitted! Read literally on productions, <code>for (let a\n a &lt; 1; a++) {}</code> inserts <code>;</code> at the end of
+   <code>LexicalDeclaration</code>.</li>
+<li><strong>Declarative (§5.1.5) vs left-to-right (§12.10.1) ASI.</strong> §5.1.5 describes ASI declaratively (<em>"if only semicolons
+   were added to the sequence in certain places"</em>), under which <code>a = b\n+c</code> has two parses (<code>a = b + c;</code> vs <code>a = b; +c;</code>)
+   and <code>let a;\na\n[\n] = [];</code> parses by inserting <code>;</code> after <code>a</code>, whereas all engines commit left-to-right to the
+   longest viable prefix.</li>
+<li><strong><code>[no LineTerminator here]</code> inside lookahead sets.</strong> <code>ExpressionStatement</code> and <code>ExportDeclaration</code> write
+   <code>`async` [no LineTerminator here] `function`</code> inside <code>[lookahead ∉ { … }]</code>, whereas §5.1.6.7 defines lookahead
+   elements solely as token sequences and §5.1.6.6 defines <code>[no LineTerminator here]</code> only on production right-hand sides.</li>
+</ol>
+<h2 id="examples">Examples</h2>
+<pre class="js"><code>var bad = [&quot;for (let a\n a &lt; 1; a++) {}&quot;, &quot;let a;\na\n[\n] = [];&quot;];
+for (var s of bad) {
+  try { (0, eval)(s); print(&quot;valid&quot;); } catch (e) { print(e.name); }
+}
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>for (let a</code> LF <code>a &lt; 1; a++) {}</code></th>
+<th><code>let a; a</code> LF <code>[</code> LF <code>] = [];</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal §14.7.4 / declarative §5.1.5</td>
+<td>valid</td>
+<td>valid (<code>a; [] = [];</code>)</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+<tr>
+<td>formal model (test262 reading)</td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Amend §12.10.1's overriding condition to include the terminating semicolon of a <code>|LexicalDeclaration|</code> in a
+<code>|ForStatement|</code> header, define offending-token ASI via maximal viable left-to-right prefix continuation, and define
+<code>[no LineTerminator here]</code> between adjacent tokens in §5.1.6.7 lookahead sequences.</p>
+<h2 id="test262">test262</h2>
+<p><code>language/asi/S7.9_A5.2_T1.js</code> and <code>language/statements/for/</code> require <code>SyntaxError</code> when either semicolon in a <code>for</code>
+header is omitted across a newline.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

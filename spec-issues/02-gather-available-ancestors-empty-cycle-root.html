@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02. GatherAvailableAncestors reads the [[CycleRoot]] of a module whose evaluation threw · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/02-gather-available-ancestors-empty-cycle-root.md</code></p>
+<h1>02. GatherAvailableAncestors reads the [[CycleRoot]] of a module whose evaluation threw</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§16.2.1.6.1.3.3 GatherAvailableAncestors (<a class="clause" href="https://tc39.es/ecma262/#sec-gather-available-ancestors"><code>#sec-gather-available-ancestors</code></a>), step 1.a; §16.2.1.6.1.3.1 InnerModuleEvaluation (<a class="clause" href="https://tc39.es/ecma262/#sec-innermoduleevaluation"><code>#sec-innermoduleevaluation</code></a>), steps 11.c.v.2 and 16.b.viii.</dd><dt>Kind</dt><dd>failing read (a field of <span class="const">empty</span>).</dd><dt>Model erratum</dt><dd><code>GatherAvailableAncestorsEmptyCycleRoot</code>, default reading literal; its readings: literal, proposed. The literal reading stops the run at step 1.a; the proposed reading is the step 1.a of Proposed wording.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3766">#3766</a> (open, 2026-03), "m.[[CycleRoot]] can be null in GatherAvailableAncestors", reports it; PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3769">#3769</a> (open, 2026-03), "Normative: Do not read from empty [[CycleRoot]] in GatherAvailableAncestors", fixes it (step 1.a tests <em>m</em>.[[EvaluationError]] instead of <em>m</em>.[[CycleRoot]].[[EvaluationError]]) and is not merged.</dd><dt>On this site</dt><dd><a href="../errata.html#GatherAvailableAncestorsEmptyCycleRoot"><code>GatherAvailableAncestorsEmptyCycleRoot</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the literal text)</dd></dl><h2 id="text">Text</h2>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> For each Cyclic Module Record <var>ancestorModule</var> of <var>module</var>.[[AsyncParentModules]], do</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> If <var>execList</var> does not contain <var>ancestorModule</var> and <var>ancestorModule</var>.[[CycleRoot]].[[EvaluationError]] is <span class="const">empty</span>, then</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>InnerModuleEvaluation (step 11.c.v.2) adds a module to the [[AsyncParentModules]] of an asynchronous dependency
+before it evaluates the module's later dependencies. When a later dependency throws, InnerModuleEvaluation returns the throw completion
+before step 16.b.viii sets the module's [[CycleRoot]], so [[CycleRoot]] stays <span class="const">empty</span>. When the asynchronous
+dependency later fulfils, GatherAvailableAncestors step 1.a reads [[EvaluationError]] of <span class="const">empty</span>. (Evaluate step 9.a
+has meanwhile set the module's own [[EvaluationError]], which the proposed step 1.a reads instead.)</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/02-gather-available-ancestors/</a> (outputs:
+<a href="results.html#02-gather-available-ancestors">the recorded runs</a>): <code>a.mjs</code> imports <code>b.mjs</code> (top-level await) and
+then <code>c.mjs</code> (throws); <code>main.mjs</code> imports <code>a.mjs</code>, then <code>b.mjs</code>.</p>
+<pre class="js"><code>// b.mjs
+print(&quot;b starts&quot;); await 0; print(&quot;b ends&quot;);
+// c.mjs
+print(&quot;c throws&quot;); throw &quot;c-error&quot;;
+// main.mjs
+import(&quot;./a.mjs&quot;).then(() =&gt; print(&quot;a fulfilled&quot;), e =&gt; print(&quot;a rejected: &quot; + e))
+  .then(() =&gt; import(&quot;./b.mjs&quot;)).then(() =&gt; print(&quot;b fulfilled&quot;), e =&gt; print(&quot;b rejected: &quot; + e));
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>b starts</code>, <code>c throws</code>, <code>b ends</code>; then <code>b</code>'s fulfilment reaches step 1.a, which reads a field of <span class="const">empty</span></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey</td>
+<td><code>b starts</code>, <code>c throws</code>, <code>b ends</code>, <code>a rejected: c-error</code>, <code>b fulfilled</code></td>
+</tr>
+<tr>
+<td>JavaScriptCore</td>
+<td><code>b starts</code>, <code>b ends</code>, <code>c throws</code>, <code>a rejected: c-error</code>, <code>b fulfilled</code></td>
+</tr>
+<tr>
+<td>formal model, literal reading (default)</td>
+<td>stops at step 1.a (<code>stop: erratum GatherAvailableAncestorsEmptyCycleRoot sec-gather-available-ancestors#0 1.a</code>)</td>
+</tr>
+<tr>
+<td>formal model, proposed reading</td>
+<td><code>b starts</code>, <code>c throws</code>, <code>b ends</code>, <code>a rejected: c-error</code>, <code>b fulfilled</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>JavaScriptCore evaluates <code>c</code> only after <code>b</code> resumes, a separate deviation.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: step 1.a tests the module's own [[EvaluationError]], and reads [[CycleRoot]] only after asserting that it is
+set:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -27647,15 +27647,16 @@
+               &lt;/dl&gt;
+               &lt;emu-alg&gt;
+                 1. For each Cyclic Module Record _ancestorModule_ of _module_.[[AsyncParentModules]], do
+-                  1. If _execList_ does not contain _ancestorModule_ and _ancestorModule_.[[CycleRoot]].[[EvaluationError]] is &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;, then
++                  1. If _execList_ does not contain _ancestorModule_ and _ancestorModule_.[[EvaluationError]] is &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;, then
+                     1. Assert: _ancestorModule_.[[Status]] is &lt;span class=&quot;const&quot;&gt;evaluating-async&lt;/span&gt;.
+-                    1. Assert: _ancestorModule_.[[EvaluationError]] is &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;.
+-                    1. Assert: _ancestorModule_.[[AsyncEvaluationOrder]] is an integer.
+-                    1. Assert: _ancestorModule_.[[PendingAsyncDependencies]] &gt; 0.
+-                    1. Set _ancestorModule_.[[PendingAsyncDependencies]] to _ancestorModule_.[[PendingAsyncDependencies]] - 1.
+-                    1. If _ancestorModule_.[[PendingAsyncDependencies]] = 0, then
+-                      1. Append _ancestorModule_ to _execList_.
+-                      1. If _ancestorModule_.[[HasTLA]] is *false*, perform GatherAvailableAncestors(_ancestorModule_, _execList_).
++                    1. Assert: _ancestorModule_.[[CycleRoot]] is not &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;.
++                    1. If _ancestorModule_.[[CycleRoot]].[[EvaluationError]] is &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;, then
++                      1. Assert: _ancestorModule_.[[AsyncEvaluationOrder]] is an integer.
++                      1. Assert: _ancestorModule_.[[PendingAsyncDependencies]] &gt; 0.
++                      1. Set _ancestorModule_.[[PendingAsyncDependencies]] to _ancestorModule_.[[PendingAsyncDependencies]] - 1.
++                      1. If _ancestorModule_.[[PendingAsyncDependencies]] = 0, then
++                        1. Append _ancestorModule_ to _execList_.
++                        1. If _ancestorModule_.[[HasTLA]] is *false*, perform GatherAvailableAncestors(_ancestorModule_, _execList_).
+                 1. Return &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;.
+               &lt;/emu-alg&gt;
+               &lt;emu-note&gt;
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>None found: no test in <code>language/module-code/top-level-await/</code> imports a module with top-level await followed by a
+module that throws.</p><section id="program"><h2>The program</h2><p>The example is a Module graph (its <code>main.mjs</code> runs as a Module). Its runs on the engines and on the model: <a href="results.html#02-gather-available-ancestors">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=02-gather-available-ancestors">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/02-gather-available-ancestors/a.mjs</code></summary><pre class="js">import &quot;./b.mjs&quot;;
+import &quot;./c.mjs&quot;;
+globalThis.print(&quot;a runs&quot;);
+</pre></details><details class="jssrc"><summary>Source <code>examples/02-gather-available-ancestors/b.mjs</code></summary><pre class="js">if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+print(&quot;b starts&quot;);
+await 0;
+print(&quot;b ends&quot;);
+</pre></details><details class="jssrc"><summary>Source <code>examples/02-gather-available-ancestors/c.mjs</code></summary><pre class="js">if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+print(&quot;c throws&quot;);
+throw &quot;c-error&quot;;
+</pre></details><details class="jssrc"><summary>Source <code>examples/02-gather-available-ancestors/main.mjs</code></summary><pre class="js">// GatherAvailableAncestors 1.a reads a.[[CycleRoot]] of a module a whose
+// synchronous evaluation threw (Evaluate 9.a never sets [[CycleRoot]]).
+// a.mjs imports b.mjs (top-level await) and then c.mjs (throws).
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+import(&quot;./a.mjs&quot;).then(
+  function () { print(&quot;a fulfilled&quot;); },
+  function (e) { print(&quot;a rejected: &quot; + e); })
+  .then(function () { return import(&quot;./b.mjs&quot;); })
+  .then(function () { print(&quot;b fulfilled&quot;); }, function (e) { print(&quot;b rejected: &quot; + e); });
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

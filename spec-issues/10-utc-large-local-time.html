@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10. new Date(0).setHours(1e21): UTC ( t ) reaches a failing Assert · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/10-utc-large-local-time.md</code></p>
+<h1>10. <code>new Date(0).setHours(1e21)</code>: UTC ( <em>t</em> ) reaches a failing Assert</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§21.4.1.18 GetUTCEpochNanoseconds (<a class="clause" href="https://tc39.es/ecma262/#sec-getutcepochnanoseconds"><code>#sec-getutcepochnanoseconds</code></a>), step 4, reached from §21.4.1.26 UTC ( <em>t</em> ) (<a class="clause" href="https://tc39.es/ecma262/#sec-utc-t"><code>#sec-utc-t</code></a>), step 4.a, through §21.4.1.20 GetNamedTimeZoneEpochNanoseconds (<a class="clause" href="https://tc39.es/ecma262/#sec-getnamedtimezoneepochnanoseconds"><code>#sec-getnamedtimezoneepochnanoseconds</code></a>), step 2; §21.4.1.28 MakeDay (<a class="clause" href="https://tc39.es/ecma262/#sec-makeday"><code>#sec-makeday</code></a>), step 8.</dd><dt>Kind</dt><dd>failing Assert, MakeDay's ambiguous "finite time value", and <code>epoch nanoseconds count</code> return-range overflow.</dd><dt>Model errata</dt><dd><code>GetUTCEpochNanosecondsNaN</code> (baked-in SpecTec reading: literal, stopping at <code>GetUTCEpochNanoseconds</code> step 4) and <code>MakeDayFiniteTimeValue</code> (baked-in SpecTec reading: proposed in <code>spec/spectec/clauses/S21.spectec</code> and <code>@sort-time-value</code>, reading MakeDay step 8's "finite time value" as any finite integral Number rather than restricting to ±8.64 × 10<sup>15</sup> ms; additionally, return-sort checking is omitted at runtime so <code>GetUTCEpochNanoseconds</code> exceeding <code>MinEpochNanoseconds..MaxEpochNanoseconds</code> on large <code>UTC(_t_)</code> inputs does not stop).</dd><dt>Upstream</dt><dd>Checked 2026-11-19: PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3464">#3464</a> (open, 2024-10), "Editorial: Add "local-offset time value" for time values with local time zone offset applied", has a commit, "Editorial: Handle too large inputs early in UTC" (e8051bb98), that adds to UTC the range check proposed here; it is not merged. Related, open: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/1087">#1087</a> (open, 2018-02), "MakeDay should be more explicit how unreasonably large numbers are handled"; issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3992">#3992</a> (open, 2026-10), "DayWithinYear AO can return -1 due to floating point errors", on <code>new Date(2000, 0, 106752348147)</code>; issue <a class="ext" href="https://github.com/tc39/ecma262/issues/4086">#4086</a> (open, 2026-11), "Argument type of UTC and TimeString should be integral Number", which says <a class="ext" href="https://github.com/tc39/ecma262/pull/3464">#3464</a> addresses the range; PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3995">#3995</a> (open, 2026-10), "Editorial: relax/restrict some Date AO types appropriately", which makes UTC's step 1 "If <em>t</em> is <em>NaN</em>" and adds no range check.</dd><dt>On this site</dt><dd><a href="../errata.html#GetUTCEpochNanosecondsNaN"><code>GetUTCEpochNanosecondsNaN</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the literal text)<br><a href="../errata.html#MakeDayFiniteTimeValue"><code>MakeDayFiniteTimeValue</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>UTC ( <em>t</em> ):</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> If <var>t</var> is not a finite Number, return <span class="val">NaN</span>.</p><p class="q-gap">…</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Else,</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Let <var>possibleInstants</var> be GetNamedTimeZoneEpochNanoseconds(<var>systemTimeZoneIdentifier</var>, YearFromTime(<var>t</var>), MonthFromTime(<var>t</var>) + 1, DateFromTime(<var>t</var>), HourFromTime(<var>t</var>), MinuteFromTime(<var>t</var>), SecondFromTime(<var>t</var>), MillisecondFromTime(<var>t</var>), 0, 0).</p><p>Input <var>t</var> is nominally a time value but may be any Number value. The algorithm must not limit <var>t</var> to the time value range, so that inputs corresponding with a boundary of the time value range can be supported regardless of local UTC offset.</p></blockquote>
+<p>GetUTCEpochNanoseconds (which the default GetNamedTimeZoneEpochNanoseconds calls for <em>"UTC"</em>):</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>date</var> be MakeDay(𝔽(<var>year</var>), 𝔽(<var>month</var> - 1), 𝔽(<var>day</var>)).</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Let <var>time</var> be MakeTime(𝔽(<var>hour</var>), 𝔽(<var>minute</var>), 𝔽(<var>second</var>), 𝔽(<var>millisecond</var>)).</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> Let <var>epochMilliseconds</var> be MakeDate(<var>date</var>, <var>time</var>).</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Assert: <var>epochMilliseconds</var> is an integral Number.</p></blockquote>
+<p>MakeDay:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">8.</span> Find a finite time value <var>tv</var> such that YearFromTime(<var>tv</var>) = ℝ(<var>balancedYear</var>), MonthFromTime(<var>tv</var>) = <var>balancedMonthMV</var>, and DateFromTime(<var>tv</var>) = 1; but if this is not possible (because some argument is out of range), return <span class="val">NaN</span>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>The local-time paths (the Date constructor with several arguments, <code>setHours</code>, <code>setMinutes</code>, <code>setSeconds</code>,
+<code>setMilliseconds</code>, <code>setDate</code>, <code>setMonth</code>, <code>setFullYear</code>) compute a local time with MakeTime and MakeDate and pass it
+to UTC before TimeClip. MakeTime does not bound its result: <code>new Date(0).setHours(1e21)</code> (in UTC) gives <em>t</em> =
+1e21 × 3.6 × 10⁶ = 3.6 × 10²⁷, which is finite, so step 1 does not return. Its date is 9 January of the year
+114079458624523116 (≈ 1.1 × 10¹⁷). GetUTCEpochNanoseconds step 1 asks MakeDay for a finite time value on 1 January
+of that year, and there is none: adjacent Numbers there are 2³⁹ ms (about 17 years) apart, and the only one in that
+January is <em>t</em> itself, on the 9th. So MakeDay returns <em>NaN</em>, MakeDate is <em>NaN</em>, and the Assert of step 4 is false.
+The intended result is the one TimeClip would give: <em>NaN</em>.</p>
+<p><strong>A question on MakeDay step 8.</strong> §21.4.1.1 says both that a finite time value is "an integral Number representing an
+instant in time to millisecond precision" and that "A time value supports a slightly smaller range of
+-8,640,000,000,000,000 to 8,640,000,000,000,000 milliseconds". If step 8's "finite time value" were limited to that
+range, the step's result would differ when the month's first day is outside the range but the requested day inside it
+(step 9 adds the day afterwards): <code>Date.UTC(275761, 0, -256)</code> would be <em>NaN</em> rather than 8639987299200000 (19 April
+275760). And the Assert above would fail even with the step proposed below: <code>new Date(-8.64e15).setHours(-1)</code> (in UTC)
+is 19 April -271821, and 1 April -271821 is outside the range. The first of these sentences defines a finite time
+value as any integral Number, which settles step 8 as the engines read it. Is that the intent, so that the range
+sentence does not limit step 8? If so, a note in MakeDay would say so.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/10-utc-large-local-time.js</a> (outputs:
+<a href="results.html#10-utc-large-local-timejs">the recorded runs</a>):</p>
+<pre class="js"><code>print(Date.UTC(275761, 0, -256));            // range reading: NaN; any-integral reading: 8639987299200000
+print(Date.UTC(275760, 8, 13));              // the last time value, either reading
+print(new Date(0).setUTCHours(1e21));        // the UTC setter: no UTC(t), NaN
+print(new Date(0).setHours(1e21));           // local: UTC(t) with t = 3.6e27
+print(new Date(2000, 0, 1, 1e21).getTime()); // the constructor: UTC(t)
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>Date.UTC(275761, 0, -256)</code></th>
+<th><code>Date.UTC(275760, 8, 13)</code></th>
+<th><code>setUTCHours</code></th>
+<th><code>setHours</code></th>
+<th>constructor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text, any integral Number</td>
+<td>8639987299200000</td>
+<td>8640000000000000</td>
+<td><em>NaN</em></td>
+<td>Assert fails</td>
+<td>Assert fails</td>
+</tr>
+<tr>
+<td>literal text, the range</td>
+<td><em>NaN</em></td>
+<td>8640000000000000</td>
+<td><em>NaN</em></td>
+<td>Assert fails</td>
+<td>Assert fails</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>8639987299200000</code></td>
+<td><code>8640000000000000</code></td>
+<td><code>NaN</code></td>
+<td><code>NaN</code></td>
+<td><code>NaN</code></td>
+</tr>
+<tr>
+<td>formal model (literal reading)</td>
+<td>(not printed)</td>
+<td>(not printed)</td>
+<td>(not printed)</td>
+<td>stops at step 4's Assert</td>
+<td>(not reached)</td>
+</tr>
+</tbody>
+</table></div>
+<p>SpecTec bakes in reading MakeDay step 8 as any finite integral Number (<a href="../errata.html#MakeDayFiniteTimeValue"><code>MakeDayFiniteTimeValue</code></a>, <code>spec/spectec/clauses/S21.spectec</code>).
+For <code>UTC</code>, SpecTec keeps the literal wording (<a href="../errata.html#GetUTCEpochNanosecondsNaN"><code>GetUTCEpochNanosecondsNaN</code></a>), so its run stops at <code>GetUTCEpochNanoseconds</code>
+step 4 (<code>stop: assertFailed sec-getutcepochnanoseconds#0 4</code>); under the proposed <code>UTC</code> guard it prints the engines' five lines.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: a range check after step 1 (MillisecondsPerDay is a mathematical value). Every caller of UTC applies
+TimeClip, and a local offset is less than a day, so the result is the one TimeClip gives:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -34292,6 +34292,7 @@
+         &lt;/dl&gt;
+         &lt;emu-alg&gt;
+           1. If _t_ is not a finite Number, return *NaN*.
++          1. If abs(ℝ(_t_)) ≥ 8.64 × 10&lt;sup&gt;15&lt;/sup&gt; + MillisecondsPerDay, return *NaN*.
+           1. Let _systemTimeZoneIdentifier_ be SystemTimeZoneIdentifier().
+           1. If IsTimeZoneOffsetString(_systemTimeZoneIdentifier_) is *true*, then
+             1. Let _offsetNanoseconds_ be ParseTimeZoneOffsetString(_systemTimeZoneIdentifier_).
+</code></pre>
+<p>The model's proposed reading returns <em>NaN</em> at the same place when MakeDay(𝔽(YearFromTime(<em>t</em>)),
+𝔽(MonthFromTime(<em>t</em>)), <em>1</em>𝔽) is <em>NaN</em>, exactly when step 4.a would fail; after TimeClip the two give the same
+results.</p>
+<h2 id="test262">test262</h2>
+<p>The <code>built-ins/Date/prototype/*/new-value-time-clip.js</code> tests keep the first day of the month inside the range.
+<code>built-ins/Date/makedate-float-arithmetic.js</code> passes UTC a local time far past it (<code>new Date(2000, 0,
+106752348147)</code>, about 9.2 × 10¹⁸ ms) and requires <em>NaN</em>, but Numbers there are 2048 ms apart, so MakeDay finds the
+month's first day and the Assert holds (the model prints <code>NaN</code>). No test reaches the Assert or decides MakeDay step 8.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#10-utc-large-local-timejs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=10-utc-large-local-time">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/10-utc-large-local-time.js</code></summary><pre class="js">// UTC ( t ) step 4.a with a large finite local time t: MakeDay (in
+// GetUTCEpochNanoseconds step 1) finds no time value on the month&#x27;s first
+// day and returns NaN, so the Assert of GetUTCEpochNanoseconds step 4 fails.
+// First, MakeDay step 8&#x27;s &quot;finite time value&quot;: any finite integral Number, or
+// one in the range a time value supports (8.64e15)? 1 January 275761 is
+// outside the range, but 256 days before it is inside.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+print(Date.UTC(275761, 0, -256));            // range reading: NaN; any-integral reading: 8639987299200000
+print(Date.UTC(275760, 8, 13));              // the last time value, either reading
+print(new Date(0).setUTCHours(1e21));        // the UTC setter: no UTC(t), NaN
+print(new Date(0).setHours(1e21));           // local: UTC(t) with t = 3.6e27
+print(new Date(2000, 0, 1, 1e21).getTime()); // the constructor: UTC(t)
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09. EnqueueAtomicsWaitAsyncTimeoutJob passes a negative delay, and its Assert can fail · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/09-atomics-waitasync-timeout-assert.md</code></p>
+<h1>09. EnqueueAtomicsWaitAsyncTimeoutJob passes a negative delay, and its Assert can fail</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§25.4.3.15 EnqueueAtomicsWaitAsyncTimeoutJob (<a class="clause" href="https://tc39.es/ecma262/#sec-enqueueatomicswaitasynctimeoutjob"><code>#sec-enqueueatomicswaitasynctimeoutjob</code></a>), steps 4 and 1.b.ii; §25.4.3.14 DoWait (<a class="clause" href="https://tc39.es/ecma262/#sec-dowait"><code>#sec-dowait</code></a>), steps 22–24; §9.5.6 HostEnqueueTimeoutJob (<a class="clause" href="https://tc39.es/ecma262/#sec-hostenqueuetimeoutjob"><code>#sec-hostenqueuetimeoutjob</code></a>).</dd><dt>Kind</dt><dd>a call outside its parameter type (a negative delay), and a failing Assert.</dd><dt>Model errata</dt><dd><code>AtomicsWaitAsyncTimeoutNegativeDelay</code> and <code>AtomicsWaitAsyncTimeoutAssert</code>, baked-in SpecTec reading literal on <code>EnqueueAtomicsWaitAsyncTimeoutJob</code> steps 1.b.ii and 4 (<code>spec/spectec/clauses/S25.spectec</code>). Note two non-literal choices alongside it: parameter sort checking is omitted at runtime so a negative <code>_delay_</code> passed to <code>HostEnqueueTimeoutJob</code> does not trigger a sort stop, and the engine's host clock (<code>lean/Engine/Host/Strategy.lean</code>, <code>msCeil</code>) clamps negative delays up to <code>0</code> ms (while <code>wakeFinite</code> in <code>spec/spectec/prose/16-host-laws-jobs.spectec</code> treats agent suspension timeouts past <code>maxTime</code> = 8.64 × 10<sup>15</sup> ms as never waking by timeout). The proposed readings are the Proposed wording below: step 4's delay clamped at <em>+0</em>𝔽, and the Assert stated for an integral clock.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "EnqueueAtomicsWaitAsyncTimeoutJob", whose one hit renames aliases, and "HostEnqueueTimeoutJob"). The operation came with PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3049">#3049</a> (merged 2023-06, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/3330e231b"><code>3330e231b</code></a>), "Normative: Add Atomics.waitAsync".</dd><dt>On this site</dt><dd><a href="../errata.html#AtomicsWaitAsyncTimeoutAssert"><code>AtomicsWaitAsyncTimeoutAssert</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the literal text)<br><a href="../errata.html#AtomicsWaitAsyncTimeoutNegativeDelay"><code>AtomicsWaitAsyncTimeoutNegativeDelay</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the literal text)</dd></dl><h2 id="text">Text</h2>
+<p>DoWait:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">22.</span> Let <var>now</var> be the time value (UTC) identifying the current time.</p><p class="q-step" style="--d:0"><span class="q-num">23.</span> Let <var>additionalTimeout</var> be an implementation-defined non-negative mathematical value.</p><p class="q-step" style="--d:0"><span class="q-num">24.</span> Let <var>timeoutTime</var> be ℝ(<var>now</var>) + <var>realTimeout</var> + <var>additionalTimeout</var>.</p></blockquote>
+<p>EnqueueAtomicsWaitAsyncTimeoutJob:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>timeoutJob</var> be a new Job Abstract Closure with no parameters that captures <var>waiterList</var> and <var>waiterRecord</var> and performs the following steps when called:</p><p class="q-gap">…</p><p class="q-step" style="--d:1"><span class="q-num">b.</span> If <var>waiterList</var>.[[Waiters]] contains <var>waiterRecord</var>, then</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> Let <var>timeOfJobExecution</var> be the time value (UTC) identifying the current time.</p><p class="q-step" style="--d:2"><span class="q-num">ii.</span> Assert: ℝ(<var>timeOfJobExecution</var>) ≥ <var>waiterRecord</var>.[[TimeoutTime]] (ignoring potential non-monotonicity of time values).</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Let <var>now</var> be the time value (UTC) identifying the current time.</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> Let <var>currentRealm</var> be the current Realm Record.</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Perform HostEnqueueTimeoutJob(<var>timeoutJob</var>, <var>currentRealm</var>, 𝔽(<var>waiterRecord</var>.[[TimeoutTime]]) - <var>now</var>).</p></blockquote>
+<p>HostEnqueueTimeoutJob takes "<em>milliseconds</em>: a non-negative finite Number" and schedules the Job "to be performed
+after at least <em>milliseconds</em> milliseconds". A finite time value is "an integral Number representing an instant in
+time to millisecond precision" (§21.4.1.1); <em>realTimeout</em> is any non-negative real (DoWait step 11: "max(ℝ(<em>timeoutNumber</em>), 0)").</p>
+<h2 id="problem">Problem</h2>
+<ol>
+<li><strong>A negative delay.</strong> Step 2 reads the clock again, after DoWait step 22's reading from which [[TimeoutTime]] was
+   computed. If the clock has advanced by more than <em>realTimeout</em> + <em>additionalTimeout</em> in between, step 4's argument
+   is negative, outside HostEnqueueTimeoutJob's parameter type. A fractional timeout makes this ordinary: with
+   <em>additionalTimeout</em> = 0, <code>Atomics.waitAsync(ia, 0, 0, 0.5)</code> read at <em>now</em> = 1000 has [[TimeoutTime]] 1000.5, and
+   if the clock reads 1001 at step 2 the delay is -0.5.</li>
+<li><strong>The Assert.</strong> [[TimeoutTime]] is an exact real, but the Job only waits for a Number of milliseconds, and its
+   clock reads integral time values. <code>Atomics.waitAsync(ia, 0, 0, 0.7)</code> at <em>now</em> = 1000, with <em>additionalTimeout</em> =
+   0, has [[TimeoutTime]] 1000.7 and a delay of 0.7 ms; a host whose clock still reads 1000 when the Job runs makes
+   1000 ≥ 1000.7 false. 𝔽 also rounds: a timeout of 1e-20 ms gives 𝔽(1000 + 10⁻²⁰) - 1000 = <em>+0</em>𝔽, so the Job may
+   run at once, below [[TimeoutTime]]; above 2⁵³ 𝔽 may round [[TimeoutTime]] down. The Assert holds only for some
+   implementation-defined choices (for example an <em>additionalTimeout</em> that makes <em>timeoutTime</em> an integer below
+   2⁵³); an Assert should hold in every conforming execution.</li>
+</ol>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/09-atomics-waitasync-timeout-assert.js</a> (outputs:
+<a href="results.html#09-atomics-waitasync-timeout-assertjs">the recorded runs</a>):</p>
+<pre class="js"><code>var ia = new Int32Array(new SharedArrayBuffer(8));
+var t0 = Date.now();
+var r = Atomics.waitAsync(ia, 0, 0, 0.7);
+print(r.async);
+r.value.then(function (v) { print(v + &quot;, elapsed ≥ 0: &quot; + (Date.now() - t0 &gt;= 0)); });
+if (typeof setTimeout === &quot;function&quot;) setTimeout(function () {}, 50);
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>true</code>, then (on a millisecond clock that has not ticked) the Assert of 1.b.ii fails</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey (with <code>-P atomics_wait_async=true</code>), JavaScriptCore</td>
+<td><code>true</code>, <code>timed-out, elapsed ≥ 0: true</code></td>
+</tr>
+<tr>
+<td>formal model (literal reading)</td>
+<td><code>true</code>, <code>timed-out, elapsed ≥ 0: true</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Both failures depend on the clock and on implementation-defined choices, so no engine output shows which choice
+keeps the text true; the derivation above is the text's. Without <code>-P atomics_wait_async=true</code>, <code>Atomics.waitAsync</code>
+is not a function in the SpiderMonkey 140 shell. The model's test hosts take the Job only once their clock has
+reached the Job's due time (§9.5.6's "after at least"), so the literal reading neither stops at step 4 nor reaches a
+false Assert here. The Assert is checked, and a run whose host reads a time below [[TimeoutTime]] stops at 1.b.ii,
+but that stop is untested end to end. The rounding case above needs a clock that reads the same time at step 2 as
+at DoWait step 22; every test host's clock (the default and <code>--host-seed</code>) advances at each reading, and timeouts
+of 0.7, 10⁻²⁰ and 1 + 10⁻¹⁴ ms time out normally on the default host and seeds 1–3: no host option gives a lawful
+run that fails the Assert. A run that failed the Assert on a host that takes the Job early would show that host
+breaking §9.5.6's "after at least", not this defect.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Clamp the delay at zero, and state the Assert for what step 4 and an integral clock guarantee: the Job runs at
+least <em>delay</em> after <em>now</em>, so its time value is at least 𝔽([[TimeoutTime]]) rounded down.</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -47184,7 +47184,7 @@
+             1. Perform EnterCriticalSection(_waiterList_).
+             1. If _waiterList_.[[Waiters]] contains _waiterRecord_, then
+               1. Let _timeOfJobExecution_ be the time value (UTC) identifying the current time.
+-              1. Assert: ℝ(_timeOfJobExecution_) ≥ _waiterRecord_.[[TimeoutTime]] (ignoring potential non-monotonicity of time values).
++              1. Assert: _timeOfJobExecution_ ≥ 𝔽(_waiterRecord_.[[TimeoutTime]]) rounded down to an integral Number (ignoring potential non-monotonicity of time values).
+               1. Set _waiterRecord_.[[Result]] to *&quot;timed-out&quot;*.
+               1. Perform RemoveWaiter(_waiterList_, _waiterRecord_).
+               1. Perform NotifyWaiter(_waiterList_, _waiterRecord_).
+@@ -47192,7 +47192,9 @@
+             1. Return &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;.
+           1. Let _now_ be the time value (UTC) identifying the current time.
+           1. Let _currentRealm_ be the current Realm Record.
+-          1. Perform HostEnqueueTimeoutJob(_timeoutJob_, _currentRealm_, 𝔽(_waiterRecord_.[[TimeoutTime]]) - _now_).
++          1. Let _delay_ be 𝔽(_waiterRecord_.[[TimeoutTime]]) - _now_.
++          1. If _delay_ &amp;lt; *+0*&lt;sub&gt;𝔽&lt;/sub&gt;, set _delay_ to *+0*&lt;sub&gt;𝔽&lt;/sub&gt;.
++          1. Perform HostEnqueueTimeoutJob(_timeoutJob_, _currentRealm_, _delay_).
+           1. Return &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;.
+         &lt;/emu-alg&gt;
+       &lt;/emu-clause&gt;
+</code></pre>
+<p>The clamp is applied to the text's own difference, 𝔽([[TimeoutTime]]) - <em>now</em>, so that <em>now</em> + <em>delay</em> is
+𝔽([[TimeoutTime]]) whenever the delay is positive. Clamping the exact difference instead,
+𝔽(max([[TimeoutTime]] - ℝ(<em>now</em>), 0)), is not enough for the new Assert: with <em>now</em> = 1000 and [[TimeoutTime]]
+= 1001 - 10⁻¹⁴, 𝔽([[TimeoutTime]]) is 1001 but the delay 𝔽(1 - 10⁻¹⁴) is below 1, so a Job may run while the
+clock still reads 1000.</p>
+<p>An alternative to the new Assert is to round <em>timeoutTime</em> up in DoWait step 24, to the smallest integral Number
+≥ ℝ(<em>now</em>) + <em>realTimeout</em> + <em>additionalTimeout</em> (or +∞ if there is none), which keeps the Assert as it is.</p>
+<h2 id="test262">test262</h2>
+<p>No test checks when the timeout Job runs against [[TimeoutTime]], or uses a fractional timeout with a clock read
+twice.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#09-atomics-waitasync-timeout-assertjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=09-atomics-waitasync-timeout-assert">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/09-atomics-waitasync-timeout-assert.js</code></summary><pre class="js">// EnqueueAtomicsWaitAsyncTimeoutJob 1.b.ii: &quot;Assert: ℝ(timeOfJobExecution) ≥
+// waiterRecord.[[TimeoutTime]]&quot;. With a fractional timeout and
+// additionalTimeout 0, [[TimeoutTime]] is not a time value; a host whose clock
+// has millisecond resolution may run the Job (after &quot;at least&quot; the step 4
+// delay) at a time below it.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var ia = new Int32Array(new SharedArrayBuffer(8));
+var t0 = Date.now();
+var r = Atomics.waitAsync(ia, 0, 0, 0.7);
+print(r.async);
+r.value.then(function (v) { print(v + &quot;, elapsed ≥ 0: &quot; + (Date.now() - t0 &gt;= 0)); });
+// (node ends the process when only an Atomics.waitAsync timeout is pending)
+if (typeof setTimeout === &quot;function&quot;) setTimeout(function () {}, 50);
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

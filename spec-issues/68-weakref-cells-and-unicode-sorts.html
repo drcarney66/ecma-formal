@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>68. WeakRef execution single-cell loop, SuspendThisAgent&#x27;s NotifyWaiter argument, &quot;Canonical property value&quot; column, and metamodel sort gaps · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/68-weakref-cells-and-unicode-sorts.md</code></p>
+<h1>68. <code>WeakRef</code> execution single-cell loop, <code>SuspendThisAgent</code>'s <code>NotifyWaiter</code> argument, <code>"Canonical property value"</code> column, and metamodel sort gaps</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§9.9.3 Execution (<a class="clause" href="https://tc39.es/ecma262/#sec-weakref-execution"><code>#sec-weakref-execution</code></a>), step 1.b; §25.4.3.11 SuspendThisAgent (<a class="clause" href="https://tc39.es/ecma262/#sec-suspendthisagent"><code>#sec-suspendthisagent</code></a>), step 7, against §25.4.3.12 NotifyWaiter (<a class="clause" href="https://tc39.es/ecma262/#sec-notifywaiter"><code>#sec-notifywaiter</code></a>); §22.2.2.9.8 UnicodeMatchPropertyValue (<a class="clause" href="https://tc39.es/ecma262/#sec-runtime-semantics-unicodematchpropertyvalue-p-v"><code>#sec-runtime-semantics-unicodematchpropertyvalue-p-v</code></a>), step 3; §16.2.1.5 Abstract Module Records (<a class="clause" href="https://tc39.es/ecma262/#sec-abstract-module-records"><code>#sec-abstract-module-records</code></a>).</dd><dt>Kind</dt><dd>quantification bug, parameter-type mismatch, nonexistent UCD column header, and stale subclass/sort prose.</dd><dt>Model erratum</dt><dd><code>WeakRefAllCellsAndSuspendWaiter</code>, baked-in SpecTec reading proposed (<code>Collected</code> / <code>Cell.Emptied</code> in <code>spec/spectec/prose/25-host-laws-changes.spectec</code>, <code>$SuspendAgentUntil</code> in <code>00-decls.spectec</code>, <code>$CanonicalPropertyValue</code> in <code>S22.spectec</code>, and <code>super [#"Module Record"]</code> on <code>#"Synthetic Module Record"</code> in <code>00-decls.spectec</code>).</dd><dt>Upstream</dt><dd>Checked 2026-11-19: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3328">#3328</a> (open, 2024-05), "Typo in step 7 of the SuspendThisAgent abstract operation", reports the <code>NotifyWaiter</code> parameter bug; none found for the <code>FinalizationRegistry</code> single-cell loop, the <code>"Canonical property value"</code> column, or <code>Abstract Module Records</code> omitting <code>Synthetic Module Record</code> (searched for "Canonical property value" and "sole concrete subclass Source Text Module Record").</dd><dt>On this site</dt><dd><a href="../errata.html#WeakRefAllCellsAndSuspendWaiter"><code>WeakRefAllCellsAndSuspendWaiter</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>§9.9.3 (<code>Execution</code>):</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:1"><span class="q-num">b.</span> For each FinalizationRegistry <var>finalizationRegistry</var> such that <var>finalizationRegistry</var>.[[Cells]] contains a Record <var>cell</var> such that <var>cell</var>.[[WeakRefTarget]] is <var>value</var>, do</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> Set <var>cell</var>.[[WeakRefTarget]] to <span class="const">empty</span>.</p></blockquote>
+<p><code>SuspendThisAgent</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">7.</span> Perform LeaveCriticalSection(<var>waiterList</var>) and suspend the surrounding agent until the time is <var>waiterRecord</var>.[[TimeoutTime]], performing the combined operation in such a way that a notification that arrives after the critical section is exited but before the suspension takes effect is not lost. The surrounding agent can only wake from suspension due to a timeout or due to another agent calling NotifyWaiter with arguments <var>waiterList</var> and <var>thisAgent</var> (i.e. via a call to <code>Atomics.notify</code>).</p></blockquote>
+<p><code>UnicodeMatchPropertyValue</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">3.</span> Let <var>value</var> be the canonical property value of <var>v</var> as given in the “Canonical property value” column of the corresponding row.</p></blockquote>
+<p>§16.2.1.5 (<code>Abstract Module Records</code>):</p>
+<blockquote class="sentence q-text"><p>This specification defines the abstract subclass named Cyclic Module Record and its concrete subclass named Source Text Module Record.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>Four prose-vs-signature defects where SpecTec bakes in a non-literal fix:</p>
+<ol>
+<li><strong><code>FinalizationRegistry</code> duplicate target cells (§9.9.3 step 1.b).</strong> Step 1.b iterates once <em>per
+   FinalizationRegistry</em> and binds a single <code>_cell_</code>, leaving duplicate registrations for the same target (<code>fr.register(o, 1);
+   fr.register(o, 2)</code>) un-emptied! SpecTec's <code>Cell.Emptied</code> (<code>25-host-laws-changes.spectec</code>) empties <em>every</em> matching
+   cell Record.</li>
+<li><strong><code>SuspendThisAgent</code> step 7 (#3328).</strong> <code>_thisAgent_</code> is <code>AgentSignifier()</code>, whereas <code>NotifyWaiter</code> requires a
+   <code>Waiter Record</code> (<code>_waiterRecord_</code>). SpecTec's <code>$SuspendAgentUntil</code> and <code>$WakeAgent</code> match via <code>Waiter Record</code>.</li>
+<li><strong>Nonexistent <code>"Canonical property value"</code> column (§22.2.2.9.8 step 3).</strong> UCD <code>PropertyValueAliases.txt</code> is a
+   headerless semicolon-delimited file with no <code>"Canonical property value"</code> column (a copy-paste from
+   <code>UnicodeMatchProperty</code> step 3's <code>"Canonical property name"</code> column), and both <code>UnicodeMatchProperty</code> and
+   <code>UnicodeMatchPropertyValue</code> declare undefined return sorts while returning <code>a List of Unicode code points</code>. SpecTec's
+   <code>$CanonicalPropertyValue</code> selects field 3 (the long property value name).</li>
+<li><strong>Metamodel sort omissions.</strong> §16.2.1.5 states <code>Cyclic Module Record</code> is the <em>only</em> <code>Module Record</code> subclass, omitting
+   <code>Synthetic Module Record</code> (§16.2.1.8, used for JSON modules — <code>00-decls.spectec</code> declares <code>super [#"Module Record"]</code>
+   on <code>#"Synthetic Module Record"</code>); §6.2.11 calls <code>Private Name</code>'s <code>[[Description]]</code> an <em>"internal slot"</em> on a
+   non-Object (<code>00-decls.spectec</code> models it as a Record field); and §6.2.9 defines <code>block[i]</code> indexing only on <code>Data
+   Block</code> before declaring <code>Shared Data Block</code> disjoint (<code>lean/Ecma</code> indexes both uniformly).</li>
+</ol>
+<h2 id="examples">Examples</h2>
+<pre class="js"><code>print(/\p{gc=Lu}/u.test(&quot;A&quot;), /\p{General_Category=Uppercase_Letter}/u.test(&quot;A&quot;));
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>/\p{gc=Lu}/u.test("A")</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal §22.2.2.9.8 step 3</td>
+<td>references nonexistent <code>"Canonical property value"</code> column</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td>formal model (proposed reading)</td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>In §9.9.3 step 1.b iterate over every matching <code>_cell_</code> in <code>_finalizationRegistry_.[[Cells]]</code>; in <code>SuspendThisAgent</code>
+step 7 replace <code>_thisAgent_</code> with <code>_waiterRecord_</code>; in <code>UnicodeMatchPropertyValue</code> step 3 name the third (long value)
+field of <code>PropertyValueAliases.txt</code> and return <code>a List of Unicode code points</code>; and in §16.2.1.5 list <code>Synthetic Module
+Record</code> alongside <code>Cyclic Module Record</code>.</p>
+<h2 id="test262">test262</h2>
+<p><code>built-ins/RegExp/property-escapes/</code> exercises <code>UnicodeMatchPropertyValue</code>, <code>language/import/import-attributes/</code> tests
+JSON <code>Synthetic Module Record</code>s, and <code>built-ins/FinalizationRegistry/</code> tests multiple cell registrations.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

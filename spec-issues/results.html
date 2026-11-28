@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The examples&#x27; runs · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page wide has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#01-number-multiply-zero-signjs">01-number-multiply-zero-sign.js</a></li><li class="t1"><a href="#02-gather-available-ancestors">02-gather-available-ancestors</a></li><li class="t1"><a href="#03-builtin-async-return-valuejs">03-builtin-async-return-value.js</a></li><li class="t1"><a href="#04-execute-module-tla-dispose">04-execute-module-tla-dispose</a></li><li class="t1"><a href="#05-parsetext-error-objectsjs">05-parsetext-error-objects.js</a></li><li class="t1"><a href="#06-dowait-sync-timeoutjs">06-dowait-sync-timeout.js</a></li><li class="t1"><a href="#09-atomics-waitasync-timeout-assertjs">09-atomics-waitasync-timeout-assert.js</a></li><li class="t1"><a href="#10-utc-large-local-timejs">10-utc-large-local-time.js</a></li><li class="t1"><a href="#11-regexp-lastindex-inside-surrogate-pairjs">11-regexp-lastindex-inside-surrogate-pair.js</a></li><li class="t1"><a href="#12-asyncblockstart-await-resultjs">12-asyncblockstart-await-result.js</a></li><li class="t1"><a href="#13-promise-job-abrupt-completionjs">13-promise-job-abrupt-completion.js</a></li><li class="t1"><a href="#14-nativefunction-initialnamejs">14-nativefunction-initialname.js</a></li><li class="t1"><a href="#15-synthetic-module-link">15-synthetic-module-link</a></li><li class="t1"><a href="#20-dynamic-function-private-identifiersjs">20-dynamic-function-private-identifiers.js</a></li><li class="t1"><a href="#21-identityescape-zwnj-zwjjs">21-identityescape-zwnj-zwj.js</a></li><li class="t1"><a href="#24-lone-property-gc-assertjs">24-lone-property-gc-assert.js</a></li><li class="t1"><a href="#26-annexb-modifiers-early-errorsjs">26-annexb-modifiers-early-errors.js</a></li><li class="t1"><a href="#29-propname-coverinitializednamejs">29-propname-coverinitializedname.js</a></li><li class="t1"><a href="#31-sort-infinite-comparatorjs">31-sort-infinite-comparator.js</a></li><li class="t1"><a href="#32-stringvalue-reservedwordjs">32-stringvalue-reservedword.js</a></li><li class="t1"><a href="#33-createintrinsics-async-argument-positionjs">33-createintrinsics-async-argument-position.js</a></li><li class="t1"><a href="#35-contains-awaitexpression-coverjs">35-contains-awaitexpression-cover.js</a></li><li class="t1"><a href="#36-islabelledfunction-labelleditemjs">36-islabelledfunction-labelleditem.js</a></li><li class="t1"><a href="#37-split-code-unitsjs">37-split-code-units.js</a></li><li class="t1"><a href="#38-ordinaryset-receiver-has-propertyjs">38-ordinaryset-receiver-has-property.js</a></li><li class="t1"><a href="#39-must-cover-other-rulesjs">39-must-cover-other-rules.js</a></li><li class="t1"><a href="#40-annexb-regexp-order-group-countjs">40-annexb-regexp-order-group-count.js</a></li><li class="t1"><a href="#41-annexb-html-close-comment-tokenjs">41-annexb-html-close-comment-token.js</a></li><li class="t1"><a href="#43-allocatesharedarraybuffer-byte-lengthjs">43-allocatesharedarraybuffer-byte-length.js</a></li><li class="t1"><a href="#44-lookahead-inserted-semicolonjs">44-lookahead-inserted-semicolon.js</a></li><li class="t1"><a href="#45-finalizationregistry-unregisterjs">45-finalizationregistry-unregister.js</a></li><li class="t1"><a href="#46-covered-node-tail-calljs">46-covered-node-tail-call.js</a></li><li class="t1"><a href="#tests-of-the-model-cited-by-the-reports">Tests of the model cited by the reports</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · <code>docs/spec-issues/examples/RESULTS.md</code></p>
+<h1>The examples' runs</h1>
+<div class="lede"><p>Every example of the write-ups, run on the three engines and on the model: each run's exit status, standard output and standard error, exactly as recorded by <code>scripts/spec_issues_run.py</code>. The model's runs were made from this repository's build; the engines' runs are the record of the versions below.</p></div>
+</header>
+<p>Each run's exit status, standard output and standard error, exactly (absolute paths shortened).</p>
+<div class="tablebox"><table>
+<thead>
+<tr>
+<th>Engine</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V8 (node)</td>
+<td>v24.18.1 (V8 13.6.233.17-node.50)</td>
+</tr>
+<tr>
+<td>SpiderMonkey (js140)</td>
+<td>JavaScript-C140.13.0</td>
+</tr>
+<tr>
+<td>JavaScriptCore (bun)</td>
+<td>Bun 1.3.13+bf2e2cecf (JavaScriptCore of oven-sh/WebKit 4d5e75ebd84a14edbc7ae264245dcd77fe597c10)</td>
+</tr>
+<tr>
+<td>the formal model (ecma-run)</td>
+<td><code>.lake/build/bin/ecma-run</code> built from the checkout (its sources: the README)</td>
+</tr>
+</tbody>
+</table></div>
+<p>A <code>.js</code> example is a Script: SpiderMonkey runs the file; node and bun run <code>script-shim.cjs</code>, which evaluates it with <code>vm.runInThisContext</code> (a Script in the main realm, not CommonJS or a Module):</p>
+<pre class="plain"><code>// Evaluates the file named by argv[2] as a Script (ScriptEvaluation) in this realm.
+const fs = require(&quot;node:fs&quot;), vm = require(&quot;node:vm&quot;);
+const file = process.argv[2];
+vm.runInThisContext(fs.readFileSync(file, &quot;utf8&quot;), { filename: file });
+</code></pre>
+<p>A directory's <code>main.mjs</code> is a Module (<code>node main.mjs</code>, <code>bun main.mjs</code>, <code>js140 -m main.mjs</code>), run in the directory; the model runs Scripts only, on ecma-run's fixed host, which defines <code>print</code>.</p>
+<h2 id="01-number-multiply-zero-signjs">01-number-multiply-zero-sign.js</h2>
+<h3 id="v8-node">V8 (node)</h3>
+<p><code>node script-shim.cjs 01-number-multiply-zero-sign.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>-Infinity
+-Infinity
+Infinity
+true
+</code></pre>
+<h3 id="spidermonkey-js140">SpiderMonkey (js140)</h3>
+<p><code>js140 01-number-multiply-zero-sign.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>-Infinity
+-Infinity
+Infinity
+true
+</code></pre>
+<h3 id="javascriptcore-bun">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 01-number-multiply-zero-sign.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>-Infinity
+-Infinity
+Infinity
+true
+</code></pre>
+<h3 id="the-formal-model-ecma-run">the formal model (ecma-run)</h3>
+<p><code>ecma-run 01-number-multiply-zero-sign.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+-Infinity
+-Infinity
+Infinity
+true
+</code></pre>
+<h2 id="02-gather-available-ancestors">02-gather-available-ancestors</h2>
+<h3 id="v8-node_1">V8 (node)</h3>
+<p><code>node main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>b starts
+c throws
+b ends
+a rejected: c-error
+b fulfilled
+</code></pre>
+<h3 id="spidermonkey-js140_1">SpiderMonkey (js140)</h3>
+<p><code>js140 -m main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>b starts
+c throws
+b ends
+a rejected: c-error
+b fulfilled
+</code></pre>
+<h3 id="javascriptcore-bun_1">JavaScriptCore (bun)</h3>
+<p><code>bun main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>b starts
+b ends
+c throws
+a rejected: c-error
+b fulfilled
+</code></pre>
+<h2 id="03-builtin-async-return-valuejs">03-builtin-async-return-value.js</h2>
+<h3 id="v8-node_2">V8 (node)</h3>
+<p><code>node script-shim.cjs 03-builtin-async-return-value.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>fromAsync fulfils with [1,2]
+</code></pre>
+<h3 id="spidermonkey-js140_2">SpiderMonkey (js140)</h3>
+<p><code>js140 03-builtin-async-return-value.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>fromAsync fulfils with [1,2]
+</code></pre>
+<h3 id="javascriptcore-bun_2">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 03-builtin-async-return-value.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>fromAsync fulfils with [1,2]
+</code></pre>
+<h3 id="the-formal-model-ecma-run_1">the formal model (ecma-run)</h3>
+<p><code>ecma-run 03-builtin-async-return-value.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: [object #19124]
+fromAsync fulfils with [1,2]
+</code></pre>
+<h2 id="04-execute-module-tla-dispose">04-execute-module-tla-dispose</h2>
+<h3 id="v8-node_3">V8 (node)</h3>
+<p><code>node main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>end of module body
+dispose b
+dispose a
+evaluation promise fulfilled
+</code></pre>
+<h3 id="spidermonkey-js140_3">SpiderMonkey (js140)</h3>
+<p><code>js140 -m main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>rejected: SyntaxError: unexpected token: identifier
+</code></pre>
+<h3 id="spidermonkey-js140_4">SpiderMonkey (js140)</h3>
+<p><code>js140 --enable-explicit-resource-management -m main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>rejected: SyntaxError: unexpected token: identifier
+</code></pre>
+<h3 id="javascriptcore-bun_3">JavaScriptCore (bun)</h3>
+<p><code>bun main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>end of module body
+dispose b
+dispose a
+evaluation promise fulfilled
+</code></pre>
+<h2 id="05-parsetext-error-objectsjs">05-parsetext-error-objects.js</h2>
+<h3 id="v8-node_4">V8 (node)</h3>
+<p><code>node script-shim.cjs 05-parsetext-error-objects.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+true
+true
+</code></pre>
+<h3 id="spidermonkey-js140_5">SpiderMonkey (js140)</h3>
+<p><code>js140 05-parsetext-error-objects.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+true
+true
+</code></pre>
+<h3 id="javascriptcore-bun_4">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 05-parsetext-error-objects.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+true
+true
+</code></pre>
+<h3 id="the-formal-model-ecma-run_2">the formal model (ecma-run)</h3>
+<p><code>ecma-run 05-parsetext-error-objects.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+true
+true
+true
+</code></pre>
+<h2 id="06-dowait-sync-timeoutjs">06-dowait-sync-timeout.js</h2>
+<h3 id="v8-node_5">V8 (node)</h3>
+<p><code>node script-shim.cjs 06-dowait-sync-timeout.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>timed-out
+timed-out
+0
+</code></pre>
+<h3 id="spidermonkey-js140_6">SpiderMonkey (js140)</h3>
+<p><code>js140 06-dowait-sync-timeout.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>timed-out
+timed-out
+0
+</code></pre>
+<h3 id="javascriptcore-bun_5">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 06-dowait-sync-timeout.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>timed-out
+timed-out
+0
+</code></pre>
+<h3 id="the-formal-model-ecma-run_3">the formal model (ecma-run)</h3>
+<p><code>ecma-run 06-dowait-sync-timeout.js</code>: exit status 1</p>
+<p>stdout:</p>
+<pre class="plain"><code>throw: TypeError
+</code></pre>
+<h2 id="09-atomics-waitasync-timeout-assertjs">09-atomics-waitasync-timeout-assert.js</h2>
+<h3 id="v8-node_6">V8 (node)</h3>
+<p><code>node script-shim.cjs 09-atomics-waitasync-timeout-assert.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+timed-out, elapsed ≥ 0: true
+</code></pre>
+<h3 id="spidermonkey-js140_7">SpiderMonkey (js140)</h3>
+<p><code>js140 09-atomics-waitasync-timeout-assert.js</code>: exit status 3</p>
+<p>stdout:</p>
+<p>(nothing)</p>
+<p>stderr:</p>
+<pre class="plain"><code>09-atomics-waitasync-timeout-assert.js:9:17 TypeError: Atomics.waitAsync is not a function
+Stack:
+  @09-atomics-waitasync-timeout-assert.js:9:17
+</code></pre>
+<h3 id="spidermonkey-js140_8">SpiderMonkey (js140)</h3>
+<p><code>js140 -P atomics_wait_async=true 09-atomics-waitasync-timeout-assert.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+timed-out, elapsed ≥ 0: true
+</code></pre>
+<h3 id="javascriptcore-bun_6">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 09-atomics-waitasync-timeout-assert.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+timed-out, elapsed ≥ 0: true
+</code></pre>
+<h3 id="the-formal-model-ecma-run_4">the formal model (ecma-run)</h3>
+<p><code>ecma-run 09-atomics-waitasync-timeout-assert.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+true
+timed-out, elapsed ≥ 0: true
+</code></pre>
+<h2 id="10-utc-large-local-timejs">10-utc-large-local-time.js</h2>
+<h3 id="v8-node_7">V8 (node)</h3>
+<p><code>node script-shim.cjs 10-utc-large-local-time.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>8639987299200000
+8640000000000000
+NaN
+NaN
+NaN
+</code></pre>
+<h3 id="spidermonkey-js140_9">SpiderMonkey (js140)</h3>
+<p><code>js140 10-utc-large-local-time.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>8639987299200000
+8640000000000000
+NaN
+NaN
+NaN
+</code></pre>
+<h3 id="javascriptcore-bun_7">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 10-utc-large-local-time.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>8639987299200000
+8640000000000000
+NaN
+NaN
+NaN
+</code></pre>
+<h3 id="the-formal-model-ecma-run_5">the formal model (ecma-run)</h3>
+<p><code>ecma-run 10-utc-large-local-time.js</code>: exit status 3</p>
+<p>stdout:</p>
+<pre class="plain"><code>stop: assertFailed sec-getutcepochnanoseconds#0 4
+</code></pre>
+<h2 id="11-regexp-lastindex-inside-surrogate-pairjs">11-regexp-lastindex-inside-surrogate-pair.js</h2>
+<h3 id="v8-node_8">V8 (node)</h3>
+<p><code>node script-shim.cjs 11-regexp-lastindex-inside-surrogate-pair.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>non-empty: index 0, match length 2, first unit d83d, lastIndex 2
+empty: index 0, match length 0, lastIndex 0
+indices[0] [0,0]
+</code></pre>
+<h3 id="spidermonkey-js140_10">SpiderMonkey (js140)</h3>
+<p><code>js140 11-regexp-lastindex-inside-surrogate-pair.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>non-empty: index 0, match length 2, first unit d83d, lastIndex 2
+empty: index 0, match length 0, lastIndex 0
+indices[0] [0,0]
+</code></pre>
+<h3 id="javascriptcore-bun_8">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 11-regexp-lastindex-inside-surrogate-pair.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>non-empty: index 2, match length 1, first unit 78, lastIndex 3
+empty: index 1, match length 0, lastIndex 1
+indices[0] [1,1]
+</code></pre>
+<h3 id="the-formal-model-ecma-run_6">the formal model (ecma-run)</h3>
+<p><code>ecma-run 11-regexp-lastindex-inside-surrogate-pair.js</code>: exit status 3</p>
+<p>stdout:</p>
+<pre class="plain"><code>stop: assertFailed sec-getmatchstring#0 1
+</code></pre>
+<h2 id="12-asyncblockstart-await-resultjs">12-asyncblockstart-await-result.js</h2>
+<h3 id="v8-node_9">V8 (node)</h3>
+<p><code>node script-shim.cjs 12-asyncblockstart-await-result.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>f fulfilled with 2
+</code></pre>
+<h3 id="spidermonkey-js140_11">SpiderMonkey (js140)</h3>
+<p><code>js140 12-asyncblockstart-await-result.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>f fulfilled with 2
+</code></pre>
+<h3 id="javascriptcore-bun_9">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 12-asyncblockstart-await-result.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>f fulfilled with 2
+</code></pre>
+<h3 id="the-formal-model-ecma-run_7">the formal model (ecma-run)</h3>
+<p><code>ecma-run 12-asyncblockstart-await-result.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: [object #18784]
+f fulfilled with 2
+</code></pre>
+<h2 id="13-promise-job-abrupt-completionjs">13-promise-job-abrupt-completion.js</h2>
+<h3 id="v8-node_10">V8 (node)</h3>
+<p><code>node script-shim.cjs 13-promise-job-abrupt-completion.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>handler 1
+resolve(1) called; it throws
+resolve(2) called; it throws
+a later Job runs
+</code></pre>
+<h3 id="spidermonkey-js140_12">SpiderMonkey (js140)</h3>
+<p><code>js140 13-promise-job-abrupt-completion.js</code>: exit status 3</p>
+<p>stdout:</p>
+<pre class="plain"><code>handler 1
+resolve(1) called; it throws
+resolve(2) called; it throws
+a later Job runs
+</code></pre>
+<p>stderr:</p>
+<pre class="plain"><code>13-promise-job-abrupt-completion.js:9:80 Error: boom
+Stack:
+  Bad/&lt;@13-promise-job-abrupt-completion.js:9:80
+13-promise-job-abrupt-completion.js:9:80 Error: boom
+Stack:
+  Bad/&lt;@13-promise-job-abrupt-completion.js:9:80
+</code></pre>
+<h3 id="javascriptcore-bun_10">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 13-promise-job-abrupt-completion.js</code>: exit status 1</p>
+<p>stdout:</p>
+<pre class="plain"><code>handler 1
+resolve(1) called; it throws
+resolve(2) called; it throws
+a later Job runs
+</code></pre>
+<p>stderr:</p>
+<pre class="plain"><code>error: boom
+      at &lt;anonymous&gt; (13-promise-job-abrupt-completion.js:9:97)
+error: boom
+      at &lt;anonymous&gt; (13-promise-job-abrupt-completion.js:9:97)
+
+Bun v1.3.13 (macOS arm64)
+</code></pre>
+<h3 id="the-formal-model-ecma-run_8">the formal model (ecma-run)</h3>
+<p><code>ecma-run 13-promise-job-abrupt-completion.js</code>: exit status 3</p>
+<p>stdout:</p>
+<pre class="plain"><code>stop: assertFailed sec-jobs -
+</code></pre>
+<h2 id="14-nativefunction-initialnamejs">14-nativefunction-initialname.js</h2>
+<h3 id="v8-node_11">V8 (node)</h3>
+<p><code>node script-shim.cjs 14-nativefunction-initialname.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;a b&quot;
+&quot;#x&quot;
+&quot;[a b]&quot;
+class {}
+</code></pre>
+<h3 id="spidermonkey-js140_13">SpiderMonkey (js140)</h3>
+<p><code>js140 14-nativefunction-initialname.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;a b&quot;
+&quot;#x&quot;
+&quot;[a b]&quot;
+class {}
+</code></pre>
+<h3 id="javascriptcore-bun_11">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 14-nativefunction-initialname.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;a b&quot;
+&quot;#x&quot;
+&quot;[a b]&quot;
+class {}
+</code></pre>
+<h3 id="the-formal-model-ecma-run_9">the formal model (ecma-run)</h3>
+<p><code>ecma-run 14-nativefunction-initialname.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+&quot;a b&quot;
+&quot;#x&quot;
+&quot;[a b]&quot;
+class {}
+</code></pre>
+<h2 id="15-synthetic-module-link">15-synthetic-module-link</h2>
+<h3 id="v8-node_12">V8 (node)</h3>
+<p><code>node main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>main sees {&quot;a&quot;:1}
+probe sees {&quot;a&quot;:1}
+after other: {&quot;a&quot;:1}
+</code></pre>
+<h3 id="spidermonkey-js140_14">SpiderMonkey (js140)</h3>
+<p><code>js140 -m main.mjs</code>: exit status 3</p>
+<p>stdout:</p>
+<p>(nothing)</p>
+<p>stderr:</p>
+<pre class="plain"><code>15-synthetic-module-link/main.mjs:6:26 SyntaxError: import attributes are not currently supported:
+15-synthetic-module-link/main.mjs:6:26 import j from &quot;./j.json&quot; with { type: &quot;json&quot; };
+15-synthetic-module-link/main.mjs:6:26 .........................^
+</code></pre>
+<h3 id="spidermonkey-js140_15">SpiderMonkey (js140)</h3>
+<p><code>js140 --enable-import-attributes -m main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>main sees {&quot;a&quot;:1}
+probe sees {&quot;a&quot;:1}
+after other: {&quot;a&quot;:1}
+</code></pre>
+<h3 id="javascriptcore-bun_12">JavaScriptCore (bun)</h3>
+<p><code>bun main.mjs</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>main sees {&quot;a&quot;:1}
+probe sees {&quot;a&quot;:1}
+after other: {&quot;a&quot;:1}
+</code></pre>
+<h2 id="20-dynamic-function-private-identifiersjs">20-dynamic-function-private-identifiers.js</h2>
+<h3 id="v8-node_13">V8 (node)</h3>
+<p><code>node script-shim.cjs 20-dynamic-function-private-identifiers.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>body: SyntaxError
+params: SyntaxError
+eval: SyntaxError
+</code></pre>
+<h3 id="spidermonkey-js140_16">SpiderMonkey (js140)</h3>
+<p><code>js140 20-dynamic-function-private-identifiers.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>body: SyntaxError
+params: SyntaxError
+eval: SyntaxError
+</code></pre>
+<h3 id="javascriptcore-bun_13">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 20-dynamic-function-private-identifiers.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>body: SyntaxError
+params: SyntaxError
+eval: SyntaxError
+</code></pre>
+<h3 id="the-formal-model-ecma-run_10">the formal model (ecma-run)</h3>
+<p><code>ecma-run 20-dynamic-function-private-identifiers.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+body: SyntaxError
+params: SyntaxError
+eval: SyntaxError
+</code></pre>
+<h2 id="21-identityescape-zwnj-zwjjs">21-identityescape-zwnj-zwj.js</h2>
+<h3 id="v8-node_14">V8 (node)</h3>
+<p><code>node script-shim.cjs 21-identityescape-zwnj-zwj.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>U+200C: literal true, RegExp true, u SyntaxError
+U+200D: literal true, RegExp true, u SyntaxError
+U+200B: literal true, RegExp true, u SyntaxError
+U+200E: literal true, RegExp true, u SyntaxError
+U+61: literal true, RegExp true, u SyntaxError
+</code></pre>
+<h3 id="spidermonkey-js140_17">SpiderMonkey (js140)</h3>
+<p><code>js140 21-identityescape-zwnj-zwj.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>U+200C: literal true, RegExp true, u SyntaxError
+U+200D: literal true, RegExp true, u SyntaxError
+U+200B: literal true, RegExp true, u SyntaxError
+U+200E: literal true, RegExp true, u SyntaxError
+U+61: literal true, RegExp true, u SyntaxError
+</code></pre>
+<h3 id="javascriptcore-bun_14">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 21-identityescape-zwnj-zwj.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>U+200C: literal true, RegExp true, u ok
+U+200D: literal true, RegExp true, u ok
+U+200B: literal true, RegExp true, u ok
+U+200E: literal true, RegExp true, u ok
+U+61: literal true, RegExp true, u SyntaxError
+</code></pre>
+<h3 id="the-formal-model-ecma-run_11">the formal model (ecma-run)</h3>
+<p><code>ecma-run 21-identityescape-zwnj-zwj.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+U+200C: literal true, RegExp true, u SyntaxError
+U+200D: literal true, RegExp true, u SyntaxError
+U+200B: literal true, RegExp true, u SyntaxError
+U+200E: literal true, RegExp true, u SyntaxError
+U+61: literal SyntaxError, RegExp SyntaxError, u SyntaxError
+</code></pre>
+<h2 id="24-lone-property-gc-assertjs">24-lone-property-gc-assert.js</h2>
+<h3 id="v8-node_15">V8 (node)</h3>
+<p><code>node script-shim.cjs 24-lone-property-gc-assert.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>/\p{Lu}/u.test('A'): true
+/\p{ASCII}/u.test('a'): true
+/\p{Hex}/u.test('f'): true
+/\p{Any}/u.test('\u{10FFFF}'): true
+</code></pre>
+<h3 id="spidermonkey-js140_18">SpiderMonkey (js140)</h3>
+<p><code>js140 24-lone-property-gc-assert.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>/\p{Lu}/u.test('A'): true
+/\p{ASCII}/u.test('a'): true
+/\p{Hex}/u.test('f'): true
+/\p{Any}/u.test('\u{10FFFF}'): true
+</code></pre>
+<h3 id="javascriptcore-bun_15">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 24-lone-property-gc-assert.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>/\p{Lu}/u.test('A'): true
+/\p{ASCII}/u.test('a'): true
+/\p{Hex}/u.test('f'): true
+/\p{Any}/u.test('\u{10FFFF}'): true
+</code></pre>
+<h3 id="the-formal-model-ecma-run_12">the formal model (ecma-run)</h3>
+<p><code>ecma-run 24-lone-property-gc-assert.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+/\p{Lu}/u.test('A'): true
+/\p{ASCII}/u.test('a'): true
+/\p{Hex}/u.test('f'): true
+/\p{Any}/u.test('\u{10FFFF}'): true
+</code></pre>
+<h2 id="26-annexb-modifiers-early-errorsjs">26-annexb-modifiers-early-errors.js</h2>
+<h3 id="v8-node_16">V8 (node)</h3>
+<p><code>node script-shim.cjs 26-annexb-modifiers-early-errors.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>/(?ii:a)/: SyntaxError; new RegExp: SyntaxError
+/(?-:a)/: SyntaxError; new RegExp: SyntaxError
+/(?i-i:a)/: SyntaxError; new RegExp: SyntaxError
+/(?i:a)/: no error; new RegExp: no error
+/(?i-m:a)/: no error; new RegExp: no error
+</code></pre>
+<h3 id="spidermonkey-js140_19">SpiderMonkey (js140)</h3>
+<p><code>js140 26-annexb-modifiers-early-errors.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>/(?ii:a)/: SyntaxError; new RegExp: SyntaxError
+/(?-:a)/: SyntaxError; new RegExp: SyntaxError
+/(?i-i:a)/: SyntaxError; new RegExp: SyntaxError
+/(?i:a)/: no error; new RegExp: no error
+/(?i-m:a)/: no error; new RegExp: no error
+</code></pre>
+<h3 id="javascriptcore-bun_16">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 26-annexb-modifiers-early-errors.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>/(?ii:a)/: SyntaxError; new RegExp: SyntaxError
+/(?-:a)/: SyntaxError; new RegExp: SyntaxError
+/(?i-i:a)/: SyntaxError; new RegExp: SyntaxError
+/(?i:a)/: no error; new RegExp: no error
+/(?i-m:a)/: no error; new RegExp: no error
+</code></pre>
+<h3 id="the-formal-model-ecma-run_13">the formal model (ecma-run)</h3>
+<p><code>ecma-run 26-annexb-modifiers-early-errors.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+/(?ii:a)/: SyntaxError; new RegExp: SyntaxError
+/(?-:a)/: SyntaxError; new RegExp: SyntaxError
+/(?i-i:a)/: SyntaxError; new RegExp: SyntaxError
+/(?i:a)/: no error; new RegExp: no error
+/(?i-m:a)/: no error; new RegExp: no error
+</code></pre>
+<h2 id="29-propname-coverinitializednamejs">29-propname-coverinitializedname.js</h2>
+<h3 id="v8-node_17">V8 (node)</h3>
+<p><code>node script-shim.cjs 29-propname-coverinitializedname.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;({a = 1});&quot;: SyntaxError
+&quot;({__proto__: 1, __proto__ = 2});&quot;: SyntaxError
+&quot;({a = 1} = {});&quot;: no error
+</code></pre>
+<h3 id="spidermonkey-js140_20">SpiderMonkey (js140)</h3>
+<p><code>js140 29-propname-coverinitializedname.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;({a = 1});&quot;: SyntaxError
+&quot;({__proto__: 1, __proto__ = 2});&quot;: SyntaxError
+&quot;({a = 1} = {});&quot;: no error
+</code></pre>
+<h3 id="javascriptcore-bun_17">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 29-propname-coverinitializedname.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;({a = 1});&quot;: SyntaxError
+&quot;({__proto__: 1, __proto__ = 2});&quot;: SyntaxError
+&quot;({a = 1} = {});&quot;: no error
+</code></pre>
+<h3 id="the-formal-model-ecma-run_14">the formal model (ecma-run)</h3>
+<p><code>ecma-run 29-propname-coverinitializedname.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+&quot;({a = 1});&quot;: SyntaxError
+&quot;({__proto__: 1, __proto__ = 2});&quot;: SyntaxError
+&quot;({a = 1} = {});&quot;: no error
+</code></pre>
+<h2 id="31-sort-infinite-comparatorjs">31-sort-infinite-comparator.js</h2>
+<h3 id="v8-node_18">V8 (node)</h3>
+<p><code>node script-shim.cjs 31-sort-infinite-comparator.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>1,2,3
+1,2,3,4,5
+a,b,c
+</code></pre>
+<h3 id="spidermonkey-js140_21">SpiderMonkey (js140)</h3>
+<p><code>js140 31-sort-infinite-comparator.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>1,2,3
+1,2,3,4,5
+a,b,c
+</code></pre>
+<h3 id="javascriptcore-bun_18">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 31-sort-infinite-comparator.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>1,2,3
+1,2,3,4,5
+a,b,c
+</code></pre>
+<h3 id="the-formal-model-ecma-run_15">the formal model (ecma-run)</h3>
+<p><code>ecma-run 31-sort-infinite-comparator.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+1,2,3
+1,2,3,4,5
+a,b,c
+</code></pre>
+<h2 id="32-stringvalue-reservedwordjs">32-stringvalue-reservedword.js</h2>
+<h3 id="v8-node_19">V8 (node)</h3>
+<p><code>node script-shim.cjs 32-stringvalue-reservedword.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>var \u0069f = 1;: SyntaxError
+var i\u0066 = 1;: SyntaxError
+var \u{63}lass = 1;: SyntaxError
+var \u0079ield = 1;: no error
+var \u0061wait = 1;: no error
+var \u0069g = 1;: no error
+</code></pre>
+<h3 id="spidermonkey-js140_22">SpiderMonkey (js140)</h3>
+<p><code>js140 32-stringvalue-reservedword.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>var \u0069f = 1;: SyntaxError
+var i\u0066 = 1;: SyntaxError
+var \u{63}lass = 1;: SyntaxError
+var \u0079ield = 1;: no error
+var \u0061wait = 1;: no error
+var \u0069g = 1;: no error
+</code></pre>
+<h3 id="javascriptcore-bun_19">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 32-stringvalue-reservedword.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>var \u0069f = 1;: SyntaxError
+var i\u0066 = 1;: SyntaxError
+var \u{63}lass = 1;: SyntaxError
+var \u0079ield = 1;: no error
+var \u0061wait = 1;: no error
+var \u0069g = 1;: no error
+</code></pre>
+<h3 id="the-formal-model-ecma-run_16">the formal model (ecma-run)</h3>
+<p><code>ecma-run 32-stringvalue-reservedword.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+var \u0069f = 1;: SyntaxError
+var i\u0066 = 1;: SyntaxError
+var \u{63}lass = 1;: SyntaxError
+var \u0079ield = 1;: no error
+var \u0061wait = 1;: no error
+var \u0069g = 1;: no error
+</code></pre>
+<h2 id="33-createintrinsics-async-argument-positionjs">33-createintrinsics-async-argument-position.js</h2>
+<h3 id="v8-node_20">V8 (node)</h3>
+<p><code>node script-shim.cjs 33-createintrinsics-async-argument-position.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>get size
+get flags
+[object Promise]
+fromAsync fulfils with [1,2]
+</code></pre>
+<h3 id="spidermonkey-js140_23">SpiderMonkey (js140)</h3>
+<p><code>js140 33-createintrinsics-async-argument-position.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>get size
+get flags
+[object Promise]
+fromAsync fulfils with [1,2]
+</code></pre>
+<h3 id="javascriptcore-bun_20">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 33-createintrinsics-async-argument-position.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>get size
+get flags
+[object Promise]
+fromAsync fulfils with [1,2]
+</code></pre>
+<h3 id="the-formal-model-ecma-run_17">the formal model (ecma-run)</h3>
+<p><code>ecma-run 33-createintrinsics-async-argument-position.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: [object #21285]
+get size
+get flags
+[object Promise]
+fromAsync fulfils with [1,2]
+</code></pre>
+<h2 id="35-contains-awaitexpression-coverjs">35-contains-awaitexpression-cover.js</h2>
+<h3 id="v8-node_21">V8 (node)</h3>
+<p><code>node script-shim.cjs 35-contains-awaitexpression-cover.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>async function f(x = await 1) {}: SyntaxError
+(async function* (x = await 1) {}): SyntaxError
+({ async m(x = await 1) {} }): SyntaxError
+({ async *m(x = await 1) {} }): SyntaxError
+async function g() { async (x = await 1) =&gt; 0; }: SyntaxError
+AsyncFunction('x = await 1', ''): SyntaxError
+async function h() { await 1; }: no error
+async function k(x = function () { var await; }) {}: no error
+(async function () { class C { static { } } }): no error
+</code></pre>
+<h3 id="spidermonkey-js140_24">SpiderMonkey (js140)</h3>
+<p><code>js140 35-contains-awaitexpression-cover.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>async function f(x = await 1) {}: SyntaxError
+(async function* (x = await 1) {}): SyntaxError
+({ async m(x = await 1) {} }): SyntaxError
+({ async *m(x = await 1) {} }): SyntaxError
+async function g() { async (x = await 1) =&gt; 0; }: SyntaxError
+AsyncFunction('x = await 1', ''): SyntaxError
+async function h() { await 1; }: no error
+async function k(x = function () { var await; }) {}: no error
+(async function () { class C { static { } } }): no error
+</code></pre>
+<h3 id="javascriptcore-bun_21">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 35-contains-awaitexpression-cover.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>async function f(x = await 1) {}: SyntaxError
+(async function* (x = await 1) {}): SyntaxError
+({ async m(x = await 1) {} }): SyntaxError
+({ async *m(x = await 1) {} }): SyntaxError
+async function g() { async (x = await 1) =&gt; 0; }: SyntaxError
+AsyncFunction('x = await 1', ''): SyntaxError
+async function h() { await 1; }: no error
+async function k(x = function () { var await; }) {}: SyntaxError
+(async function () { class C { static { } } }): no error
+</code></pre>
+<h3 id="the-formal-model-ecma-run_18">the formal model (ecma-run)</h3>
+<p><code>ecma-run 35-contains-awaitexpression-cover.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+async function f(x = await 1) {}: SyntaxError
+(async function* (x = await 1) {}): SyntaxError
+({ async m(x = await 1) {} }): SyntaxError
+({ async *m(x = await 1) {} }): SyntaxError
+async function g() { async (x = await 1) =&gt; 0; }: SyntaxError
+AsyncFunction('x = await 1', ''): SyntaxError
+async function h() { await 1; }: no error
+async function k(x = function () { var await; }) {}: no error
+(async function () { class C { static { } } }): no error
+</code></pre>
+<h2 id="36-islabelledfunction-labelleditemjs">36-islabelledfunction-labelleditem.js</h2>
+<h3 id="v8-node_22">V8 (node)</h3>
+<p><code>node script-shim.cjs 36-islabelledfunction-labelleditem.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>if (1) l: function f() {}: SyntaxError
+while (0) l: function f() {}: SyntaxError
+if (0) ; else a: b: function g() {}: SyntaxError
+while (0) l: m: x;: no error
+l: function h() {}: no error
+</code></pre>
+<h3 id="spidermonkey-js140_25">SpiderMonkey (js140)</h3>
+<p><code>js140 36-islabelledfunction-labelleditem.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>if (1) l: function f() {}: SyntaxError
+while (0) l: function f() {}: SyntaxError
+if (0) ; else a: b: function g() {}: SyntaxError
+while (0) l: m: x;: no error
+l: function h() {}: no error
+</code></pre>
+<h3 id="javascriptcore-bun_22">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 36-islabelledfunction-labelleditem.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>if (1) l: function f() {}: SyntaxError
+while (0) l: function f() {}: SyntaxError
+if (0) ; else a: b: function g() {}: SyntaxError
+while (0) l: m: x;: no error
+l: function h() {}: no error
+</code></pre>
+<h3 id="the-formal-model-ecma-run_19">the formal model (ecma-run)</h3>
+<p><code>ecma-run 36-islabelledfunction-labelleditem.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+if (1) l: function f() {}: SyntaxError
+while (0) l: function f() {}: SyntaxError
+if (0) ; else a: b: function g() {}: SyntaxError
+while (0) l: m: x;: no error
+l: function h() {}: SyntaxError
+</code></pre>
+<h2 id="37-split-code-unitsjs">37-split-code-units.js</h2>
+<h3 id="v8-node_23">V8 (node)</h3>
+<p><code>node script-shim.cjs 37-split-code-units.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>2 string [&quot;a&quot;,&quot;b&quot;]
+true
+[&quot;\ud83d&quot;,&quot;\ude00&quot;]
+</code></pre>
+<h3 id="spidermonkey-js140_26">SpiderMonkey (js140)</h3>
+<p><code>js140 37-split-code-units.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>2 string [&quot;a&quot;,&quot;b&quot;]
+true
+[&quot;\ud83d&quot;,&quot;\ude00&quot;]
+</code></pre>
+<h3 id="javascriptcore-bun_23">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 37-split-code-units.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>2 string [&quot;a&quot;,&quot;b&quot;]
+true
+[&quot;\ud83d&quot;,&quot;\ude00&quot;]
+</code></pre>
+<h3 id="the-formal-model-ecma-run_20">the formal model (ecma-run)</h3>
+<p><code>ecma-run 37-split-code-units.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+2 string [&quot;a&quot;,&quot;b&quot;]
+true
+[&quot;\ud83d&quot;,&quot;\ude00&quot;]
+</code></pre>
+<h2 id="38-ordinaryset-receiver-has-propertyjs">38-ordinaryset-receiver-has-property.js</h2>
+<h3 id="v8-node_24">V8 (node)</h3>
+<p><code>node script-shim.cjs 38-ordinaryset-receiver-has-property.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+5
+</code></pre>
+<h3 id="spidermonkey-js140_27">SpiderMonkey (js140)</h3>
+<p><code>js140 38-ordinaryset-receiver-has-property.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+5
+</code></pre>
+<h3 id="javascriptcore-bun_24">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 38-ordinaryset-receiver-has-property.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+5
+</code></pre>
+<h3 id="the-formal-model-ecma-run_21">the formal model (ecma-run)</h3>
+<p><code>ecma-run 38-ordinaryset-receiver-has-property.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+true
+5
+</code></pre>
+<h2 id="39-must-cover-other-rulesjs">39-must-cover-other-rules.js</h2>
+<h3 id="v8-node_25">V8 (node)</h3>
+<p><code>node script-shim.cjs 39-must-cover-other-rules.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;([...x = []]) =&gt; {};&quot;: SyntaxError
+&quot;([...x, y]) =&gt; {};&quot;: SyntaxError
+&quot;(a, ...b,) =&gt; {};&quot;: SyntaxError
+&quot;async (...x = []) =&gt; {};&quot;: SyntaxError
+&quot;async\n(foo) =&gt; {};&quot;: SyntaxError
+&quot;(x) =&gt; {};&quot;: no error
+</code></pre>
+<h3 id="spidermonkey-js140_28">SpiderMonkey (js140)</h3>
+<p><code>js140 39-must-cover-other-rules.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;([...x = []]) =&gt; {};&quot;: SyntaxError
+&quot;([...x, y]) =&gt; {};&quot;: SyntaxError
+&quot;(a, ...b,) =&gt; {};&quot;: SyntaxError
+&quot;async (...x = []) =&gt; {};&quot;: SyntaxError
+&quot;async\n(foo) =&gt; {};&quot;: SyntaxError
+&quot;(x) =&gt; {};&quot;: no error
+</code></pre>
+<h3 id="javascriptcore-bun_25">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 39-must-cover-other-rules.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;([...x = []]) =&gt; {};&quot;: SyntaxError
+&quot;([...x, y]) =&gt; {};&quot;: SyntaxError
+&quot;(a, ...b,) =&gt; {};&quot;: SyntaxError
+&quot;async (...x = []) =&gt; {};&quot;: SyntaxError
+&quot;async\n(foo) =&gt; {};&quot;: SyntaxError
+&quot;(x) =&gt; {};&quot;: no error
+</code></pre>
+<h3 id="the-formal-model-ecma-run_22">the formal model (ecma-run)</h3>
+<p><code>ecma-run 39-must-cover-other-rules.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+&quot;([...x = []]) =&gt; {};&quot;: SyntaxError
+&quot;([...x, y]) =&gt; {};&quot;: SyntaxError
+&quot;(a, ...b,) =&gt; {};&quot;: SyntaxError
+&quot;async (...x = []) =&gt; {};&quot;: SyntaxError
+&quot;async\n(foo) =&gt; {};&quot;: SyntaxError
+&quot;(x) =&gt; {};&quot;: no error
+</code></pre>
+<h2 id="40-annexb-regexp-order-group-countjs">40-annexb-regexp-order-group-count.js</h2>
+<h3 id="v8-node_26">V8 (node)</h3>
+<p><code>node script-shim.cjs 40-annexb-regexp-order-group-count.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;a{1}&quot; on &quot;a&quot;: true
+&quot;\\b*&quot; on &quot;&quot;: SyntaxError
+&quot;a\\b?&quot; on &quot;ab&quot;: SyntaxError
+&quot;\\x4&quot; on &quot;x4&quot;: true
+&quot;{,1}&quot; on &quot;{,1}&quot;: true
+&quot;[\\b]&quot; on &quot;\b&quot;: true
+&quot;\\c1&quot; on &quot;\\c1&quot;: true
+&quot;\\1(a)&quot; on &quot;a&quot;: true
+&quot;\\2(a)(b)&quot; on &quot;ab&quot;: true
+&quot;\\3(a)(b)&quot; on &quot;\u0003ab&quot;: true
+&quot;(a)\\10&quot; on &quot;a\b&quot;: true
+&quot;\\1&quot; on &quot;\u0001&quot;: true
+</code></pre>
+<h3 id="spidermonkey-js140_29">SpiderMonkey (js140)</h3>
+<p><code>js140 40-annexb-regexp-order-group-count.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;a{1}&quot; on &quot;a&quot;: true
+&quot;\\b*&quot; on &quot;&quot;: SyntaxError
+&quot;a\\b?&quot; on &quot;ab&quot;: SyntaxError
+&quot;\\x4&quot; on &quot;x4&quot;: true
+&quot;{,1}&quot; on &quot;{,1}&quot;: true
+&quot;[\\b]&quot; on &quot;\b&quot;: true
+&quot;\\c1&quot; on &quot;\\c1&quot;: true
+&quot;\\1(a)&quot; on &quot;a&quot;: true
+&quot;\\2(a)(b)&quot; on &quot;ab&quot;: true
+&quot;\\3(a)(b)&quot; on &quot;\u0003ab&quot;: true
+&quot;(a)\\10&quot; on &quot;a\b&quot;: true
+&quot;\\1&quot; on &quot;\u0001&quot;: true
+</code></pre>
+<h3 id="javascriptcore-bun_26">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 40-annexb-regexp-order-group-count.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;a{1}&quot; on &quot;a&quot;: true
+&quot;\\b*&quot; on &quot;&quot;: SyntaxError
+&quot;a\\b?&quot; on &quot;ab&quot;: SyntaxError
+&quot;\\x4&quot; on &quot;x4&quot;: true
+&quot;{,1}&quot; on &quot;{,1}&quot;: true
+&quot;[\\b]&quot; on &quot;\b&quot;: true
+&quot;\\c1&quot; on &quot;\\c1&quot;: true
+&quot;\\1(a)&quot; on &quot;a&quot;: true
+&quot;\\2(a)(b)&quot; on &quot;ab&quot;: true
+&quot;\\3(a)(b)&quot; on &quot;\u0003ab&quot;: true
+&quot;(a)\\10&quot; on &quot;a\b&quot;: true
+&quot;\\1&quot; on &quot;\u0001&quot;: true
+</code></pre>
+<h3 id="the-formal-model-ecma-run_23">the formal model (ecma-run)</h3>
+<p><code>ecma-run 40-annexb-regexp-order-group-count.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+&quot;a{1}&quot; on &quot;a&quot;: true
+&quot;\\b*&quot; on &quot;&quot;: SyntaxError
+&quot;a\\b?&quot; on &quot;ab&quot;: SyntaxError
+&quot;\\x4&quot; on &quot;x4&quot;: SyntaxError
+&quot;{,1}&quot; on &quot;{,1}&quot;: SyntaxError
+&quot;[\\b]&quot; on &quot;\b&quot;: true
+&quot;\\c1&quot; on &quot;\\c1&quot;: SyntaxError
+&quot;\\1(a)&quot; on &quot;a&quot;: true
+&quot;\\2(a)(b)&quot; on &quot;ab&quot;: true
+&quot;\\3(a)(b)&quot; on &quot;\u0003ab&quot;: SyntaxError
+&quot;(a)\\10&quot; on &quot;a\b&quot;: SyntaxError
+&quot;\\1&quot; on &quot;\u0001&quot;: SyntaxError
+</code></pre>
+<h2 id="41-annexb-html-close-comment-tokenjs">41-annexb-html-close-comment-token.js</h2>
+<h3 id="v8-node_27">V8 (node)</h3>
+<p><code>node script-shim.cjs 41-annexb-html-close-comment-token.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>parsed
+</code></pre>
+<h3 id="spidermonkey-js140_30">SpiderMonkey (js140)</h3>
+<p><code>js140 41-annexb-html-close-comment-token.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>parsed
+</code></pre>
+<h3 id="javascriptcore-bun_27">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 41-annexb-html-close-comment-token.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>parsed
+</code></pre>
+<h3 id="the-formal-model-ecma-run_24">the formal model (ecma-run)</h3>
+<p><code>ecma-run 41-annexb-html-close-comment-token.js</code>: exit status 1</p>
+<p>stdout:</p>
+<pre class="plain"><code>throw: SyntaxError
+</code></pre>
+<h2 id="43-allocatesharedarraybuffer-byte-lengthjs">43-allocatesharedarraybuffer-byte-length.js</h2>
+<h3 id="v8-node_28">V8 (node)</h3>
+<p><code>node script-shim.cjs 43-allocatesharedarraybuffer-byte-length.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true 4 16
+8 2
+</code></pre>
+<h3 id="spidermonkey-js140_31">SpiderMonkey (js140)</h3>
+<p><code>js140 43-allocatesharedarraybuffer-byte-length.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true 4 16
+8 2
+</code></pre>
+<h3 id="javascriptcore-bun_28">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 43-allocatesharedarraybuffer-byte-length.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true 4 16
+8 2
+</code></pre>
+<h3 id="the-formal-model-ecma-run_25">the formal model (ecma-run)</h3>
+<p><code>ecma-run 43-allocatesharedarraybuffer-byte-length.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+true 4 16
+8 2
+</code></pre>
+<h2 id="44-lookahead-inserted-semicolonjs">44-lookahead-inserted-semicolon.js</h2>
+<h3 id="v8-node_29">V8 (node)</h3>
+<p><code>node script-shim.cjs 44-lookahead-inserted-semicolon.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;if (false) let\n[a] = 0;&quot;: SyntaxError
+&quot;while (false) let\n[a] = 0;&quot;: SyntaxError
+&quot;if (false) let\n{}&quot;: no error
+&quot;if (false) let;\n[a] = 0;&quot;: no error
+</code></pre>
+<h3 id="spidermonkey-js140_32">SpiderMonkey (js140)</h3>
+<p><code>js140 44-lookahead-inserted-semicolon.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;if (false) let\n[a] = 0;&quot;: SyntaxError
+&quot;while (false) let\n[a] = 0;&quot;: SyntaxError
+&quot;if (false) let\n{}&quot;: no error
+&quot;if (false) let;\n[a] = 0;&quot;: no error
+</code></pre>
+<h3 id="javascriptcore-bun_29">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 44-lookahead-inserted-semicolon.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>&quot;if (false) let\n[a] = 0;&quot;: SyntaxError
+&quot;while (false) let\n[a] = 0;&quot;: SyntaxError
+&quot;if (false) let\n{}&quot;: no error
+&quot;if (false) let;\n[a] = 0;&quot;: no error
+</code></pre>
+<h3 id="the-formal-model-ecma-run_26">the formal model (ecma-run)</h3>
+<p><code>ecma-run 44-lookahead-inserted-semicolon.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+&quot;if (false) let\n[a] = 0;&quot;: SyntaxError
+&quot;while (false) let\n[a] = 0;&quot;: SyntaxError
+&quot;if (false) let\n{}&quot;: no error
+&quot;if (false) let;\n[a] = 0;&quot;: no error
+</code></pre>
+<h2 id="45-finalizationregistry-unregisterjs">45-finalizationregistry-unregister.js</h2>
+<h3 id="v8-node_30">V8 (node)</h3>
+<p><code>node script-shim.cjs 45-finalizationregistry-unregister.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+false
+</code></pre>
+<h3 id="spidermonkey-js140_33">SpiderMonkey (js140)</h3>
+<p><code>js140 45-finalizationregistry-unregister.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+false
+</code></pre>
+<h3 id="javascriptcore-bun_30">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 45-finalizationregistry-unregister.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>true
+false
+</code></pre>
+<h3 id="the-formal-model-ecma-run_27">the formal model (ecma-run)</h3>
+<p><code>ecma-run 45-finalizationregistry-unregister.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+true
+false
+</code></pre>
+<h2 id="46-covered-node-tail-calljs">46-covered-node-tail-call.js</h2>
+<h3 id="v8-node_31">V8 (node)</h3>
+<p><code>node script-shim.cjs 46-covered-node-tail-call.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>plain: RangeError
+paren: RangeError
+</code></pre>
+<h3 id="spidermonkey-js140_34">SpiderMonkey (js140)</h3>
+<p><code>js140 46-covered-node-tail-call.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>plain: InternalError
+paren: InternalError
+</code></pre>
+<h3 id="javascriptcore-bun_31">JavaScriptCore (bun)</h3>
+<p><code>bun script-shim.cjs 46-covered-node-tail-call.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>plain: done
+paren: done
+</code></pre>
+<h3 id="the-formal-model-ecma-run_28">the formal model (ecma-run)</h3>
+<p><code>ecma-run 46-covered-node-tail-call.js</code>: exit status TIMEOUT after 120 s</p>
+<p>stdout:</p>
+<p>(nothing)</p>
+<h2 id="tests-of-the-model-cited-by-the-reports">Tests of the model cited by the reports</h2>
+<h3 id="report-11">Report 11</h3>
+<p><code>ecma-run tests/run/regexp_lastindex_inside_pair_nonempty.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+1 1 de00 2
+</code></pre>
+<h3 id="report-13">Report 13</h3>
+<p><code>ecma-run tests/run/null_realm_job.js</code>: exit status 0</p>
+<p>stdout:</p>
+<pre class="plain"><code>normal: undefined
+false,true
+</code></pre>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

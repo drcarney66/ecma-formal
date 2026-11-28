@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>66. GetExportedNames and ResolveExport assert circularity on acyclic diamond export * module graphs · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/66-module-diamond-circularity-asserts.md</code></p>
+<h1>66. <code>GetExportedNames</code> and <code>ResolveExport</code> assert circularity on acyclic diamond <code>export *</code> module graphs</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§16.2.1.7.2.1 GetExportedNames (<a class="clause" href="https://tc39.es/ecma262/#sec-getexportednames"><code>#sec-getexportednames</code></a>), step 3.a; §16.2.1.7.2.2 ResolveExport (<a class="clause" href="https://tc39.es/ecma262/#sec-resolveexport"><code>#sec-resolveexport</code></a>), step 3.a.i.</dd><dt>Kind</dt><dd>failing Assert (both assertions fail on any cycle-free diamond <code>export *</code> DAG).</dd><dt>Model erratum</dt><dd><code>ModuleDiamondCircularityAsserts</code>, baked-in SpecTec reading test262 (<code>assert pass</code> at lines 528 and 563 of <code>spec/spectec/clauses/S16.spectec</code>). SpecTec silences both false circularity <code>Assert:</code>s so diamond <code>export *</code> module graphs link and evaluate without stopping.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "starting point of an <code>export *</code> circularity" and "circular import request").</dd><dt>On this site</dt><dd><a href="../errata.html#ModuleDiamondCircularityAsserts"><code>ModuleDiamondCircularityAsserts</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p><code>GetExportedNames</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">3.</span> If <var>exportStarSet</var> contains <var>module</var>, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Assert: We&#x27;ve reached the starting point of an <code>export *</code> circularity.</p><p class="q-step" style="--d:1"><span class="q-num">b.</span> Return a new empty List.</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Append <var>module</var> to <var>exportStarSet</var>.</p></blockquote>
+<p><code>ResolveExport</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">3.</span> For each Record { [[Module]], [[ExportName]] } <var>record</var> of <var>resolveSet</var>, do</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> If <var>module</var> and <var>record</var>.[[Module]] are the same Module Record and <var>exportName</var> is <var>record</var>.[[ExportName]], then</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> Assert: This is a circular import request.</p><p class="q-step" style="--d:2"><span class="q-num">ii.</span> Return <span class="val">null</span>.</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Append the Record { [[Module]]: <var>module</var>, [[ExportName]]: <var>exportName</var> } to <var>resolveSet</var>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>Both algorithms pass a <em>single mutable List</em> (<code>_exportStarSet_</code> / <code>_resolveSet_</code>) across all recursive <code>export *</code>
+branches and <code>Append</code> visited modules without popping or copying between sibling branches:</p>
+<ul>
+<li>Consider the acyclic 4-module DAG where <code>main.mjs</code> has <code>export * from "./b.mjs"; export * from "./c.mjs";</code>, both
+  <code>b.mjs</code> and <code>c.mjs</code> have <code>export * from "./d.mjs";</code>, and <code>d.mjs</code> has <code>export const x = 1;</code>.</li>
+<li>During <code>main.GetExportedNames()</code> (e.g. <code>import * as ns from "./main.mjs"</code>), the first branch visits <code>b</code> then <code>d</code>,
+  appending <code>d</code> to <code>_exportStarSet_</code>. The second branch visits <code>c</code> then <code>d</code>, sees <code>d</code> already in <code>_exportStarSet_</code>, and
+  hits step 3.a (<code>Assert: We've reached the starting point of an export * circularity</code>) in a graph with <strong>zero cycles</strong>!</li>
+<li>Likewise, resolving an absent name (<code>import { missing } from "./main.mjs"</code>) or a name exported by a later star branch
+  reaches <code>d.ResolveExport</code> twice and falsifies step 3.a.i (<code>Assert: This is a circular import request</code>). (Even on a
+  lasso cycle <code>a -&gt; b -&gt; c -&gt; b</code>, <code>GetExportedNames</code> hits step 3.a at <code>b</code>, not at the starting point <code>a</code>.)</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<pre class="js"><code>// d.mjs: export const x = 1;
+// b.mjs: export * from &quot;./d.mjs&quot;;
+// c.mjs: export * from &quot;./d.mjs&quot;;
+// main.mjs:
+// export * from &quot;./b.mjs&quot;;
+// export * from &quot;./c.mjs&quot;;
+// entry.mjs:
+import * as ns from &quot;./main.mjs&quot;;
+print(Object.keys(ns).join(&quot;,&quot;), ns.x);
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>entry.mjs</code> on diamond <code>a -&gt; {b, c} -&gt; d</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>GetExportedNames</code> step 3.a's circularity <code>Assert:</code> fails (and <code>ResolveExport</code> step 3.a.i fails when resolving an unexported name)</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>"x"</code>, <code>1</code></td>
+</tr>
+<tr>
+<td>formal model (test262 reading, <code>assert pass</code>)</td>
+<td><code>"x"</code>, <code>1</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Replace step 3.a of <code>GetExportedNames</code> and step 3.a.i of <code>ResolveExport</code> with <code>NOTE:</code> steps explaining that <code>_module_</code>
+(or <code>(_module_, _exportName_)</code>) was already visited along the current or an earlier <code>export *</code> path.</p>
+<h2 id="test262">test262</h2>
+<p><code>language/module-code/ambiguous-export-bindings/</code> and <code>namespace/</code> test <code>export *</code> graphs including shared targets.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

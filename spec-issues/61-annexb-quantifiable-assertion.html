@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>61. Annex B.1.2.5 CompileSubpattern calls undefined 2-argument CompileAtom on QuantifiableAssertion · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/61-annexb-quantifiable-assertion.md</code></p>
+<h1>61. Annex B.1.2.5 <code>CompileSubpattern</code> calls undefined 2-argument <code>CompileAtom</code> on <code>QuantifiableAssertion</code></h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§B.1.2.5 Runtime Semantics: CompileSubpattern (<a class="clause" href="https://tc39.es/ecma262/#sec-compilesubpattern-annexb"><code>#sec-compilesubpattern-annexb</code></a>), against §22.2.2.5 CompileSubpattern (<a class="clause" href="https://tc39.es/ecma262/#sec-compilesubpattern"><code>#sec-compilesubpattern</code></a>) and §B.1.2.6 CompileAssertion (<a class="clause" href="https://tc39.es/ecma262/#sec-compileassertion-annexb"><code>#sec-compileassertion-annexb</code></a>).</dd><dt>Kind</dt><dd>missing syntax-directed operation and arity mismatch (<code>/(?=a)*/</code> in Annex B mode has no defined compilation).</dd><dt>Model erratum</dt><dd><code>AnnexBQuantifiableAssertion</code>, baked-in SpecTec reading test262 (<code>@row-compilesubpattern-quantifiableassertion-quantifier</code> in <code>spec/spectec/clauses/Helpers.spectec</code>). SpecTec adds an explicit <code>CompileSubpattern</code> row for <code>Term :: QuantifiableAssertion Quantifier</code> calling 1-argument <code>CompileAssertion</code> with <code>_regexpRecord_</code>.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "QuantifiableAssertion" with "CompileSubpattern").</dd><dt>On this site</dt><dd><a href="../errata.html#AnnexBQuantifiableAssertion"><code>AnnexBQuantifiableAssertion</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>§B.1.2.5:</p>
+<blockquote class="sentence q-text"><p>The rule for <code>Term :: QuantifiableAssertion Quantifier</code> is the same as for <code>Term :: Atom Quantifier</code> but with <span class="nt">QuantifiableAssertion</span> substituted for <span class="nt">Atom</span>.</p></blockquote>
+<p>§22.2.2.5 (<code>Term :: Atom Quantifier</code>):</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>m</var> be CompileAtom of <span class="nt">Atom</span> with arguments <var>regexpRecord</var> and <var>direction</var>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>Substituting <code>|QuantifiableAssertion|</code> for <code>|Atom|</code> in <code>Term :: Atom Quantifier</code> produces <code>CompileAtom of
+|QuantifiableAssertion| with arguments _regexpRecord_ and _direction_</code>. However, <code>|QuantifiableAssertion|</code> has <em>no</em>
+<code>CompileAtom</code> rule — its semantics in §B.1.2.6 (<a class="clause" href="https://tc39.es/ecma262/#sec-compileassertion-annexb"><code>#sec-compileassertion-annexb</code></a>) is <code>CompileAssertion</code>, which takes a
+<em>single</em> argument <code>_regexpRecord_</code> (no <code>_direction_</code>). Read literally, quantifying a lookahead assertion such as
+<code>/(?=a)*/</code> or <code>/(?!b)+/</code> under §B.1.2 calls a non-existent SDO with the wrong number of arguments.</p>
+<h2 id="examples">Examples</h2>
+<pre class="js"><code>var m = /(?=a)+a/.exec(&quot;a&quot;);
+print(m[0], /(?!b)*a/.exec(&quot;a&quot;)[0]);
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>/(?=a)+a/.exec("a")[0]</code></th>
+<th><code>/(?!b)*a/.exec("a")[0]</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal §B.1.2.5</td>
+<td>undefined (<code>CompileAtom</code> has no row for <code>QuantifiableAssertion</code>)</td>
+<td>undefined</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>"a"</code></td>
+<td><code>"a"</code></td>
+</tr>
+<tr>
+<td>formal model (<code>--web-browser</code>, test262 reading)</td>
+<td><code>"a"</code></td>
+<td><code>"a"</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Write out the explicit 6-step <code>CompileSubpattern</code> algorithm for <code>Term :: QuantifiableAssertion Quantifier</code> in §B.1.2.5
+with step 1 calling <code>CompileAssertion of |QuantifiableAssertion| with argument _regexpRecord_</code>.</p>
+<h2 id="test262">test262</h2>
+<p><code>annexB/built-ins/RegExp/quantifiable-assertion-*.js</code> and <code>annexB/language/literals/regexp/quantifiable-assertion-*.js</code>
+test quantified <code>(?=…)</code> and <code>(?!…)</code> assertions and require them to compile via <code>CompileAssertion</code>.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>36. IsLabelledFunction tests a |Statement| node for being a |LabelledStatement|: always false · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/36-islabelledfunction-labelleditem.md</code></p>
+<h1>36. IsLabelledFunction tests a |Statement| node for being a |LabelledStatement|: always <em>false</em></h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§14.13.2 Static Semantics: IsLabelledFunction (<a class="clause" href="https://tc39.es/ecma262/#sec-islabelledfunction"><code>#sec-islabelledfunction</code></a>), steps 1–2, with its callers in §14.6.1 (<code>if</code>, <a class="clause" href="https://tc39.es/ecma262/#sec-if-statement-static-semantics-early-errors"><code>#sec-if-statement-static-semantics-early-errors</code></a>), §14.7.2.1, §14.7.3.1, §14.7.4.1 and §14.7.5.1 (the iteration statements) and §14.11.1 (<code>with</code>), §14.13.1's early error for <code>LabelledItem : FunctionDeclaration</code> (<a class="clause" href="https://tc39.es/ecma262/#sec-labelled-statements-static-semantics-early-errors"><code>#sec-labelled-statements-static-semantics-early-errors</code></a>), §5.1.2 Parsing (<a class="clause" href="https://tc39.es/ecma262/#sec-parsing"><code>#sec-parsing</code></a>) and §5.2.3 Syntax-Directed Operations (<a class="clause" href="https://tc39.es/ecma262/#sec-algorithm-conventions-syntax-directed-operations"><code>#sec-algorithm-conventions-syntax-directed-operations</code></a>), its chain-production rule.</dd><dt>Kind</dt><dd>notation (the steps name a child the node does not have); observable on hosts with §B.3.1 Labelled Function Declarations, in non-strict code.</dd><dt>Model erratum</dt><dd><code>UnitChainChild</code>, default reading test262; its readings: literal, test262, proposed. The model reads "<em>n</em> is a |X|" through the chain of unit productions, so its literal reading passes step 1 and stops at step 2, where <em>n</em>'s production has no |LabelledItem|; the test262 and proposed readings take "the |X| of <em>n</em>" from the first node of <em>n</em>'s chain of unit productions whose production has one.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "IsLabelledFunction", whose one hit is a Temporal pull request). Issue <a class="ext" href="https://github.com/tc39/ecma262/issues/1811">#1811</a> (closed, 2019-12), "Chain production definition", is about the term.</dd><dt>On this site</dt><dd><a href="../errata.html#UnitChainChild"><code>UnitChainChild</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<blockquote class="sentence q-text"><p>Static Semantics: IsLabelledFunction ( <var>stmt</var>: a <span class="nt">Statement</span> Parse Node, ): a Boolean</p><p class="q-step" style="--d:0"><span class="q-num">1.</span> If <var>stmt</var> is not a <span class="nt">LabelledStatement</span>, return <span class="val">false</span>.</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Let <var>item</var> be the <span class="nt">LabelledItem</span> of <var>stmt</var>.</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> If <var>item</var> is <code>LabelledItem : FunctionDeclaration</code>, return <span class="val">true</span>.</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Let <var>subStmt</var> be the <span class="nt">Statement</span> of <var>item</var>.</p><p class="q-step" style="--d:0"><span class="q-num">5.</span> Return IsLabelledFunction(<var>subStmt</var>).</p></blockquote>
+<p>A caller (§14.6.1; the others have the same form):</p>
+<blockquote class="sentence q-text"><p>It is a Syntax Error if IsLabelledFunction(the first <span class="nt">Statement</span>) is <span class="val">true</span>.</p><p>It is only necessary to apply this rule if the extension specified in … is implemented.</p></blockquote>
+<p>(the reference is to §B.3.1). §14.13.1:</p>
+<blockquote class="sentence q-text"><p>LabelledItem : FunctionDeclaration</p><p>It is a Syntax Error if any source text is matched by this production, unless that source text is non-strict code and the host is a web browser or otherwise supports …</p></blockquote>
+<p>(the reference is to §B.3.1 Labelled Function Declarations).</p>
+<p>§5.1.2: "When a Parse Node is an instance of a nonterminal, it is also an instance of some production that has
+that nonterminal as its left-hand side. Moreover, it has zero or more children, one for each symbol on the
+production's right-hand side".</p>
+<h2 id="problem">Problem</h2>
+<p>Every caller passes a |Statement| node. For a labelled statement that node is an instance of <code>Statement :
+LabelledStatement</code>: it is not an instance of |LabelledStatement|, and its only child is the |LabelledStatement|
+node, so its |LabelledItem| is a grandchild. Read by §5.1.2, step 1 returns <em>false</em> for every argument and step 2
+names no child. §5.2.3's implicit definitions for chain productions do not help: they cover syntax-directed
+operations, and IsLabelledFunction is an abstract operation that inspects a node. Step 4's <em>subStmt</em> is again a
+|Statement| node, so the recursion has the same gap.</p>
+<p>Without §B.3.1 this is invisible: §14.13.1 rejects every labelled function declaration, inside an <code>if</code> or not.
+With §B.3.1 (web browsers, non-strict code), <code>l: function h() {}</code> is allowed and the IsLabelledFunction rules are
+what reject <code>if (1) l: function f() {}</code>; read literally they never apply, and the <code>if</code> body is a labelled
+function declaration.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/36-islabelledfunction-labelleditem.js</a> (outputs:
+<a href="results.html#36-islabelledfunction-labelleditemjs">the recorded runs</a>), each source parsed as a non-strict Script:</p>
+<pre class="js"><code>var sources = [&quot;if (1) l: function f() {}&quot;, &quot;while (0) l: function f() {}&quot;,
+               &quot;if (0) ; else a: b: function g() {}&quot;, &quot;while (0) l: m: x;&quot;, &quot;l: function h() {}&quot;];
+for (var s of sources) {
+  try { (0, eval)(s); print(s + &quot;: no error&quot;); }
+  catch (e) { print(s + &quot;: &quot; + e.constructor.name); }
+}
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>if (1) l: function f() {}</code></th>
+<th><code>while (0) l: function f() {}</code></th>
+<th><code>if (0) ; else a: b: function g() {}</code></th>
+<th><code>while (0) l: m: x;</code></th>
+<th><code>l: function h() {}</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text, host with §B.3.1</td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+<tr>
+<td>formal model, web-browser host (<code>ecma-run --web-browser</code>), test262 and proposed readings</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+<tr>
+<td>formal model, its default host (no §B.3.1), test262 and proposed readings</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>no error</td>
+<td>SyntaxError</td>
+</tr>
+</tbody>
+</table></div>
+<p>The engines implement §B.3.1 and agree with the intended reading, as does the model on its web-browser host, where
+§14.13.1 does not reject <code>l: function h() {}</code> and the first three SyntaxErrors come from IsLabelledFunction. The
+model's default host does not implement §B.3.1, so there the SyntaxErrors come from §14.13.1 and witness nothing
+about IsLabelledFunction. On either host the model's literal reading stops at IsLabelledFunction step 2 on the first
+source.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -23309,8 +23309,9 @@
+       &lt;dl class=&quot;header&quot;&gt;
+       &lt;/dl&gt;
+       &lt;emu-alg&gt;
+-        1. If _stmt_ is not a |LabelledStatement|, return *false*.
+-        1. Let _item_ be the |LabelledItem| of _stmt_.
++        1. If _stmt_ is not an instance of the production &lt;emu-grammar&gt;Statement : LabelledStatement&lt;/emu-grammar&gt;, return *false*.
++        1. Let _labelled_ be the |LabelledStatement| of _stmt_.
++        1. Let _item_ be the |LabelledItem| of _labelled_.
+         1. If _item_ is &lt;emu-grammar&gt;LabelledItem : FunctionDeclaration&lt;/emu-grammar&gt;, return *true*.
+         1. Let _subStmt_ be the |Statement| of _item_.
+         1. Return IsLabelledFunction(_subStmt_).
+</code></pre>
+<p>The other repair is a general rule in §5.1.2 that "<em>n</em> is a |X|" and "the |X| of <em>n</em>" see through chain
+productions, which other algorithms may already assume; SpecTec (<code>lean/Ecma/Ops/Leaf.lean</code>) reads all "the |X| of <em>n</em>"
+sites that way, and additionally patches <code>VarScopedDeclarations</code> on <code>ModuleItem : ExportDeclaration</code>
+(<code>spec/spectec/clauses/S08.spectec</code>) where the text asks for grandchild <code>|VariableStatement|</code> across the non-chain
+production <code>ExportDeclaration : `export` VariableStatement</code>.</p>
+<h2 id="test262">test262</h2>
+<p><code>language/statements/{if,while,do-while,for,for-in,for-of,with}/labelled-fn-stmt*.js</code> (18 files) require the
+SyntaxError. The <code>info</code> of four of them (the three <code>if</code> tests and <code>with/labelled-fn-stmt.js</code>) notes that in the
+absence of the Annex B extension (B.3.2 in their numbering, §B.3.1 today) the labelled function declaration itself is
+the error, so on a host without §B.3.1 they pass under the literal text too; on a host with it they need the
+proposed wording.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#36-islabelledfunction-labelleditemjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=36-islabelledfunction-labelleditem">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/36-islabelledfunction-labelleditem.js</code></summary><pre class="js">// IsLabelledFunction(stmt) takes a Statement node; step 1 asks whether it &quot;is a LabelledStatement&quot; and step 2
+// takes its LabelledItem, a grandchild. Each source is parsed as a Script (indirect eval).
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var sources = [&quot;if (1) l: function f() {}&quot;, &quot;while (0) l: function f() {}&quot;,
+               &quot;if (0) ; else a: b: function g() {}&quot;, &quot;while (0) l: m: x;&quot;, &quot;l: function h() {}&quot;];
+for (var s of sources) {
+  try { (0, eval)(s); print(s + &quot;: no error&quot;); }
+  catch (e) { print(s + &quot;: &quot; + e.constructor.name); }
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

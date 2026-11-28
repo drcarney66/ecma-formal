@@ -1,0 +1,837 @@
+{
+ "examples": [
+  {
+   "id": "01-number-multiply-zero-sign",
+   "number": "01",
+   "label": "01 Number::multiply gives +0 for +0 × -5",
+   "title": "Number::multiply gives +0 for +0 × -5",
+   "report": "01-number-multiply-zero-sign.md",
+   "name": "01-number-multiply-zero-sign.js",
+   "source": "// Number::multiply step 6 and the sign of an exact zero product.\n// Literal step 6: 𝔽(0) is +0, so 1/(+0 * -5) is +Infinity.\n// IEEE 754-2019 (the clause's description): -0, so -Infinity.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nprint(String(1 / (0 * -5)));   // +0 × -5\nprint(String(1 / (-5 * 0)));   // -5 × +0\nprint(String(1 / (0 * 5)));    // +0 × 5 (both readings: Infinity)\nprint(String(Object.is(-5 * 0, -0)));\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-numeric-types-number-multiply",
+     "path": "6"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "-Infinity",
+     "-Infinity",
+     "Infinity",
+     "true"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "02-gather-available-ancestors",
+   "number": "02",
+   "label": "02 GatherAvailableAncestors reads the [[CycleRoot]] of a module whose evaluation threw",
+   "title": "GatherAvailableAncestors reads the [[CycleRoot]] of a module whose evaluation threw",
+   "report": "02-gather-available-ancestors-empty-cycle-root.md",
+   "name": "02-gather-available-ancestors.js",
+   "source": "// Flags: --bundle\n\n// JS_BUNDLE_MODULE:a.mjs\nimport \"./b.mjs\";\nimport \"./c.mjs\";\nglobalThis.print(\"a runs\");\n// JS_BUNDLE_MODULE:b.mjs\nif (typeof print === \"undefined\") globalThis.print = console.log;\nprint(\"b starts\");\nawait 0;\nprint(\"b ends\");\n// JS_BUNDLE_MODULE:c.mjs\nif (typeof print === \"undefined\") globalThis.print = console.log;\nprint(\"c throws\");\nthrow \"c-error\";\n// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs\n// GatherAvailableAncestors 1.a reads a.[[CycleRoot]] of a module a whose\n// synchronous evaluation threw (Evaluate 9.a never sets [[CycleRoot]]).\n// a.mjs imports b.mjs (top-level await) and then c.mjs (throws).\nif (typeof print === \"undefined\") globalThis.print = console.log;\nimport(\"./a.mjs\").then(\n  function () { print(\"a fulfilled\"); },\n  function (e) { print(\"a rejected: \" + e); })\n  .then(function () { return import(\"./b.mjs\"); })\n  .then(function () { print(\"b fulfilled\"); }, function (e) { print(\"b rejected: \" + e); });\n",
+   "module": true,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-gather-available-ancestors",
+     "path": "1.a"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 3,
+    "line": "stop: sortError sec-gather-available-ancestors#0 1.a",
+    "printed": []
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "03-builtin-async-return-value",
+   "number": "03",
+   "label": "03 A built-in async function's promise fulfils with undefined",
+   "title": "A built-in async function's promise fulfils with undefined",
+   "report": "03-builtin-async-return-value.md",
+   "name": "03-builtin-async-return-value.js",
+   "source": "// BuiltinCallOrConstruct 10.b.iii and AsyncBlockStart 1.f: the fulfilment\n// value of a built-in async function. Literal text: undefined.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nArray.fromAsync([1, 2]).then(function (v) {\n  print(\"fromAsync fulfils with \" + JSON.stringify(v));\n});\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-builtincallorconstruct",
+     "path": "10.b.iii"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: [object #19124]",
+    "printed": [
+     "fromAsync fulfils with [1,2]"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "04-execute-module-tla-dispose",
+   "number": "04",
+   "label": "04 A module with top-level await never disposes its top-level resources",
+   "title": "A module with top-level await never disposes its top-level resources",
+   "report": "04-execute-module-tla-dispose.md",
+   "name": "04-execute-module-tla-dispose.js",
+   "source": "// Flags: --bundle\n\n// JS_BUNDLE_MODULE:m.mjs\nif (typeof print === \"undefined\") globalThis.print = console.log;\nawait using a = { async [Symbol.asyncDispose]() { print(\"dispose a\"); } };\nusing b = { [Symbol.dispose]() { print(\"dispose b\"); } };\nawait null;\nprint(\"end of module body\");\n// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs\n// ExecuteModule 4.b: a module with top-level await never disposes the\n// resources of its top-level `using` / `await using` declarations.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nimport(\"./m.mjs\").then(function () { print(\"evaluation promise fulfilled\"); },\n                       function (e) { print(\"rejected: \" + e); });\n",
+   "module": true,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-source-text-module-record-execute-module",
+     "path": "4.b"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "end of module body",
+     "dispose b",
+     "dispose a",
+     "evaluation promise fulfilled"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "05-parsetext-error-objects",
+   "number": "05",
+   "label": "05 ParseText creates SyntaxError objects without a realm",
+   "title": "ParseText creates SyntaxError objects without a realm",
+   "report": "05-parsetext-error-objects.md",
+   "name": "05-parsetext-error-objects.js",
+   "source": "// ParseText returns \"a List of one or more SyntaxError objects\". No\n// algorithm reads the List's objects: PerformEval throws its own SyntaxError\n// (step 11.b), from the current realm.\nif (typeof print === \"undefined\") globalThis.print = console.log;\ntry { eval(\"var x = ;\"); } catch (e) { print(e instanceof SyntaxError); }\ntry { Function(\"a\", \"return a +;\"); } catch (e) { print(e instanceof SyntaxError); }\ntry { new RegExp(\"(\"); } catch (e) { print(e instanceof SyntaxError); }\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "true",
+     "true",
+     "true"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "06-dowait-sync-timeout",
+   "number": "06",
+   "label": "06 A synchronous Atomics.wait that times out returns \"ok\"",
+   "title": "A synchronous Atomics.wait that times out returns \"ok\"",
+   "report": "06-dowait-sync-timeout.md",
+   "name": "06-dowait-sync-timeout.js",
+   "source": "// DoWait 28.a–31: a synchronous Atomics.wait that times out. Literal text:\n// it returns \"ok\" (the [[Result]] of step 26) and its Waiter Record stays in\n// the WaiterList; the second wait then fails AddWaiter step 2's Assert, and\n// Atomics.notify counts a waiter that is not waiting.\n// (Needs an agent that can block: node, bun, d8, the SpiderMonkey shell.)\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar ia = new Int32Array(new SharedArrayBuffer(4));\nprint(Atomics.wait(ia, 0, 0, 0));\nprint(Atomics.wait(ia, 0, 0, 1));\nprint(Atomics.notify(ia, 0));\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 1,
+    "line": "throw: TypeError",
+    "printed": []
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "09-atomics-waitasync-timeout-assert",
+   "number": "09",
+   "label": "09 EnqueueAtomicsWaitAsyncTimeoutJob passes a negative delay, and its Assert can fail",
+   "title": "EnqueueAtomicsWaitAsyncTimeoutJob passes a negative delay, and its Assert can fail",
+   "report": "09-atomics-waitasync-timeout-assert.md",
+   "name": "09-atomics-waitasync-timeout-assert.js",
+   "source": "// EnqueueAtomicsWaitAsyncTimeoutJob 1.b.ii: \"Assert: ℝ(timeOfJobExecution) ≥\n// waiterRecord.[[TimeoutTime]]\". With a fractional timeout and\n// additionalTimeout 0, [[TimeoutTime]] is not a time value; a host whose clock\n// has millisecond resolution may run the Job (after \"at least\" the step 4\n// delay) at a time below it.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar ia = new Int32Array(new SharedArrayBuffer(8));\nvar t0 = Date.now();\nvar r = Atomics.waitAsync(ia, 0, 0, 0.7);\nprint(r.async);\nr.value.then(function (v) { print(v + \", elapsed ≥ 0: \" + (Date.now() - t0 >= 0)); });\n// (node ends the process when only an Atomics.waitAsync timeout is pending)\nif (typeof setTimeout === \"function\") setTimeout(function () {}, 50);\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-enqueueatomicswaitasynctimeoutjob",
+     "path": "4"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "true",
+     "timed-out, elapsed ≥ 0: true"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "10-utc-large-local-time",
+   "number": "10",
+   "label": "10 new Date(0).setHours(1e21): UTC ( _t_ ) reaches a failing Assert",
+   "title": "new Date(0).setHours(1e21): UTC ( _t_ ) reaches a failing Assert",
+   "report": "10-utc-large-local-time.md",
+   "name": "10-utc-large-local-time.js",
+   "source": "// UTC ( t ) step 4.a with a large finite local time t: MakeDay (in\n// GetUTCEpochNanoseconds step 1) finds no time value on the month's first\n// day and returns NaN, so the Assert of GetUTCEpochNanoseconds step 4 fails.\n// First, MakeDay step 8's \"finite time value\": any finite integral Number, or\n// one in the range a time value supports (8.64e15)? 1 January 275761 is\n// outside the range, but 256 days before it is inside.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nprint(Date.UTC(275761, 0, -256));            // range reading: NaN; any-integral reading: 8639987299200000\nprint(Date.UTC(275760, 8, 13));              // the last time value, either reading\nprint(new Date(0).setUTCHours(1e21));        // the UTC setter: no UTC(t), NaN\nprint(new Date(0).setHours(1e21));           // local: UTC(t) with t = 3.6e27\nprint(new Date(2000, 0, 1, 1e21).getTime()); // the constructor: UTC(t)\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-getutcepochnanoseconds",
+     "path": "4"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "expect": {
+    "exit": 3,
+    "line": "stop: assertFailed sec-getutcepochnanoseconds#0 4",
+    "printed": []
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "11-regexp-lastindex-inside-surrogate-pair",
+   "number": "11",
+   "label": "11 /u with lastIndex inside a surrogate pair: a match reported one code unit late, and a Match Record that ends before it starts",
+   "title": "/u with lastIndex inside a surrogate pair: a match reported one code unit late, and a Match Record that ends before it starts",
+   "report": "11-regexp-lastindex-inside-surrogate-pair.md",
+   "name": "11-regexp-lastindex-inside-surrogate-pair.js",
+   "source": "// RegExpBuiltinExec with /u and lastIndex on the trailing surrogate of a pair.\n// A non-empty match (steps 13.b, 22, 24, 28): the literal text reports index 1\n// and a lone trailing surrogate as the match.\n// An empty match: match = { [[StartIndex]]: 1, [[EndIndex]]: 0 }, which the\n// Match Record table does not allow, and GetMatchString step 1's Assert fails.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar n = /./gu;\nn.lastIndex = 1;\nvar mn = n.exec(\"\\u{1F600}x\");\nprint(\"non-empty: index \" + mn.index + \", match length \" + mn[0].length +\n  \", first unit \" + mn[0].charCodeAt(0).toString(16) + \", lastIndex \" + n.lastIndex);\nvar r = /(?:)/gu;\nr.lastIndex = 1;\nvar m = r.exec(\"\\u{1F600}\");\nprint(\"empty: index \" + m.index + \", match length \" + m[0].length + \", lastIndex \" + r.lastIndex);\nvar rd = /(?:)/gud;\nrd.lastIndex = 1;\nvar md = rd.exec(\"\\u{1F600}\");\nprint(\"indices[0] \" + JSON.stringify(md.indices[0]));\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-regexpbuiltinexec",
+     "path": "13.b"
+    }
+   ],
+   "filters": [
+    "stop"
+   ],
+   "expect": {
+    "exit": 3,
+    "line": "stop: assertFailed sec-getmatchstring#0 1",
+    "printed": []
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "12-asyncblockstart-await-result",
+   "number": "12",
+   "label": "12 AsyncBlockStart asserts ~unused~, but Await resumes it with ~empty~",
+   "title": "AsyncBlockStart asserts ~unused~, but Await resumes it with ~empty~",
+   "report": "12-asyncblockstart-await-result.md",
+   "name": "12-asyncblockstart-await-result.js",
+   "source": "// AsyncBlockStart step 4 \"Assert: result is unused\" against Await step 8\n// \"Return ? RunCallerContext(empty)\": every async function that awaits.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nasync function f() { await 1; return 2; }\nf().then(function (v) { print(\"f fulfilled with \" + v); });\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-asyncblockstart",
+     "path": "3"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: [object #18784]",
+    "printed": [
+     "f fulfilled with 2"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "13-promise-job-abrupt-completion",
+   "number": "13",
+   "label": "13 NewPromiseReactionJob can return a throw completion, and null-realm promise Jobs run user code without a specified agent or realm",
+   "title": "NewPromiseReactionJob can return a throw completion, and null-realm promise Jobs run user code without a specified agent or realm",
+   "report": "13-promise-job-abrupt-completion.md",
+   "name": "13-promise-job-abrupt-completion.js",
+   "source": "// §9.5 \"The Abstract Closure must return a normal completion\" against\n// NewPromiseReactionJob 1.i \"Return ? Call(promiseCapability.[[Resolve]], …)\",\n// with a capability whose resolve function throws (a species constructor).\n// The second reaction has no handler: its Job's realm is null, yet it calls\n// the program's resolve function (§9.5: such a job \"does not evaluate\n// ECMAScript code\").\nif (typeof print === \"undefined\") globalThis.print = console.log;\nfunction Bad(executor) {\n  executor(function (v) { print(\"resolve(\" + v + \") called; it throws\"); throw new Error(\"boom\"); },\n           function () {});\n}\nBad[Symbol.species] = Bad;\nvar p = Promise.resolve(1);\np.constructor = Bad;\np.then(function (v) { print(\"handler \" + v); return v; });\nvar q = Promise.resolve(2);\nq.constructor = Bad;\nq.then();   // no handler: the Job's realm is null\nPromise.resolve(3).then(function () { print(\"a later Job runs\"); });\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-newpromisereactionjob",
+     "path": "1.i"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 3,
+    "line": "stop: assertFailed sec-jobs -",
+    "printed": []
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "14-nativefunction-initialname",
+   "number": "14",
+   "label": "14 Function.prototype.toString has no conforming result for some [[InitialName]] values",
+   "title": "Function.prototype.toString has no conforming result for some [[InitialName]] values",
+   "report": "14-nativefunction-initialname.md",
+   "name": "14-nativefunction-initialname.js",
+   "source": "// Function.prototype.toString step 3: for a built-in function whose\n// [[InitialName]] no PropertyName matches, no String has \"the syntax of a\n// NativeFunction\" with that name as its PropertyName portion. A class's\n// default constructor is a built-in function (ClassDefinitionEvaluation\n// 14.b) named by NamedEvaluation; on a host whose HostHasSourceTextAvailable\n// is false, step 3 applies to it.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar o = { [\"a b\"]: class {} };\nprint(JSON.stringify(o[\"a b\"].name));\nclass C { static #x = class {}; static name2() { return C.#x.name; } }\nprint(JSON.stringify(C.name2()));\nvar s = { [Symbol(\"a b\")]: class {} };\nprint(JSON.stringify(s[Object.getOwnPropertySymbols(s)[0]].name));\n// With source text available (every engine), step 2 returns the class text:\nprint(Function.prototype.toString.call(o[\"a b\"]));\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "\"a b\"",
+     "\"#x\"",
+     "\"[a b]\"",
+     "class {}"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "15-synthetic-module-link",
+   "number": "15",
+   "label": "15 A second Link of a Synthetic Module Record resets its exports, observably with JSON modules",
+   "title": "A second Link of a Synthetic Module Record resets its exports, observably with JSON modules",
+   "report": "15-synthetic-module-link.md",
+   "name": "15-synthetic-module-link.js",
+   "source": "// Flags: --bundle\n\n// JS_BUNDLE_MODULE:j.json\n{\"a\": 1}\n// JS_BUNDLE_MODULE:other.mjs\nimport \"./probe.mjs\";\nimport k from \"./j.json\" with { type: \"json\" };\nexport { k };\n// JS_BUNDLE_MODULE:probe.mjs\nimport { readJ } from \"./main.mjs\";\nvar print = globalThis.print || console.log;\nprint(\"probe sees \" + JSON.stringify(readJ()));\n// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs\n// Link of a Synthetic Module Record: InnerModuleLinking 1.a calls it for each\n// importer, and each call gives the module a new environment whose bindings\n// are undefined until InnerModuleEvaluation evaluates it again. other.mjs\n// imports probe.mjs before j.json, so probe.mjs runs between the two.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nimport j from \"./j.json\" with { type: \"json\" };\nexport function readJ() { return j; }\nprint(\"main sees \" + JSON.stringify(j));\nimport(\"./other.mjs\").then(function () { print(\"after other: \" + JSON.stringify(j)); },\n                           function (e) { print(\"rejected: \" + e); });\n",
+   "module": true,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-smr-Link",
+     "path": "1"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "main sees {\"a\":1}",
+     "probe sees undefined",
+     "after other: {\"a\":1}"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "20-dynamic-function-private-identifiers",
+   "number": "20",
+   "label": "20 new Function(\"o\", \"return o.#f\"): no check of private names in dynamic functions",
+   "title": "new Function(\"o\", \"return o.#f\"): no check of private names in dynamic functions",
+   "report": "20-dynamic-function-private-identifiers.md",
+   "name": "20-dynamic-function-private-identifiers.js",
+   "source": "if (typeof print === \"undefined\") globalThis.print = console.log;\n// AllPrivateIdentifiersValid is checked only for a Script or Module body.\ntry { new Function(\"o\", \"return o.#f\"); print(\"body: no error\"); }\ncatch (e) { print(\"body: \" + e.constructor.name); }\ntry { new Function(\"a = {}.#g\", \"\"); print(\"params: no error\"); }\ncatch (e) { print(\"params: \" + e.constructor.name); }\ntry { eval(\"(function (o) { return o.#f; })\"); print(\"eval: no error\"); }\ncatch (e) { print(\"eval: \" + e.constructor.name); }\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-createdynamicfunction",
+     "path": "18"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "body: SyntaxError",
+     "params: SyntaxError",
+     "eval: SyntaxError"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "21-identityescape-zwnj-zwj",
+   "number": "21",
+   "label": "21 /<ZWNJ>/ and /<ZWJ>/ became SyntaxErrors with Unicode 15.1",
+   "title": "/<ZWNJ>/ and /<ZWJ>/ became SyntaxErrors with Unicode 15.1",
+   "report": "21-identityescape-zwnj-zwj.md",
+   "name": "21-identityescape-zwnj-zwj.js",
+   "source": "// IdentityEscape[~UnicodeMode] :: SourceCharacter but not UnicodeIDContinue\n// (§22.2.1). Since Unicode 15.1, U+200C (ZWNJ) and U+200D (ZWJ) are\n// ID_Continue, so the literal text rejects `\\` followed by either of them in\n// a pattern without the u or v flag; before Unicode 15.1 it accepted them.\n// U+200B and U+200E (not ID_Continue) are the neighbours; `a` (U+0061,\n// ID_Continue) is an IdentityEscape only in §B.1.2's grammar, which every\n// engine implements. The pattern text is built with fromCharCode: the\n// characters are invisible.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nfor (var cu of [0x200C, 0x200D, 0x200B, 0x200E, 0x61]) {\n  var ch = String.fromCharCode(cu), src = \"\\\\\" + ch, out = [];\n  try { var re = eval(\"/\" + src + \"/\"); out.push(\"literal \" + (re.source === src && re.test(ch))); }\n  catch (e) { out.push(\"literal \" + e.constructor.name); }\n  try { out.push(\"RegExp \" + new RegExp(src).test(ch)); }\n  catch (e) { out.push(\"RegExp \" + e.constructor.name); }\n  try { new RegExp(src, \"u\"); out.push(\"u ok\"); }\n  catch (e) { out.push(\"u \" + e.constructor.name); }\n  print(\"U+\" + cu.toString(16).toUpperCase() + \": \" + out.join(\", \"));\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-parsepattern",
+     "path": "4.a"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "U+200C: literal true, RegExp true, u SyntaxError",
+     "U+200D: literal true, RegExp true, u SyntaxError",
+     "U+200B: literal true, RegExp true, u SyntaxError",
+     "U+200E: literal true, RegExp true, u SyntaxError",
+     "U+61: literal SyntaxError, RegExp SyntaxError, u SyntaxError"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "24-lone-property-gc-assert",
+   "number": "24",
+   "label": "24 CompileToCharSet asks UnicodeMatchPropertyValue for a General_Category value before testing that it is one",
+   "title": "CompileToCharSet asks UnicodeMatchPropertyValue for a General_Category value before testing that it is one",
+   "report": "24-lone-property-gc-assert.md",
+   "name": "24-lone-property-gc-assert.js",
+   "source": "// CompileToCharSet, UnicodePropertyValueExpression :: LoneUnicodePropertyNameOrValue, step 2 calls\n// UnicodeMatchPropertyValue(General_Category, s) before testing s; for a binary property name s its\n// Assert (step 2) fails.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar cases = [\n  [\"/\\\\p{Lu}/u.test('A')\", () => /\\p{Lu}/u.test(\"A\")],\n  [\"/\\\\p{ASCII}/u.test('a')\", () => /\\p{ASCII}/u.test(\"a\")],\n  [\"/\\\\p{Hex}/u.test('f')\", () => /\\p{Hex}/u.test(\"f\")],\n  [\"/\\\\p{Any}/u.test('\\\\u{10FFFF}')\", () => /\\p{Any}/u.test(\"\\u{10FFFF}\")],\n];\nfor (var [src, run] of cases) {\n  try { print(src + \": \" + run()); } catch (e) { print(src + \": \" + e.constructor.name); }\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-runtime-semantics-unicodematchpropertyvalue-p-v",
+     "path": "2"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "/\\p{Lu}/u.test('A'): true",
+     "/\\p{ASCII}/u.test('a'): true",
+     "/\\p{Hex}/u.test('f'): true",
+     "/\\p{Any}/u.test('\\u{10FFFF}'): true"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "26-annexb-modifiers-early-errors",
+   "number": "26",
+   "label": "26 Annex B: /(?ii:a)/ has no early error under §B.1.2",
+   "title": "Annex B: /(?ii:a)/ has no early error under §B.1.2",
+   "report": "26-annexb-modifiers-early-errors.md",
+   "name": "26-annexb-modifiers-early-errors.js",
+   "source": "// §22.2.1.1's modifier early errors are keyed on Atom; under §B.1.2 a pattern without `u` or `v` has an\n// ExtendedAtom there, which no early error covers. Each pattern is compiled as a literal (indirect eval)\n// and by the RegExp constructor.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar patterns = [\"(?ii:a)\", \"(?-:a)\", \"(?i-i:a)\", \"(?i:a)\", \"(?i-m:a)\"];\nfor (var p of patterns) {\n  var lit, ctor;\n  try { (0, eval)(\"/\" + p + \"/\"); lit = \"no error\"; } catch (e) { lit = e.constructor.name; }\n  try { new RegExp(p); ctor = \"no error\"; } catch (e) { ctor = e.constructor.name; }\n  print(\"/\" + p + \"/: \" + lit + \"; new RegExp: \" + ctor);\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "/(?ii:a)/: SyntaxError; new RegExp: SyntaxError",
+     "/(?-:a)/: SyntaxError; new RegExp: SyntaxError",
+     "/(?i-i:a)/: SyntaxError; new RegExp: SyntaxError",
+     "/(?i:a)/: no error; new RegExp: no error",
+     "/(?i-m:a)/: no error; new RegExp: no error"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "29-propname-coverinitializedname",
+   "number": "29",
+   "label": "29 ({a = 1});: the __proto__ early error asks for the PropName of a CoverInitializedName, which has none",
+   "title": "({a = 1});: the __proto__ early error asks for the PropName of a CoverInitializedName, which has none",
+   "report": "29-propname-coverinitializedname.md",
+   "name": "29-propname-coverinitializedname.js",
+   "source": "// The ObjectLiteral `__proto__` early error asks for the PropName of every PropertyDefinition, and PropName\n// has no row for CoverInitializedName. Each source is parsed as a Script (indirect eval).\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar sources = [\"({a = 1});\", \"({__proto__: 1, __proto__ = 2});\", \"({a = 1} = {});\"];\nfor (var s of sources) {\n  try { (0, eval)(s); print(JSON.stringify(s) + \": no error\"); }\n  catch (e) { print(JSON.stringify(s) + \": \" + e.constructor.name); }\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "\"({a = 1});\": SyntaxError",
+     "\"({__proto__: 1, __proto__ = 2});\": SyntaxError",
+     "\"({a = 1} = {});\": no error"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "31-sort-infinite-comparator",
+   "number": "31",
+   "label": "31 Sort: a comparator that returns ±∞ is neither consistent nor inconsistent",
+   "title": "Sort: a comparator that returns ±∞ is neither consistent nor inconsistent",
+   "report": "31-sort-infinite-comparator.md",
+   "name": "31-sort-infinite-comparator.js",
+   "source": "// SortIndexedProperties: a <C b means ℝ(comparator(a, b)) < 0, and ℝ(±∞) is not defined, so a comparator\n// that returns ±∞ is neither consistent nor inconsistent by the definition.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nprint([3, 1, 2].sort((a, b) => a < b ? -Infinity : a > b ? Infinity : 0).join());\nprint([5, 3, 4, 1, 2].sort((a, b) => (a - b) * Infinity).join());\nprint([\"b\", \"a\", \"c\"].sort((a, b) => a < b ? -Infinity : a > b ? Infinity : 0).join());\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-comparearrayelements",
+     "path": "4.a"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "1,2,3",
+     "1,2,3,4,5",
+     "a,b,c"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "32-stringvalue-reservedword",
+   "number": "32",
+   "label": "32 Identifier early errors take the StringValue of a ReservedWord, which StringValue does not define",
+   "title": "Identifier early errors take the StringValue of a ReservedWord, which StringValue does not define",
+   "report": "32-stringvalue-reservedword.md",
+   "name": "32-stringvalue-reservedword.js",
+   "source": "// Identifier early errors: \"the StringValue of IdentifierName is the StringValue of any ReservedWord except\n// for yield or await\", and StringValue has no row for ReservedWord. Each source is parsed as a Script.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar sources = [\"var \\\\u0069f = 1;\", \"var i\\\\u0066 = 1;\", \"var \\\\u{63}lass = 1;\", \"var \\\\u0079ield = 1;\",\n               \"var \\\\u0061wait = 1;\", \"var \\\\u0069g = 1;\"];\nfor (var s of sources) {\n  try { (0, eval)(s); print(s + \": no error\"); }\n  catch (e) { print(s + \": \" + e.constructor.name); }\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "var \\u0069f = 1;: SyntaxError",
+     "var i\\u0066 = 1;: SyntaxError",
+     "var \\u{63}lass = 1;: SyntaxError",
+     "var \\u0079ield = 1;: no error",
+     "var \\u0061wait = 1;: no error",
+     "var \\u0069g = 1;: no error"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "33-createintrinsics-async-argument-position",
+   "number": "33",
+   "label": "33 CreateIntrinsics passes _async_ in _prefix_'s position: every built-in gets a Boolean prefix",
+   "title": "CreateIntrinsics passes _async_ in _prefix_'s position: every built-in gets a Boolean prefix",
+   "report": "33-createintrinsics-async-argument-position.md",
+   "name": "33-createintrinsics-async-argument-position.js",
+   "source": "// CreateIntrinsics step 2 passes _async_ where CreateBuiltinFunction takes _prefix_, and passes no _prefix_.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nprint(Object.getOwnPropertyDescriptor(Map.prototype, \"size\").get.name);\nprint(Object.getOwnPropertyDescriptor(RegExp.prototype, \"flags\").get.name);\nvar p = Array.fromAsync([1, 2]);\nprint(Object.prototype.toString.call(p));\np.then(function (v) { print(\"fromAsync fulfils with \" + JSON.stringify(v)); });\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: [object #21285]",
+    "printed": [
+     "get size",
+     "get flags",
+     "[object Promise]",
+     "fromAsync fulfils with [1,2]"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "35-contains-awaitexpression-cover",
+   "number": "35",
+   "label": "35 Contains never finds an AwaitExpression: async function f(x = await 1) {} has no early error",
+   "title": "Contains never finds an AwaitExpression: async function f(x = await 1) {} has no early error",
+   "report": "35-contains-awaitexpression-cover.md",
+   "name": "35-contains-awaitexpression-cover.js",
+   "source": "// Contains (§8.5.1) has no row for UnaryExpression :\n// CoverAwaitExpressionAndAwaitUsingDeclarationHead, the production an `await`\n// expression parses as, so literally no Parse Node contains an\n// AwaitExpression and the rules \"FormalParameters Contains AwaitExpression\"\n// never apply. Each source is evaluated as a Script (indirect eval) or by the\n// AsyncFunction constructor; test262 expects a SyntaxError for the first six\n// and none for the last three.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar AsyncFunction = (async function () {}).constructor;\nvar cases = [\n  [\"async function f(x = await 1) {}\", () => (0, eval)(\"async function f(x = await 1) {}\")],\n  [\"(async function* (x = await 1) {})\", () => (0, eval)(\"(async function* (x = await 1) {})\")],\n  [\"({ async m(x = await 1) {} })\", () => (0, eval)(\"({ async m(x = await 1) {} })\")],\n  [\"({ async *m(x = await 1) {} })\", () => (0, eval)(\"({ async *m(x = await 1) {} })\")],\n  [\"async function g() { async (x = await 1) => 0; }\", () => (0, eval)(\"async function g() { async (x = await 1) => 0; }\")],\n  [\"AsyncFunction('x = await 1', '')\", () => AsyncFunction(\"x = await 1\", \"\")],\n  [\"async function h() { await 1; }\", () => (0, eval)(\"async function h() { await 1; }\")],\n  [\"async function k(x = function () { var await; }) {}\", () => (0, eval)(\"async function k(x = function () { var await; }) {}\")],\n  [\"(async function () { class C { static { } } })\", () => (0, eval)(\"(async function () { class C { static { } } })\")],\n];\nfor (var [src, run] of cases) {\n  try { run(); print(src + \": no error\"); }\n  catch (e) { print(src + \": \" + e.constructor.name); }\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "async function f(x = await 1) {}: SyntaxError",
+     "(async function* (x = await 1) {}): SyntaxError",
+     "({ async m(x = await 1) {} }): SyntaxError",
+     "({ async *m(x = await 1) {} }): SyntaxError",
+     "async function g() { async (x = await 1) => 0; }: SyntaxError",
+     "AsyncFunction('x = await 1', ''): SyntaxError",
+     "async function h() { await 1; }: no error",
+     "async function k(x = function () { var await; }) {}: no error",
+     "(async function () { class C { static { } } }): no error"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "36-islabelledfunction-labelleditem",
+   "number": "36",
+   "label": "36 IsLabelledFunction tests a Statement node for being a LabelledStatement: always false",
+   "title": "IsLabelledFunction tests a Statement node for being a LabelledStatement: always false",
+   "report": "36-islabelledfunction-labelleditem.md",
+   "name": "36-islabelledfunction-labelleditem.js",
+   "source": "// IsLabelledFunction(stmt) takes a Statement node; step 1 asks whether it \"is a LabelledStatement\" and step 2\n// takes its LabelledItem, a grandchild. Each source is parsed as a Script (indirect eval).\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar sources = [\"if (1) l: function f() {}\", \"while (0) l: function f() {}\",\n               \"if (0) ; else a: b: function g() {}\", \"while (0) l: m: x;\", \"l: function h() {}\"];\nfor (var s of sources) {\n  try { (0, eval)(s); print(s + \": no error\"); }\n  catch (e) { print(s + \": \" + e.constructor.name); }\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-islabelledfunction",
+     "path": "1"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "if (1) l: function f() {}: SyntaxError",
+     "while (0) l: function f() {}: SyntaxError",
+     "if (0) ; else a: b: function g() {}: SyntaxError",
+     "while (0) l: m: x;: no error",
+     "l: function h() {}: SyntaxError"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "37-split-code-units",
+   "number": "37",
+   "label": "37 String.prototype.split with an empty separator builds an Array of code units",
+   "title": "String.prototype.split with an empty separator builds an Array of code units",
+   "report": "37-split-code-units.md",
+   "name": "37-split-code-units.js",
+   "source": "// String.prototype.split step 10.d passes a List of code units to CreateArrayFromList, which takes a List\n// of ECMAScript language values.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar a = \"ab\".split(\"\");\nprint(a.length + \" \" + typeof a[1] + \" \" + JSON.stringify(a));\nprint(new String(\" \").split(\"\")[0] === \" \");\nprint(JSON.stringify(\"\\u{1F600}\".split(\"\")));\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-string.prototype.split",
+     "path": "10.d"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "2 string [\"a\",\"b\"]",
+     "true",
+     "[\"\\ud83d\",\"\\ude00\"]"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "38-ordinaryset-receiver-has-property",
+   "number": "38",
+   "label": "38 OrdinarySetWithOwnDescriptor asserts what a Proxy receiver's trap need not tell",
+   "title": "OrdinarySetWithOwnDescriptor asserts what a Proxy receiver's trap need not tell",
+   "report": "38-ordinaryset-receiver-has-property.md",
+   "name": "38-ordinaryset-receiver-has-property.js",
+   "source": "// OrdinarySetWithOwnDescriptor 2.d.i asserts that the receiver \"does not currently have\" the property right\n// after a Proxy receiver's trap said undefined for a property its target has.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar t = { x: 1 };\nvar p = new Proxy(t, { getOwnPropertyDescriptor() { return undefined; } });\nprint(Reflect.set({}, \"x\", 5, p));\nprint(t.x);\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-ordinarysetwithowndescriptor",
+     "path": "2.d.i"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "true",
+     "5"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "39-must-cover-other-rules",
+   "number": "39",
+   "label": "39 Early error rules read \"the n that is covered by\" a cover that covers nothing",
+   "title": "Early error rules read \"the n that is covered by\" a cover that covers nothing",
+   "report": "39-must-cover-other-rules.md",
+   "name": "39-must-cover-other-rules.js",
+   "source": "// Each source has a cover that does not cover what an early error rule says it must; the\n// other rules of the same and enclosing productions read static semantics through the cover.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar sources = [\n  \"([...x = []]) => {};\",\n  \"([...x, y]) => {};\",\n  \"(a, ...b,) => {};\",\n  \"async (...x = []) => {};\",\n  \"async\\n(foo) => {};\",\n  \"(x) => {};\",\n];\nfor (var s of sources) {\n  try {\n    (0, eval)(s);\n    print(JSON.stringify(s) + \": no error\");\n  } catch (e) {\n    print(JSON.stringify(s) + \": \" + e.constructor.name);\n  }\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "\"([...x = []]) => {};\": SyntaxError",
+     "\"([...x, y]) => {};\": SyntaxError",
+     "\"(a, ...b,) => {};\": SyntaxError",
+     "\"async (...x = []) => {};\": SyntaxError",
+     "\"async\\n(foo) => {};\": SyntaxError",
+     "\"(x) => {};\": no error"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "40-annexb-regexp-order-group-count",
+   "number": "40",
+   "label": "40 Annex B: what §B.1.2's ordered alternatives choose, and which Pattern its group-number condition counts",
+   "title": "Annex B: what §B.1.2's ordered alternatives choose, and which Pattern its group-number condition counts",
+   "report": "40-annexb-regexp-order-group-count.md",
+   "name": "40-annexb-regexp-order-group-count.js",
+   "source": "// §B.1.2: \"each alternative is considered only if previous production alternatives do not match\", and\n// AtomEscape's DecimalEscape \"only if the CapturingGroupNumber of DecimalEscape is ≤\n// CountLeftCapturingParensWithin(the Pattern containing DecimalEscape)\". Each pattern is compiled with no\n// flags; the string is matched against it.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar cases = [[\"a{1}\", \"a\"], [\"\\\\b*\", \"\"], [\"a\\\\b?\", \"ab\"], [\"\\\\x4\", \"x4\"], [\"{,1}\", \"{,1}\"], [\"[\\\\b]\", \"\\b\"],\n             [\"\\\\c1\", \"\\\\c1\"], [\"\\\\1(a)\", \"a\"], [\"\\\\2(a)(b)\", \"ab\"], [\"\\\\3(a)(b)\", \"\\x03ab\"], [\"(a)\\\\10\", \"a\\x08\"],\n             [\"\\\\1\", \"\\x01\"]];\nfor (var [p, s] of cases) {\n  var r;\n  try { r = String(new RegExp(p).test(s)); } catch (e) { r = e.constructor.name; }\n  print(JSON.stringify(p) + \" on \" + JSON.stringify(s) + \": \" + r);\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "\"a{1}\" on \"a\": true",
+     "\"\\\\b*\" on \"\": SyntaxError",
+     "\"a\\\\b?\" on \"ab\": SyntaxError",
+     "\"\\\\x4\" on \"x4\": SyntaxError",
+     "\"{,1}\" on \"{,1}\": SyntaxError",
+     "\"[\\\\b]\" on \"\\b\": true",
+     "\"\\\\c1\" on \"\\\\c1\": SyntaxError",
+     "\"\\\\1(a)\" on \"a\": true",
+     "\"\\\\2(a)(b)\" on \"ab\": true",
+     "\"\\\\3(a)(b)\" on \"\\u0003ab\": SyntaxError",
+     "\"(a)\\\\10\" on \"a\\b\": SyntaxError",
+     "\"\\\\1\" on \"\\u0001\": SyntaxError"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "41-annexb-html-close-comment-token",
+   "number": "41",
+   "label": "41 Annex B: a first-line --> is an input element that is neither a comment nor a token",
+   "title": "Annex B: a first-line --> is an input element that is neither a comment nor a token",
+   "report": "41-annexb-html-close-comment-token.md",
+   "name": "41-annexb-html-close-comment-token.js",
+   "source": "--> a comment: the first line is an HTMLCloseComment input element (B.1.1)\n// With B.1.1 the line above is a comment; under §5.1.2 alone it would be a token no production has.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nprint(\"parsed\");\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 1,
+    "line": "throw: SyntaxError",
+    "printed": []
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "43-allocatesharedarraybuffer-byte-length",
+   "number": "43",
+   "label": "43 AllocateSharedArrayBuffer stores a growable buffer's length with SetValueInBuffer on a Shared Data Block",
+   "title": "AllocateSharedArrayBuffer stores a growable buffer's length with SetValueInBuffer on a Shared Data Block",
+   "report": "43-allocatesharedarraybuffer-byte-length.md",
+   "name": "43-allocatesharedarraybuffer-byte-length.js",
+   "source": "// AllocateSharedArrayBuffer step 9.c stores the length with SetValueInBuffer(_byteLengthBlock_, …), passing a\n// Shared Data Block where SetValueInBuffer takes an ArrayBuffer or SharedArrayBuffer.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar sab = new SharedArrayBuffer(4, { maxByteLength: 16 });\nprint(sab.growable + \" \" + sab.byteLength + \" \" + sab.maxByteLength);\nsab.grow(8);\nprint(sab.byteLength + \" \" + new Int32Array(sab).length);\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-allocatesharedarraybuffer",
+     "path": "9.c"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "true 4 16",
+     "8 2"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "44-lookahead-inserted-semicolon",
+   "number": "44",
+   "label": "44 Lookahead restrictions over an automatically inserted semicolon",
+   "title": "Lookahead restrictions over an automatically inserted semicolon",
+   "report": "44-lookahead-source-tokens.md",
+   "name": "44-lookahead-inserted-semicolon.js",
+   "source": "// ExpressionStatement's [lookahead ∉ { let [ }] and a semicolon that §12.10 inserts before `[`: whether the\n// lookahead reads the inserted `;`. Each source is parsed (not run) as a function body in a Script.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar sources = [\"if (false) let\\n[a] = 0;\", \"while (false) let\\n[a] = 0;\", \"if (false) let\\n{}\",\n               \"if (false) let;\\n[a] = 0;\"];\nfor (var s of sources) {\n  try { (0, eval)(\"(function () {\\n\" + s + \"\\n})\"); print(JSON.stringify(s) + \": no error\"); }\n  catch (e) { print(JSON.stringify(s) + \": \" + e.constructor.name); }\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "\"if (false) let\\n[a] = 0;\": SyntaxError",
+     "\"while (false) let\\n[a] = 0;\": SyntaxError",
+     "\"if (false) let\\n{}\": no error",
+     "\"if (false) let;\\n[a] = 0;\": no error"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "45-finalizationregistry-unregister",
+   "number": "45",
+   "label": "45 FinalizationRegistry.prototype.unregister removes cells from the List it iterates",
+   "title": "FinalizationRegistry.prototype.unregister removes cells from the List it iterates",
+   "report": "45-unregister-iterates-cells.md",
+   "name": "45-finalizationregistry-unregister.js",
+   "source": "// FinalizationRegistry.prototype.unregister step 5 removes cells from the List its For each iterates.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nvar fr = new FinalizationRegistry(function () {});\nvar token = {}, t1 = {}, t2 = {}, t3 = {};\nfr.register(t1, 1, token);\nfr.register(t2, 2, token);\nfr.register(t3, 3, {});\nprint(fr.unregister(token));\nprint(fr.unregister(token));\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-finalization-registry.prototype.unregister",
+     "path": "5"
+    }
+   ],
+   "filters": [],
+   "expect": {
+    "exit": 0,
+    "line": "normal: undefined",
+    "printed": [
+     "true",
+     "false"
+    ]
+   },
+   "unrunnable": null
+  },
+  {
+   "id": "46-covered-node-tail-call",
+   "number": "46",
+   "label": "46 A covered Parse Node is outside the tree that covers it",
+   "title": "A covered Parse Node is outside the tree that covers it",
+   "report": "46-covered-node-parent.md",
+   "name": "46-covered-node-tail-call.js",
+   "source": "\"use strict\";\n// IsInTailPosition: the call in `return (paren(n - 1))` lies in the ParenthesizedExpression that the cover\n// covers, which §5.1.4 parses as a separate tree containing no FunctionBody.\nif (typeof print === \"undefined\") globalThis.print = console.log;\nfunction plain(n) { if (n === 0) return \"done\"; return plain(n - 1); }\nfunction paren(n) { if (n === 0) return \"done\"; return (paren(n - 1)); }\nfor (var [name, fn] of [[\"plain\", plain], [\"paren\", paren]]) {\n  try { print(name + \": \" + fn(100000)); }\n  catch (e) { print(name + \": \" + e.constructor.name); }\n}\n",
+   "module": false,
+   "args": [],
+   "breakpoints": [
+    {
+     "alg": "sec-isintailposition",
+     "path": "2"
+    }
+   ],
+   "filters": [],
+   "expect": null,
+   "unrunnable": "the run does not end within RESULTS.md's 120 s natively, and the Worker build is slower"
+  }
+ ]
+}

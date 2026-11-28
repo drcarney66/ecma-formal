@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it works · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="how-it-works.html" aria-current="page">How it works</a></li><li><a href="proposal.html">Applying a proposal</a></li><li><a href="errata.html">Spec issues &amp; errata</a></li><li><a href="what-is-proved.html">What is proved</a></li><li><a href="test262.html">test262 results</a></li><li><a href="slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="model.html">The model</a></li><li><a href="host.html">The host</a></li><li><a href="memory-model.html">Memory model</a></li><li><a href="parser-laws.html">Parser laws</a></li><li><a href="implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="examples.html">Examples</a></li><li><a href="debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#whole">The whole</a></li><li class="t1"><a href="#spectec">The specification in SpecTec</a></li><li class="t1"><a href="#bijection">Bidirectional bijections: spec.html ↔ SpecTec ↔ Lean</a></li><li class="t2"><a href="#ids">Symbolic names and sorted declarations</a></li><li class="t1"><a href="#prose">Prose concepts in SpecTec: syntax, relation and laws</a></li><li class="t1"><a href="#errata">Specification decisions and errata</a></li><li class="t1"><a href="#downstream">Downstream: the small-step machine and proved engine</a></li><li class="t1"><a href="#example">One clause, end to end</a></li><li class="t1"><a href="#sizes">Sizes</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow">ECMA-262 formalized in SpecTec, bijective with <code>spec.html</code>, compiled and proved in Lean</p>
+<h1>How it works</h1>
+<div class="lede"><p>The specification lives in <strong>SpecTec</strong> (<code>spec/spectec/</code>) in two parts: structured SpecTec for ECMA-262's algorithms, grammars, early errors and tables (bijective with <code>spec.html</code>), and prose SpecTec modules for its abstract sorts, grammar and §29 memory relations, and the 246 model, parser, memory-model and host laws that quote the English text. Everything else — the Lean specification semantics, the proved reference engine, and the WebAssembly debugger — is downstream of SpecTec.</p></div>
+</header>
+<h2 id="whole">The whole</h2>
+
+<figure class="diagram" aria-labelledby="fig1-cap">
+<div class="svgbox">
+<svg viewBox="0 0 760 444" role="img" aria-label="spec.html and SpecTec (spec/spectec/) are connected by spectec-html's bidirectional bijection; SpecTec holds structured algorithms, grammars and tables alongside prose syntax, relations and quoted laws. Downstream, spectec emit compiles SpecTec to the small-step specification machine, which lean/Engine is proved to implement and which drives ecma-dbg and test262.">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="dg-zone" x="228" y="8" width="266" height="266" rx="8"/>
+<text class="dg-zl" x="240" y="264">spec/spectec/: source of truth (62 files)</text>
+<rect class="dg-box spec" x="8" y="26" width="136" height="92" rx="5"/>
+<text class="dg-t" x="20" y="50">spec.html</text>
+<text class="dg-s" x="20" y="68">tc39/ecma262</text>
+<text class="dg-s" x="20" y="84">at b1eaed82f</text>
+<text class="dg-s" x="20" y="102">+ spec/html/ meta</text>
+<path class="dg-a" d="M148,66 L224,66" marker-start="url(#ah)" marker-end="url(#ah)"/>
+<text class="dg-l" x="186" y="53" text-anchor="middle">spectec-html</text>
+<text class="dg-l" x="186" y="82" text-anchor="middle">0-diff splice</text>
+<rect class="dg-box spec" x="8" y="150" width="136" height="84" rx="5"/>
+<text class="dg-t" x="20" y="173">DECISIONS.md</text>
+<text class="dg-s" x="20" y="191">56 resolved</text>
+<text class="dg-s" x="20" y="207">errata &amp; choices</text>
+<text class="dg-s" x="20" y="223">no runtime switches</text>
+<path class="dg-a dg-dash" d="M144,192 L236,192" marker-end="url(#ah)"/>
+<rect class="dg-box lean" x="240" y="22" width="242" height="102" rx="5"/>
+<text class="dg-t" x="252" y="45">Structured SpecTec</text>
+<text class="dg-s" x="252" y="63">36 files (55,936 lines)</text>
+<text class="dg-m" x="252" y="81">def @sec-… · grammar · sdo</text>
+<text class="dg-s" x="252" y="98">early_error · field · enum · table</text>
+<text class="dg-s" x="252" y="114">spectec roundtrip + ecma-print</text>
+<rect class="dg-box lean" x="240" y="140" width="242" height="104" rx="5"/>
+<text class="dg-t" x="252" y="163">Prose SpecTec (prose/)</text>
+<text class="dg-s" x="252" y="181">26 modules (4,304 lines)</text>
+<text class="dg-m" x="252" y="199">syntax · relation · laws · def</text>
+<text class="dg-s" x="252" y="216">Model (148) · Parser (7) · §29 (19) · Host (72)</text>
+<text class="dg-s" x="252" y="232">every law quotes spec.html</text>
+<path class="dg-a" d="M482,76 L552,100" marker-end="url(#ah)"/>
+<path class="dg-a" d="M482,192 L552,162" marker-end="url(#ah)"/>
+<text class="dg-l" x="524" y="62" text-anchor="middle">spectec emit</text>
+<rect class="dg-box lean" x="556" y="68" width="196" height="126" rx="5"/>
+<text class="dg-t" x="568" y="92">Downstream spec</text>
+<text class="dg-s" x="568" y="110">compiled to Lean 4</text>
+<text class="dg-m" x="568" y="128">Lower + Machine.step</text>
+<text class="dg-s" x="568" y="146">over any Model &amp; Host</text>
+<text class="dg-m" x="568" y="164">Ecma.Implements</text>
+<text class="dg-s" x="568" y="181">Gen/ gitignored</text>
+<rect class="dg-box proved" x="318" y="318" width="434" height="86" rx="5"/>
+<text class="dg-t" x="330" y="341">The engine: lean/Engine</text>
+<text class="dg-s" x="330" y="359">concrete model &amp; host, proved parser, verified shortcuts</text>
+<text class="dg-m" x="330" y="377">Engine.implements · run_sound · parseLaws · coverLaws</text>
+<text class="dg-s" x="330" y="394">0 native_decide pins · 3 standard axioms · 71 runtime checks</text>
+<path class="dg-a" d="M650,318 L650,198" marker-end="url(#ah)"/>
+<text class="dg-l" x="658" y="264">implements</text>
+<rect class="dg-box" x="8" y="294" width="218" height="56" rx="5"/>
+<text class="dg-t" x="20" y="317">The debugger: ecma-dbg</text>
+<text class="dg-s" x="20" y="335">Wasm64 + native, step by step</text>
+<rect class="dg-box" x="8" y="368" width="218" height="56" rx="5"/>
+<text class="dg-t" x="20" y="391">test262</text>
+<text class="dg-s" x="20" y="409">TC39's suite, run on ecma-run</text>
+<path class="dg-a" d="M314,348 L230,326" marker-end="url(#ah)"/>
+<path class="dg-a" d="M314,380 L230,396" marker-end="url(#ah)"/>
+</svg>
+</div>
+<figcaption id="fig1-cap"><code>spec.html</code> and structured SpecTec are checked against each other by <code>spectec-html</code> with zero byte diffs; prose SpecTec states the abstract sorts, relations and quoted laws. <code>crates/spectec</code> compiles SpecTec into Lean, where the concrete engine is proved to implement the specification and drives both the debugger and <code>test262</code>.</figcaption>
+</figure>
+
+<h2 id="spectec">The specification in SpecTec</h2>
+
+<p>SpecTec (<code>spec/spectec/</code>, 62 files) is the human-readable formal representation of ECMA-262 in this repository. Instead of bolting an ad-hoc HTML overlay onto generated Lean syntax trees, the specification is expressed directly in SpecTec's typed declarations:</p>
+
+<ul class="steps">
+<li><strong>Declarations (<code>00-decls.spectec</code>):</strong> Every specification clause (<code>clause @sec-…</code>, including named phrase helpers <code>@ph-…</code>), internal slot and Record field (<code>field [[…]]</code>), specification constant (<code>enum ~…~</code>), Record and object sort hierarchy (<code>syntax Name defined { super […] record … }</code>), internal method signature (<code>method [[…]]</code>), syntax-directed operation (<code>sdo Name</code>), and editorial notation primitive (<code>extern def $Prim</code>).</li>
+<li><strong>Grammars and early errors (<code>01..08-*.spectec</code>):</strong> All six ECMA-262 grammars — numeric string, lexical, syntactic, RegExp, Annex B and JSON — written as <code>grammar &lt;kind&gt;</code> and <code>rule &lt;kind&gt; |Nonterminal|[Params] :: { | … }</code> with parameter guards (<code>[+Await]</code>, <code>[~Yield]</code>), <code>but not</code> exclusions, <code>[lookahead …]</code> restrictions and <code>[no LineTerminator here]</code>, followed by <code>early_error</code> rules, <code>09-tables.spectec</code>, and the intrinsic realm definition in <code>10-realm.spectec</code>.</li>
+<li><strong>Clause algorithms (<code>clauses/*.spectec</code>, 25 modules):</strong> Every abstract operation (<code>kind ao</code>), built-in function (<code>kind builtin</code>), syntax-directed row (<code>kind sdo</code>) and internal method (<code>kind method</code>) as a typed <code>def @sec-… "Name" (kind … params […] -&gt; …) vars […] { … }</code> block (1,627 definitions in all). Steps use structured control flow (<code>let</code>, <code>set</code>, <code>if</code> / <code>else_if</code> / <code>else</code>, <code>repeat_while</code>, <code>for_each</code>, <code>perform</code>, <code>return</code>, <code>throw</code>, <code>assert</code>), explicit <code>?</code> and <code>!</code> completion unwrapping, type tests (<code>is ty {Object}</code>, <code>is val {~empty~}</code>), slot accesses (<code>x[[Slot]]</code>), and calls to <code>@sec-…</code> clauses or <code>$Prim</code> primitives.</li>
+</ul>
+
+<h2 id="bijection">Bidirectional bijections: <code>spec.html</code> ↔ SpecTec ↔ Lean</h2>
+
+<p>The specification's source, <code>spec.html</code>, is pinned at a revision of <code>tc39/ecma262</code> (with any active proposals from <code>spec/proposals.txt</code> merged by <code>scripts/spec_text.py</code> (<a href="proposal.html">Applying a proposal</a> shows one applied)). Three automated round-trips keep <code>spec.html</code>, SpecTec, and the downstream Lean representation locked together:</p>
+
+<ol class="steps">
+<li><strong><code>spec.html</code> ↔ SpecTec (<code>crates/spectec-html</code>, <code>scripts/html_bijection.py</code>):</strong> Using four small presentation tables in <code>spec/html/</code> (English call templates, grammar attributes, clause headers, and step patches), <code>spectec-html</code> renders every SpecTec grammar block, algorithm, equation and early-error rule back into ecmarkup HTML and splices them into <code>spec.html</code> with <strong>zero byte diffs</strong>.</li>
+<li><strong>SpecTec ↔ SpecTec (<code>spectec roundtrip</code>):</strong> Every <code>.spectec</code> file — structured and prose alike — is parsed into SpecTec's AST and pretty-printed back byte for byte.</li>
+<li><strong>SpecTec ↔ Lean (<code>spectec emit</code> &amp; <code>ecma-print</code>, <code>scripts/bijection.py</code>):</strong> <code>crates/spectec</code> compiles <code>spec/spectec/</code> into gitignored Lean modules, and the Lean printer <code>ecma-print</code> prints all 36 structured <code>.spectec</code> files back from those compiled definitions byte for byte.</li>
+</ol>
+
+<h3 id="ids">Symbolic names and sorted declarations</h3>
+<p>In SpecTec, everything is written by name (<code>@sec-iscallable</code>, <code>[[Call]]</code>, <code>~start+end~</code>, <code>|IdentifierName|</code>). When <code>crates/spectec</code> emits Lean code for the machine and proofs, it collects all declared and referenced names across each namespace in <code>spec/spectec/</code>, sorts them lexicographically (<code>0..N-1</code>), and generates symbolic constants in <code>Ecma.Known</code>. Because downstream Lean code references symbolic names rather than raw numbers, editing a clause or applying a proposal stays local to the changed SpecTec definitions.</p>
+
+<h2 id="prose">Prose concepts in SpecTec: <code>syntax</code>, <code>relation</code> and <code>laws</code></h2>
+
+<p>Algorithms and grammars are only half of ECMA-262: §5.1, §6, §9, §21 and §29 state in English prose what values are, how grammars derive parse trees, how shared memory behaves, and what a host environment may do. Those prose sections are formalized in 26 SpecTec modules under <code>spec/spectec/prose/</code> (4,304 lines) using four declarations:</p>
+
+<ul class="steps">
+<li><strong><code>syntax</code> (abstract sorts, records and variants):</strong> <a href="model.html#Model"><code>Ecma.Model</code></a> declares the abstract carriers and operations of every specification sort (mathematical values, IEEE 754 binary64 Numbers, BigInts, UTF-16 Strings, Symbols, Parse Nodes, Lists, Data Blocks, CharSets, Records, property tables and the store) without fixing any implementation; <a href="model.html#Val"><code>Val</code></a>, <a href="model.html#Cell"><code>Cell</code></a> and <a href="host.html#Host"><code>Host</code></a> define runtime values, store cells and the host interface over any <code>Model</code>.</li>
+<li><strong><code>relation</code> (inductive inference rules):</strong> Declarative specifications such as §5.1 grammar derivations (<a href="parser-laws.html#Grammar.Derives"><code>Grammar.Derives</code></a>), the correspondence between abstract Parse Nodes and derivation trees (<a href="parser-laws.html#Model.NodeRel"><code>Model.NodeRel</code></a>), and <a href="memory-model.html">§29 candidate-execution orders</a> (<a href="memory-model.html#MemoryModel.HB"><code>MemoryModel.HB</code></a>) are written as Horn-style inference rules (<code>rule name : Conclusion :- Premise1, Premise2;</code>).</li>
+<li><strong><code>laws</code> (axiomatic requirements quoting <code>spec.html</code>):</strong> <a href="model.html#Model.Laws"><code>Model.Laws</code></a> and its companion blocks (148 laws: 116 core, 12 for Numbers, 9 for Data Blocks, 7 for Unicode, and 4 for Parse Node parents), <a href="parser-laws.html#Model.ParseLaws"><code>Model.ParseLaws</code></a> / <a href="parser-laws.html#Model.CoverLaws"><code>Model.CoverLaws</code></a> / <a href="parser-laws.html#Model.NodeLaws"><code>Model.NodeLaws</code></a> (7 laws for parsing, covers and Parse Nodes), <a href="memory-model.html#MemoryModel.ValidWith"><code>MemoryModel.ValidWith</code></a> (19 laws for §29 candidate executions and shared reads), and <a href="host.html#Host.WF"><code>Host.WF</code></a> (72 laws across 10 topics, constraining host hooks and choices over the host-call log) state what any conforming model, parser and host must satisfy. Every <code>law</code> begins with a <code>--- sec-id:</code> docstring quoting the governing sentence of <code>spec.html</code> and giving a one-line <code>Reading:</code>, checked against <code>spec.html</code> by <code>scripts/law_quotes.py</code> (see <a href="host.html#Host.TimeLaws.timeoutAfter"><code>timeoutAfter</code></a>).</li>
+<li><strong><code>def</code> (pure specification helpers):</strong> Total helper functions over <code>Model</code> and <code>State</code> used to state relations and laws cleanly, with no tactics, proofs or <code>partial</code> recursion.</li>
+</ul>
+
+<h2 id="errata">Specification decisions and errata</h2>
+<p>Where ECMA-262 as written is contradictory, incomplete, or disagrees with every engine and <code>test262</code>, SpecTec resolves the ambiguity directly in <code>spec/spectec/</code> rather than carrying a runtime <code>.emu</code> overlay or command-line errata switches. Every such choice is documented in <code>spec/DECISIONS.md</code>, including 56 active specification errata and proposed normative changes (53 defects of the text and 3 proposed normative changes): 33 bake in the reading <code>test262</code> requires, 13 bake in a proposed fix, and 10 keep the literal wording so that reaching a broken <code>Assert:</code> stops at the exact offending step. <a href="errata.html">Spec issues &amp; errata</a> quotes each entry's sentences and alternative readings, tracks upstream issues and PRs, links to its long-form write-up, and verifies a demonstration program where one applies.</p>
+
+<h2 id="downstream">Downstream: the small-step machine and proved engine</h2>
+<p>Everything under <code>lean/</code> consumes the compiled SpecTec specification:</p>
+<ul class="steps">
+<li><strong>Specification semantics (<code>lean/Ecma</code>):</strong> <code>lean/Ecma/Lower</code> expands editorial macros such as <code>IfAbruptRejectPromise</code> and linearizes SpecTec algorithm bodies while preserving step paths; <code>Ecma.Machine.step</code> defines one small-step transition over call frames for any <code>Model</code> and <code>Host</code> (<a href="implements.html#Machine.Runs"><code>Machine.Runs</code></a>); and <a href="implements.html#Implements"><code>Ecma.Implements</code></a> states what it means for an implementation to conform. <code>lean/Ecma</code> contains zero theorems, tactics, <code>partial</code> defs or <code>unsafe</code> code (<code>scripts/quick_check.py</code>).</li>
+<li><strong>Reference engine and proofs (<code>lean/Engine</code>):</strong> Concrete carriers (exact rationals, IEEE 754 binary64, UTF-16 arrays, a chunked store), a proved parser over all six SpecTec grammars (<code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>, <code>Engine.Claims.nodeLaws</code>), a concrete host with jobs, agents, modules and <code>$262</code>, and verified fast-path shortcuts (12,291 lines of implementation, 57,206 lines of proofs). It runs JavaScript programs and <a href="test262.html">test262</a> as <code>ecma-run</code>, and <a href="what-is-proved.html">What is proved</a> explains <code>Engine.implements</code> and <code>Engine.run_sound</code>.</li>
+<li><strong>Interactive step debugger (<code>lean/Debugger</code>):</strong> Drives the specification machine step by step as <code>ecma-dbg</code> (3,666 lines, native and 64-bit WebAssembly), pausing on clauses, step paths, throws and <code>Assert:</code> stops.</li>
+</ul>
+
+<h2 id="example">One clause, end to end</h2>
+<p>§7.2.3 IsCallable is three steps in <code>spec.html</code>:</p>
+<blockquote class="sentence alg"><cite><a class="clause" href="https://tc39.es/ecma262/#sec-iscallable">§7.2.3 IsCallable ( <var>arg</var> )</a></cite><ol class="alg" style="list-style-type:decimal"><li>If <var>arg</var> is not an Object, return <span class="val">false</span>.</li><li>If <var>arg</var> has a [[Call]] internal method, return <span class="val">true</span>.</li><li>Return <span class="val">false</span>.</li></ol></blockquote>
+<p><strong>In SpecTec.</strong> Clause §7.2.3 lives in <code>spec/spectec/clauses/S07.spectec</code> as a five-line <code>def</code>:</p>
+<pre class="lean"><span class="l" style="--i:0"><span class="c">--- spec/spectec/clauses/S07.spectec</span></span><span class="l" style="--i:0"><span class="k">def</span> <span class="o">@sec-iscallable</span> <span class="s">&quot;IsCallable&quot;</span> (<span class="k">kind</span> <span class="k">ao</span> <span class="k">params</span> [arg : <span class="s">#&quot;ECMAScript language value&quot;</span>] <span class="o">-&gt;</span> Boolean) <span class="k">vars</span> [arg] {</span><span class="l" style="--i:2">  <span class="k">if</span> arg <span class="k">is</span> <span class="k">not</span> <span class="k">ty</span> {Object} <span class="o">-&gt;</span> <span class="k">return</span> false</span><span class="l" style="--i:2">  <span class="k">if</span> arg <span class="k">sat</span> <span class="o">$HasMethod</span>(<span class="o">[[Call]]</span>) <span class="o">-&gt;</span> <span class="k">return</span> true</span><span class="l" style="--i:2">  <span class="k">return</span> false</span><span class="l" style="--i:0">}</span></pre>
+<p>Every part of the clause is explicit and readable by name: <code>@sec-iscallable</code> identifies the clause (mapped to sorted <code>ClauseId</code> 1364 when emitting Lean), <code>kind ao</code> marks an abstract operation taking <code>arg</code> of sort <code>#"ECMAScript language value"</code> and returning <code>Boolean</code>, step 1 tests <code>arg is not ty {Object}</code>, and step 2 checks <code>arg sat $HasMethod([[Call]])</code> before step 3 returns <code>false</code>. Running <code>spectec-html</code> renders those three steps back into <code>spec.html</code>'s exact ecmarkup.</p>
+<p><strong>A step of the machine.</strong> Downstream, <code>Lower</code> compiles the body with its step numbers preserved. When <code>EvaluateCall</code> reaches <code>IsCallable(func)</code>, the small-step machine pushes a frame for <code>@sec-iscallable</code> with <code>arg</code> bound to the callee; <code>Ecma.Machine.step</code> checks whether the callee is an Object in the store, inspects its <code>[[Call]]</code> internal method at step 2, and returns <code>true</code> or advances to step 3.</p>
+<p><strong>In the debugger.</strong> The example <code>tests/run/iscallable.js</code> calls both a function and an ordinary object: the debugger pauses at <code>IsCallable</code> step 2 for the function and step 3 for the object, displaying <code>IsCallable</code> above <code>EvaluateCall</code> in the spec stack alongside the value of <var>arg</var>.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/iscallable">Open in the debugger</button></p>
+
+<h2 id="sizes">Sizes</h2>
+<div class="tablebox">
+<table>
+<thead><tr><th>Part</th><th class="num">Files</th><th class="num">Lines</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><code>spec/spectec/</code> (structured)</td><td class="num">36</td><td class="num">55,936</td><td>SpecTec declarations, grammars, early errors, tables &amp; clause algorithms (bijective with <code>spec.html</code>)</td></tr>
+<tr><td><code>spec/spectec/prose/</code></td><td class="num">26</td><td class="num">4,304</td><td>SpecTec prose modules: <code>Model</code>, <code>Host</code>, derivations, §29 memory &amp; 246 quoted laws</td></tr>
+<tr><td><code>spec/html/*.txt</code></td><td class="num">4</td><td class="num">19,881</td><td>ecmarkup presentation templates &amp; metadata for <code>spectec-html</code></td></tr>
+<tr><td><code>lean/Ecma</code> (hand-written)</td><td class="num">70</td><td class="num">9,572</td><td>downstream small-step machine, lowering &amp; <code>Implements</code> contract (<code>Gen/</code> is gitignored)</td></tr>
+<tr><td><code>lean/Engine</code> (outside proofs)</td><td class="num">63</td><td class="num">12,291</td><td>concrete VM model, parser, host &amp; shortcuts</td></tr>
+<tr><td><code>lean/Engine/Proofs</code></td><td class="num">85</td><td class="num">57,206</td><td>conformance &amp; parser proofs (<code>Engine.implements</code>, <code>Engine.run_sound</code>, <code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>)</td></tr>
+<tr><td><code>lean/Debugger</code></td><td class="num">10</td><td class="num">3,666</td><td>step debugger (<code>ecma-dbg</code>, native &amp; Wasm64)</td></tr>
+</tbody>
+</table>
+</div>
+<p class="muted">Lines are counted in this commit's tracked sources. Gitignored outputs (<code>lean/Ecma/Gen</code>: 108 modules, 42,287 lines; <code>lean/Ecma/Grammar/Gen</code>: 16 modules, 6,391 lines) are generated from <code>spec/spectec/</code> by <code>scripts/generate.py</code>. Not counted: Unicode Character Database tables.</p>
+
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

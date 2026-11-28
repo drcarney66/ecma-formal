@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12. AsyncBlockStart asserts unused, but Await resumes it with empty · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/12-asyncblockstart-await-result.md</code></p>
+<h1>12. AsyncBlockStart asserts <span class="const">unused</span>, but Await resumes it with <span class="const">empty</span></h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§27.10.5.2 AsyncBlockStart (<a class="clause" href="https://tc39.es/ecma262/#sec-asyncblockstart"><code>#sec-asyncblockstart</code></a>), steps 3–4, against §27.10.5.3 Await (<a class="clause" href="https://tc39.es/ecma262/#await"><code>#await</code></a>), step 8, and §9.4.8 RunCallerContext (<a class="clause" href="https://tc39.es/ecma262/#sec-runcallercontext"><code>#sec-runcallercontext</code></a>), step 4; §9.4.7 RunSuspendedContext (<a class="clause" href="https://tc39.es/ecma262/#sec-runsuspendedcontext"><code>#sec-runsuspendedcontext</code></a>), its return type.</dd><dt>Kind</dt><dd>failing Assert (in every async function that awaits).</dd><dt>Model erratum</dt><dd><code>AsyncBlockStartAwaitResult</code>, default reading test262; its readings: literal, test262, proposed (the test262 and proposed readings are one: the Assert of Proposed wording); the literal reading stops at AsyncBlockStart step 4.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3435">#3435</a> (open, 2024-10), "editorial: mismatch between <code>Await</code> transfer-of-control and <code>AsyncBlockStart</code>", reports it, against the text before RunCallerContext; it has no comments. RunCallerContext came with PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3846">#3846</a> (merged 2026-06, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/45a667175"><code>45a667175</code></a>). PR <a class="ext" href="https://github.com/tc39/ecma262/pull/4018">#4018</a> (closed without merging, 2026-10), "Editorial: align async block assertions with Await suspension", proposed letting the Assert accept <span class="const">empty</span>. PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3604">#3604</a> (open, 2025-05) rewords step 1.d only.</dd><dt>On this site</dt><dd><a href="../errata.html#AsyncBlockStartAwaitResult"><code>AsyncBlockStartAwaitResult</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>AsyncBlockStart:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>closure</var> be a new Abstract Closure with no parameters that captures <var>promiseCapability</var> and <var>asyncBody</var> and performs the following steps when called:</p><p class="q-gap">…</p><p class="q-step" style="--d:1"><span class="q-num">j.</span> Resume <var>callerContext</var>, passing NormalCompletion(<span class="const">unused</span>).</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Set the code evaluation state of <var>asyncContext</var> such that …</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> Let <var>result</var> be ! RunSuspendedContext(<var>asyncContext</var>, NormalCompletion(<span class="const">empty</span>)).</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Assert: <var>result</var> is <span class="const">unused</span>.</p><p class="q-step" style="--d:0"><span class="q-num">5.</span> NOTE: The possible sources of <var>result</var> values are Await or, if the async function doesn&#x27;t await anything, step … above.</p></blockquote>
+<p>Await:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">8.</span> Return ? RunCallerContext(<span class="const">empty</span>).</p></blockquote>
+<p>RunCallerContext (<em>value</em>: an ECMAScript language value or <span class="const">empty</span>):</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">4.</span> Resume <var>callerContext</var>, passing NormalCompletion(<var>value</var>).</p></blockquote>
+<p>Step 5's "step … above" is step 1.j. RunSuspendedContext returns "either a normal completion containing either an
+ECMAScript language value or <span class="const">unused</span>, or an abrupt completion".</p>
+<h2 id="problem">Problem</h2>
+<p>The first <code>await</code> in an async function body runs Await step 8, which resumes the caller context with
+NormalCompletion(<span class="const">empty</span>). That caller is AsyncBlockStart step 3, so <em>result</em> is <span class="const">empty</span> and step 4's Assert fails.
+Every async function or module body that awaits before it returns reaches it. The same <span class="const">empty</span> is also outside
+RunSuspendedContext's return type, here and in §27.9.3.6 AsyncGeneratorResume step 4 (an async generator that
+awaits).</p>
+<p>The two sides can be made to agree in two ways. Await could pass <span class="const">unused</span>, but RunCallerContext's <em>value</em> parameter
+is "an ECMAScript language value or <span class="const">empty</span>", and Await is its only caller that passes a value that is not a language
+value, so that parameter would change too. Or AsyncBlockStart could accept <span class="const">empty</span>, which needs only its Assert and
+RunSuspendedContext's return type, which an async generator's <code>await</code> also reaches (AsyncGeneratorResume step 4).
+The proposed wording below is the second; the model's test262 reading runs under its Assert.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/12-asyncblockstart-await-result.js</a> (outputs:
+<a href="results.html#12-asyncblockstart-await-resultjs">the recorded runs</a>):</p>
+<pre class="js"><code>async function f() { await 1; return 2; }
+f().then(function (v) { print(&quot;f fulfilled with &quot; + v); });
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td>the Assert of AsyncBlockStart step 4 fails at <code>await 1</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>f fulfilled with 2</code></td>
+</tr>
+<tr>
+<td>formal model (literal reading)</td>
+<td>stops at AsyncBlockStart step 4 (<code>stop: erratum AsyncBlockStartAwaitResult sec-asyncblockstart#0 4</code>)</td>
+</tr>
+<tr>
+<td>formal model (test262 and proposed readings)</td>
+<td><code>f fulfilled with 2</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -12098,7 +12098,7 @@
+         RunSuspendedContext (
+           _context_: an execution context,
+           _completionRecord_: a Completion Record,
+-        ): either a normal completion containing either an ECMAScript language value or &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;, or an abrupt completion
++        ): either a normal completion containing one of an ECMAScript language value, &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;, or &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;, or an abrupt completion
+       &lt;/h1&gt;
+       &lt;dl class=&quot;header&quot;&gt;
+         &lt;dt&gt;description&lt;/dt&gt;
+@@ -52418,8 +52418,8 @@
+             1. Assert: This step is never reached.
+           1. Set the code evaluation state of _asyncContext_ such that when evaluation is resumed for that execution context, _closure_ will be called with no arguments.
+           1. Let _result_ be ! RunSuspendedContext(_asyncContext_, NormalCompletion(&lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;)).
+-          1. Assert: _result_ is &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;.
+-          1. NOTE: The possible sources of _result_ values are Await or, if the async function doesn't await anything, step &lt;emu-xref href=&quot;#step-asyncblockstart-return-undefined&quot;&gt;&lt;/emu-xref&gt; above.
++          1. Assert: _result_ is either &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt; or &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;.
++          1. NOTE: The possible sources of _result_ values are Await, which passes &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;, or, if the async function doesn't await anything, step &lt;emu-xref href=&quot;#step-asyncblockstart-return-undefined&quot;&gt;&lt;/emu-xref&gt; above, which passes &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;.
+           1. Return &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;.
+         &lt;/emu-alg&gt;
+       &lt;/emu-clause&gt;
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>Every test of an async function that awaits reaches the Assert; an Assert has no observable effect, so none fails.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#12-asyncblockstart-await-resultjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=12-asyncblockstart-await-result">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/12-asyncblockstart-await-result.js</code></summary><pre class="js">// AsyncBlockStart step 4 &quot;Assert: result is unused&quot; against Await step 8
+// &quot;Return ? RunCallerContext(empty)&quot;: every async function that awaits.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+async function f() { await 1; return 2; }
+f().then(function (v) { print(&quot;f fulfilled with &quot; + v); });
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

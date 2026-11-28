@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>67. §29 Memory Model: overlapping-RMW ValueOfReadEvent cycle non-termination, unquantified reads-bytes-from, and HostEventSet · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/67-memory-model-rmw-cycle.md</code></p>
+<h1>67. §29 Memory Model: overlapping-RMW <code>ValueOfReadEvent</code> cycle non-termination, unquantified <code>reads-bytes-from</code>, and <code>HostEventSet</code></h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§29.5.4 ComposeWriteEventBytes (<a class="clause" href="https://tc39.es/ecma262/#sec-composewriteeventbytes"><code>#sec-composewriteeventbytes</code></a>), step 3.d.ii; §29.5.5 ValueOfReadEvent (<a class="clause" href="https://tc39.es/ecma262/#sec-valueofreadevent"><code>#sec-valueofreadevent</code></a>); §29.6.2 reads-bytes-from (<a class="clause" href="https://tc39.es/ecma262/#sec-reads-bytes-from"><code>#sec-reads-bytes-from</code></a>); §29.6.5 synchronizes-with (<a class="clause" href="https://tc39.es/ecma262/#sec-synchronizes-with"><code>#sec-synchronizes-with</code></a>), first bullet; §29.7.5 Valid Executions (<a class="clause" href="https://tc39.es/ecma262/#sec-valid-executions"><code>#sec-valid-executions</code></a>); §29.5.3 HostEventSet (<a class="clause" href="https://tc39.es/ecma262/#sec-hosteventset"><code>#sec-hosteventset</code></a>) and §29.6.4 host-synchronizes-with (<a class="clause" href="https://tc39.es/ecma262/#sec-host-synchronizes-with"><code>#sec-host-synchronizes-with</code></a>).</dd><dt>Kind</dt><dd>non-terminating mutual recursion on candidate executions, unquantified relation variable, and set-domain contradiction.</dd><dt>Model erratum</dt><dd><code>MemoryModelRMWCycleAndRbf</code>, baked-in SpecTec reading proposed (layer <code>none</code>, <code>spec/spectec/prose/07-memory-model.spectec</code>). SpecTec defines <code>Compose</code> and <code>ValueOf</code> as a mutual inductive least fixpoint (so cyclic RMW byte reads evaluate <code>ValidChosenReads</code> to <code>False</code> instead of diverging), existentially quantifies <code>rbf : Rbf(E)</code> in <code>Valid</code>, converts <code>Tear Free Reads</code> step 1.a.i's <code>Assert:</code> into a boolean conjunct, and defines <code>HostSync</code> over <code>inHost</code>.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found for the RMW cycle or <code>HostEventSet</code> domain; PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3321">#3321</a> (merged 2024-05, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/1babaf809"><code>1babaf809</code></a>), "Editorial: Rework memory model relations", removed <code>[[ReadsBytesFrom]]</code> from Candidate Execution Records while leaving <code>reads-bytes-from</code> unquantified in §29.7.5.</dd><dt>On this site</dt><dd><a href="../errata.html#MemoryModelRMWCycleAndRbf"><code>MemoryModelRMWCycleAndRbf</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p><code>ComposeWriteEventBytes</code> (§29.5.4):</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:2"><span class="q-num">ii.</span> Let <var>bytes</var> be ValueOfReadEvent(<var>execution</var>, <var>writeEvent</var>).</p></blockquote>
+<p><code>synchronizes-with</code> (§29.6.5):</p>
+<blockquote class="sentence q-text"><p>For events <var>readEvent</var> and <var>writeEvent</var>, <var>writeEvent</var> synchronizes-with <var>readEvent</var> in <var>execution</var> if <var>readEvent</var> reads-from <var>writeEvent</var> in <var>execution</var>, <var>readEvent</var>.[[Order]] is <span class="const">seq-cst</span>, <var>writeEvent</var>.[[Order]] is <span class="const">seq-cst</span>, and <var>readEvent</var> and <var>writeEvent</var> have equal memory ranges.</p></blockquote>
+<p><code>Valid Executions</code> (§29.7.5):</p>
+<blockquote class="sentence q-text"><p>A candidate execution <var>execution</var> is a valid execution (or simply an execution) if all of the following are true.</p><p><var>execution</var> admits a happens-before Relation that is a strict partial order.</p></blockquote>
+<p><code>HostEventSet</code> (§29.5.3) vs <code>host-synchronizes-with</code> (§29.6.4):</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Return a new Set containing all elements of EventSet(<var>execution</var>) that are not in SharedDataBlockEventSet(<var>execution</var>).</p></blockquote>
+<blockquote class="sentence q-text"><p>For a candidate execution <var>execution</var>, its host-synchronizes-with Relation is a host-provided strict partial order on host-specific Memory events that satisfies at least the following.</p><p>If <var>eventA</var> host-synchronizes-with <var>eventB</var> in <var>execution</var>, HostEventSet(<var>execution</var>) contains <var>eventA</var> and <var>eventB</var>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<ol>
+<li><strong>Non-terminating <code>ValueOfReadEvent</code> ↔ <code>ComposeWriteEventBytes</code> recursion on unequal overlapping RMWs.</strong> <code>reads-bytes-from</code>
+   only forbids direct 1-cycles (<code>_readEvent_ is not in _writes_</code>), not 2-cycles (<code>rmw1</code> reads byte 0 from <code>rmw2</code> and
+   <code>rmw2</code> reads byte 0 from <code>rmw1</code>). When <code>rmw1</code> (e.g. 2-byte <code>Uint16Array</code> RMW on <code>[0, 2)</code>) and <code>rmw2</code> (4-byte
+   <code>Uint32Array</code> RMW on <code>[0, 4)</code>) have <em>unequal</em> overlapping ranges, §29.6.5 <code>synchronizes-with</code> step 1.c does <em>not</em>
+   order them! Thus <code>happens-before</code> remains a strict partial order, <code>Coherent Reads</code> holds, <code>Tear Free Reads</code> holds,
+   and <code>Sequentially Consistent Atomics</code> holds — yet <code>Valid Chosen Reads</code> invokes <code>ValueOfReadEvent</code>, which diverges in
+   infinite mutual recursion without returning <code>*true*</code> or <code>*false*</code>!</li>
+<li><strong>Unquantified <code>reads-bytes-from</code> in §29.7.5.</strong> PR #3321 removed <code>[[ReadsBytesFrom]]</code> from Candidate Execution
+   Records, yet §29.7.5 <code>Valid Executions</code> quantifies <code>happens-before</code> without quantifying <em>"admits a reads-bytes-from
+   function"</em>!</li>
+<li><strong><code>HostEventSet</code> includes <code>Synchronize</code> events.</strong> §29.1 partitions Memory events into Shared Data Block, Synchronize
+   (<code>EnterCriticalSection</code> / <code>LeaveCriticalSection</code>), and host-specific events, yet <code>HostEventSet</code> includes Synchronize
+   events, contradicting §29.6.4's header.</li>
+</ol>
+<h2 id="examples">Examples</h2>
+<p>None run (the memory model is a declarative relation in <code>lean/Ecma/MemoryModel.lean</code>); SpecTec's inductive <code>ValueOf</code>
+rejects cyclic RMW reads cleanly.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Require <code>reads-bytes-from</code> to be acyclic across RMW events (or order overlapping RMWs in <code>synchronizes-with</code>), quantify
+<code>reads-bytes-from</code> in §29.7.5 <code>Valid Executions</code>, and exclude <code>Synchronize</code> events from <code>HostEventSet</code> (§29.5.3).</p>
+<h2 id="test262">test262</h2>
+<p>None (<code>test262</code> does not test formal §29 candidate-execution edge cases).</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

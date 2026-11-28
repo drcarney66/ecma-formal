@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>35. Contains never finds an |AwaitExpression|: async function f(x = await 1) {} has no early error · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/35-contains-awaitexpression-cover.md</code></p>
+<h1>35. Contains never finds an |AwaitExpression|: <code>async function f(x = await 1) {}</code> has no early error</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§8.5.1 Static Semantics: Contains (<a class="clause" href="https://tc39.es/ecma262/#sec-static-semantics-contains"><code>#sec-static-semantics-contains</code></a>), the default definition, step 1.a, and its rows; §13.5 Unary Operators (<a class="clause" href="https://tc39.es/ecma262/#sec-unary-operators"><code>#sec-unary-operators</code></a>), UnaryExpression's grammar and Supplemental Syntax; the six rules "… Contains |AwaitExpression| is <em>true</em>" of §15.3.1 (ArrowFunction), §15.6.1 (AsyncGeneratorMethod, AsyncGeneratorDeclaration/Expression), §15.8.1 (AsyncMethod, AsyncFunctionDeclaration/Expression) and §15.9.1 (AsyncArrowFunction).</dd><dt>Kind</dt><dd>missing case (no Contains row for a cover); six early errors never apply.</dd><dt>Model erratum</dt><dd><code>ContainsAwaitCover</code>, default reading test262; its readings: literal, test262, proposed. The test262 and proposed readings count <code>UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead</code> (and not the cover of an |AwaitUsingDeclaration|) as an |AwaitExpression|.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "CoverAwaitExpressionAndAwaitUsingDeclarationHead", no hits). The cover came with PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3000">#3000</a> (merged 2026-06, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/f792966f2"><code>f792966f2</code></a>), which replaced UnaryExpression's <code>[+Await] AwaitExpression[?Yield]</code> by it; issue <a class="ext" href="https://github.com/tc39/ecma262/issues/917">#917</a> (closed, 2018-03), "await in parameters", predates it.</dd><dt>On this site</dt><dd><a href="../errata.html#ContainsAwaitCover"><code>ContainsAwaitCover</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>An <code>await</code> expression parses as the cover:</p>
+<blockquote class="sentence q-text"><p>UnaryExpression[Yield, Await] : … <code>[+Await]</code> CoverAwaitExpressionAndAwaitUsingDeclarationHead[?Yield]</p><p>CoverAwaitExpressionAndAwaitUsingDeclarationHead[Yield] : <code>await</code> UnaryExpression[?Yield, +Await]</p></blockquote>
+<p>and |AwaitExpression| is only its refined interpretation (Supplemental Syntax):</p>
+<blockquote class="sentence q-text"><p>When processing an instance of the production UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead the interpretation of <span class="nt">CoverAwaitExpressionAndAwaitUsingDeclarationHead</span> is refined using the following grammar: AwaitExpression[Yield] : <code>await</code> UnaryExpression[?Yield, +Await]</p></blockquote>
+<p>Contains has no row for that production, so the default definition applies:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> For each child node <var>child</var> of this Parse Node, do</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> If <var>child</var> is an instance of <var>symbol</var>, return <span class="val">true</span>.</p><p class="q-step" style="--d:1"><span class="q-num">b.</span> If <var>child</var> is an instance of a nonterminal, then</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> Let <var>contained</var> be the result of <var>child</var> Contains <var>symbol</var>.</p><p class="q-step" style="--d:2"><span class="q-num">ii.</span> If <var>contained</var> is <span class="val">true</span>, return <span class="val">true</span>.</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Return <span class="val">false</span>.</p></blockquote>
+<p>The rules (one of each form):</p>
+<blockquote class="sentence q-text"><p>It is a Syntax Error if <span class="nt">ArrowParameters</span> Contains <span class="nt">AwaitExpression</span> is <span class="val">true</span>.</p><p>It is a Syntax Error if <span class="nt">FormalParameters</span> Contains <span class="nt">AwaitExpression</span> is <span class="val">true</span>.</p><p>It is a Syntax Error if <span class="nt">CoverCallExpressionAndAsyncArrowHead</span> Contains <span class="nt">AwaitExpression</span> is <span class="val">true</span>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>No parse tree has an |AwaitExpression| node: the parse produces the cover, and no rule makes it "cover" an
+|AwaitExpression| except when the production is "processed", as Evaluation does ("Let <em>expr</em> be the
+|AwaitExpression| that is covered by …"). Step 1.a compares each child with <em>symbol</em>; the child of
+<code>UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead</code> is a
+|CoverAwaitExpressionAndAwaitUsingDeclarationHead|. So "X Contains |AwaitExpression|" is <em>false</em> for every X and
+the six rules never apply: read literally, <code>async function f(x = await 1) {}</code> is a function whose parameter
+initializer awaits.</p>
+<p>The other covers have Contains rows that look through them (<code>ArrowParameters :
+CoverParenthesizedExpressionAndArrowParameterList</code>, <code>AsyncArrowFunction : CoverCallExpressionAndAsyncArrowHead
+`=&gt;` AsyncConciseBody</code>). Were |AwaitExpression| itself a right-hand side of UnaryExpression, step 1.a would find
+it. |YieldExpression| has no cover, and the "Contains |YieldExpression|" rules work.</p>
+<p>The row is for the UnaryExpression production only: under <code>AwaitUsingDeclaration :
+CoverAwaitExpressionAndAwaitUsingDeclarationHead BindingList `;`</code> the cover is an |AwaitUsingDeclarationHead|.
+(Note a companion gap in §15.9.1: <code>AsyncArrowFunction</code>'s early error checks unrefined
+<code>|CoverCallExpressionAndAsyncArrowHead| Contains |AwaitExpression|</code>, whereas in <code>[~Await]</code> contexts <code>async (x = await + 1) =&gt; x</code>
+parses <code>await + 1</code> as binary <code>+</code> inside <code>CoverCallExpressionAndAsyncArrowHead</code> and only becomes an <code>AwaitExpression</code>
+inside the refined <code>|AsyncArrowHead|</code>.)</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/35-contains-awaitexpression-cover.js</a> (outputs:
+<a href="results.html#35-contains-awaitexpression-coverjs">the recorded runs</a>) evaluates each source as a Script (indirect
+eval) or with the AsyncFunction constructor and prints the error's constructor or <code>no error</code>:</p>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th>source</th>
+<th>literal text (and the model's literal reading)</th>
+<th>V8, SpiderMonkey</th>
+<th>JavaScriptCore</th>
+<th>formal model, test262 and proposed readings</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>async function f(x = await 1) {}</code></td>
+<td>no error</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>(async function* (x = await 1) {})</code></td>
+<td>no error</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>({ async m(x = await 1) {} })</code></td>
+<td>no error</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>({ async *m(x = await 1) {} })</code></td>
+<td>no error</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>async function g() { async (x = await 1) =&gt; 0; }</code></td>
+<td>no error</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>AsyncFunction('x = await 1', '')</code></td>
+<td>no error</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+</tr>
+<tr>
+<td><code>async function h() { await 1; }</code></td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+<tr>
+<td><code>async function k(x = function () { var await; }) {}</code></td>
+<td>no error</td>
+<td>no error</td>
+<td>SyntaxError</td>
+<td>no error</td>
+</tr>
+<tr>
+<td><code>(async function () { class C { static { } } })</code></td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+</tbody>
+</table></div>
+<p>JavaScriptCore's SyntaxError for <code>k</code> is its own deviation (the <code>await</code> in the nested FunctionExpression is an
+identifier, and Contains does not look into a function), not this defect.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>A Contains row beside the other covers' rows:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -9550,6 +9550,12 @@
+       &lt;emu-alg&gt;
+         1. Let _formals_ be the |ArrowFormalParameters| that is covered by |CoverParenthesizedExpressionAndArrowParameterList|.
+         1. Return _formals_ Contains _symbol_.
++      &lt;/emu-alg&gt;
++      &lt;emu-grammar&gt;UnaryExpression : CoverAwaitExpressionAndAwaitUsingDeclarationHead&lt;/emu-grammar&gt;
++      &lt;emu-alg&gt;
++        1. If _symbol_ is |AwaitExpression|, return *true*.
++        1. Let _expr_ be the |AwaitExpression| that is covered by |CoverAwaitExpressionAndAwaitUsingDeclarationHead|.
++        1. Return _expr_ Contains _symbol_.
+       &lt;/emu-alg&gt;
+       &lt;emu-grammar&gt;
+         AsyncArrowFunction : `async` AsyncArrowBindingIdentifier `=&gt;` AsyncConciseBody
+</code></pre>
+<h2 id="test262">test262</h2>
+<p><code>built-ins/AsyncGeneratorFunction/instance-await-expr-in-param.js</code>,
+<code>language/expressions/async-generator/early-errors-expression-formals-contains-await-expr.js</code>,
+<code>language/expressions/async-arrow-function/await-as-param-nested-arrow-body-position.js</code> and the other <code>await</code>
+parameter tests require the SyntaxErrors. They fail under the literal text and pass under the proposed wording.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#35-contains-awaitexpression-coverjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=35-contains-awaitexpression-cover">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/35-contains-awaitexpression-cover.js</code></summary><pre class="js">// Contains (§8.5.1) has no row for UnaryExpression :
+// CoverAwaitExpressionAndAwaitUsingDeclarationHead, the production an `await`
+// expression parses as, so literally no Parse Node contains an
+// AwaitExpression and the rules &quot;FormalParameters Contains AwaitExpression&quot;
+// never apply. Each source is evaluated as a Script (indirect eval) or by the
+// AsyncFunction constructor; test262 expects a SyntaxError for the first six
+// and none for the last three.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var AsyncFunction = (async function () {}).constructor;
+var cases = [
+  [&quot;async function f(x = await 1) {}&quot;, () =&gt; (0, eval)(&quot;async function f(x = await 1) {}&quot;)],
+  [&quot;(async function* (x = await 1) {})&quot;, () =&gt; (0, eval)(&quot;(async function* (x = await 1) {})&quot;)],
+  [&quot;({ async m(x = await 1) {} })&quot;, () =&gt; (0, eval)(&quot;({ async m(x = await 1) {} })&quot;)],
+  [&quot;({ async *m(x = await 1) {} })&quot;, () =&gt; (0, eval)(&quot;({ async *m(x = await 1) {} })&quot;)],
+  [&quot;async function g() { async (x = await 1) =&gt; 0; }&quot;, () =&gt; (0, eval)(&quot;async function g() { async (x = await 1) =&gt; 0; }&quot;)],
+  [&quot;AsyncFunction(&#x27;x = await 1&#x27;, &#x27;&#x27;)&quot;, () =&gt; AsyncFunction(&quot;x = await 1&quot;, &quot;&quot;)],
+  [&quot;async function h() { await 1; }&quot;, () =&gt; (0, eval)(&quot;async function h() { await 1; }&quot;)],
+  [&quot;async function k(x = function () { var await; }) {}&quot;, () =&gt; (0, eval)(&quot;async function k(x = function () { var await; }) {}&quot;)],
+  [&quot;(async function () { class C { static { } } })&quot;, () =&gt; (0, eval)(&quot;(async function () { class C { static { } } })&quot;)],
+];
+for (var [src, run] of cases) {
+  try { run(); print(src + &quot;: no error&quot;); }
+  catch (e) { print(src + &quot;: &quot; + e.constructor.name); }
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

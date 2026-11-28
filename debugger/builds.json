@@ -1,0 +1,124 @@
+{
+ "builds": [
+  {
+   "id": "spec",
+   "label": "The specification",
+   "description": "ECMA-262 in SpecTec, with the resolved readings recorded in spec/DECISIONS.md.",
+   "wasm": "ecma-dbg-web.wasm",
+   "args": [],
+   "wasmBytes": 11499628
+  },
+  {
+   "id": "defer",
+   "label": "Proposal (Stage 3): import defer",
+   "description": "tc39/proposal-defer-import-eval (with PR #97) applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-defer.wasm",
+   "args": [],
+   "wasmBytes": 11366142
+  },
+  {
+   "id": "import-text",
+   "label": "Proposal (Stage 3): Import Text",
+   "description": "tc39/proposal-import-text (Stage 4 candidate) applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-import-text.wasm",
+   "args": [],
+   "wasmBytes": 11335601
+  },
+  {
+   "id": "thenable-curtailment",
+   "label": "Proposal (Stage 3): Thenable Curtailment",
+   "description": "tc39/proposal-thenable-curtailment (with PRs #22 and #26) applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-thenable-curtailment.wasm",
+   "args": [],
+   "wasmBytes": 11341745
+  },
+  {
+   "id": "deferred-reexports",
+   "label": "Proposal (Stage 2.7): Deferred Re-exports",
+   "description": "tc39/proposal-deferred-reexports applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-deferred-reexports.wasm",
+   "args": [],
+   "wasmBytes": 11466790
+  },
+  {
+   "id": "json-parseimmutable",
+   "label": "Proposal (Stage 2.7): JSON.parse Options",
+   "description": "tc39/proposal-json-parseimmutable (PR #27: nullPrototypeObjects) applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-json-parseimmutable.wasm",
+   "args": [],
+   "wasmBytes": 11341680
+  },
+  {
+   "id": "esm-phase-imports",
+   "label": "Proposal (Stage 2.7): ESM Phase Imports",
+   "description": "tc39/proposal-esm-phase-imports (PR #65) applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-esm-phase-imports.wasm",
+   "args": [],
+   "wasmBytes": 11360632
+  },
+  {
+   "id": "immutable-arraybuffer",
+   "label": "Proposal (Stage 2.7): Immutable ArrayBuffers",
+   "description": "tc39/proposal-immutable-arraybuffer applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-immutable-arraybuffer.wasm",
+   "args": [],
+   "wasmBytes": 11355995
+  },
+  {
+   "id": "error-code-property",
+   "label": "Proposal (Stage 2): Error.code",
+   "description": "tc39/proposal-error-code-property applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-error-code-property.wasm",
+   "args": [],
+   "wasmBytes": 11335640
+  },
+  {
+   "id": "fma",
+   "label": "Proposal (Stage 2): Math.fusedMultiplyAdd",
+   "description": "tc39/proposal-fma applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-fma.wasm",
+   "args": [],
+   "wasmBytes": 11340756
+  },
+  {
+   "id": "composites",
+   "label": "Proposal (Stage 2): Composites",
+   "description": "tc39/proposal-composites applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-composites.wasm",
+   "args": [],
+   "wasmBytes": 11349879
+  },
+  {
+   "id": "cancellation",
+   "label": "Proposal (Stage 1): Cancellation (AbortController)",
+   "description": "tc39/proposal-cancellation (PR #35 spec draft) applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-cancellation.wasm",
+   "args": [],
+   "wasmBytes": 11376082
+  },
+  {
+   "id": "iterator-transfer",
+   "label": "Proposal (Stage 0): Iterator.prototype.transfer",
+   "description": "jasnell/proposal-iterator-transfer applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-iterator-transfer.wasm",
+   "args": [],
+   "wasmBytes": 11342689
+  },
+  {
+   "id": "trim-chars",
+   "label": "Proposal (Stage 0): Trim Specific Characters",
+   "description": "eemeli/proposal-trim-chars applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-trim-chars.wasm",
+   "args": [],
+   "wasmBytes": 11337793
+  },
+  {
+   "id": "popcount",
+   "label": "Proposal (Stage 0): Math.popcount32 / ctz32",
+   "description": "js-choi/proposal-popcount applied to ECMA-262.",
+   "wasm": "ecma-dbg-web-popcount.wasm",
+   "args": [],
+   "wasmBytes": 11337170
+  }
+ ]
+}

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>43. AllocateSharedArrayBuffer stores a growable buffer&#x27;s length with SetValueInBuffer on a Shared Data Block · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/43-allocatesharedarraybuffer-byte-length.md</code></p>
+<h1>43. AllocateSharedArrayBuffer stores a growable buffer's length with SetValueInBuffer on a Shared Data Block</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§25.2.2.1 AllocateSharedArrayBuffer (<a class="clause" href="https://tc39.es/ecma262/#sec-allocatesharedarraybuffer"><code>#sec-allocatesharedarraybuffer</code></a>), step 9.c, against §25.1.3.18 SetValueInBuffer (<a class="clause" href="https://tc39.es/ecma262/#sec-setvalueinbuffer"><code>#sec-setvalueinbuffer</code></a>), its first parameter.</dd><dt>Kind</dt><dd>type error (a Shared Data Block where an ArrayBuffer or SharedArrayBuffer is required).</dd><dt>Model erratum</dt><dd><code>AllocateSharedArrayBufferByteLengthStore</code>, default reading test262; its readings: literal, test262, proposed. The test262 and proposed readings are the same steps, the proposed wording below.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: PR <a class="ext" href="https://github.com/tc39/ecma262/pull/4023">#4023</a> (closed without merging, 2026-10), "Editorial: initialize shared byte-length data with a memory event", proposed replacing the SetValueInBuffer call by a WriteSharedMemory event; no issue was found (searched for "AllocateSharedArrayBuffer"). The step came with PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3116">#3116</a> (merged 2023-10, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/a9ae96eda"><code>a9ae96eda</code></a>); PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3976">#3976</a> (open, 2026-09), "Editorial: Use "Internal Slots" tables for more object types", leaves it as it is.</dd><dt>On this site</dt><dd><a href="../errata.html#AllocateSharedArrayBufferByteLengthStore"><code>AllocateSharedArrayBufferByteLengthStore</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">9.</span> If <var>allocatingGrowableBuffer</var> is <span class="val">true</span>, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Assert: <var>byteLength</var> ≤ <var>maxByteLength</var>.</p><p class="q-step" style="--d:1"><span class="q-num">b.</span> Let <var>byteLengthBlock</var> be ? CreateSharedByteDataBlock(8).</p><p class="q-step" style="--d:1"><span class="q-num">c.</span> Perform SetValueInBuffer(<var>byteLengthBlock</var>, 0, <span class="const">biguint64</span>, ℤ(<var>byteLength</var>), <span class="val">true</span>, <span class="const">seq-cst</span>).</p><p class="q-step" style="--d:1"><span class="q-num">d.</span> Set <var>obj</var>.[[ArrayBufferByteLengthData]] to <var>byteLengthBlock</var>.</p></blockquote>
+<p>SetValueInBuffer takes "<em>arrayBuffer</em>: an ArrayBuffer or SharedArrayBuffer", and its steps begin:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Assert: IsDetachedBuffer(<var>arrayBuffer</var>) is <span class="val">false</span>.</p><p class="q-gap">…</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Let <var>block</var> be <var>arrayBuffer</var>.[[ArrayBufferData]].</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>CreateSharedByteDataBlock returns a Shared Data Block, a data block value with no internal slots, not a
+SharedArrayBuffer. Step 9.c passes it to SetValueInBuffer outside its parameter's type: IsDetachedBuffer (step 1)
+and step 4 read its [[ArrayBufferData]], which it does not have, so the step has no defined result and every
+growable SharedArrayBuffer construction reaches it. The other readers and writers of the same block,
+ArrayBufferByteLength (§25.1.3.2) and SharedArrayBuffer.prototype.grow (§25.2.5.3), use the Shared Data Block
+operations GetRawBytesFromSharedBlock and AtomicCompareExchangeInSharedBlock on the block itself. The intent is
+clear: write the length into the block as a seq-cst 8-byte event, as SetValueInBuffer's shared branch would for a
+SharedArrayBuffer whose [[ArrayBufferData]] is the block.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/43-allocatesharedarraybuffer-byte-length.js</a>
+(outputs: <a href="results.html#43-allocatesharedarraybuffer-byte-lengthjs">the recorded runs</a>):</p>
+<pre class="js"><code>var sab = new SharedArrayBuffer(4, { maxByteLength: 16 });
+print(sab.growable + &quot; &quot; + sab.byteLength + &quot; &quot; + sab.maxByteLength);
+sab.grow(8);
+print(sab.byteLength + &quot; &quot; + new Int32Array(sab).length);
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>construction</th>
+<th><code>growable byteLength maxByteLength</code></th>
+<th>after <code>grow(8)</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal step 9.c</td>
+<td>no defined result (SetValueInBuffer on a Shared Data Block)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td>succeeds</td>
+<td><code>true 4 16</code></td>
+<td><code>8 2</code></td>
+</tr>
+<tr>
+<td>formal model (test262 and proposed readings)</td>
+<td>succeeds</td>
+<td><code>true 4 16</code></td>
+<td><code>8 2</code></td>
+</tr>
+<tr>
+<td>formal model (literal reading)</td>
+<td>the run stops in SetValueInBuffer (<code>stop: sortError sec-setvalueinbuffer#0 4</code>)</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>The steps of SetValueInBuffer's shared branch, on the block itself (IsNoTearConfiguration(<span class="const">biguint64</span>, <span class="const">seq-cst</span>) is
+<em>true</em>):</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -45903,7 +45903,11 @@
+           1. If _allocatingGrowableBuffer_ is *true*, then
+             1. Assert: _byteLength_ ≤ _maxByteLength_.
+             1. Let _byteLengthBlock_ be ? CreateSharedByteDataBlock(8).
+-            1. Perform SetValueInBuffer(_byteLengthBlock_, 0, &lt;span class=&quot;const&quot;&gt;biguint64&lt;/span&gt;, ℤ(_byteLength_), *true*, &lt;span class=&quot;const&quot;&gt;seq-cst&lt;/span&gt;).
++            1. Let _agentRecord_ be the Agent Record of the surrounding agent.
++            1. Let _rawBytes_ be NumericToRawBytes(&lt;span class=&quot;const&quot;&gt;biguint64&lt;/span&gt;, ℤ(_byteLength_), _agentRecord_.[[LittleEndian]]).
++            1. Let _execution_ be _agentRecord_.[[CandidateExecution]].
++            1. Let _eventsRecord_ be the Agent Events Record of _execution_.[[EventsRecords]] whose [[AgentSignifier]] is AgentSignifier().
++            1. Append WriteSharedMemory { [[Order]]: &lt;span class=&quot;const&quot;&gt;seq-cst&lt;/span&gt;, [[NoTear]]: *true*, [[Block]]: _byteLengthBlock_, [[ByteIndex]]: 0, [[ElementSize]]: 8, [[Payload]]: _rawBytes_ } to _eventsRecord_.[[EventList]].
+             1. Set _obj_.[[ArrayBufferByteLengthData]] to _byteLengthBlock_.
+             1. Set _obj_.[[ArrayBufferMaxByteLength]] to _maxByteLength_.
+           1. Else,
+</code></pre>
+<p>A shorter alternative is an abstract operation that writes a value into a Shared Data Block, shared by this step
+and SetValueInBuffer's shared branch.</p>
+<h2 id="test262">test262</h2>
+<p>No test checks the step's event itself, but 14 test files construct a growable SharedArrayBuffer directly (eight in
+<code>built-ins/SharedArrayBuffer/prototype</code>, among them <code>grow/grow-larger-size.js</code>, three in <code>built-ins/Atomics</code> and
+three in <code>staging/built-ins</code>), and none of them has a defined result under the literal step.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#43-allocatesharedarraybuffer-byte-lengthjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=43-allocatesharedarraybuffer-byte-length">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/43-allocatesharedarraybuffer-byte-length.js</code></summary><pre class="js">// AllocateSharedArrayBuffer step 9.c stores the length with SetValueInBuffer(_byteLengthBlock_, …), passing a
+// Shared Data Block where SetValueInBuffer takes an ArrayBuffer or SharedArrayBuffer.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var sab = new SharedArrayBuffer(4, { maxByteLength: 16 });
+print(sab.growable + &quot; &quot; + sab.byteLength + &quot; &quot; + sab.maxByteLength);
+sab.grow(8);
+print(sab.byteLength + &quot; &quot; + new Int32Array(sab).length);
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>49. Annex B: /[\c1-\c5]/ asks for the IsCharacterClass of ClassEscape :: c ClassControlLetter, which has none · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/49-annexb-ischaracterclass-classcontrolletter.md</code></p>
+<h1>49. Annex B: <code>/[\c1-\c5]/</code> asks for the IsCharacterClass of <code>ClassEscape :: c ClassControlLetter</code>, which has none</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§B.1.2 Regular Expressions Patterns (<a class="clause" href="https://tc39.es/ecma262/#sec-regular-expressions-patterns"><code>#sec-regular-expressions-patterns</code></a>), ClassEscape's <code>[~UnicodeMode] c ClassControlLetter</code>; §B.1.2.1 Static Semantics: Early Errors (<a class="clause" href="https://tc39.es/ecma262/#sec-patterns-static-semantics-early-errors-annexb"><code>#sec-patterns-static-semantics-early-errors-annexb</code></a>), the range rules; §B.1.2.3 Static Semantics: IsCharacterClass (<a class="clause" href="https://tc39.es/ecma262/#sec-patterns-static-semantics-is-character-class-annexb"><code>#sec-patterns-static-semantics-is-character-class-annexb</code></a>); §B.1.2.4 Static Semantics: CharacterValue (<a class="clause" href="https://tc39.es/ecma262/#sec-patterns-static-semantics-character-value-annexb"><code>#sec-patterns-static-semantics-character-value-annexb</code></a>); §22.2.1.6 Static Semantics: IsCharacterClass (<a class="clause" href="https://tc39.es/ecma262/#sec-patterns-static-semantics-is-character-class"><code>#sec-patterns-static-semantics-is-character-class</code></a>).</dd><dt>Kind</dt><dd>missing case (an operation applied to a production it does not define).</dd><dt>Model erratum</dt><dd><code>IsCharacterClassControlLetter</code>, default reading test262; its readings: literal, test262, proposed. The test262 and proposed readings add the row of the proposed wording to §B.1.2.3's clause; the literal reading (no row) stops at a range with such an end.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "IsCharacterClass" and "ClassControlLetter"). Related: PR <a class="ext" href="https://github.com/tc39/ecma262/pull/2445">#2445</a> (open, 2021-06) rewrites the grammar line of §B.1.2.3 and adds no rule for <code>ClassEscape :: c ClassControlLetter</code>.</dd><dt>On this site</dt><dd><a href="../errata.html#IsCharacterClassControlLetter"><code>IsCharacterClassControlLetter</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>§B.1.2 adds an alternative to ClassEscape:</p>
+<blockquote class="sentence q-text"><p>ClassEscape[UnicodeMode, NamedCaptureGroups] :: <code>b</code> [+UnicodeMode] <code>-</code> [~UnicodeMode] <code>c</code> ClassControlLetter CharacterClassEscape[?UnicodeMode] CharacterEscape[?UnicodeMode, ?NamedCaptureGroups]</p><p>ClassControlLetter :: DecimalDigit <code>_</code></p></blockquote>
+<p>§B.1.2.1, for <code>NonemptyClassRanges :: ClassAtom - ClassAtom ClassContents</code> (and likewise
+<code>NonemptyClassRangesNoDash</code>):</p>
+<blockquote class="sentence q-text"><p>It is a Syntax Error if IsCharacterClass of the first <span class="nt">ClassAtom</span> is <span class="val">true</span> or IsCharacterClass of the second <span class="nt">ClassAtom</span> is <span class="val">true</span> and this production has a [UnicodeMode] parameter.</p><p>It is a Syntax Error if IsCharacterClass of the first <span class="nt">ClassAtom</span> is <span class="val">false</span>, IsCharacterClass of the second <span class="nt">ClassAtom</span> is <span class="val">false</span>, and the CharacterValue of the first <span class="nt">ClassAtom</span> is strictly greater than the CharacterValue of the second <span class="nt">ClassAtom</span>.</p></blockquote>
+<p>§B.1.2.3 extends IsCharacterClass only with <code>ClassAtomNoDash :: \ [lookahead == c]</code>. §B.1.2.4 extends CharacterValue
+with that production and with <code>ClassEscape :: c ClassControlLetter</code> ("the remainder of dividing <em>i</em> by 32").
+§22.2.1.6 defines IsCharacterClass for <code>ClassAtom :: -</code>, <code>ClassAtomNoDash :: SourceCharacter but not one of \ or ]
+or -</code>, and <code>ClassEscape :: b</code>, <code>-</code>, CharacterEscape and CharacterClassEscape.</p>
+<h2 id="problem">Problem</h2>
+<p><code>/[\c1-\c5]/</code> parses with each end a <code>ClassAtom :: ClassAtomNoDash :: \ ClassEscape</code> whose ClassEscape is
+<code>c ClassControlLetter</code>. The range rules ask for IsCharacterClass of each ClassAtom, which reaches that production
+through chain productions, and no clause defines it there: it is a chain production, and its implicit rule reaches
+ClassControlLetter's alternatives <code>_</code> and DecimalDigit's digits, which have no rule. Both rules have no value, and
+the second also needs CharacterValue, which §B.1.2.4 does define for it. §B.1.2.4's row and the other
+single-character escapes say what is meant: the escape is one character, and IsCharacterClass is <em>false</em>.</p>
+<h2 id="examples">Examples</h2>
+<pre class="js"><code>print(/[\c1-\c5]/.test(&quot;\x13&quot;) + &quot; &quot; + /[\c1-\c5]/.test(&quot;A&quot;));
+try { new RegExp(&quot;[\\c5-\\c1]&quot;); print(&quot;no error&quot;); } catch (e) { print(e.name); }
+</code></pre>
+<p>With the row of the proposed wording the first line prints <code>true false</code> (<code>\c1</code> is U+0011 and <code>\c5</code> U+0015) and the
+second <code>SyntaxError</code> (out of order). The formal model, run with <code>--web-browser</code> (Annex B on):</p>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>first line</th>
+<th>second line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal reading</td>
+<td><code>stop: sortError row-ischaracterclass-classcontrolletter#0</code> (at the range rules, at IsCharacterClass)</td>
+<td>(not reached)</td>
+</tr>
+<tr>
+<td>test262 and proposed readings (the default: test262)</td>
+<td><code>true false</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The model's test <code>tests/run/frontend_regexp_annexb.js</code> (<code>--web-browser</code>) checks the same two lines under the default
+reading and prints <code>true false</code> and <code>SyntaxError</code> for them. test262's <code>annexB/language/literals/regexp/class-escape.js</code>
+requires <code>[\c1]</code> to match U+0011.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: add the production to §B.1.2.3's row.</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -53998,8 +53998,10 @@
+         &lt;h1&gt;Static Semantics: IsCharacterClass&lt;/h1&gt;
+         &lt;p&gt;The semantics of IsCharacterClass is extended as follows:&lt;/p&gt;
+         &lt;emu-grammar&gt;
+           ClassAtomNoDash :: `\` [lookahead == `c`]
++
++          ClassEscape :: `c` ClassControlLetter
+         &lt;/emu-grammar&gt;
+         &lt;emu-alg&gt;
+           1. Return *false*.
+         &lt;/emu-alg&gt;
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>None has <code>\c</code> with a digit or <code>_</code> at an end of a range: <code>annexB/language/literals/regexp/class-escape.js</code> tests
+<code>[\c0]</code>, <code>[\c1]</code>, <code>[\c8]</code>, <code>[\c9]</code>, <code>[\c_]</code> and <code>[\c00]+</code>, <code>[\c10]+</code>, <code>[\c80]+</code>, <code>[\c90]+</code>, which ask for no
+IsCharacterClass, and <code>annexB/built-ins/RegExp/RegExp-invalid-control-escape-character-class-range.js</code> tests
+<code>/[\\c-f]/</code>.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

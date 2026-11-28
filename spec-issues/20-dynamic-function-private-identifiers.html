@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>20. new Function(&quot;o&quot;, &quot;return o.#f&quot;): no check of private names in dynamic functions · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/20-dynamic-function-private-identifiers.md</code></p>
+<h1>20. <code>new Function("o", "return o.#f")</code>: no check of private names in dynamic functions</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§20.2.1.1.1 CreateDynamicFunction (<a class="clause" href="https://tc39.es/ecma262/#sec-createdynamicfunction"><code>#sec-createdynamicfunction</code></a>), steps 18–29; §6.2.5.9 MakePrivateReference (<a class="clause" href="https://tc39.es/ecma262/#sec-makeprivatereference"><code>#sec-makeprivatereference</code></a>), step 2.</dd><dt>Kind</dt><dd>missing step (an early error that no goal of CreateDynamicFunction applies), and a failing Assert.</dd><dt>Model erratum</dt><dd><code>CreateDynamicFunctionPrivateIdentifiers</code>, default reading proposed; its readings: literal, test262, proposed (the proposed reading is the Proposed wording; the test262 reading checks the body only).</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "CreateDynamicFunction" with private, no hits, and "AllPrivateIdentifiersValid"). PR <a class="ext" href="https://github.com/tc39/ecma262/pull/1668">#1668</a> (merged 2021-05), which brought private names into the specification, has no check of them in CreateDynamicFunction. Issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3080">#3080</a> (closed, 2023-05), "MakePrivateReference and ResolvePrivateIdentifier assert that outer private environment can't be null", asked why MakePrivateReference asserts a non-null PrivateEnvironment; the answer there points to AllPrivateIdentifiersValid's early errors, which are rules of Scripts, Modules and direct eval.</dd><dt>On this site</dt><dd><a href="../errata.html#CreateDynamicFunctionPrivateIdentifiers"><code>CreateDynamicFunctionPrivateIdentifiers</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>AllPrivateIdentifiersValid is applied in three places:</p>
+<blockquote class="sentence q-text"><p>§16.1.1 (ScriptBody): It is a Syntax Error if AllPrivateIdentifiersValid of <span class="nt">StatementList</span> with argument « » is <span class="val">false</span> unless the source text containing <span class="nt">ScriptBody</span> is eval code that is being processed by a direct eval.</p><p>§16.2.1.1 (ModuleBody): It is a Syntax Error if AllPrivateIdentifiersValid of <span class="nt">ModuleItemList</span> with argument « » is <span class="val">false</span>.</p><p>§19.2.1.4 EvalDeclarationInstantiation: If AllPrivateIdentifiersValid of <var>body</var> with argument <var>privateIdentifiers</var> is <span class="val">false</span>, throw a <span class="val">SyntaxError</span> exception.</p></blockquote>
+<p>CreateDynamicFunction parses with other goals and has no such step:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">18.</span> Let <var>params</var> be ParseText(<var>joinedParamsString</var>, <var>paramGrammar</var>).</p><p class="q-step" style="--d:0"><span class="q-num">19.</span> If <var>params</var> is a List of errors, throw a <span class="val">SyntaxError</span> exception.</p><p class="q-step" style="--d:0"><span class="q-num">20.</span> Let <var>body</var> be ParseText(<var>bodyParseString</var>, <var>bodyGrammar</var>).</p><p class="q-step" style="--d:0"><span class="q-num">21.</span> If <var>body</var> is a List of errors, throw a <span class="val">SyntaxError</span> exception.</p><p class="q-gap">…</p><p class="q-step" style="--d:0"><span class="q-num">24.</span> Let <var>expr</var> be ParseText(<var>sourceText</var>, <var>exprGrammar</var>).</p><p class="q-step" style="--d:0"><span class="q-num">25.</span> If <var>expr</var> is a List of errors, throw a <span class="val">SyntaxError</span> exception.</p><p class="q-gap">…</p><p class="q-step" style="--d:0"><span class="q-num">28.</span> Let <var>privateEnv</var> be <span class="val">null</span>.</p><p class="q-step" style="--d:0"><span class="q-num">29.</span> Let <var>func</var> be OrdinaryFunctionCreate(<var>funcProto</var>, <var>sourceText</var>, <var>params</var>, <var>body</var>, <span class="const">non-lexical-this</span>, <var>envRecord</var>, <var>privateEnv</var>).</p></blockquote>
+<p>MakePrivateReference:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Let <var>privateEnv</var> be the running execution context&#x27;s PrivateEnvironment.</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Assert: <var>privateEnv</var> is not <span class="val">null</span>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>The goals of steps 18, 20 and 24 are FormalParameters, FunctionBody and FunctionExpression (or their generator and
+async forms). None of their early errors applies AllPrivateIdentifiersValid, so a body or a parameter list that uses
+<code>o.#f</code> outside any class parses without error, and step 29 creates a function whose [[PrivateEnvironment]] is <em>null</em>.
+Calling it evaluates <code>o.#f</code>, whose MakePrivateReference finds that <em>null</em> PrivateEnvironment: the Assert of step 2
+fails. The parameters reach it too, through an initializer (<code>new Function("a = {}.#g", "")</code>, called with no argument).</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/20-dynamic-function-private-identifiers.js</a> (outputs:
+<a href="results.html#20-dynamic-function-private-identifiersjs">the recorded runs</a>):</p>
+<pre class="js"><code>try { new Function(&quot;o&quot;, &quot;return o.#f&quot;); print(&quot;body: no error&quot;); }
+catch (e) { print(&quot;body: &quot; + e.constructor.name); }
+try { new Function(&quot;a = {}.#g&quot;, &quot;&quot;); print(&quot;params: no error&quot;); }
+catch (e) { print(&quot;params: &quot; + e.constructor.name); }
+try { eval(&quot;(function (o) { return o.#f; })&quot;); print(&quot;eval: no error&quot;); }
+catch (e) { print(&quot;eval: &quot; + e.constructor.name); }
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>body</th>
+<th>params</th>
+<th>eval</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>no error</code> (a call fails MakePrivateReference's Assert)</td>
+<td><code>no error</code> (likewise)</td>
+<td><code>SyntaxError</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+<tr>
+<td>formal model, proposed reading (the default)</td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+<tr>
+<td>formal model, test262 reading</td>
+<td><code>SyntaxError</code></td>
+<td><code>no error</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+<tr>
+<td>formal model, literal reading</td>
+<td><code>no error</code></td>
+<td><code>no error</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The model's default reading is the proposed wording, which checks both, as the engines do; its test262 reading
+checks the body only, which is what test262 tests. Where a function is created, calling it
+(<code>new Function("o", "return o.#f")({})</code> under the literal reading, <code>new Function("a = {}.#g", "")()</code> under the
+literal and test262 readings) stops the model with <code>stop: sortError sec-resolve-private-identifier#0 1</code>: the
+<em>null</em> PrivateEnvironment of MakePrivateReference's step 2 is passed on to ResolvePrivateIdentifier
+(<a class="clause" href="https://tc39.es/ecma262/#sec-resolve-private-identifier"><code>#sec-resolve-private-identifier</code></a>), whose parameter is a PrivateEnvironment Record.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -31525,6 +31525,8 @@
+             1. NOTE: If this step is reached, _sourceText_ must have the syntax of _exprGrammar_ (although the reverse implication does not hold). The purpose of the next two steps is to enforce any Early Error rules which apply to _exprGrammar_ directly.
+             1. Let _expr_ be ParseText(_sourceText_, _exprGrammar_).
+             1. If _expr_ is a List of errors, throw a *SyntaxError* exception.
++            1. If AllPrivateIdentifiersValid of _body_ with argument « » is *false*, throw a *SyntaxError* exception.
++            1. If AllPrivateIdentifiersValid of _params_ with argument « » is *false*, throw a *SyntaxError* exception.
+             1. Let _funcProto_ be ? GetPrototypeFromConstructor(_newTarget_, _fallbackProto_).
+             1. Let _envRecord_ be _currentRealm_.[[GlobalEnv]].
+             1. Let _privateEnv_ be *null*.
+</code></pre>
+<h2 id="test262">test262</h2>
+<p><code>built-ins/Function/private-identifiers-not-empty.js</code> requires a <em>SyntaxError</em> for <code>new Function("o.#f")</code>; its <code>info</code>
+quotes the class fields proposal's steps of CreateDynamicFunction:</p>
+<blockquote class="sentence q-other"><p class="q-step" style="--d:0"><span class="q-num">30.</span> If AllPrivateIdentifiersValid of body with the argument privateIdentifiers is false, throw a SyntaxError exception.</p><p class="q-step" style="--d:0"><span class="q-num">31.</span> If AllPrivateIdentifiersValid of parameters with the argument privateIdentifiers is false, throw a SyntaxError exception.</p></blockquote>
+<p>Under the literal text it fails. <code>staging/sm/PrivateName/lexical-presence.js</code> also requires a <em>SyntaxError</em> from
+<code>Function(str)</code> for bodies. No test covers the parameters.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#20-dynamic-function-private-identifiersjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=20-dynamic-function-private-identifiers">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/20-dynamic-function-private-identifiers.js</code></summary><pre class="js">if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+// AllPrivateIdentifiersValid is checked only for a Script or Module body.
+try { new Function(&quot;o&quot;, &quot;return o.#f&quot;); print(&quot;body: no error&quot;); }
+catch (e) { print(&quot;body: &quot; + e.constructor.name); }
+try { new Function(&quot;a = {}.#g&quot;, &quot;&quot;); print(&quot;params: no error&quot;); }
+catch (e) { print(&quot;params: &quot; + e.constructor.name); }
+try { eval(&quot;(function (o) { return o.#f; })&quot;); print(&quot;eval: no error&quot;); }
+catch (e) { print(&quot;eval: &quot; + e.constructor.name); }
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

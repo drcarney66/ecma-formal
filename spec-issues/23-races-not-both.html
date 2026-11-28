@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>23. Races: &quot;it is not the case that both&quot; is always true · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/23-races-not-both.md</code></p>
+<h1>23. Races: "it is not the case that both" is always true</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§29.8 Races (<a class="clause" href="https://tc39.es/ecma262/#sec-races"><code>#sec-races</code></a>), step 1.a; §29.7.5 Valid Executions (<a class="clause" href="https://tc39.es/ecma262/#sec-valid-executions"><code>#sec-valid-executions</code></a>); §29.10 Data Race Freedom (<a class="clause" href="https://tc39.es/ecma262/#sec-data-race-freedom"><code>#sec-data-race-freedom</code></a>).</dd><dt>Kind</dt><dd>a condition that is always true under the clause's own definitions.</dd><dt>Model erratum</dt><dd><code>RacesNotBoth</code>, baked-in SpecTec reading literal (<code>Ecma.MemoryModel.Race</code>, <code>spec/spectec/prose/07-memory-model.spectec</code>); its note in <code>site/errata.json</code> gives the proposed wording below.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: PR <a class="ext" href="https://github.com/tc39/ecma262/pull/4021">#4021</a> (closed without merging, 2026-10), "Normative: exclude happens-before ordered events from races", proposed requiring that neither event happens-before the other; no issue was found (searched for "not the case that both" and "Races"). The wording came with PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3321">#3321</a> (merged 2024-05, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/1babaf809"><code>1babaf809</code></a>), "Editorial: Rework memory model relations", which replaced "If the pairs (<em>E</em>, <em>D</em>) and (<em>D</em>, <em>E</em>) are not in <em>execution</em>.[[HappensBefore]]".</dd><dt>On this site</dt><dd><a href="../errata.html#RacesNotBoth"><code>RacesNotBoth</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the literal text)</dd></dl><h2 id="text">Text</h2>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> If <var>eventA</var> and <var>eventB</var> are not the same Shared Data Block event, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> If it is not the case that both <var>eventA</var> happens-before <var>eventB</var> in <var>execution</var> and <var>eventB</var> happens-before <var>eventA</var> in <var>execution</var>, then</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> If <var>eventA</var> is either a WriteSharedMemory or ReadModifyWriteSharedMemory event, <var>eventB</var> is either a WriteSharedMemory or ReadModifyWriteSharedMemory event, and <var>eventA</var> and <var>eventB</var> do not have disjoint memory ranges, then</p><p class="q-step" style="--d:3"><span class="q-num">1.</span> Return <span class="val">true</span>.</p><p class="q-step" style="--d:2"><span class="q-num">ii.</span> If <var>eventA</var> reads-from <var>eventB</var> in <var>execution</var> or <var>eventB</var> reads-from <var>eventA</var> in <var>execution</var>, then</p><p class="q-step" style="--d:3"><span class="q-num">1.</span> Return <span class="val">true</span>.</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Return <span class="val">false</span>.</p></blockquote>
+<p>§29.7.5:</p>
+<blockquote class="sentence q-text"><p>A candidate execution <var>execution</var> is a valid execution (or simply an execution) if all of the following are true.</p><p class="q-gap">…</p><p><var>execution</var> admits a happens-before Relation that is a strict partial order.</p></blockquote>
+<p>§29.10:</p>
+<blockquote class="sentence q-text"><p>The memory model guarantees sequential consistency of all events for data race free programs.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>Races are defined for an execution, whose happens-before is a strict partial order, hence asymmetric: "<em>eventA</em>
+happens-before <em>eventB</em> and <em>eventB</em> happens-before <em>eventA</em>" never holds, and step 1.a's condition is always true.
+Read literally, any two conflicting events race, including two writes that happens-before orders, such as two
+writes of one agent in agent order. Data races, and with them the guarantee of §29.10, then cover every program
+that writes shared memory twice at the same bytes. The intent is that neither event happens-before the other.</p>
+<h2 id="examples">Examples</h2>
+<p>None run: the definition is not observable through an engine, and the formal model defines the memory model in Lean
+but does not run it. Under the literal text, this single-agent program has a data race (two <span class="const">unordered</span> writes of
+the same bytes, ordered by agent order), so it is not data race free:</p>
+<pre class="js"><code>const ta = new Int32Array(new SharedArrayBuffer(4));
+ta[0] = 1;
+ta[0] = 2;
+</code></pre>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -53236,7 +53236,7 @@
+     &lt;p&gt;For an execution _execution_ and events _eventA_ and _eventB_ that are contained in SharedDataBlockEventSet(_execution_), _eventA_ and _eventB_ are in a &lt;em&gt;race&lt;/em&gt; if the following algorithm returns *true*.&lt;/p&gt;
+     &lt;emu-alg&gt;
+       1. If _eventA_ and _eventB_ are not the same Shared Data Block event, then
+-        1. If it is not the case that both _eventA_ happens-before _eventB_ in _execution_ and _eventB_ happens-before _eventA_ in _execution_, then
++        1. If neither _eventA_ happens-before _eventB_ in _execution_ nor _eventB_ happens-before _eventA_ in _execution_, then
+           1. If _eventA_ is either a WriteSharedMemory or ReadModifyWriteSharedMemory event, _eventB_ is either a WriteSharedMemory or ReadModifyWriteSharedMemory event, and _eventA_ and _eventB_ do not have disjoint memory ranges, then
+             1. Return *true*.
+           1. If _eventA_ reads-from _eventB_ in _execution_ or _eventB_ reads-from _eventA_ in _execution_, then
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>No test: data race freedom is a property of all executions of a program, which test262 does not test.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

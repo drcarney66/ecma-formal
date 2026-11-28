@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>21. /\/ and /\/ became SyntaxErrors with Unicode 15.1 · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · proposed normative change · <code>docs/spec-issues/21-identityescape-zwnj-zwj.md</code></p>
+<h1>21. <code>/\&lt;ZWNJ&gt;/</code> and <code>/\&lt;ZWJ&gt;/</code> became SyntaxErrors with Unicode 15.1</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§22.2.1 Patterns (<a class="clause" href="https://tc39.es/ecma262/#sec-patterns"><code>#sec-patterns</code></a>), the production IdentityEscape, with §12.7 Names and Keywords (<a class="clause" href="https://tc39.es/ecma262/#sec-names-and-keywords"><code>#sec-names-and-keywords</code></a>, UnicodeIDContinue), reached from §22.2.3.4 ParsePattern (<a class="clause" href="https://tc39.es/ecma262/#sec-parsepattern"><code>#sec-parsepattern</code></a>), step 4.a.</dd><dt>Kind</dt><dd>contradiction (an unrecorded normative change: a change of the Unicode Standard turned valid patterns into SyntaxErrors).</dd><dt>Model erratum</dt><dd><code>IdentityEscapeJoinControls</code>, baked-in SpecTec reading proposed (<code>kind="proposal"</code>, layer <code>parser</code>, <code>spec/spectec/04-grammar-regexp.spectec</code>); its readings: literal, proposed.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "IdentityEscape"). Issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3073">#3073</a> (closed, 2024-02), "[Informative] Observable changes because of Unicode 15.1", and PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3074">#3074</a> (merged 2024-02, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/467819a42"><code>467819a42</code></a>), "Editorial: Remove special-casing of U+200C and U+200D", concern the same two code points; the PR removed &lt;ZWNJ&gt; and &lt;ZWJ&gt; from IdentifierPartChar.</dd><dt>On this site</dt><dd><a href="../errata.html#IdentityEscapeJoinControls"><code>IdentityEscapeJoinControls</code></a> on Spec issues &amp; errata (proposed normative change; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>§22.2.1:</p>
+<blockquote class="sentence q-text"><p>IdentityEscape[UnicodeMode] :: [+UnicodeMode] SyntaxCharacter [+UnicodeMode] <code>/</code> [~UnicodeMode] SourceCharacter but not UnicodeIDContinue</p></blockquote>
+<p>§12.7:</p>
+<blockquote class="sentence q-text"><p>IdentifierPartChar :: UnicodeIDContinue <code>$</code></p><p>UnicodeIDContinue :: &gt; any Unicode code point with the Unicode property “ID_Continue”</p></blockquote>
+<p>The Unicode Character Database since 15.1.0 (PropList.txt and DerivedCoreProperties.txt):</p>
+<blockquote class="sentence q-other"><p>200C..200D ; Other_ID_Continue # Cf [2] ZERO WIDTH NON-JOINER..ZERO WIDTH JOINER</p><p>200C..200D ; ID_Continue # Cf [2] ZERO WIDTH NON-JOINER..ZERO WIDTH JOINER</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>U+200C ZERO WIDTH NON-JOINER and U+200D ZERO WIDTH JOINER are now UnicodeIDContinue, so neither is an IdentityEscape
+without [UnicodeMode], and no other alternative of CharacterEscape derives them. A pattern of <code>\</code> and one of them is
+not a Pattern[~UnicodeMode, ~UnicodeSetsMode, +NamedCaptureGroups]: ParsePattern step 4.a returns a List of errors,
+<code>new RegExp("\\‍")</code> throws a <em>SyntaxError</em> (RegExpInitialize step 15), and so does a RegularExpressionLiteral of a
+backslash and a ZWJ (the early error of §13.2.7.1). A ClassEscape of them fails the same way.</p>
+<p>These escapes were valid until Unicode 15.1 (September 2023). IdentityEscape has read "SourceCharacter but not
+UnicodeIDContinue" since ECMAScript 2015, when ID_Continue did not contain the two code points and IdentifierPart
+listed them beside UnicodeIDContinue: the exclusion covered the identifier characters that are UnicodeIDContinue, and
+the identity escapes of ZWNJ, ZWJ and <code>$</code> stayed valid. Unicode 15.1 added both to ID_Continue. The pinned
+IdentifierPartChar no longer lists &lt;ZWNJ&gt; and &lt;ZWJ&gt; beside UnicodeIDContinue: for IdentifierName they
+would be redundant, and dropping them is editorial. For IdentityEscape, which also reads ID_Continue, the same Unicode
+change is normative, and neither the text nor Annex F (Additions and Changes That Introduce Incompatibilities with
+Prior Editions) records it.</p>
+<p>Only the main grammar without [UnicodeMode] is affected: a pattern without the <code>u</code> or <code>v</code> flag on a host that does not
+implement §B.1.2. With [+UnicodeMode], IdentityEscape is SyntaxCharacter or <code>/</code>, which never included the code points.
+§B.1.2 (which web browsers implement) has its own IdentityEscape[~UnicodeMode], SourceCharacterIdentityEscape:
+SourceCharacter but not <code>c</code> (or not <code>c</code> or <code>k</code>), which does not read ID_Continue. Group names (RegExpIdentifierName)
+read IdentifierPartChar and accept the two code points either way.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/21-identityescape-zwnj-zwj.js</a> (outputs:
+<a href="results.html#21-identityescape-zwnj-zwjjs">the recorded runs</a>) evaluates <code>/\X/</code> (through eval), <code>new RegExp("\\" +
+X)</code> and the same with the <code>u</code> flag, for X = U+200C, U+200D, their neighbours U+200B and U+200E (not ID_Continue) and
+<code>a</code> (ID_Continue):</p>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>\</code> U+200C, <code>\</code> U+200D</th>
+<th><code>\</code> U+200B, <code>\</code> U+200E</th>
+<th><code>\a</code></th>
+<th>with <code>u</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text, main grammar</td>
+<td><code>SyntaxError</code></td>
+<td>valid</td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+<tr>
+<td>literal text, §B.1.2</td>
+<td>valid</td>
+<td>valid</td>
+<td>valid</td>
+<td><code>SyntaxError</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey</td>
+<td>valid</td>
+<td>valid</td>
+<td>valid</td>
+<td><code>SyntaxError</code></td>
+</tr>
+<tr>
+<td>JavaScriptCore</td>
+<td>valid</td>
+<td>valid</td>
+<td>valid</td>
+<td>valid, but <code>SyntaxError</code> for <code>a</code></td>
+</tr>
+<tr>
+<td>formal model (proposed reading, main grammar)</td>
+<td>valid</td>
+<td>valid</td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+<tr>
+<td>formal model (literal reading, main grammar)</td>
+<td><code>SyntaxError</code></td>
+<td>valid</td>
+<td><code>SyntaxError</code></td>
+<td><code>SyntaxError</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The engines implement §B.1.2, under which the escapes are valid anyway: their output shows that none rejects them, not
+which reading of the main grammar they take. The model's default host runs without §B.1.2 (<code>--web-browser</code> enables §B.1.2). JavaScriptCore's acceptance
+of non-ASCII identity escapes with the <code>u</code> flag is a separate deviation: test262's
+<code>built-ins/RegExp/unicode_restricted_identity_escape*.js</code> check ASCII characters only.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: the two code points become IdentityEscapes again, with their abbreviations &lt;ZWNJ&gt; and &lt;ZWJ&gt;
+(which the pinned text no longer defines) defined in §12.1:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -16601,6 +16601,7 @@
+     &lt;h1&gt;Unicode Format-Control Characters&lt;/h1&gt;
+     &lt;p&gt;The Unicode format-control characters (i.e., the characters in category “Cf” in the Unicode Character Database such as LEFT-TO-RIGHT MARK or RIGHT-TO-LEFT MARK) are control codes used to control the formatting of a range of text in the absence of higher-level protocols for this (such as mark-up languages).&lt;/p&gt;
+     &lt;p&gt;It is useful to allow format-control characters in source text to facilitate editing and display. All format control characters may be used within comments, and within string literals, template literals, and regular expression literals.&lt;/p&gt;
++    &lt;p&gt;U+200C (ZERO WIDTH NON-JOINER) and U+200D (ZERO WIDTH JOINER), abbreviated &amp;lt;ZWNJ&gt; and &amp;lt;ZWJ&gt;, are format-control characters that are used to make necessary distinctions when forming words or phrases in certain languages.&lt;/p&gt;
+     &lt;p&gt;U+FEFF (ZERO WIDTH NO-BREAK SPACE) is a format-control character used primarily at the start of a text to mark it as Unicode and to allow detection of the text's encoding and byte order. &amp;lt;ZWNBSP&gt; characters intended for this purpose can sometimes also appear after the start of a text, for example as a result of concatenating files. In ECMAScript source text &amp;lt;ZWNBSP&gt; code points are treated as white space characters (see &lt;emu-xref href=&quot;#sec-white-space&quot;&gt;&lt;/emu-xref&gt;) outside of comments, string literals, template literals, and regular expression literals.&lt;/p&gt;
+   &lt;/emu-clause&gt;
+
+@@ -37016,6 +37017,8 @@
+           [+UnicodeMode] SyntaxCharacter
+           [+UnicodeMode] `/`
+           [~UnicodeMode] SourceCharacter but not UnicodeIDContinue
++          [~UnicodeMode] &amp;lt;ZWNJ&amp;gt;
++          [~UnicodeMode] &amp;lt;ZWJ&amp;gt;
+
+         DecimalEscape ::
+           NonZeroDigit DecimalDigits[~Sep]? [lookahead &amp;notin; DecimalDigit]
+</code></pre>
+<p>A production <code>SourceCharacter but not IdentifierPartChar</code> would not do: it also excludes <code>$</code>, whose identity escape
+<code>\$</code> is valid and which the tests below require. If the committee prefers the escapes to stay invalid, the change is
+normative and needs an entry in Annex F.</p>
+<h2 id="test262">test262</h2>
+<p><code>language/literals/regexp/S7.8.5_A1.4_T2.js</code> and <code>S7.8.5_A2.4_T2.js</code> (outside <code>annexB/</code>) evaluate <code>/\X/</code> and <code>/a\X/</code>
+for every code unit X but the line terminators. They accept a <em>SyntaxError</em> only when X can continue an identifier
+(<code>eval("var _" + X)</code> succeeds) and X is not <code>$</code> (the one code unit they name, "<code>$</code> is not ID_Continue"). U+200C and
+U+200D continue identifiers, so the tests accept a <em>SyntaxError</em> for them: they pass under the literal text, and do not
+decide between the two readings. No test requires the escapes of U+200C and U+200D to be valid, or to be
+<em>SyntaxError</em>s.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#21-identityescape-zwnj-zwjjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=21-identityescape-zwnj-zwj">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/21-identityescape-zwnj-zwj.js</code></summary><pre class="js">// IdentityEscape[~UnicodeMode] :: SourceCharacter but not UnicodeIDContinue
+// (§22.2.1). Since Unicode 15.1, U+200C (ZWNJ) and U+200D (ZWJ) are
+// ID_Continue, so the literal text rejects `\` followed by either of them in
+// a pattern without the u or v flag; before Unicode 15.1 it accepted them.
+// U+200B and U+200E (not ID_Continue) are the neighbours; `a` (U+0061,
+// ID_Continue) is an IdentityEscape only in §B.1.2&#x27;s grammar, which every
+// engine implements. The pattern text is built with fromCharCode: the
+// characters are invisible.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+for (var cu of [0x200C, 0x200D, 0x200B, 0x200E, 0x61]) {
+  var ch = String.fromCharCode(cu), src = &quot;\\&quot; + ch, out = [];
+  try { var re = eval(&quot;/&quot; + src + &quot;/&quot;); out.push(&quot;literal &quot; + (re.source === src &amp;&amp; re.test(ch))); }
+  catch (e) { out.push(&quot;literal &quot; + e.constructor.name); }
+  try { out.push(&quot;RegExp &quot; + new RegExp(src).test(ch)); }
+  catch (e) { out.push(&quot;RegExp &quot; + e.constructor.name); }
+  try { new RegExp(src, &quot;u&quot;); out.push(&quot;u ok&quot;); }
+  catch (e) { out.push(&quot;u &quot; + e.constructor.name); }
+  print(&quot;U+&quot; + cu.toString(16).toUpperCase() + &quot;: &quot; + out.join(&quot;, &quot;));
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

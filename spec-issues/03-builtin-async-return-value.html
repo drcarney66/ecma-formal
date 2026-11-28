@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03. A built-in async function&#x27;s promise fulfils with undefined · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/03-builtin-async-return-value.md</code></p>
+<h1>03. A built-in async function's promise fulfils with <em>undefined</em></h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§10.3.3 BuiltinCallOrConstruct (<a class="clause" href="https://tc39.es/ecma262/#sec-builtincallorconstruct"><code>#sec-builtincallorconstruct</code></a>), step 10.b.iii, with §27.10.5.2 AsyncBlockStart (<a class="clause" href="https://tc39.es/ecma262/#sec-asyncblockstart"><code>#sec-asyncblockstart</code></a>), steps 1.f–1.g.</dd><dt>Kind</dt><dd>contradiction (the literal result is not what the algorithm of an async built-in returns).</dd><dt>Model erratum</dt><dd><code>BuiltinReturnCompletion</code>, default reading test262; its readings: literal, test262, proposed. The test262 and proposed readings are the same: step 10.b.iii turns a normal completion into a return completion (Proposed wording).</dd><dt>Upstream</dt><dd>Checked 2026-11-19: PR <a class="ext" href="https://github.com/tc39/ecma262/pull/4074">#4074</a> (open, 2026-11), "Normative: Fix async built-in functions resolving to undefined", reports this (with <code>Array.fromAsync([1, 2, 3])</code>) and proposes a fix; no issue was found (searched for "BuiltinCallOrConstruct"). Step 10, the built-in async path, came with PR <a class="ext" href="https://github.com/tc39/ecma262/pull/2942">#2942</a> (merged 2025-12, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/7029ed1b2"><code>7029ed1b2</code></a>).</dd><dt>On this site</dt><dd><a href="../errata.html#BuiltinReturnCompletion"><code>BuiltinReturnCompletion</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>BuiltinCallOrConstruct, for <em>func</em>.[[Async]] <em>true</em>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:1"><span class="q-num">b.</span> Let <var>resultsClosure</var> be a new Abstract Closure with no parameters that captures … and performs the following steps when called:</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> Let <var>result</var> be the Completion Record that is the result of evaluating <var>func</var> …</p><p class="q-step" style="--d:2"><span class="q-num">iii.</span> Return Completion(<var>result</var>).</p><p class="q-step" style="--d:1"><span class="q-num">c.</span> Perform AsyncFunctionStart(<var>promiseCapability</var>, <var>resultsClosure</var>).</p></blockquote>
+<p>AsyncBlockStart:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:1"><span class="q-num">f.</span> If <var>result</var> is a normal completion, then</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> Perform ! Call(<var>promiseCapability</var>.[[Resolve]], <span class="val">undefined</span>, « <span class="val">undefined</span> »).</p><p class="q-step" style="--d:1"><span class="q-num">g.</span> Else if <var>result</var> is a return completion, then</p><p class="q-step" style="--d:2"><span class="q-num">i.</span> Perform ! Call(<var>promiseCapability</var>.[[Resolve]], <span class="val">undefined</span>, « <var>result</var>.[[Value]] »).</p></blockquote>
+<p>and §5.2.4.4 Implicit Normal Completion: in a built-in function, "Return <em>v</em>" returns NormalCompletion(<em>v</em>).</p>
+<h2 id="problem">Problem</h2>
+<p>Array.fromAsync ends with "Return <em>A</em>" (§23.1.2.2, steps 3.j.ii.10.b and 3.k.ix of its async closure), a normal
+completion. Step 10.b.iii returns it unchanged, AsyncBlockStart receives a normal completion, and step 1.f resolves
+the promise with <em>undefined</em>. So every built-in async function's promise fulfils with <em>undefined</em>, whatever its
+algorithm returns. For an ECMAScript async function, <code>return v</code> evaluates to a return completion, which is why step
+1.g exists; the built-in path has nothing that makes one.</p>
+<p>The specification's two built-in async functions are Array.fromAsync and AsyncDisposableStack.prototype.disposeAsync.
+disposeAsync returns <em>undefined</em>, so only Array.fromAsync shows the defect, on every call.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/03-builtin-async-return-value.js</a> (outputs:
+<a href="results.html#03-builtin-async-return-valuejs">the recorded runs</a>):</p>
+<pre class="js"><code>Array.fromAsync([1, 2]).then(function (v) {
+  print(&quot;fromAsync fulfils with &quot; + JSON.stringify(v));
+});
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>fromAsync fulfils with undefined</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>fromAsync fulfils with [1,2]</code></td>
+</tr>
+<tr>
+<td>formal model, literal reading</td>
+<td><code>fromAsync fulfils with undefined</code></td>
+</tr>
+<tr>
+<td>formal model, test262 reading (default) and proposed reading</td>
+<td><code>fromAsync fulfils with [1,2]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -14122,6 +14122,7 @@
+           1. Let _resultsClosure_ be a new Abstract Closure with no parameters that captures _func_, _thisArg_, _argList_, and _newTarget_ and performs the following steps when called:
+             1. Let _result_ be the Completion Record that is &lt;emu-meta effects=&quot;user-code&quot;&gt;the result of evaluating&lt;/emu-meta&gt; _func_ in a manner that conforms to the specification of _func_. If _thisArg_ is &lt;span class=&quot;const&quot;&gt;uninitialized&lt;/span&gt;, the *this* value is uninitialized; else _thisArg_ provides the *this* value. _argList_ provides the named parameters. _newTarget_ provides the NewTarget value.
+             1. NOTE: If _func_ is defined in this document, “the specification of _func_” is the behaviour specified for it via algorithm steps or other means.
++            1. If _result_ is a normal completion, return ReturnCompletion(_result_.[[Value]]).
+             1. Return Completion(_result_).
+           1. Perform AsyncFunctionStart(_promiseCapability_, _resultsClosure_).
+           1. Remove _calleeContext_ from the execution context stack and restore _callerContext_ as the running execution context.
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>The Array.fromAsync tests that read the fulfilment value require the array, e.g.
+<code>built-ins/Array/fromAsync/asyncitems-array-add.js</code> and <code>built-ins/Array/fromAsync/asyncitems-arraylike-holes.js</code>
+(each awaits the promise and compares the result with <code>assert.compareArray</code>). They fail under the literal text.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#03-builtin-async-return-valuejs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=03-builtin-async-return-value">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/03-builtin-async-return-value.js</code></summary><pre class="js">// BuiltinCallOrConstruct 10.b.iii and AsyncBlockStart 1.f: the fulfilment
+// value of a built-in async function. Literal text: undefined.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+Array.fromAsync([1, 2]).then(function (v) {
+  print(&quot;fromAsync fulfils with &quot; + JSON.stringify(v));
+});
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

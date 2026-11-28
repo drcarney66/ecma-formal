@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06. A synchronous Atomics.wait that times out returns &quot;ok&quot; · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/06-dowait-sync-timeout.md</code></p>
+<h1>06. A synchronous Atomics.wait that times out returns <em>"ok"</em></h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§25.4.3.14 DoWait (<a class="clause" href="https://tc39.es/ecma262/#sec-dowait"><code>#sec-dowait</code></a>), steps 26–31, with §25.4.3.11 SuspendThisAgent (<a class="clause" href="https://tc39.es/ecma262/#sec-suspendthisagent"><code>#sec-suspendthisagent</code></a>), steps 7–9, and §25.4.3.8 AddWaiter (<a class="clause" href="https://tc39.es/ecma262/#sec-addwaiter"><code>#sec-addwaiter</code></a>), step 2.</dd><dt>Kind</dt><dd>contradiction, and a later failing Assert.</dd><dt>Model erratum</dt><dd><code>DoWaitSyncTimeout</code>, default reading test262; its readings: literal, test262, proposed. The test262 and proposed readings add, after step 28.a, the steps of Proposed wording (the proposed reading with its NOTE).</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "DoWait"). Issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3328">#3328</a> (open, 2024-05), "Typo in step 7 of the SuspendThisAgent abstract operation", is about another error in SuspendThisAgent step 7.</dd><dt>On this site</dt><dd><a href="../errata.html#DoWaitSyncTimeout"><code>DoWaitSyncTimeout</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>DoWait:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">26.</span> Let <var>waiterRecord</var> be a new Waiter Record { [[AgentSignifier]]: <var>thisAgent</var>, [[PromiseCapability]]: <var>promiseCapability</var>, [[TimeoutTime]]: <var>timeoutTime</var>, [[Result]]: <span class="val">&quot;ok&quot;</span> }.</p><p class="q-step" style="--d:0"><span class="q-num">27.</span> Perform AddWaiter(<var>waiterList</var>, <var>waiterRecord</var>).</p><p class="q-step" style="--d:0"><span class="q-num">28.</span> If <var>mode</var> is <span class="const">sync</span>, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Perform SuspendThisAgent(<var>waiterList</var>, <var>waiterRecord</var>).</p><p class="q-gap">…</p><p class="q-step" style="--d:0"><span class="q-num">30.</span> Perform LeaveCriticalSection(<var>waiterList</var>).</p><p class="q-step" style="--d:0"><span class="q-num">31.</span> If <var>mode</var> is <span class="const">sync</span>, return <var>waiterRecord</var>.[[Result]].</p></blockquote>
+<p>SuspendThisAgent:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">7.</span> Perform LeaveCriticalSection(<var>waiterList</var>) and suspend the surrounding agent until the time is <var>waiterRecord</var>.[[TimeoutTime]], … The surrounding agent can only wake from suspension due to a timeout or due to another agent calling NotifyWaiter …</p><p class="q-step" style="--d:0"><span class="q-num">8.</span> Perform EnterCriticalSection(<var>waiterList</var>).</p><p class="q-step" style="--d:0"><span class="q-num">9.</span> Return <span class="const">unused</span>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>For a <span class="const">sync</span> wait, [[Result]] is written only at step 26, as <em>"ok"</em>. The other places that produce <em>"timed-out"</em> are
+for <span class="const">async</span> waits (DoWait step 20.d and EnqueueAtomicsWaitAsyncTimeoutJob step 1.b.iii). SuspendThisAgent neither removes the
+waiter nor changes its [[Result]]; only Atomics.notify's RemoveWaiters removes a waiter. So a synchronous wait that
+times out:</p>
+<ol>
+<li>returns <em>"ok"</em> at step 31, although Atomics.wait is described as "returning a String differentiating those cases"
+   (notified or timed out, §25.4.15), and a Waiter Record's [[Result]], <em>"ok"</em> or <em>"timed-out"</em>, is "The return
+   value of the call" (§25.4.1);</li>
+<li>leaves its Waiter Record in the WaiterList. A second Atomics.wait by the same agent on the same location then
+   fails AddWaiter's step 2, "Assert: There is no Waiter Record in <em>waiterList</em>.[[Waiters]] whose
+   [[PromiseCapability]] field is <em>waiterRecord</em>.[[PromiseCapability]] and whose [[AgentSignifier]] field is
+   <em>waiterRecord</em>.[[AgentSignifier]]", and a later Atomics.notify counts the stale record and wakes an agent that is
+   not suspended.</li>
+</ol>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/06-dowait-sync-timeout.js</a> (outputs:
+<a href="results.html#06-dowait-sync-timeoutjs">the recorded runs</a>):</p>
+<pre class="js"><code>var ia = new Int32Array(new SharedArrayBuffer(4));
+print(Atomics.wait(ia, 0, 0, 0));
+print(Atomics.wait(ia, 0, 0, 1));
+print(Atomics.notify(ia, 0));
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>ok</code>, then the second wait fails AddWaiter step 2's Assert (<code>stops="sec-addwaiter@2"</code>)</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>timed-out</code>, <code>timed-out</code>, <code>0</code></td>
+</tr>
+<tr>
+<td>formal model, <code>ecma-run --can-block</code>, literal reading</td>
+<td>stops at AddWaiter step 2's Assert (<code>stop: erratum DoWaitSyncTimeout sec-addwaiter 2</code>)</td>
+</tr>
+<tr>
+<td>formal model, <code>ecma-run --can-block</code>, test262 reading (default) and proposed reading</td>
+<td><code>timed-out</code>, <code>timed-out</code>, <code>0</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The engines' main threads can block (the Node.js and Bun hosts and the SpiderMonkey shell allow it). The model's
+host agent can block only under <code>--can-block</code>: without it, DoWait step 12 throws a <em>TypeError</em> before any wait
+(<code>throw: TypeError</code>, under every reading).</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: do what EnqueueAtomicsWaitAsyncTimeoutJob steps 1.b.iii–iv do for an asynchronous waiter:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -47157,6 +47157,10 @@
+           1. Perform AddWaiter(_waiterList_, _waiterRecord_).
+           1. If _mode_ is &lt;span class=&quot;const&quot;&gt;sync&lt;/span&gt;, then
+             1. Perform SuspendThisAgent(_waiterList_, _waiterRecord_).
++            1. If _waiterList_.[[Waiters]] contains _waiterRecord_, then
++              1. NOTE: The agent woke because of the timeout: NotifyWaiter is performed only on a Waiter Record that RemoveWaiters has removed.
++              1. Set _waiterRecord_.[[Result]] to *&quot;timed-out&quot;*.
++              1. Perform RemoveWaiter(_waiterList_, _waiterRecord_).
+           1. Else if _timeoutTime_ is finite, then
+             1. Perform EnqueueAtomicsWaitAsyncTimeoutJob(_waiterList_, _waiterRecord_).
+           1. Perform LeaveCriticalSection(_waiterList_).
+</code></pre>
+<h2 id="test262">test262</h2>
+<p><code>built-ins/Atomics/wait/false-for-timeout.js</code> (three timed-out waits on one location, each <em>"timed-out"</em>) and
+<code>built-ins/Atomics/wait/negative-timeout.js</code> require <em>"timed-out"</em>. Both fail under the literal text.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#06-dowait-sync-timeoutjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=06-dowait-sync-timeout">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/06-dowait-sync-timeout.js</code></summary><pre class="js">// DoWait 28.a–31: a synchronous Atomics.wait that times out. Literal text:
+// it returns &quot;ok&quot; (the [[Result]] of step 26) and its Waiter Record stays in
+// the WaiterList; the second wait then fails AddWaiter step 2&#x27;s Assert, and
+// Atomics.notify counts a waiter that is not waiting.
+// (Needs an agent that can block: node, bun, d8, the SpiderMonkey shell.)
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var ia = new Int32Array(new SharedArrayBuffer(4));
+print(Atomics.wait(ia, 0, 0, 0));
+print(Atomics.wait(ia, 0, 0, 1));
+print(Atomics.notify(ia, 0));
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

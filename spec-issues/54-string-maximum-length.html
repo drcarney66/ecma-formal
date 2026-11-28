@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>54. Maximum String length below 2^53 - 1: &quot;a&quot;.repeat(2 ** 30) throws a RangeError past host memory limits · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · proposed normative change · <code>docs/spec-issues/54-string-maximum-length.md</code></p>
+<h1>54. Maximum String length below <code>2^53 - 1</code>: <code>"a".repeat(2 ** 30)</code> throws a <em>RangeError</em> past host memory limits</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§6.1.4 The String Type (<a class="clause" href="https://tc39.es/ecma262/#sec-ecmascript-language-types-string-type"><code>#sec-ecmascript-language-types-string-type</code></a>), first paragraph; §22.1.3.18 <code>String.prototype.repeat</code> (<a class="clause" href="https://tc39.es/ecma262/#sec-string.prototype.repeat"><code>#sec-string.prototype.repeat</code></a>), step 7; §22.1.3.17.1 StringPaddingBuiltinsImpl (<a class="clause" href="https://tc39.es/ecma262/#sec-stringpaddingbuiltinsimpl"><code>#sec-stringpaddingbuiltinsimpl</code></a>), step 7; §22.1.3.5 <code>String.prototype.concat</code> (<a class="clause" href="https://tc39.es/ecma262/#sec-string.prototype.concat"><code>#sec-string.prototype.concat</code></a>), step 5.b; §13.15.3 ApplyStringOrNumericBinaryOperator (<a class="clause" href="https://tc39.es/ecma262/#sec-applystringornumericbinaryoperator"><code>#sec-applystringornumericbinaryoperator</code></a>), step 1.c.iii; §23.1.3.18.1 JoinIndexedProperties (<a class="clause" href="https://tc39.es/ecma262/#sec-joinindexedproperties"><code>#sec-joinindexedproperties</code></a>), steps 4.a and 4.d.iii.</dd><dt>Kind</dt><dd>proposed normative change (a finite-hardware resource limit analogous to <a href="51-bigint-maximum-size.html">51</a>; for the missing <code>&gt; 2^53 - 1</code> check in <code>repeat</code>, <code>concat</code>, <code>+</code> and <code>JoinIndexedProperties</code>, see <a href="53-string-length-overflow.html">53</a>).</dd><dt>Model erratum</dt><dd><code>StringMaximumLength</code>, baked-in SpecTec reading proposed (<code>$StringTooLarge</code> in <code>spec/spectec/clauses/S13.spectec</code>, <code>S22.spectec</code>, <code>S23.spectec</code>). SpecTec queries the host (<code>StringTooLarge</code>, answering <em>true</em> past 2<sup>28</sup> = 268,435,456 code units in <code>lean/Engine/Host/Core.lean</code>) before constructing the String and throws a <em>RangeError</em> if so; the literal text requires forming every String up to 2<sup>53</sup> - 1 code units.</dd><dt>Upstream</dt><dd>Checked 2026-11-20: none found that specifies an implementation-defined sub-<code>2^53 - 1</code> maximum String length throw (searched for String with "maximum length" and "RangeError"). Related: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/4063">#4063</a> (closed, 2026-10), "Specify that exceeding resource limits may throw".</dd><dt>On this site</dt><dd><a href="../errata.html#StringMaximumLength"><code>StringMaximumLength</code></a> on Spec issues &amp; errata (proposed normative change; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>§6.1.4:</p>
+<blockquote class="sentence q-text"><p>The String type is the set of all ordered sequences of zero or more 16-bit unsigned integer values (“elements”) up to a maximum length of 2<sup>53</sup> - 1 elements.</p></blockquote>
+<p><code>String.prototype.repeat</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">7.</span> Return the String value that is made from <var>n</var> copies of <var>string</var> appended together.</p></blockquote>
+<p><code>StringPaddingBuiltinsImpl</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">7.</span> Return StringPad(<var>string</var>, <var>intMaxLength</var>, <var>fillString</var>, <var>placement</var>).</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>While §6.1.4 permits Strings up to length 2<sup>53</sup> - 1, no runtime has 18 petabytes for one UTF-16 String. Every
+engine enforces a smaller implementation-defined maximum String length and throws a <em>RangeError</em> when an operation would
+exceed it (V8 2<sup>28</sup> on 32-bit targets and 2<sup>29</sup> - 24 on 64-bit, SpiderMonkey 2<sup>30</sup> - 2,
+JavaScriptCore 2<sup>31</sup> - 1). Read literally, <code>"a".repeat(2 ** 30)</code> and <code>"a".padStart(2 ** 30, "b")</code> must return
+1-billion-element Strings, whereas <code>"a".padStart(2 ** 32, "")</code> returns <code>"a"</code> because <code>StringPad</code> returns early when
+<code>_fillString_</code> is empty.</p>
+<h2 id="examples">Examples</h2>
+<pre class="js"><code>try { &quot;a&quot;.repeat(2 ** 30); } catch (e) { print(&quot;repeat: &quot; + e.constructor.name); }
+print('&quot;&quot; repeat:', &quot;&quot;.repeat(2 ** 40).length);
+try { &quot;a&quot;.padStart(2 ** 30, &quot;b&quot;); } catch (e) { print(&quot;padStart: &quot; + e.constructor.name); }
+print(&quot;empty fill:&quot;, &quot;a&quot;.padStart(2 ** 32, &quot;&quot;));
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>"a".repeat(2 ** 30)</code></th>
+<th><code>"".repeat(2 ** 40).length</code></th>
+<th><code>"a".padStart(2 ** 30, "b")</code></th>
+<th><code>"a".padStart(2 ** 32, "")</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td>2<sup>30</sup>-length String</td>
+<td><code>0</code></td>
+<td>2<sup>30</sup>-length String</td>
+<td><code>"a"</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>RangeError</code></td>
+<td><code>0</code></td>
+<td><code>RangeError</code></td>
+<td><code>"a"</code></td>
+</tr>
+<tr>
+<td>formal model (proposed reading)</td>
+<td><code>repeat: RangeError</code></td>
+<td><code>0</code></td>
+<td><code>padStart: RangeError</code></td>
+<td><code>"a"</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Allow an implementation-defined maximum String length at most 2<sup>53</sup> - 1, checked before constructing Strings
+that grow past it (after checking non-empty <code>_fillString_</code> in <code>StringPaddingBuiltinsImpl</code>), throwing a <em>RangeError</em>
+exception.</p>
+<h2 id="test262">test262</h2>
+<p>Existing tests check <code>repeat(-1)</code> / <code>repeat(Infinity)</code> throwing <em>RangeError</em> and large <code>padStart</code> counts with an empty
+fill string (<code>""</code>) returning the original String; none requires constructing a <code>2^30</code>-unit String.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

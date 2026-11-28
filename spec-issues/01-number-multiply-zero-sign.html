@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01. Number::multiply gives +0 for +0 × -5 · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/01-number-multiply-zero-sign.md</code></p>
+<h1>01. Number::multiply gives +0 for <code>+0 × -5</code></h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§6.1.6.1.4 Number::multiply (<a class="clause" href="https://tc39.es/ecma262/#sec-numeric-types-number-multiply"><code>#sec-numeric-types-number-multiply</code></a>), step 6, and the clause's description.</dd><dt>Kind</dt><dd>contradiction (a step's result against the clause's description).</dd><dt>Model erratum</dt><dd><code>NumberMultiplyZeroSign</code>, default reading proposed; its readings: literal, proposed. The proposed reading returns <em>-0</em>𝔽 when one operand is <em>+0</em>𝔽 and the other is negative.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: PR <a class="ext" href="https://github.com/tc39/ecma262/pull/4072">#4072</a> (open, 2026-11), "Normative: Fix the sign of zero results in Number::multiply", proposes a fix for this case (its description names <code>0 * -5</code> and <code>-5 * 0</code>); no issue was found (searched tc39/ecma262's issues and pull requests for "Number::multiply"). PR <a class="ext" href="https://github.com/tc39/ecma262/pull/2700">#2700</a> (merged 2022-03, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/4ef927684"><code>4ef927684</code></a>) added the steps for <em>-0</em>𝔽 operands and left this case.</dd><dt>On this site</dt><dd><a href="../errata.html#NumberMultiplyZeroSign"><code>NumberMultiplyZeroSign</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>The clause's description:</p>
+<blockquote class="sentence q-text"><p>It performs multiplication according to the rules of IEEE 754-2019 binary double-precision arithmetic, producing the product of <var>x</var> and <var>y</var>.</p></blockquote>
+<p>The last steps:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">4.</span> If <var>x</var> is <span class="val">-0</span><sub>𝔽</sub>, then …</p><p class="q-step" style="--d:0"><span class="q-num">5.</span> If <var>y</var> is <span class="val">-0</span><sub>𝔽</sub>, then …</p><p class="q-step" style="--d:0"><span class="q-num">6.</span> Return 𝔽(ℝ(<var>x</var>) × ℝ(<var>y</var>)).</p></blockquote>
+<p>and §6.1.6.1's definition of 𝔽(<em>x</em>): "… if <em>+0</em>𝔽 was chosen, replace it with <em>-0</em>𝔽 if and only if <em>x</em> &lt; 0; …".</p>
+<h2 id="problem">Problem</h2>
+<p>For <em>x</em> = <em>+0</em>𝔽 and <em>y</em> = -5𝔽, steps 1–5 do not apply. Step 6 computes ℝ(<em>x</em>) × ℝ(<em>y</em>) = 0, a mathematical
+value with no sign, and 𝔽(0) is <em>+0</em>𝔽. IEEE 754-2019 §6.3 makes the sign of a product the exclusive or of the
+operands' signs, so the description gives <em>-0</em>𝔽. The two disagree exactly when one operand is <em>+0</em>𝔽 and the other
+is finite and negative. A product that only rounds to zero is not affected: 𝔽 of a negative real is <em>-0</em>𝔽.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/01-number-multiply-zero-sign.js</a> (outputs:
+<a href="results.html#01-number-multiply-zero-signjs">the recorded runs</a>):</p>
+<pre class="js"><code>print(String(1 / (0 * -5)));   // +0 × -5
+print(String(1 / (-5 * 0)));   // -5 × +0
+print(String(1 / (0 * 5)));    // +0 × 5
+print(String(Object.is(-5 * 0, -0)));
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>1/(0*-5)</code></th>
+<th><code>1/(-5*0)</code></th>
+<th><code>1/(0*5)</code></th>
+<th><code>Object.is(-5*0, -0)</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal step 6</td>
+<td><code>Infinity</code></td>
+<td><code>Infinity</code></td>
+<td><code>Infinity</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>-Infinity</code></td>
+<td><code>-Infinity</code></td>
+<td><code>Infinity</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td>formal model, literal reading</td>
+<td><code>Infinity</code></td>
+<td><code>Infinity</code></td>
+<td><code>Infinity</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td>formal model, proposed reading (default)</td>
+<td><code>-Infinity</code></td>
+<td><code>-Infinity</code></td>
+<td><code>Infinity</code></td>
+<td><code>true</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -1817,6 +1817,9 @@
+             1. If _y_ is *-0*&lt;sub&gt;𝔽&lt;/sub&gt;, then
+               1. If _x_ &amp;lt; *-0*&lt;sub&gt;𝔽&lt;/sub&gt;, return *+0*&lt;sub&gt;𝔽&lt;/sub&gt;.
+               1. Return *-0*&lt;sub&gt;𝔽&lt;/sub&gt;.
++            1. If _x_ is *+0*&lt;sub&gt;𝔽&lt;/sub&gt; or _y_ is *+0*&lt;sub&gt;𝔽&lt;/sub&gt;, then
++              1. If _x_ &amp;lt; *-0*&lt;sub&gt;𝔽&lt;/sub&gt; or _y_ &amp;lt; *-0*&lt;sub&gt;𝔽&lt;/sub&gt;, return *-0*&lt;sub&gt;𝔽&lt;/sub&gt;.
++              1. Return *+0*&lt;sub&gt;𝔽&lt;/sub&gt;.
+             1. Return 𝔽(ℝ(_x_) × ℝ(_y_)).
+           &lt;/emu-alg&gt;
+           &lt;emu-note&gt;
+</code></pre>
+<h2 id="test262">test262</h2>
+<p><code>language/expressions/multiplication/S11.5.1_A4_T2.js</code> tests the sign of a product. Its description states the
+IEEE rule ("negative if the operands have different signs"), but its assertions cover only products of ±1
+(<code>1 * -1</code>, …) and products of two signed zeros (<code>0 * -0</code>, <code>-0 * 0</code>, …), not a zero times a nonzero finite Number
+such as <code>0 * -5</code>. No test in test262 multiplies <em>+0</em>𝔽 by a negative finite Number, so none fails under the literal
+text.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#01-number-multiply-zero-signjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=01-number-multiply-zero-sign">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/01-number-multiply-zero-sign.js</code></summary><pre class="js">// Number::multiply step 6 and the sign of an exact zero product.
+// Literal step 6: 𝔽(0) is +0, so 1/(+0 * -5) is +Infinity.
+// IEEE 754-2019 (the clause&#x27;s description): -0, so -Infinity.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+print(String(1 / (0 * -5)));   // +0 × -5
+print(String(1 / (-5 * 0)));   // -5 × +0
+print(String(1 / (0 * 5)));    // +0 × 5 (both readings: Infinity)
+print(String(Object.is(-5 * 0, -0)));
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

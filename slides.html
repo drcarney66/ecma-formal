@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Executing spec.html · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="site.js?v=d850cd3" defer></script>
+</head>
+<body class="slides-body">
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="how-it-works.html">How it works</a></li><li><a href="proposal.html">Applying a proposal</a></li><li><a href="errata.html">Spec issues &amp; errata</a></li><li><a href="what-is-proved.html">What is proved</a></li><li><a href="test262.html">test262 results</a></li><li><a href="slides.html" aria-current="page">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="model.html">The model</a></li><li><a href="host.html">The host</a></li><li><a href="memory-model.html">Memory model</a></li><li><a href="parser-laws.html">Parser laws</a></li><li><a href="implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="examples.html">Examples</a></li><li><a href="debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page wide slides-page">
+
+<main id="main">
+
+<button type="button" class="corner-theme" id="corner-theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+  <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg>
+</button>
+
+<div class="deck-bar" id="deck-bar" role="region" aria-label="Slide controls">
+  <div class="deck-bar-left">
+    <button type="button" class="theme deck-btn" id="deck-prev" title="Previous (←)">←</button>
+    <span class="deck-pos" id="deck-pos" aria-live="polite">1 / 16</span>
+    <button type="button" class="theme deck-btn" id="deck-next" title="Next (→)">→</button>
+  </div>
+  <div class="deck-bar-right">
+    <span class="deck-hint muted"><kbd>←</kbd> <kbd>→</kbd> step · <kbd>Esc</kbd> exit</span>
+    <button type="button" class="theme deck-btn deck-present-btn" id="deck-present" title="Enter full-screen presentation mode (f)">Present</button>
+  </div>
+</div>
+
+<div class="deck-stage" id="deck" tabindex="-1">
+
+  <!-- 1. Title -->
+  <section class="slide slide-center active" id="slide-title" data-slide="1" data-max-step="0">
+    <div class="hero-wrap">
+      <h1 class="hero-h1">Executing <code>spec.html</code></h1>
+      <p class="hero-sub">Formalization's time has come</p>
+    </div>
+  </section>
+
+  <!-- 2. Architecture -->
+  <section class="slide" id="slide-pipeline" data-slide="2" data-max-step="0">
+    <div class="slide-top">
+      <h2 id="pipeline">Architecture</h2>
+    </div>
+    <div class="slide-fill">
+      <svg class="pipe-svg" viewBox="0 0 960 400" role="img" aria-label="spec.html and SpecTec (spec/spectec/) form a verified 0-diff bijection via spectec-html; SpecTec emits the proved Lean 4 Engine, which powers the Wasm64 and native spec debugger">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path class="dg-ah" d="M0,0 L10,5 L0,10 z"/>
+          </marker>
+          <marker id="arr-bij" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path fill="var(--quote)" d="M0,0 L10,5 L0,10 z"/>
+          </marker>
+        </defs>
+
+        <!-- spec.html -->
+        <rect class="dg-box spec" x="20" y="76" width="204" height="190" rx="12" stroke-width="2.5"/>
+        <text x="122" y="136" text-anchor="middle" class="p-title-svg">spec.html</text>
+        <text x="122" y="166" text-anchor="middle" class="p-sub-svg">+ proposal changes</text>
+        <line x1="50" y1="190" x2="194" y2="190" stroke="var(--quote)" stroke-opacity="0.4"/>
+        <text x="122" y="218" text-anchor="middle" class="p-mono-svg">algorithms · grammar</text>
+        <text x="122" y="242" text-anchor="middle" class="p-muted-svg">prose laws quoted</text>
+
+        <!-- Forward arrow: spectec-html -->
+        <path class="dg-a" d="M228,136 L392,136" stroke-width="3" marker-end="url(#arr)"/>
+        <text x="310" y="118" text-anchor="middle" class="p-label-svg">spectec-html</text>
+        <text x="310" y="158" text-anchor="middle" class="p-muted-svg">extracts &amp; types</text>
+
+        <!-- Backwards arrow: 0-diff HTML bijection! -->
+        <path d="M396,222 C344,292 278,292 228,226" fill="none" stroke="var(--quote)" stroke-width="3.2" stroke-dasharray="7 4" marker-end="url(#arr-bij)"/>
+        <rect x="218" y="276" width="184" height="46" rx="8" fill="var(--quote-bg)" stroke="var(--quote)" stroke-width="1.8"/>
+        <text x="310" y="295" text-anchor="middle" class="p-bij-svg">HTML bijection</text>
+        <text x="310" y="313" text-anchor="middle" class="p-muted-svg">0-diff splice (+ spec/html/)</text>
+
+        <!-- SpecTec -->
+        <rect class="dg-box lean" x="400" y="56" width="246" height="230" rx="12" stroke-width="2.5"/>
+        <text x="523" y="102" text-anchor="middle" class="p-title-svg">SpecTec</text>
+        <text x="523" y="132" text-anchor="middle" class="p-sub-svg">spec/spectec/ (62 files)</text>
+        <text x="523" y="162" text-anchor="middle" class="p-mono-svg">def @sec-… · grammar</text>
+        <text x="523" y="192" text-anchor="middle" class="p-mono-svg">syntax · relation · laws</text>
+        <text x="523" y="222" text-anchor="middle" class="p-muted-svg">148 model · 7 parser · 72 host laws</text>
+        <text x="523" y="252" text-anchor="middle" class="p-muted-svg">roundtrip + Lean bijection</text>
+
+        <!-- Arrow: SpecTec -> Lean 4 Engine -->
+        <path class="dg-a" d="M646,97 L724,97" stroke-width="2.8" marker-end="url(#arr)"/>
+        <text x="685" y="84" text-anchor="middle" class="p-muted-svg">emit</text>
+
+        <!-- Lean 4 Engine & Proofs -->
+        <rect class="dg-box proved" x="730" y="36" width="210" height="122" rx="12" stroke-width="2.5"/>
+        <text x="835" y="76" text-anchor="middle" class="p-title-svg">Lean 4 Engine</text>
+        <text x="835" y="106" text-anchor="middle" class="p-mono-svg">Engine.implements + parser</text>
+        <text x="835" y="132" text-anchor="middle" class="p-muted-svg">all laws proved · runs test262</text>
+
+        <!-- Arrow: Lean 4 Engine -> Debugger -->
+        <path class="dg-a" d="M835,160 L835,200" stroke-width="2.8" marker-end="url(#arr)"/>
+
+        <!-- Wasm64 Debugger -->
+        <rect class="dg-box lean" x="730" y="206" width="210" height="122" rx="12" stroke-width="2.5"/>
+        <text x="835" y="246" text-anchor="middle" class="p-title-svg">Debugger</text>
+        <text x="835" y="276" text-anchor="middle" class="p-mono-svg">Wasm64 + Native</text>
+        <text x="835" y="302" text-anchor="middle" class="p-muted-svg">lazy-loaded per proposal</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 3. The Spec -> The Spec: Algorithms -->
+  <section class="slide has-morph" id="slide-algorithms" data-slide="3" data-max-step="2" data-step="0">
+    <div class="slide-top">
+      <span class="morph-spacer" aria-hidden="true">&nbsp;</span>
+      <h2 id="the-spec" class="morph-h2">The Spec<span class="morph-tail">: Algorithms</span></h2>
+    </div>
+    <div class="slide-fill step-panel morph-body">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§7.1.4 ToNumber ( arg )</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim>&lt;emu-clause id="sec-tonumber" type="abstract operation"&gt;
+  &lt;h1&gt;ToNumber ( _arg_: an ECMAScript language value ): either a normal completion containing a Number or a throw completion&lt;/h1&gt;
+  &lt;emu-alg&gt;
+    1. If _arg_ is a Number, return _arg_.
+    1. If _arg_ is either a Symbol or a BigInt, throw a *TypeError* exception.
+    1. If _arg_ is *undefined*, return *NaN*.
+    1. If _arg_ is either *null* or *false*, return *+0*&lt;sub&gt;𝔽&lt;/sub&gt;.
+    1. If _arg_ is *true*, return *1*&lt;sub&gt;𝔽&lt;/sub&gt;.
+    1. If _arg_ is a String, return StringToNumber(_arg_).
+    1. Assert: _arg_ is an Object.
+    1. Let _primitiveValue_ be ? ToPrimitive(_arg_, ~number~).
+    1. Assert: _primitiveValue_ is not an Object.
+    1. Return ? ToNumber(_primitiveValue_).
+  &lt;/emu-alg&gt;
+&lt;/emu-clause&gt;</pre>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec/spectec/clauses/S07.spectec</code>
+              <span class="badge proved">0-diff splice with spec.html</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim><span class="k">def</span> <span class="o">@sec-tonumber</span> <span class="s">"ToNumber"</span>
+  (<span class="k">kind</span> <span class="k">ao</span> <span class="k">params</span> [arg : <span class="s">#"ECMAScript language value"</span>] -&gt; <span class="k">completion</span>&lt;Number&gt; | <span class="s">#"throw completion"</span>)
+  <span class="k">vars</span> [arg, primitiveValue] {
+  <span class="k">if</span> arg <span class="k">is</span> <span class="k">ty</span> {Number} -&gt; <span class="k">return</span> arg
+  <span class="k">if</span> arg <span class="k">is</span> <span class="k">ty</span> {Symbol; BigInt} -&gt; <span class="k">throw</span> <span class="o">@ph-new-error</span>([[TypeError]])
+  <span class="k">if</span> arg <span class="k">is</span> <span class="k">val</span> {undefined} -&gt; <span class="k">return</span> nan
+  <span class="k">if</span> arg <span class="k">is</span> <span class="k">val</span> {null; false} -&gt; <span class="k">return</span> num_f(+0)
+  <span class="k">if</span> arg <span class="k">is</span> <span class="k">val</span> {true} -&gt; <span class="k">return</span> num_f(1)
+  <span class="k">if</span> arg <span class="k">is</span> <span class="k">ty</span> {String} -&gt; <span class="k">return</span> <span class="o">@sec-stringtonumber</span>(arg)
+  <span class="k">assert</span> arg <span class="k">is</span> <span class="k">ty</span> {Object}
+  <span class="k">let</span> primitiveValue = ? <span class="o">@sec-toprimitive</span>(arg, <span class="s">~number~</span>)
+  <span class="k">assert</span> primitiveValue <span class="k">is</span> <span class="k">not</span> <span class="k">ty</span> {Object}
+  <span class="k">return</span> ? <span class="o">@sec-tonumber</span>(primitiveValue)
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. The Spec: Grammar Rules -->
+  <section class="slide" id="slide-grammar-rules" data-slide="4" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <h2 id="spec-grammar-rules">The Spec: Grammar Rules</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§13.1 Identifiers &amp; §13.2.5 Object Initializer</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim>&lt;emu-grammar type="definition"&gt;
+  IdentifierReference[Yield, Await] :
+    Identifier
+    [~Yield] `yield`
+    [~Await] `await`
+
+  Identifier :
+    IdentifierName but not ReservedWord
+
+  PropertyDefinition[Yield, Await] :
+    IdentifierReference[?Yield, ?Await]
+    CoverInitializedName[?Yield, ?Await]
+    PropertyName[?Yield, ?Await] `:` AssignmentExpression[+In, ?Yield, ?Await]
+    MethodDefinition[?Yield, ?Await]
+    `...` AssignmentExpression[+In, ?Yield, ?Await]
+&lt;/emu-grammar&gt;</pre>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec/spectec/03-grammar-syntactic.spectec</code>
+              <span class="badge proved">0-diff splice with spec.html</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim><span class="k">rule</span> syntactic |IdentifierReference| [Yield, Await] : {
+  | |Identifier|
+  | [~Yield] <span class="s">"yield"</span>
+  | [~Await] <span class="s">"await"</span>
+}
+
+<span class="k">rule</span> syntactic |Identifier| [] : {
+  | |IdentifierName| <span class="k">butnot</span> |ReservedWord|
+}
+
+<span class="k">rule</span> syntactic |PropertyDefinition| [Yield, Await] : {
+  | |IdentifierReference[?Yield, ?Await]|
+  | |CoverInitializedName[?Yield, ?Await]|
+  | |PropertyName[?Yield, ?Await]| <span class="s">":"</span> |AssignmentExpression[+In, ?Yield, ?Await]|
+  | |MethodDefinition[?Yield, ?Await]|
+  | <span class="s">"..."</span> |AssignmentExpression[+In, ?Yield, ?Await]|
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. The Spec: Tables -->
+  <section class="slide" id="slide-tables" data-slide="5" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <h2 id="spec-tables">The Spec: Tables</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§6.2.4 Table 8 — Completion Record Fields</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim>&lt;emu-table id="table-completion-record-fields" caption="Completion Record Fields"&gt;
+  &lt;table&gt;
+    &lt;thead&gt;
+      &lt;tr&gt;&lt;th&gt;Field Name&lt;/th&gt;&lt;th&gt;Value&lt;/th&gt;&lt;th&gt;Meaning&lt;/th&gt;&lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tr&gt;
+      &lt;td&gt;[[Type]]&lt;/td&gt;
+      &lt;td&gt;~normal~, ~break~, ~continue~, ~return~, or ~throw~&lt;/td&gt;
+      &lt;td&gt;The type of completion that occurred.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;[[Value]]&lt;/td&gt;
+      &lt;td&gt;any value except a Completion Record&lt;/td&gt;
+      &lt;td&gt;The value that was produced.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;[[Target]]&lt;/td&gt;
+      &lt;td&gt;a String or ~empty~&lt;/td&gt;
+      &lt;td&gt;The target label for directed control transfers…&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/table&gt;
+&lt;/emu-table&gt;</pre>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec/spectec/09-tables.spectec</code>
+              <span class="badge proved">Typed schema &amp; field types</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim><span class="k">table</span> <span class="s">t"table-completion-record-fields"</span> <span class="o">@sec-completion-record-specification-type#0</span> {
+  <span class="k">kind</span> fields    <span class="k">thead</span> true    <span class="k">schema</span> (<span class="s">"Completion Record"</span>, false)    <span class="k">vars</span> []
+  <span class="k">rows</span> [
+    <span class="k">row</span> [ <span class="k">cell</span> { <span class="k">text</span> <span class="s">"Field Name"</span> }  <span class="k">cell</span> { <span class="k">text</span> <span class="s">"Value"</span> }  <span class="k">cell</span> { <span class="k">text</span> <span class="s">"Meaning"</span> } ]
+    <span class="k">row</span> [
+      <span class="k">cell</span> { <span class="k">field</span> [[Type]] }
+      <span class="k">cell</span> { <span class="k">ty</span> (<span class="k">val</span>(<span class="s">~normal~</span>) | <span class="k">val</span>(<span class="s">~break~</span>) | <span class="k">val</span>(<span class="s">~continue~</span>) | <span class="k">val</span>(<span class="s">~return~</span>) | <span class="k">val</span>(<span class="s">~throw~</span>)) }
+      <span class="k">cell</span> { <span class="k">text</span> <span class="s">"The type of completion that occurred."</span> }
+    ]
+    <span class="k">row</span> [
+      <span class="k">cell</span> { <span class="k">field</span> [[Value]] }
+      <span class="k">cell</span> { <span class="k">ty</span> (<span class="k">pred</span>(<span class="k">sat</span> <span class="o">@ph-type-except</span>(<span class="k">data</span> <span class="k">sort</span> <span class="s">#"Completion Record"</span>))) }
+      <span class="k">cell</span> { <span class="k">text</span> <span class="s">"The value that was produced."</span> }
+    ]
+    <span class="k">row</span> [
+      <span class="k">cell</span> { <span class="k">field</span> [[Target]] }
+      <span class="k">cell</span> { <span class="k">ty</span> (String | <span class="k">val</span>(<span class="s">~empty~</span>)) }
+      <span class="k">cell</span> { <span class="k">text</span> <span class="s">"The target label for directed control transfers…"</span> }
+    ]
+  ]
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. The Spec: Models -->
+  <section class="slide" id="slide-models" data-slide="6" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <h2 id="prose-models">The Spec: Models</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§5.2.6 Mathematical Operations &amp; §6.1.6.1 The Number Type</span>
+            </div>
+            <div class="prose-translate-body">
+              <blockquote class="prose-spec-quote">
+                “The <b>Number type</b> has exactly 18,437,736,874,454,810,627 (2<sup>64</sup> − 2<sup>53</sup> + 3) values, representing the double-precision floating point IEEE 754-2019 binary64 values… except that the distinct NaN values of the IEEE Standard are represented in ECMAScript as a single special <b>NaN</b> value… two other special values, <b>+∞</b><sub>𝔽</sub> and <b>−∞</b><sub>𝔽</sub>… <b>+0</b><sub>𝔽</sub> and <b>−0</b><sub>𝔽</sub>, and the finite non-zero values.”
+              </blockquote>
+              <div class="translate-note">
+                <span class="badge rd">How it translates</span>
+                <span>Each specification sort (<code>Math</code>, <code>Num</code>, <code>Str</code>, <code>Addr</code>, <code>Node</code>, …) is an abstract carrier in <code>syntax Model record</code>, with a case view <code>NumView(Math)</code> and primitive operations — fixing no concrete representation.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec/spectec/prose/01-model.spectec</code>
+              <span class="badge rd">Abstract carriers &amp; operations</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim><span class="c">--- The case view of an IEEE 754-2019 binary64 Number value (§6.1.6.1).</span>
+<span class="k">syntax</span> NumView (Math : Type) {
+  | nan  | posInf  | negInf  | posZero  | negZero  | finite (m : Math)
+}
+
+<span class="c">--- A model of the specification's sorts and primitive operations (excerpt).</span>
+<span class="k">syntax</span> Model <span class="k">record</span> {
+  Math : Type;          Num : Type;           Str : Type;
+  Addr : Type;          Node : Type;          Heap : Type -&gt; Type;
+
+  numView : Num -&gt; NumView(Math);             <span class="c">--- inspect binary64 value</span>
+  numOf   : Math -&gt; Num;                      <span class="c">--- 𝔽(x): roundTiesToEven (§6.1.6.1)</span>
+  numAdd  : Num -&gt; Num -&gt; Num;                <span class="c">--- IEEE 754-2019 addition</span>
+  numNeg  : Num -&gt; Num;                       <span class="c">--- unary negation</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. The Spec: Relations -->
+  <section class="slide" id="slide-relations" data-slide="7" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <h2 id="prose-relations">The Spec: Relations</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§29.6.6 happens-before</span>
+            </div>
+            <div class="prose-translate-body">
+              <div class="prose-spec-quote prose-spec-list">
+                <p>For a candidate execution <i>execution</i>, its <b>happens-before</b> Relation is the least Relation on Memory events that satisfies the following — <i>eventA</i> happens-before <i>eventB</i> if any of the following conditions are true:</p>
+                <ul>
+                  <li><i>eventA</i> is-agent-order-before <i>eventB</i> in <i>execution</i>.</li>
+                  <li><i>eventA</i> synchronizes-with <i>eventB</i> in <i>execution</i>.</li>
+                  <li>SharedDataBlockEventSet(<i>execution</i>) contains both <i>eventA</i> and <i>eventB</i>, <i>eventA</i>.[[Order]] is ~init~, and <i>eventA</i> and <i>eventB</i> have overlapping memory ranges.</li>
+                  <li>There is an event <i>eventC</i> such that <i>eventA</i> happens-before <i>eventC</i> and <i>eventC</i> happens-before <i>eventB</i> in <i>execution</i>.</li>
+                </ul>
+              </div>
+              <div class="translate-note">
+                <span class="badge rd">How it translates</span>
+                <span>“The least Relation that satisfies…” becomes an inductive SpecTec <code>relation</code>, with one Horn <code>rule</code> (<code>conclusion :- premises;</code>) per prose bullet.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec/spectec/prose/07-memory-model.spectec</code>
+              <span class="badge rd">Inductive SpecTec relation</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim><span class="c">--- happens-before (§29.6.6): the least Relation closed under its four rules.</span>
+<span class="k">relation</span> HB (rbf : Rbf(E)) (hsw : Rel(E)) : Rel(E) {
+  <span class="k">rule</span> agent {a b : E} :
+    HB(rbf, hsw, a, b) :- agentOrder(x, a, b);
+  <span class="k">rule</span> sync  {a b : E} :
+    HB(rbf, hsw, a, b) :- SyncWith(x, rbf, hsw, a, b);
+  <span class="k">rule</span> init  {a b : E} :
+    HB(rbf, hsw, a, b) :- inSdb(x, a), inSdb(x, b), x.order(a) = .init, rangesOverlapping(x, a, b);
+  <span class="k">rule</span> trans {a b c : E} :
+    HB(rbf, hsw, a, b) :- HB(rbf, hsw, a, c), HB(rbf, hsw, c, b);
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. The Spec: Laws -->
+  <section class="slide" id="slide-laws" data-slide="8" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <h2 id="prose-laws">The Spec: Laws</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec.html</code>
+              <span class="muted">§6.1.6.1.1 Number::unaryMinus &amp; §4.2 Hosts and Implementations</span>
+            </div>
+            <div class="prose-translate-body">
+              <blockquote class="prose-spec-quote">
+                <b>§6.1.6.1.1 Number::unaryMinus ( <i>number</i> ):</b> “1. If <i>number</i> is <b>NaN</b>, return <b>NaN</b>. 2. Return the negation of <i>number</i>; that is, compute a Number with the same magnitude but opposite sign.”
+              </blockquote>
+              <blockquote class="prose-spec-quote">
+                <b>§4.2 Hosts and Implementations:</b> “A host hook must conform to at least the following requirements: It must return either a normal completion or a throw completion.”
+              </blockquote>
+              <div class="translate-note">
+                <span class="badge rd">How it translates</span>
+                <span>Each prose requirement becomes a <code>law</code> in a SpecTec <code>laws</code> block (148 model, 7 parser &amp; 72 host laws), quoting the governing <code>spec.html</code> sentence verbatim (checked by <code>law_quotes.py</code>).</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec/spectec/prose/05-model-laws.spectec</code> &amp; <code>24-host-laws-hooks.spectec</code>
+              <span class="badge rd">Quotes verified against spec.html</span>
+            </div>
+            <pre class="spec-code lean-code" data-verbatim><span class="k">laws</span> Model.NumLaws (M : Model) {
+  <span class="c">--- sec-numeric-types-number-unaryMinus:</span>
+  <span class="c">--- "Return the negation of number; that is, compute a Number with the same magnitude but opposite sign."</span>
+  <span class="k">law</span> numNeg_view : <span class="k">forall</span> a, M.numView(M.numNeg(a)) = <span class="k">match</span> M.numView(a) <span class="k">with</span>
+    | .nan =&gt; .nan        | .posInf =&gt; .negInf    | .posZero =&gt; .negZero
+    | .negInf =&gt; .posInf  | .negZero =&gt; .posZero  | .finite(m) =&gt; .finite(M.neg(m))
+  <span class="k">end</span>;
+}
+
+<span class="k">laws</span> Host.HookLaws (H : Host(M)) {
+  <span class="c">--- sec-hosts-and-implementations:</span>
+  <span class="c">--- "A host hook must conform to at least the following requirements: It must return either a normal completion or a throw completion."</span>
+  <span class="k">law</span> hookCompletion : <span class="k">forall</span> c xs s r s',
+    H.answers(c, xs, s, r, s') -&gt; compType(r) = Known.eNormal \/ compType(r) = Known.eThrow;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Adding a proposal -> Adding a proposal: Change the HTML -->
+  <section class="slide has-morph" id="slide-step-1" data-slide="9" data-max-step="2" data-step="0">
+    <div class="slide-top">
+      <span class="morph-spacer" aria-hidden="true">&nbsp;</span>
+      <h2 id="step-1" class="morph-h2">Adding a proposal<span class="morph-tail">: Change the HTML</span></h2>
+    </div>
+    <div class="slide-fill step-panel morph-body">
+      <div class="code-window">
+        <div class="code-bar">
+          <code>spec.html</code>
+          <span class="muted">§22.1.3.32 String.prototype.trim — proposal-trim-chars</span>
+        </div>
+        <pre class="spec-code">&lt;emu-clause id="sec-string.prototype.trim" type="built-in function"&gt;
+  &lt;h1&gt;String.prototype.trim ( <span class="diff-ins">&lt;ins&gt;[ _characters_ ]&lt;/ins&gt; </span>)&lt;/h1&gt;
+  &lt;emu-alg&gt;
+    1. Let _thisValue_ be the *this* value.
+    1. Return ? TrimString(_thisValue_, ~start+end~<span class="diff-ins">&lt;ins&gt;, _characters_&lt;/ins&gt;</span>).
+  &lt;/emu-alg&gt;
+&lt;/emu-clause&gt;</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10. Adding a proposal: Generate the code -->
+  <section class="slide" id="slide-step-2" data-slide="10" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <h2 id="step-2">Adding a proposal: Generate the code</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec/spectec/clauses/S22.spectec</code>
+              <span class="badge none">Before (ECMA-262)</span>
+            </div>
+            <pre class="spec-code lean-code"><span class="k">def</span> @sec-string.prototype.trim <span class="s">"String.prototype.trim"</span>
+  (<span class="k">kind</span> <span class="k">builtin</span> <span class="k">params</span> [])
+  <span class="k">vars</span> [<span class="s">#"this value"</span>, NewTarget, thisValue] {
+  <span class="k">let</span> thisValue = this_value
+  <span class="k">return</span> ? @sec-trimstring(thisValue, <span class="s">~start+end~</span>)
+}</pre>
+          </div>
+        </div>
+        <div class="swap-layer swap-after">
+          <div class="code-window">
+            <div class="code-bar">
+              <code>spec/spectec/clauses/S22.spectec</code>
+              <span class="badge proved">After spectec-html + generate.py · 0 proof lines needed</span>
+            </div>
+            <pre class="spec-code lean-code"><span class="k">def</span> @sec-string.prototype.trim <span class="s">"String.prototype.trim"</span>
+  (<span class="k">kind</span> <span class="k">builtin</span> <span class="k">params</span> [<span class="hl-ins">[characters]</span>])
+  <span class="k">vars</span> [<span class="s">#"this value"</span>, NewTarget, <span class="hl-ins">characters</span>, thisValue] {
+  <span class="k">let</span> thisValue = this_value
+  <span class="k">return</span> ? @sec-trimstring(thisValue, <span class="s">~start+end~</span><span class="hl-ins">, characters</span>)
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. Adding a proposal: Debug! -->
+  <section class="slide" id="slide-step-3" data-slide="11" data-max-step="1" data-step="0">
+    <div class="slide-top">
+      <h2 id="step-3">Adding a proposal: Debug!</h2>
+    </div>
+    <div class="slide-fill step-panel">
+      <div class="swap-box">
+        <div class="swap-layer swap-before">
+          <div class="code-window step3-preview">
+            <div class="code-bar">
+              <code>proposal_trim_chars.js</code>
+              <span class="bp-pill">● Breakpoint: <code>sec-string.prototype.trim</code> · step 2</span>
+            </div>
+            <pre class="spec-code js-big">const path = "/__ecma-262__/".trim("/_");
+// → "ecma-262"</pre>
+          </div>
+        </div>
+        <div class="swap-layer swap-after step3-dbg-wrap">
+          <div class="step3-live"><iframe class="step-dbg-iframe" id="step3-dbg-frame" data-dbg-src="debugger/?example=dbg/proposal_trim_chars&amp;build=trim-chars" title="Live spec debugger paused on String.prototype.trim step 2"></iframe></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12. Varying levels of difficulty -->
+  <section class="slide" id="slide-step-4" data-slide="12" data-max-step="0">
+    <div class="slide-top">
+      <h2 id="step-4">Varying levels of difficulty</h2>
+    </div>
+    <div class="slide-fill">
+      <div class="tablebox prop117-box"><table class="prop117-table"><thead><tr><th>Stage</th><th>Proposal</th><th class="num"><code>spec.html</code></th><th class="num">SpecTec</th><th class="num">Hand-written Lean</th><th></th></tr></thead><tbody><tr><td><span class="badge proved">3</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-defer-import-eval">import defer (with PR #97 cycle/TLA fix)</a></td><td class="num">+723 / −109</td><td class="num">+643 / −112</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=run/import_defer_basic&amp;build=defer" data-dbg-open="debugger/?example=run/import_defer_basic&amp;build=defer">Debug →</a></td></tr><tr><td><span class="badge proved">3</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-import-text">Import Text (for Stage 4)</a></td><td class="num">+39 / −4</td><td class="num">+5</td><td class="num">+4</td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_import_text&amp;build=import-text" data-dbg-open="debugger/?example=dbg/proposal_import_text&amp;build=import-text">Debug →</a></td></tr><tr><td><span class="badge proved">3</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-thenable-curtailment">Thenable Curtailment (PRs #22 &amp; #26)</a></td><td class="num">+157 / −23</td><td class="num">+99 / −30</td><td class="num">+3 / −2</td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_thenable_curtailment&amp;build=thenable-curtailment" data-dbg-open="debugger/?example=dbg/proposal_thenable_curtailment&amp;build=thenable-curtailment">Debug →</a></td></tr><tr><td><span class="badge rd">2.7</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-deferred-reexports">Deferred Re-exports (export defer)</a></td><td class="num">+2,154 / −186</td><td class="num">+2,048 / −290</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_deferred_reexports&amp;build=deferred-reexports" data-dbg-open="debugger/?example=dbg/proposal_deferred_reexports&amp;build=deferred-reexports">Debug →</a></td></tr><tr><td><span class="badge rd">2.7</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-json-parseimmutable">JSON.parse Options (PR #27 nullPrototypeObjects)</a></td><td class="num">+96 / −7</td><td class="num">+88 / −9</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_json_parseimmutable&amp;build=json-parseimmutable" data-dbg-open="debugger/?example=dbg/proposal_json_parseimmutable&amp;build=json-parseimmutable">Debug →</a></td></tr><tr><td><span class="badge rd">2.7</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-esm-phase-imports">ESM Phase Imports (PR #65)</a></td><td class="num">+1,083 / −89</td><td class="num">+404 / −98</td><td class="num">+12 / −5</td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_esm_phase_imports&amp;build=esm-phase-imports" data-dbg-open="debugger/?example=dbg/proposal_esm_phase_imports&amp;build=esm-phase-imports">Debug →</a></td></tr><tr><td><span class="badge rd">2.7</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-immutable-arraybuffer">Immutable ArrayBuffers (for Stage 3)</a></td><td class="num">+366 / −206</td><td class="num">+377 / −213</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_immutable_arraybuffer&amp;build=immutable-arraybuffer" data-dbg-open="debugger/?example=dbg/proposal_immutable_arraybuffer&amp;build=immutable-arraybuffer">Debug →</a></td></tr><tr><td><span class="badge owed">2</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-error-code-property">Error code property (to Stage 2.7)</a></td><td class="num">+32 / −4</td><td class="num">+26 / −9</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_error_code_property&amp;build=error-code-property" data-dbg-open="debugger/?example=dbg/proposal_error_code_property&amp;build=error-code-property">Debug →</a></td></tr><tr><td><span class="badge owed">2</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-fma">Math.fusedMultiplyAdd (to Stage 2.7)</a></td><td class="num">+63</td><td class="num">+63</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_fma&amp;build=fma" data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma">Debug →</a></td></tr><tr><td><span class="badge owed">2</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-composites">Composites</a></td><td class="num">+268 / −2</td><td class="num">+187 / −1</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_composites&amp;build=composites" data-dbg-open="debugger/?example=dbg/proposal_composites&amp;build=composites">Debug →</a></td></tr><tr><td><span class="badge none">1</span></td><td class="p-title"><a href="https://github.com/tc39/proposal-cancellation">Cancellation: AbortController &amp; AbortSignal (PR #35)</a></td><td class="num">+790 / −14</td><td class="num">+600 / −14</td><td class="num">+6 / −2</td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_cancellation&amp;build=cancellation" data-dbg-open="debugger/?example=dbg/proposal_cancellation&amp;build=cancellation">Debug →</a></td></tr><tr><td><span class="badge none">0</span></td><td class="p-title"><a href="https://github.com/jasnell/proposal-iterator-transfer">Iterator.prototype.transfer</a></td><td class="num">+83</td><td class="num">+108</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_iterator_transfer&amp;build=iterator-transfer" data-dbg-open="debugger/?example=dbg/proposal_iterator_transfer&amp;build=iterator-transfer">Debug →</a></td></tr><tr><td><span class="badge none">0</span></td><td class="p-title"><a href="https://github.com/eemeli/proposal-trim-chars">Trim Specific Characters</a></td><td class="num">+21 / −15</td><td class="num">+71 / −48</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_trim_chars&amp;build=trim-chars" data-dbg-open="debugger/?example=dbg/proposal_trim_chars&amp;build=trim-chars">Debug →</a></td></tr><tr><td><span class="badge none">0</span></td><td class="p-title"><a href="https://github.com/js-choi/proposal-popcount">Bitwise counting (Math.popcount32 / Math.ctz32)</a></td><td class="num">+23</td><td class="num">+61</td><td class="num"><span class="muted">0</span></td><td><a class="open open-xs" href="debugger/?example=dbg/proposal_popcount&amp;build=popcount" data-dbg-open="debugger/?example=dbg/proposal_popcount&amp;build=popcount">Debug →</a></td></tr></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- 13. Spec issues & errata -->
+  <section class="slide" id="slide-issues" data-slide="13" data-max-step="4" data-step="0">
+    <div class="slide-top">
+      <h2 id="spec-issues">Spec issues &amp; errata</h2>
+    </div>
+    <div class="slide-fill slide-bullets-wrap">
+      <ul class="slide-bullets">
+        <li class="reveal-item" data-reveal="1">
+          <strong>Contradictions &amp; wrong results</strong>
+          <ul>
+            <li><code>Array.fromAsync()</code> fulfills with <code>undefined</code>; <code>CreateIntrinsics</code> misaligns <code>async</code></li>
+            <li>Timed-out <code>Atomics.wait()</code> returns <code>"ok"</code>; <code>+0 * -5</code> yields <code>+0</code>; TLA <code>using</code> never disposes</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="2">
+          <strong>Failing <code>Assert:</code>s on valid programs</strong>
+          <ul>
+            <li>Every <code>await</code> resumes <code>AsyncBlockStart</code> with <code>~empty~</code>, failing its <code>~unused~</code> <code>Assert:</code></li>
+            <li><code>/\p{Hex}/u</code>, <code>new Date(0).setHours(1e21)</code> &amp; diamond <code>export *</code> DAGs trip literal <code>Assert:</code>s</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="3">
+          <strong>Missing grammar cases, type errors &amp; §29 defects</strong>
+          <ul>
+            <li>Post-ASI <code>/re/</code> lexing, <code>new Function("o", "return o.#f")</code> &amp; <code>return (f(x))</code> cover tail calls</li>
+            <li><code>"ab".split("")</code> builds code units, not Strings; §29 RMW cycles, <code>Races</code> &amp; block-aliasing bugs</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="4">
+          <strong>In-flight proposal bugs</strong>
+          <ul>
+            <li>Missing <code>BoundNames</code> SDO row &amp; <code>[[DeferredNamespace]]</code> slots in <code>import defer</code></li>
+            <li><code>*undefined*</code> vs. <code>~empty~</code> / <code>~unused~</code> mismatches in <code>Immutable ArrayBuffers</code></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 14. What this can deliver -->
+  <section class="slide" id="slide-deliver" data-slide="14" data-max-step="3" data-step="0">
+    <div class="slide-top">
+      <h2 id="deliver">What this can deliver</h2>
+    </div>
+    <div class="slide-fill slide-bullets-wrap">
+      <ul class="slide-bullets">
+        <li class="reveal-item" data-reveal="1">
+          <strong>Invariants</strong>
+          <ul>
+            <li>§6.1.7.3 essential object invariants &amp; module <code>[[Status]]</code> monotonicity</li>
+            <li>Proposal guarantees (e.g. immutable <code>ArrayBuffer</code> bytes never mutate)</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="2">
+          <strong>Soundness</strong>
+          <ul>
+            <li><code>!</code> never throws, <code>Assert:</code>s never fail &amp; slots/SDOs never miss a case</li>
+            <li>Editorial refactorings proved observably identical</li>
+            <li>Elided spec allocations &amp; §29 reorderings proved unobservable</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="3">
+          <strong>Generated JS reference VM</strong>
+          <ul>
+            <li>Executable engine &amp; proved parser compiled from SpecTec &amp; <code>spec.html</code> (native &amp; Wasm)</li>
+            <li>Verified shortcuts &amp; grammar kernel proved with 0 sorrys (<code>Engine.implements</code>, <code>Engine.Claims.parseLaws</code>)</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 15. Looking ahead -->
+  <section class="slide" id="slide-next" data-slide="15" data-max-step="3" data-step="0">
+    <div class="slide-top">
+      <h2 id="next-steps">Looking ahead</h2>
+    </div>
+    <div class="slide-fill slide-bullets-wrap">
+      <ul class="slide-bullets next-bullets">
+        <li class="reveal-item" data-reveal="1">
+          <strong>Clean everything up!</strong>
+          <ul>
+            <li>Simplify the SpecTec pipeline, decisions register &amp; downstream proofs</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="2">
+          <strong>Make it even easier to use</strong>
+          <ul>
+            <li>Turnkey proposal checks, CI integration &amp; smoother debugger UX</li>
+          </ul>
+        </li>
+        <li class="reveal-item" data-reveal="3">
+          <strong>Converge <code>.emu</code> authoring and SpecTec</strong>
+          <ul>
+            <li>Turnkey <code>spectec-html</code> round-tripping for proposal <code>spec.emu</code> drafts</li>
+            <li>State invariants &amp; static checks directly in SpecTec, proved downstream in Lean</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 16. Questions -->
+  <section class="slide slide-center" id="slide-questions" data-slide="16" data-max-step="0">
+    <div class="hero-wrap">
+      <h2 class="hero-h1" id="questions">Questions?</h2>
+    </div>
+  </section>
+
+</div>
+
+<!-- Live debugger overlay modal -->
+<div class="dbg-modal" id="dbg-modal" hidden role="dialog" aria-modal="true" aria-label="Live specification debugger">
+  <div class="dbg-modal-box">
+    <button type="button" class="theme dbg-modal-close" id="dbg-modal-close" title="Close debugger overlay (Esc)">× Close (Esc)</button>
+    <iframe class="dbg-modal-frame" id="dbg-modal-frame" title="Specification debugger"></iframe>
+  </div>
+</div>
+
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

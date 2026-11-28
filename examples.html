@@ -1,0 +1,1172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Examples · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu"><summary>Read</summary><ul><li><a href="how-it-works.html">How it works</a></li><li><a href="proposal.html">Applying a proposal</a></li><li><a href="errata.html">Spec issues &amp; errata</a></li><li><a href="what-is-proved.html">What is proved</a></li><li><a href="test262.html">test262 results</a></li><li><a href="slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="model.html">The model</a></li><li><a href="host.html">The host</a></li><li><a href="memory-model.html">Memory model</a></li><li><a href="parser-laws.html">Parser laws</a></li><li><a href="implements.html">Implements</a></li></ul></details><details class="nav-menu here"><summary>Try it</summary><ul><li><a href="examples.html" aria-current="page">Examples</a></li><li><a href="debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#tour">The tour</a></li><li class="t1"><a href="#language">The language, step by step</a></li><li class="t1"><a href="#corners">Corners of the specification</a></li><li class="t1"><a href="#errata">Errata: resolved readings and literal Assert stops</a></li><li class="t1"><a href="#proposal">A proposal: import defer</a></li><li class="t1"><a href="#proposals-117">TC39 #117 agenda proposals (November 2026)</a></li><li class="t1"><a href="#errata-programs">The errata page&#x27;s programs</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow">Programs for the debugger · <code>tools/dbg/gallery.json</code></p>
+<h1>Examples</h1>
+<div class="lede"><p>65 programs that open in the <a href="debugger/">debugger</a> with their breakpoints set, 81 runs in all. Each was run, under each build it names, on the native debugger and on the WebAssembly build in node when this site was built, and reached what its check below says.</p></div>
+</header>
+<p>The debugger runs one of these builds, chosen in its header:</p><ul class="builds"><li><strong>The specification.</strong> ECMA-262 in SpecTec, with the resolved readings recorded in spec/DECISIONS.md.</li><li><strong>Proposal (Stage 3): import defer.</strong> tc39/proposal-defer-import-eval (with PR #97) applied to ECMA-262.</li><li><strong>Proposal (Stage 3): Import Text.</strong> tc39/proposal-import-text (Stage 4 candidate) applied to ECMA-262.</li><li><strong>Proposal (Stage 3): Thenable Curtailment.</strong> tc39/proposal-thenable-curtailment (with PRs #22 and #26) applied to ECMA-262.</li><li><strong>Proposal (Stage 2.7): Deferred Re-exports.</strong> tc39/proposal-deferred-reexports applied to ECMA-262.</li><li><strong>Proposal (Stage 2.7): JSON.parse Options.</strong> tc39/proposal-json-parseimmutable (PR #27: nullPrototypeObjects) applied to ECMA-262.</li><li><strong>Proposal (Stage 2.7): ESM Phase Imports.</strong> tc39/proposal-esm-phase-imports (PR #65) applied to ECMA-262.</li><li><strong>Proposal (Stage 2.7): Immutable ArrayBuffers.</strong> tc39/proposal-immutable-arraybuffer applied to ECMA-262.</li><li><strong>Proposal (Stage 2): Error.code.</strong> tc39/proposal-error-code-property applied to ECMA-262.</li><li><strong>Proposal (Stage 2): Math.fusedMultiplyAdd.</strong> tc39/proposal-fma applied to ECMA-262.</li><li><strong>Proposal (Stage 2): Composites.</strong> tc39/proposal-composites applied to ECMA-262.</li><li><strong>Proposal (Stage 1): Cancellation (AbortController).</strong> tc39/proposal-cancellation (PR #35 spec draft) applied to ECMA-262.</li><li><strong>Proposal (Stage 0): Iterator.prototype.transfer.</strong> jasnell/proposal-iterator-transfer applied to ECMA-262.</li><li><strong>Proposal (Stage 0): Trim Specific Characters.</strong> eemeli/proposal-trim-chars applied to ECMA-262.</li><li><strong>Proposal (Stage 0): Math.popcount32 / ctz32.</strong> js-choi/proposal-popcount applied to ECMA-262.</li></ul><section class="part" id="tour"><h2 class="part-title"><a class="self" href="#tour">The tour</a></h2><p>Four short programs, each with breakpoints set where the specification&#x27;s algorithms do the work. The debugger&#x27;s guided script for them, stop by stop, is docs/debugger/DEMO.md.</p><article class="example" id="ex-demo-get">
+<h3><a class="self" href="#ex-demo-get">A property get, up the prototype chain</a></h3>
+<p class="what">GetValue calls the object&#x27;s [[Get]], which is OrdinaryGet; for a property the object lacks, OrdinaryGet calls its prototype&#x27;s [[Get]] with the same receiver.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=demo/get">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-ordinaryget 1</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>OrdinaryGet 1</code>, then <code>OrdinaryGet 1</code>, then <code>OrdinaryGet 1</code>; ends <code>normal: 8</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tools/dbg/demo/get.js</code></summary><pre class="js">let proto = { z: 5 };
+let point = { x: 3, __proto__: proto };
+let a = point.x;
+let b = point.z;
+a + b;
+</pre></details>
+</article><article class="example" id="ex-demo-call">
+<h3><a class="self" href="#ex-demo-call">A function call</a></h3>
+<p class="what">EvaluateCall evaluates the arguments and calls Call, the function&#x27;s [[Call]] makes a new execution context, and OrdinaryCallEvaluateBody runs the body.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=demo/call">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-evaluatecall 7</code>, <code>sec-ordinarycallevaluatebody 1</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>EvaluateCall 7</code>, then <code>OrdinaryCallEvaluateBody 1</code>; ends <code>normal: 5</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tools/dbg/demo/call.js</code></summary><pre class="js">function add(a, b) {
+  var s = a + b;
+  return s;
+}
+var r = add(2, 3);
+r;
+</pre></details>
+</article><article class="example" id="ex-demo-forof">
+<h3><a class="self" href="#ex-demo-forof">A for-of loop</a></h3>
+<p class="what">ForIn/OfBodyEvaluation asks the iterator for its next result at step 8.a once per round, and once more to find that it is done.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=demo/forof">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>ForIn/OfBodyEvaluation 8.a</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>ForIn/OfBodyEvaluation 8.a</code>, then <code>ForIn/OfBodyEvaluation 8.a</code>, then <code>ForIn/OfBodyEvaluation 8.a</code>; ends <code>normal: 30</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tools/dbg/demo/forof.js</code></summary><pre class="js">let sum = 0;
+for (const v of [10, 20]) {
+  sum = sum + v;
+}
+sum;
+</pre></details>
+</article><article class="example" id="ex-demo-throw">
+<h3><a class="self" href="#ex-demo-throw">A throw caught</a></h3>
+<p class="what">The throw statement&#x27;s Evaluation makes a throw completion inside the called function; it returns through [[Call]] to the try statement, and CatchClauseEvaluation binds it.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=demo/throw">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-runtime-semantics-catchclauseevaluation 1</code>; pauses on throw completions.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>sec-throw-statement-runtime-semantics-evaluation 3</code>, then <code>CatchClauseEvaluation 1</code>; ends <code>normal: &quot;negative&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tools/dbg/demo/throw.js</code></summary><pre class="js">function check(n) {
+  if (n &lt; 0) throw new RangeError(&quot;negative&quot;);
+  return n;
+}
+let msg;
+try {
+  check(-1);
+} catch (e) {
+  msg = e.message;
+}
+msg;
+</pre></details>
+</article></section><section class="part" id="language"><h2 class="part-title"><a class="self" href="#language">The language, step by step</a></h2><p>Ordinary JavaScript, paused in the algorithms that give it its meaning: environments, calls into built-ins, eval, generators, modules.</p><article class="example" id="ex-run-iscallable">
+<h3><a class="self" href="#ex-run-iscallable">IsCallable, step by step</a></h3>
+<p class="what">The worked example of How it works. EvaluateCall asks IsCallable of each callee that is an Object: a function has a [[Call]] internal method, and step 2 returns true; an ordinary object has none, step 3 returns false, and the call throws a TypeError.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/iscallable">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-iscallable 2</code>, <code>sec-iscallable 3</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>IsCallable 2</code>, then <code>IsCallable 2</code>, then <code>IsCallable 2</code>, then <code>IsCallable 2</code>, then <code>IsCallable 3</code>; ends <code>normal: &quot;function|TypeError&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/iscallable.js</code></summary><pre class="js">// expect: normal: &quot;function|TypeError&quot;
+// IsCallable (§7.2.3), asked by EvaluateCall of a callee that is an Object: a function
+// has a [[Call]] internal method (step 2 returns true); an ordinary object has none,
+// step 3 returns false, and the call throws a TypeError.
+function f() { return &quot;function&quot;; }
+var o = {};
+var r = f();
+try { o(); } catch (e) { r += &quot;|&quot; + e.constructor.name; }
+r;
+</pre></details>
+</article><article class="example" id="ex-run-s2_let_tdz">
+<h3><a class="self" href="#ex-run-s2_let_tdz">A let binding read before its declaration</a></h3>
+<p class="what">The declarative Environment Record&#x27;s GetBindingValue finds the binding uninitialized and throws a ReferenceError, which the catch clause receives.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/s2_let_tdz">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-declarative-environment-records-getbindingvalue-n-s</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>sec-declarative-environment-records-getbindingvalue-n-s 1</code>; ends <code>normal: &quot;ReferenceError&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/s2_let_tdz.js</code></summary><pre class="js">// S2 end to end: reading a let binding before its declaration throws a ReferenceError.
+// expect: normal: &quot;ReferenceError&quot;
+try { t; let t = 1; } catch (e) { e.name }
+</pre></details>
+</article><article class="example" id="ex-dbg-loop">
+<h3><a class="self" href="#ex-dbg-loop">A for loop&#x27;s binding, copied each round</a></h3>
+<p class="what">ForBodyEvaluation calls CreatePerIterationEnvironment before the first round and after each, so each round has its own binding of i.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/loop">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-createperiterationenvironment</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>CreatePerIterationEnvironment 1</code>, then <code>CreatePerIterationEnvironment 1</code>; ends <code>normal: 1</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/loop.js</code></summary><pre class="js">var s = 0;
+for (let i = 0; i &lt; 3; i++) {
+  s = s + i;
+}
+while (s &gt; 1) s = s - 2;
+</pre></details>
+</article><article class="example" id="ex-dbg-getter">
+<h3><a class="self" href="#ex-dbg-getter">An accessor property</a></h3>
+<p class="what">OrdinaryGet finds an accessor descriptor and, at step 7, calls its getter with the receiver as this; the getter&#x27;s body runs in OrdinaryCallEvaluateBody.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/getter">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-ordinaryget 7</code>, <code>sec-ordinarycallevaluatebody 1</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>OrdinaryGet 7</code>, then <code>OrdinaryCallEvaluateBody 1</code>; ends <code>normal: [object #N]</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/getter.js</code></summary><pre class="js">var o = {};
+Object.defineProperty(o, &quot;v&quot;, { get: function () {
+  var k = 41;
+  return k + 1;
+} });
+var w = o.v;
+</pre></details>
+</article><article class="example" id="ex-dbg-map">
+<h3><a class="self" href="#ex-dbg-map">A built-in that calls back</a></h3>
+<p class="what">Array.prototype.map runs as a built-in function&#x27;s steps under BuiltinCallOrConstruct, and calls the callback for each element; the JS stack shows the built-in between the two functions.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/map">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-array.prototype.map</code>, <code>sec-ordinarycallevaluatebody 1</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>Array.prototype.map 1</code>, then <code>OrdinaryCallEvaluateBody 1</code>; ends <code>normal: undefined</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/map.js</code></summary><pre class="js">var a = [1, 2].map(function (x) {
+  var y = x * 10;
+  return y;
+});
+var b = a.map(function (x) { return x + 1; });
+</pre></details>
+</article><article class="example" id="ex-dbg-eval">
+<h3><a class="self" href="#ex-dbg-eval">Direct eval and new Function</a></h3>
+<p class="what">A direct eval goes through PerformEval and new Function through CreateDynamicFunction; each parses its own source text, which the debugger opens as a source of its own.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/eval">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-performeval</code>, <code>sec-createdynamicfunction</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>PerformEval 1</code>, then <code>CreateDynamicFunction 1</code>; ends <code>normal: undefined</code>; prints <code>10</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/eval.js</code></summary><pre class="js">var a = 1;
+var b = eval(&quot;var c = a + 1;\nc * 2&quot;);
+var f = new Function(&quot;x&quot;, &quot;var y = x + 1;\nreturn y * 2;&quot;);
+var r = f(b);
+print(r);
+</pre></details>
+</article><article class="example" id="ex-dbg-generator">
+<h3><a class="self" href="#ex-dbg-generator">A generator</a></h3>
+<p class="what">Each yield is GeneratorYield, which suspends the generator&#x27;s execution context; next() resumes it through GeneratorResume.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/generator">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-generatoryield</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>GeneratorYield 1</code>, then <code>GeneratorYield 1</code>; ends <code>normal: 3</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/generator.js</code></summary><pre class="js">function* g() {
+  var a = 1;
+  yield a;
+  a = a + 1;
+  yield a;
+}
+var it = g();
+var x = it.next().value;
+x = x + it.next().value;
+</pre></details>
+</article><article class="example" id="ex-dbg-strict">
+<h3><a class="self" href="#ex-dbg-strict">A string that is not a directive</a></h3>
+<p class="what">&quot;use strict&quot; followed by .length on the next line is one expression statement, not a Use Strict Directive: IsStrict finds the script non-strict.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/strict">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-isstrict</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>IsStrict 1</code>; ends <code>normal: 10</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/strict.js</code></summary><pre class="js">&quot;use strict&quot;
+.length;
+debugger;
+</pre></details>
+</article><article class="example" id="ex-dbg-heap">
+<h3><a class="self" href="#ex-dbg-heap">Objects in the store</a></h3>
+<p class="what">Each debugger statement pauses; the Heap tab shows the object&#x27;s cell, and after the assignment the cell that changed.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/heap">Open in the debugger</button></p>
+<p class="setup">Opened with pauses on debugger statements.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>sec-debugger-statement-runtime-semantics-evaluation 1</code>, then <code>sec-debugger-statement-runtime-semantics-evaluation 1</code>, then <code>sec-debugger-statement-runtime-semantics-evaluation 1</code>; ends <code>normal: 2</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/heap.js</code></summary><pre class="js">debugger;
+var o = {a: 1};
+debugger;
+o.a = 2;
+debugger;
+</pre></details>
+</article><article class="example" id="ex-dbg-bundle">
+<h3><a class="self" href="#ex-dbg-bundle">Three modules</a></h3>
+<p class="what">The entry module&#x27;s LoadRequestedModules, then Link, then Evaluate; each module of the bundle opens as a source of its own.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/bundle">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-LoadRequestedModules</code>, <code>sec-moduledeclarationlinking</code>, <code>sec-moduleevaluation</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>LoadRequestedModules 1</code>, then <code>Link 1</code>, then <code>Evaluate 1</code>; ends <code>normal: undefined</code>; prints <code>42</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/bundle.js</code></summary><pre class="js">// Flags: --bundle
+
+// JS_BUNDLE_MODULE:lib/math.mjs
+export function double(x) {
+  return x * 2;
+}
+// JS_BUNDLE_MODULE:lib/show.mjs
+import { double } from &quot;./math.mjs&quot;;
+export function show(x) {
+  print(double(x));
+}
+// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs
+import { show } from &quot;./lib/show.mjs&quot;;
+show(21);
+</pre></details>
+</article></section><section class="part" id="corners"><h2 class="part-title"><a class="self" href="#corners">Corners of the specification</a></h2><p>Programs that go where fewer readers go: Proxy traps, the job queue, using declarations, with, Annex B, regular expressions, top-level await, timeouts, iterator helpers.</p><article class="example" id="ex-run-proxy_traps">
+<h3><a class="self" href="#ex-run-proxy_traps">Proxy traps</a></h3>
+<p class="what">A get on a Proxy is the Proxy&#x27;s own [[Get]], which calls the handler&#x27;s get trap; every other trap is called the same way, and a missing one forwards to the target.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/proxy_traps">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>sec-proxy-object-internal-methods-and-internal-slots-get-p-receiver 1</code>; ends <code>normal: &quot;get:a,has:a,set:b,getOwnPropertyDescriptor:b,defineProperty:b,delete:b,ownKeys,getOwnPropertyDescriptor:a,defineProperty:c,getPrototypeOf,setPrototypeOf,isExtensible,preventExtensions|1|true|2|a,c|true&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/proxy_traps.js</code></summary><pre class="js">// Proxy exotic objects (§10.5): every trap is called with the target, and a
+// missing trap forwards to the target. Reflect.set with the Proxy as receiver
+// defines the property through the Proxy (OrdinarySetWithOwnDescriptor, §10.1.9.2).
+// expect: normal: &quot;get:a,has:a,set:b,getOwnPropertyDescriptor:b,defineProperty:b,delete:b,ownKeys,getOwnPropertyDescriptor:a,defineProperty:c,getPrototypeOf,setPrototypeOf,isExtensible,preventExtensions|1|true|2|a,c|true&quot;
+var log = [];
+var target = { a: 1 };
+var handler = {
+  get: function (t, k, r) { log.push(&quot;get:&quot; + String(k)); return Reflect.get(t, k, r); },
+  has: function (t, k) { log.push(&quot;has:&quot; + String(k)); return k in t; },
+  set: function (t, k, v, r) { log.push(&quot;set:&quot; + String(k)); return Reflect.set(t, k, v, r); },
+  deleteProperty: function (t, k) { log.push(&quot;delete:&quot; + String(k)); return delete t[k]; },
+  ownKeys: function (t) { log.push(&quot;ownKeys&quot;); return Reflect.ownKeys(t); },
+  getOwnPropertyDescriptor: function (t, k) {
+    log.push(&quot;getOwnPropertyDescriptor:&quot; + String(k));
+    return Object.getOwnPropertyDescriptor(t, k);
+  },
+  defineProperty: function (t, k, d) { log.push(&quot;defineProperty:&quot; + String(k)); return Reflect.defineProperty(t, k, d); },
+  getPrototypeOf: function (t) { log.push(&quot;getPrototypeOf&quot;); return Object.getPrototypeOf(t); },
+  setPrototypeOf: function (t, p) { log.push(&quot;setPrototypeOf&quot;); return Reflect.setPrototypeOf(t, p); },
+  isExtensible: function (t) { log.push(&quot;isExtensible&quot;); return Object.isExtensible(t); },
+  preventExtensions: function (t) { log.push(&quot;preventExtensions&quot;); return Reflect.preventExtensions(t); }
+};
+var p = new Proxy(target, handler);
+var a = p.a;
+var has = &quot;a&quot; in p;
+p.b = 2;
+var b = target.b;
+delete p.b;
+Reflect.ownKeys(p);
+Object.getOwnPropertyDescriptor(p, &quot;a&quot;);
+Object.defineProperty(p, &quot;c&quot;, { value: 3, configurable: true, enumerable: true });
+Object.getPrototypeOf(p);
+Object.setPrototypeOf(p, Object.prototype);
+Object.isExtensible(p);
+Object.preventExtensions(p);
+log.join(&quot;,&quot;) + &quot;|&quot; + a + &quot;|&quot; + has + &quot;|&quot; + b + &quot;|&quot; + Object.keys(target).join(&quot;,&quot;) + &quot;|&quot; +
+  (Object.isExtensible(target) === false)
+</pre></details>
+</article><article class="example" id="ex-run-promise_job_order">
+<h3><a class="self" href="#ex-run-promise_job_order">Promise jobs in order</a></h3>
+<p class="what">then calls PerformPromiseThen, which makes a job with NewPromiseReactionJob; the jobs run after the script in the order they were queued, and resolving with a promise takes two more.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/promise_job_order">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-newpromisereactionjob</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>NewPromiseReactionJob 1</code>; ends <code>normal: &quot;0&quot;</code>; prints <code>0,1,2,3,4</code>, <code>b,c,a,d</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/promise_job_order.js</code></summary><pre class="js">// expect: normal: &quot;0&quot;
+// print: 0,1,2,3,4
+// print: b,c,a,d
+// Promise jobs run in FIFO order after the Script (§9.5, §27.5.2); resolving
+// with a promise takes two more jobs (NewPromiseResolveThenableJob, then the
+// reaction that resolves).
+var log = [];
+Promise.resolve().then(function () { log.push(1); }).then(function () { log.push(3); });
+Promise.resolve().then(function () { log.push(2); }).then(function () { log.push(4); print(log.join(&quot;,&quot;)); });
+var order = [];
+var p = Promise.resolve(1);
+new Promise(function (r) { r(p); }).then(function () { order.push(&quot;a&quot;); });
+p.then(function () { order.push(&quot;b&quot;); }).then(function () { order.push(&quot;c&quot;); })
+  .then(function () { order.push(&quot;d&quot;); print(order.join(&quot;,&quot;)); });
+log.push(0);
+log.join(&quot;,&quot;)
+</pre></details>
+</article><article class="example" id="ex-run-using_dispose">
+<h3><a class="self" href="#ex-run-using_dispose">using declarations</a></h3>
+<p class="what">At the end of the block, DisposeResources calls each resource&#x27;s dispose method in the reverse order of the declarations; DisposableStack.prototype.dispose does the same.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/using_dispose">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-disposeresources</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>DisposeResources 1</code>; ends <code>normal: &quot;b,a,s&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/using_dispose.js</code></summary><pre class="js">// `using` declarations (§14.3.1) dispose their resources in reverse order when
+// the Block ends (DisposeResources, §7.5.5); DisposableStack.prototype.use too.
+// expect: normal: &quot;b,a,s&quot;
+var log = [];
+function res(n) { return { [Symbol.dispose]() { log.push(n); } }; }
+{
+  using a = res(&quot;a&quot;), b = res(&quot;b&quot;);
+}
+var stack = new DisposableStack();
+stack.use(res(&quot;s&quot;));
+stack.dispose();
+log.join()
+</pre></details>
+</article><article class="example" id="ex-run-s2_with">
+<h3><a class="self" href="#ex-run-s2_with">The with statement</a></h3>
+<p class="what">Inside with, ResolveBinding goes through GetIdentifierReference to the object Environment Record&#x27;s HasBinding, which reads @@unscopables.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/s2_with">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-object-environment-records-hasbinding-n</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>sec-object-environment-records-hasbinding-n 1</code>; ends <code>normal: &quot;1,5,outer,undefined,2&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/s2_with.js</code></summary><pre class="js">// The with statement (§14.11): names resolve in the object first, assignments
+// go to its properties, @@unscopables hides names, and the scope ends after.
+// expect: normal: &quot;1,5,outer,undefined,2&quot;
+var v = &quot;outer&quot;, a = 0, o = { a: 1, v: 2 };
+var r = [];
+with (o) { r.push(a); v = 5; }
+r.push(o.v, v);
+o[Symbol.unscopables] = { a: true };
+with (o) { r.push(typeof b); a = 2; }
+r.push(a);
+r.join()
+</pre></details>
+</article><article class="example" id="ex-run-annexb_block_function">
+<h3><a class="self" href="#ex-run-annexb_block_function">A function in a block, on a web browser&#x27;s host</a></h3>
+<p class="what">With the host a web browser, FunctionDeclarationInstantiation also gives the enclosing function a var binding of the block&#x27;s function (B.3.2.1): typeof f is undefined before the block and function after it.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/annexb_block_function">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-functiondeclarationinstantiation</code>.</p><p class="args">Run with <code>--web-browser</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>FunctionDeclarationInstantiation 1</code>; ends <code>normal: &quot;undefined,function,2&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/annexb_block_function.js</code></summary><pre class="js">// On a web-browser host, a FunctionDeclaration in a Block is also a var of the
+// enclosing function (§B.3.2.1), set when the declaration is evaluated.
+// args: --web-browser
+// expect: normal: &quot;undefined,function,2&quot;
+function g() {
+  var before = typeof f;
+  { function f() { return 2; } }
+  return [before, typeof f, f()].join();
+}
+g()
+</pre></details>
+</article><article class="example" id="ex-run-regexp_duplicate_named_groups">
+<h3><a class="self" href="#ex-run-regexp_duplicate_named_groups">Duplicate named groups</a></h3>
+<p class="what">Two groups of one name are an early error unless MightBothParticipate finds them in different alternatives; the check runs while the pattern is parsed.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/regexp_duplicate_named_groups">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-mightbothparticipate</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>MightBothParticipate 1</code>; ends <code>normal: undefined</code>; prints <code>SyntaxError SyntaxError SyntaxError ok ok</code>, <code>SyntaxError</code>, <code>y</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/regexp_duplicate_named_groups.js</code></summary><pre class="js">// Two GroupSpecifiers with one CapturingGroupName are a SyntaxError unless
+// some Disjunction has them in different Alternatives (§22.2.1.1, Pattern ::
+// Disjunction; MightBothParticipate, §22.2.1.4), in nested Disjunctions too,
+// for new RegExp and for a RegularExpressionLiteral (§13.2.7.2).
+// expect: normal: undefined
+// print: SyntaxError SyntaxError SyntaxError ok ok
+// print: SyntaxError
+// print: y
+function t(s) { try { new RegExp(s); return &quot;ok&quot;; } catch (e) { return e.name; } }
+print(t(&quot;(?:(?&lt;a&gt;x)|y)(?:z|(?&lt;a&gt;w))&quot;) + &quot; &quot; + t(&quot;(?&lt;a&gt;x)(?:|(?&lt;a&gt;z))&quot;) + &quot; &quot; + t(&quot;(?&lt;a&gt;(?&lt;a&gt;x))&quot;) + &quot; &quot; +
+  t(&quot;(?&lt;a&gt;x)|(?&lt;a&gt;y)&quot;) + &quot; &quot; + t(&quot;((?&lt;a&gt;x)|y|(?:z|(?&lt;a&gt;w)))&quot;));
+try { eval(&quot;/(?:(?&lt;a&gt;x)|y)(?:z|(?&lt;a&gt;w))\\k&lt;a&gt;/&quot;); print(&quot;parsed&quot;); } catch (e) { print(e.name); }
+print(/(?:(?&lt;a&gt;x)|(?&lt;a&gt;y))\k&lt;a&gt;/.exec(&quot;yy&quot;).groups.a);
+</pre></details>
+</article><article class="example" id="ex-run-module_top_level_await">
+<h3><a class="self" href="#ex-run-module_top_level_await">Top-level await</a></h3>
+<p class="what">A module whose body awaits is evaluated by ExecuteAsyncModule, which runs the body with AsyncBlockStart, so the rest of the body runs from the promise jobs. Read literally, AsyncBlockStart&#x27;s step 4 has no answer (erratum AsyncBlockStartAwaitResult) and the run stops there.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/module_top_level_await">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-asyncblockstart</code>; pauses on the machine's stops.</p><p class="args">Run with <code>--module</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>AsyncBlockStart 1</code>; ends <code>normal: undefined</code>; prints <code>before</code>, <code>3 after</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/module_top_level_await.js</code></summary><pre class="js">// module: yes
+// expect: normal: undefined
+// print: before
+// print: 3 after
+// A Module whose body contains `await` has [[HasTLA]] true: ExecuteModule
+// runs it with AsyncBlockStart (§16.2.1.7.3.2 step 4.b), so the body suspends
+// at each Await and the rest of it runs from the promise jobs.
+print(&quot;before&quot;);
+var a = await Promise.resolve(1);
+var b = await 2;
+print((a + b) + &quot; after&quot;);
+</pre></details>
+</article><article class="example" id="ex-run-settimeout_order">
+<h3><a class="self" href="#ex-run-settimeout_order">Timeouts after promise jobs</a></h3>
+<p class="what">The test host&#x27;s setTimeout performs HostEnqueueTimeoutJob: the promise jobs run first, then each timeout job once its delay has passed on the host&#x27;s clock.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/settimeout_order">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: undefined</code>; prints <code>function,2,undefined</code>, <code>sync</code>, <code>promise</code>, <code>t0</code>, <code>t5</code>, <code>t10,true</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/settimeout_order.js</code></summary><pre class="js">// expect: normal: undefined
+// print: function,2,undefined
+// print: sync
+// print: promise
+// print: t0
+// print: t5
+// print: t10,true
+// setTimeout (the test host&#x27;s global) performs HostEnqueueTimeoutJob of a Job that calls its callback:
+// the promise Jobs run first, then each timeout Job once its delay has passed; a negative delay is 0.
+var before = Date.now();
+print([typeof setTimeout, setTimeout.length, typeof setTimeout(function () { print(&quot;t0&quot;); }, -3)].join(&quot;,&quot;));
+setTimeout(function () { print(&quot;t5&quot;); }, 5);
+setTimeout(function () { print([&quot;t10&quot;, Date.now() - before &gt;= 10].join(&quot;,&quot;)); }, 10);
+Promise.resolve().then(function () { print(&quot;promise&quot;); });
+print(&quot;sync&quot;);
+</pre></details>
+</article><article class="example" id="ex-run-iterator_helpers">
+<h3><a class="self" href="#ex-run-iterator_helpers">Iterator helpers</a></h3>
+<p class="what">Iterator.prototype.map and the other helpers make iterator objects whose next runs the helper&#x27;s steps; Iterator.from, concat and zip build on the same protocol.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/iterator_helpers">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-iterator.prototype.map</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>Iterator.prototype.map 1</code>; ends <code>normal: &quot;10,30,50|2,3|3,4,5|1,1,2,2|15|true,false,3|1+2|a,b,c|1:x,2:y|u,v,w&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/iterator_helpers.js</code></summary><pre class="js">// expect: normal: &quot;10,30,50|2,3|3,4,5|1,1,2,2|15|true,false,3|1+2|a,b,c|1:x,2:y|u,v,w&quot;
+// Iterator helpers (§27.1.3.3), Iterator.from, Iterator.concat and Iterator.zip (§27.1.3.2).
+var parts = [];
+parts.push([1, 2, 3, 4, 5].values().filter(function (x) { return x % 2; })
+  .map(function (x) { return x * 10; }).toArray().join(&quot;,&quot;));
+parts.push([1, 2, 3, 4].values().drop(1).take(2).toArray().join(&quot;,&quot;));
+parts.push([1, 2, 3, 4, 5].values().drop(2).toArray().join(&quot;,&quot;));
+parts.push([1, 2].values().flatMap(function (x) { return [x, x]; }).toArray().join(&quot;,&quot;));
+parts.push([1, 2, 3, 4, 5].values().reduce(function (a, b) { return a + b; }));
+parts.push([[1, 2].values().some(function (x) { return x &gt; 1; }),
+  [1, 2].values().every(function (x) { return x &gt; 1; }),
+  [1, 2, 3].values().find(function (x) { return x &gt; 2; })].join(&quot;,&quot;));
+var seen = [];
+[1, 2].values().forEach(function (x) { seen.push(x); });
+parts.push(seen.join(&quot;+&quot;));
+var n = 0;
+var plain = { next: function () { n++; return n &lt;= 3 ? { value: &quot;abc&quot;[n - 1], done: false } : { done: true }; } };
+parts.push(Iterator.from(plain).toArray().join(&quot;,&quot;));
+parts.push(Iterator.zip([[1, 2], [&quot;x&quot;, &quot;y&quot;, &quot;z&quot;]]).map(function (p) { return p.join(&quot;:&quot;); }).toArray().join(&quot;,&quot;));
+parts.push(Iterator.concat([&quot;u&quot;], [&quot;v&quot;, &quot;w&quot;]).toArray().join(&quot;,&quot;));
+parts.join(&quot;|&quot;)
+</pre></details>
+</article></section><section class="part" id="errata"><h2 class="part-title"><a class="self" href="#errata">Errata: resolved readings and literal Assert stops</a></h2><p>Each of these programs reaches a sentence documented on the Errata page (spec/DECISIONS.md). Where SpecTec bakes in the test262 or proposed reading, the program runs as engines and test262 expect; where SpecTec keeps the literal text, the run pauses and stops at the exact Assert or step where the text gives no answer.</p><article class="example" id="ex-run-number_multiply_zero_sign">
+<h3><a class="self" href="#ex-run-number_multiply_zero_sign">NumberMultiplyZeroSign: +0 × −5</a></h3>
+<p class="what">Number::multiply step 6 gives 𝔽(0), which is +0, where IEEE 754 and every engine give −0. The default reading gives −0, so 1 / (0 * -5) is -Infinity; the literal text gives +0 and Infinity.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/number_multiply_zero_sign">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-numeric-types-number-multiply 6</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>Number::multiply 6</code>; ends <code>normal: undefined</code>; prints <code>-Infinity,-Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/number_multiply_zero_sign.js</code></summary><pre class="js">// expect: normal: undefined
+// print: -Infinity,-Infinity,Infinity,-Infinity,Infinity,Infinity,-Infinity
+// Number::multiply step 6 gives 𝔽(0) = +0 for +0 × -5; the clause&#x27;s
+// description (IEEE 754-2019) and every engine give -0 (Erratum
+// NumberMultiplyZeroSign, read by default as proposed: no test262 assertion
+// covers the case). A product that underflows keeps
+// its sign by 𝔽 itself.
+print(String([1 / (0 * -5), 1 / (-5 * 0), 1 / (0 * 5), 1 / (-0 * 5), 1 / (-0 * -5), 1 / (0 * 0),
+  1 / (1e-300 * -1e-300)]));
+</pre></details>
+</article><article class="example" id="ex-run-errata_sort_infinite_comparator">
+<h3><a class="self" href="#ex-run-errata_sort_infinite_comparator">SortInfiniteComparator: a comparator returning ±Infinity</a></h3>
+<p class="what">SortIndexedProperties takes ℝ of the comparator&#x27;s result, which ±∞ does not have. The default reading orders by the result&#x27;s sign; the literal text stops in SortIndexedProperties.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/errata_sort_infinite_comparator">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-sortindexedproperties</code>; pauses on the machine's stops.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>SortIndexedProperties 1</code>; ends <code>normal: &quot;1,2,3|3,2,1&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/errata_sort_infinite_comparator.js</code></summary><pre class="js">// expect: normal: &quot;1,2,3|3,2,1&quot;
+// A comparator that returns ±Infinity (Erratum SortInfiniteComparator): under
+// the test262 reading the order is the host&#x27;s, and the test host&#x27;s goes by the
+// result&#x27;s sign.
+var r = [];
+r.push([3, 1, 2].sort(function (a, b) { return a &lt; b ? -Infinity : a &gt; b ? Infinity : 0; }).join());
+r.push([1, 3, 2].sort(function (a, b) { return a &lt; b ? Infinity : a &gt; b ? -Infinity : 0; }).join());
+r.join(&quot;|&quot;);
+</pre></details>
+</article><article class="example" id="ex-run-erratum_unit_chain_child">
+<h3><a class="self" href="#ex-run-erratum_unit_chain_child">UnitChainChild: a labelled function in an if body</a></h3>
+<p class="what">IsLabelledFunction takes &quot;the LabelledItem of&quot; a Statement that has one only through its chain of single children. The default reading follows the chain and the early error makes it a SyntaxError; the literal text stops at IsLabelledFunction step 2.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/erratum_unit_chain_child">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-islabelledfunction</code>; pauses on the machine's stops.</p><p class="args">Run with <code>--web-browser</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>IsLabelledFunction 1</code>; ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/erratum_unit_chain_child.js</code></summary><pre class="js">// IsLabelledFunction takes &quot;the |LabelledItem| of&quot; a |Statement| node through
+// its unit chain (Erratum UnitChainChild, test262&#x27;s reading): the labelled
+// function in an if body is the Early Error of sec-if-statement-static-semantics-early-errors.
+// args: --web-browser
+// expect: throw: SyntaxError
+if (1) l: function f() {}
+</pre></details>
+</article><article class="example" id="ex-dbg-async">
+<h3><a class="self" href="#ex-dbg-async">AsyncBlockStartAwaitResult: an async function</a></h3>
+<p class="what">An async function&#x27;s body runs under AsyncBlockStart and suspends at each await. Its step 4, read literally, has no answer for the result of the body&#x27;s last await, and the run stops there; the default reading goes on, and the function&#x27;s promise resolves to 2.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/async">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-asyncblockstart</code>; pauses on the machine's stops.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>AsyncBlockStart 1</code>; ends <code>normal: [object #N]</code>; prints <code>2</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/async.js</code></summary><pre class="js">async function h() {
+  var a = 1;
+  await a;
+  a = a + 1;
+  return a;
+}
+var p = h();
+p.then(function (v) { print(v); });
+var z = 3;
+</pre></details>
+</article><article class="example" id="ex-run-atomics_wait_sync_timeout">
+<h3><a class="self" href="#ex-run-atomics_wait_sync_timeout">DoWaitSyncTimeout: Atomics.wait that times out</a></h3>
+<p class="what">On a host whose agent can block, DoWait waits until its timeout. The default reading gives the woken waiter the result &quot;timed-out&quot; and removes it from the WaiterList; as the text is written it returns &quot;ok&quot; and leaves the waiter in the WaiterList, so the second Atomics.wait fails AddWaiter step 2&#x27;s Assert.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/atomics_wait_sync_timeout">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-dowait</code>; pauses on the machine's stops.</p><p class="args">Run with <code>--can-block</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>DoWait 1</code>; ends <code>normal: undefined</code>; prints <code>timed-out,timed-out,true,true,0 ; not-equal</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/atomics_wait_sync_timeout.js</code></summary><pre class="js">// Atomics.wait on an agent that can block (§25.4.3.14, SuspendThisAgent
+// §25.4.3.11): with one agent nothing notifies the waiter, so it wakes when
+// the host&#x27;s clock reaches its timeout time. Erratum DoWaitSyncTimeout: the
+// woken waiter&#x27;s [[Result]] is &quot;timed-out&quot; and it leaves the WaiterList, so a
+// second wait on the same location does not fail AddWaiter step 2&#x27;s Assert
+// and a later Atomics.notify finds no waiter.
+// args: --can-block
+// expect: normal: undefined
+// print: timed-out,timed-out,true,true,0 ; not-equal
+var i32 = new Int32Array(new SharedArrayBuffer(8));
+var t0 = Date.now();
+var first = Atomics.wait(i32, 0, 0, 10);
+var t1 = Date.now();
+var second = Atomics.wait(i32, 0, 0, 5);
+var t2 = Date.now();
+var notified = Atomics.notify(i32, 0);
+Atomics.store(i32, 1, 3);
+print([first, second, t1 - t0 &gt;= 10, t2 - t1 &gt;= 5, notified].join() + &quot; ; &quot; + Atomics.wait(i32, 1, 0, 10));
+void 0;
+</pre></details>
+</article><article class="example" id="ex-run-dynamic_function_private_identifiers">
+<h3><a class="self" href="#ex-run-dynamic_function_private_identifiers">CreateDynamicFunctionPrivateIdentifiers: new Function with #names</a></h3>
+<p class="what">CreateDynamicFunction parses the parameters and the body on their own, where a private name refers to no class. The default reading makes that a SyntaxError for both (test262 requires it of the body); the literal text has no such check and makes the function.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/dynamic_function_private_identifiers">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-createdynamicfunction</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>CreateDynamicFunction 1</code>; ends <code>normal: undefined</code>; prints <code>body: SyntaxError</code>, <code>params: SyntaxError</code>, <code>generator body: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/dynamic_function_private_identifiers.js</code></summary><pre class="js">// expect: normal: undefined
+// print: body: SyntaxError
+// print: params: SyntaxError
+// print: generator body: SyntaxError
+// CreateDynamicFunction steps 18-29: no goal it parses with applies
+// AllPrivateIdentifiersValid (Erratum CreateDynamicFunctionPrivateIdentifiers).
+// The default reading, the proposed one, adds after step 25
+// &quot;If AllPrivateIdentifiersValid of _body_ with argument « » is false, throw a
+// SyntaxError exception&quot; and the same of _params_ (spec/formal/readings.emu):
+// engines parse the parameters and the body as one source text and throw for
+// both. The test262 reading checks the body only, which is all test262&#x27;s
+// built-ins/Function/private-identifiers-not-empty.js asserts
+// (dynamic_function_private_identifiers_test262.js); the literal text checks
+// neither (dynamic_function_private_identifiers_literal.js).
+try { new Function(&quot;o&quot;, &quot;return o.#f&quot;); print(&quot;body: no error&quot;); }
+catch (e) { print(&quot;body: &quot; + e.constructor.name); }
+try { new Function(&quot;a = {}.#g&quot;, &quot;&quot;); print(&quot;params: no error&quot;); }
+catch (e) { print(&quot;params: &quot; + e.constructor.name); }
+var GeneratorFunction = Object.getPrototypeOf(function* () {}).constructor;
+try { GeneratorFunction(&quot;o&quot;, &quot;yield o.#h&quot;); print(&quot;generator body: no error&quot;); }
+catch (e) { print(&quot;generator body: &quot; + e.constructor.name); }
+</pre></details>
+</article><article class="example" id="ex-run-errata_unregister_two_cells">
+<h3><a class="self" href="#ex-run-errata_unregister_two_cells">UnregisterIteratesCopy: two cells with one token</a></h3>
+<p class="what">FinalizationRegistry.prototype.unregister removes cells from the list it iterates. The default reading removes both cells with the token, so a second unregister returns false; as written it skips the second cell, and the second call returns true.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/errata_unregister_two_cells">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-finalization-registry.prototype.unregister</code>.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>FinalizationRegistry.prototype.unregister 1</code>; ends <code>normal: &quot;true|false&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/errata_unregister_two_cells.js</code></summary><pre class="js">// expect: normal: &quot;true|false&quot;
+// Two cells with one unregister token, in a row (Erratum
+// UnregisterIteratesCopy): the test262 reading removes both.
+var fr = new FinalizationRegistry(function () {});
+var token = {};
+fr.register({}, 1, token);
+fr.register({}, 2, token);
+[fr.unregister(token), fr.unregister(token)].join(&quot;|&quot;);
+</pre></details>
+</article><article class="example" id="ex-run-date_utc_large_local_time">
+<h3><a class="self" href="#ex-run-date_utc_large_local_time">GetUTCEpochNanosecondsNaN: a local time out of range</a></h3>
+<p class="what">setHours(1e21) asks UTC for a local time far out of range: GetUTCEpochNanoseconds finds no time value, and the Assert of its step 4 fails. SpecTec keeps the literal text here, so the run stops at the failed Assert.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/date_utc_large_local_time">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-getutcepochnanoseconds</code>; pauses on the machine's stops.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>GetUTCEpochNanoseconds 1</code>, then <code>GetUTCEpochNanoseconds 4</code>; ends <code>stop: assertFailed sec-getutcepochnanoseconds#0 4</code>; prints <code>NaN</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/date_utc_large_local_time.js</code></summary><pre class="js">// expect: stop: assertFailed sec-getutcepochnanoseconds#0 4
+// UTC ( t ) of a large finite local time: setHours(1e21) gives t = 3.6e24,
+// GetUTCEpochNanoseconds step 1&#x27;s MakeDay finds no time value on the month&#x27;s
+// first day (NaN), and the Assert of its step 4 fails. No test262 test
+// reaches it, and the default reading is the text as written (Erratum
+// GetUTCEpochNanosecondsNaN), so the run stops.
+// Engines give NaN. The UTC setter does not call UTC ( t ): NaN.
+print(String(new Date(0).setUTCHours(1e21)));
+print(String(new Date(0).setHours(1e21)));
+</pre></details>
+</article><article class="example" id="ex-run-regexp_lastindex_inside_pair">
+<h3><a class="self" href="#ex-run-regexp_lastindex_inside_pair">GetMatchStringStartAfterEnd: lastIndex inside a surrogate pair</a></h3>
+<p class="what">With /u and lastIndex on the second half of a surrogate pair, RegExpBuiltinExec starts the empty match at the pair&#x27;s start, and GetMatchString&#x27;s Assert (start before end) fails at step 1. SpecTec keeps the literal text here, so the run stops at the failed Assert.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/regexp_lastindex_inside_pair">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-regexpbuiltinexec</code>; pauses on the machine's stops.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>RegExpBuiltinExec 1</code>, then <code>GetMatchString 1</code>; ends <code>stop: assertFailed sec-getmatchstring#0 1</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/regexp_lastindex_inside_pair.js</code></summary><pre class="js">// expect: stop: assertFailed sec-getmatchstring#0 1
+// RegExpBuiltinExec with /u and lastIndex on the trailing surrogate of a pair:
+// step 13.b starts at the code point that contains it, the empty pattern
+// matches there with [[EndIndex]] 0, and step 24&#x27;s Match Record { 1, 0 } fails
+// GetMatchString step 1&#x27;s Assert. No test262 test sets lastIndex inside a
+// pair before an empty match; the default reading is the text as written
+// (Erratum GetMatchStringStartAfterEnd), so the run stops.
+// V8 and SpiderMonkey report index 0; JavaScriptCore reports index 1.
+// (The non-empty case, which does not stop, is
+// regexp_lastindex_inside_pair_nonempty.js.)
+var r = /(?:)/gu;
+r.lastIndex = 1;
+r.exec(&quot;\u{1F600}&quot;);
+</pre></details>
+</article><article class="example" id="ex-run-promise_job_abrupt">
+<h3><a class="self" href="#ex-run-promise_job_abrupt">PromiseJobAbruptCompletion: a reaction job that throws</a></h3>
+<p class="what">A promise reaction job, made by NewPromiseReactionJob, returns a throw completion when the species constructor&#x27;s resolve function throws, which a job must not do. SpecTec keeps the literal text here, so the run stops when the job returns.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/promise_job_abrupt">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-newpromisereactionjob</code>; pauses on the machine's stops.</p><ul class="checks"><li><span class="build">The specification</span>: pauses at <code>NewPromiseReactionJob 1</code>; ends <code>stop: assertFailed sec-jobs -</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/promise_job_abrupt.js</code></summary><pre class="js">// expect: stop: assertFailed sec-jobs -
+// NewPromiseReactionJob 1.i returns `? Call(promiseCapability.[[Resolve]], …)`;
+// with a species constructor whose resolve throws, the Job returns a throw
+// completion, which §9.5 says a Job must not. No test262 test makes a
+// reaction Job&#x27;s resolving function throw; the default reading is the text
+// as written (Erratum PromiseJobAbruptCompletion), so the run
+// stops. (Engine hosts differ: node goes on silently; the SpiderMonkey shell
+// and Bun, with JavaScriptCore, report the throw and go on.)
+function Bad(executor) {
+  executor(function () { throw new Error(&quot;boom&quot;); }, function () {});
+}
+Bad[Symbol.species] = Bad;
+var p = Promise.resolve(1);
+p.constructor = Bad;
+p.then(function (v) { print(&quot;handler &quot; + v); return v; });
+Promise.resolve(3).then(function () { print(&quot;a later Job&quot;); });
+</pre></details>
+</article></section><section class="part" id="proposal"><h2 class="part-title"><a class="self" href="#proposal">A proposal: import defer</a></h2><p>Three programs that use the syntax of tc39/proposal-defer-import-eval. Under the specification&#x27;s build each is a SyntaxError, since ECMA-262 has no such syntax. Under the build &quot;Proposal: import defer&quot;, made from a branch where the proposal&#x27;s text is merged into the specification&#x27;s, each runs, and the breakpoints stop in the proposal&#x27;s own algorithms.</p><p>What it took to apply the proposal: <a href="proposal.html">Applying a proposal</a>.</p><article class="example" id="ex-run-import_defer_basic">
+<h3><a class="self" href="#ex-run-import_defer_basic">import defer: a namespace evaluated at its first read</a></h3>
+<p class="what">With proposal-defer-import-eval, `import defer * as heavy` links heavy.mjs with the graph but leaves it unevaluated: InitializeEnvironment asks GetModuleNamespace for its ~defer~ namespace, and the first read of an export goes through the namespace&#x27;s [[Get]] and GetModuleExportsList to EvaluateModuleSync. Reading %Symbol.toStringTag% does not evaluate it.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/import_defer_basic&amp;build=defer">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-getmodulenamespace 1</code>, <code>sec-EvaluateModuleSync 1</code>.</p><p class="args">Run with <code>--bundle</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 3): import defer</span>: pauses at <code>GetModuleNamespace 1</code>, then <code>EvaluateModuleSync 1</code>, then <code>EvaluateModuleSync 1</code>; ends <code>normal: undefined</code>; prints <code>[object Deferred Module]</code>, <code>main starts; heavy evaluates; read 42; read again 42</code>.</li><li><span class="build">The specification</span>: ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/import_defer_basic.js</code></summary><pre class="js">// args: --bundle
+// expect: throw: SyntaxError
+// ECMA-262 as it stands has no `import defer` and no `import.defer()`: this is a SyntaxError.
+// With proposal-defer-import-eval applied (branch proposal-defer-import-eval; the debugger&#x27;s build
+// &quot;Proposal: import defer&quot;) it completes normally and prints:
+//   [object Deferred Module]
+//   main starts; heavy evaluates; read 42; read again 42
+// proposal-defer-import-eval: `import defer * as heavy` loads and links heavy.mjs with the graph but evaluates it at the
+// first read of an export (the namespace&#x27;s [[Get]]: GetModuleExportsList, EvaluateModuleSync); %Symbol.toStringTag%
+// is read without evaluating it (IsSymbolLikeNamespaceKey), and is &quot;Deferred Module&quot; (ModuleNamespaceCreate).
+// JS_BUNDLE_MODULE:log.mjs
+export const log = [];
+// JS_BUNDLE_MODULE:heavy.mjs
+import { log } from &quot;./log.mjs&quot;;
+log.push(&quot;heavy evaluates&quot;);
+export const answer = 42;
+// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs
+import { log } from &quot;./log.mjs&quot;;
+import defer * as heavy from &quot;./heavy.mjs&quot;;
+log.push(&quot;main starts&quot;);
+print(Object.prototype.toString.call(heavy));
+log.push(&quot;read &quot; + heavy.answer);
+log.push(&quot;read again &quot; + heavy.answer);
+print(log.join(&quot;; &quot;));
+</pre></details>
+</article><article class="example" id="ex-run-import_defer_dynamic">
+<h3><a class="self" href="#ex-run-import_defer_dynamic">import.defer(): a promise for an unevaluated namespace</a></h3>
+<p class="what">`import.defer()` loads and links the module, and ContinueDynamicImport&#x27;s ~defer~ branch asks GatherAsynchronousTransitiveDependencies what must be evaluated first (nothing here) before it settles the promise. The module exports `then`, but a deferred namespace has no `then` (IsSymbolLikeNamespaceKey), so settling the promise does not evaluate it; reading `x` does.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/import_defer_dynamic&amp;build=defer">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-ContinueDynamicImport 1</code>, <code>sec-GatherAsynchronousTransitiveDependencies 1</code>, <code>sec-IsSymbolLikeNamespaceKey 1</code>.</p><p class="args">Run with <code>--bundle</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 3): import defer</span>: pauses at <code>ContinueDynamicImport 1</code>, then <code>GatherAsynchronousTransitiveDependencies 1</code>, then <code>IsSymbolLikeNamespaceKey 1</code>, then <code>IsSymbolLikeNamespaceKey 1</code>, then <code>IsSymbolLikeNamespaceKey 1</code>, then <code>IsSymbolLikeNamespaceKey 1</code>, then <code>IsSymbolLikeNamespaceKey 1</code>; ends <code>normal: undefined</code>; prints <code>promise settled; then in ns: false; dep evaluates; x is 1</code>.</li><li><span class="build">The specification</span>: ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/import_defer_dynamic.js</code></summary><pre class="js">// args: --bundle
+// expect: throw: SyntaxError
+// ECMA-262 as it stands has no `import defer` and no `import.defer()`: this is a SyntaxError.
+// With proposal-defer-import-eval applied (branch proposal-defer-import-eval; the debugger&#x27;s build
+// &quot;Proposal: import defer&quot;) it completes normally and prints:
+//   promise settled; then in ns: false; dep evaluates; x is 1
+// proposal-defer-import-eval: `import.defer()` settles with a deferred namespace without evaluating the module
+// (ContinueDynamicImport, GatherAsynchronousTransitiveDependencies finds nothing); &quot;then&quot; is not an export of a
+// deferred namespace (GetModuleNamespace), so the promise&#x27;s resolution does not evaluate it either
+// (IsSymbolLikeNamespaceKey); reading `x` does.
+// JS_BUNDLE_MODULE:dep.mjs
+globalThis.order.push(&quot;dep evaluates&quot;);
+export function then(resolve) { globalThis.order.push(&quot;then called&quot;); resolve(&quot;oops&quot;); }
+export const x = 1;
+// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs
+globalThis.order = [];
+const ns = await import.defer(&quot;./dep.mjs&quot;);
+order.push(&quot;promise settled&quot;);
+order.push(&quot;then in ns: &quot; + (&quot;then&quot; in ns));
+order.push(&quot;x is &quot; + ns.x);
+print(order.join(&quot;; &quot;));
+</pre></details>
+</article><article class="example" id="ex-run-import_defer_tla">
+<h3><a class="self" href="#ex-run-import_defer_tla">import defer and top-level await</a></h3>
+<p class="what">The proposal&#x27;s README graph: c is deferred, but its dependency d awaits at top level, so InnerModuleEvaluation asks GatherAsynchronousTransitiveDependencies for c&#x27;s asynchronous dependencies and evaluates d (and e) with the graph; f and c wait for the first read of c&#x27;s namespace, which EvaluateModuleSync evaluates synchronously.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/import_defer_tla&amp;build=defer">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-GatherAsynchronousTransitiveDependencies 1</code>, <code>sec-EvaluateModuleSync 1</code>.</p><p class="args">Run with <code>--bundle</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 3): import defer</span>: pauses at <code>GatherAsynchronousTransitiveDependencies 1</code>, then <code>GatherAsynchronousTransitiveDependencies 1</code>, then <code>GatherAsynchronousTransitiveDependencies 1</code>, then <code>GatherAsynchronousTransitiveDependencies 1</code>, then <code>GatherAsynchronousTransitiveDependencies 1</code>, then <code>EvaluateModuleSync 1</code>; ends <code>normal: undefined</code>; prints <code>before access: b, e, d, a</code>, <code>after access: b, e, d, a, f, c</code>.</li><li><span class="build">The specification</span>: ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/import_defer_tla.js</code></summary><pre class="js">// args: --bundle
+// expect: throw: SyntaxError
+// ECMA-262 as it stands has no `import defer` and no `import.defer()`: this is a SyntaxError.
+// With proposal-defer-import-eval applied (branch proposal-defer-import-eval; the debugger&#x27;s build
+// &quot;Proposal: import defer&quot;) it completes normally and prints:
+//   before access: b, e, d, a
+//   after access: b, e, d, a, f, c
+// proposal-defer-import-eval, the README&#x27;s graph: c is deferred, but its dependency d has top-level await, so d and
+// its dependency e evaluate with the graph (InnerModuleEvaluation, GatherAsynchronousTransitiveDependencies); f and
+// c wait for the first read of c&#x27;s namespace.
+// JS_BUNDLE_MODULE:order.mjs
+export const order = [];
+// JS_BUNDLE_MODULE:b.mjs
+import { order } from &quot;./order.mjs&quot;;
+order.push(&quot;b&quot;);
+// JS_BUNDLE_MODULE:e.mjs
+import { order } from &quot;./order.mjs&quot;;
+order.push(&quot;e&quot;);
+// JS_BUNDLE_MODULE:d.mjs
+import { order } from &quot;./order.mjs&quot;;
+import &quot;./e.mjs&quot;;
+await 0;
+order.push(&quot;d&quot;);
+// JS_BUNDLE_MODULE:f.mjs
+import { order } from &quot;./order.mjs&quot;;
+order.push(&quot;f&quot;);
+// JS_BUNDLE_MODULE:c.mjs
+import { order } from &quot;./order.mjs&quot;;
+import &quot;./d.mjs&quot;;
+import &quot;./f.mjs&quot;;
+order.push(&quot;c&quot;);
+export let value = 2;
+// JS_BUNDLE_MODULE_ENTRYPOINT:a.mjs
+import { order } from &quot;./order.mjs&quot;;
+import &quot;./b.mjs&quot;;
+import defer * as c from &quot;./c.mjs&quot;;
+order.push(&quot;a&quot;);
+print(&quot;before access: &quot; + order.join(&quot;, &quot;));
+c.value;
+print(&quot;after access: &quot; + order.join(&quot;, &quot;));
+</pre></details>
+</article></section><section class="part" id="proposals-117"><h2 class="part-title"><a class="self" href="#proposals-117">TC39 #117 agenda proposals (November 2026)</a></h2><p>Thirteen more ECMA-262 proposals from the 117th TC39 plenary agenda (Stages 0–3, alongside import defer above). Each runs under its own lazy-loaded WebAssembly build and pauses inside the proposal&#x27;s specification algorithm; under the baseline specification build each shows how ECMA-262 behaves today.</p><article class="example" id="ex-dbg-proposal_import_text">
+<h3><a class="self" href="#ex-dbg-proposal_import_text">Stage 3: Import Text (with { type: &quot;text&quot; })</a></h3>
+<p class="what">HostLoadImportedModule dispatches on the type: &quot;text&quot; import attribute to CreateTextModule, wrapping the UTF-8 decoded text in a Synthetic Module Record shared between static and dynamic imports.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_import_text&amp;build=import-text">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-create-text-module 1</code>.</p><p class="args">Run with <code>--bundle</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 3): Import Text</span>: pauses at <code>CreateTextModule 1</code>; ends <code>normal: undefined</code>; prints <code>Hello from ECMA-262 Import Text! | cached=true</code>.</li><li><span class="build">The specification</span>: ends <code>throw: TypeError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_import_text.js</code></summary><pre class="js">// JS_BUNDLE_MODULE:greeting.txt
+Hello from ECMA-262 Import Text!
+// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs
+import greeting from &quot;./greeting.txt&quot; with { type: &quot;text&quot; };
+const dyn = await import(&quot;./greeting.txt&quot;, { with: { type: &quot;text&quot; } });
+print(greeting.trim() + &quot; | cached=&quot; + (greeting === dyn.default));
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_thenable_curtailment">
+<h3><a class="self" href="#ex-dbg-proposal_thenable_curtailment">Stage 3: Thenable Curtailment</a></h3>
+<p class="what">Promise.resolve inspects whether looking up &quot;then&quot; could run user code via RequiresDeferredPromiseResolution, then dispatches user-defined thenables through PerformPromiseResolveThenable.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_thenable_curtailment&amp;build=thenable-curtailment">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-perform-promise-resolve-thenable 1</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 3): Thenable Curtailment</span>: pauses at <code>PerformPromiseResolveThenable 1</code>; ends <code>normal: undefined</code>; prints <code>then-called -&gt; microtask -&gt; resolved:42</code>.</li><li><span class="build">The specification</span>: ends <code>normal: undefined</code>; prints <code>then-called -&gt; microtask -&gt; resolved:42</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_thenable_curtailment.js</code></summary><pre class="js">const events = [];
+const thenable = {
+  then(resolve) {
+    events.push(&quot;then-called&quot;);
+    resolve(42);
+  }
+};
+const p = Promise.resolve(thenable);
+Promise.resolve().then(() =&gt; events.push(&quot;microtask&quot;));
+p.then((v) =&gt; {
+  events.push(&quot;resolved:&quot; + v);
+  print(events.join(&quot; -&gt; &quot;));
+});
+void 0;
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_deferred_reexports">
+<h3><a class="self" href="#ex-dbg-proposal_deferred_reexports">Stage 2.7: Deferred Re-exports (export defer)</a></h3>
+<p class="what">Importing barrel.mjs links export defer { x } from &quot;./heavy.mjs&quot; without evaluating heavy.mjs; reading barrel.x triggers EnsureDeferredExportEvaluated on the module namespace.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_deferred_reexports&amp;build=deferred-reexports">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-EnsureDeferredExportEvaluated 1</code>.</p><p class="args">Run with <code>--bundle</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 2.7): Deferred Re-exports</span>: pauses at <code>EnsureDeferredExportEvaluated 1</code>; ends <code>normal: undefined</code>; prints <code>after barrel import: barrel</code>, <code>after reading barrel.x=99: barrel,heavy</code>.</li><li><span class="build">The specification</span>: ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_deferred_reexports.js</code></summary><pre class="js">// JS_BUNDLE_MODULE:log.mjs
+export const events = [];
+// JS_BUNDLE_MODULE:heavy.mjs
+import { events } from &quot;./log.mjs&quot;;
+events.push(&quot;heavy&quot;);
+export const x = 99;
+// JS_BUNDLE_MODULE:barrel.mjs
+import { events } from &quot;./log.mjs&quot;;
+export defer { x } from &quot;./heavy.mjs&quot;;
+events.push(&quot;barrel&quot;);
+// JS_BUNDLE_MODULE_ENTRYPOINT:main.mjs
+import { events } from &quot;./log.mjs&quot;;
+import * as barrel from &quot;./barrel.mjs&quot;;
+print(&quot;after barrel import: &quot; + events.join(&quot;,&quot;));
+const v = barrel.x;
+print(&quot;after reading barrel.x=&quot; + v + &quot;: &quot; + events.join(&quot;,&quot;));
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_json_parseimmutable">
+<h3><a class="self" href="#ex-dbg-proposal_json_parseimmutable">Stage 2.7: JSON.parse Options (freeze &amp; nullPrototypeObjects)</a></h3>
+<p class="what">CreateJSONParseOptions validates the options bag for { freeze: true } and { nullPrototypeObjects: true }, producing frozen null-prototype graphs or mutable null-prototype objects.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_json_parseimmutable&amp;build=json-parseimmutable">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-createjsonparseoptions 1</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 2.7): JSON.parse Options</span>: pauses at <code>CreateJSONParseOptions 1</code>, then <code>CreateJSONParseOptions 1</code>; ends <code>normal: undefined</code>; prints <code>frozen=true, proto=null, ownProto=true, nullMutable=2</code>.</li><li><span class="build">The specification</span>: ends <code>normal: undefined</code>; prints <code>frozen=false, proto=[object Object], ownProto=true, nullMutable=2</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_json_parseimmutable.js</code></summary><pre class="js">const imm = JSON.parse(&#x27;{&quot;x&quot;:[1,{&quot;y&quot;:2}],&quot;__proto__&quot;:{&quot;safe&quot;:true}}&#x27;, { freeze: true });
+const nullOnly = JSON.parse(&#x27;{&quot;mutable&quot;:1}&#x27;, { nullPrototypeObjects: true });
+nullOnly.mutable = 2;
+print([
+  &quot;frozen=&quot; + Object.isFrozen(imm.x[1]),
+  &quot;proto=&quot; + Object.getPrototypeOf(imm),
+  &quot;ownProto=&quot; + imm.__proto__.safe,
+  &quot;nullMutable=&quot; + nullOnly.mutable
+].join(&quot;, &quot;));
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_esm_phase_imports">
+<h3><a class="self" href="#ex-dbg-proposal_esm_phase_imports">Stage 2.7: ESM Phase Imports (import source &amp; ModuleSource)</a></h3>
+<p class="what">import source and import.source() bind a ModuleSource object inheriting from %AbstractModuleSource%; dynamic import(depSrc) unwraps its Module Source Record via GetModuleSourceRecord and coalesces evaluation.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_esm_phase_imports&amp;build=esm-phase-imports">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-getmodulesourcerecord 1</code>.</p><p class="args">Run with <code>--bundle</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 2.7): ESM Phase Imports</span>: pauses at <code>GetModuleSourceRecord 1</code>, then <code>GetModuleSourceRecord 1</code>; ends <code>normal: undefined</code>; prints <code>ModuleSource, sameSource=true, sameNs=true, runs=1, answer=42</code>.</li><li><span class="build">The specification</span>: ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_esm_phase_imports.js</code></summary><pre class="js">// JS_BUNDLE_MODULE:dep.js
+export let runs = 0;
+runs++;
+export const answer = 42;
+// JS_BUNDLE_MODULE_ENTRYPOINT:main.js
+import source depSrc from &quot;./dep.js&quot;;
+const dynSrc = await import.source(&quot;./dep.js&quot;);
+const ns1 = await import(depSrc);
+const ns2 = await import(&quot;./dep.js&quot;);
+print([
+  depSrc[Symbol.toStringTag],
+  &quot;sameSource=&quot; + (depSrc === dynSrc),
+  &quot;sameNs=&quot; + (ns1 === ns2),
+  &quot;runs=&quot; + ns1.runs,
+  &quot;answer=&quot; + ns1.answer
+].join(&quot;, &quot;));
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_immutable_arraybuffer">
+<h3><a class="self" href="#ex-dbg-proposal_immutable_arraybuffer">Stage 2.7: Immutable ArrayBuffers</a></h3>
+<p class="what">sliceToImmutable copies a subrange and transferToImmutable detaches the source buffer into a new buffer with [[ArrayBufferDetachKey]] ~immutable~, causing TypedArray writes to throw a TypeError.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_immutable_arraybuffer&amp;build=immutable-arraybuffer">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-arraybuffer.prototype.transfertoimmutable 1</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 2.7): Immutable ArrayBuffers</span>: pauses at <code>ArrayBuffer.prototype.transferToImmutable 1</code>; ends <code>normal: undefined</code>; prints <code>slice=20,30, detached=true, immutable=true, writeThrew=true</code>.</li><li><span class="build">The specification</span>: ends <code>throw: TypeError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_immutable_arraybuffer.js</code></summary><pre class="js">&quot;use strict&quot;;
+const ab = new ArrayBuffer(4);
+new Uint8Array(ab).set([10, 20, 30, 40]);
+const sliced = ab.sliceToImmutable(1, 3);
+const moved = ab.transferToImmutable(6);
+const view = new Uint8Array(moved);
+let writeThrew = false;
+try { view[0] = 99; } catch (e) { writeThrew = e instanceof TypeError; }
+print([
+  &quot;slice=&quot; + Array.from(new Uint8Array(sliced)).join(&quot;,&quot;),
+  &quot;detached=&quot; + ab.detached,
+  &quot;immutable=&quot; + moved.immutable,
+  &quot;writeThrew=&quot; + writeThrew
+].join(&quot;, &quot;));
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_error_code_property">
+<h3><a class="self" href="#ex-dbg-proposal_error_code_property">Stage 2: Error.code property</a></h3>
+<p class="what">Error, NativeError, and SuppressedError constructors delegate to InstallErrorOwnProperties, installing non-enumerable code alongside cause from the options object.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_error_code_property&amp;build=error-code-property">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-installerrorownproperties 1</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 2): Error.code</span>: pauses at <code>InstallErrorOwnProperties 1</code>, then <code>InstallErrorOwnProperties 1</code>, then <code>InstallErrorOwnProperties 1</code>; ends <code>normal: undefined</code>; prints <code>code=ECONNREFUSED, enumerable=false, suppressedCode=EDISPOSE</code>.</li><li><span class="build">The specification</span>: ends <code>throw: TypeError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_error_code_property.js</code></summary><pre class="js">const err = new Error(&quot;connect failed&quot;, { code: &quot;ECONNREFUSED&quot;, cause: &quot;timeout&quot; });
+const sup = new SuppressedError(err, new TypeError(&quot;close failed&quot;), &quot;disposal failed&quot;, { code: &quot;EDISPOSE&quot; });
+const desc = Object.getOwnPropertyDescriptor(err, &quot;code&quot;);
+print([
+  &quot;code=&quot; + err.code,
+  &quot;enumerable=&quot; + desc.enumerable,
+  &quot;suppressedCode=&quot; + sup.code
+].join(&quot;, &quot;));
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_fma">
+<h3><a class="self" href="#ex-dbg-proposal_fma">Stage 2: Math.fusedMultiplyAdd</a></h3>
+<p class="what">For a = 1 + 2^-52 and b = 1 - 2^-52, naive a * b + (-1) rounds a * b to 1 first and yields 0; Math.fusedMultiplyAdd computes a * b + c in R with a single rounding, preserving -2^-104.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_fma&amp;build=fma">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-math.fusedMultiplyAdd 1</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 2): Math.fusedMultiplyAdd</span>: pauses at <code>Math.fusedMultiplyAdd 1</code>; ends <code>normal: undefined</code>; prints <code>naive=0, fma=-4.930380657631324e-32, exactMatch=true</code>.</li><li><span class="build">The specification</span>: ends <code>throw: TypeError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_fma.js</code></summary><pre class="js">// (1 + 2^-52) * (1 - 2^-52) = 1 - 2^-104 in R.
+// Naive a * b + (-1) rounds a * b to 1 first and loses the -2^-104 residual!
+const a = 1 + 2 ** -52;
+const b = 1 - 2 ** -52;
+const naive = a * b + (-1);
+const exact = Math.fusedMultiplyAdd(a, b, -1);
+print(&quot;naive=&quot; + naive + &quot;, fma=&quot; + exact + &quot;, exactMatch=&quot; + (exact === -(2 ** -104)));
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_composites">
+<h3><a class="self" href="#ex-dbg-proposal_composites">Stage 2: Composites</a></h3>
+<p class="what">Composite(...) canonicalizes integer-index keys before lexicographic string keys, freezes the object with null prototype, and interns structural duplicates in the Realm&#x27;s [[CompositeRegistry]].</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_composites&amp;build=composites">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-composite-function-arg 1</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 2): Composites</span>: pauses at <code>Composite 1</code>, then <code>Composite 1</code>, then <code>Composite 1</code>; ends <code>normal: undefined</code>; prints <code>interned=true | keys=2,10,x,y | inSet=true</code>.</li><li><span class="build">The specification</span>: ends <code>throw: ReferenceError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_composites.js</code></summary><pre class="js">const c1 = Composite({ y: 4, x: 1, 10: &quot;ten&quot;, 2: &quot;two&quot; });
+const c2 = Composite({ 2: &quot;two&quot;, x: 1, 10: &quot;ten&quot;, y: 4 });
+const visited = new Set([c1]);
+print([
+  &quot;interned=&quot; + (c1 === c2),
+  &quot;keys=&quot; + Object.keys(c1).join(&quot;,&quot;),
+  &quot;inSet=&quot; + visited.has(Composite({ x: 1, y: 4, 2: &quot;two&quot;, 10: &quot;ten&quot; }))
+].join(&quot; | &quot;));
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_cancellation">
+<h3><a class="self" href="#ex-dbg-proposal_cancellation">Stage 1: Cancellation (AbortController &amp; AbortSignal)</a></h3>
+<p class="what">new AbortController() allocates an AbortSignal via CreateAbortSignal; a block-scoped using registration disposes cleanly before ac.abort(&quot;timeout&quot;) runs SignalAbort and rejects Atomics.waitAsync.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_cancellation&amp;build=cancellation">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-createabortsignal 1</code>, <code>sec-signalabort 1</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 1): Cancellation (AbortController)</span>: pauses at <code>CreateAbortSignal 1</code>, then <code>SignalAbort 1</code>; ends <code>normal: undefined</code>; prints <code>aborted:timeout, waitAsync:timeout</code>.</li><li><span class="build">The specification</span>: ends <code>throw: ReferenceError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_cancellation.js</code></summary><pre class="js">const ac = new AbortController();
+const events = [];
+{
+  using _scoped = ac.signal.addAbortCallback(() =&gt; events.push(&quot;disposed-listener&quot;));
+}
+ac.signal.addAbortCallback(() =&gt; events.push(&quot;aborted:&quot; + ac.signal.reason));
+const sab = new SharedArrayBuffer(4);
+const wait = Atomics.waitAsync(new Int32Array(sab), 0, 0, { signal: ac.signal });
+ac.abort(&quot;timeout&quot;);
+wait.value.catch((reason) =&gt; {
+  events.push(&quot;waitAsync:&quot; + reason);
+  print(events.join(&quot;, &quot;));
+});
+void 0;
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_iterator_transfer">
+<h3><a class="self" href="#ex-dbg-proposal_iterator_transfer">Stage 0: Iterator.prototype.transfer</a></h3>
+<p class="what">Iterator.prototype.transfer moves a suspended generator&#x27;s state and execution context onto a fresh Generator instance while marking the source generator ~completed~.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_iterator_transfer&amp;build=iterator-transfer">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-iterator.prototype.transfer 1</code>, <code>sec-iterator.prototype.transfer 3.f</code>, <code>sec-iterator.prototype.transfer 3.j.i</code>, <code>sec-iterator.prototype.transfer 3.k</code>, <code>sec-iterator.prototype.transfer 3.l</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 0): Iterator.prototype.transfer</span>: pauses at <code>Iterator.prototype.transfer 1</code>, then <code>Iterator.prototype.transfer 3.f</code>, then <code>Iterator.prototype.transfer 3.j.i</code>, then <code>Iterator.prototype.transfer 3.k</code>, then <code>Iterator.prototype.transfer 3.l</code>; ends <code>normal: undefined</code>; prints <code>a=first, origDone=true, b=second, finallyRuns=1</code>.</li><li><span class="build">The specification</span>: ends <code>throw: TypeError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_iterator_transfer.js</code></summary><pre class="js">let cleanedUp = 0;
+function* items() {
+  try {
+    yield &quot;first&quot;;
+    yield &quot;second&quot;;
+  } finally {
+    cleanedUp++;
+  }
+}
+const orig = items();
+const a = orig.next().value;
+const moved = orig.transfer();
+const origDone = orig.next().done;
+const b = moved.next().value;
+moved.return();
+print(&quot;a=&quot; + a + &quot;, origDone=&quot; + origDone + &quot;, b=&quot; + b + &quot;, finallyRuns=&quot; + cleanedUp);
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_trim_chars">
+<h3><a class="self" href="#ex-dbg-proposal_trim_chars">Stage 0: Trim Specific Characters</a></h3>
+<p class="what">String.prototype.trim accepts an optional characters string and forwards it to TrimString, which trims matching Unicode code points via StringToCodePoints rather than UTF-16 code units.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_trim_chars&amp;build=trim-chars">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-string.prototype.trim 2</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 0): Trim Specific Characters</span>: pauses at <code>String.prototype.trim 2</code>, then <code>String.prototype.trim 2</code>; ends <code>normal: undefined</code>; prints <code>path=ecma-262, astralPreserved=true</code>.</li><li><span class="build">The specification</span>: pauses at <code>String.prototype.trim 2</code>, then <code>String.prototype.trim 2</code>; ends <code>normal: undefined</code>; prints <code>path=/__ecma-262__/, astralPreserved=true</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_trim_chars.js</code></summary><pre class="js">const path = &quot;/__ecma-262__/&quot;.trim(&quot;/_&quot;);
+// U+1F601 (\uD83D\uDE01) shares high surrogate \uD83D with U+1F600 (\uD83D\uDE00)
+const astral = &quot;\u{1F601}ok\u{1F601}&quot;.trim(&quot;\u{1F600}&quot;);
+print(&quot;path=&quot; + path + &quot;, astralPreserved=&quot; + (astral === &quot;\u{1F601}ok\u{1F601}&quot;));
+</pre></details>
+</article><article class="example" id="ex-dbg-proposal_popcount">
+<h3><a class="self" href="#ex-dbg-proposal_popcount">Stage 0: Bitwise counting (Math.popcount32 &amp; Math.ctz32)</a></h3>
+<p class="what">Math.popcount32 counts 1 bits and Math.ctz32 counts trailing 0 bits of ToUint32(n), returning 32 when the 32-bit unsigned value is 0.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=dbg/proposal_popcount&amp;build=popcount">Open in the debugger</button></p>
+<p class="setup">Opened with breakpoints at <code>sec-math.popcount32 1</code>, <code>sec-math.ctz32 1</code>.</p><ul class="checks"><li><span class="build">Proposal (Stage 0): Math.popcount32 / ctz32</span>: pauses at <code>Math.popcount32 1</code>, then <code>Math.ctz32 1</code>, then <code>Math.ctz32 1</code>; ends <code>normal: undefined</code>; prints <code>popcount32(0xaaaaaaaa)=16, ctz32(0)=32, ctz32(12)=2</code>.</li><li><span class="build">The specification</span>: ends <code>throw: TypeError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/dbg/proposal_popcount.js</code></summary><pre class="js">const pop = Math.popcount32(0xaaaaaaaa);
+const ctzZero = Math.ctz32(0);
+const ctz12 = Math.ctz32(12);
+print(&quot;popcount32(0xaaaaaaaa)=&quot; + pop + &quot;, ctz32(0)=&quot; + ctzZero + &quot;, ctz32(12)=&quot; + ctz12);
+</pre></details>
+</article></section><section class="part" id="errata-programs"><h2 class="part-title"><a class="self" href="#errata-programs">The errata page&#x27;s programs</a></h2><p>Additional programs from the Errata page, opened under the specification build.</p><article class="example" id="ex-run-erratum_stringvalue_reserved_word">
+<h3><a class="self" href="#ex-run-erratum_stringvalue_reserved_word">StringValueReservedWord: an escaped reserved word</a></h3>
+<p class="what">var \u0069f spells the reserved word if with an escape; the default reading makes it a SyntaxError.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/erratum_stringvalue_reserved_word">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/erratum_stringvalue_reserved_word.js</code></summary><pre class="js">// An |IdentifierName| spelling `if` with an escape is the String value of a
+// terminal of |ReservedWord| (Erratum StringValueReservedWord, test262&#x27;s reading).
+// expect: throw: SyntaxError
+var \u0069f;
+</pre></details>
+</article><article class="example" id="ex-run-erratum_lookahead_source_tokens">
+<h3><a class="self" href="#ex-run-erratum_lookahead_source_tokens">LookaheadSourceTokens: let and a newline</a></h3>
+<p class="what">After if (0) let and a line break, ExpressionStatement&#x27;s lookahead reads the source&#x27;s tokens past the inserted semicolon; the default reading gives no parse, a SyntaxError.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/erratum_lookahead_source_tokens">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/erratum_lookahead_source_tokens.js</code></summary><pre class="js">// The inserted `;` after `let` is no source token: ExpressionStatement&#x27;s lookahead
+// reads `let [` and the program has no parse (Erratum LookaheadSourceTokens,
+// test262&#x27;s reading).
+// expect: throw: SyntaxError
+if (0) let
+[a] = 0;
+</pre></details>
+</article><article class="example" id="ex-run-erratum_html_close_comment_token">
+<h3><a class="self" href="#ex-run-erratum_html_close_comment_token">HTMLCloseCommentToken: --&gt; on the first line</a></h3>
+<p class="what">On a host with B.1.1, a first-line --&gt; is an HTMLCloseComment; the default reading takes it as a comment, and the program gives 1.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/erratum_html_close_comment_token">Open in the debugger</button></p>
+<p class="args">Run with <code>--annex-b sec-html-like-comments</code>.</p><ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: 1</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/erratum_html_close_comment_token.js</code></summary><pre class="js">--&gt; the Script&#x27;s first input element: an HTMLCloseComment
+// A first-line `--&gt;` is an HTMLCloseComment, a comment (Erratum
+// HTMLCloseCommentToken, test262&#x27;s reading).
+// args: --annex-b sec-html-like-comments
+// expect: normal: 1
+1
+</pre></details>
+</article><article class="example" id="ex-run-erratum_annexb_regexp_order">
+<h3><a class="self" href="#ex-run-erratum_annexb_regexp_order">AnnexBRegExpOrder: /\b*/</a></h3>
+<p class="what">Under B.1.2&#x27;s grammar the alternatives commit in order: \b is an Assertion, which no quantifier follows, so the pattern is a SyntaxError.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/erratum_annexb_regexp_order">Open in the debugger</button></p>
+<p class="args">Run with <code>--annex-b sec-regular-expressions-patterns</code>.</p><ul class="checks"><li><span class="build">The specification</span>: ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/erratum_annexb_regexp_order.js</code></summary><pre class="js">// B.1.2&#x27;s alternatives commit in order: `\b*` is an Assertion, which no
+// quantifier follows, and the literal has no parse (Erratum AnnexBRegExpOrder,
+// test262&#x27;s reading).
+// args: --annex-b sec-regular-expressions-patterns
+// expect: throw: SyntaxError
+/\b*/;
+</pre></details>
+</article><article class="example" id="ex-run-erratum_annexb_group_count">
+<h3><a class="self" href="#ex-run-erratum_annexb_group_count">AnnexBGroupCount: /(a)\1/</a></h3>
+<p class="what">Under B.1.2&#x27;s grammar \1 with one capturing group is a backreference: the group count comes from a committed parse.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/erratum_annexb_group_count">Open in the debugger</button></p>
+<p class="args">Run with <code>--annex-b sec-regular-expressions-patterns</code>.</p><ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: true</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/erratum_annexb_group_count.js</code></summary><pre class="js">// `\1` with one capturing group is a backreference: the group count is read
+// from a committed parse (Erratum AnnexBGroupCount, test262&#x27;s reading).
+// args: --annex-b sec-regular-expressions-patterns
+// expect: normal: true
+/(a)\1/.test(&quot;aa&quot;);
+</pre></details>
+</article><article class="example" id="ex-run-erratum_annexb_modifier_early_errors">
+<h3><a class="self" href="#ex-run-erratum_annexb_modifier_early_errors">AnnexBModifierEarlyErrors: /(?ii:a)/</a></h3>
+<p class="what">§22.2.1.1&#x27;s modifier rules apply to B.1.2&#x27;s ExtendedAtom under the default reading: a repeated modifier is a SyntaxError.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/erratum_annexb_modifier_early_errors">Open in the debugger</button></p>
+<p class="args">Run with <code>--annex-b sec-regular-expressions-patterns</code>.</p><ul class="checks"><li><span class="build">The specification</span>: ends <code>throw: SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/erratum_annexb_modifier_early_errors.js</code></summary><pre class="js">// §22.2.1.1&#x27;s modifier rules hold on B.1.2&#x27;s ExtendedAtom: `(?ii:a)` repeats a
+// modifier (Erratum AnnexBModifierEarlyErrors, test262&#x27;s reading).
+// args: --annex-b sec-regular-expressions-patterns
+// expect: throw: SyntaxError
+/(?ii:a)/;
+</pre></details>
+</article><article class="example" id="ex-run-erratum_covered_node_parent">
+<h3><a class="self" href="#ex-run-erratum_covered_node_parent">CoveredNodeParent: a tail call in parentheses</a></h3>
+<p class="what">The covered ParenthesizedExpression takes its cover&#x27;s place in the tree, so return (f(n - 1)) is in tail position.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/erratum_covered_node_parent">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: 0</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/erratum_covered_node_parent.js</code></summary><pre class="js">// Erratum CoveredNodeParent at its test262 reading: the covered
+// |ParenthesizedExpression| takes its cover&#x27;s place, so `return (f(n - 1))` is
+// in tail position (test262 tco-pos.js).
+// expect: normal: 0
+&quot;use strict&quot;;
+function f(n) {
+  if (n === 0) return 0;
+  return (f(n - 1));
+}
+f(3);
+</pre></details>
+</article><article class="example" id="ex-run-builtin_async_return">
+<h3><a class="self" href="#ex-run-builtin_async_return">BuiltinReturnCompletion: Array.fromAsync&#x27;s result</a></h3>
+<p class="what">Array.fromAsync&#x27;s promise is fulfilled with the array under the default reading of BuiltinCallOrConstruct step 10.b.iii.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/builtin_async_return">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: undefined</code>; prints <code>undefined</code>, <code>1,2</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/builtin_async_return.js</code></summary><pre class="js">// expect: normal: undefined
+// print: undefined
+// print: 1,2
+// BuiltinCallOrConstruct step 10.b.iii under Erratum BuiltinReturnCompletion
+// (its test262 reading): &quot;Return array&quot; of Array.fromAsync is a normal
+// completion, which the resultsClosure gives to AsyncBlockStart as a return
+// completion, so the promise is fulfilled with the array; disposeAsync&#x27;s
+// &quot;Return ? DisposeResources(…)&quot; fulfils it with undefined.
+Array.fromAsync([1, 2]).then(function (a) { print(a.join(&quot;,&quot;)); });
+new AsyncDisposableStack().disposeAsync().then(function (v) { print(String(v)); });
+void 0;
+</pre></details>
+</article><article class="example" id="ex-run-errata_execute_module_dispose">
+<h3><a class="self" href="#ex-run-errata_execute_module_dispose">ExecuteModuleAsyncDisposeResources: await using in a module</a></h3>
+<p class="what">A module with top-level await disposes its await using resources after its body under the default reading; read literally, never.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/errata_execute_module_dispose">Open in the debugger</button></p>
+<p class="args">Run with <code>--module</code>.</p><ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: undefined</code>; prints <code>end</code>, <code>disposed</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/errata_execute_module_dispose.js</code></summary><pre class="js">// module: yes
+// expect: normal: undefined
+// print: end
+// print: disposed
+// A module with top-level await and `await using` (Erratum ExecuteModuleAsyncDisposeResources):
+// the test262 reading disposes the module&#x27;s resources after its body.
+await using x = { [Symbol.asyncDispose]() { print(&quot;disposed&quot;); } };
+await 0;
+print(&quot;end&quot;);
+</pre></details>
+</article><article class="example" id="ex-run-regexp_identity_escape_join_controls">
+<h3><a class="self" href="#ex-run-regexp_identity_escape_join_controls">IdentityEscapeJoinControls: \ before ZWNJ and ZWJ</a></h3>
+<p class="what">Without the u or v flag, a backslash before U+200C or U+200D is an IdentityEscape under the default reading.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/regexp_identity_escape_join_controls">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: undefined</code>; prints <code>U+200C: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError</code>, <code>U+200D: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError</code>, <code>U+200B: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError</code>, <code>U+200E: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError</code>, <code>U+61: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError</code>, <code>U+B7: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/regexp_identity_escape_join_controls.js</code></summary><pre class="js">// Erratum IdentityEscapeJoinControls, at its test262 reading: without the
+// u or v flag, `\` U+200C (ZWNJ) and `\` U+200D (ZWJ) are IdentityEscapes,
+// as test262&#x27;s language/literals/regexp/S7.8.5_A1.4_T2.js and
+// S7.8.5_A2.4_T2.js require, although Unicode 15.1 made both UnicodeIDContinue.
+// ecma-run&#x27;s default host does not support §B.1.2, so this is the main grammar:
+// the other UnicodeIDContinue code points (`a`, U+00B7) stay SyntaxErrors, and
+// U+200B and U+200E (not ID_Continue) are IdentityEscapes. The u and v flags
+// allow neither. The characters are invisible: the patterns are built with
+// fromCharCode.
+// expect: normal: undefined
+// print: U+200C: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError
+// print: U+200D: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError
+// print: U+200B: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError
+// print: U+200E: literal true, class true, a-literal true, RegExp true, u SyntaxError, v SyntaxError
+// print: U+61: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError
+// print: U+B7: literal SyntaxError, class SyntaxError, a-literal SyntaxError, RegExp SyntaxError, u SyntaxError, v SyntaxError
+function t(f) { try { return f(); } catch (e) { return e.name; } }
+for (var cu of [0x200C, 0x200D, 0x200B, 0x200E, 0x61, 0xB7]) {
+  var ch = String.fromCharCode(cu), src = &quot;\\&quot; + ch;
+  print(&quot;U+&quot; + cu.toString(16).toUpperCase() + &quot;: &quot; + [
+    &quot;literal &quot; + t(() =&gt; { var re = eval(&quot;/&quot; + src + &quot;/&quot;); return re.source === src &amp;&amp; re.test(ch) &amp;&amp; !re.test(&quot;x&quot;); }),
+    &quot;class &quot; + t(() =&gt; eval(&quot;/[&quot; + src + &quot;]/&quot;).test(ch)),
+    &quot;a-literal &quot; + t(() =&gt; eval(&quot;/a&quot; + src + &quot;/&quot;).test(&quot;a&quot; + ch)),
+    &quot;RegExp &quot; + t(() =&gt; new RegExp(src).exec(&quot;x&quot; + ch)[0] === ch),
+    &quot;u &quot; + t(() =&gt; new RegExp(src, &quot;u&quot;)),
+    &quot;v &quot; + t(() =&gt; new RegExp(src, &quot;v&quot;)),
+  ].join(&quot;, &quot;));
+}
+</pre></details>
+</article><article class="example" id="ex-run-errata_allocate_sab_byte_length">
+<h3><a class="self" href="#ex-run-errata_allocate_sab_byte_length">AllocateSharedArrayBufferByteLengthStore: a growable SharedArrayBuffer</a></h3>
+<p class="what">grow reads the byte length that AllocateSharedArrayBuffer stored in a Shared Data Block.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/errata_allocate_sab_byte_length">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: 2</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/errata_allocate_sab_byte_length.js</code></summary><pre class="js">// expect: normal: 2
+// A growable SharedArrayBuffer (Erratum AllocateSharedArrayBufferByteLengthStore): the
+// test262 reading stores the byte length in its Shared Data Block, which grow reads.
+var b = new SharedArrayBuffer(1, { maxByteLength: 4 });
+b.grow(2);
+b.byteLength;
+</pre></details>
+</article><article class="example" id="ex-run-await_in_params_early_errors">
+<h3><a class="self" href="#ex-run-await_in_params_early_errors">ContainsAwaitCover: await in parameters</a></h3>
+<p class="what">The early errors &quot;X Contains AwaitExpression&quot; see an await expression, which parses as a cover.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/await_in_params_early_errors">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: undefined</code>; prints <code>async function: SyntaxError</code>, <code>async function expression: SyntaxError</code>, <code>async generator: SyntaxError</code>, <code>async generator expression: SyntaxError</code>, <code>async method: SyntaxError</code>, <code>async generator method: SyntaxError</code>, <code>arrow in async body: SyntaxError</code>, <code>async arrow in async body: SyntaxError</code>, <code>AsyncFunction: SyntaxError</code>, <code>AsyncGeneratorFunction: SyntaxError</code>, <code>await in async body: no error</code>, <code>static block in async function: no error</code>, <code>var await in nested function: no error</code>, <code>async arrow parameters: no error</code>, <code>await in static block: SyntaxError</code>, <code>var await in static block function: no error</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/await_in_params_early_errors.js</code></summary><pre class="js">// expect: normal: undefined
+// print: async function: SyntaxError
+// print: async function expression: SyntaxError
+// print: async generator: SyntaxError
+// print: async generator expression: SyntaxError
+// print: async method: SyntaxError
+// print: async generator method: SyntaxError
+// print: arrow in async body: SyntaxError
+// print: async arrow in async body: SyntaxError
+// print: AsyncFunction: SyntaxError
+// print: AsyncGeneratorFunction: SyntaxError
+// print: await in async body: no error
+// print: static block in async function: no error
+// print: var await in nested function: no error
+// print: async arrow parameters: no error
+// print: await in static block: SyntaxError
+// print: var await in static block function: no error
+// The early errors &quot;X Contains |AwaitExpression|&quot; (§15.3.1, §15.6.1, §15.8.1,
+// §15.9.1): an `await` expression is the cover of UnaryExpression :
+// CoverAwaitExpressionAndAwaitUsingDeclarationHead, which Contains counts as an
+// AwaitExpression (Erratum ContainsAwaitCover, its test262 reading).
+// Contains does not look into nested functions, and a static block&#x27;s rule is
+// on the terminal `await`.
+var AsyncFunction = (async function () {}).constructor;
+var AsyncGeneratorFunction = (async function* () {}).constructor;
+function check(name, run) {
+  try { run(); print(name + &quot;: no error&quot;); }
+  catch (e) { print(name + &quot;: &quot; + e.constructor.name); }
+}
+function script(src) { return function () { (0, eval)(src); }; }
+check(&quot;async function&quot;, script(&quot;async function f(x = await 1) {}&quot;));
+check(&quot;async function expression&quot;, script(&quot;(async function (x = await 1) {})&quot;));
+check(&quot;async generator&quot;, script(&quot;async function* f(x = await 1) {}&quot;));
+check(&quot;async generator expression&quot;, script(&quot;(async function* (x = await 1) {})&quot;));
+check(&quot;async method&quot;, script(&quot;({ async m(x = await 1) {} })&quot;));
+check(&quot;async generator method&quot;, script(&quot;({ async *m(x = await 1) {} })&quot;));
+check(&quot;arrow in async body&quot;, script(&quot;async function g() { (x = await 1) =&gt; 0; }&quot;));
+check(&quot;async arrow in async body&quot;, script(&quot;async function g() { async (x = await 1) =&gt; 0; }&quot;));
+check(&quot;AsyncFunction&quot;, function () { AsyncFunction(&quot;x = await 1&quot;, &quot;&quot;); });
+check(&quot;AsyncGeneratorFunction&quot;, function () { AsyncGeneratorFunction(&quot;x = await 1&quot;, &quot;&quot;); });
+check(&quot;await in async body&quot;, script(&quot;async function h() { await 1; }&quot;));
+check(&quot;static block in async function&quot;, script(&quot;(async function () { class C { static { } } })&quot;));
+check(&quot;var await in nested function&quot;, script(&quot;async function k(x = function () { var await; }) {}&quot;));
+check(&quot;async arrow parameters&quot;, script(&quot;async (x = 1) =&gt; await x;&quot;));
+check(&quot;await in static block&quot;, script(&quot;class C { static { await 0; } }&quot;));
+check(&quot;var await in static block function&quot;, script(&quot;class C { static { (function () { var await; }); } }&quot;));
+</pre></details>
+</article><article class="example" id="ex-run-errata_split_code_units">
+<h3><a class="self" href="#ex-run-errata_split_code_units">SplitCodeUnitStrings: &quot;ab&quot;.split(&quot;&quot;)</a></h3>
+<p class="what">Each element is a String of one code unit under the default reading; read literally, the Array holds code units.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/errata_split_code_units">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: &quot;string&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/errata_split_code_units.js</code></summary><pre class="js">// expect: normal: &quot;string&quot;
+// String.prototype.split with the empty String as separator (Erratum SplitCodeUnitStrings):
+// the test262 reading makes each element a String of one code unit.
+typeof &quot;ab&quot;.split(&quot;&quot;)[1];
+</pre></details>
+</article><article class="example" id="ex-run-errata_createintrinsics_async_argument">
+<h3><a class="self" href="#ex-run-errata_createintrinsics_async_argument">CreateIntrinsicsAsyncArgument: an accessor&#x27;s name and Array.fromAsync</a></h3>
+<p class="what">Under the default reading a getter gets its prefix and Array.fromAsync is async.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/errata_createintrinsics_async_argument">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: &quot;get size|true&quot;</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/errata_createintrinsics_async_argument.js</code></summary><pre class="js">// expect: normal: &quot;get size|true&quot;
+// CreateIntrinsics step 2 (Erratum CreateIntrinsicsAsyncArgument): the
+// test262 reading passes a getter its prefix and Array.fromAsync its [[Async]].
+var r = [];
+r.push(Object.getOwnPropertyDescriptor(Map.prototype, &quot;size&quot;).get.name);
+r.push(Array.fromAsync([1]) instanceof Promise);
+r.join(&quot;|&quot;);
+</pre></details>
+</article><article class="example" id="ex-run-errata_ischaracterclass_control_letter">
+<h3><a class="self" href="#ex-run-errata_ischaracterclass_control_letter">IsCharacterClassControlLetter: /[\c1-\c5]/</a></h3>
+<p class="what">On a host with B.1.2, a class range between two \c escapes asks IsCharacterClass of each; the default reading gives that production a row.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/errata_ischaracterclass_control_letter">Open in the debugger</button></p>
+<p class="args">Run with <code>--annex-b sec-regular-expressions-patterns</code>.</p><ul class="checks"><li><span class="build">The specification</span>: ends <code>normal: true</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/errata_ischaracterclass_control_letter.js</code></summary><pre class="js">// expect: normal: true
+// args: --annex-b sec-regular-expressions-patterns
+// A class range between two \c escapes of B.1.2 (Erratum IsCharacterClassControlLetter):
+// the test262 reading gives IsCharacterClass a row for ClassEscape :: `c` ClassControlLetter.
+/[\c1-\c5]/.test(&quot;\x11&quot;);
+</pre></details>
+</article><article class="example" id="ex-run-bigint_huge_left_shift">
+<h3><a class="self" href="#ex-run-bigint_huge_left_shift">BigIntMaximumSize: 1n &lt;&lt; 2n ** 31n</a></h3>
+<p class="what">The proposed text throws a RangeError past the implementation&#x27;s maximum BigInt size; read as written, the engine stops at its own limit.</p>
+<p class="opens"><button type="button" class="open" data-dbg-open="debugger/?example=run/bigint_huge_left_shift">Open in the debugger</button></p>
+<ul class="checks"><li><span class="build">The specification</span>: ends <code>throw: RangeError</code>.</li></ul>
+<details class="jssrc" open><summary>Source <code>tests/run/bigint_huge_left_shift.js</code></summary><pre class="js">// expect: throw: RangeError
+// BigInt::leftShift whose result has more than 2^30 bits throws a RangeError
+// (erratum BigIntMaximumSize, proposed reading), not a runtime abort
+// (BigInt.shiftLeft).
+2n &lt;&lt; (1n &lt;&lt; 64n);
+</pre></details>
+</article></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

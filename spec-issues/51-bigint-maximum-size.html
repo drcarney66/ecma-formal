@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>51. A maximum BigInt size: 2n ** (2n ** 40n) has an exact result in the text, which allows no maximum size · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · proposed normative change · <code>docs/spec-issues/51-bigint-maximum-size.md</code></p>
+<h1>51. A maximum BigInt size: <code>2n ** (2n ** 40n)</code> has an exact result in the text, which allows no maximum size</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§6.1.6.2 The BigInt Type (<a class="clause" href="https://tc39.es/ecma262/#sec-ecmascript-language-types-bigint-type"><code>#sec-ecmascript-language-types-bigint-type</code></a>), its first paragraph; §6.1.6.2.3 BigInt::exponentiate (<a class="clause" href="https://tc39.es/ecma262/#sec-numeric-types-bigint-exponentiate"><code>#sec-numeric-types-bigint-exponentiate</code></a>), step 3; §6.1.6.2.4 BigInt::multiply (<a class="clause" href="https://tc39.es/ecma262/#sec-numeric-types-bigint-multiply"><code>#sec-numeric-types-bigint-multiply</code></a>), step 1, and its note; §6.1.6.2.7 BigInt::add (<a class="clause" href="https://tc39.es/ecma262/#sec-numeric-types-bigint-add"><code>#sec-numeric-types-bigint-add</code></a>), step 1; §6.1.6.2.8 BigInt::subtract (<a class="clause" href="https://tc39.es/ecma262/#sec-numeric-types-bigint-subtract"><code>#sec-numeric-types-bigint-subtract</code></a>), step 1; §6.1.6.2.9 BigInt::leftShift (<a class="clause" href="https://tc39.es/ecma262/#sec-numeric-types-bigint-leftShift"><code>#sec-numeric-types-bigint-leftShift</code></a>), step 2; §21.2.2.2 BigInt.asUintN (<a class="clause" href="https://tc39.es/ecma262/#sec-bigint.asuintn"><code>#sec-bigint.asuintn</code></a>), step 3.</dd><dt>Kind</dt><dd>proposed normative change (not a defect: the text is consistent and gives every result).</dd><dt>Model erratum</dt><dd><code>BigIntMaximumSize</code>, baked-in SpecTec reading proposed (<code>$BigIntTooLarge</code> in <code>spec/spectec/clauses/S06.spectec</code> and <code>S21.spectec</code>); its readings: literal, proposed. The proposed reading asks the host before the result is formed whether it would exceed the implementation's maximum (the model's host answers <em>true</em> past 2<sup>30</sup> bits, covering <code>exponentiate</code>, <code>leftShift</code>, <code>multiply</code>, <code>add</code>, <code>subtract</code>, and <code>asUintN</code>) and throws a <em>RangeError</em> if so; the literal reading forms the result whatever its size.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found that proposes this (searched for BigInt with "maximum size" and with "size limit"). Related: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/1391">#1391</a> (open, 2019-01), "Extending defining out-of-memory beyond ArrayBuffer", asks whether BigInt will have a defined out-of-memory error as ArrayBuffer has; issue <a class="ext" href="https://github.com/tc39/ecma262/issues/4063">#4063</a> (closed, 2026-10, as not planned), "Specify that exceeding resource limits may throw", asked it of resource limits in general.</dd><dt>On this site</dt><dd><a href="../errata.html#BigIntMaximumSize"><code>BigIntMaximumSize</code></a> on Spec issues &amp; errata (proposed normative change; SpecTec bakes in the proposed reading)</dd></dl><h2 id="text">Text</h2>
+<p>§6.1.6.2:</p>
+<blockquote class="sentence q-text"><p>The BigInt type represents an integer value. The value may be any size and is not limited to a particular bit-width.</p></blockquote>
+<p>BigInt::exponentiate:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> If <var>exponent</var> &lt; <span class="val">0</span><sub>ℤ</sub>, throw a <span class="val">RangeError</span> exception.</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> If <var>base</var> = <span class="val">0</span><sub>ℤ</sub> and <var>exponent</var> = <span class="val">0</span><sub>ℤ</sub>, return <span class="val">1</span><sub>ℤ</sub>.</p><p class="q-step" style="--d:0"><span class="q-num">3.</span> Return <var>base</var> raised to the power <var>exponent</var>.</p></blockquote>
+<p>BigInt::multiply, with its note:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> Return <var>x</var> × <var>y</var>.</p></blockquote>
+<blockquote class="sentence q-text"><p>Even if the result has a much larger bit width than the input, the exact mathematical answer is given.</p></blockquote>
+<p>BigInt::leftShift:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">1.</span> If <var>y</var> &lt; <span class="val">0</span><sub>ℤ</sub>, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Return ℤ(floor(ℝ(<var>x</var>) / 2<sup>-ℝ(<var>y</var>)</sup>)).</p><p class="q-step" style="--d:0"><span class="q-num">2.</span> Return <var>x</var> × <span class="val">2</span><sub>ℤ</sub><sup><var>y</var></sup>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>The three operations are the ones whose result can be far larger than their operands, and each returns its exact
+result, of any size. An implementation can hold BigInts only up to some size. Read as written,
+<code>2n ** (2n ** 40n)</code> is 2<sup>2<sup>40</sup></sup>, a BigInt of 2<sup>40</sup> + 1 bits (about 137 GB), and a
+conforming implementation must produce it; one that throws a <em>RangeError</em> there departs from the text: a search of
+spec.html found no sentence that sets or allows a limit on the size of a BigInt.</p>
+<p>The proposal is to say what an implementation with a limit does. In each of the three, before its result is formed, the proposed
+step:</p>
+<blockquote class="sentence q-other"><p>If the result would exceed the implementation&#x27;s maximum BigInt size, throw a <span class="val">RangeError</span> exception.</p></blockquote>
+<p>The maximum stays implementation-defined. The change is normative: it makes a <em>RangeError</em> a conforming result
+where the text now requires the exact BigInt.</p>
+<p>The proposed wording below does not settle every consequence. BigInt::multiply, BigInt::add, BigInt::subtract, and
+BigInt::leftShift return "a BigInt" and would return a completion record (their headers and their rows in §6.1.6's
+Numeric Type Operations table); ApplyStringOrNumericBinaryOperator (§13.15.3) calls them in its last step, "Return
+<em>operation</em>(<em>leftNumber</em>, <em>rightNumber</em>)", which would take <code>?</code>; BigInt::signedRightShift calls
+BigInt::leftShift(<em>x</em>, -<em>y</em>), which shifts left when <em>y</em> is negative (<code>2n &gt;&gt; -(2n ** 40n)</code>) and therefore also takes <code>?</code>,
+as do the four <code>UpdateExpression</code> (<code>++</code>/<code>--</code>) evaluation rules calling BigInt::add and BigInt::subtract; and the
+note of BigInt::multiply would end "unless it exceeds the implementation's maximum BigInt size". Under <a href="../errata.html#BigIntMaximumSize"><code>BigIntMaximumSize</code></a>,
+<code>BigInt.asUintN</code>, <code>BigInt::add</code>, and <code>BigInt::subtract</code> are covered alongside <code>exponentiate</code>, <code>leftShift</code>, and
+<code>multiply</code>.</p>
+<h2 id="examples">Examples</h2>
+<p>No example program is in <a href="results.html">examples/</a> for this proposal, and no engine's output is recorded in
+RESULTS.md for it.</p>
+<pre class="js"><code>try { print((2n ** (2n ** 40n)) &gt; 0n); } catch (e) { print(&quot;**: &quot; + e.constructor.name); }
+try { print((1n &lt;&lt; (2n ** 40n)) &gt; 0n); } catch (e) { print(&quot;&lt;&lt;: &quot; + e.constructor.name); }
+var big = 1n &lt;&lt; (2n ** 29n);
+try { print((big * big * big) &gt; 0n); } catch (e) { print(&quot;*: &quot; + e.constructor.name); }
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>**</code></th>
+<th><code>&lt;&lt;</code></th>
+<th><code>*</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>true</code> (an exact result of 2<sup>40</sup> + 1 bits)</td>
+<td><code>true</code> (likewise)</td>
+<td><code>true</code> (about 3 × 2<sup>29</sup> bits)</td>
+</tr>
+<tr>
+<td>proposed text</td>
+<td><code>RangeError</code> where the result exceeds the implementation's maximum</td>
+<td>likewise</td>
+<td>likewise</td>
+</tr>
+<tr>
+<td>formal model, proposed reading (the default)</td>
+<td><code>**: RangeError</code></td>
+<td><code>&lt;&lt;: RangeError</code></td>
+<td><code>*: RangeError</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>The model was not run under its literal reading here: it would have to form a BigInt of 2<sup>40</sup> + 1 bits.
+The model's tests <code>tests/run/bigint_huge_power.js</code> (<code>3n ** (1n &lt;&lt; 40n)</code>) and <code>tests/run/bigint_huge_left_shift.js</code>
+(<code>2n &lt;&lt; (1n &lt;&lt; 64n)</code>) end <code>throw: RangeError</code> under the default reading, and <code>tests/run/bigint_power_below_limit.js</code>
+computes <code>3n ** 5592406n</code> (8863754 bits), below the model's limit.</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: the three steps (the consequences above are not drafted):</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -2263,3 +2263,4 @@
+             1. If _exponent_ &amp;lt; *0*&lt;sub&gt;ℤ&lt;/sub&gt;, throw a *RangeError* exception.
+             1. If _base_ = *0*&lt;sub&gt;ℤ&lt;/sub&gt; and _exponent_ = *0*&lt;sub&gt;ℤ&lt;/sub&gt;, return *1*&lt;sub&gt;ℤ&lt;/sub&gt;.
++            1. If the result would exceed the implementation's maximum BigInt size, throw a *RangeError* exception.
+             1. Return _base_ raised to the power _exponent_.
+@@ -2278,3 +2279,4 @@
+           &lt;emu-alg&gt;
++            1. If the result would exceed the implementation's maximum BigInt size, throw a *RangeError* exception.
+             1. Return _x_ × _y_.
+           &lt;/emu-alg&gt;
+@@ -2358,3 +2360,4 @@
+               1. Return ℤ(floor(ℝ(_x_) / 2&lt;sup&gt;-ℝ(_y_)&lt;/sup&gt;)).
++            1. If the result would exceed the implementation's maximum BigInt size, throw a *RangeError* exception.
+             1. Return _x_ × *2*&lt;sub&gt;ℤ&lt;/sub&gt;&lt;sup&gt;_y_&lt;/sup&gt;.
+           &lt;/emu-alg&gt;
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>A search of test262 at 2e58f87d (exponentiations, shifts and products of huge BigInts, and "maximum BigInt size")
+found no test that requires either the exact result or a <em>RangeError</em> past a limit.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

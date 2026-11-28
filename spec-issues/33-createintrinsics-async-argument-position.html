@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>33. CreateIntrinsics passes async in prefix&#x27;s position: every built-in gets a Boolean prefix · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/33-createintrinsics-async-argument-position.md</code></p>
+<h1>33. CreateIntrinsics passes <em>async</em> in <em>prefix</em>'s position: every built-in gets a Boolean prefix</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§9.3.2 CreateIntrinsics (<a class="clause" href="https://tc39.es/ecma262/#sec-createintrinsics"><code>#sec-createintrinsics</code></a>), step 2, with §10.3.4 CreateBuiltinFunction (<a class="clause" href="https://tc39.es/ecma262/#sec-createbuiltinfunction"><code>#sec-createbuiltinfunction</code></a>), its header and steps 3, 7 and 13, §10.2.9 SetFunctionName (<a class="clause" href="https://tc39.es/ecma262/#sec-setfunctionname"><code>#sec-setfunctionname</code></a>), step 5.a, and the <em>"name"</em> paragraphs of §18 ECMAScript Standard Built-in Objects (<a class="clause" href="https://tc39.es/ecma262/#sec-ecmascript-standard-built-in-objects"><code>#sec-ecmascript-standard-built-in-objects</code></a>).</dd><dt>Kind</dt><dd>a call outside its parameter types (an argument in the wrong position).</dd><dt>Model erratum</dt><dd><code>CreateIntrinsicsAsyncArgument</code>, default reading test262; its readings: literal, test262, proposed. Read literally, the run stops at SetFunctionName step 5.a under CreateBuiltinFunction, where <em>async</em> is concatenated as the prefix; the test262 and proposed readings pass <em>prefix</em> as §18 gives it and set [[Async]] from the step's sentence.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3534">#3534</a> (open, 2025-02), "CreateIntrinsics isn't passing prefix to CreateBuiltinFunction for builtin getters/setters", reports the missing <em>prefix</em>; issue <a class="ext" href="https://github.com/tc39/ecma262/issues/4046">#4046</a> (open, 2026-10), "Editorial: CreateBuiltinFunction call in CreateIntrinsics passes wrong parameters", reports the argument position. PR <a class="ext" href="https://github.com/tc39/ecma262/pull/4022">#4022</a> (closed without merging, 2026-10) proposed six arguments and setting [[Async]] afterwards; PR <a class="ext" href="https://github.com/tc39/ecma262/pull/2833">#2833</a> (open, 2022-07), "Editorial: Specify <em>prefix</em> for non-specific uses of CreateBuiltinFunction", passes <em>prefix</em> last and predates <em>async</em>, which came with PR <a class="ext" href="https://github.com/tc39/ecma262/pull/2942">#2942</a> (merged 2025-12, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/7029ed1b2"><code>7029ed1b2</code></a>).</dd><dt>On this site</dt><dd><a href="../errata.html#CreateIntrinsicsAsyncArgument"><code>CreateIntrinsicsAsyncArgument</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>CreateIntrinsics, step 2:</p>
+<blockquote class="sentence q-text"><p>All values that are built-in function objects are created by performing CreateBuiltinFunction(<var>steps</var>, <var>length</var>, <var>name</var>, <var>slots</var>, <var>realmRecord</var>, <var>proto</var>, <var>async</var>) where <var>steps</var> is the definition of that function provided by this specification, <var>name</var> is the initial value of the function&#x27;s <span class="val">&quot;name&quot;</span> property, … and <var>async</var> is <span class="val">true</span> if the function is described as “async” and <span class="val">false</span> otherwise.</p></blockquote>
+<p>CreateBuiltinFunction's header:</p>
+<blockquote class="sentence q-text"><p>CreateBuiltinFunction ( <var>behaviour</var>: an Abstract Closure, a set of algorithm steps, or some other definition of a function&#x27;s behaviour provided in this specification, <var>length</var>: a non-negative integer or +∞, <var>name</var>: a property key or a Private Name, <var>additionalInternalSlotsList</var>: a List of names of internal slots, optional <var>realm</var>: a Realm Record, optional <var>proto</var>: an Object or <span class="val">null</span>, optional <var>prefix</var>: a String, optional <var>async</var>: a Boolean, ): a built-in function object</p></blockquote>
+<p>and its steps:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">3.</span> If <var>async</var> is not present, set <var>async</var> to <span class="val">false</span>.</p><p class="q-step" style="--d:0"><span class="q-num">7.</span> Set <var>func</var>.[[Async]] to <var>async</var>.</p><p class="q-step" style="--d:0"><span class="q-num">13.</span> If <var>prefix</var> is not present, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Perform SetFunctionName(<var>func</var>, <var>name</var>).</p><p class="q-step" style="--d:0"><span class="q-num">14.</span> Else,</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Perform SetFunctionName(<var>func</var>, <var>name</var>, <var>prefix</var>).</p></blockquote>
+<p>SetFunctionName:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">5.</span> If <var>prefix</var> is present, then</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Let <var>prefixedName</var> be the string-concatenation of <var>prefix</var>, the code unit 0x0020 (SPACE), and <var>name</var>.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>The step passes seven arguments; the seventh parameter is <em>prefix</em>, a String. So every built-in function created
+by CreateIntrinsics gets <em>prefix</em> <em>false</em> (or <em>true</em>) and no <em>async</em>. CreateBuiltinFunction then calls
+SetFunctionName with a Boolean prefix, whose step 5.a concatenates a Boolean with Strings, which is not defined;
+and [[Async]] is <em>false</em> for every built-in, so <code>Array.fromAsync</code>, the one built-in described as "async", runs its
+steps without AsyncFunctionStart (BuiltinCallOrConstruct, step 10) and its Await has no async function context. The
+step's intent is clear from its own sentence and from §18: <em>async</em> in its own position, and <em>prefix</em> <em>"get"</em> or
+<em>"set"</em> for an accessor, which the step does not pass at all. Since <em>async</em> follows <em>prefix</em>, a call that passes <em>async</em> must pass some <em>prefix</em>,
+so the fix gives <em>prefix</em> an <span class="const">empty</span> case.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/33-createintrinsics-async-argument-position.js</a>
+(outputs: <a href="results.html#33-createintrinsics-async-argument-positionjs">the recorded runs</a>):</p>
+<pre class="js"><code>print(Object.getOwnPropertyDescriptor(Map.prototype, &quot;size&quot;).get.name);
+print(Object.getOwnPropertyDescriptor(RegExp.prototype, &quot;flags&quot;).get.name);
+var p = Array.fromAsync([1, 2]);
+print(Object.prototype.toString.call(p));
+p.then(function (v) { print(&quot;fromAsync fulfils with &quot; + JSON.stringify(v)); });
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td>none: creating the realm's first built-in function concatenates a Boolean (SetFunctionName 5.a)</td>
+</tr>
+<tr>
+<td>proposed text</td>
+<td><code>get size</code>, <code>get flags</code>, <code>[object Promise]</code>, <code>fromAsync fulfils with [1,2]</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>get size</code>, <code>get flags</code>, <code>[object Promise]</code>, <code>fromAsync fulfils with [1,2]</code></td>
+</tr>
+<tr>
+<td>formal model, literal reading</td>
+<td>none: the run stops at SetFunctionName 5.a while the realm is created</td>
+</tr>
+<tr>
+<td>formal model, test262 and proposed readings</td>
+<td><code>get size</code>, <code>get flags</code>, <code>[object Promise]</code>, <code>fromAsync fulfils with [1,2]</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -11854,7 +11854,7 @@
+       &lt;/dl&gt;
+       &lt;emu-alg&gt;
+         1. Set _realmRecord_.[[Intrinsics]] to a new Record.
+-        1. [declared=&quot;steps,name,length,slots,proto,async&quot;] Set fields of _realmRecord_.[[Intrinsics]] with the values listed in &lt;emu-xref href=&quot;#table-well-known-intrinsic-objects&quot;&gt;&lt;/emu-xref&gt;. The field names are the names listed in the “Intrinsic Name” column of the table. The value of each field is a new object value fully and recursively populated with property values as defined by the specification of each object in clauses &lt;emu-xref href=&quot;#sec-global-object&quot;&gt;&lt;/emu-xref&gt; through &lt;emu-xref href=&quot;#sec-reflection&quot;&gt;&lt;/emu-xref&gt;. All object property values are newly created object values. All values that are built-in function objects are created by performing CreateBuiltinFunction(_steps_, _length_, _name_, _slots_, _realmRecord_, _proto_, _async_) where _steps_ is the definition of that function provided by this specification, _name_ is the initial value of the function's *&quot;name&quot;* property, _length_ is the initial value of the function's *&quot;length&quot;* property, _slots_ is a list of the names, if any, of the function's specified internal slots, _proto_ is the specified value of the function's [[Prototype]] internal slot, and _async_ is *true* if the function is described as “async” and *false* otherwise. The creation of the intrinsics and their properties must be ordered to avoid any dependencies upon objects that have not yet been created.
++        1. [declared=&quot;steps,name,length,slots,proto,prefix,async&quot;] Set fields of _realmRecord_.[[Intrinsics]] with the values listed in &lt;emu-xref href=&quot;#table-well-known-intrinsic-objects&quot;&gt;&lt;/emu-xref&gt;. The field names are the names listed in the “Intrinsic Name” column of the table. The value of each field is a new object value fully and recursively populated with property values as defined by the specification of each object in clauses &lt;emu-xref href=&quot;#sec-global-object&quot;&gt;&lt;/emu-xref&gt; through &lt;emu-xref href=&quot;#sec-reflection&quot;&gt;&lt;/emu-xref&gt;. All object property values are newly created object values. All values that are built-in function objects are created by performing CreateBuiltinFunction(_steps_, _length_, _name_, _slots_, _realmRecord_, _proto_, _prefix_, _async_) where _steps_ is the definition of that function provided by this specification, _name_ and _prefix_ are as given in &lt;emu-xref href=&quot;#sec-ecmascript-standard-built-in-objects&quot;&gt;&lt;/emu-xref&gt; (_prefix_ is &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt; for a function that is not a get or set accessor function of a built-in property), _length_ is the initial value of the function's *&quot;length&quot;* property, _slots_ is a list of the names, if any, of the function's specified internal slots, _proto_ is the specified value of the function's [[Prototype]] internal slot, and _async_ is *true* if the function is described as “async” and *false* otherwise. The creation of the intrinsics and their properties must be ordered to avoid any dependencies upon objects that have not yet been created.
+         1. Perform AddRestrictedFunctionProperties(_realmRecord_.[[Intrinsics]].[[%Function.prototype%]], _realmRecord_).
+         1. Return &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;.
+       &lt;/emu-alg&gt;
+@@ -14145,7 +14145,7 @@
+           _additionalInternalSlotsList_: a List of names of internal slots,
+           optional _realm_: a Realm Record,
+           optional _proto_: an Object or *null*,
+-          optional _prefix_: a String,
++          optional _prefix_: a String or &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;,
+           optional _async_: a Boolean,
+         ): a built-in function object
+       &lt;/h1&gt;
+@@ -14166,7 +14166,7 @@
+         1. Set _func_.[[Realm]] to _realm_.
+         1. Set _func_.[[InitialName]] to *null*.
+         1. Perform SetFunctionLength(_func_, _length_).
+-        1. If _prefix_ is not present, then
++        1. If _prefix_ is not present or _prefix_ is &lt;span class=&quot;const&quot;&gt;empty&lt;/span&gt;, then
+           1. Perform SetFunctionName(_func_, _name_).
+         1. Else,
+           1. Perform SetFunctionName(_func_, _name_, _prefix_).
+</code></pre>
+<h2 id="test262">test262</h2>
+<p>Every test needs the realm's built-ins. Those that observe the two arguments:
+<code>built-ins/Array/fromAsync/returns-promise.js</code> and <code>built-ins/Array/fromAsync/asyncitems-null-undefined.js</code> (a
+rejected promise, not a synchronous throw) need [[Async]] <em>true</em>; <code>built-ins/Map/prototype/size/name.js</code> and the
+other accessor <code>name.js</code> tests need the <em>"get "</em> prefix.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#33-createintrinsics-async-argument-positionjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=33-createintrinsics-async-argument-position">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/33-createintrinsics-async-argument-position.js</code></summary><pre class="js">// CreateIntrinsics step 2 passes _async_ where CreateBuiltinFunction takes _prefix_, and passes no _prefix_.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+print(Object.getOwnPropertyDescriptor(Map.prototype, &quot;size&quot;).get.name);
+print(Object.getOwnPropertyDescriptor(RegExp.prototype, &quot;flags&quot;).get.name);
+var p = Array.fromAsync([1, 2]);
+print(Object.prototype.toString.call(p));
+p.then(function (v) { print(&quot;fromAsync fulfils with &quot; + JSON.stringify(v)); });
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

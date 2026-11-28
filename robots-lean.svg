@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-label="Three retro-futuristic robots at mechanical typewriters typing Lean 4 formal proofs from spec.html">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fbfcfd"/>
+      <stop offset="100%" stop-color="#f1f4f7"/>
+    </linearGradient>
+    <linearGradient id="paperGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f7f3e8"/>
+    </linearGradient>
+    <linearGradient id="botMetal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#dce6f0"/>
+      <stop offset="100%" stop-color="#afc2d6"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d9b45b"/>
+      <stop offset="100%" stop-color="#9a7426"/>
+    </linearGradient>
+    <linearGradient id="twBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2c3540"/>
+      <stop offset="100%" stop-color="#1b2129"/>
+    </linearGradient>
+    <filter id="softShadow" x="-8%" y="-8%" width="116%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#1b2129" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <!-- Subtle studio background & drafting grid lines -->
+  <rect width="1200" height="620" rx="18" fill="url(#bgGrad)"/>
+  <g stroke="#e3e9ef" stroke-width="1">
+    <line x1="60" y1="110" x2="1140" y2="110"/>
+    <line x1="60" y1="220" x2="1140" y2="220"/>
+    <line x1="60" y1="330" x2="1140" y2="330"/>
+  </g>
+
+  <!-- Floating proof speech/thought banners above each robot -->
+  <g filter="url(#softShadow)" font-family="Menlo, Consolas, monospace" font-size="14.5">
+    <rect x="68" y="26" width="334" height="66" rx="10" fill="#ffffff" stroke="#d9e0e6" stroke-width="2"/>
+    <text x="86" y="52" fill="#7b3fa0" font-weight="700">theorem</text>
+    <text x="156" y="52" fill="#1b2129" font-weight="700">Engine.implements</text>
+    <text x="86" y="75" fill="#2c7a4b">⊢ Implements (implementation …)</text>
+
+    <rect x="433" y="26" width="334" height="66" rx="10" fill="#ffffff" stroke="#d9e0e6" stroke-width="2"/>
+    <text x="451" y="52" fill="#1c5d99" font-weight="700">∀ c c′, Machine.step c = c′</text>
+    <text x="451" y="75" fill="#4c5864">simp [TrimString, Step.loop] ∎</text>
+
+    <rect x="798" y="26" width="334" height="66" rx="10" fill="#ffffff" stroke="#d9e0e6" stroke-width="2"/>
+    <text x="816" y="52" fill="#9a7426" font-weight="700">&lt;emu-alg&gt; → Lean 4</text>
+    <text x="816" y="75" fill="#2c7a4b">0 sorry · 0 native_decide ✓</text>
+  </g>
+
+  <!-- Long oak workbench -->
+  <rect x="30" y="486" width="1140" height="26" rx="6" fill="#c79c63" stroke="#1b2129" stroke-width="3"/>
+  <rect x="50" y="512" width="1100" height="92" fill="#a87e49" stroke="#1b2129" stroke-width="3"/>
+  <line x1="65" y1="534" x2="1135" y2="534" stroke="#8a6436" stroke-width="2"/>
+
+  <!-- ==================== ROBOT 1 (LEFT) ==================== -->
+  <g transform="translate(95, 118)">
+    <!-- Antenna -->
+    <line x1="140" y1="32" x2="140" y2="4" stroke="#1b2129" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="140" cy="4" r="8" fill="#e08a00" stroke="#1b2129" stroke-width="3"/>
+    <!-- Ears -->
+    <rect x="74" y="66" width="12" height="30" rx="4" fill="url(#brass)" stroke="#1b2129" stroke-width="3"/>
+    <rect x="194" y="66" width="12" height="30" rx="4" fill="url(#brass)" stroke="#1b2129" stroke-width="3"/>
+    <!-- Head -->
+    <rect x="86" y="32" width="108" height="88" rx="18" fill="url(#botMetal)" stroke="#1b2129" stroke-width="3.5"/>
+    <!-- Visor & glowing eyes -->
+    <rect x="102" y="52" width="76" height="34" rx="9" fill="#1b2129"/>
+    <circle cx="122" cy="69" r="8" fill="#74c795"/>
+    <circle cx="158" cy="69" r="8" fill="#74c795"/>
+    <circle cx="124" cy="66" r="2.5" fill="#ffffff"/>
+    <circle cx="160" cy="66" r="2.5" fill="#ffffff"/>
+    <!-- Happy mouth grille -->
+    <rect x="114" y="96" width="52" height="10" rx="4" fill="#ffffff" stroke="#1b2129" stroke-width="2"/>
+    <line x1="127" y1="96" x2="127" y2="106" stroke="#1b2129" stroke-width="2"/>
+    <line x1="140" y1="96" x2="140" y2="106" stroke="#1b2129" stroke-width="2"/>
+    <line x1="153" y1="96" x2="153" y2="106" stroke="#1b2129" stroke-width="2"/>
+    <!-- Neck & Torso -->
+    <rect x="126" y="120" width="28" height="16" fill="url(#brass)" stroke="#1b2129" stroke-width="3"/>
+    <rect x="72" y="136" width="136" height="126" rx="20" fill="url(#botMetal)" stroke="#1b2129" stroke-width="3.5"/>
+    <!-- Chest gauge -->
+    <rect x="96" y="156" width="88" height="48" rx="8" fill="#fbf8f1" stroke="#1b2129" stroke-width="2.5"/>
+    <text x="140" y="186" text-anchor="middle" font-family="Georgia, serif" font-size="24" font-weight="700" fill="#1c5d99">∀ ⊢ ∎</text>
+    <!-- Articulated arms reaching to typewriter keys -->
+    <path d="M72,166 C34,196 38,258 84,292" fill="none" stroke="#1b2129" stroke-width="14" stroke-linecap="round"/>
+    <path d="M72,166 C34,196 38,258 84,292" fill="none" stroke="#dce6f0" stroke-width="8" stroke-linecap="round"/>
+    <path d="M208,166 C246,196 242,258 196,292" fill="none" stroke="#1b2129" stroke-width="14" stroke-linecap="round"/>
+    <path d="M208,166 C246,196 242,258 196,292" fill="none" stroke="#dce6f0" stroke-width="8" stroke-linecap="round"/>
+    <!-- Curling proof scroll rising from typewriter -->
+    <path d="M80,262 L80,192 C80,178 92,172 104,172 L180,172 C192,172 200,180 200,192 L200,262 Z" fill="url(#paperGrad)" stroke="#1b2129" stroke-width="2.5" filter="url(#softShadow)"/>
+    <g font-family="Menlo, monospace" font-size="9.2" fill="#1b2129">
+      <text x="90" y="193" fill="#7b3fa0" font-weight="700">lemma step_ok :</text>
+      <text x="90" y="208">  Reached P c →</text>
+      <text x="90" y="223">  Steps P c c′</text>
+      <text x="90" y="238" fill="#2c7a4b">  := by exact h</text>
+    </g>
+    <!-- Mechanical Typewriter -->
+    <rect x="64" y="254" width="152" height="18" rx="6" fill="#4c5864" stroke="#1b2129" stroke-width="3"/>
+    <circle cx="56" cy="263" r="8" fill="url(#brass)" stroke="#1b2129" stroke-width="2.5"/>
+    <circle cx="224" cy="263" r="8" fill="url(#brass)" stroke="#1b2129" stroke-width="2.5"/>
+    <path d="M50,272 L230,272 L248,368 L32,368 Z" fill="url(#twBody)" stroke="#1b2129" stroke-width="3.5"/>
+    <rect x="76" y="286" width="128" height="22" rx="4" fill="url(#brass)" stroke="#1b2129" stroke-width="2"/>
+    <text x="140" y="301" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="700" fill="#1b2129">LEAN-O-MATIC IV</text>
+    <!-- Typewriter keys -->
+    <g fill="#fbfcfd" stroke="#1b2129" stroke-width="2">
+      <circle cx="72" cy="330" r="8"/><circle cx="98" cy="330" r="8"/><circle cx="124" cy="330" r="8"/><circle cx="150" cy="330" r="8"/><circle cx="176" cy="330" r="8"/><circle cx="202" cy="330" r="8"/>
+      <circle cx="84" cy="350" r="8"/><circle cx="110" cy="350" r="8"/><circle cx="136" cy="350" r="8"/><circle cx="162" cy="350" r="8"/><circle cx="188" cy="350" r="8"/>
+    </g>
+  </g>
+
+  <!-- ==================== ROBOT 2 (CENTER, HERO) ==================== -->
+  <g transform="translate(455, 102)">
+    <!-- Twin brass antennas anchored into dome head -->
+    <line x1="126" y1="54" x2="114" y2="18" stroke="#1b2129" stroke-width="4" stroke-linecap="round"/>
+    <line x1="164" y1="54" x2="176" y2="18" stroke="#1b2129" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="114" cy="18" r="8" fill="#1c5d99" stroke="#1b2129" stroke-width="3"/>
+    <circle cx="176" cy="18" r="8" fill="#2c7a4b" stroke="#1b2129" stroke-width="3"/>
+    <!-- Dome Head -->
+    <path d="M86,78 C86,34 204,34 204,78 L204,124 C204,134 196,140 186,140 L104,140 C94,140 86,134 86,124 Z" fill="#e6eef6" stroke="#1b2129" stroke-width="3.5"/>
+    <rect x="74" y="78" width="12" height="32" rx="4" fill="url(#brass)" stroke="#1b2129" stroke-width="3"/>
+    <rect x="204" y="78" width="12" height="32" rx="4" fill="url(#brass)" stroke="#1b2129" stroke-width="3"/>
+    <!-- Spectacles / Visor focused intensely -->
+    <circle cx="122" cy="86" r="20" fill="#1b2129" stroke="url(#brass)" stroke-width="4"/>
+    <circle cx="168" cy="86" r="20" fill="#1b2129" stroke="url(#brass)" stroke-width="4"/>
+    <line x1="142" y1="86" x2="148" y2="86" stroke="url(#brass)" stroke-width="4"/>
+    <circle cx="122" cy="86" r="8" fill="#7db4e8"/>
+    <circle cx="168" cy="86" r="8" fill="#7db4e8"/>
+    <circle cx="125" cy="83" r="2.5" fill="#ffffff"/>
+    <circle cx="171" cy="83" r="2.5" fill="#ffffff"/>
+    <path d="M126,120 Q145,130 164,120" fill="none" stroke="#1b2129" stroke-width="3" stroke-linecap="round"/>
+    <!-- Neck & Torso -->
+    <rect x="130" y="140" width="30" height="16" fill="url(#brass)" stroke="#1b2129" stroke-width="3"/>
+    <rect x="72" y="156" width="146" height="128" rx="22" fill="#e6eef6" stroke="#1b2129" stroke-width="3.5"/>
+    <rect x="98" y="174" width="94" height="46" rx="8" fill="#e6f3ea" stroke="#2c7a4b" stroke-width="2.5"/>
+    <text x="145" y="203" text-anchor="middle" font-family="Menlo, monospace" font-size="17" font-weight="700" fill="#2c7a4b">Q.E.D. ✓</text>
+    <!-- Fast typing arms with motion arcs -->
+    <path d="M72,184 C26,214 32,274 86,308" fill="none" stroke="#1b2129" stroke-width="14" stroke-linecap="round"/>
+    <path d="M72,184 C26,214 32,274 86,308" fill="none" stroke="#e6eef6" stroke-width="8" stroke-linecap="round"/>
+    <path d="M218,184 C264,214 258,274 204,308" fill="none" stroke="#1b2129" stroke-width="14" stroke-linecap="round"/>
+    <path d="M218,184 C264,214 258,274 204,308" fill="none" stroke="#e6eef6" stroke-width="8" stroke-linecap="round"/>
+    <path d="M42,286 Q32,298 44,310" fill="none" stroke="#9a7426" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M248,286 Q258,298 246,310" fill="none" stroke="#9a7426" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Long curling proof scroll -->
+    <path d="M80,278 L80,186 C80,172 92,166 104,166 L186,166 C198,166 210,172 210,186 L210,278 Z" fill="url(#paperGrad)" stroke="#1b2129" stroke-width="2.5" filter="url(#softShadow)"/>
+    <g font-family="Menlo, monospace" font-size="9" fill="#1b2129">
+      <text x="89" y="189" fill="#7b3fa0" font-weight="700">theorem run_sound</text>
+      <text x="89" y="204">  (h : runT s = .ok v)</text>
+      <text x="89" y="219">  : SpecRuns s v :=</text>
+      <text x="89" y="234" fill="#1c5d99">  implements.sim h</text>
+      <text x="89" y="249" fill="#2c7a4b">-- 14/14 proposals ✓</text>
+    </g>
+    <!-- Center Typewriter -->
+    <rect x="64" y="270" width="162" height="18" rx="6" fill="#4c5864" stroke="#1b2129" stroke-width="3"/>
+    <circle cx="55" cy="279" r="8" fill="url(#brass)" stroke="#1b2129" stroke-width="2.5"/>
+    <circle cx="235" cy="279" r="8" fill="url(#brass)" stroke="#1b2129" stroke-width="2.5"/>
+    <path d="M48,288 L242,288 L260,384 L30,384 Z" fill="#1c5d99" stroke="#1b2129" stroke-width="3.5"/>
+    <rect x="80" y="302" width="130" height="22" rx="4" fill="url(#brass)" stroke="#1b2129" stroke-width="2"/>
+    <text x="145" y="317" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="700" fill="#1b2129">PROOFWRITER 262</text>
+    <g fill="#fbfcfd" stroke="#1b2129" stroke-width="2">
+      <circle cx="74" cy="346" r="8"/><circle cx="102" cy="346" r="8"/><circle cx="130" cy="346" r="8"/><circle cx="158" cy="346" r="8"/><circle cx="186" cy="346" r="8"/><circle cx="214" cy="346" r="8"/>
+      <circle cx="88" cy="366" r="8"/><circle cx="116" cy="366" r="8"/><circle cx="144" cy="366" r="8"/><circle cx="172" cy="366" r="8"/><circle cx="200" cy="366" r="8"/>
+    </g>
+  </g>
+
+  <!-- ==================== ROBOT 3 (RIGHT) ==================== -->
+  <g transform="translate(820, 118)">
+    <!-- Antenna -->
+    <line x1="140" y1="32" x2="140" y2="4" stroke="#1b2129" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="140" cy="4" r="8" fill="#7b3fa0" stroke="#1b2129" stroke-width="3"/>
+    <!-- Head -->
+    <rect x="74" y="66" width="12" height="30" rx="4" fill="url(#brass)" stroke="#1b2129" stroke-width="3"/>
+    <rect x="194" y="66" width="12" height="30" rx="4" fill="url(#brass)" stroke="#1b2129" stroke-width="3"/>
+    <rect x="86" y="32" width="108" height="88" rx="18" fill="url(#botMetal)" stroke="#1b2129" stroke-width="3.5"/>
+    <rect x="102" y="52" width="76" height="34" rx="9" fill="#1b2129"/>
+    <circle cx="122" cy="69" r="8" fill="#ffb547"/>
+    <circle cx="158" cy="69" r="8" fill="#ffb547"/>
+    <circle cx="124" cy="66" r="2.5" fill="#ffffff"/>
+    <circle cx="160" cy="66" r="2.5" fill="#ffffff"/>
+    <line x1="118" y1="100" x2="162" y2="100" stroke="#1b2129" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Neck & Torso -->
+    <rect x="126" y="120" width="28" height="16" fill="url(#brass)" stroke="#1b2129" stroke-width="3"/>
+    <rect x="72" y="136" width="136" height="126" rx="20" fill="url(#botMetal)" stroke="#1b2129" stroke-width="3.5"/>
+    <rect x="96" y="156" width="88" height="48" rx="8" fill="#fbf8f1" stroke="#1b2129" stroke-width="2.5"/>
+    <text x="140" y="185" text-anchor="middle" font-family="Menlo, monospace" font-size="16" font-weight="700" fill="#7b3fa0">λ x ⇒ x</text>
+    <!-- Arms -->
+    <path d="M72,166 C34,196 38,258 84,292" fill="none" stroke="#1b2129" stroke-width="14" stroke-linecap="round"/>
+    <path d="M72,166 C34,196 38,258 84,292" fill="none" stroke="#dce6f0" stroke-width="8" stroke-linecap="round"/>
+    <path d="M208,166 C246,196 242,258 196,292" fill="none" stroke="#1b2129" stroke-width="14" stroke-linecap="round"/>
+    <path d="M208,166 C246,196 242,258 196,292" fill="none" stroke="#dce6f0" stroke-width="8" stroke-linecap="round"/>
+    <!-- Scroll -->
+    <path d="M80,262 L80,192 C80,178 92,172 104,172 L180,172 C192,172 200,180 200,192 L200,262 Z" fill="url(#paperGrad)" stroke="#1b2129" stroke-width="2.5" filter="url(#softShadow)"/>
+    <g font-family="Menlo, monospace" font-size="9.2" fill="#1b2129">
+      <text x="90" y="193" fill="#9a7426" font-weight="700">Host.WF :</text>
+      <text x="90" y="208">  72/72 laws</text>
+      <text x="90" y="223">  quoted &amp;</text>
+      <text x="90" y="238" fill="#2c7a4b">  checked ✓</text>
+    </g>
+    <!-- Typewriter -->
+    <rect x="64" y="254" width="152" height="18" rx="6" fill="#4c5864" stroke="#1b2129" stroke-width="3"/>
+    <circle cx="56" cy="263" r="8" fill="url(#brass)" stroke="#1b2129" stroke-width="2.5"/>
+    <circle cx="224" cy="263" r="8" fill="url(#brass)" stroke="#1b2129" stroke-width="2.5"/>
+    <path d="M50,272 L230,272 L248,368 L32,368 Z" fill="url(#twBody)" stroke="#1b2129" stroke-width="3.5"/>
+    <rect x="76" y="286" width="128" height="22" rx="4" fill="url(#brass)" stroke="#1b2129" stroke-width="2"/>
+    <text x="140" y="301" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-weight="700" fill="#1b2129">TACTIC-TYPE 4</text>
+    <g fill="#fbfcfd" stroke="#1b2129" stroke-width="2">
+      <circle cx="72" cy="330" r="8"/><circle cx="98" cy="330" r="8"/><circle cx="124" cy="330" r="8"/><circle cx="150" cy="330" r="8"/><circle cx="176" cy="330" r="8"/><circle cx="202" cy="330" r="8"/>
+      <circle cx="84" cy="350" r="8"/><circle cx="110" cy="350" r="8"/><circle cx="136" cy="350" r="8"/><circle cx="162" cy="350" r="8"/><circle cx="188" cy="350" r="8"/>
+    </g>
+  </g>
+
+  <!-- Thick `spec.html` binder resting on the desk between Robots 1 & 2 -->
+  <g transform="translate(362, 434)" filter="url(#softShadow)">
+    <rect x="0" y="14" width="116" height="38" rx="4" fill="#fbf8f1" stroke="#1b2129" stroke-width="3"/>
+    <rect x="0" y="0" width="116" height="22" rx="4" fill="#9a7426" stroke="#1b2129" stroke-width="3"/>
+    <text x="58" y="15" text-anchor="middle" font-family="Menlo, monospace" font-size="12" font-weight="700" fill="#ffffff">spec.html</text>
+    <text x="58" y="40" text-anchor="middle" font-family="Georgia, serif" font-size="12" font-weight="700" fill="#1b2129">ECMA-262</text>
+  </g>
+
+  <!-- Coffee / oil mug on the desk between Robots 2 & 3 -->
+  <g transform="translate(748, 432)" filter="url(#softShadow)">
+    <path d="M38,14 C52,14 52,40 38,40" fill="none" stroke="#1b2129" stroke-width="4"/>
+    <rect x="0" y="6" width="40" height="46" rx="5" fill="#ffffff" stroke="#1b2129" stroke-width="3"/>
+    <text x="20" y="34" text-anchor="middle" font-family="Menlo, monospace" font-size="11" font-weight="700" fill="#1c5d99">LEAN</text>
+  </g>
+</svg>

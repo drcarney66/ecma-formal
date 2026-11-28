@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04. A module with top-level await never disposes its top-level resources · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/04-execute-module-tla-dispose.md</code></p>
+<h1>04. A module with top-level await never disposes its top-level resources</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§16.2.1.7.3.2 ExecuteModule (<a class="clause" href="https://tc39.es/ecma262/#sec-source-text-module-record-execute-module"><code>#sec-source-text-module-record-execute-module</code></a>), step 4.b, against step 3.f.</dd><dt>Kind</dt><dd>missing step.</dd><dt>Model erratum</dt><dd><code>ExecuteModuleAsyncDisposeResources</code>, default reading test262; its readings: literal, test262, proposed. The test262 and proposed readings are the same: step 4.b passes AsyncBlockStart the closure of Proposed wording.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: issue <a class="ext" href="https://github.com/tc39/ecma262/issues/4039">#4039</a> (open, 2026-10), "Disposers are not run for modules with top-level await", reports it; PR <a class="ext" href="https://github.com/tc39/ecma262/pull/4007">#4007</a> (closed without merging, 2026-10), "Normative: dispose resources during async module evaluation", proposed passing AsyncBlockStart a closure that calls DisposeResources. The declarations <code>using</code> and <code>await using</code> came with PR <a class="ext" href="https://github.com/tc39/ecma262/pull/3000">#3000</a> (merged 2026-06, commit <a class="ext" href="https://github.com/tc39/ecma262/commit/f792966f2"><code>f792966f2</code></a>).</dd><dt>On this site</dt><dd><a href="../errata.html#ExecuteModuleAsyncDisposeResources"><code>ExecuteModuleAsyncDisposeResources</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">3.</span> If <var>module</var>.[[HasTLA]] is <span class="val">false</span>, then</p><p class="q-gap">…</p><p class="q-step" style="--d:1"><span class="q-num">e.</span> Let <var>result</var> be Completion(Evaluation of <var>module</var>.[[ECMAScriptCode]]).</p><p class="q-step" style="--d:1"><span class="q-num">f.</span> Set <var>result</var> to Completion(DisposeResources(<var>env</var>.[[DisposableResourceStack]], <var>result</var>)).</p><p class="q-gap">…</p><p class="q-step" style="--d:0"><span class="q-num">4.</span> Else,</p><p class="q-step" style="--d:1"><span class="q-num">a.</span> Assert: <var>capability</var> is a PromiseCapability Record.</p><p class="q-step" style="--d:1"><span class="q-num">b.</span> Perform AsyncBlockStart(<var>capability</var>, <var>module</var>.[[ECMAScriptCode]], <var>moduleContext</var>).</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>A module's top-level <code>using</code> and <code>await using</code> declarations add resources to the module environment's
+[[DisposableResourceStack]]. Step 3.f disposes them for a module without top-level await. Step 4.b hands the Module
+Parse Node to AsyncBlockStart, which evaluates it and settles the capability. Neither AsyncBlockStart nor the
+Evaluation of Module and ModuleBody (§16.2.1.14) calls DisposeResources, and no other algorithm disposes the module
+environment.</p>
+<p>So the resources of a module with [[HasTLA]] <em>true</em> are never disposed. An <code>await using</code> declaration contains an
+await, so every module with one at top level has [[HasTLA]] <em>true</em>: <code>await using</code> at the top level of a module
+never disposes anything, and neither does <code>using</code> in a module that awaits.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/04-execute-module-tla-dispose/</a> (outputs:
+<a href="results.html#04-execute-module-tla-dispose">the recorded runs</a>):</p>
+<pre class="js"><code>// m.mjs
+await using a = { async [Symbol.asyncDispose]() { print(&quot;dispose a&quot;); } };
+using b = { [Symbol.dispose]() { print(&quot;dispose b&quot;); } };
+await null;
+print(&quot;end of module body&quot;);
+// main.mjs
+import(&quot;./m.mjs&quot;).then(function () { print(&quot;evaluation promise fulfilled&quot;); });
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>end of module body</code>, <code>evaluation promise fulfilled</code></td>
+</tr>
+<tr>
+<td>V8, JavaScriptCore</td>
+<td><code>end of module body</code>, <code>dispose b</code>, <code>dispose a</code>, <code>evaluation promise fulfilled</code></td>
+</tr>
+<tr>
+<td>SpiderMonkey 140</td>
+<td><code>rejected: SyntaxError: unexpected token: identifier</code> (its shell parses neither <code>using</code> nor <code>await using</code>, with or without <code>--enable-explicit-resource-management</code>)</td>
+</tr>
+<tr>
+<td>formal model, literal reading</td>
+<td><code>end of module body</code>, <code>evaluation promise fulfilled</code></td>
+</tr>
+<tr>
+<td>formal model, test262 reading (default) and proposed reading</td>
+<td><code>end of module body</code>, <code>dispose b</code>, <code>dispose a</code>, <code>evaluation promise fulfilled</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: give AsyncBlockStart a closure that performs steps 3.e–3.f:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -28969,7 +28969,12 @@
+                   1. Return ? _result_.
+               1. Else,
+                 1. Assert: _capability_ is a PromiseCapability Record.
+-                1. Perform AsyncBlockStart(_capability_, _module_.[[ECMAScriptCode]], _moduleContext_).
++                1. Let _env_ be _module_.[[Environment]].
++                1. Let _asyncBody_ be a new Abstract Closure with no parameters that captures _module_ and _env_ and performs the following steps when called:
++                  1. Let _result_ be Completion(Evaluation of _module_.[[ECMAScriptCode]]).
++                  1. Set _result_ to Completion(DisposeResources(_env_.[[DisposableResourceStack]], _result_)).
++                  1. Return Completion(_result_).
++                1. Perform AsyncBlockStart(_capability_, _asyncBody_, _moduleContext_).
+               1. Return &lt;span class=&quot;const&quot;&gt;unused&lt;/span&gt;.
+             &lt;/emu-alg&gt;
+           &lt;/emu-clause&gt;
+</code></pre>
+<p>The closure ends in "Return Completion(<em>result</em>)", as BuiltinCallOrConstruct's <em>resultsClosure</em> does: an Abstract
+Closure gets no implicit normal completion (§5.2.4.4).</p>
+<h2 id="test262">test262</h2>
+<p><code>language/statements/await-using/initializer-Symbol.asyncDispose-disposed-at-end-of-module.js</code>,
+<code>initializer-Symbol.dispose-disposed-at-end-of-module.js</code> and the two <code>…-disposed-at-end-of-imported-module.js</code>
+tests in the same directory require the disposal. They fail under the literal text.</p><section id="program"><h2>The program</h2><p>The example is a Module graph (its <code>main.mjs</code> runs as a Module). Its runs on the engines and on the model: <a href="results.html#04-execute-module-tla-dispose">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=04-execute-module-tla-dispose">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/04-execute-module-tla-dispose/m.mjs</code></summary><pre class="js">if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+await using a = { async [Symbol.asyncDispose]() { print(&quot;dispose a&quot;); } };
+using b = { [Symbol.dispose]() { print(&quot;dispose b&quot;); } };
+await null;
+print(&quot;end of module body&quot;);
+</pre></details><details class="jssrc"><summary>Source <code>examples/04-execute-module-tla-dispose/main.mjs</code></summary><pre class="js">// ExecuteModule 4.b: a module with top-level await never disposes the
+// resources of its top-level `using` / `await using` declarations.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+import(&quot;./m.mjs&quot;).then(function () { print(&quot;evaluation promise fulfilled&quot;); },
+                       function (e) { print(&quot;rejected: &quot; + e); });
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

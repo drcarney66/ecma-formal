@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu"><summary>Read</summary><ul><li><a href="how-it-works.html">How it works</a></li><li><a href="proposal.html">Applying a proposal</a></li><li><a href="errata.html">Spec issues &amp; errata</a></li><li><a href="what-is-proved.html">What is proved</a></li><li><a href="test262.html">test262 results</a></li><li><a href="slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="model.html">The model</a></li><li><a href="host.html">The host</a></li><li><a href="memory-model.html">Memory model</a></li><li><a href="parser-laws.html">Parser laws</a></li><li><a href="implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="examples.html">Examples</a></li><li><a href="debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page">
+
+<main id="main">
+<header class="title">
+<p class="eyebrow">ECMA-262 formalized in SpecTec, with an execution engine proved in Lean 4</p>
+<h1>ECMA-262 in Lean</h1>
+<div class="lede"><p>The specification's algorithms, grammars, early errors and tables are formalized in <strong>SpecTec</strong> (<code>spec/spectec/</code>) in a verified bijection with <code>spec.html</code>. What the prose assumes of its values and leaves to the host is stated as SpecTec <code>syntax</code>, <code>relation</code> and <code>laws</code> declarations, each law quoting the sentence it reads. Downstream, SpecTec compiles to Lean 4, where one concrete engine is proved to implement the specification and runs <code>test262</code>.</p></div>
+</header>
+<ul class="facts" aria-label="The specification in numbers">
+<li><b>36</b><span>SpecTec modules of algorithms, grammars, tables &amp; early errors (55,936 lines, bijective with <code>spec.html</code>)</span></li>
+<li><b>72</b><span>SpecTec laws of the host, in 10 topics</span></li>
+<li><b>148</b><span>SpecTec laws of the model (116 core, 12 of Numbers, 9 of Data Blocks, 7 of Unicode, and 4 of Parse Node parents) plus 7 of parsing, covers &amp; Parse Nodes</span></li>
+<li><b>56</b><span>documented specification decisions: 53 defects of the text and 3 proposed normative changes</span></li>
+</ul>
+
+<h2 id="read">Read first</h2>
+<ul class="cards two">
+<li><h3><a href="how-it-works.html">How it works</a></h3><p>From <code>spec.html</code> to SpecTec and downstream to Lean: structured declarations, prose relations &amp; laws, bidirectional bijections, and one clause followed end to end.</p></li>
+<li><h3><a href="proposal.html">Applying a proposal</a></h3><p>A TC39 proposal applied in a branch: 1,042 lines written by hand, 0 files of hand-written Lean changed.</p></li>
+<li><h3><a href="errata.html">Spec issues &amp; errata</a></h3><p>All 56 specification defects, non-literal SpecTec readings, and proposed changes (53 long-form write-ups, upstream TC39 tracking, and 52 runnable examples).</p></li>
+<li><h3><a href="what-is-proved.html">What is proved</a></h3><p>What it is to implement the specification, the engine's and parser's theorems verbatim, and what is proved, trusted and outside the claim.</p></li>
+</ul>
+
+<h2 id="pages">The specification, set for reading</h2>
+<p>Generated from the SpecTec prose modules (<code>spec/spectec/prose/</code>) and their transitive closure: every object and law cites its governing ECMA-262 clause, every law quotes the sentence it reads, and every referenced identifier is clickable (with auxiliary definitions folded until clicked).</p>
+<ul class="cards two">
+<li><h3><a href="model.html">The model and its laws</a></h3><p>The sorts of the specification as SpecTec carriers, values and operations, and the laws a model obeys.</p></li>
+<li><h3><a href="host.html">The host and its laws</a></h3><p>What the specification leaves to the host, and the 72 SpecTec laws it requires, by topic.</p></li>
+<li><h3><a href="memory-model.html">The memory model (§29)</a></h3><p>Candidate executions, happens-before, sequentially consistent memory order, valid executions (19 quoted laws), and races.</p></li>
+<li><h3><a href="parser-laws.html">The parser's laws</a></h3><p>Parse Nodes, §5.1 grammar derivations, §12 lexical scanning &amp; ASI, and cover laws in SpecTec. All proved of the engine.</p></li>
+<li><h3><a href="implements.html">Implements</a></h3><p>What it is for a downstream implementation to conform to the specification, with the observable state and §5.2 notation types.</p></li>
+</ul>
+
+<h2 id="run">Run it</h2>
+<ul class="cards two">
+<li><h3><a href="debugger/">The debugger</a></h3><p>A JavaScript program run by the specification's machine, paused at its steps: the spec stack beside the JS stack, the step's text, its slots and the store. In a browser with 64-bit WebAssembly.</p></li>
+<li><h3><a href="examples.html">Examples</a></h3><p>Programs that each open in the debugger with their breakpoints set, from a property get to the errata read as written.</p></li>
+</ul>
+<h2 id="results">Results</h2>
+<ul class="cards two">
+<li><h3><a href="test262.html">test262 results</a></h3><p>TC39's conformance suite on <code>ecma-run</code>: 42,985 of 43,521 tests pass (42,856 in the 60 s default pass, rising to 42,985 under the 600 s <code>--gc</code> pass; 0 failures, 0 stops).</p></li>
+</ul>
+<h2 id="three">Three things to know first</h2>
+<ol class="steps">
+<li><strong>SpecTec and <code>spec.html</code> form a verified bijection.</strong> Every algorithm, equation, early-error rule, table and grammar production lives in <code>spec/spectec/</code> (<code>def @sec-…</code>, <code>grammar</code>, <code>early_error</code>, <code>syntax</code>, <code>field</code>, <code>enum</code>). <code>crates/spectec-html</code> splices <code>spec/spectec/</code> back into <code>spec.html</code> with zero byte diffs via explicit presentation and patch tables in <code>spec/html/</code>; <code>spectec roundtrip</code> checks SpecTec's own formatting; and <code>scripts/bijection.py</code> prints SpecTec back from downstream Lean byte for byte.</li>
+<li><strong>Where the English is prose, SpecTec states <code>syntax</code>, <code>relation</code> and <code>laws</code> — quoting <code>spec.html</code>.</strong> What the text assumes (that mathematical values form an ordered field, that Numbers are IEEE 754 binary64) and what it leaves to the host (time, job scheduling, locale, §29 memory) is written in <code>spec/spectec/prose/*.spectec</code>, and every law quotes the governing sentence of <code>spec.html</code> (<code>scripts/law_quotes.py</code>).</li>
+<li><strong>The downstream Lean claim is precise and has limits.</strong> <code>crates/spectec</code> compiles SpecTec to Lean 4, where the concrete engine and its parser are proved against the specification relying on Lean's 3 standard axioms alone (0 <code>native_decide</code> pins; 71 shortcut and parser-table checks verified at run time). Every stated SpecTec law is proved; the debugger loop is outside the claim; <a href="what-is-proved.html">What is proved</a> lists all of it.</li>
+</ol>
+
+<h2 id="revisions">Revisions</h2>
+<p>This site is built from one commit of the repository, <code>d850cd3</code>, with the specification at tc39/ecma262 <code>b1eaed82f</code> and the tests at tc39/test262 <code>2e58f87d8</code>. The engine runs as <code>ecma-run</code>; the step debugger, <code>ecma-dbg</code>, runs in the browser as WebAssembly. In its latest recorded run of test262 (at <code>2e58f87d8</code>, 2026-11-27), 42,985 of the 43,521 tests run pass (including the 600 s --gc pass); <a href="test262.html">test262 results</a> gives the breakdown by directory.</p>
+
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

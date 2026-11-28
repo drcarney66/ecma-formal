@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>44. Lookahead restrictions over an automatically inserted semicolon · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li><li class="t1"><a href="#program">The program</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/44-lookahead-source-tokens.md</code></p>
+<h1>44. Lookahead restrictions over an automatically inserted semicolon</h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§5.1.6.7 Lookahead Restrictions (<a class="clause" href="https://tc39.es/ecma262/#sec-lookahead-restrictions"><code>#sec-lookahead-restrictions</code></a>), with §12.10 Automatic Semicolon Insertion (<a class="clause" href="https://tc39.es/ecma262/#sec-automatic-semicolon-insertion"><code>#sec-automatic-semicolon-insertion</code></a>) and its §12.10.1 Rules of Automatic Semicolon Insertion (<a class="clause" href="https://tc39.es/ecma262/#sec-rules-of-automatic-semicolon-insertion"><code>#sec-rules-of-automatic-semicolon-insertion</code></a>), rule 1, and §14.5 Expression Statement (<a class="clause" href="https://tc39.es/ecma262/#sec-expression-statement"><code>#sec-expression-statement</code></a>).</dd><dt>Kind</dt><dd>ambiguity (two readings of "input token sequence"; test262 requires one).</dd><dt>Model erratum</dt><dd><code>LookaheadSourceTokens</code>, default reading test262; its readings: literal, test262, proposed. The test262 and proposed readings: a lookahead reads the source's tokens, past the semicolons §12.10 inserted. Under the literal reading the run stops where a lookahead reads at an inserted <code>;</code>.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for lookahead with "semicolon insertion"). Issue <a class="ext" href="https://github.com/tc39/ecma262/issues/3269">#3269</a> (open, 2024-01), "Suggestion: <code>[no ASI if lookahead ...]</code> constraint instead of SS rules for OptionalChain", proposes a constraint for OptionalChain and does not ask what a lookahead reads after an inserted semicolon.</dd><dt>On this site</dt><dd><a href="../errata.html#LookaheadSourceTokens"><code>LookaheadSourceTokens</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p>§5.1.6.7:</p>
+<blockquote class="sentence q-text"><p>If the phrase “[lookahead = <var>seq</var>]” appears in the right-hand side of a production, it indicates that the production may only be used if the token sequence <var>seq</var> is a prefix of the immediately following input token sequence.</p></blockquote>
+<p>§12.10 and §12.10.1:</p>
+<blockquote class="sentence q-text"><p>These situations are described by saying that semicolons are automatically inserted into the source code token stream in those situations.</p></blockquote>
+<blockquote class="sentence q-text"><p>When, as the source text is parsed from left to right, a token (called the <span class="val">offending token</span>) is encountered that is not allowed by any production of the grammar, then a semicolon is automatically inserted before the offending token if one or more of the following conditions is true: The offending token is separated from the previous token by at least one <span class="nt">LineTerminator</span>. …</p></blockquote>
+<p>§14.5:</p>
+<blockquote class="sentence q-text"><p>ExpressionStatement[Yield, Await] : [lookahead ∉ { <code>{</code>, <code>function</code>, <code>async</code> [no LineTerminator here] <code>function</code>, <code>class</code>, <code>let</code> <code>[</code> }] Expression[+In, ?Yield, ?Await] <code>;</code></p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>A lookahead restriction reads "the immediately following input token sequence", and §12.10 describes semicolon
+insertion as inserting tokens "into the source code token stream". The text does not say whether a semicolon inserted
+by rule 1 is one of the input tokens a later lookahead restriction reads.</p>
+<p>Take the Script</p>
+<pre class="js"><code>if (false) let
+[a] = 0;
+</code></pre>
+<p>The <code>[</code> after <code>let</code> is an offending token: <code>let [</code> cannot begin an |ExpressionStatement| (its lookahead excludes it),
+and a |LexicalDeclaration| cannot be the |Statement| of an |IfStatement|. It is separated from <code>let</code> by a line
+terminator, so rule 1 inserts <code>;</code> before it. If the inserted <code>;</code> is an input token, the |ExpressionStatement|'s
+lookahead now reads <code>let</code> <code>;</code>, which is not excluded, so <code>let;</code> is an |ExpressionStatement| and <code>[a] = 0;</code> another:
+the Script is valid. If a lookahead reads the source's tokens, past the inserted semicolon, it still reads <code>let</code> <code>[</code>
+and the production cannot be used: no parse exists and the Script is a SyntaxError.</p>
+<h2 id="examples">Examples</h2>
+<p><a href="#program">examples/44-lookahead-inserted-semicolon.js</a> (outputs:
+<a href="results.html#44-lookahead-inserted-semicolonjs">the recorded runs</a>) parses each source as a function body:</p>
+<pre class="js"><code>var sources = [&quot;if (false) let\n[a] = 0;&quot;, &quot;while (false) let\n[a] = 0;&quot;, &quot;if (false) let\n{}&quot;,
+               &quot;if (false) let;\n[a] = 0;&quot;];
+for (var s of sources) {
+  try { (0, eval)(&quot;(function () {\n&quot; + s + &quot;\n})&quot;); print(JSON.stringify(s) + &quot;: no error&quot;); }
+  catch (e) { print(JSON.stringify(s) + &quot;: &quot; + e.constructor.name); }
+}
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th><code>if … let</code> LF <code>[a] = 0;</code></th>
+<th><code>while … let</code> LF <code>[a] = 0;</code></th>
+<th><code>if … let</code> LF <code>{}</code></th>
+<th><code>if … let;</code> LF <code>[a] = 0;</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the inserted <code>;</code> is an input token</td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+<tr>
+<td>lookahead reads the source's tokens</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+<tr>
+<td>formal model (test262 and proposed readings)</td>
+<td>SyntaxError</td>
+<td>SyntaxError</td>
+<td>no error</td>
+<td>no error</td>
+</tr>
+</tbody>
+</table></div>
+<p>SpecTec bakes in the test262 reading (<code>pastVirt</code> and <code>SynLook</code> in <code>spec/spectec/prose/04-derives.spectec</code> examine source
+tokens past automatically inserted semicolons), so <code>if (0) let</code> LF <code>[a] = 0;</code> is rejected with <code>throw: SyntaxError</code>
+(<code>tests/run/erratum_lookahead_source_tokens.js</code>).</p>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Proposed: a paragraph in §12.10.1, after the rules and their overriding condition:</p>
+<pre class="diff"><code>--- a/spec.html
++++ b/spec.html
+@@ -18089,1 +18089,2 @@
+       &lt;p&gt;However, there is an additional overriding condition on the preceding rules: a semicolon is never inserted automatically if the semicolon would then be parsed as an empty statement or if that semicolon would become one of the two semicolons in the header of a `for` statement (see &lt;emu-xref href=&quot;#sec-for-statement&quot;&gt;&lt;/emu-xref&gt;).&lt;/p&gt;
++      &lt;p&gt;A semicolon inserted by these rules is not a token of the input token sequence that a lookahead restriction (&lt;emu-xref href=&quot;#sec-lookahead-restrictions&quot;&gt;&lt;/emu-xref&gt;) examines.&lt;/p&gt;
+</code></pre>
+<p>Or state in §5.1.6.7 that the input token sequence a lookahead restriction examines is the source text's tokens,
+without automatically inserted semicolons.</p>
+<h2 id="test262">test262</h2>
+<p>language/statements/{do-while,for,for-await-of,for-in,for-of,if,labeled,while,with}/let-array-with-newline.js (9
+files) require a SyntaxError at parse time for this pattern: the second reading.</p><section id="program"><h2>The program</h2><p>The example is a Script. Its runs on the engines and on the model: <a href="results.html#44-lookahead-inserted-semicolonjs">the examples' runs</a>.</p><p class="opens"><button type="button" class="open" data-dbg-open="../debugger/?example=44-lookahead-inserted-semicolon">Open in the debugger</button></p><details class="jssrc"><summary>Source <code>examples/44-lookahead-inserted-semicolon.js</code></summary><pre class="js">// ExpressionStatement&#x27;s [lookahead ∉ { let [ }] and a semicolon that §12.10 inserts before `[`: whether the
+// lookahead reads the inserted `;`. Each source is parsed (not run) as a function body in a Script.
+if (typeof print === &quot;undefined&quot;) globalThis.print = console.log;
+var sources = [&quot;if (false) let\n[a] = 0;&quot;, &quot;while (false) let\n[a] = 0;&quot;, &quot;if (false) let\n{}&quot;,
+               &quot;if (false) let;\n[a] = 0;&quot;];
+for (var s of sources) {
+  try { (0, eval)(&quot;(function () {\n&quot; + s + &quot;\n})&quot;); print(JSON.stringify(s) + &quot;: no error&quot;); }
+  catch (e) { print(JSON.stringify(s) + &quot;: &quot; + e.constructor.name); }
+}
+</pre></details></section>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

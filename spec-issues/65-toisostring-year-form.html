@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>65. Date.prototype.toISOString leaves 4-digit vs expanded ±YYYYYY year format unspecified for 0..9999 · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="../coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="../style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="../site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="../index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="../how-it-works.html">How it works</a></li><li><a href="../proposal.html">Applying a proposal</a></li><li><a href="../errata.html" aria-current="page">Spec issues &amp; errata</a></li><li><a href="../what-is-proved.html">What is proved</a></li><li><a href="../test262.html">test262 results</a></li><li><a href="../slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="../model.html">The model</a></li><li><a href="../host.html">The host</a></li><li><a href="../memory-model.html">Memory model</a></li><li><a href="../parser-laws.html">Parser laws</a></li><li><a href="../implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="../examples.html">Examples</a></li><li><a href="../debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#text">Text</a></li><li class="t1"><a href="#problem">Problem</a></li><li class="t1"><a href="#examples">Examples</a></li><li class="t1"><a href="#proposed-wording">Proposed wording</a></li><li class="t1"><a href="#test262">test262</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow"><a href="../errata.html">Spec issues &amp; errata</a> · defect of the text · <code>docs/spec-issues/65-toisostring-year-form.md</code></p>
+<h1>65. <code>Date.prototype.toISOString</code> leaves 4-digit vs expanded <code>±YYYYYY</code> year format unspecified for <code>0..9999</code></h1>
+
+</header>
+<dl class="split efacts"><dt>Location</dt><dd>§21.4.4.36 <code>Date.prototype.toISOString</code> (<a class="clause" href="https://tc39.es/ecma262/#sec-date.prototype.toisostring"><code>#sec-date.prototype.toisostring</code></a>), step 7, with §21.4.1.32 Date Time String Format (<a class="clause" href="https://tc39.es/ecma262/#sec-date-time-string-format"><code>#sec-date-time-string-format</code></a>), <code>YYYY</code> and Expanded Years.</dd><dt>Kind</dt><dd>underspecification (<code>test262</code> and all engines require 4-digit <code>YYYY</code> for years <code>0..9999</code>, whereas the prose permits <code>+002026</code>).</dd><dt>Model erratum</dt><dd><code>ToISOStringYearForm</code>, baked-in SpecTec reading test262 (<code>$ExpandedYearForm</code> in <code>spec/spectec/clauses/S21.spectec</code> and <code>lean/Engine/Host/Core.lean</code>). SpecTec binds <code>$ExpandedYearForm</code> to <code>false</code> for years in <code>0..9999</code> so <code>toISOString</code> always emits 4-digit <code>YYYY</code> there and 6-digit <code>±YYYYYY</code> outside <code>0..9999</code>.</dd><dt>Upstream</dt><dd>Checked 2026-11-19: none found (searched for "toISOString" with "expanded year").</dd><dt>On this site</dt><dd><a href="../errata.html#ToISOStringYearForm"><code>ToISOStringYearForm</code></a> on Spec issues &amp; errata (defect of the text; SpecTec bakes in the test262 reading)</dd></dl><h2 id="text">Text</h2>
+<p><code>Date.prototype.toISOString</code>:</p>
+<blockquote class="sentence q-text"><p class="q-step" style="--d:0"><span class="q-num">7.</span> Return a String representation of <var>tv</var> in the Date Time String Format on the UTC time scale, including all format elements and the UTC offset representation <span class="val">&quot;Z&quot;</span>.</p></blockquote>
+<p>§21.4.1.32:</p>
+<blockquote class="sentence q-text"><p><code>YYYY</code> is the year in the proleptic Gregorian calendar as four decimal digits from 0000 to 9999, or as an expanded year of <span class="val">&quot;+&quot;</span> or <span class="val">&quot;-&quot;</span> followed by six decimal digits.</p></blockquote>
+<h2 id="problem">Problem</h2>
+<p>§21.4.1.32 defines the <em>input/interchange</em> grammar accepted by <code>Date.parse</code>, where <code>+002026-01-01T00:00:00.000Z</code> is a
+valid expanded-year representation of 2026 (only <code>-000000</code> is forbidden). <code>Date.prototype.toISOString</code> step 7 asks for
+<em>"a String representation of <em>tv</em> in the Date Time String Format"</em> without restricting expanded years to <code>&lt; 0</code> or
+<code>&gt; 9999</code>, leaving <code>"+002026-01-01T00:00:00.000Z"</code> a literally conforming result for <code>new Date(Date.UTC(2026, 0, 1)).toISOString()</code>.</p>
+<h2 id="examples">Examples</h2>
+<pre class="js"><code>print(new Date(Date.UTC(0, 0, 1)).toISOString());
+print(new Date(Date.UTC(2026, 0, 1)).toISOString());
+print(new Date(Date.UTC(10000, 0, 1)).toISOString());
+</code></pre>
+<div class="tablebox"><table class="wt">
+<thead>
+<tr>
+<th></th>
+<th>year <code>1900</code> (<code>Date.UTC(0, 0, 1)</code>)</th>
+<th>year <code>2026</code></th>
+<th>year <code>10000</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>literal text</td>
+<td><code>"1900-..."</code> or <code>"+001900-..."</code></td>
+<td><code>"2026-..."</code> or <code>"+002026-..."</code></td>
+<td><code>"+010000-01-01T00:00:00.000Z"</code></td>
+</tr>
+<tr>
+<td>V8, SpiderMonkey, JavaScriptCore</td>
+<td><code>"1900-01-01T00:00:00.000Z"</code></td>
+<td><code>"2026-01-01T00:00:00.000Z"</code></td>
+<td><code>"+010000-01-01T00:00:00.000Z"</code></td>
+</tr>
+<tr>
+<td>formal model (test262 reading)</td>
+<td><code>"1900-01-01T00:00:00.000Z"</code></td>
+<td><code>"2026-01-01T00:00:00.000Z"</code></td>
+<td><code>"+010000-01-01T00:00:00.000Z"</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="proposed-wording">Proposed wording</h2>
+<p>Add to <code>Date.prototype.toISOString</code> step 7: <em>"representing the year as four digits if 0 ≤ YearFromTime(<em>tv</em>) ≤ 9999 and
+as an expanded year otherwise."</em></p>
+<h2 id="test262">test262</h2>
+<p><code>built-ins/Date/prototype/toISOString/15.9.5.43-0-4.js</code> and <code>15.9.1.15-1.js</code> require exact 4-digit <code>YYYY</code> strings for
+years in <code>0..9999</code>.</p>
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>

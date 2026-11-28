@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What is proved · ECMA-262 in Lean</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ctext x=%276%27 y=%2725%27 font-family=%27Georgia,serif%27 font-size=%2726%27 fill=%27%231c5d99%27%3E%C2%A7%3C/text%3E%3C/svg%3E">
+<script src="coi-serviceworker.js?v=d850cd3"></script>
+<link rel="stylesheet" href="style.css?v=d850cd3">
+<script>document.documentElement.classList.add("js");try{var t=localStorage.getItem("theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
+<script src="site.js?v=d850cd3" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the text</a>
+<header class="bar">
+<div class="bar-in">
+<a class="brand" href="index.html">ECMA-262 in Lean</a>
+<nav class="site" aria-label="Pages"><details class="nav-menu here"><summary>Read</summary><ul><li><a href="how-it-works.html">How it works</a></li><li><a href="proposal.html">Applying a proposal</a></li><li><a href="errata.html">Spec issues &amp; errata</a></li><li><a href="what-is-proved.html" aria-current="page">What is proved</a></li><li><a href="test262.html">test262 results</a></li><li><a href="slides.html">TC39 #117 slides</a></li></ul></details><details class="nav-menu"><summary>The Specification</summary><ul><li><a href="model.html">The model</a></li><li><a href="host.html">The host</a></li><li><a href="memory-model.html">Memory model</a></li><li><a href="parser-laws.html">Parser laws</a></li><li><a href="implements.html">Implements</a></li></ul></details><details class="nav-menu"><summary>Try it</summary><ul><li><a href="examples.html">Examples</a></li><li><a href="debugger/">Debugger</a></li></ul></details></nav>
+<button class="theme theme-sm" type="button" id="theme" aria-label="Toggle dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
+</div>
+</header>
+<div class="page has-toc">
+<nav class="toc" aria-label="On this page"><details open id="toc-details"><summary>On this page</summary><ol><li class="t1"><a href="#definition">The definition: Ecma.Implements</a></li><li class="t1"><a href="#theorems">The theorems, verbatim</a></li><li class="t2"><a href="#implements">The engine implements the specification</a></li><li class="t2"><a href="#run-sound">Every run of the engine is the specification&#x27;s</a></li><li class="t2"><a href="#parser-theorems">The parser and cover laws, sound and complete</a></li><li class="t1"><a href="#ledger">Proved, trusted, owed, outside</a></li><li class="t1"><a href="#not-said">What the theorem does not say</a></li><li class="t1"><a href="#engine-impl">The engine as an implementation</a></li></ol></details></nav>
+<main id="main">
+<header class="title">
+<p class="eyebrow">Downstream conformance proofs over the compiled SpecTec specification · <code>lean/Engine/Claims.lean</code>, <code>lean/Ecma/Implements.lean</code></p>
+<h1>What is proved</h1>
+<div class="lede"><p>SpecTec (<code>spec/spectec/</code>) defines ECMA-262's algorithms, grammars, model laws and host laws, and compiles downstream to Lean 4. There, <code>Ecma.Implements</code> states what it means for an execution engine to conform to the specification, and <code>lean/Engine</code> is proved to meet that definition: every run of the engine is a run of the specification's machine, or a stop at an implementation limit of its own. This page states the claim, then lists what is proved, trusted, owed, and outside it.</p></div>
+</header>
+<h2 id="definition">The definition: <code>Ecma.Implements</code></h2>
+<p>An implementation (<a href="implements.html#Implementation"><code>Implementation</code></a>) provides concrete values (a <a href="model.html#Model"><code>Model</code></a>), a <a href="host.html#Host"><code>Host</code></a>, host algorithms beside the specification's, and its own transition between machine configurations. Its transition may execute many specification steps at once or compute a fast-path shortcut directly. It implements the specification when three conditions hold:</p>
+<pre class="lean"><span class="l" style="--i:0"><span class="c">-- lean/Ecma/Implements.lean, in namespace Ecma</span></span><span class="l" style="--i:0"><span class="k">structure</span> Implements (I : Implementation M) : <span class="k">Prop</span> <span class="k">where</span></span><span class="l" style="--i:2">  <span class="c">/-- its values are the specification&#x27;s: the model&#x27;s laws (§6, sec-ecmascript-data-types-and-values) -/</span></span><span class="l" style="--i:2"><span class="c">  </span>model : Model.Laws M <span class="o">∧</span> Model.UnicodeLaws M <span class="o">∧</span> Model.ParentLaws M</span><span class="l" style="--i:2">  <span class="c">/-- its host meets every requirement the specification makes of a host (§4.2, sec-hosts-and-implementations) -/</span></span><span class="l" style="--i:2"><span class="c">  </span>host : Host.WF I.host</span><span class="l" style="--i:2">  <span class="c">/-- each transition it takes from a configuration the specification&#x27;s machine reaches is some transitions of</span></span><span class="l" style="--i:2"><span class="c">  that machine, and where it ends, that machine&#x27;s run ends so; or it gives up at a limit of its own (§2,</span></span><span class="l" style="--i:2"><span class="c">  sec-conformance; §5.2, sec-algorithm-conventions) -/</span></span><span class="l" style="--i:2"><span class="c">  </span>step : <span class="o">∀</span> chk c, Reached (I.spec chk) c <span class="o">→</span></span><span class="l" style="--i:4">    <span class="k">match</span> I.step chk c <span class="k">with</span></span><span class="l" style="--i:4">    <span class="o">|</span> .inl c&#x27; <span class="o">=&gt;</span> Steps (I.spec chk) c c&#x27;</span><span class="l" style="--i:4">    <span class="o">|</span> .inr f <span class="o">=&gt;</span> Runs (I.spec chk) c f <span class="o">∨</span> f = .stop .implLimit</span></pre>
+<dl class="split">
+<dt>model</dt>
+<dd><p>Its values obey all 148 SpecTec model laws: <a href="model.html#Model.Laws"><code>Model.Laws</code></a> (116 core laws, joined with <a href="model.html#Model.NumLaws"><code>Model.NumLaws</code></a>'s 12 for Numbers and <a href="model.html#Model.ByteLaws"><code>Model.ByteLaws</code></a>'s 9 for Data Blocks), the Unicode laws (<a href="model.html#Model.UnicodeLaws"><code>Model.UnicodeLaws</code></a>, 7), and the Parse Node parent laws (<a href="model.html#Model.ParentLaws"><code>Model.ParentLaws</code></a>, 4).</p></dd>
+<dt>host</dt>
+<dd><p>Its host obeys every SpecTec law the specification requires of a host (<a href="host.html#Host.WF"><code>Host.WF</code></a>, 72 laws across 10 topics).</p></dd>
+<dt>step</dt>
+<dd><p>Whether Asserts are checked or unchecked (<code>chk</code>): from any configuration the specification's machine reaches (<a href="implements.html#Reached"><code>Reached</code></a>), a transition the implementation takes is zero or more transitions of the specification's machine; where the implementation finishes, the specification's machine finishes from there with the same result; or the implementation stops at a resource limit of its own (<code>.stop .implLimit</code>). It never answers otherwise than the specification.</p></dd>
+</dl>
+
+<figure class="diagram" aria-labelledby="fig2-cap">
+<div class="svgbox">
+<svg viewBox="0 0 640 190" role="img" aria-label="A transition of the implementation from configuration c to c-prime is matched by zero or more transitions of the specification's machine from c to c-prime.">
+<defs><marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+<rect class="dg-box lean" x="40" y="70" width="70" height="44" rx="22"/>
+<text class="dg-t" x="68" y="97">c</text>
+<rect class="dg-box lean" x="530" y="70" width="70" height="44" rx="22"/>
+<text class="dg-t" x="556" y="97">c′</text>
+<path class="dg-a" d="M110,80 C250,20 390,20 530,80" marker-end="url(#ah2)"/>
+<text class="dg-t" x="242" y="30">I.step chk c = .inl c′</text>
+<text class="dg-s" x="232" y="46">one transition of the implementation</text>
+<g>
+<circle class="dg-box" cx="200" cy="140" r="5"/><circle class="dg-box" cx="290" cy="150" r="5"/><circle class="dg-box" cx="380" cy="150" r="5"/><circle class="dg-box" cx="460" cy="140" r="5"/>
+<path class="dg-a" d="M110,104 L194,138" marker-end="url(#ah2)"/>
+<path class="dg-a" d="M205,141 L284,149" marker-end="url(#ah2)"/>
+<path class="dg-a" d="M295,150 L374,150" marker-end="url(#ah2)"/>
+<path class="dg-a" d="M385,149 L454,141" marker-end="url(#ah2)"/>
+<path class="dg-a" d="M465,138 L530,106" marker-end="url(#ah2)"/>
+</g>
+<text class="dg-s" x="220" y="180">Steps (I.spec chk) c c′: the specification's machine, step by step</text>
+<text class="dg-l" x="10" y="60">reached by the</text>
+<text class="dg-l" x="10" y="140">specification</text>
+</svg>
+</div>
+<figcaption id="fig2-cap">The step condition. Above, what the implementation does in one transition; below, the specification's machine with the same compiled SpecTec program and host, which reaches the same configuration in zero or more of its own transitions. Where the implementation finishes with a result, the specification's run from the same configuration finishes with that result.</figcaption>
+</figure>
+
+<h2 id="theorems">The theorems, verbatim</h2>
+<p>The engine as an implementation, <a href="#engine-impl"><code>Engine.implementation o cells mc accel</code></a>, bundles the concrete model <code>Impl</code>, its host under the options <code>o</code> over the cells <code>cells</code>, the host's own algorithms, and its transition with the store ceiling <code>mc</code>, with or without shortcuts (<code>accel</code>). Both theorems are in <code>lean/Engine/Proofs/Model.lean</code> and have no hypothesis beyond what they state.</p>
+<h3 id="implements">The engine implements the specification</h3>
+<pre class="lean"><span class="l" style="--i:0"><span class="c">-- lean/Engine/Proofs/Model.lean, in namespace Engine</span></span><span class="l" style="--i:0"><span class="k">theorem</span> implements (o : Engine.Host.HostOpts) (cells : Engine.Host.Cells) (mc : Option Nat) (accel : Bool) :</span><span class="l" style="--i:4">    Implements (implementation o cells mc accel)</span></pre>
+<p>For every option set of the host, every allocation of its cells, every store ceiling, with or without the shortcuts, the engine is an implementation of the specification in the sense above.</p>
+<h3 id="run-sound">Every run of the engine is the specification's</h3>
+<pre class="lean"><span class="l" style="--i:0"><span class="c">-- lean/Engine/Proofs/Model.lean, in namespace Engine</span></span><span class="l" style="--i:0"><span class="k">theorem</span> run_sound (o : Engine.Host.HostOpts) (cells : Engine.Host.Cells) (mc : Option Nat) (accel : Bool)</span><span class="l" style="--i:4">    (chk : Bool) (units : Thunk Engine.Machine.Units) (ob : Engine.Machine.Obs)</span><span class="l" style="--i:4">    (s : State Impl) (k : Call Impl) (f : Final Impl) (hs : s.frames = [])</span><span class="l" style="--i:4">    (h : Machine.runT (setupAt (hostBy o cells) mc accel chk) units ob (start s k) = some f) :</span><span class="l" style="--i:4">    Runs (Ctx.spec (Spec.program hostAlgs) (hostBy o cells) chk) (start s k) f <span class="o">∨</span> f = .stop .implLimit</span></pre>
+<p>If the engine's run loop (<code>runT</code>), started on a call in a state with no suspended execution context, returns a result <code>f</code>, then the specification's machine, running the compiled SpecTec program with the engine's host, has a run from the same configuration that ends with <code>f</code>; or <code>f</code> is a stop at an implementation limit. A companion, <code>Engine.run_sound_reached</code>, proves the same from any configuration the specification's machine reaches, covering jobs and runs after preludes.</p>
+<h3 id="parser-theorems">The parser and cover laws, sound and complete</h3>
+<pre class="lean"><span class="l" style="--i:0"><span class="c">-- lean/Engine/Claims.lean, in namespace Engine.Claims</span></span><span class="l" style="--i:0"><span class="k">theorem</span> parseLaws (cx : Grammar.Ctx) (strict : Bool) :</span><span class="l" style="--i:4">    Model.ParseLaws Impl (Engine.Impl.grammarCtx cx Engine.Model.codePrims strict)</span></pre>
+<pre class="lean"><span class="l" style="--i:0"><span class="c">-- lean/Engine/Claims.lean, in namespace Engine.Claims</span></span><span class="l" style="--i:0"><span class="k">theorem</span> coverLaws (cx : Grammar.Ctx) (strict : Bool) :</span><span class="l" style="--i:4">    Model.CoverLaws Impl (Engine.Impl.grammarCtx cx Engine.Model.codePrims strict)</span></pre>
+<p>In <code>lean/Engine/Claims.lean</code> (proved in <code>lean/Engine/Proofs/Parse/Laws.lean</code> and <code>Cover.lean</code>): for every parser context and strictness flag, <code>Model.parse</code> is both sound and complete against <code>GrammarCtx.ParseIs</code> / <code>GrammarCtx.Parses</code> (<a href="parser-laws.html#Model.ParseLaws"><code>Model.ParseLaws</code></a>), and <code>Model.cover</code> is sound against <code>GrammarCtx.CoverIs</code> (<a href="parser-laws.html#Model.CoverLaws"><code>Model.CoverLaws</code></a>), alongside <code>Engine.Claims.nodeLaws</code> and <code>Engine.Claims.parentLaws</code>.</p>
+
+<h2 id="ledger">Proved, trusted, owed, outside</h2>
+<div class="ledger">
+<section id="proved"><h3><span class="badge proved">Proved</span> What the theorems establish</h3>
+<ul>
+<li>The engine's values obey the SpecTec model laws and Unicode laws (<code>Engine.Impl.laws</code>, <code>Engine.Impl.unicodeLaws</code>).</li>
+<li>The engine's host obeys all 72 SpecTec host laws under every option set (<code>Engine.SpecHost.wfBy</code>).</li>
+<li>The code table the engine runs equals the compiled SpecTec program plus the host's own algorithms where the specification defines none (<code>Engine.P'_eq</code>).</li>
+<li>Each transition of the engine, shortcuts included, matches the specification's at every reachable configuration, with <strong>0 <code>native_decide</code> pins</strong>; the 71 checks on the generated program and parser tables are verified at run time (<code>Engine.Machine.pinsOk</code>; if any failed, <code>Engine.setupAt</code> falls back to <code>Engine.Machine.plain</code>).</li>
+<li>The parser's soundness and completeness laws (<code>Engine.Claims.parseLaws</code>), the cover soundness law (<code>Engine.Claims.coverLaws</code>), and the laws of a Parse Node's parent (<code>Engine.Claims.parentLaws</code>) and of its children and descendants (<code>Engine.Claims.nodeLaws</code>), over <code>Engine.Model.codePrims</code>.</li>
+<li>The set-ups covered: <code>ecma-run</code> by default and with <code>--no-accel</code>, under every <code>--checked</code>, <code>--max-heap</code>, every host option (<code>--host-seed</code>, <code>--web-browser</code>, <code>--annex-b</code>, <code>--can-block</code>, <code>--resize-in-place</code>), and with tracing, <code>--sites</code> and <code>--cover</code>.</li>
+</ul></section>
+<section id="trusted"><h3><span class="badge trusted">Trusted</span> Relied on, not proved</h3>
+<ul>
+<li>Lean's 3 standard axioms (<code>propext</code>, <code>Classical.choice</code>, <code>Quot.sound</code>), <code>crates/spectec</code>'s emitter, and Lean's kernel and compiler.</li>
+<li>The <code>implemented_by</code> overrides: the run loop's observers (<code>traceOut</code>, <code>noteOut</code>, <code>noteStep</code>, the identity to the logic), and the model's binary64 operations <code>addHw</code>, <code>mulHw</code>, <code>divHw</code>, and Parent's <code>treeIndex</code>, <code>treeHeight</code>, <code>parentFast</code>.</li>
+<li>The driver between runs: realm initialization, preludes and the main program as separate runs, snapshots and <code>--serve</code>'s caches. None of them mutates suspended execution contexts, so each run starts from a configuration <code>Reached</code> covers. That is inspected in the code, not proved.</li>
+</ul></section>
+<section id="owed"><h3><span class="badge owed">Owed</span> Stated, not proved</h3>
+<ul>
+<li>None: every SpecTec law stated of the model, the host, and the parser (<a href="parser-laws.html#Model.ParseLaws"><code>Model.ParseLaws</code></a>, <a href="parser-laws.html#Model.CoverLaws"><code>Model.CoverLaws</code></a>, <a href="parser-laws.html#Model.NodeLaws"><code>Model.NodeLaws</code></a>) is proved of the engine.</li>
+</ul></section>
+<section id="outside"><h3><span class="badge outside">Outside</span> Not covered by the claim</h3>
+<ul>
+<li>The step debugger's loop (<code>Debugger.Machine.runW</code>, a <code>partial</code> definition): <code>ecma-dbg</code> steps the same machine, but its interactive loop is not proved.</li>
+<li>Optional mark-and-sweep store collection (<code>ecma-run --gc</code> via <code>Engine.GC.runGC</code>, a <code>partial</code> loop, and <code>ecma-dbg</code>'s <code>"gc"</code> request): reclaiming unreachable cells in <code>Engine.Model.ChunkedHeap</code> while keeping live addresses monotonic is outside <code>Engine.implements</code>; default <code>ecma-run</code> runs without <code>--gc</code>.</li>
+<li>Test results: the theorem says nothing about which <a href="test262.html">test262</a> tests pass.</li>
+</ul></section>
+</div>
+
+<h2 id="not-said">What the theorem does not say</h2>
+<ol class="steps">
+<li><strong>That SpecTec is the English.</strong> The correspondence between <code>spec/spectec/</code> and <code>spec.html</code> is enforced by mechanical checks rather than a mathematical theorem: <code>crates/spectec-html</code> splices all SpecTec grammars, algorithms, equations and early errors back into <code>spec.html</code> with zero byte diffs (<code>scripts/html_bijection.py</code>), <code>spectec roundtrip</code> and <code>ecma-print</code> (<code>scripts/bijection.py</code>) verify the SpecTec ↔ Lean round-trips byte for byte, and <code>scripts/law_quotes.py</code> verifies every law's quotation against <code>spec.html</code>. The resolved decisions in <code>spec/DECISIONS.md</code> and the SpecTec readings of prose laws are reviewed by humans.</li>
+<li><strong>That every program gets an answer.</strong> The theorem governs runs that return from the engine's loop. A run may also stop at an implementation limit (the store ceiling or an exact power exceeding 2<sup>30</sup> bits), which the claim explicitly permits. Non-terminating runs produce no final value to compare.</li>
+<li><strong>That every source text is decided within fixed limits.</strong> The parser's soundness and completeness laws (<code>Engine.Claims.parseLaws</code>, <code>Engine.Claims.coverLaws</code>) are proved where <code>Model.parse</code> decides, while fuel or nesting-depth limits leave the parse undecided (<code>.stop .implLimit</code>).</li>
+<li><strong>That every host law matches its sentence word for word.</strong> Two host laws read their sentence more strictly than written (candidates for proposed normative changes) and two read theirs more weakly: see <a href="host.html#all-laws">the host's laws</a>.</li>
+</ol>
+
+<h2 id="engine-impl">The engine as an implementation</h2>
+<p>From <code>lean/Engine/Claims.lean</code>: the host's algorithms (<code>hostAlgs</code>: built-in functions, agent API hooks, <code>HostLoadImportedModule</code>, and entry-point drivers), none at an ID the specification defines; the host under options <code>o</code>; and the transition <code>Engine.Machine.stepE</code>: a stop at the store ceiling, else a verified shortcut where one applies (disabled when <code>accel</code> is false or if <code>Engine.Machine.pinsOkThunk</code> were false), else the specification's own step.</p>
+<pre class="lean"><span class="l" style="--i:0"><span class="c">-- lean/Engine/Claims.lean, in namespace Engine</span></span><span class="l" style="--i:0"><span class="k">def</span> implementation (o : Engine.Host.HostOpts) (cells : Engine.Host.Cells) (mc : Option Nat) (accel : Bool <span class="o">:=</span> true) :</span><span class="l" style="--i:4">    Ecma.Implementation Impl <span class="k">where</span></span><span class="l" style="--i:2">  extras <span class="o">:=</span> hostAlgs</span><span class="l" style="--i:2">  host <span class="o">:=</span> hostBy o cells</span><span class="l" style="--i:2">  step chk <span class="o">:=</span> Engine.Machine.stepE (setupAt (hostBy o cells) mc accel chk)</span></pre>
+
+</main>
+</div>
+<footer class="foot">
+<div class="foot-in">
+<p>ECMA-262 in Lean (a working title). Built from this repository at <code>d850cd3</code>;
+the specification at tc39/ecma262 <code>b1eaed82f</code>, the tests at tc39/test262 <code>2e58f87d8</code>.
+Clause links go to the living draft at tc39.es, which may differ from the pinned text; clause numbers are the pinned text's.</p>
+</div>
+</footer>
+</body>
+</html>
